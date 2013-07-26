@@ -22,7 +22,11 @@ package org.axonframework.common;
  *
  * @author Allard Buijze
  * @since 0.5
+ * @deprecated as of 2.1. This interface will be removed in future versions. Self subscribing components give problems
+ *             when wrapping components (using compositions or proxies). Therefore, subscriptions should be managed by
+ *             the creating component.
  */
+@Deprecated
 public interface Subscribable {
 
     /**

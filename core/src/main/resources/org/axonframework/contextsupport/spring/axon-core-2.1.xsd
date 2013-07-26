@@ -105,7 +105,7 @@
                         </xsd:attribute>
                     </xsd:complexType>
                 </xsd:element>
-                <xsd:element name="selectors" minOccurs="0">
+                <xsd:element name="selectors" type="selectorType" minOccurs="0">
                     <xsd:annotation>
                         <xsd:documentation>
                             Describes the criteria an Event Listener must meet to be selected for this instance. One or
@@ -117,14 +117,6 @@
                             </tool:annotation>
                         </xsd:appinfo>
                     </xsd:annotation>
-                    <xsd:complexType>
-                        <xsd:choice minOccurs="1" maxOccurs="unbounded">
-                            <!--<xsd:element name="instance-of" type="selectorInstanceOfType"/>-->
-                            <xsd:element name="class-name-matches" type="selectorClassNamePatternMatchType"/>
-                            <xsd:element name="package" type="selectorPackagePrefixType"/>
-                            <xsd:element name="annotation" type="selectorAnnotationType"/>
-                        </xsd:choice>
-                    </xsd:complexType>
                 </xsd:element>
                 <xsd:element name="replay-config" minOccurs="0">
                     <xsd:annotation>
@@ -239,6 +231,15 @@
         </xsd:complexType>
     </xsd:element>
 
+    <xsd:complexType name="selectorType">
+        <xsd:choice minOccurs="1" maxOccurs="unbounded">
+            <!--<xsd:element name="instance-of" type="selectorInstanceOfType"/>-->
+            <xsd:element name="class-name-matches" type="selectorClassNamePatternMatchType"/>
+            <xsd:element name="package" type="selectorPackagePrefixType"/>
+            <xsd:element name="annotation" type="selectorAnnotationType"/>
+        </xsd:choice>
+    </xsd:complexType>
+
     <xsd:complexType name="selectorInstanceOfType">
         <xsd:attribute name="type" type="xsd:string">
             <xsd:annotation>
@@ -259,7 +260,7 @@
             <xsd:documentation>Defines a selector that will match an Event Listeners class name against a pattern.
             </xsd:documentation>
         </xsd:annotation>
-        <xsd:attribute name="pattern" type="xsd:string"/>
+        <xsd:attribute name="pattern" type="xsd:string" use="required"/>
     </xsd:complexType>
 
     <xsd:complexType name="selectorPackagePrefixType">
@@ -267,7 +268,7 @@
             <xsd:documentation>Defines a selector that will match an Event Listeners class name using its package.
             </xsd:documentation>
         </xsd:annotation>
-        <xsd:attribute name="prefix" type="xsd:string"/>
+        <xsd:attribute name="prefix" type="xsd:string" use="required"/>
     </xsd:complexType>
 
     <xsd:complexType name="selectorAnnotationType">
@@ -276,7 +277,7 @@
                 a specific annotation.
             </xsd:documentation>
         </xsd:annotation>
-        <xsd:attribute name="type" type="xsd:string">
+        <xsd:attribute name="type" type="xsd:string" use="required">
             <xsd:annotation>
                 <xsd:documentation>The type of annotation to find on the class.</xsd:documentation>
             </xsd:annotation>

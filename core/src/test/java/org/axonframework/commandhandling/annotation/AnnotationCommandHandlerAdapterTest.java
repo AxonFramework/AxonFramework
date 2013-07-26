@@ -89,6 +89,7 @@ public class AnnotationCommandHandlerAdapterTest {
         }
     }
 
+    @Deprecated
     @Test
     public void testSubscribe() {
         testSubject.subscribe();

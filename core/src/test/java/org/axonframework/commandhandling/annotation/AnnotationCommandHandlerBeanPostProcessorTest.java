@@ -23,11 +23,13 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 
@@ -64,9 +66,14 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         map.put("ignored", mockCommandBus);
         when(mockApplicationContext.getBeansOfType(CommandBus.class)).thenReturn(map);
 
-        testSubject.initializeAdapterFor(new Object());
+        AnnotationCommandHandlerAdapter adapter = mock(AnnotationCommandHandlerAdapter.class);
+        when(adapter.supportedCommands()).thenReturn(Collections.singleton("test"));
+        CommandHandler handler = mock(CommandHandler.class);
+
+        testSubject.subscribe(handler, adapter);
 
         verify(mockApplicationContext).getBeansOfType(CommandBus.class);
+        verify(mockCommandBus).subscribe(anyString(), eq(handler));
     }
 
     @SuppressWarnings({"unchecked"})
@@ -88,18 +95,41 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testEventHandlerAdapterIsInitializedAndDestroyedProperly() throws Exception {
+    public void testEventHandlerAdapterIsInitializedAndDestroyedProperly_NoStopSignal() throws Exception {
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
         CommandHandler postProcessedBean = (CommandHandler) testSubject.postProcessAfterInitialization(result1,
                                                                                                        "beanName");
 
-        verify(mockCommandBus).subscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
-
+        verify(mockCommandBus, never()).subscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
         verify(mockCommandBus, never()).unsubscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
 
-        testSubject.postProcessBeforeDestruction(postProcessedBean, "beanName");
+        testSubject.start();
 
-        verify(mockCommandBus).unsubscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
+        verify(mockCommandBus).subscribe(eq(MyCommand.class.getName()), eq(postProcessedBean));
+        verify(mockCommandBus, never()).unsubscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
+
+        // it should unregister even when the postprocessor isn't explicitly stopped
+        testSubject.postProcessBeforeDestruction(postProcessedBean, "beanName");
+        verify(mockCommandBus).unsubscribe(eq(MyCommand.class.getName()), eq(postProcessedBean));
+    }
+
+    @SuppressWarnings({"unchecked"})
+    @Test
+    public void testEventHandlerAdapterIsInitializedAndDestroyedProperly_NormalLifecycle() throws Exception {
+        Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
+        CommandHandler postProcessedBean = (CommandHandler) testSubject.postProcessAfterInitialization(result1,
+                                                                                                       "beanName");
+
+        verify(mockCommandBus, never()).subscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
+        verify(mockCommandBus, never()).unsubscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
+
+        testSubject.start();
+
+        verify(mockCommandBus).subscribe(eq(MyCommand.class.getName()), eq(postProcessedBean));
+        verify(mockCommandBus, never()).unsubscribe(eq(MyCommand.class.getName()), isA(CommandHandler.class));
+
+        testSubject.stop();
+        verify(mockCommandBus).unsubscribe(eq(MyCommand.class.getName()), eq(postProcessedBean));
     }
 
     public static class AnnotatedCommandHandler {

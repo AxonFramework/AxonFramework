@@ -63,15 +63,19 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     }
 
     @Test
-    public void testEventBusIsAutowired() throws Exception {
+    public void testBeanSubscribedToAutowiredEventBus() throws Exception {
         testSubject.setEventBus(null);
         Map<String, EventBus> map = new HashMap<String, EventBus>();
         map.put("ignored", mockEventBus);
         when(mockApplicationContext.getBeansOfType(EventBus.class)).thenReturn(map);
 
-        testSubject.initializeAdapterFor(new Object());
+        final AnnotationEventListenerAdapter adapter = mock(AnnotationEventListenerAdapter.class);
+        EventListener mockProxy = mock(EventListener.class);
+        testSubject.subscribe(mockProxy, adapter);
 
         verify(mockApplicationContext).getBeansOfType(EventBus.class);
+        verify(mockEventBus).subscribe(mockProxy);
+        verifyZeroInteractions(adapter);
     }
 
     @Test
@@ -131,16 +135,39 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     }
 
     @Test
-    public void testEventHandlerAdapterIsInitializedAndDestroyedProperly() throws Exception {
+    public void testEventHandlerAdapterIsInitializedAndDestroyedProperly_NoStopSignal() throws Exception {
         Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
         EventListener postProcessedBean = (EventListener) testSubject.postProcessAfterInitialization(result1,
                                                                                                      "beanName");
 
-        verify(mockEventBus).subscribe(isA(EventListener.class));
+        verify(mockEventBus, never()).subscribe(isA(EventListener.class));
+        verify(mockEventBus, never()).unsubscribe(isA(EventListener.class));
 
+        testSubject.start();
+
+        verify(mockEventBus).subscribe(isA(EventListener.class));
         verify(mockEventBus, never()).unsubscribe(isA(EventListener.class));
 
         testSubject.postProcessBeforeDestruction(postProcessedBean, "beanName");
+
+        verify(mockEventBus).unsubscribe(isA(EventListener.class));
+    }
+
+    @Test
+    public void testEventHandlerAdapterIsInitializedAndDestroyedProperly_NormalLifecycle() throws Exception {
+        Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
+        EventListener postProcessedBean = (EventListener) testSubject.postProcessAfterInitialization(result1,
+                                                                                                     "beanName");
+
+        verify(mockEventBus, never()).subscribe(isA(EventListener.class));
+        verify(mockEventBus, never()).unsubscribe(isA(EventListener.class));
+
+        testSubject.start();
+
+        verify(mockEventBus).subscribe(isA(EventListener.class));
+        verify(mockEventBus, never()).unsubscribe(isA(EventListener.class));
+
+        testSubject.stop();
 
         verify(mockEventBus).unsubscribe(isA(EventListener.class));
     }

@@ -20,6 +20,7 @@ import org.axonframework.common.annotation.AbstractAnnotationHandlerBeanPostProc
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
@@ -33,12 +34,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  * @since 0.3
  */
-public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor {
+public class AnnotationEventListenerBeanPostProcessor
+        extends AbstractAnnotationHandlerBeanPostProcessor<EventListener, AnnotationEventListenerAdapter>
+        implements SmartLifecycle {
 
     private EventBus eventBus;
 
     @Override
-    protected Class<?> getAdapterInterface() {
+    protected Class<EventListener> getAdapterInterface() {
         return EventListener.class;
     }
 
@@ -51,8 +54,7 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
      */
     @Override
     protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
-        ensureEventBusInitialized();
-        return AnnotationEventListenerAdapter.subscribe(bean, eventBus);
+        return new AnnotationEventListenerAdapter(bean);
     }
 
     @Override
@@ -75,6 +77,19 @@ public class AnnotationEventListenerBeanPostProcessor extends AbstractAnnotation
             } else {
                 this.eventBus = beans.entrySet().iterator().next().getValue();
             }
+        }
+    }
+
+    @Override
+    protected void subscribe(EventListener bean, AnnotationEventListenerAdapter adapter) {
+        ensureEventBusInitialized();
+        eventBus.subscribe(bean);
+    }
+
+    @Override
+    protected void unsubscribe(EventListener bean, AnnotationEventListenerAdapter adapter) {
+        if (eventBus != null) {
+            eventBus.unsubscribe(bean);
         }
     }
 

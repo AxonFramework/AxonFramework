@@ -47,7 +47,10 @@ public class SimpleSagaManager extends AbstractSagaManager {
      * @param sagaRepository           The repository providing access to Saga instances
      * @param associationValueResolver The instance providing AssociationValues for incoming Events
      * @param eventBus                 The event bus that the manager should register to
+     * @deprecated use {@link #SimpleSagaManager(Class, SagaRepository, AssociationValueResolver)} and register using
+     *             {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
+    @Deprecated
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
                              AssociationValueResolver associationValueResolver,
                              EventBus eventBus) {
@@ -62,12 +65,43 @@ public class SimpleSagaManager extends AbstractSagaManager {
      * @param associationValueResolver The instance providing AssociationValues for incoming Events
      * @param sagaFactory              The factory creating new Saga instances
      * @param eventBus                 The event bus that the manager should register to
+     * @deprecated use {@link #SimpleSagaManager(Class, SagaRepository, AssociationValueResolver, SagaFactory)} and
+     *             register using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @SuppressWarnings("unchecked")
+    @Deprecated
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
                              AssociationValueResolver associationValueResolver, SagaFactory sagaFactory,
                              EventBus eventBus) {
         super(eventBus, sagaRepository, sagaFactory, sagaType);
+        this.sagaType = sagaType;
+        this.associationValueResolver = associationValueResolver;
+    }
+
+    /**
+     * Initialize a SimpleSagaManager backed by the given resources, using a GenericSagaFactory.
+     *
+     * @param sagaType                 The type of Saga managed by this SagaManager
+     * @param sagaRepository           The repository providing access to Saga instances
+     * @param associationValueResolver The instance providing AssociationValues for incoming Events
+     */
+    public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
+                             AssociationValueResolver associationValueResolver) {
+        this(sagaType, sagaRepository, associationValueResolver, new GenericSagaFactory());
+    }
+
+    /**
+     * Initialize a SimpleSagaManager backed by the given resources.
+     *
+     * @param sagaType                 The type of Saga managed by this SagaManager
+     * @param sagaRepository           The repository providing access to Saga instances
+     * @param associationValueResolver The instance providing AssociationValues for incoming Events
+     * @param sagaFactory              The factory creating new Saga instances
+     */
+    @SuppressWarnings("unchecked")
+    public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
+                             AssociationValueResolver associationValueResolver, SagaFactory sagaFactory) {
+        super(sagaRepository, sagaFactory, sagaType);
         this.sagaType = sagaType;
         this.associationValueResolver = associationValueResolver;
     }

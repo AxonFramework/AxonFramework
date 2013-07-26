@@ -16,7 +16,6 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
@@ -37,8 +36,6 @@ import org.w3c.dom.Element;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
-
 /**
  * Abstract SagaManager parser that parses common properties for all SagaManager implementations.
  *
@@ -50,7 +47,6 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
     private static final String DEFAULT_SAGA_REPOSITORY_ID = "sagaRepository$$DefaultInMemory";
     private static final String RESOURCE_INJECTOR_ATTRIBUTE = "resource-injector";
     private static final String SAGA_REPOSITORY_ATTRIBUTE = "saga-repository";
-    private static final String EVENT_BUS_ATTRIBUTE = "event-bus";
     private static final String SAGA_FACTORY_ATTRIBUTE = "saga-factory";
 
     private Object resourceInjector;
@@ -69,15 +65,10 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         parseResourceInjectorAttribute(element);
         parseSagaRepositoryAttribute(element, parserContext, sagaManagerDefinition);
         parseSagaFactoryAttribute(element, sagaManagerDefinition);
-        parseEventBusAttribute(element, sagaManagerDefinition);
         parseTypesElement(element, sagaManagerDefinition);
         parseSuppressExceptionsAttribute(element, sagaManagerDefinition.getPropertyValues());
 
-        sagaManagerDefinition.setInitMethodName("subscribe");
-        sagaManagerDefinition.setDestroyMethodName("unsubscribe");
-
         registerSpecificProperties(element, parserContext, sagaManagerDefinition);
-
         return sagaManagerDefinition;
     }
 
@@ -113,14 +104,6 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
      * @param sagaManagerDefinition The definition of the saga manager to register the types in.
      */
     protected abstract void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition);
-
-    /**
-     * Registers the given <code>eventBusDefinition</code> in the given <code>sagaManagerDefinition</code>.
-     *
-     * @param eventBusDefinition    The bean definition of the event bus to register
-     * @param sagaManagerDefinition The definition of the saga manager to register the event bus in.
-     */
-    protected abstract void registerEventBus(Object eventBusDefinition, GenericBeanDefinition sagaManagerDefinition);
 
     /**
      * Registers any implementation specific properties found in the given <code>element</code> in the given
@@ -194,14 +177,6 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
             }
         }
         registerTypes(filteredTypes.toArray(new String[filteredTypes.size()]), sagaManagerDefinition);
-    }
-
-    private void parseEventBusAttribute(Element element, GenericBeanDefinition beanDefinition) {
-        if (element.hasAttribute(EVENT_BUS_ATTRIBUTE)) {
-            registerEventBus(new RuntimeBeanReference(element.getAttribute(EVENT_BUS_ATTRIBUTE)), beanDefinition);
-        } else {
-            registerEventBus(createAutowiredBean(EventBus.class), beanDefinition);
-        }
     }
 
     /**

@@ -47,7 +47,11 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      * @param sagaRepository The repository providing access to the Saga instances
      * @param eventBus       The event bus publishing the events
      * @param sagaClasses    The types of Saga that this instance should manage
+     * @deprecated use {@link #AnnotatedSagaManager(org.axonframework.saga.SagaRepository,
+     *             Class[])} instead and register this instance using {@link
+     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
+    @Deprecated
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         this(sagaRepository, new GenericSagaFactory(), eventBus, sagaClasses);
@@ -60,11 +64,34 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      * @param sagaFactory    The factory creating new instances of a Saga
      * @param eventBus       The event bus publishing the events
      * @param sagaClasses    The types of Saga that this instance should manage
+     * @deprecated use {@link #AnnotatedSagaManager(org.axonframework.saga.SagaRepository,
+     *             org.axonframework.saga.SagaFactory, Class[])} instead and register this instance using {@link
+     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
-    @SuppressWarnings({"unchecked"})
+    @Deprecated
     public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory, EventBus eventBus,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(eventBus, sagaRepository, sagaFactory, sagaClasses);
+        for (Class<? extends AbstractAnnotatedSaga> sagaClass : sagaClasses) {
+            managedSagaTypes.put(sagaClass, SagaMethodMessageHandlerInspector.getInstance(sagaClass));
+        }
+    }
+
+    public AnnotatedSagaManager(SagaRepository sagaRepository,
+                                Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
+        this(sagaRepository, new GenericSagaFactory(), sagaTypes);
+    }
+
+    /**
+     * Initialize the AnnotatedSagaManager using the given resources.
+     *
+     * @param sagaRepository The repository providing access to the Saga instances
+     * @param sagaFactory    The factory creating new instances of a Saga
+     * @param sagaClasses    The types of Saga that this instance should manage
+     */
+    public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
+                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
+        super(sagaRepository, sagaFactory, sagaClasses);
         for (Class<? extends AbstractAnnotatedSaga> sagaClass : sagaClasses) {
             managedSagaTypes.put(sagaClass, SagaMethodMessageHandlerInspector.getInstance(sagaClass));
         }

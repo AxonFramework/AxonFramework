@@ -69,12 +69,7 @@ public class AsyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBea
 
     @Override
     protected void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition) {
-        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(1, types);
-    }
-
-    @Override
-    protected void registerEventBus(Object eventBusDefinition, GenericBeanDefinition sagaManagerDefinition) {
-        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, eventBusDefinition);
+        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(0, types);
     }
 
     @Override

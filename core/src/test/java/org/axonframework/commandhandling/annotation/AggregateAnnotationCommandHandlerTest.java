@@ -28,6 +28,10 @@ import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.eq;
@@ -77,16 +81,32 @@ public class AggregateAnnotationCommandHandlerTest {
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(new FailingUpdateCommand(aggregateIdentifier, "parameter")),
                             new VoidCallback() {
-            @Override
-            protected void onSuccess() {
-                fail("Expected exception");
-            }
+                                @Override
+                                protected void onSuccess() {
+                                    fail("Expected exception");
+                                }
 
-            @Override
-            public void onFailure(Throwable cause) {
-                assertEquals("parameter", cause.getMessage());
-            }
-        });
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    assertEquals("parameter", cause.getMessage());
+                                }
+                            });
+    }
+
+    @Test
+    public void testSupportedCommands() {
+        Set<String> actual = testSubject.supportedCommands();
+        Set<String> expected = new HashSet<String>(Arrays.asList(
+                CreateCommand.class.getName(),
+                UpdateCommandWithAnnotatedMethod.class.getName(),
+                FailingCreateCommand.class.getName(),
+                UpdateCommandWithAnnotatedMethodAndVersion.class.getName(),
+                UpdateCommandWithAnnotatedField.class.getName(),
+                UpdateCommandWithAnnotatedFieldAndVersion.class.getName(),
+                UpdateCommandWithAnnotatedFieldAndIntegerVersion.class.getName(),
+                FailingUpdateCommand.class.getName()));
+
+        assertEquals(expected, actual);
     }
 
     @Test

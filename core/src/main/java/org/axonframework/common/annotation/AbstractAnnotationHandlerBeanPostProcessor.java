@@ -30,6 +30,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.util.ClassUtils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -42,16 +43,20 @@ import java.util.Map;
  * Abstract bean post processor that finds candidates for proxying. Typically used to wrap annotated beans with their
  * respective interface implementations.
  *
+ * @param <I> The primary interface of the adapter being created
+ * @param <T> The type of adapter created by this class
  * @author Allard Buijze
  * @since 0.4
  */
-public abstract class AbstractAnnotationHandlerBeanPostProcessor
-        implements DestructionAwareBeanPostProcessor, ApplicationContextAware {
+public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
+        implements DestructionAwareBeanPostProcessor, ApplicationContextAware, SmartLifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractAnnotationHandlerBeanPostProcessor.class);
 
-    private final Map<String, Subscribable> managedAdapters = new HashMap<String, Subscribable>();
+    private final Map<String, T> managedAdapters = new HashMap<String, T>();
+    private final Map<String, I> managedProxies = new HashMap<String, I>();
     private ApplicationContext applicationContext;
+    private volatile boolean running = false;
 
     /**
      * {@inheritDoc}
@@ -67,10 +72,16 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
         Class<?> targetClass = bean.getClass();
+        final ClassLoader classLoader = targetClass.getClassLoader();
         if (isPostProcessingCandidate(targetClass)) {
-            Subscribable adapter = initializeAdapterFor(bean);
+            T adapter = initializeAdapterFor(bean);
+            final I proxy = createAdapterProxy(bean, adapter, getAdapterInterface(), true, classLoader);
             managedAdapters.put(beanName, adapter);
-            return createAdapterProxy(targetClass, bean, adapter, getAdapterInterface(), true);
+            managedProxies.put(beanName, proxy);
+            if (running) {
+                subscribe(proxy, adapter);
+            }
+            return proxy;
         } else if (!getAdapterInterface().isInstance(bean) &&
                 isPostProcessingCandidate(AopProxyUtils.ultimateTargetClass(bean))) {
             // Java Proxy, find target and inspect that instance
@@ -79,9 +90,15 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
                 // we want to invoke the Java Proxy if possible, so we create a CGLib proxy that does that for us
                 Object proxyInvokingBean = createJavaProxyInvoker(bean, targetBean);
 
-                Subscribable adapter = initializeAdapterFor(proxyInvokingBean);
+                T adapter = initializeAdapterFor(proxyInvokingBean);
+                final I proxy = createAdapterProxy(proxyInvokingBean, adapter, getAdapterInterface(), false,
+                                                   classLoader);
                 managedAdapters.put(beanName, adapter);
-                return createAdapterProxy(targetClass, proxyInvokingBean, adapter, getAdapterInterface(), false);
+                managedProxies.put(beanName, proxy);
+                if (running) {
+                    subscribe(proxy, adapter);
+                }
+                return proxy;
             } catch (Exception e) {
                 throw new AxonConfigurationException("Unable to wrap annotated handler.", e);
             }
@@ -115,7 +132,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
      * @return the interface that the adapter implements to connect the annotated method to the actual interface
      *         definition
      */
-    protected abstract Class<?> getAdapterInterface();
+    protected abstract Class<I> getAdapterInterface();
 
     /**
      * Indicates whether an object of the given <code>targetClass</code> should be post processed.
@@ -125,21 +142,77 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
      */
     protected abstract boolean isPostProcessingCandidate(Class<?> targetClass);
 
+    @Override
+    public boolean isAutoStartup() {
+        return true;
+    }
+
+    @Override
+    public void stop(Runnable callback) {
+        stop();
+        callback.run();
+    }
+
+    @Override
+    public void start() {
+        for (Map.Entry<String, T> entry : managedAdapters.entrySet()) {
+            subscribe(managedProxies.get(entry.getKey()), entry.getValue());
+        }
+        running = true;
+    }
+
+    @Override
+    public void stop() {
+        for (Map.Entry<String, T> entry : managedAdapters.entrySet()) {
+            unsubscribe(managedProxies.get(entry.getKey()), entry.getValue());
+        }
+        running = false;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public int getPhase() {
+        return 0;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void postProcessBeforeDestruction(Object bean, String beanName) throws BeansException {
-        if (managedAdapters.containsKey(beanName)) {
+        if (running && managedProxies.containsKey(beanName)) {
             try {
-                managedAdapters.get(beanName).unsubscribe();
+                unsubscribe(managedProxies.get(beanName), managedAdapters.get(beanName));
             } catch (Exception e) {
                 logger.error("An exception occurred while unsubscribing an event listener", e);
             } finally {
                 managedAdapters.remove(beanName);
+                managedProxies.remove(beanName);
             }
         }
     }
+
+    /**
+     * Subscribe the given proxy <code>bean</code> (with its annotated methods managed by given <code>adapter</code>)
+     * to the messaging infrastructure.
+     *
+     * @param bean    The bean to subscribe
+     * @param adapter The adapter wrapping the bean
+     */
+    protected abstract void subscribe(I bean, T adapter);
+
+    /**
+     * Unsubscribe the given proxy <code>bean</code> (with its annotated methods managed by given <code>adapter</code>)
+     * to the messaging infrastructure.
+     *
+     * @param bean    The bean to unsubscribe
+     * @param adapter The adapter wrapping the bean
+     */
+    protected abstract void unsubscribe(I bean, T adapter);
 
     /**
      * Create an AnnotationEventListenerAdapter instance of the given {@code bean}. This adapter will receive all event
@@ -148,17 +221,18 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor
      * @param bean The bean that the EventListenerAdapter has to adapt
      * @return an event handler adapter for the given {@code bean}
      */
-    protected abstract Subscribable initializeAdapterFor(Object bean);
+    protected abstract T initializeAdapterFor(Object bean);
 
-    private Object createAdapterProxy(Class targetClass, Object annotatedHandler, final Object adapter,
-                                      final Class<?> adapterInterface, boolean proxyTargetClass) {
+    @SuppressWarnings("unchecked")
+    private I createAdapterProxy(Object annotatedHandler, final T adapter, final Class<I> adapterInterface,
+                                 boolean proxyTargetClass, ClassLoader classLoader) {
         ProxyFactory pf = new ProxyFactory(annotatedHandler);
         pf.addAdvice(new AdapterIntroductionInterceptor(adapter, adapterInterface));
         pf.addInterface(adapterInterface);
         pf.addInterface(Subscribable.class);
         pf.setProxyTargetClass(proxyTargetClass);
         pf.setExposeProxy(true);
-        return pf.getProxy(targetClass.getClassLoader());
+        return (I) pf.getProxy(classLoader);
     }
 
     /**

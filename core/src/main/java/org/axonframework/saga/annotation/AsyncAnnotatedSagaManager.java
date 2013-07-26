@@ -86,11 +86,28 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      *
      * @param eventBus  The Event Bus from which the Saga Manager will process events
      * @param sagaTypes The types of Saga this saga manager will process incoming events for
+     * @deprecated use {@link #AsyncAnnotatedSagaManager(Class[])} and register with the event bus using {@link
+     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
-    @SuppressWarnings({"unchecked"})
+    @Deprecated
     public AsyncAnnotatedSagaManager(EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         Assert.notNull(eventBus, "eventBus may not be null");
         this.eventBus = eventBus;
+        sagaAnnotationInspectors = new SagaMethodMessageHandlerInspector[sagaTypes.length];
+        for (int i = 0; i < sagaTypes.length; i++) {
+            sagaAnnotationInspectors[i] = SagaMethodMessageHandlerInspector.getInstance(sagaTypes[i]);
+        }
+    }
+
+    /**
+     * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code>.
+     * <p/>
+     * After initialization, the SagaManager must be explicitly started using the {@link #start()} method.
+     *
+     * @param sagaTypes The types of Saga this saga manager will process incoming events for
+     */
+    public AsyncAnnotatedSagaManager(Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
+        this.eventBus = null;
         sagaAnnotationInspectors = new SagaMethodMessageHandlerInspector[sagaTypes.length];
         for (int i = 0; i < sagaTypes.length; i++) {
             sagaAnnotationInspectors[i] = SagaMethodMessageHandlerInspector.getInstance(sagaTypes[i]);
@@ -140,31 +157,38 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
 
     @Override
     public void unsubscribe() {
-        eventBus.unsubscribe(this);
+        if (eventBus != null) {
+            eventBus.unsubscribe(this);
+        }
     }
 
     @Override
     public void subscribe() {
-        eventBus.subscribe(this);
+        if (eventBus != null) {
+            eventBus.subscribe(this);
+        }
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     public void handle(final EventMessage event) {
-        for (final SagaMethodMessageHandlerInspector inspector : sagaAnnotationInspectors) {
-            final SagaMethodMessageHandler handler = inspector.getMessageHandler(event);
-            if (handler.isHandlerAvailable()) {
-                final AbstractAnnotatedSaga newSagaInstance;
-                switch (handler.getCreationPolicy()) {
-                    case ALWAYS:
-                    case IF_NONE_FOUND:
-                        newSagaInstance = (AbstractAnnotatedSaga) sagaFactory.createSaga(inspector.getSagaType());
-                        break;
-                    default:
-                        newSagaInstance = null;
-                        break;
+        if (disruptor != null) {
+            for (final SagaMethodMessageHandlerInspector inspector : sagaAnnotationInspectors) {
+                final SagaMethodMessageHandler handler = inspector.getMessageHandler(event);
+                if (handler.isHandlerAvailable()) {
+                    final AbstractAnnotatedSaga newSagaInstance;
+                    switch (handler.getCreationPolicy()) {
+                        case ALWAYS:
+                        case IF_NONE_FOUND:
+                            newSagaInstance = (AbstractAnnotatedSaga) sagaFactory.createSaga(inspector.getSagaType());
+                            break;
+                        default:
+                            newSagaInstance = null;
+                            break;
+                    }
+                    disruptor.publishEvent(new SagaProcessingEventTranslator(event, inspector, handler,
+                                                                             newSagaInstance));
                 }
-                disruptor.publishEvent(new SagaProcessingEventTranslator(event, inspector, handler, newSagaInstance));
             }
         }
     }

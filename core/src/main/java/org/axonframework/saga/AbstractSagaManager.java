@@ -59,13 +59,33 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * @param sagaRepository The repository providing the saga instances.
      * @param sagaFactory    The factory providing new saga instances
      * @param sagaTypes      The types of Saga supported by this Saga Manager
+     * @deprecated use {@link #AbstractSagaManager(SagaRepository, SagaFactory, Class[])} and register using {@link
+     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
+    @Deprecated
     public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory,
                                Class<? extends Saga>... sagaTypes) {
         Assert.notNull(eventBus, "eventBus may not be null");
         Assert.notNull(sagaRepository, "sagaRepository may not be null");
         Assert.notNull(sagaFactory, "sagaFactory may not be null");
         this.eventBus = eventBus;
+        this.sagaRepository = sagaRepository;
+        this.sagaFactory = sagaFactory;
+        this.sagaTypes = sagaTypes;
+    }
+
+    /**
+     * Initializes the SagaManager with the given <code>sagaRepository</code>.
+     *
+     * @param sagaRepository The repository providing the saga instances.
+     * @param sagaFactory    The factory providing new saga instances
+     * @param sagaTypes      The types of Saga supported by this Saga Manager
+     */
+    public AbstractSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
+                               Class<? extends Saga>... sagaTypes) {
+        Assert.notNull(sagaRepository, "sagaRepository may not be null");
+        Assert.notNull(sagaFactory, "sagaFactory may not be null");
+        this.eventBus = null;
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;
         this.sagaTypes = sagaTypes;
@@ -215,20 +235,32 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     /**
      * Unsubscribe the EventListener with the configured EventBus.
+     *
+     * @deprecated Use {@link EventBus#unsubscribe(org.axonframework.eventhandling.EventListener)} to unsubscribe this
+     *             instance
      */
     @Override
     @PreDestroy
+    @Deprecated
     public void unsubscribe() {
-        eventBus.unsubscribe(this);
+        if (eventBus != null) {
+            eventBus.unsubscribe(this);
+        }
     }
 
     /**
      * Subscribe the EventListener with the configured EventBus.
+     *
+     * @deprecated Use {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)} to subscribe this
+     *             instance
      */
     @Override
     @PostConstruct
+    @Deprecated
     public void subscribe() {
-        eventBus.subscribe(this);
+        if (eventBus != null) {
+            eventBus.subscribe(this);
+        }
     }
 
     /**

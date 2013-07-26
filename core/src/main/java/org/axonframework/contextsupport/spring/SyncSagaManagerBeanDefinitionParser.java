@@ -46,17 +46,12 @@ public class SyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBean
 
     @Override
     protected void registerSagaFactory(Object sagaFactoryDefinition, GenericBeanDefinition sagaManagerDefinition) {
-        sagaManagerDefinition.getConstructorArgumentValues().addGenericArgumentValue(sagaFactoryDefinition);
+        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(1, sagaFactoryDefinition);
     }
 
     @Override
     protected void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition) {
-        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(3, types);
-    }
-
-    @Override
-    protected void registerEventBus(Object eventBusDefinition, GenericBeanDefinition sagaManagerDefinition) {
-        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(2, eventBusDefinition);
+        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(2, types);
     }
 
     @Override

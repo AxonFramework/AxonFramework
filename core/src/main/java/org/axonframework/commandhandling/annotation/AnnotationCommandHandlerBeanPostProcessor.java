@@ -33,12 +33,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Allard Buijze
  * @since 0.5
  */
-public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotationHandlerBeanPostProcessor {
+public class AnnotationCommandHandlerBeanPostProcessor
+        extends AbstractAnnotationHandlerBeanPostProcessor<CommandHandler, AnnotationCommandHandlerAdapter> {
 
     private CommandBus commandBus;
 
     @Override
-    protected Class<?> getAdapterInterface() {
+    protected Class<CommandHandler> getAdapterInterface() {
         return CommandHandler.class;
     }
 
@@ -49,8 +50,7 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
 
     @Override
     protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean) {
-        ensureCommandBusInitialized();
-        return AnnotationCommandHandlerAdapter.subscribe(bean, commandBus);
+        return new AnnotationCommandHandlerAdapter(bean);
     }
 
     /**
@@ -80,6 +80,24 @@ public class AnnotationCommandHandlerBeanPostProcessor extends AbstractAnnotatio
         final AtomicBoolean result = new AtomicBoolean(false);
         ReflectionUtils.doWithMethods(beanClass, new HasEventHandlerAnnotationMethodCallback(result));
         return result.get();
+    }
+
+
+    @Override
+    protected void subscribe(CommandHandler bean, AnnotationCommandHandlerAdapter adapter) {
+        ensureCommandBusInitialized();
+        for (String cmd : adapter.supportedCommands()) {
+            commandBus.subscribe(cmd, bean);
+        }
+    }
+
+    @Override
+    protected void unsubscribe(CommandHandler bean, AnnotationCommandHandlerAdapter adapter) {
+        if (commandBus != null) {
+            for (String cmd : adapter.supportedCommands()) {
+                commandBus.unsubscribe(cmd, bean);
+            }
+        }
     }
 
     /**

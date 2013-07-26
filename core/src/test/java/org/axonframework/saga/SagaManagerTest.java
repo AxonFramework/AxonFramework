@@ -42,6 +42,7 @@ public class SagaManagerTest {
     private Saga mockSaga2;
     private Saga mockSaga3;
     private SagaFactory mockSagaFactory;
+    private AssociationValue associationValue;
 
     @Before
     public void setUp() throws Exception {
@@ -60,7 +61,7 @@ public class SagaManagerTest {
         when(mockSagaRepository.load("saga1")).thenReturn(mockSaga1);
         when(mockSagaRepository.load("saga2")).thenReturn(mockSaga2);
         when(mockSagaRepository.load("saga3")).thenReturn(mockSaga3);
-        final AssociationValue associationValue = new AssociationValue("association", "value");
+        associationValue = new AssociationValue("association", "value");
         for(Saga saga : setOf(mockSaga1, mockSaga2, mockSaga3)) {
             final AssociationValuesImpl associationValues = new AssociationValuesImpl();
             associationValues.add(associationValue);
@@ -68,28 +69,23 @@ public class SagaManagerTest {
         }
         when(mockSagaRepository.find(isA(Class.class), eq(associationValue)))
                 .thenReturn(setOf("saga1", "saga2", "saga3"));
-        testSubject = new AbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory, Saga.class) {
 
-            @Override
-            public Class<?> getTargetType() {
-                return Saga.class;
-            }
-
-            @Override
-            protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
-                return SagaCreationPolicy.NONE;
-            }
-
-            @Override
-            protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
-                return associationValue;
-            }
-
-        };
+        testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockSagaFactory, Saga.class);
     }
 
+    @Deprecated
+    @Test
+    public void testSubscriptionIsIgnoredWithoutEventBus() {
+        testSubject.subscribe();
+        verify(mockEventBus, never()).subscribe(testSubject);
+        testSubject.unsubscribe();
+        verify(mockEventBus, never()).unsubscribe(testSubject);
+    }
+
+    @Deprecated
     @Test
     public void testSubscription() {
+        testSubject = new TestableAbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory, Saga.class);
         testSubject.subscribe();
         verify(mockEventBus).subscribe(testSubject);
         testSubject.unsubscribe();
@@ -141,5 +137,34 @@ public class SagaManagerTest {
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
         return ListOrderedSet.decorate(Arrays.asList(items));
+    }
+
+    private class TestableAbstractSagaManager extends AbstractSagaManager {
+
+        private TestableAbstractSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
+                                            Class<? extends Saga>... sagaTypes) {
+            super(sagaRepository, sagaFactory, sagaTypes);
+        }
+
+        private TestableAbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository,
+                                            SagaFactory sagaFactory,
+                                            Class<? extends Saga>... sagaTypes) {
+            super(eventBus, sagaRepository, sagaFactory, sagaTypes);
+        }
+
+        @Override
+        public Class<?> getTargetType() {
+            return Saga.class;
+        }
+
+        @Override
+        protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+            return SagaCreationPolicy.NONE;
+        }
+
+        @Override
+        protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
+            return associationValue;
+        }
     }
 }
