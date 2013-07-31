@@ -17,6 +17,7 @@
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -28,14 +29,15 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
-import org.axonframework.upcasting.UpcastingContext;
-import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
+import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
@@ -222,6 +224,20 @@ public class MongoEventStoreTest {
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
         testSubject.readEvents("test", UUID.randomUUID());
+    }
+
+    @Test(expected = EventStreamNotFoundException.class)
+    public void testLoadStream_FirstEventTypeCannotBeResolved() {
+        final UUID streamId = UUID.randomUUID();
+        DBObject[] docs = new DocumentPerEventStorageStrategy()
+                .createDocuments("test",
+                                 new XStreamSerializer(),
+                                 Arrays.<DomainEventMessage>asList(
+                                         new GenericDomainEventMessage<String>(streamId, 0, "test")));
+        // we insert a document with a payload type that cannot be resolved to a class
+        docs[0].put("payloadType", "UnknownClass");
+        mongoTemplate.domainEventCollection().insert(docs);
+        testSubject.readEvents("test", streamId);
     }
 
     @Test
