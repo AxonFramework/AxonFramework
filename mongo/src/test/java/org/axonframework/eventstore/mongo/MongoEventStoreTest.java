@@ -28,14 +28,14 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
-import org.axonframework.upcasting.UpcastingContext;
-import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
+import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
@@ -138,12 +138,12 @@ public class MongoEventStoreTest {
         UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
         when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
                 .thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
-                return Arrays.asList(serializedObject, serializedObject);
-            }
-        });
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
+                        return Arrays.asList(serializedObject, serializedObject);
+                    }
+                });
 
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
 
@@ -222,6 +222,20 @@ public class MongoEventStoreTest {
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
         testSubject.readEvents("test", UUID.randomUUID());
+    }
+
+    @Test(expected = EventStreamNotFoundException.class)
+    public void testLoadStream_UpcasterClearsAllFound() {
+        testSubject.setUpcasterChain(new UpcasterChain() {
+            @Override
+            public List<SerializedObject> upcast(SerializedObject serializedObject, UpcastingContext upcastingContext) {
+                return Collections.emptyList();
+            }
+        });
+        final UUID streamId = UUID.randomUUID();
+        testSubject.appendEvents("test", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>(streamId, 0, "test")));
+        testSubject.readEvents("test", streamId);
     }
 
     @Test
@@ -369,6 +383,7 @@ public class MongoEventStoreTest {
         private StubStateChangedEvent() {
         }
     }
+
     private static class StubUpcaster implements Upcaster<byte[]> {
 
         @Override

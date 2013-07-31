@@ -153,10 +153,11 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                                              identifier.toString(),
                                                              snapshotSequenceNumber + 1);
 
-        if (!dbCursor.hasNext() && lastSnapshotCommit == null) {
+        DomainEventStream stream = new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier, false);
+        if (!stream.hasNext()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier, false);
+        return stream;
     }
 
     @Override
