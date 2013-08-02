@@ -181,7 +181,7 @@ public class AsynchronousCluster extends AbstractCluster {
     protected void schedule(EventMessage<?> task) {
         final Object sequenceIdentifier = sequencingPolicy.getSequenceIdentifierFor(task);
         if (sequenceIdentifier == null) {
-            logger.debug("Scheduling Event for full concurrent processing",
+            logger.debug("Scheduling Event for full concurrent processing {}",
                          task.getClass().getSimpleName());
             EventProcessor scheduler = newProcessingScheduler(new NoActionCallback());
             scheduler.scheduleEvent(task);
@@ -224,9 +224,6 @@ public class AsynchronousCluster extends AbstractCluster {
 
     private static class NoActionCallback implements EventProcessor.ShutdownCallback {
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public void afterShutdown(EventProcessor scheduler) {
         }
@@ -240,9 +237,6 @@ public class AsynchronousCluster extends AbstractCluster {
             this.sequenceIdentifier = sequenceIdentifier;
         }
 
-        /**
-         * {@inheritDoc}
-         */
         @Override
         public void afterShutdown(EventProcessor scheduler) {
             logger.debug("Cleaning up processing scheduler for sequence [{}]", sequenceIdentifier.toString());
