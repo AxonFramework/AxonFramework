@@ -222,16 +222,18 @@
                 <title><code>AbstractEventSourcedAggregateRoot</code>
                 </title>
                 <para>The <code>AbstractEventSourcedAggregateRoot</code> implements all methods on
-                    the <code>EventSourcedAggregateRoot</code> interface. It defines an abstract
-                        <code>handle()</code> method, which you need to implement with the actual
-                    logic to apply state changes based on domain events. When you extend the
+                    the <code>EventSourcedAggregateRoot</code> interface, except
+                        <code>getIdentifier()</code>. It defines an abstract <code>handle()</code>
+                    method, which you need to implement with the actual logic to apply state changes
+                    based on domain events, and <code>getChildEntities()</code>, which you can use
+                    to declare the entities that are member of this aggregate. When you extend the
                         <code>AbstractEventSourcedAggregateRoot</code>, you can register new events
                     using <code>apply()</code>. This method will register the event to be committed
                     when the aggregate is saved, and will call the <code>handle()</code> method with
                     the event as parameter. You need to implement this <code>handle()</code> method
                     to apply the state changes represented by that event. Below is a sample
                     implementation of an aggregate. </para>
-                <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot {
+                <programlisting language="java">public class MyAggregateRoot extends AbstractEventSourcedAggregateRoot&lt;String> {
 
     private String aggregateIdentifier;
     private String someProperty;
@@ -244,17 +246,22 @@
     protected MyAggregateRoot() {
     }
 
-    public void handle(DomainEvent event) {
-        if (MyAggregateCreatedEvent.class.isAssignableFrom(event.getPayloadType())) {
+    protected void handle(DomainEventMessage eventMessage) {
+        if (MyAggregateCreatedEvent.class.isAssignableFrom(eventMessage.getPayloadType())) {
             // make sure to always initialize the aggregate identifier
-            this.aggregateIdentifier = ((MyAggregateCreatedEvent) this.getPayload()).getMyIdentifier();
+            this.aggregateIdentifier = ((MyAggregateCreatedEvent) eventMessage.getPayload()).getMyIdentifier();
             // do something with someProperty
         }
         // and more if-else-if logic here
     }
 
-    public Object getAggregateIdentifier() {
+    public String getIdentifier() {
         return aggregateIdentifier;
+    }
+
+    @Override
+    protected Iterable&lt;? extends EventSourcedEntity> getChildEntities() {
+        return Collections.emptyList();
     }
 }                </programlisting>
                 <note>
