@@ -305,8 +305,8 @@ public class DefaultUnitOfWorkTest {
     @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored", "NullableProblems"})
     @Test
     public void testUnitOfWorkCleanupDelayedUntilOuterUnitOfWorkIsCleanedUp_InnerCommit_OuterRollback() {
-        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class);
-        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class);
+        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class, "outerListener");
+        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class, "innerListener");
         UnitOfWork outer = DefaultUnitOfWork.startAndGet();
         UnitOfWork inner = DefaultUnitOfWork.startAndGet();
         inner.registerListener(innerListener);

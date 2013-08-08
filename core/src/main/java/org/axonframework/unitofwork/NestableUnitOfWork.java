@@ -229,11 +229,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
         @Override
         public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             CurrentUnitOfWork.set(NestableUnitOfWork.this);
-            try {
-                doRollback(failureCause);
-            } finally {
-                CurrentUnitOfWork.clear(NestableUnitOfWork.this);
-            }
+            rollback(failureCause);
         }
 
         @Override
