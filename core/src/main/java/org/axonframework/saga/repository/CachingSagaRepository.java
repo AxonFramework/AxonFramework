@@ -23,6 +23,7 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -70,7 +71,8 @@ public class CachingSagaRepository implements SagaRepository {
         if (associations == null) {
             associations = feedCache(type, associationValue, key);
         }
-        return associations;
+
+        return new HashSet<String>(associations);
     }
 
     @SuppressWarnings("unchecked")

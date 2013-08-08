@@ -24,7 +24,10 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 import org.junit.*;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
@@ -68,6 +71,27 @@ public class CachingSagaRepositoryTest {
         verify(sagaCache).put("id", saga);
         verify(associationsCache, never()).put(any(), any());
         verify(repository).add(saga);
+    }
+
+    @Test
+    public void testConcurrentAccessToSagaRepository() {
+        final StubSaga saga = new StubSaga("id");
+        saga.associate("key", "value");
+        testSubject.add(saga);
+        testSubject.commit(saga);
+
+        // to make sure this saga is found
+        when(repository.find(any(Class.class), any(AssociationValue.class))).thenReturn(new HashSet<String>(Arrays.asList(saga.getSagaIdentifier())));
+
+        Set<String> found = testSubject.find(StubSaga.class, new AssociationValue("key", "value"));
+        Iterator<String> iterator = found.iterator();
+
+        final StubSaga saga2 = new StubSaga("id");
+        saga2.associate("key", "value");
+        testSubject.add(saga2);
+        testSubject.commit(saga2);
+
+        assertEquals(saga.getSagaIdentifier(), iterator.next());
     }
 
     @Test
