@@ -196,12 +196,15 @@
                          throws TimeoutException, InterruptedException;
 }</programlisting>
             <simplesect>
-                <title>Configuring a custom Command Gateway Spring</title>
+                <!--TODO: Show code sample to create command gateway.-->
+                <title>Configuring a custom Command Gateway in Spring</title>
                 <para>When using Spring, the easiest way to create a custom Command Gateway is by
                     using the <code>CommandGatewayFactoryBean</code>. It uses setter injection,
                     making it easier to configure. Only the "commandBus" and "gatewayInterface"
-                    properties are mandatory.</para>
+                    properties are mandatory. </para>
+                <!--TODO: Example. "gatewayInterface" property is not mandatory!!-->
             </simplesect>
+            <!--TODO: Explain the danger of blocking for a result, while locks are being held-->
         </sect2>
     </sect1>
     <sect1 xml:id="command-bus">

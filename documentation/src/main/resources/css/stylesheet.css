@@ -115,3 +115,46 @@ span.productname {
     font-weight: bold;
     font-family: Verdana, Arial, helvetica, sans-serif;
 }
+
+/*Code highlighting*/
+.code_tag {
+    color: #000080
+}
+
+.code_attribute {
+    color: #000080;
+}
+
+.code_value {
+    font-weight: bold;
+    color: #008000;
+}
+
+.code_comment {
+    font-style: italic;
+    color: #444444;
+}
+
+.code_string {
+    color: #008000;
+}
+
+.code_keyword {
+    color: #000080;
+}
+
+.code_number {
+    color: #008000;
+}
+
+.code_annotation {
+    color: #808000;
+}
+
+.code_directive {
+
+}
+
+.code_doctype {
+    font-weight: bold;
+}

@@ -22,7 +22,7 @@
                 exclude-result-prefixes="xslthl"
                 version='1.0'>
 
-    <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/fo/docbook.xsl"/>
+    <xsl:import href="../docbook/fo/docbook.xsl"/>
     <xsl:import href="coverpages.xsl"/>
     <xsl:import href="highlight.xsl"/>
 

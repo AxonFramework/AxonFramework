@@ -201,7 +201,7 @@
             <programlisting language="xml"><![CDATA[<dependency>
     <groupId>org.axonframework</groupId>
     <artifactId>axon-core</artifactId>
-    <version>2.0</version>
+    <version>]]><?eval ${project.version}?><![CDATA[</version>
 </dependency>]]></programlisting>
             <para>Most of the features provided by the Axon Framework are optional and require
                 additional dependencies. We have chosen not to add these dependencies by default, as

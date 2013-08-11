@@ -27,7 +27,7 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>target/docbook/publish/en-US/pdf</directory>
+            <directory>target/docbkx</directory>
             <includes>
                 <include>*.pdf</include>
             </includes>

@@ -47,7 +47,7 @@
                 <imagedata align="center" fileref="logo.png" width="257px"/>
             </imageobject>
         </mediaobject>
-        <releaseinfo>Axon Framework &version;</releaseinfo>
+        <releaseinfo>Axon Framework <?eval ${project.version}?></releaseinfo>
         <subjectset>
             <subject>
                 <subjectterm>Axon Framework Reference Guide</subjectterm>

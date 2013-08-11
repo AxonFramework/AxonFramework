@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
@@ -46,210 +47,104 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.jboss.maven.plugins</groupId>
-                <artifactId>maven-jdocbook-plugin</artifactId>
-                <version>2.2.3</version>
-                <extensions>true</extensions>
+                <groupId>com.agilejava.docbkx</groupId>
+                <artifactId>docbkx-maven-plugin</artifactId>
+                <version>2.0.14</version>
                 <executions>
                     <execution>
-                        <id>make-html</id>
+                        <id>doc-html</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>resources</goal>
-                            <goal>generate</goal>
+                            <goal>generate-html</goal>
                         </goals>
                         <configuration>
-                            <sourceDocumentName>reference-guide.xml</sourceDocumentName>
-                            <formats>
-                                <format>
-                                    <formatName>html</formatName>
-                                    <finalName>index.html</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/chunked.xsl
-                                    </stylesheetResource>
-                                </format>
-                                <format>
-                                    <formatName>html_single</formatName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/html/single.xsl
-                                    </stylesheetResource>
-                                </format>
-                            </formats>
-                            <options>
-                                <xincludeSupported>true</xincludeSupported>
-                                <localeSeparator>-</localeSeparator>
-                                <useRelativeImageUris>true</useRelativeImageUris>
-                                <transformerParameters>
-                                    <property>
-                                        <name>admon.graphics.path</name>
-                                        <value>images/</value>
-                                    </property>
-                                    <property>
-                                        <name>admon.graphics.extension</name>
-                                        <value>.png</value>
-                                    </property>
-                                    <property>
-                                        <name>callout.graphics.path</name>
-                                        <value>images/callouts/</value>
-                                    </property>
-                                    <property>
-                                        <name>callout.graphics.extension</name>
-                                        <value>.png</value>
-                                    </property>
-                                    <property>
-                                        <name>highlight.xslthl.config.path</name>
-                                        <value>
-                                            file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
-                                        </value>
-                                    </property>
-                                </transformerParameters>
-                            </options>
-                            <imageResource>
-                                <directory>${project.basedir}/src/main/resources</directory>
-                            </imageResource>
+                            <htmlCustomization>${project.basedir}/src/main/docbook/styles/html/chunked.xsl
+                            </htmlCustomization>
+                            <targetDirectory>${project.build.directory}/docbkx/html/</targetDirectory>
+                            <postProcess>
+                                <copy todir="${project.build.directory}/docbkx/html/reference-guide">
+                                    <fileset dir="src/main/resources"/>
+                                </copy>
+                            </postProcess>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>make-pdf</id>
+                        <id>doc-single-html</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>resources</goal>
-                            <goal>generate</goal>
+                            <goal>generate-html</goal>
                         </goals>
                         <configuration>
-                            <sourceDocumentName>reference-guide.xml</sourceDocumentName>
-                            <formats>
-                                <format>
-                                    <formatName>pdf</formatName>
-                                    <finalName>reference-guide-${project.version}.pdf</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/pdf/custom.xsl
-                                    </stylesheetResource>
-                                </format>
-                            </formats>
-                            <options>
-                                <xincludeSupported>true</xincludeSupported>
-                                <localeSeparator>-</localeSeparator>
-                                <useRelativeImageUris>true</useRelativeImageUris>
-                                <transformerParameters>
-                                    <property>
-                                        <name>admon.graphics.path</name>
-                                        <value>${basedir}/src/main/resources/images/</value>
-                                    </property>
-                                    <property>
-                                        <name>admon.graphics.extension</name>
-                                        <value>_large.png</value>
-                                    </property>
-                                    <property>
-                                        <name>callout.graphics.path</name>
-                                        <value>${basedir}/src/main/resources/images/callouts/</value>
-                                    </property>
-                                    <property>
-                                        <name>callout.graphics.extension</name>
-                                        <value>.svg</value>
-                                    </property>
-                                    <property>
-                                        <name>highlight.xslthl.config.path</name>
-                                        <value>
-                                            file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
-                                        </value>
-                                    </property>
-                                </transformerParameters>
-                            </options>
-                            <imageResource>
-                                <directory>${project.basedir}/src/main/resources/images</directory>
-                            </imageResource>
+                            <htmlCustomization>${project.basedir}/src/main/docbook/styles/html/single.xsl
+                            </htmlCustomization>
+                            <targetDirectory>${project.build.directory}/docbkx/single/</targetDirectory>
+                            <postProcess>
+                                <copy todir="${project.build.directory}/docbkx/single/reference-guide">
+                                    <fileset dir="src/main/resources"/>
+                                </copy>
+                                <move file="${project.build.directory}/docbkx/single/reference-guide/reference-guide.html"
+                                      tofile="${project.build.directory}/docbkx/single/reference-guide/single.html"/>
+                            </postProcess>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>make-sample-pdf</id>
+                        <id>doc-pdf</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>resources</goal>
-                            <goal>generate</goal>
+                            <goal>generate-pdf</goal>
                         </goals>
                         <configuration>
-                            <sourceDocumentName>sample-documentation.xml</sourceDocumentName>
-                            <formats>
-                                <format>
-                                    <formatName>pdf</formatName>
-                                    <finalName>sample-documentation-${project.version}.pdf</finalName>
-                                    <stylesheetResource>file:${basedir}/src/main/docbook/styles/pdf/custom.xsl
-                                    </stylesheetResource>
-                                </format>
-                            </formats>
-                            <options>
-                                <xincludeSupported>true</xincludeSupported>
-                                <localeSeparator>-</localeSeparator>
-                                <useRelativeImageUris>true</useRelativeImageUris>
-                                <transformerParameters>
-                                    <property>
-                                        <name>admon.graphics.path</name>
-                                        <value>${basedir}/src/main/resources/images/</value>
-                                    </property>
-                                    <property>
-                                        <name>admon.graphics.extension</name>
-                                        <value>_large.png</value>
-                                    </property>
-                                    <property>
-                                        <name>callout.graphics.path</name>
-                                        <value>${basedir}/src/main/resources/images/callouts/</value>
-                                    </property>
-                                    <property>
-                                        <name>callout.graphics.extension</name>
-                                        <value>.svg</value>
-                                    </property>
-                                    <property>
-                                        <name>highlight.xslthl.config.path</name>
-                                        <value>
-                                            file:///${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
-                                        </value>
-                                    </property>
-                                </transformerParameters>
-                            </options>
-                            <imageResource>
-                                <directory>${project.basedir}/src/main/resources/images</directory>
-                            </imageResource>
+                            <foCustomization>${basedir}/src/main/docbook/styles/pdf/custom.xsl</foCustomization>
+                            <imgSrcPath>file:${basedir}/src/main/resources/images/</imgSrcPath>
+                            <admonGraphicsPath>${basedir}/src/main/resources/images/</admonGraphicsPath>
+                            <admonGraphicsExtension>_large.png</admonGraphicsExtension>
+                            <calloutGraphicsPath>${basedir}/src/main/resources/images/callouts/</calloutGraphicsPath>
+                            <calloutGraphicsExtension>.svg</calloutGraphicsExtension>
+                            <paperType>A4</paperType>
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <imgSrcPath>images/</imgSrcPath>
+                    <graphicDefaultExtension>.png</graphicDefaultExtension>
+                    <customizationParameters>
+                        <parameter>
+                            <name>highlight.xslthl.config.path</name>
+                            <value>file:////${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
+                            </value>
+                        </parameter>
+                    </customizationParameters>
+                    <sourceDirectory>${project.basedir}/src/main/docbook/en-US</sourceDirectory>
+                    <chunkedOutput>true</chunkedOutput>
+                    <keepRelativeImageUris>true</keepRelativeImageUris>
+                    <admonGraphicsPath>images/</admonGraphicsPath>
+                    <admonGraphicsExtension>.png</admonGraphicsExtension>
+                    <calloutGraphicsPath>images/callouts</calloutGraphicsPath>
+                    <calloutGraphicsExtension>.png</calloutGraphicsExtension>
+                    <xincludeSupported>true</xincludeSupported>
+                    <htmlStylesheet>css/stylesheet.css</htmlStylesheet>
+                    <highlightSource>true</highlightSource>
+                    <chunkSectionDepth>0</chunkSectionDepth>
+                    <includes>reference-guide.xml</includes>
+                    <entities>
+                        <entity>
+                            <name>version</name>
+                            <value>${project.version}</value>
+                        </entity>
+                    </entities>
+                    <targetDirectory>target/docbkx/</targetDirectory>
+                </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>net.sf.xslthl</groupId>
-                        <artifactId>xslthl</artifactId>
-                        <version>2.0.2</version>
+                        <groupId>net.sf.docbook</groupId>
+                        <artifactId>docbook-xml</artifactId>
+                        <version>5.0-all</version>
+                        <classifier>resources</classifier>
+                        <type>zip</type>
+                        <scope>runtime</scope>
                     </dependency>
                 </dependencies>
-                <configuration>
-                    <sourceDocumentName>reference-guide.xml</sourceDocumentName>
-                    <sourceDirectory>${basedir}/src/main/docbook</sourceDirectory>
-                    <masterTranslation>en-US</masterTranslation>
-                    <injections>
-                        <injection>
-                            <name>version</name>
-                            <value>${project.parent.version}</value>
-                        </injection>
-                    </injections>
-                </configuration>
             </plugin>
         </plugins>
     </build>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>jboss</id>
-            <name>JBoss Repository</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
-    </pluginRepositories>
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <name>JBoss Repository</name>
-            <url>http://repository.jboss.org/nexus/content/groups/public-jboss/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-    </repositories>
 </project>

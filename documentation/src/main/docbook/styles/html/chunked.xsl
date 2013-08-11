@@ -21,6 +21,6 @@
                 exclude-result-prefixes="xslthl"
                 version='1.0'>
 
-    <xsl:import href="http://docbook.sourceforge.net/release/xsl/current/html/chunk.xsl"/>
+    <xsl:import href="../docbook/html/chunk.xsl"/>
     <xsl:import href="custom.xsl"/>
 </xsl:stylesheet>

@@ -27,7 +27,7 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>target/docbook/publish/en-US/html</directory>
+            <directory>target/docbkx/html/reference-guide</directory>
             <includes>
                 <include>*.html</include>
                 <include>images/**</include>
