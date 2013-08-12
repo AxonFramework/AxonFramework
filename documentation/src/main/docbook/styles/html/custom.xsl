@@ -24,7 +24,6 @@
 
     <xsl:import href="coverpages.xsl"/>
     <xsl:import href="highlight.xsl"/>
-    <xsl:param name="admon.graphics.path">./</xsl:param>
 
     <xsl:param name="chunker.output.method">html</xsl:param>
     <xsl:param name="root.filename">index</xsl:param>
@@ -33,23 +32,25 @@
     <xsl:param name="highlight.xslthl.config.path"/>
     <xsl:variable name="highlight.xslthl.config" select="$highlight.xslthl.config.path"/>
 
-	<xsl:param name="chunk.section.depth">'5'</xsl:param>
-	<xsl:param name="use.id.as.filename" select="1"/>
+    <xsl:param name="chunk.section.depth">0</xsl:param>
+    <xsl:param name="use.id.as.filename" select="1"/>
 
     <!-- Extensions -->
     <xsl:param name="use.extensions">1</xsl:param>
-	<xsl:param name="tablecolumns.extension">0</xsl:param>
-	<xsl:param name="callout.extensions">1</xsl:param>
+    <xsl:param name="tablecolumns.extension">0</xsl:param>
+    <xsl:param name="callout.extensions">1</xsl:param>
+    <xsl:param name="keep.relative.image.uris">1</xsl:param>
 
     <!-- Activate Graphics -->
     <xsl:param name="admon.graphics" select="1"/>
+    <xsl:param name="admon.graphics.path">images/</xsl:param>
     <!--<xsl:param name="admon.graphics.path">images/</xsl:param>-->
-    <xsl:param name="admon.graphics.extension">.gif</xsl:param>
+    <xsl:param name="admon.graphics.extension">.png</xsl:param>
 	<xsl:param name="callout.graphics" select="1"/>
 	<xsl:param name="callout.defaultcolumn">120</xsl:param>
     <!--<xsl:param name="callout.graphics.path">images/callouts/</xsl:param>-->
-    <xsl:param name="callout.graphics.path">callouts/</xsl:param>
-	<xsl:param name="callout.graphics.extension">.gif</xsl:param>
+    <xsl:param name="callout.graphics.path">images/callouts</xsl:param>
+	<xsl:param name="callout.graphics.extension">.png</xsl:param>
 
 	<xsl:param name="table.borders.with.css" select="1"/>
 	<xsl:param name="html.stylesheet">css/stylesheet.css</xsl:param>

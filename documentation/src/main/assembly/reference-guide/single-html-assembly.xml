@@ -28,7 +28,7 @@
     </formats>
     <fileSets>
         <fileSet>
-            <directory>target/docbkx/single/reference-guide</directory>
+            <directory>target/docbkx/single</directory>
             <includes>
                 <include>*.html</include>
                 <include>images/**</include>
@@ -39,6 +39,8 @@
                 <exclude>images/*_large.*</exclude>
                 <exclude>**/*.svg</exclude>
                 <exclude>**/addressbook-*.png</exclude>
+                <!-- for some reason, an empty file is created -->
+                <exclude>reference-guide.html</exclude>
             </excludes>
             <outputDirectory>/</outputDirectory>
         </fileSet>

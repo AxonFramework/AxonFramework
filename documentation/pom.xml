@@ -62,7 +62,7 @@
                             </htmlCustomization>
                             <targetDirectory>${project.build.directory}/docbkx/html/</targetDirectory>
                             <postProcess>
-                                <copy todir="${project.build.directory}/docbkx/html/reference-guide">
+                                <copy todir="${project.build.directory}/docbkx/html">
                                     <fileset dir="src/main/resources"/>
                                 </copy>
                             </postProcess>
@@ -79,11 +79,9 @@
                             </htmlCustomization>
                             <targetDirectory>${project.build.directory}/docbkx/single/</targetDirectory>
                             <postProcess>
-                                <copy todir="${project.build.directory}/docbkx/single/reference-guide">
+                                <copy todir="${project.build.directory}/docbkx/single">
                                     <fileset dir="src/main/resources"/>
                                 </copy>
-                                <move file="${project.build.directory}/docbkx/single/reference-guide/reference-guide.html"
-                                      tofile="${project.build.directory}/docbkx/single/reference-guide/single.html"/>
                             </postProcess>
                         </configuration>
                     </execution>
@@ -106,7 +104,6 @@
                 </executions>
                 <configuration>
                     <imgSrcPath>images/</imgSrcPath>
-                    <graphicDefaultExtension>.png</graphicDefaultExtension>
                     <customizationParameters>
                         <parameter>
                             <name>highlight.xslthl.config.path</name>
@@ -114,24 +111,9 @@
                             </value>
                         </parameter>
                     </customizationParameters>
-                    <sourceDirectory>${project.basedir}/src/main/docbook/en-US</sourceDirectory>
-                    <chunkedOutput>true</chunkedOutput>
-                    <keepRelativeImageUris>true</keepRelativeImageUris>
-                    <admonGraphicsPath>images/</admonGraphicsPath>
-                    <admonGraphicsExtension>.png</admonGraphicsExtension>
-                    <calloutGraphicsPath>images/callouts</calloutGraphicsPath>
-                    <calloutGraphicsExtension>.png</calloutGraphicsExtension>
                     <xincludeSupported>true</xincludeSupported>
-                    <htmlStylesheet>css/stylesheet.css</htmlStylesheet>
-                    <highlightSource>true</highlightSource>
-                    <chunkSectionDepth>0</chunkSectionDepth>
+                    <sourceDirectory>${project.basedir}/src/main/docbook/en-US</sourceDirectory>
                     <includes>reference-guide.xml</includes>
-                    <entities>
-                        <entity>
-                            <name>version</name>
-                            <value>${project.version}</value>
-                        </entity>
-                    </entities>
                     <targetDirectory>target/docbkx/</targetDirectory>
                 </configuration>
                 <dependencies>
