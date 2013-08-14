@@ -110,6 +110,7 @@ public class MongoEventStoreTest {
         aggregate2.changeState();
     }
 
+    @DirtiesContext
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
@@ -181,6 +182,7 @@ public class MongoEventStoreTest {
         }
     }
 
+    @DirtiesContext
     @Test
     public void testLoadWithSnapshotEvent() {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
@@ -199,6 +201,7 @@ public class MongoEventStoreTest {
         assertEquals(2, domainEvents.size());
     }
 
+    @DirtiesContext
     @Test
     public void testLoadWithMultipleSnapshotEvents() {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
@@ -221,11 +224,13 @@ public class MongoEventStoreTest {
         assertEquals(2, domainEvents.size());
     }
 
+    @DirtiesContext
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
         testSubject.readEvents("test", UUID.randomUUID());
     }
 
+    @DirtiesContext
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadStream_FirstEventTypeCannotBeResolved() {
         final UUID streamId = UUID.randomUUID();
@@ -240,6 +245,7 @@ public class MongoEventStoreTest {
         testSubject.readEvents("test", streamId);
     }
 
+    @DirtiesContext
     @Test
     public void testStoreDuplicateAggregate() {
         testSubject.appendEvents("type1", new SimpleDomainEventStream(
@@ -253,6 +259,7 @@ public class MongoEventStoreTest {
         }
     }
 
+    @DirtiesContext
     @Test
     public void testVisitAllEvents() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
@@ -263,6 +270,7 @@ public class MongoEventStoreTest {
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEventMessage.class));
     }
 
+    @DirtiesContext
     @Test
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
@@ -277,6 +285,7 @@ public class MongoEventStoreTest {
         verify(eventVisitor, times(21)).doWithEvent(isA(DomainEventMessage.class));
     }
 
+    @DirtiesContext
     @Test
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
@@ -299,6 +308,7 @@ public class MongoEventStoreTest {
         assertEquals(new DateTime(2011, 12, 18, 14, 0, 0, 1), captor.getAllValues().get(26).getTimestamp());
     }
 
+    @DirtiesContext
     @Test
     public void testVisitEvents_BetweenTimestamps() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
@@ -321,6 +331,7 @@ public class MongoEventStoreTest {
         verify(eventVisitor, times(12 + 13)).doWithEvent(isA(DomainEventMessage.class));
     }
 
+    @DirtiesContext
     @Test
     public void testVisitEvents_OnOrAfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
