@@ -287,6 +287,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
                                        .add(PAYLOAD_TYPE_PROPERTY, payloadType)
                                        .add(PAYLOAD_REVISION_PROPERTY, payloadRevision)
                                        .add(META_DATA_PROPERTY, serializedMetaData)
+                                       .add(EVENT_IDENTIFIER_PROPERTY, eventIdentifier)
                                        .get();
         }
 

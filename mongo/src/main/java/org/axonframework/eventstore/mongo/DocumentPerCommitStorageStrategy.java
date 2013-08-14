@@ -396,6 +396,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                                .add(EVENT_TIMESTAMP_PROPERTY, timestamp)
                                .add(EVENT_SEQUENCE_NUMBER_PROPERTY, sequenceNumber)
                                .add(META_DATA_PROPERTY, serializedMetaData)
+                               .add(EVENT_IDENTIFIER_PROPERTY, eventIdentifier)
                                .get();
         }
     }

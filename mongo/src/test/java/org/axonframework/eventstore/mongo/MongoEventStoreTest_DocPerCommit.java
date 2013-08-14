@@ -123,6 +123,8 @@ public class MongoEventStoreTest_DocPerCommit {
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
             actualEvents.add(event);
+            // Tests AXON-169
+            assertNotNull(event.getIdentifier());
             assertEquals("Events are read back in the wrong order",
                          expectedSequenceNumber,
                          event.getSequenceNumber());

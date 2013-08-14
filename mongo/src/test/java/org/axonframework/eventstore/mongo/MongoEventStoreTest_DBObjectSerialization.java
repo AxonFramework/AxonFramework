@@ -104,6 +104,8 @@ public class MongoEventStoreTest_DBObjectSerialization {
         long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
+            // Tests AXON-169
+            assertNotNull(event.getIdentifier());
             actualEvents.add(event);
             assertEquals("Events are read back in in the wrong order",
                          expectedSequenceNumber,
