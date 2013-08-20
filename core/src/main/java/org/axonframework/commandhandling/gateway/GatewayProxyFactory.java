@@ -171,15 +171,10 @@ public class GatewayProxyFactory {
             MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterAnnotations());
 
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
-            boolean hasCallbacks = false;
-            for (Class<?> argument : arguments) {
-                if (CommandCallback.class.isAssignableFrom(argument)) {
-                    hasCallbacks = true;
-                }
-            }
+
             InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
                                                                            dispatchInterceptors, extractors,
-                                                                           hasCallbacks);
+                                                                           true);
             if (Future.class.equals(gatewayMethod.getReturnType())) {
                 // no wrapping
             } else if (arguments.length >= 3
@@ -198,7 +193,9 @@ public class GatewayProxyFactory {
                         || gatewayMethod.getExceptionTypes().length > 0) {
                     dispatcher = wrapToWaitForResult(dispatcher);
                 } else {
-                    dispatcher = wrapToFireAndForget(dispatcher);
+                    dispatcher = wrapToFireAndForget(new DispatchOnInvocationHandler(commandBus, retryScheduler,
+                                                                                     dispatchInterceptors, extractors,
+                                                                                     false));
                 }
             }
             Class<?>[] declaredExceptions = gatewayMethod.getExceptionTypes();
@@ -398,7 +395,8 @@ public class GatewayProxyFactory {
                 send(command, new CompositeCallback(callbacks));
                 return future;
             } else {
-                return doSend(command);
+                sendAndForget(command);
+                return null;
             }
         }
     }

@@ -82,7 +82,7 @@ public class GatewayProxyFactoryTest {
             public void describeTo(Description description) {
                 description.appendText("A command with 2 meta data entries");
             }
-        }), isA(CommandCallback.class));
+        }));
     }
 
     @Test(timeout = 2000)

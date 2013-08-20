@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 
 import java.util.List;
@@ -98,7 +99,9 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      */
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) {
-        return (R) doSend(command).getResult();
+        FutureCallback<Object> futureCallback = new FutureCallback<Object>();
+        send(command, futureCallback);
+        return (R) futureCallback.getResult();
     }
 
     /**
@@ -118,7 +121,9 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      */
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
-        return (R) doSend(command).getResult(timeout, unit);
+        FutureCallback<Object> futureCallback = new FutureCallback<Object>();
+        send(command, futureCallback);
+        return (R) futureCallback.getResult(timeout, unit);
     }
 
     /**
