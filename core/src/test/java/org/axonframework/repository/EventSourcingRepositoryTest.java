@@ -187,6 +187,29 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
+    public void testLoadWithConflictingChanges_NoConflictResolverSet_UsingTooHighExpectedVersion() {
+        UUID identifier = UUID.randomUUID();
+        DomainEventMessage event2 = new GenericDomainEventMessage<String>(identifier, (long) 2,
+                                                                          "Mock contents", MetaData.emptyInstance());
+        DomainEventMessage event3 = new GenericDomainEventMessage<String>(identifier, (long) 3,
+                                                                          "Mock contents", MetaData.emptyInstance());
+        when(mockEventStore.readEvents("test", identifier)).thenReturn(
+                new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 1,
+                                                                                  "Mock contents",
+                                                                                  MetaData.emptyInstance()
+                ), event2, event3));
+
+        try {
+            testSubject.load(identifier, 100L);
+            fail("Expected ConflictingAggregateVersionException");
+        } catch (ConflictingAggregateVersionException e) {
+            assertEquals(identifier, e.getAggregateIdentifier());
+            assertEquals(100L, e.getExpectedVersion());
+            assertEquals(3L, e.getActualVersion());
+        }
+    }
+
+    @Test
     public void testLoadAndSaveWithoutConflictingChanges() {
         ConflictResolver conflictResolver = mock(ConflictResolver.class);
         UUID identifier = UUID.randomUUID();

@@ -104,7 +104,8 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      *
      */
     protected void validateOnLoad(T aggregate, Long expectedVersion) {
-        if (expectedVersion != null && aggregate.getVersion() != null && aggregate.getVersion() > expectedVersion) {
+        if (expectedVersion != null && aggregate.getVersion() != null &&
+                !expectedVersion.equals(aggregate.getVersion())) {
             throw new ConflictingAggregateVersionException(aggregate.getIdentifier(),
                                                            expectedVersion,
                                                            aggregate.getVersion());
