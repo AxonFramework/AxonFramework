@@ -82,6 +82,27 @@ public class GatewayProxyFactoryTest {
             public void describeTo(Description description) {
                 description.appendText("A command with 2 meta data entries");
             }
+        }), isA(RetryingCallback.class));
+    }
+
+    @Test(timeout = 2000)
+    public void testGateway_FireAndForgetWithoutRetryScheduler() {
+        final Object metaTest = new Object();
+        GatewayProxyFactory testSubject = new GatewayProxyFactory(mockCommandBus);
+        CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
+        gateway.fireAndForget("Command", metaTest, "value");
+        // in this case, no callback is used
+        verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<?>>() {
+            @Override
+            public boolean matchesSafely(CommandMessage<?> item) {
+                return item.getMetaData().get("test") == metaTest
+                        && "value".equals(item.getMetaData().get("key"));
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("A command with 2 meta data entries");
+            }
         }));
     }
 

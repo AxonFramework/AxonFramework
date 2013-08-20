@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Assert;
 
 import java.util.ArrayList;
@@ -81,8 +82,12 @@ public abstract class AbstractCommandGateway {
      * @param command The command to dispatch
      */
     protected void sendAndForget(Object command) {
-        CommandMessage commandMessage = processInterceptors(asCommandMessage(command));
-        commandBus.dispatch(commandMessage);
+        if (retryScheduler == null) {
+            commandBus.dispatch(processInterceptors(asCommandMessage(command)));
+        } else {
+            CommandMessage<?> commandMessage = asCommandMessage(command);
+            send(commandMessage, new LoggingCallback(commandMessage));
+        }
     }
 
     /**

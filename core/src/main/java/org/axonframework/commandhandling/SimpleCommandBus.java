@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.monitoring.MonitorRegistry;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
@@ -66,8 +67,7 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
     public void dispatch(CommandMessage<?> command) {
-
-        doDispatch(intercept(command), new LogErrorCallback<Object>(command));
+        doDispatch(intercept(command), new LoggingCallback(command));
     }
 
     @Override
@@ -237,35 +237,5 @@ public class SimpleCommandBus implements CommandBus {
      */
     public void setRollbackConfiguration(RollbackConfiguration rollbackConfiguration) {
         this.rollbackConfiguration = rollbackConfiguration;
-    }
-
-    /**
-     * Callback that logs error messages, but ignored return values.
-     *
-     * @param <R> The return type expected
-     */
-    private static final class LogErrorCallback<R> implements CommandCallback<R> {
-
-        private final CommandMessage<?> command;
-
-        /**
-         * Initialize a callback that logs error for the given <code>command</code>
-         *
-         * @param command The command being dispatched
-         */
-        private LogErrorCallback(CommandMessage<?> command) {
-            this.command = command;
-        }
-
-        @Override
-        public void onSuccess(R result) {
-        }
-
-        @Override
-        public void onFailure(Throwable cause) {
-            logger.error("Processing of a {} resulted in an exception: ",
-                         command.getPayloadType().getSimpleName(),
-                         cause);
-        }
     }
 }
