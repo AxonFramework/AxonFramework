@@ -96,6 +96,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
     private static final String DEFAULT_ATTRIBUTE = "default";
     private static final String ORDER_ATTRIBUTE = "order";
     private static final String TYPE_ATTRIBUTE = "type";
+    private static final String CHECK_SUPERCLASS_ATTRIBUTE = "check-superclass";
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
@@ -243,10 +244,16 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
                                         .addConstructorArgReference(clusterId)
                                         .getBeanDefinition();
         } else if (SELECTOR_ANNOTATION_ELEMENT.equals(nodeName)) {
-            return BeanDefinitionBuilder.genericBeanDefinition(AnnotationClusterSelector.class)
-                                        .addConstructorArgValue(item.getAttribute(TYPE_ATTRIBUTE))
-                                        .addConstructorArgReference(clusterId)
-                                        .getBeanDefinition();
+            final BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(
+                    AnnotationClusterSelector.class)
+                                                                       .addConstructorArgValue(item.getAttribute(
+                                                                               TYPE_ATTRIBUTE))
+                                                                       .addConstructorArgReference(
+                                                                               clusterId);
+            if (item.hasAttribute(CHECK_SUPERCLASS_ATTRIBUTE)) {
+                builder.addConstructorArgValue(item.getAttribute(CHECK_SUPERCLASS_ATTRIBUTE));
+            }
+            return builder.getBeanDefinition();
         }
         throw new AxonConfigurationException("No Cluster Selector known for element '" + item.getLocalName() + "'.");
     }

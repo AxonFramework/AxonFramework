@@ -40,7 +40,7 @@ public class AnnotationClusterSelectorTest {
     @Before
     public void setUp() throws Exception {
         cluster = new SimpleCluster("cluster");
-        testSubject = new AnnotationClusterSelector(MyAnnotation.class, cluster);
+        testSubject = new AnnotationClusterSelector(MyInheritedAnnotation.class, cluster);
     }
 
     @Test
@@ -64,6 +64,23 @@ public class AnnotationClusterSelectorTest {
         assertNull("ClusterSelector should not have selected a cluster", actual);
     }
 
+    @Test
+    public void testSelectClusterForNonInheritedHandlerSubClassWhenSuperClassInspectionIsEnabled() {
+        testSubject = new AnnotationClusterSelector(MyAnnotation.class, cluster, true);
+        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler(),
+                                                                                      null));
+        assertSame(cluster, actual);
+    }
+
+    @Test
+    public void testReturnNullForNonInheritedHandlerSubClassWhenSuperClassInspectionIsDisabled() {
+        testSubject = new AnnotationClusterSelector(MyAnnotation.class, cluster);
+        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler(),
+                                                                                      null));
+        assertNull("ClusterSelector should not have selected a cluster", actual);
+    }
+
+    @MyInheritedAnnotation
     @MyAnnotation
     public static class AnnotatedEventHandler {
 
@@ -86,7 +103,15 @@ public class AnnotationClusterSelectorTest {
     @Inherited
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)
+    public static @interface MyInheritedAnnotation {
+
+    }
+
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
     public static @interface MyAnnotation {
 
     }
+
+
 }
