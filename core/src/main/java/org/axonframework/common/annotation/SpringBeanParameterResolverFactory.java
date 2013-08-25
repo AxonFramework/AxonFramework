@@ -28,7 +28,13 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 
 /**
+ * ParameterResolverFactory implementation that resolves parameters in the Spring Application Context. A parameter can
+ * be resolved as a Spring bean if there is exactly one bean assignable to the parameter type. If multiple beans are
+ * available and one is marked as primary, that bean is chosen. Note that when multiple beans are marked as primary,
+ * either one can be selected as parameter value.
+ *
  * @author Allard Buijze
+ * @since 2.1
  */
 public class SpringBeanParameterResolverFactory implements ParameterResolverFactory, ApplicationContextAware {
 
@@ -39,7 +45,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
     @SuppressWarnings("SuspiciousMethodCalls")
     @Override
     public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                               Annotation[] parameterAnnotations) {
+                                            Annotation[] parameterAnnotations) {
         Map<String, ?> beansFound = applicationContext.getBeansOfType(parameterType);
         if (beansFound.isEmpty()) {
             return null;
