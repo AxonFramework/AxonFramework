@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.annotation.AbstractAnnotationHandlerBeanPostProcessor;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -45,16 +46,10 @@ public class AnnotationEventListenerBeanPostProcessor
         return EventListener.class;
     }
 
-    /**
-     * Create an AnnotationEventListenerAdapter instance of the given {@code bean}. This adapter will receive all event
-     * handler calls to be handled by this bean.
-     *
-     * @param bean The bean that the EventListenerAdapter has to adapt
-     * @return an event handler adapter for the given {@code bean}
-     */
     @Override
-    protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean) {
-        return new AnnotationEventListenerAdapter(bean);
+    protected AnnotationEventListenerAdapter initializeAdapterFor(Object bean,
+                                                                  ParameterResolverFactory parameterResolverFactory) {
+        return new AnnotationEventListenerAdapter(bean, parameterResolverFactory);
     }
 
     @Override

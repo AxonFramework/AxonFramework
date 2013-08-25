@@ -97,8 +97,8 @@ public class AsynchronousClusterTest {
 
         final FirstHandler handler1 = spy(new FirstHandler());
         final SecondHandler handler2 = spy(new SecondHandler());
-        testSubject.subscribe(new AnnotationEventListenerAdapter(handler1, null));
-        testSubject.subscribe(new AnnotationEventListenerAdapter(handler2, null));
+        testSubject.subscribe(new AnnotationEventListenerAdapter(handler1));
+        testSubject.subscribe(new AnnotationEventListenerAdapter(handler2));
 
         testSubject.publish(GenericEventMessage.asEventMessage("test"));
 

@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.annotation;
 
 import net.sf.cglib.proxy.Enhancer;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubAggregate;
@@ -38,15 +39,12 @@ import static org.mockito.Mockito.*;
  */
 public class AnnotationEventListenerBeanPostProcessorTest {
 
-    private AnnotationEventListenerAdapter mockAdapter;
-
     private AnnotationEventListenerBeanPostProcessor testSubject;
     private EventBus mockEventBus;
     private ApplicationContext mockApplicationContext;
 
     @Before
     public void setUp() {
-        mockAdapter = mock(AnnotationEventListenerAdapter.class);
         mockEventBus = mock(EventBus.class);
         mockApplicationContext = mock(ApplicationContext.class);
         testSubject = spy(new AnnotationEventListenerBeanPostProcessor());
@@ -57,7 +55,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     @Test
     public void testEventBusIsNotAutowiredWhenProvided() throws Exception {
 
-        testSubject.initializeAdapterFor(new Object());
+        testSubject.initializeAdapterFor(new Object(), mock(ParameterResolverFactory.class));
 
         verify(mockApplicationContext, never()).getBeansOfType(EventBus.class);
     }

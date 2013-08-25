@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.common.annotation.AbstractAnnotationHandlerBeanPostProcessor;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.springframework.util.ReflectionUtils;
 
@@ -49,8 +50,9 @@ public class AnnotationCommandHandlerBeanPostProcessor
     }
 
     @Override
-    protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean) {
-        return new AnnotationCommandHandlerAdapter(bean);
+    protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean,
+                                                                   ParameterResolverFactory parameterResolverFactory) {
+        return new AnnotationCommandHandlerAdapter(bean, parameterResolverFactory);
     }
 
     /**

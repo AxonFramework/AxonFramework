@@ -17,6 +17,8 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
@@ -48,6 +50,7 @@ public final class AggregateAnnotationInspector {
     private static final Map<Class<?>, AggregateAnnotationInspector> INSTANCES = new ConcurrentHashMap<Class<?>, AggregateAnnotationInspector>();
     private final Field[] childEntityFields;
     private final Field identifierField;
+    private final ParameterResolverFactory parameterResolverFactory;
 
     /**
      * Returns (or creates) an inspector for the given <code>entityType</code>. If an instance is already created for
@@ -80,6 +83,7 @@ public final class AggregateAnnotationInspector {
         } else {
             identifierField = null;
         }
+        parameterResolverFactory = ClasspathParameterResolverFactory.forClass(entityType);
     }
 
     /**
@@ -89,7 +93,7 @@ public final class AggregateAnnotationInspector {
      * @return an AnnotationEventHandlerInvoker that invokes annotated methods on given <code>instance</code>
      */
     public AnnotationEventHandlerInvoker createEventHandlerInvoker(Object instance) {
-        return new AnnotationEventHandlerInvoker(instance);
+        return new AnnotationEventHandlerInvoker(instance, parameterResolverFactory);
     }
 
     /**

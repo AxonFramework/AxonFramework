@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 
@@ -54,7 +55,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
     @Test
     public void testCommandBusIsNotAutowiredWhenProvided() throws Exception {
 
-        testSubject.initializeAdapterFor(new Object());
+        testSubject.initializeAdapterFor(new Object(), mock(ParameterResolverFactory.class));
 
         verify(mockApplicationContext, never()).getBeansOfType(CommandBus.class);
     }

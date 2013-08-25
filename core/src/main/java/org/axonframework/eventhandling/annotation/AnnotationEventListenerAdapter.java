@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListenerProxy;
@@ -46,6 +48,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @param annotatedEventListener The annotated event listener
      * @param eventBus               The event bus to subscribe to
      * @return an AnnotationEventListenerAdapter that wraps the listener. Can be used to unsubscribe.
+     *
      * @deprecated Use {@link #AnnotationEventListenerAdapter(Object)} and subscribe the listener to the event bus
      *             using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
@@ -62,7 +65,19 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @param annotatedEventListener the annotated event listener
      */
     public AnnotationEventListenerAdapter(Object annotatedEventListener) {
-        this.invoker = new AnnotationEventHandlerInvoker(annotatedEventListener);
+        this(annotatedEventListener, ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()));
+    }
+
+    /**
+     * Wraps the given <code>annotatedEventListener</code>, allowing it to be subscribed to an Event Bus. The given
+     * <code>parameterResolverFactory</code> is used to resolve parameter values for handler methods.
+     *
+     * @param annotatedEventListener   the annotated event listener
+     * @param parameterResolverFactory the strategy for resolving handler method parameter values
+     */
+    public AnnotationEventListenerAdapter(Object annotatedEventListener,
+                                          ParameterResolverFactory parameterResolverFactory) {
+        this.invoker = new AnnotationEventHandlerInvoker(annotatedEventListener, parameterResolverFactory);
         this.listenerType = annotatedEventListener.getClass();
         if (annotatedEventListener instanceof ReplayAware) {
             this.replayAware = (ReplayAware) annotatedEventListener;
@@ -85,7 +100,9 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      */
     @Deprecated
     public AnnotationEventListenerAdapter(Object annotatedEventListener, EventBus eventBus) {
-        this.invoker = new AnnotationEventHandlerInvoker(annotatedEventListener);
+        ParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(annotatedEventListener
+                                                                                              .getClass());
+        this.invoker = new AnnotationEventHandlerInvoker(annotatedEventListener, factory);
         this.listenerType = annotatedEventListener.getClass();
         this.eventBus = eventBus;
         if (annotatedEventListener instanceof ReplayAware) {

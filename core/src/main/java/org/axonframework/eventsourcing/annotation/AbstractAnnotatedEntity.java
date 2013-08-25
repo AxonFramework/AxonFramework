@@ -49,7 +49,6 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
      * Default constructor.
      */
     protected AbstractAnnotatedEntity() {
-        this.eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
     }
 
     /**
@@ -75,7 +74,7 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
 
     private void ensureInvokerInitialized() {
         if (eventHandlerInvoker == null) {
-            eventHandlerInvoker = new AnnotationEventHandlerInvoker(this);
+            eventHandlerInvoker = inspector.createEventHandlerInvoker(this);
         }
     }
 

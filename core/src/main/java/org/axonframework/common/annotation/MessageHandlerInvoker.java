@@ -37,16 +37,21 @@ public final class MessageHandlerInvoker<T extends Annotation> {
      * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
      * given <code>annotationType</code>.
      *
-     * @param target              The target to invoke methods on
-     * @param annotationType      The type of annotation used to demarcate the handler methods
-     * @param allowDuplicates     Whether or not to accept multiple handlers listening to messages with the same
-     *                            payload type
-     * @param payloadTypeResolver The resolver providing the explicitly configured payload, if any
+     * @param target                   The target to invoke methods on
+     * @param parameterResolverFactory The factory to create ParameterResolvers with
+     * @param annotationType           The type of annotation used to demarcate the handler methods
+     * @param allowDuplicates          Whether or not to accept multiple handlers listening to messages with the same
+     *                                 payload type
+     * @param payloadTypeResolver      The resolver providing the explicitly configured payload, if any
      */
-    public MessageHandlerInvoker(Object target, Class<T> annotationType, boolean allowDuplicates,
+    public MessageHandlerInvoker(Object target, ParameterResolverFactory parameterResolverFactory,
+                                 Class<T> annotationType, boolean allowDuplicates,
                                  HandlerPayloadTypeResolver<T> payloadTypeResolver) {
-        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(), annotationType,
-                                                                   allowDuplicates, payloadTypeResolver);
+        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
+                                                                   annotationType,
+                                                                   parameterResolverFactory,
+                                                                   allowDuplicates,
+                                                                   payloadTypeResolver);
         this.target = target;
     }
 

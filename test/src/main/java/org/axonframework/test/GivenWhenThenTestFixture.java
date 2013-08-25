@@ -26,6 +26,7 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -95,7 +96,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private boolean reportIllegalStateChange = true;
     private final Class<T> aggregateType;
     private boolean explicitCommandHandlersSet;
-    private final List<Object> injectableResources = new ArrayList<Object>();
+    private final FixtureResourceParameterResolverFactory parameterResolverFactory;
 
     /**
      * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
@@ -108,6 +109,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         eventStore = new RecordingEventStore();
         clearGivenWhenState();
         this.aggregateType = aggregateType;
+        this.parameterResolverFactory = new FixtureResourceParameterResolverFactory(aggregateType, eventBus, commandBus);
     }
 
     @Override
@@ -126,12 +128,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        doWithInjectableResourcesAvailable(new Runnable() {
-            @Override
-            public void run() {
-                AnnotationCommandHandlerAdapter.subscribe(annotatedCommandHandler, commandBus);
-            }
-        });
+        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(annotatedCommandHandler,
+                                                                                      parameterResolverFactory);
+        for (String supportedCommand : adapter.supportedCommands()) {
+            commandBus.subscribe(supportedCommand, adapter);
+        }
         return this;
     }
 
@@ -149,21 +150,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         return this;
     }
 
-    private void doWithInjectableResourcesAvailable(Runnable runnable) {
-        if (!injectableResources.contains(commandBus)) {
-            injectableResources.add(commandBus);
-        }
-        if (!injectableResources.contains(eventBus)) {
-            injectableResources.add(eventBus);
-        }
-        FixtureResourceParameterResolverFactory factory =
-                FixtureResourceParameterResolverFactory.register(injectableResources);
-        try {
-            runnable.run();
-        } finally {
-            factory.disable();
-        }
-    }
 
     @Override
     public FixtureConfiguration<T> registerInjectableResource(Object resource) {
@@ -173,7 +159,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                                                         + "registerCommandHandler() or "
                                                         + "registerAnnotatedCommandHandler()");
         }
-        injectableResources.add(resource);
+        parameterResolverFactory.registerResource(resource);
         return this;
     }
 
@@ -251,12 +237,13 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private void registerAggregateCommandHandlers() {
         ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
-            doWithInjectableResourcesAvailable(new Runnable() {
-                @Override
-                public void run() {
-                    new AggregateAnnotationCommandHandler<T>(aggregateType, repository, commandBus).subscribe();
-                }
-            });
+            AggregateAnnotationCommandHandler<T> handler =
+                    new AggregateAnnotationCommandHandler<T>(aggregateType, repository,
+                                                             new AnnotationCommandTargetResolver(),
+                                                             parameterResolverFactory);
+            for (String supportedCommand : handler.supportedCommands()) {
+                commandBus.subscribe(supportedCommand, handler);
+            }
         }
     }
 

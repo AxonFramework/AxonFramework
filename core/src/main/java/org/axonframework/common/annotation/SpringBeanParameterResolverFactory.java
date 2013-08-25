@@ -20,15 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ApplicationContextEvent;
-import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.context.event.ContextStoppedEvent;
 
 import java.lang.annotation.Annotation;
 import java.util.Map;
@@ -36,8 +30,7 @@ import java.util.Map;
 /**
  * @author Allard Buijze
  */
-public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
-        implements BeanFactoryPostProcessor, ApplicationContextAware, ApplicationListener {
+public class SpringBeanParameterResolverFactory implements ParameterResolverFactory, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringBeanParameterResolverFactory.class);
 
@@ -45,7 +38,7 @@ public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
 
     @SuppressWarnings("SuspiciousMethodCalls")
     @Override
-    protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                                Annotation[] parameterAnnotations) {
         Map<String, ?> beansFound = applicationContext.getBeansOfType(parameterType);
         if (beansFound.isEmpty()) {
@@ -71,33 +64,8 @@ public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
         }
     }
 
-    /**
-     * This implementation always returns <code>false</code>, to indicate that payload resolution is not supported for
-     * this factory
-     *
-     * @return <code>false</code>
-     */
-    @Override
-    public boolean supportsPayloadResolution() {
-        return false;
-    }
-
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-    }
-
-    @Override
-    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        ParameterResolverFactory.registerFactory(this);
-    }
-
-    @Override
-    public void onApplicationEvent(ApplicationEvent event) {
-        if ((event instanceof ContextStoppedEvent || event instanceof ContextClosedEvent)
-                && (applicationContext == null
-                || applicationContext.equals(((ApplicationContextEvent) event).getApplicationContext()))) {
-            ParameterResolverFactory.unregisterFactory(this);
-        }
     }
 }

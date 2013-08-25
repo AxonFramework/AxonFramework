@@ -31,7 +31,7 @@ import java.lang.annotation.Annotation;
  * @author Allard Buijze
  * @since 2.0
  */
-public class CurrentUnitOfWorkParameterResolverFactory extends ParameterResolverFactory implements ParameterResolver {
+public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResolverFactory, ParameterResolver {
 
     @Override
     public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
@@ -50,10 +50,5 @@ public class CurrentUnitOfWorkParameterResolverFactory extends ParameterResolver
     @Override
     public boolean matches(Message message) {
         return CommandMessage.class.isInstance(message) && CurrentUnitOfWork.isStarted();
-    }
-
-    @Override
-    public boolean supportsPayloadResolution() {
-        return false;
     }
 }

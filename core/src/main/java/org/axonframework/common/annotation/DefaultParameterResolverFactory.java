@@ -30,7 +30,7 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DefaultParameterResolverFactory extends ParameterResolverFactory {
+public class DefaultParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
     public ParameterResolver createInstance(Annotation[] methodAnnotations, Class<?> parameterType,
@@ -46,21 +46,6 @@ public class DefaultParameterResolverFactory extends ParameterResolverFactory {
             return MetaDataParameterResolver.INSTANCE;
         }
         return null;
-    }
-
-    /**
-     * Creates a new payload resolver, which passes a message's payload as parameter.
-     *
-     * @param parameterType The type of payload supported by this resolver
-     * @return a payload resolver that returns the payload of a message when of the given <code>parameterType</code>
-     */
-    public ParameterResolver newPayloadResolver(Class<?> parameterType) {
-        return new PayloadParameterResolver(parameterType);
-    }
-
-    @Override
-    public boolean supportsPayloadResolution() {
-        return true;
     }
 
     private static class AnnotatedMetaDataParameterResolver implements ParameterResolver {
@@ -122,25 +107,6 @@ public class DefaultParameterResolverFactory extends ParameterResolverFactory {
         @Override
         public boolean matches(Message message) {
             return parameterType.isInstance(message);
-        }
-    }
-
-    private static class PayloadParameterResolver implements ParameterResolver {
-
-        private final Class<?> payloadType;
-
-        public PayloadParameterResolver(Class<?> payloadType) {
-            this.payloadType = payloadType;
-        }
-
-        @Override
-        public Object resolveParameterValue(Message message) {
-            return message.getPayload();
-        }
-
-        @Override
-        public boolean matches(Message message) {
-            return message.getPayloadType() != null && payloadType.isAssignableFrom(message.getPayloadType());
         }
     }
 }

@@ -17,8 +17,10 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 
 import java.util.Set;
@@ -40,6 +42,7 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
 
     private final Set<SagaMethodMessageHandler> handlers = new TreeSet<SagaMethodMessageHandler>();
     private final Class<T> sagaType;
+    private final ParameterResolverFactory parameterResolverFactory;
 
     /**
      * Returns a SagaMethodMessageHandlerInspector for the given <code>sagaType</code>. The inspector provides
@@ -53,9 +56,13 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     public static <T extends AbstractAnnotatedSaga> SagaMethodMessageHandlerInspector<T> getInstance(
             Class<T> sagaType) {
         SagaMethodMessageHandlerInspector<T> sagaInspector = INSPECTORS.get(sagaType);
+        ClasspathParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(sagaType);
         if (sagaInspector == null) {
-            sagaInspector = new SagaMethodMessageHandlerInspector<T>(sagaType);
-            INSPECTORS.putIfAbsent(sagaType, sagaInspector);
+            sagaInspector = new SagaMethodMessageHandlerInspector<T>(sagaType, factory);
+            SagaMethodMessageHandlerInspector previous = INSPECTORS.putIfAbsent(sagaType, sagaInspector);
+            if (previous != null && !previous.getParameterResolverFactory().equals(factory)) {
+                INSPECTORS.replace(sagaType, previous, sagaInspector);
+            }
         }
         return sagaInspector;
     }
@@ -63,11 +70,15 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     /**
      * Initialize the inspector to handle events for the given <code>sagaType</code>.
      *
-     * @param sagaType The type of saga this inspector handles
+     * @param sagaType                 The type of saga this inspector handles
+     * @param parameterResolverFactory The factory for parameter resolvers that resolve parameters for the annotated
+     *                                 methods
      */
-    protected SagaMethodMessageHandlerInspector(Class<T> sagaType) {
+    protected SagaMethodMessageHandlerInspector(Class<T> sagaType, ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(
-                sagaType, SagaEventHandler.class, true, AnnotationPayloadTypeResolver.INSTANCE);
+                sagaType, SagaEventHandler.class, parameterResolverFactory, true,
+                AnnotationPayloadTypeResolver.INSTANCE);
         for (MethodMessageHandler handler : inspector.getHandlers()) {
             handlers.add(SagaMethodMessageHandler.getInstance(handler));
         }
@@ -99,6 +110,15 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     @SuppressWarnings({"unchecked"})
     public Class<T> getSagaType() {
         return sagaType;
+    }
+
+    /**
+     * Returns the ParameterResolverFactory used by this inspector to resolve values for handler parameters
+     *
+     * @return the ParameterResolverFactory used by this inspector
+     */
+    public ParameterResolverFactory getParameterResolverFactory() {
+        return parameterResolverFactory;
     }
 
     private static final class AnnotationPayloadTypeResolver extends AbstractPayloadTypeResolver<SagaEventHandler> {

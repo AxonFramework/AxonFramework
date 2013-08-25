@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.annotation.UnsupportedHandlerException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
@@ -33,6 +35,12 @@ import static org.mockito.Mockito.*;
 public class AnnotationEventHandlerInvokerTest {
 
     private AnnotationEventHandlerInvoker testSubject;
+    private ParameterResolverFactory parameterResolverFactory;
+
+    @Before
+    public void setUp() throws Exception {
+        parameterResolverFactory = ClasspathParameterResolverFactory.forClass(AnnotationEventHandlerInvokerTest.class);
+    }
 
     /*
     Test scenario:
@@ -42,7 +50,7 @@ public class AnnotationEventHandlerInvokerTest {
     @Test
     public void testInvokeEventHandler_SubClassHasPriority() {
         SecondSubclass secondSubclass = new SecondSubclass();
-        testSubject = new AnnotationEventHandlerInvoker(secondSubclass);
+        testSubject = new AnnotationEventHandlerInvoker(secondSubclass, parameterResolverFactory);
         testSubject.invokeEventHandlerMethod(new GenericEventMessage<StubEventTwo>(new StubEventTwo()));
 
         assertEquals("Method handler 1 shouldn't be invoked. Calls", 0, secondSubclass.invocationCount1);
@@ -53,7 +61,7 @@ public class AnnotationEventHandlerInvokerTest {
     @Test
     public void testInvokeEventHandler_SuperClassTakesPrecedenceOverInterface() {
         ListeningToInterface handler = new ListeningToInterface();
-        testSubject = new AnnotationEventHandlerInvoker(handler);
+        testSubject = new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
         testSubject.invokeEventHandlerMethod(new GenericEventMessage<StubEventTwo>(new StubEventTwo()));
 
         assertEquals("Handler was not triggered. Do interfaces get priority over implementations?", 1, handler.invocationCount2);
@@ -63,7 +71,7 @@ public class AnnotationEventHandlerInvokerTest {
     @Test
     public void testInvokeEventHandler_MatchesAgainstInterface() {
         ListeningToInterface handler = new ListeningToInterface();
-        testSubject = new AnnotationEventHandlerInvoker(handler);
+        testSubject = new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
         testSubject.invokeEventHandlerMethod(new GenericEventMessage<SomeInterface>(mock(SomeInterface.class)));
 
         assertEquals("Wrong handler triggered", 0, handler.invocationCount2);
@@ -78,7 +86,7 @@ public class AnnotationEventHandlerInvokerTest {
     @Test
     public void testInvokeEventHandler_MostSpecificHandlerInClassChosen() {
         FirstSubclass handler = new FirstSubclass();
-        testSubject = new AnnotationEventHandlerInvoker(handler);
+        testSubject = new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
         testSubject
                 .invokeEventHandlerMethod(new GenericEventMessage<StubEventTwo>(new StubEventTwo() {/*anonymous subclass*/
                 }));
@@ -90,7 +98,7 @@ public class AnnotationEventHandlerInvokerTest {
     @Test
     public void testInvokeEventHandler_UnknownEventIsIgnored() {
         FirstSubclass handler = new FirstSubclass();
-        testSubject = new AnnotationEventHandlerInvoker(handler);
+        testSubject = new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
         testSubject
                 .invokeEventHandlerMethod(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent() {/*anonymous subclass*/
                 }));
@@ -108,7 +116,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_PrimitiveFirstParameterIsRejected() {
         FirstSubclass handler = new IllegalEventHandler();
         try {
-            new AnnotationEventHandlerInvoker(handler);
+            new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
             fail("Expected an UnsupportedHandlerException");
         } catch (UnsupportedHandlerException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
@@ -120,7 +128,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_WrongSecondsParameterIsRejected() {
         FirstSubclass handler = new ASecondIllegalEventHandler();
         try {
-            new AnnotationEventHandlerInvoker(handler);
+            new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
             fail("Expected an UnsupportedHandlerException");
         } catch (UnsupportedHandlerException e) {
             assertTrue(e.getMessage().contains("notARealHandler"));
@@ -137,7 +145,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_HandleDomainEventIsRejected() {
         FirstSubclass handler = new EventHandlerWithUnfortunateMethod();
         try {
-            new AnnotationEventHandlerInvoker(handler);
+            new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
             fail("Expected an UnsupportedHandlerException");
         } catch (UnsupportedHandlerException e) {
             assertTrue(e.getMessage().contains("conflict"));
@@ -149,7 +157,7 @@ public class AnnotationEventHandlerInvokerTest {
     public void testValidateEventHandler_DuplicateHandler() {
         DuplicateHandlerMethod handler = new DuplicateHandlerMethod();
         try {
-            new AnnotationEventHandlerInvoker(handler);
+            new AnnotationEventHandlerInvoker(handler, parameterResolverFactory);
             fail("Expected an UnsupportedHandlerException");
         } catch (UnsupportedHandlerException e) {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("otherHandler"));

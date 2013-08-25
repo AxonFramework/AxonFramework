@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.annotation.UnsupportedHandlerException;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Message;
@@ -43,18 +44,20 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
     /**
      * Creates a ConstructorCommandMessageHandler for the given <code>constructor</code>.
      *
-     * @param constructor         The constructor to wrap as a Handler
-     * @param <T>                 The type of Aggregate created by the constructor
+     * @param constructor              The constructor to wrap as a Handler
+     * @param parameterResolverFactory The strategy for resolving parameter values of handler methods
+     * @param <T>                      The type of Aggregate created by the constructor
      * @return ConstructorCommandMessageHandler
      *
      * @throws UnsupportedHandlerException when the given constructor is not suitable as a Handler
      */
     public static <T extends AggregateRoot> ConstructorCommandMessageHandler<T> forConstructor(
-            Constructor<T> constructor) {
-        ParameterResolver[] resolvers = findResolvers(
-                constructor.getAnnotations(),
-                constructor.getParameterTypes(),
-                constructor.getParameterAnnotations(), true);
+            Constructor<T> constructor, ParameterResolverFactory parameterResolverFactory) {
+        ParameterResolver[] resolvers = findResolvers(parameterResolverFactory,
+                                                      constructor.getAnnotations(),
+                                                      constructor.getParameterTypes(),
+                                                      constructor.getParameterAnnotations(),
+                                                      true);
         Class<?> firstParameter = constructor.getParameterTypes()[0];
         Class payloadType;
         if (Message.class.isAssignableFrom(firstParameter)) {

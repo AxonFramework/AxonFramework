@@ -16,10 +16,9 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
-import org.springframework.beans.factory.config.RuntimeBeanReference;
+import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandlerFactoryBean;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.GenericBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
@@ -34,22 +33,18 @@ public class AggregateCommandHandlerBeanDefinitionParser extends AbstractBeanDef
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
-        beanDefinition.setBeanClass(AggregateAnnotationCommandHandler.class);
-        beanDefinition.getConstructorArgumentValues()
-                      .addIndexedArgumentValue(0, element.getAttribute("aggregate-type"));
-        beanDefinition.getConstructorArgumentValues()
-                      .addIndexedArgumentValue(1, new RuntimeBeanReference(element.getAttribute("repository")));
-        beanDefinition.getConstructorArgumentValues()
-                      .addIndexedArgumentValue(2, new RuntimeBeanReference(element.getAttribute("command-bus")));
+        BeanDefinitionBuilder builder =
+                BeanDefinitionBuilder.genericBeanDefinition(AggregateAnnotationCommandHandlerFactoryBean.class)
+                                     .addPropertyValue("aggregateType", element.getAttribute("aggregate-type"))
+                                     .addPropertyReference("repository", element.getAttribute("repository"))
+                                     .addPropertyReference("commandBus", element.getAttribute("command-bus"))
+                                     .addPropertyValue("parameterResolverFactory",
+                                                       SpringContextParameterResolverFactoryBuilder.getBeanReference(
+                                                               parserContext.getRegistry()));
         if (element.hasAttribute("command-target-resolver")) {
-            beanDefinition.getConstructorArgumentValues()
-                          .addIndexedArgumentValue(3, new RuntimeBeanReference(
-                                  element.getAttribute("command-target-resolver")));
+            builder.addPropertyReference("commandTargetResolver", element.getAttribute("command-target-resolver"));
         }
-        beanDefinition.setInitMethodName("subscribe");
-        beanDefinition.setDestroyMethodName("unsubscribe");
-        return beanDefinition;
+        return builder.getBeanDefinition();
     }
 
     @Override

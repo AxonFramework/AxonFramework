@@ -55,6 +55,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
     private final Map<String, T> managedAdapters = new HashMap<String, T>();
     private final Map<String, I> managedProxies = new HashMap<String, I>();
+    private ParameterResolverFactory parameterResolverFactory;
     private ApplicationContext applicationContext;
     private volatile boolean running = false;
 
@@ -73,8 +74,11 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
         Class<?> targetClass = bean.getClass();
         final ClassLoader classLoader = targetClass.getClassLoader();
+        if (parameterResolverFactory == null) {
+            parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(classLoader);
+        }
         if (isPostProcessingCandidate(targetClass)) {
-            T adapter = initializeAdapterFor(bean);
+            T adapter = initializeAdapterFor(bean, parameterResolverFactory);
             final I proxy = createAdapterProxy(bean, adapter, getAdapterInterface(), true, classLoader);
             managedAdapters.put(beanName, adapter);
             managedProxies.put(beanName, proxy);
@@ -90,7 +94,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                 // we want to invoke the Java Proxy if possible, so we create a CGLib proxy that does that for us
                 Object proxyInvokingBean = createJavaProxyInvoker(bean, targetBean);
 
-                T adapter = initializeAdapterFor(proxyInvokingBean);
+                T adapter = initializeAdapterFor(proxyInvokingBean, parameterResolverFactory);
                 final I proxy = createAdapterProxy(proxyInvokingBean, adapter, getAdapterInterface(), false,
                                                    classLoader);
                 managedAdapters.put(beanName, adapter);
@@ -218,10 +222,12 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * Create an AnnotationEventListenerAdapter instance of the given {@code bean}. This adapter will receive all event
      * handler calls to be handled by this bean.
      *
-     * @param bean The bean that the EventListenerAdapter has to adapt
+     * @param bean                     The bean that the EventListenerAdapter has to adapt
+     * @param parameterResolverFactory The parameter resolver factory that provides the parameter resolvers for the
+     *                                 annotated handlers
      * @return an event handler adapter for the given {@code bean}
      */
-    protected abstract T initializeAdapterFor(Object bean);
+    protected abstract T initializeAdapterFor(Object bean, ParameterResolverFactory parameterResolverFactory);
 
     @SuppressWarnings("unchecked")
     private I createAdapterProxy(Object annotatedHandler, final T adapter, final Class<I> adapterInterface,
@@ -250,6 +256,16 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    /**
+     * Sets the ParameterResolverFactory to create the Parameter Resolvers with that provide the parameter values for
+     * the handler methods.
+     *
+     * @param parameterResolverFactory The parameter resolver factory to resolve parameter values with
+     */
+    public void setParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
     }
 
     private static final class ProxyOrImplementationInvocationInterceptor

@@ -42,20 +42,11 @@ public final class MethodMessageHandlerInspector {
 
     private final Class<?> targetType;
     private final List<MethodMessageHandler> handlers = new ArrayList<MethodMessageHandler>();
+    private final ParameterResolverFactory parameterResolver;
 
     private static final ConcurrentMap<String, MethodMessageHandlerInspector> INSPECTORS =
             new ConcurrentHashMap<String, MethodMessageHandlerInspector>();
 
-    static {
-        // make sure the cached inspectors are cleared when the parameter resolvers change
-        ParameterResolverFactory.registerChangeListener(new ParameterResolverFactory.ChangeListener() {
-            @Override
-            public void onChange() {
-                INSPECTORS.clear();
-            }
-        });
-    }
-
     /**
      * Returns a MethodMessageHandlerInspector for the given <code>handlerClass</code> that contains handler methods
      * annotated with the given <code>annotationType</code>. The <code>allowDuplicates</code> will indicate whether it
@@ -63,43 +54,57 @@ public final class MethodMessageHandlerInspector {
      * always be false, unless some a property other than the payload of the Message is used to route the Message to a
      * handler.
      *
-     * @param handlerClass    The Class containing the handler methods to evaluate
-     * @param annotationType  The annotation marking handler methods
-     * @param allowDuplicates Indicates whether to accept multiple handlers listening to Messages with the same payload
-     *                        type
-     * @param <T>             The type of annotation this inspector should check for
-     * @return a MethodMessageHandlerInspector providing access to the handler methods
-     */
-    public static <T extends Annotation> MethodMessageHandlerInspector getInstance(Class<?> handlerClass,
-                                                                                   Class<T> annotationType,
-                                                                                   boolean allowDuplicates) {
-        return getInstance(handlerClass, annotationType, allowDuplicates, new UndefinedPayloadResolver<T>());
-    }
-
-    /**
-     * Returns a MethodMessageHandlerInspector for the given <code>handlerClass</code> that contains handler methods
-     * annotated with the given <code>annotationType</code>. The <code>allowDuplicates</code> will indicate whether it
-     * is acceptable to have multiple handlers listening to Messages with the same payload type. Basically, this should
-     * always be false, unless some a property other than the payload of the Message is used to route the Message to a
-     * handler.
-     *
-     * @param handlerClass        The Class containing the handler methods to evaluate
-     * @param annotationType      The annotation marking handler methods
-     * @param allowDuplicates     Indicates whether to accept multiple handlers listening to Messages with the same
-     *                            payload
-     *                            type
-     * @param payloadTypeResolver The resolver providing the explicitly configured payload type of a method, if any
-     * @param <T>                 The type of annotation this inspector should check for
+     * @param handlerClass             The Class containing the handler methods to evaluate
+     * @param annotationType           The annotation marking handler methods
+     * @param parameterResolverFactory The strategy for resolving parameter value for handler methods
+     * @param allowDuplicates          Indicates whether to accept multiple handlers listening to Messages with the
+     *                                 same payload type
      * @return a MethodMessageHandlerInspector providing access to the handler methods
      */
     public static <T extends Annotation> MethodMessageHandlerInspector getInstance(
-            Class<?> handlerClass, Class<T> annotationType, boolean allowDuplicates,
-            HandlerPayloadTypeResolver<T> payloadTypeResolver) {
+            Class<?> handlerClass, Class<T> annotationType, ParameterResolverFactory parameterResolverFactory,
+            boolean allowDuplicates) {
+        return getInstance(handlerClass, annotationType, parameterResolverFactory,
+                           allowDuplicates,
+                           new UndefinedPayloadResolver<T>());
+    }
+
+    /**
+     * Returns a MethodMessageHandlerInspector for the given <code>handlerClass</code> that contains handler methods
+     * annotated with the given <code>annotationType</code>. The <code>allowDuplicates</code> will indicate whether it
+     * is acceptable to have multiple handlers listening to Messages with the same payload type. Basically, this should
+     * always be false, unless some a property other than the payload of the Message is used to route the Message to a
+     * handler.
+     * <p/>
+     * This method attempts to return an existing inspector instance. It will do so when it detects an instance for the
+     * same handler class and for the same annotation type, that uses the same parameterResolverFactory.
+     *
+     * @param handlerClass             The Class containing the handler methods to evaluate
+     * @param annotationType           The annotation marking handler methods
+     * @param parameterResolverFactory The strategy for resolving parameter value for handler methods
+     * @param allowDuplicates          Indicates whether to accept multiple handlers listening to Messages with the
+     *                                 same payload type
+     * @param payloadTypeResolver      The resolver providing the explicitly configured payload type of a method, if
+     *                                 any
+     * @return a MethodMessageHandlerInspector providing access to the handler methods
+     */
+    public static <T extends Annotation> MethodMessageHandlerInspector getInstance(
+            Class<?> handlerClass, Class<T> annotationType, ParameterResolverFactory parameterResolverFactory,
+            boolean allowDuplicates, HandlerPayloadTypeResolver<T> payloadTypeResolver) {
         String key = annotationType.getName() + "@" + handlerClass.getName();
         MethodMessageHandlerInspector inspector = INSPECTORS.get(key);
-        if (inspector == null) {
-            INSPECTORS.putIfAbsent(key, new MethodMessageHandlerInspector(handlerClass, annotationType,
-                                                                          allowDuplicates, payloadTypeResolver));
+        if (inspector == null || !inspector.parameterResolver.equals(parameterResolverFactory)) {
+            final MethodMessageHandlerInspector newInspector = new MethodMessageHandlerInspector(
+                    parameterResolverFactory,
+                    handlerClass,
+                    annotationType,
+                    allowDuplicates,
+                    payloadTypeResolver);
+            if (inspector == null) {
+                INSPECTORS.putIfAbsent(key, newInspector);
+            } else {
+                INSPECTORS.replace(key, inspector, newInspector);
+            }
             inspector = INSPECTORS.get(key);
         }
         return inspector;
@@ -114,9 +119,11 @@ public final class MethodMessageHandlerInspector {
      * @param payloadTypeResolver The resolver providing information about explicitly configured expected payload
      * @param <T>                 The type of annotation this inspector should check for
      */
-    private <T extends Annotation> MethodMessageHandlerInspector(Class<?> targetType, Class<T> annotationType,
+    private <T extends Annotation> MethodMessageHandlerInspector(ParameterResolverFactory parameterResolverFactory,
+                                                                 Class<?> targetType, Class<T> annotationType,
                                                                  boolean allowDuplicates,
                                                                  HandlerPayloadTypeResolver<T> payloadTypeResolver) {
+        this.parameterResolver = parameterResolverFactory;
         this.targetType = targetType;
         Iterable<Method> methods = methodsOf(targetType);
         NavigableSet<MethodMessageHandler> uniqueHandlers = new TreeSet<MethodMessageHandler>();
@@ -124,7 +131,10 @@ public final class MethodMessageHandlerInspector {
             final T annotation = method.getAnnotation(annotationType);
             if (annotation != null) {
                 final Class<?> explicitPayloadType = payloadTypeResolver.resolvePayloadFor(annotation);
-                MethodMessageHandler handlerMethod = MethodMessageHandler.createFor(method, explicitPayloadType);
+                MethodMessageHandler handlerMethod = MethodMessageHandler.createFor(method,
+                                                                                    explicitPayloadType,
+                                                                                    parameterResolverFactory
+                );
                 handlers.add(handlerMethod);
                 if (!allowDuplicates && !uniqueHandlers.add(handlerMethod)) {
                     MethodMessageHandler existing = uniqueHandlers.tailSet(handlerMethod).first();

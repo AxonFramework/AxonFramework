@@ -37,7 +37,7 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
  * @author Mark Ingram
  * @since 2.1
  */
-public abstract class AbstractAnnotatedParameterResolverFactory<A, P> extends ParameterResolverFactory {
+public abstract class AbstractAnnotatedParameterResolverFactory<A, P> implements ParameterResolverFactory {
 
     private final Class<A> annotationType;
     private final Class<P> declaredParameterType;
@@ -62,8 +62,8 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A, P> extends Pa
     protected abstract ParameterResolver<P> getResolver();
 
     @Override
-    protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                               Annotation[] parameterAnnotations) {
+    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                            Annotation[] parameterAnnotations) {
         A annotation = getAnnotation(parameterAnnotations, annotationType);
         if (annotation != null) {
             if (parameterType.isAssignableFrom(declaredParameterType)) {
@@ -79,10 +79,5 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A, P> extends Pa
         }
 
         return null;
-    }
-
-    @Override
-    public boolean supportsPayloadResolution() {
-        return false;
     }
 }

@@ -45,22 +45,19 @@ public class AnnotationClusterSelectorTest {
 
     @Test
     public void testSelectClusterForAnnotatedHandler() {
-        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedEventHandler(),
-                                                                                      null));
+        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedEventHandler()));
         assertSame(cluster, actual);
     }
 
     @Test
     public void testSelectClusterForAnnotatedHandlerSubClass() {
-        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler(),
-                                                                                      null));
+        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
         assertSame(cluster, actual);
     }
 
     @Test
     public void testReturnNullWhenNoAnnotationFound() {
-        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new NonAnnotatedEventHandler(),
-                                                                                      null));
+        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new NonAnnotatedEventHandler()));
         assertNull("ClusterSelector should not have selected a cluster", actual);
     }
 

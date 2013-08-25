@@ -23,7 +23,10 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -110,7 +113,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
 
     /**
      * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
-     * given <code>repository</code> to add and load aggregate instances.
+     * given <code>repository</code> to add and load aggregate instances and the default ParameterResolverFactory.
      *
      * @param aggregateType         The type of aggregate
      * @param repository            The repository providing access to aggregate instances
@@ -118,13 +121,33 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      */
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver) {
+        this(aggregateType, repository, commandTargetResolver,
+             new MultiParameterResolverFactory(
+                     new CurrentUnitOfWorkParameterResolverFactory(),
+                     ClasspathParameterResolverFactory.forClass(aggregateType)));
+    }
+
+    /**
+     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
+     * given <code>repository</code> to add and load aggregate instances and the given
+     * <code>parameterResolverFactory</code>.
+     *
+     * @param aggregateType            The type of aggregate
+     * @param repository               The repository providing access to aggregate instances
+     * @param commandTargetResolver    The target resolution strategy
+     * @param parameterResolverFactory The strategy for resolving parameter values for handler methods
+     */
+    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
+                                             CommandTargetResolver commandTargetResolver,
+                                             ParameterResolverFactory parameterResolverFactory) {
         Assert.notNull(aggregateType, "aggregateType may not be null");
         Assert.notNull(repository, "repository may not be null");
         Assert.notNull(commandTargetResolver, "commandTargetResolver may not be null");
         this.repository = repository;
         this.commandBus = null;
         this.commandTargetResolver = commandTargetResolver;
-        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(aggregateType));
+        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(aggregateType,
+                                                                                   parameterResolverFactory));
     }
 
     /**
@@ -170,7 +193,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         this.repository = repository;
         this.commandBus = commandBus;
         this.commandTargetResolver = commandTargetResolver;
-        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(aggregateType));
+        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(
+                aggregateType, ClasspathParameterResolverFactory.forClass(aggregateType)));
     }
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {

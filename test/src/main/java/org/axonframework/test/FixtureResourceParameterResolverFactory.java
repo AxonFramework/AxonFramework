@@ -16,12 +16,14 @@
 
 package org.axonframework.test;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.Message;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -33,50 +35,45 @@ import java.util.List;
  * to be configured.
  *
  * @author Allard Buijze
- * @since 2.0.1, 2.1
+ * @since 2.1
  */
-public final class FixtureResourceParameterResolverFactory extends ParameterResolverFactory {
+public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
-    private final List<Object> injectableResources;
-
-    private FixtureResourceParameterResolverFactory(List<Object> injectableResources) {
-        this.injectableResources = new ArrayList<Object>(injectableResources);
-    }
+    private final List<Object> injectableResources = new ArrayList<Object>();
+    private final ParameterResolverFactory delegate;
 
     /**
-     * Registers a ParameterResolverFactory capable of injecting the given <code>injectableResources</code> in
-     * annotated
-     * handlers.
+     * Initializes the ParameterResolverFactory that allows for the given <code>initialResources</code> to be injected
+     * as handler method parameters.
      *
-     * @param injectableResources The resources eligible for injection
-     * @return a ParameterResolverFactory capable of injecting the given resources
+     * @param targetClass      The class for which the injected parameters must be available
+     * @param initialResources The resources to make available for injection
      */
-    public static FixtureResourceParameterResolverFactory register(List<Object> injectableResources) {
-        FixtureResourceParameterResolverFactory factory = new FixtureResourceParameterResolverFactory(
-                injectableResources);
-        ParameterResolverFactory.registerFactory(factory);
-        return factory;
+    public FixtureResourceParameterResolverFactory(Class<?> targetClass, Object... initialResources) {
+        injectableResources.addAll(Arrays.asList(initialResources));
+        delegate = ClasspathParameterResolverFactory.forClass(targetClass);
     }
 
     @Override
-    public boolean supportsPayloadResolution() {
-        return false;
-    }
-
-    @Override
-    protected ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                               Annotation[] parameterAnnotations) {
+    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                            Annotation[] parameterAnnotations) {
+        ParameterResolver parameterResolver = delegate.createInstance(memberAnnotations, parameterType,
+                                                                      parameterAnnotations);
+        if (parameterResolver != null) {
+            return parameterResolver;
+        }
         return new LazyParameterResolver(parameterType, injectableResources);
     }
 
     /**
-     * Disables this factory. When a factory is disabled, it doesn't return any ParameterResolvers.
-     * <p/>
-     * As ParameterResolvers aren't designed to come and go at runtime, this allows factories created during tests to
-     * be ignored for other tests that run in the same JVM.
+     * Registers an additional resource for injection
+     *
+     * @param injectableResource the resource to inject into handler methods
      */
-    public void disable() {
-        ParameterResolverFactory.unregisterFactory(this);
+    public void registerResource(Object injectableResource) {
+        if (!injectableResources.contains(injectableResource)) {
+            injectableResources.add(injectableResource);
+        }
     }
 
     private static class LazyParameterResolver implements ParameterResolver {

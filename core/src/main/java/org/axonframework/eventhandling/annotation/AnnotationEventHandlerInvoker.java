@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 
 import java.lang.reflect.InvocationTargetException;
@@ -37,11 +38,12 @@ public class AnnotationEventHandlerInvoker {
     /**
      * Initialize an event handler invoker that invokes handlers on the given <code>target</code>.
      *
-     * @param target the bean on which to invoke event handlers
+     * @param target                   the bean on which to invoke event handlers
+     * @param parameterResolverFactory The strategy for resolving parameter values for handler methods
      */
-    public AnnotationEventHandlerInvoker(Object target) {
-        invoker = new MessageHandlerInvoker<EventHandler>(
-                target, EventHandler.class, false, AnnotationPayloadTypeResolver.INSTANCE);
+    public AnnotationEventHandlerInvoker(Object target, ParameterResolverFactory parameterResolverFactory) {
+        invoker = new MessageHandlerInvoker<EventHandler>(target, parameterResolverFactory, EventHandler.class,
+                                                          false, AnnotationPayloadTypeResolver.INSTANCE);
     }
 
     /**

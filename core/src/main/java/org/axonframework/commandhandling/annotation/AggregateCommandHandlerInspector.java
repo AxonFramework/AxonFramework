@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 
 import java.lang.reflect.Constructor;
@@ -42,14 +43,17 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
      * Initialize an MethodMessageHandlerInspector, where the given <code>annotationType</code> is used to annotate the
      * Event Handler methods.
      *
-     * @param targetType The targetType to inspect methods on
+     * @param targetType               The targetType to inspect methods on
+     * @param parameterResolverFactory The strategy for resolving parameter values
      */
     @SuppressWarnings({"unchecked"})
-    protected AggregateCommandHandlerInspector(Class<T> targetType) {
-        inspector = MethodMessageHandlerInspector.getInstance(targetType, CommandHandler.class, true);
+    protected AggregateCommandHandlerInspector(Class<T> targetType, ParameterResolverFactory parameterResolverFactory) {
+        inspector = MethodMessageHandlerInspector.getInstance(targetType, CommandHandler.class, parameterResolverFactory,
+                                                              true);
         for (Constructor constructor : targetType.getConstructors()) {
             if (constructor.isAnnotationPresent(CommandHandler.class)) {
-                constructorCommandHandlers.add(ConstructorCommandMessageHandler.forConstructor(constructor));
+                constructorCommandHandlers.add(
+                        ConstructorCommandMessageHandler.forConstructor(constructor, parameterResolverFactory));
             }
         }
     }

@@ -17,6 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.domain.EventMessage;
@@ -35,14 +36,15 @@ public class SagaEventHandlerInvoker {
     private MessageHandlerInvoker invoker;
 
     /**
-     * Initialize a handler invoker for the given <code>target</code> object that has handler method annotated with
-     * given <code>annotationType</code>.
+     * Initialize a handler invoker for the given <code>target</code> object, using ParameterResolverFactory instances
+     * found on the class path.
      *
      * @param target The target to invoke methods on
      */
     public SagaEventHandlerInvoker(Object target) {
         invoker = new MessageHandlerInvoker<SagaEventHandler>(
-                target, SagaEventHandler.class, false, AnnotationPayloadTypeResolver.INSTANCE);
+                target, ClasspathParameterResolverFactory.forClass(target.getClass()),
+                SagaEventHandler.class, false, AnnotationPayloadTypeResolver.INSTANCE);
     }
 
     /**

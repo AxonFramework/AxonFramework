@@ -84,6 +84,9 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
     private void registerAnnotationEventListenerBeanPostProcessor(Element element, ParserContext parserContext) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationEventListenerBeanPostProcessor.class);
+        beanDefinition.getPropertyValues().add("parameterResolverFactory",
+                                               SpringContextParameterResolverFactoryBuilder.getBeanReference(
+                                                       parserContext.getRegistry()));
         if (element.hasAttribute(EVENT_BUS_ATTRIBUTE)) {
             String eventBusReference = element.getAttribute(EVENT_BUS_ATTRIBUTE);
             RuntimeBeanReference beanReference = new RuntimeBeanReference(eventBusReference);
@@ -102,6 +105,9 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
     private void registerAnnotationCommandHandlerBeanPostProcessor(Element element, ParserContext parserContext) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationCommandHandlerBeanPostProcessor.class);
+        beanDefinition.getPropertyValues().add("parameterResolverFactory",
+                                               SpringContextParameterResolverFactoryBuilder.getBeanReference(
+                                                       parserContext.getRegistry()));
         if (element.hasAttribute(COMMAND_BUS_ATTRIBUTE)) {
             String commandBusReference = element.getAttribute(COMMAND_BUS_ATTRIBUTE);
             RuntimeBeanReference beanReference = new RuntimeBeanReference(commandBusReference);

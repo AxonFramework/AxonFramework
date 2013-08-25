@@ -21,8 +21,11 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.unitofwork.UnitOfWork;
 
 import java.lang.reflect.InvocationTargetException;
@@ -54,6 +57,7 @@ public class AnnotationCommandHandlerAdapter
      * @param annotatedCommandHandler The annotated command handler that is to be subscribed to the command bus
      * @param commandBus              The command bus that gets the handler's subscription
      * @return the Adapter created for the command handler target. Can be used to unsubscribe.
+     *
      * @deprecated Use {@link #AnnotationCommandHandlerAdapter(Object)} and subscribe the handler to the command bus
      *             using {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
      *             org.axonframework.commandhandling.CommandHandler)}.
@@ -82,8 +86,10 @@ public class AnnotationCommandHandlerAdapter
     @Deprecated
     public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
         Assert.notNull(target, "target may not be null");
+        ParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(target.getClass());
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
                                                                                             CommandHandler.class,
+                                                                                            factory,
                                                                                             true);
         for (MethodMessageHandler handler : inspector.getHandlers()) {
             String commandName = CommandMessageHandlerUtils.resolveAcceptedCommandName(handler);
@@ -94,20 +100,36 @@ public class AnnotationCommandHandlerAdapter
     }
 
     /**
-     * Initialize the command handler adapter for the given <code>target</code>.
+     * Wraps the given <code>annotatedCommandHandler</code>, allowing it to be subscribed to a Command Bus.
      *
-     * @param target The object containing the @CommandHandler annotated methods
+     * @param annotatedCommandHandler The object containing the @CommandHandler annotated methods
      */
-    public AnnotationCommandHandlerAdapter(Object target) {
-        Assert.notNull(target, "target may not be null");
-        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
+    public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler) {
+        this(annotatedCommandHandler,
+             new MultiParameterResolverFactory(new CurrentUnitOfWorkParameterResolverFactory(),
+                                               ClasspathParameterResolverFactory.forClass(annotatedCommandHandler
+                                                                                                  .getClass())));
+    }
+
+    /**
+     * Wraps the given <code>annotatedCommandHandler</code>, allowing it to be subscribed to a Command Bus.
+     *
+     * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
+     * @param parameterResolverFactory The strategy for resolving handler method parameter values
+     */
+    public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
+                                           ParameterResolverFactory parameterResolverFactory) {
+        Assert.notNull(annotatedCommandHandler, "annotatedCommandHandler may not be null");
+        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(annotatedCommandHandler
+                .getClass(),
                                                                                             CommandHandler.class,
+                                                                                            parameterResolverFactory,
                                                                                             true);
         for (MethodMessageHandler handler : inspector.getHandlers()) {
             String commandName = CommandMessageHandlerUtils.resolveAcceptedCommandName(handler);
             handlers.put(commandName, handler);
         }
-        this.target = target;
+        this.target = annotatedCommandHandler;
         this.commandBus = null;
     }
 
