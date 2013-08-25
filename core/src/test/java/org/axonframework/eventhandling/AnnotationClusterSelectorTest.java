@@ -64,16 +64,14 @@ public class AnnotationClusterSelectorTest {
     @Test
     public void testSelectClusterForNonInheritedHandlerSubClassWhenSuperClassInspectionIsEnabled() {
         testSubject = new AnnotationClusterSelector(MyAnnotation.class, cluster, true);
-        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler(),
-                                                                                      null));
+        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
         assertSame(cluster, actual);
     }
 
     @Test
     public void testReturnNullForNonInheritedHandlerSubClassWhenSuperClassInspectionIsDisabled() {
         testSubject = new AnnotationClusterSelector(MyAnnotation.class, cluster);
-        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler(),
-                                                                                      null));
+        Cluster actual = testSubject.selectCluster(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
         assertNull("ClusterSelector should not have selected a cluster", actual);
     }
 
