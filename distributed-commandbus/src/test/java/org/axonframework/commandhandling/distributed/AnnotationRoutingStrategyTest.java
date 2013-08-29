@@ -21,6 +21,11 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.junit.*;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import static org.junit.Assert.*;
 
 /**
@@ -67,6 +72,21 @@ public class AnnotationRoutingStrategyTest {
         assertFalse(testSubject.getRoutingKey(command).equals(testSubject.getRoutingKey(command)));
     }
 
+    @Test
+    public void testGetRoutingKeyWithCustomAnnotation() {
+        testSubject = new AnnotationRoutingStrategy(SomeOtherAnnotation.class);
+        String actual = testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand2("SomeIdentifier")));
+        assertEquals("SomeIdentifier", actual);
+    }
+
+    @Test
+    public void testGetRoutingKeyForMultipleAnnotations() {
+        testSubject = new AnnotationRoutingStrategy(TargetAggregateIdentifier.class, SomeOtherAnnotation.class);
+        String actual = testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand("SomeIdentifier")));
+        assertEquals("SomeIdentifier", actual);
+        actual = testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand2("SomeOtherIdentifier")));
+        assertEquals("SomeOtherIdentifier", actual);
+    }
     public static class StubCommand {
 
         @TargetAggregateIdentifier
@@ -76,6 +96,23 @@ public class AnnotationRoutingStrategyTest {
             this.identifier = identifier;
         }
 
+        public String getIdentifier() {
+            return identifier;
+        }
+    }
+
+    @Target({ElementType.METHOD, ElementType.FIELD})
+    @Retention(RetentionPolicy.RUNTIME)
+    public static @interface SomeOtherAnnotation{}
+
+    public static class StubCommand2 {
+        private String identifier;
+
+        public StubCommand2(String identifier) {
+            this.identifier = identifier;
+        }
+
+        @SomeOtherAnnotation
         public String getIdentifier() {
             return identifier;
         }
