@@ -45,6 +45,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private Serializer serializer;
     private String configuration = "tcp_mcast.xml";
     private String clusterName;
+    private String channelName;
     private CommandBus localSegment;
     private int loadFactor = 100;
     private JChannel channel;
@@ -84,6 +85,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
             clusterName = beanName;
         }
         channel = new JChannel(configuration);
+        channel.setName(channelName);
         connector = new JGroupsConnector(channel, clusterName, localSegment, serializer);
     }
 
@@ -117,6 +119,15 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
      */
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
+    }
+
+    /**
+     * Optionally sets the logical channel name of the channel. If not provided JGroups will generate a default name.
+     *
+     * @param channelName The logical name to give to the channel
+     */
+    public void setChannelName(String channelName) {
+        this.channelName = channelName;
     }
 
     /**
