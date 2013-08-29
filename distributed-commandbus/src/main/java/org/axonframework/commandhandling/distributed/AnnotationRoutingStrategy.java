@@ -88,6 +88,18 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
     public AnnotationRoutingStrategy(AnnotationRoutingResolver annotationRoutingResolver,
                                      UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
         super(unresolvedRoutingKeyPolicy);
+        this.annotationRoutingResolver = annotationRoutingResolver;
+    }
+
+    /**
+     * Returns a Routing Strategy that checks for one of the candidate annotation types.
+     * The result for each Command type is cached.
+     *
+     * @param candidateAnnotationTypes annotation types that will be considered
+     * @return a AnnotationRoutingStrategy that caches the result for each Command type
+     */
+    public static AnnotationRoutingStrategy withCacheing(Class<? extends Annotation>... candidateAnnotationTypes) {
+        return new AnnotationRoutingStrategy(AnnotationRoutingResolver.withCacheing(candidateAnnotationTypes), UnresolvedRoutingKeyPolicy.ERROR);
     }
 
     @Override

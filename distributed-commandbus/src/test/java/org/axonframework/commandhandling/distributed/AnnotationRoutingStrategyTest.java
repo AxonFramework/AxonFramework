@@ -87,6 +87,18 @@ public class AnnotationRoutingStrategyTest {
         actual = testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand2("SomeOtherIdentifier")));
         assertEquals("SomeOtherIdentifier", actual);
     }
+
+    @Test
+    public void testCachingRoutingStrategy() {
+        testSubject = AnnotationRoutingStrategy.withCacheing(SomeOtherAnnotation.class);
+
+        String actual = testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand2("SomeIdentifier")));
+        assertEquals("SomeIdentifier", actual);
+
+        actual = testSubject.getRoutingKey(new GenericCommandMessage<Object>(new StubCommand2("SomeIdentifier")));
+        assertEquals("SomeIdentifier", actual);
+    }
+
     public static class StubCommand {
 
         @TargetAggregateIdentifier
