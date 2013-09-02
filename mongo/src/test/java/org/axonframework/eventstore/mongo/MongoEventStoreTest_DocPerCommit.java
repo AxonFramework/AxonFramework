@@ -106,6 +106,17 @@ public class MongoEventStoreTest_DocPerCommit {
     }
 
     @Test
+    public void testStoreEmptyUncommittedEventList(){
+        assertNotNull(testSubject);
+        StubAggregateRoot aggregate = new StubAggregateRoot();
+        // no events
+        assertEquals(0, aggregate.getUncommittedEventCount());
+        testSubject.appendEvents("test", aggregate.getUncommittedEvents());
+
+        assertEquals(0, mongoTemplate.domainEventCollection().count());
+    }
+
+    @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
