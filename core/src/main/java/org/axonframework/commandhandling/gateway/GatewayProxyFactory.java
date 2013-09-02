@@ -178,8 +178,8 @@ public class GatewayProxyFactory {
                 // no wrapping
                 if (arguments.length >= 3
                         && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
-                        && (long.class.isAssignableFrom(arguments[arguments.length - 2])
-                        || int.class.isAssignableFrom(arguments[arguments.length - 2]))) {
+                        && (Long.TYPE.isAssignableFrom(arguments[arguments.length - 2])
+                        || Integer.TYPE.isAssignableFrom(arguments[arguments.length - 2]))) {
                     dispatcher = wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2,
                                                                     arguments.length - 1);
                 } else {
