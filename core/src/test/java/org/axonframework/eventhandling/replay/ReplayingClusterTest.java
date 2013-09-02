@@ -139,6 +139,18 @@ public class ReplayingClusterTest {
     }
 
     @Test
+    public void testReplay_HandlersSubscribedTwice() {
+        final ReplayAwareListener replayAwareListener = mock(ReplayAwareListener.class);
+        testSubject.subscribe(replayAwareListener);
+        testSubject.subscribe(replayAwareListener);
+
+        testSubject.startReplay();
+
+        verify(replayAwareListener, times(1)).beforeReplay();
+        verify(replayAwareListener, times(1)).afterReplay();
+    }
+
+    @Test
     public void testPartialReplay_withCriteria() {
         doAnswer(new Answer() {
             @Override

@@ -28,9 +28,8 @@ import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.unitofwork.TransactionManager;
 
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
@@ -59,7 +58,7 @@ public class ReplayingCluster implements Cluster {
     private final TransactionManager transactionManager;
     private final int commitThreshold;
     private final IncomingMessageHandler incomingMessageHandler;
-    private final List<ReplayAware> replayAwareListeners = new CopyOnWriteArrayList<ReplayAware>();
+    private final Set<ReplayAware> replayAwareListeners = new CopyOnWriteArraySet<ReplayAware>();
 
     private volatile boolean inReplay = false;
 
