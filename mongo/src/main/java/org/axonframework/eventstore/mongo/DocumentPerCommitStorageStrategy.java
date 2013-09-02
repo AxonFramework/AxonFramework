@@ -79,14 +79,17 @@ import static org.axonframework.serializer.MessageSerializer.serializePayload;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DocumentPerCommitStorageStrategy implements StorageStrategy {
+    public class DocumentPerCommitStorageStrategy implements StorageStrategy {
 
     private static final int ORDER_ASC = 1;
     private static final int ORDER_DESC = -1;
 
     @Override
     public DBObject[] createDocuments(String type, Serializer eventSerializer, List<DomainEventMessage> messages) {
-        return new DBObject[]{new CommitEntry(type, eventSerializer, messages).asDBObject()};
+        if(messages != null && messages.size() > 0){
+            return new DBObject[]{new CommitEntry(type, eventSerializer, messages).asDBObject()};
+        }
+        return new DBObject[]{};
     }
 
     @Override
