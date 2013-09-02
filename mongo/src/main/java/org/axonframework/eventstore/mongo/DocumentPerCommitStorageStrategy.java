@@ -40,7 +40,8 @@ import static org.axonframework.serializer.MessageSerializer.serializePayload;
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
- * Implementation of the StorageStrategy that stores each commit as a single document. The document contains an array
+ * Implementation of the StorageStrategy that stores each commit as a single document. The document contains an
+ * array
  * containing each separate event.
  * <p/>
  * The structure is as follows:
@@ -72,17 +73,14 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  * @author Allard Buijze
  * @since 2.0
  */
-    public class DocumentPerCommitStorageStrategy implements StorageStrategy {
+public class DocumentPerCommitStorageStrategy implements StorageStrategy {
 
     private static final int ORDER_ASC = 1;
     private static final int ORDER_DESC = -1;
 
     @Override
     public DBObject[] createDocuments(String type, Serializer eventSerializer, List<DomainEventMessage> messages) {
-        if(messages != null && messages.size() > 0){
-            return new DBObject[]{new CommitEntry(type, eventSerializer, messages).asDBObject()};
-        }
-        return new DBObject[]{};
+        return new DBObject[]{new CommitEntry(type, eventSerializer, messages).asDBObject()};
     }
 
     @Override

@@ -122,6 +122,10 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     @Override
     public void appendEvents(String type, DomainEventStream events) {
+        if (!events.hasNext()) {
+            return;
+        }
+
         List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
         while (events.hasNext()) {
             messages.add(events.next());
