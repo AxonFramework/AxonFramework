@@ -32,10 +32,13 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +47,8 @@ import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
 import static org.axonframework.serializer.MessageSerializer.serializePayload;
 
 /**
- * Implementation of the StorageStrategy that stores each commit as a single document. The document contains an array
+ * Implementation of the StorageStrategy that stores each commit as a single document. The document contains an
+ * array
  * containing each separate event.
  * <p/>
  * The structure is as follows:
@@ -140,6 +144,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
      */
     private static final class CommitEntry {
 
+        private static final Logger logger = LoggerFactory.getLogger(DocumentPerCommitStorageStrategy.class);
+
         private static final String AGGREGATE_IDENTIFIER_PROPERTY = "aggregateIdentifier";
         private static final String SEQUENCE_NUMBER_PROPERTY = "sequenceNumber";
         private static final String AGGREGATE_TYPE_PROPERTY = "type";
@@ -224,19 +230,25 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                 List<SerializedObject> upcastObjects = upcasterChain.upcast(
                         eventEntry.getPayload(), context);
                 for (SerializedObject upcastObject : upcastObjects) {
-                    DomainEventMessage message = new SerializedDomainEventMessage(
-                            new UpcastSerializedDomainEventData(
-                                    new DomainEventData(this, eventEntry),
-                                    actualAggregateIdentifier == null ? aggregateIdentifier : actualAggregateIdentifier,
-                                    upcastObject),
-                            eventSerializer);
+                    try {
+                        DomainEventMessage message = new SerializedDomainEventMessage(
+                                new UpcastSerializedDomainEventData(
+                                        new DomainEventData(this, eventEntry),
+                                        actualAggregateIdentifier
+                                                == null ? aggregateIdentifier : actualAggregateIdentifier,
+                                        upcastObject),
+                                eventSerializer);
 
-                    // prevents duplicate deserialization of meta data when it has already been access during upcasting
-                    if (context.getSerializedMetaData().isDeserialized()) {
-                        message = message.withMetaData(context.getSerializedMetaData().getObject());
+                        // prevents duplicate deserialization of meta data when it has already been access during upcasting
+                        if (context.getSerializedMetaData().isDeserialized()) {
+                            message = message.withMetaData(context.getSerializedMetaData().getObject());
+                        }
+
+                        messages.add(message);
+                    } catch (UnknownSerializedTypeException e) {
+                        logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
+                                    upcastObject.getType().getName(), upcastObject.getType().getRevision());
                     }
-
-                    messages.add(message);
                 }
             }
             return messages;
@@ -460,6 +472,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                                .add(EVENT_TIMESTAMP_PROPERTY, timestamp)
                                .add(EVENT_SEQUENCE_NUMBER_PROPERTY, sequenceNumber)
                                .add(META_DATA_PROPERTY, serializedMetaData)
+                               .add(EVENT_IDENTIFIER_PROPERTY, eventIdentifier)
                                .get();
         }
     }

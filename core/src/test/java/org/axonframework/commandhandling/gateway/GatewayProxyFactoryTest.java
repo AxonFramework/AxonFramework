@@ -82,7 +82,28 @@ public class GatewayProxyFactoryTest {
             public void describeTo(Description description) {
                 description.appendText("A command with 2 meta data entries");
             }
-        }), isA(CommandCallback.class));
+        }), isA(RetryingCallback.class));
+    }
+
+    @Test(timeout = 2000)
+    public void testGateway_FireAndForgetWithoutRetryScheduler() {
+        final Object metaTest = new Object();
+        GatewayProxyFactory testSubject = new GatewayProxyFactory(mockCommandBus);
+        CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
+        gateway.fireAndForget("Command", metaTest, "value");
+        // in this case, no callback is used
+        verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<?>>() {
+            @Override
+            public boolean matchesSafely(CommandMessage<?> item) {
+                return item.getMetaData().get("test") == metaTest
+                        && "value".equals(item.getMetaData().get("key"));
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("A command with 2 meta data entries");
+            }
+        }));
     }
 
     @Test(timeout = 2000)
@@ -447,6 +468,37 @@ public class GatewayProxyFactoryTest {
     }
 
     @Test(timeout = 2000)
+    public void testCreateGateway_AsyncWithCallbacks_Success() {
+        CountDownLatch cdl = new CountDownLatch(1);
+
+        final CommandCallback callback1 = mock(CommandCallback.class);
+        final CommandCallback callback2 = mock(CommandCallback.class);
+
+        doAnswer(new Success(cdl, "OK"))
+                .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
+        assertEquals(0, cdl.getCount());
+
+        verify(callback1).onSuccess("OK");
+        verify(callback2).onSuccess("OK");
+    }
+
+    @Test(timeout = 2000)
+    public void testCreateGateway_AsyncWithCallbacks_Failure() {
+        final CommandCallback callback1 = mock(CommandCallback.class);
+        final CommandCallback callback2 = mock(CommandCallback.class);
+
+        final RuntimeException exception = new RuntimeException();
+        doAnswer(new Failure(exception))
+                .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
+        verify(callback1).onFailure(exception);
+        verify(callback2).onFailure(exception);
+    }
+
+    @Test(timeout = 2000)
     public void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() throws Throwable {
         final AtomicReference<Object> result = new AtomicReference<Object>();
         final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
@@ -501,6 +553,8 @@ public class GatewayProxyFactoryTest {
         Future<Object> futureWithTimeout(Object command, int timeout, TimeUnit unit);
 
         Object fireAndWaitAndInvokeCallbacks(Object command, CommandCallback first, CommandCallback second);
+
+        void fireAsyncWithCallbacks(Object command, CommandCallback first, CommandCallback second);
     }
 
     public static class ExpectedException extends Exception {

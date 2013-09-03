@@ -44,7 +44,7 @@ public class JpaEventStoreBeanDefinitionParserTest {
 
     @Test
     public void jpaEventStore() {
-        BeanDefinition definition = beanFactory.getBeanDefinition("eventStore");
+        BeanDefinition definition = beanFactory.getBeanDefinition("eventStore1");
         assertNotNull("BeanDefinition not created", definition);
         assertEquals("Wrong bean class", JpaEventStore.class.getName(), definition.getBeanClassName());
         ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(1, Serializer.class);
@@ -57,7 +57,7 @@ public class JpaEventStoreBeanDefinitionParserTest {
         PropertyValue batchSize = definition.getPropertyValues().getPropertyValue("batchSize");
         assertEquals("maxSnapshotsArchived value", "1000", batchSize.getValue());
 
-        JpaEventStore jpaEventStore = beanFactory.getBean("eventStore", JpaEventStore.class);
+        JpaEventStore jpaEventStore = beanFactory.getBean("eventStore1", JpaEventStore.class);
         assertNotNull(jpaEventStore);
     }
 

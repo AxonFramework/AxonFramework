@@ -271,8 +271,19 @@
                 its files and the serializer to use to actually serialize and deserialize the
                 events. </para>
             <para>Note that the FileSystemEventStore is not aware of transactions and cannot
-                automatically recover from crashes. It is therefore not a suitable implementation
-                for production environments.</para>
+                automatically recover from crashes. Furthermore, it stores a single file for each
+                aggregate, potentially creating too many files for the OS to handle. It is therefore
+                not a suitable implementation for production environments.<tip>
+                    <title>Out of diskspace</title>
+                    <para>When using the <code>FileSystemEventStore</code> in a test environment (or
+                        other environment where many aggregate may be created), you may end up with
+                        an "Out of disk space" error, even if there is plenty of
+                            <emphasis>room</emphasis> on the disk. The cause is that the filesystem
+                        runs out of i-nodes (or an equivalent when not on a Unix filesystem). This
+                        typically means that a filesystem holds too many files.</para>
+                    <para>To prevent this problem, make sure the output directory of the
+                            <code>FileSystemEventStore</code> is cleaned after each test run.</para>
+                </tip></para>
         </sect2>
         <sect2>
             <title><code>JpaEventStore</code>

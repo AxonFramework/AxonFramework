@@ -46,12 +46,12 @@ public class FixtureTest_MatcherParams {
     @Before
     public void setUp() {
         fixture = Fixtures.newGivenWhenThenFixture(StandardAggregate.class);
+        fixture.registerAggregateFactory(new StandardAggregate.Factory());
     }
 
     @Test
     public void testFirstFixture() {
-        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
-                                                                     fixture.getEventBus()))
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()))
                .given(new MyEvent("aggregateId", 1))
                .when(new TestCommand("aggregateId"))
                .expectReturnValue(new DoesMatch())

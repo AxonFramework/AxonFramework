@@ -79,7 +79,6 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 
-        assertTrue(Enhancer.isEnhanced(postProcessedBean.getClass()));
         assertTrue(postProcessedBean instanceof EventListener);
         assertTrue(postProcessedBean instanceof SyncEventListener);
 
@@ -98,7 +97,6 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         Object doubleProcessedBean = testSubject.postProcessBeforeInitialization(postProcessedBean, "beanName");
         doubleProcessedBean = testSubject.postProcessAfterInitialization(doubleProcessedBean, "beanName");
 
-        assertTrue(Enhancer.isEnhanced(postProcessedBean.getClass()));
         assertTrue(postProcessedBean instanceof EventListener);
         assertTrue(postProcessedBean instanceof SyncEventListener);
         assertSame("Bean should not have been processed again", doubleProcessedBean, postProcessedBean);
@@ -118,7 +116,6 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 
-        assertTrue(Enhancer.isEnhanced(postProcessedBean.getClass()));
         assertTrue(postProcessedBean instanceof EventListener);
         assertTrue(postProcessedBean instanceof SyncEventListener);
 

@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.commandhandling.callbacks.LoggingCallback;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,6 @@ public abstract class AbstractCommandGateway {
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
     private final List<CommandDispatchInterceptor> dispatchInterceptors;
-
 
     /**
      * Initialize the AbstractCommandGateway with given <code>commandBus</code>, <code>retryScheduler</code> and
@@ -70,6 +69,21 @@ public abstract class AbstractCommandGateway {
     }
 
     /**
+     * Dispatches a command without callback. When dispatching fails, since there is no callback, the command will
+     * <em>not</em> be retried.
+     *
+     * @param command The command to dispatch
+     */
+    protected void sendAndForget(Object command) {
+        if (retryScheduler == null) {
+            commandBus.dispatch(processInterceptors(asCommandMessage(command)));
+        } else {
+            CommandMessage<?> commandMessage = asCommandMessage(command);
+            send(commandMessage, new LoggingCallback(commandMessage));
+        }
+    }
+
+    /**
      * Invokes all the dispatch interceptors and returns the CommandMessage instance that should be dispatched.
      *
      * @param commandMessage The incoming command message
@@ -81,18 +95,5 @@ public abstract class AbstractCommandGateway {
             message = dispatchInterceptor.handle(message);
         }
         return message;
-    }
-
-    /**
-     * Dispatches a command and returns a Future from which the processing results can be retrieved.
-     *
-     * @param command The command to dispatch
-     * @param <R>     The expected result of the command
-     * @return a future providing access to the command's result
-     */
-    protected <R> FutureCallback<R> doSend(Object command) {
-        FutureCallback<R> futureCallback = new FutureCallback<R>();
-        send(command, futureCallback);
-        return futureCallback;
     }
 }

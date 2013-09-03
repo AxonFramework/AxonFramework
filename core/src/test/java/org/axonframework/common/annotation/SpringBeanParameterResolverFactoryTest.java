@@ -36,7 +36,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.sql.DataSource;
 
 import static org.axonframework.domain.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
@@ -183,7 +182,7 @@ public class SpringBeanParameterResolverFactoryTest {
     public static class MissingResourceHandler {
 
         @EventHandler
-        public void handle(String message, DataSource dataSource) {
+        public void handle(String message, ThisResourceReallyDoesntExist dataSource) {
             counter.incrementAndGet();
         }
     }
@@ -213,5 +212,9 @@ public class SpringBeanParameterResolverFactoryTest {
             assertNotNull(eventBus);
             counter.incrementAndGet();
         }
+    }
+
+    private static interface ThisResourceReallyDoesntExist {
+
     }
 }

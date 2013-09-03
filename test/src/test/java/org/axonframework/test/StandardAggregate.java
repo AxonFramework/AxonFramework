@@ -18,6 +18,7 @@ package org.axonframework.test;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 
@@ -35,7 +36,7 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     private Object identifier;
     private MyEntity entity;
 
-    public StandardAggregate() {
+    public StandardAggregate(Object aggregateIdentifier) {
     }
 
     public StandardAggregate(int initialValue, Object aggregateIdentifier) {
@@ -89,5 +90,23 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
         result = 31 * result + (identifier != null ? identifier.hashCode() : 0);
         result = 31 * result + (entity != null ? entity.hashCode() : 0);
         return result;
+    }
+
+    static class Factory extends AbstractAggregateFactory<StandardAggregate> {
+
+        @Override
+        protected StandardAggregate doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
+            return new StandardAggregate(aggregateIdentifier);
+        }
+
+        @Override
+        public String getTypeIdentifier() {
+            return StandardAggregate.class.getSimpleName();
+        }
+
+        @Override
+        public Class<StandardAggregate> getAggregateType() {
+            return StandardAggregate.class;
+        }
     }
 }

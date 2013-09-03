@@ -122,6 +122,10 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
     @Override
     public void appendEvents(String type, DomainEventStream events) {
+        if (!events.hasNext()) {
+            return;
+        }
+
         List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
         while (events.hasNext()) {
             messages.add(events.next());
@@ -152,10 +156,11 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                                              identifier.toString(),
                                                              snapshotSequenceNumber + 1);
 
-        if (!dbCursor.hasNext() && lastSnapshotCommit == null) {
+        DomainEventStream stream = new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier);
+        if (!stream.hasNext()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier);
+        return stream;
     }
 
     @Override

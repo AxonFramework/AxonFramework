@@ -146,7 +146,7 @@ public class RepositoryBeanDefinitionParserTest {
                                                    .getArgumentValue(1, BeanDefinition.class);
         assertNotNull("Second argument is wrong", secondArgument);
         assertTrue("Second argument is wrong", secondArgument.getValue() instanceof RuntimeBeanReference);
-        assertEquals("Second argument is wrong", "eventStore",
+        assertEquals("Second argument is wrong", "eventStore1",
                      ((RuntimeBeanReference) secondArgument.getValue()).getBeanName());
         ValueHolder thirdArgument = beanDefinition.getConstructorArgumentValues()
                                                    .getArgumentValue(2, BeanDefinition.class);
@@ -199,7 +199,7 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, EventStore.class);
         assertNotNull("Second argument is wrong", secondArgument);
         assertEquals("Second argument is wrong", RuntimeBeanReference.class, secondArgument.getValue().getClass());
-        assertEquals("Wrong reference", "eventStore", ((RuntimeBeanReference)secondArgument.getValue()).getBeanName());
+        assertEquals("Wrong reference", "eventStore1", ((RuntimeBeanReference)secondArgument.getValue()).getBeanName());
 
         ValueHolder thirdArgument = beanDefinition.getConstructorArgumentValues()
                                                    .getArgumentValue(2, BeanReference.class);
@@ -254,7 +254,7 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, EventStore.class);
         assertNotNull("Second argument is wrong", secondArgument);
         assertEquals("Second argument is wrong", RuntimeBeanReference.class, secondArgument.getValue().getClass());
-        assertEquals("Wrong reference", "eventStore", ((RuntimeBeanReference)secondArgument.getValue()).getBeanName());
+        assertEquals("Wrong reference", "eventStore1", ((RuntimeBeanReference)secondArgument.getValue()).getBeanName());
 
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
         assertNotNull("Property missing", eventBusPropertyValue);

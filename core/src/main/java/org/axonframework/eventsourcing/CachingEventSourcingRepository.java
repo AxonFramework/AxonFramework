@@ -46,7 +46,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      * Optimistic locking is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore The event store that holds the event streams for this repository
+     * @param eventStore       The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore) {
@@ -55,11 +55,11 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
-     *
+     * <p/>
      * Note that an optimistic locking strategy is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore The event store that holds the event streams for this repository
+     * @param eventStore       The event store that holds the event streams for this repository
      * @param lockManager      The lock manager restricting concurrent access to aggregate instances
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
@@ -79,14 +79,8 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      */
     @Override
     public void doSaveWithLock(final T aggregate) {
-        cache.put(aggregate.getIdentifier(), aggregate);
-        try {
-            super.doSaveWithLock(aggregate);
-        } catch (RuntimeException ex) {
-            // when an exception occurs, the lock is release and cached state is compromised.
-            cache.remove(aggregate.getIdentifier());
-            throw ex;
-        }
+        super.doSaveWithLock(aggregate);
+        CurrentUnitOfWork.get().registerListener(new CacheUpdatingUnitOfWorkListener(aggregate));
     }
 
     @Override
@@ -109,13 +103,17 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
     @Override
     public T doLoad(Object aggregateIdentifier, Long expectedVersion) {
         T aggregate = (T) cache.get(aggregateIdentifier);
-        if (aggregate == null) {
+        if (aggregate == null || !hasExpectedVersion(expectedVersion, aggregate.getVersion())) {
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
         } else if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
         CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
         return aggregate;
+    }
+
+    private boolean hasExpectedVersion(Long expectedVersion, Long actualVersion) {
+        return expectedVersion == null || (actualVersion != null && actualVersion.equals(expectedVersion));
     }
 
     /**
@@ -138,6 +136,20 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
         @Override
         public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             cache.remove(identifier);
+        }
+    }
+
+    private class CacheUpdatingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
+
+        private final T aggregate;
+
+        public CacheUpdatingUnitOfWorkListener(T aggregate) {
+            this.aggregate = aggregate;
+        }
+
+        @Override
+        public void afterCommit(UnitOfWork unitOfWork) {
+            cache.put(aggregate.getIdentifier(), aggregate);
         }
     }
 }

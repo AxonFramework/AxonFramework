@@ -26,9 +26,14 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
-import org.axonframework.upcasting.UpcastingContext;
 import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SerializedType;
+import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.SimpleSerializedType;
+import org.axonframework.upcasting.LazyUpcasterChain;
+import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
+import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
@@ -101,6 +106,17 @@ public class MongoEventStoreTest_DocPerCommit {
     }
 
     @Test
+    public void testStoreEmptyUncommittedEventList(){
+        assertNotNull(testSubject);
+        StubAggregateRoot aggregate = new StubAggregateRoot();
+        // no events
+        assertEquals(0, aggregate.getUncommittedEventCount());
+        testSubject.appendEvents("test", aggregate.getUncommittedEvents());
+
+        assertEquals(0, mongoTemplate.domainEventCollection().count());
+    }
+
+    @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
@@ -108,7 +124,7 @@ public class MongoEventStoreTest_DocPerCommit {
         assertEquals(1, mongoTemplate.domainEventCollection().count());
         // with multiple events
         assertEquals((long) aggregate1.getUncommittedEventCount(),
-                     ((List)mongoTemplate.domainEventCollection().findOne().get("events")).size());
+                     ((List) mongoTemplate.domainEventCollection().findOne().get("events")).size());
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents("test", aggregate2.getUncommittedEvents());
@@ -118,6 +134,8 @@ public class MongoEventStoreTest_DocPerCommit {
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
             actualEvents.add(event);
+            // Tests AXON-169
+            assertNotNull(event.getIdentifier());
             assertEquals("Events are read back in the wrong order",
                          expectedSequenceNumber,
                          event.getSequenceNumber());
@@ -134,12 +152,12 @@ public class MongoEventStoreTest_DocPerCommit {
         UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
         when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
                 .thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
-                return Arrays.asList(serializedObject, serializedObject);
-            }
-        });
+                    @Override
+                    public Object answer(InvocationOnMock invocation) throws Throwable {
+                        SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
+                        return Arrays.asList(serializedObject, serializedObject);
+                    }
+                });
 
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
 
@@ -149,7 +167,7 @@ public class MongoEventStoreTest_DocPerCommit {
         assertEquals(1, mongoTemplate.domainEventCollection().count());
         // with multiple events
         assertEquals((long) aggregate1.getUncommittedEventCount(),
-                     ((List)mongoTemplate.domainEventCollection().findOne().get("events")).size());
+                     ((List) mongoTemplate.domainEventCollection().findOne().get("events")).size());
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents("test", new SimpleDomainEventStream(
@@ -195,7 +213,7 @@ public class MongoEventStoreTest_DocPerCommit {
 
         assertEquals(2, domainEvents.size());
     }
-    
+
     @Test
     public void testLoadWithMultipleSnapshotEvents() {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
@@ -232,6 +250,21 @@ public class MongoEventStoreTest_DocPerCommit {
         testSubject.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEventMessage.class));
     }
+
+    @Test
+    public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
+        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<String>("test", 0, "test");
+        testSubject.appendEvents("test", new SimpleDomainEventStream(eventMessage));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
+        // we upcast the event to two instances, one of which is an unknown class
+        testSubject.setUpcasterChain(new LazyUpcasterChain(Arrays.<Upcaster>asList(new StubUpcaster())));
+        testSubject.visitEvents(eventVisitor);
+
+        verify(eventVisitor, times(21)).doWithEvent(isA(DomainEventMessage.class));
+    }
+
 
     @Test
     public void testVisitEvents_AfterTimestamp() {
@@ -339,6 +372,34 @@ public class MongoEventStoreTest_DocPerCommit {
         private static final long serialVersionUID = 3459228620192273869L;
 
         private StubStateChangedEvent() {
+        }
+    }
+
+    private static class StubUpcaster implements Upcaster<byte[]> {
+
+        @Override
+        public boolean canUpcast(SerializedType serializedType) {
+            return "java.lang.String".equals(serializedType.getName());
+        }
+
+        @Override
+        public Class<byte[]> expectedRepresentationType() {
+            return byte[].class;
+        }
+
+        @Override
+        public List<SerializedObject<?>> upcast(SerializedObject<byte[]> intermediateRepresentation,
+                                                List<SerializedType> expectedTypes, UpcastingContext context) {
+            return Arrays.<SerializedObject<?>>asList(
+                    new SimpleSerializedObject<String>("data1", String.class, expectedTypes.get(0)),
+                    new SimpleSerializedObject<byte[]>(intermediateRepresentation.getData(), byte[].class,
+                                                       expectedTypes.get(1)));
+        }
+
+        @Override
+        public List<SerializedType> upcast(SerializedType serializedType) {
+            return Arrays.<SerializedType>asList(new SimpleSerializedType("unknownType1", "2"),
+                                                 new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
         }
     }
 }

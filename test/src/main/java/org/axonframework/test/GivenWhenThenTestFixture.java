@@ -107,10 +107,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
         clearGivenWhenState();
-        final EventSourcingRepository<T> eventSourcingRepository = new EventSourcingRepository<T>(aggregateType,
-                                                                                                  eventStore);
-        eventSourcingRepository.setEventBus(eventBus);
-        repository = new IdentifierValidatingRepository<T>(eventSourcingRepository);
         this.aggregateType = aggregateType;
     }
 
@@ -128,6 +124,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
+        registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         doWithInjectableResourcesAvailable(new Runnable() {
             @Override
@@ -146,6 +143,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     @Override
     @SuppressWarnings({"unchecked"})
     public FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler) {
+        registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(commandName, commandHandler);
         return this;
@@ -181,6 +179,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public TestExecutor given(Object... domainEvents) {
+        ensureRepositoryConfiguration();
         return given(Arrays.asList(domainEvents));
     }
 
@@ -238,7 +237,19 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         return resultValidator;
     }
 
+    private void ensureRepositoryConfiguration() {
+        if (repository == null) {
+            registerRepository(new EventSourcingRepository<T>(aggregateType, eventStore));
+        }
+    }
+
     private void finalizeConfiguration() {
+        ensureRepositoryConfiguration();
+        registerAggregateCommandHandlers();
+        explicitCommandHandlersSet = true;
+    }
+
+    private void registerAggregateCommandHandlers() {
         if (!explicitCommandHandlersSet) {
             doWithInjectableResourcesAvailable(new Runnable() {
                 @Override
@@ -247,7 +258,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                 }
             });
         }
-        explicitCommandHandlersSet = true;
     }
 
     private void detectIllegalStateChanges() {
@@ -351,6 +361,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public Repository<T> getRepository() {
+        ensureRepositoryConfiguration();
         return repository;
     }
 

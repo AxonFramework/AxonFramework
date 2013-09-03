@@ -91,7 +91,7 @@
     <axon:cluster id="defaultCluster" default="true"/>
 
     <axon:cluster id="replayingCluster">
-        <axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
+        <axon:replay-config event-store="eventStore1" transaction-manager="mockTransactionManager"/>
         <axon:selectors>
             <axon:package prefix="does.not.exist"/>
         </axon:selectors>
@@ -149,7 +149,7 @@
 
     <axon:event-bus id="eventBus"/>
 
-    <axon:jpa-event-store id="eventStore" data-source="dataSource"
+    <axon:jpa-event-store id="eventStore1" data-source="dataSource"
                           event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000"/>
 
     <axon:jpa-event-store id="eventStore2" data-source="dataSource" entity-manager-provider="myEntityManagerProvider"
@@ -195,7 +195,7 @@
 
     <axon:event-sourcing-repository id="testRepository" locking-strategy="PESSIMISTIC"
                                     aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
-                                    event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver">
+                                    event-bus="eventBus" event-store="eventStore1" conflict-resolver="conflictResolver">
         <axon:snapshotter-trigger id="snapshotterTrigger" event-count-threshold="50" snapshotter-ref="snapshotter"/>
         <axon:event-processors>
             <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
@@ -206,7 +206,7 @@
 
     <axon:event-sourcing-repository id="testCacheRepository" cache-ref="mockCache" lock-manager="nullLockManager"
                                     aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
-                                    event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver">
+                                    event-bus="eventBus" event-store="eventStore1" conflict-resolver="conflictResolver">
         <axon:snapshotter-trigger event-count-threshold="50" snapshotter-ref="snapshotter"/>
     </axon:event-sourcing-repository>
 
@@ -217,7 +217,7 @@
                          aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
 
     <axon:jpa-repository id="fullyDefinedJpaRepository" entity-manager-provider="customEntityManagerProvider"
-                         event-bus="eventBus" event-store="eventStore" lock-manager="nullLockManager"
+                         event-bus="eventBus" event-store="eventStore1" lock-manager="nullLockManager"
                          aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
 
     <bean id="mockCache" class="org.axonframework.testutils.MockitoMockFactoryBean">
@@ -230,12 +230,12 @@
 
     <axon:event-sourcing-repository id="defaultStrategyRepository"
                                     aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"
-                                    event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver"/>
+                                    event-bus="eventBus" event-store="eventStore1" conflict-resolver="conflictResolver"/>
 
     <axon:jpa-repository id="jpaRepository" event-bus="eventBus"
                          aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
 
-    <axon:jpa-repository id="hybridJpaRepository" event-bus="eventBus" event-store="eventStore"
+    <axon:jpa-repository id="hybridJpaRepository" event-bus="eventBus" event-store="eventStore1"
                          entity-manager-provider="customEntityManagerProvider"
                          aggregate-type="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
 
@@ -250,8 +250,8 @@
 
     <bean id="nullLockManager" class="org.axonframework.repository.NullLockManager"/>
 
-    <axon:snapshotter id="snapshotter" event-store="eventStore" transaction-manager="transactionManager"
+    <axon:snapshotter id="snapshotter" event-store="eventStore1" transaction-manager="transactionManager"
                       executor="taskExecutor"/>
-    <axon:snapshotter id="inThreadsnapshotter" transaction-manager="transactionManager" event-store="eventStore"/>
+    <axon:snapshotter id="inThreadsnapshotter" transaction-manager="transactionManager" event-store="eventStore1"/>
 
 </beans>

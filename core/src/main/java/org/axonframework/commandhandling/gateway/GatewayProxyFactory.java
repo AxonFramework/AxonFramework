@@ -164,44 +164,43 @@ public class GatewayProxyFactory {
             MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterAnnotations());
 
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
-            boolean hasCallbacks = false;
-            for (Class<?> argument : arguments) {
-                if (CommandCallback.class.isAssignableFrom(argument)) {
-                    hasCallbacks = true;
-                }
-            }
+
             InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
                                                                            dispatchInterceptors, extractors,
-                                                                           hasCallbacks);
-            if (Future.class.equals(gatewayMethod.getReturnType())) {
-                // no wrapping
-            } else if (arguments.length >= 3
-                    && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
-                    && (long.class.isAssignableFrom(arguments[arguments.length - 2])
-                    || int.class.isAssignableFrom(arguments[arguments.length - 2]))) {
-                dispatcher = wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2, arguments.length - 1);
-            } else {
-                Timeout timeout = gatewayMethod.getAnnotation(Timeout.class);
-                if (timeout == null) {
-                    timeout = gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class);
-                }
-                if (timeout != null) {
-                    dispatcher = wrapToReturnWithFixedTimeout(dispatcher, timeout.value(), timeout.unit());
-                } else if (!Void.TYPE.equals(gatewayMethod.getReturnType())
-                        || gatewayMethod.getExceptionTypes().length > 0) {
-                    dispatcher = wrapToWaitForResult(dispatcher);
+                                                                           true);
+            if (!Future.class.equals(gatewayMethod.getReturnType())) {
+                if (arguments.length >= 3
+                        && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
+                        && (long.class.isAssignableFrom(arguments[arguments.length - 2])
+                        || int.class.isAssignableFrom(arguments[arguments.length - 2]))) {
+                    dispatcher = wrapToReturnWithTimeoutInArguments(dispatcher, arguments.length - 2,
+                                                                    arguments.length - 1);
                 } else {
-                    dispatcher = wrapToFireAndForget(dispatcher);
+                    Timeout timeout = gatewayMethod.getAnnotation(Timeout.class);
+                    if (timeout == null) {
+                        timeout = gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class);
+                    }
+                    if (timeout != null) {
+                        dispatcher = wrapToReturnWithFixedTimeout(dispatcher, timeout.value(), timeout.unit());
+                    } else if (!Void.TYPE.equals(gatewayMethod.getReturnType())
+                            || gatewayMethod.getExceptionTypes().length > 0) {
+                        dispatcher = wrapToWaitForResult(dispatcher);
+                    } else if (!hasCallbackParameters(gatewayMethod)) {
+                        // switch to fire-and-forget mode
+                        dispatcher = wrapToFireAndForget(new DispatchOnInvocationHandler(commandBus, retryScheduler,
+                                                                                         dispatchInterceptors,
+                                                                                         extractors, false));
+                    }
                 }
+                Class<?>[] declaredExceptions = gatewayMethod.getExceptionTypes();
+                if (!contains(declaredExceptions, TimeoutException.class)) {
+                    dispatcher = wrapToReturnNullOnTimeout(dispatcher);
+                }
+                if (!contains(declaredExceptions, InterruptedException.class)) {
+                    dispatcher = wrapToReturnNullOnInterrupted(dispatcher);
+                }
+                dispatcher = wrapUndeclaredExceptions(dispatcher, declaredExceptions);
             }
-            Class<?>[] declaredExceptions = gatewayMethod.getExceptionTypes();
-            if (!contains(declaredExceptions, TimeoutException.class)) {
-                dispatcher = wrapToReturnNullOnTimeout(dispatcher);
-            }
-            if (!contains(declaredExceptions, InterruptedException.class)) {
-                dispatcher = wrapToReturnNullOnInterrupted(dispatcher);
-            }
-            dispatcher = wrapUndeclaredExceptions(dispatcher, declaredExceptions);
             dispatchers.put(gatewayMethod, dispatcher);
         }
 
@@ -212,6 +211,15 @@ public class GatewayProxyFactory {
                                                                     commandBus,
                                                                     retryScheduler,
                                                                     dispatchInterceptors)));
+    }
+
+    private boolean hasCallbackParameters(Method gatewayMethod) {
+        for (Class<?> parameter : gatewayMethod.getParameterTypes()) {
+            if (CommandCallback.class.isAssignableFrom(parameter)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -355,14 +363,14 @@ public class GatewayProxyFactory {
             implements InvocationHandler<Future<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
-        private final boolean hasCallbacks;
+        private final boolean useCallbacks;
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
                                               List<CommandDispatchInterceptor> commandDispatchInterceptors,
-                                              MetaDataExtractor[] metaDataExtractors, boolean hasCallbacks) {
+                                              MetaDataExtractor[] metaDataExtractors, boolean useCallbacks) {
             super(commandBus, retryScheduler, commandDispatchInterceptors);
             this.metaDataExtractors = metaDataExtractors;
-            this.hasCallbacks = hasCallbacks;
+            this.useCallbacks = useCallbacks;
         }
 
         @SuppressWarnings("unchecked")
@@ -378,7 +386,7 @@ public class GatewayProxyFactory {
                     command = asCommandMessage(command).withMetaData(metaDataValues);
                 }
             }
-            if (hasCallbacks) {
+            if (useCallbacks) {
                 List<CommandCallback<R>> callbacks = new LinkedList<CommandCallback<R>>();
                 FutureCallback<R> future = new FutureCallback<R>();
                 callbacks.add(future);
@@ -391,7 +399,8 @@ public class GatewayProxyFactory {
                 send(command, new CompositeCallback(callbacks));
                 return future;
             } else {
-                return doSend(command);
+                sendAndForget(command);
+                return null;
             }
         }
     }
