@@ -94,6 +94,7 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.setSerializer(serializer);
         SimpleCommandBus localSegment = new SimpleCommandBus();
         testSubject.setLocalSegment(localSegment);
+        testSubject.setChannelName("localname");
         testSubject.afterPropertiesSet();
         testSubject.start();
         testSubject.getObject();
@@ -102,6 +103,7 @@ public class JGroupsConnectorFactoryBeanTest {
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("ClusterName"),
                                                         same(localSegment), same(serializer));
         verify(mockApplicationContext, never()).getBean(Serializer.class);
+        verify(mockChannel).setName("localname");
         verify(mockConnector).connect(200);
         verify(mockChannel, never()).close();
 
