@@ -185,7 +185,8 @@ public class GatewayProxyFactory {
                     } else if (!Void.TYPE.equals(gatewayMethod.getReturnType())
                             || gatewayMethod.getExceptionTypes().length > 0) {
                         dispatcher = wrapToWaitForResult(dispatcher);
-                    } else {
+                    } else if (!hasCallbackParameters(gatewayMethod)) {
+                        // switch to fire-and-forget mode
                         dispatcher = wrapToFireAndForget(new DispatchOnInvocationHandler(commandBus, retryScheduler,
                                                                                          dispatchInterceptors,
                                                                                          extractors, false));
@@ -210,6 +211,15 @@ public class GatewayProxyFactory {
                                                                     commandBus,
                                                                     retryScheduler,
                                                                     dispatchInterceptors)));
+    }
+
+    private boolean hasCallbackParameters(Method gatewayMethod) {
+        for (Class<?> parameter : gatewayMethod.getParameterTypes()) {
+            if (CommandCallback.class.isAssignableFrom(parameter)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
