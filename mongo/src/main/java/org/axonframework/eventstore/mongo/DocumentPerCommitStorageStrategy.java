@@ -114,6 +114,11 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                                              .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
                                      "uniqueAggregateIndex",
                                      true);
+        snapshotsCollection.ensureIndex(new BasicDBObject(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
+                                             .append(CommitEntry.AGGREGATE_TYPE_PROPERTY, 1)
+                                             .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
+                                     "uniqueAggregateIndex",
+                                     true);
     }
 
     @Override
