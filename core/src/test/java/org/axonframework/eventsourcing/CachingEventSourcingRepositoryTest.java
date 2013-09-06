@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
+package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
@@ -24,11 +24,8 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.AbstractAggregateFactory;
-import org.axonframework.eventsourcing.AggregateDeletedException;
-import org.axonframework.eventsourcing.CachingEventSourcingRepository;
-import org.axonframework.eventsourcing.ConflictResolver;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.hamcrest.Description;

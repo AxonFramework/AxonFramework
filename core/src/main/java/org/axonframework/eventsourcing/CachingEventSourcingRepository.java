@@ -68,25 +68,22 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
         super(aggregateFactory, eventStore, lockManager);
     }
 
-    /**
-     * Saves the aggregate and stores it in the cache (if configured) for fast retrieval. If an exception occurs while
-     * saving the aggregate, the related cache entry is invalidated immediately.
-     * <p/>
-     * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that
-     * aggregate. This is done to prevent the cache from returning aggregates that may not have fully persisted.
-     *
-     * @param aggregate the aggregate to save
-     */
     @Override
-    public void doSaveWithLock(final T aggregate) {
-        super.doSaveWithLock(aggregate);
-        CurrentUnitOfWork.get().registerListener(new CacheUpdatingUnitOfWorkListener(aggregate));
+    public void add(T aggregate) {
+        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregate.getIdentifier()));
+        super.add(aggregate);
     }
 
     @Override
-    protected void doDeleteWithLock(T aggregate) {
-        cache.remove(aggregate.getIdentifier());
-        super.doDeleteWithLock(aggregate);
+    protected void postSave(T aggregate) {
+        super.postSave(aggregate);
+        cache.put(aggregate.getIdentifier(), aggregate);
+    }
+
+    @Override
+    protected void postDelete(T aggregate) {
+        super.postDelete(aggregate);
+        cache.put(aggregate.getIdentifier(), aggregate);
     }
 
     /**
@@ -136,20 +133,6 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
         @Override
         public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
             cache.remove(identifier);
-        }
-    }
-
-    private class CacheUpdatingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
-
-        private final T aggregate;
-
-        public CacheUpdatingUnitOfWorkListener(T aggregate) {
-            this.aggregate = aggregate;
-        }
-
-        @Override
-        public void afterCommit(UnitOfWork unitOfWork) {
-            cache.put(aggregate.getIdentifier(), aggregate);
         }
     }
 }

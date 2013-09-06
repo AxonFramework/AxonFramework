@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
+package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.AbstractAggregateFactory;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcedEntity;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.repository.LockManager;
+import org.axonframework.repository.OptimisticLockManager;
+import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
