@@ -35,10 +35,10 @@ import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.junit.*;
+import org.junit.rules.*;
 
-import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -111,18 +111,18 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     final List<String> events = new ArrayList<String>();
 
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Before
     public void setUp() throws Exception {
         cache = new JCache(CacheManager.getInstance().addCacheIfAbsent("name"));
-
-        File dir = new File("events");
-        delete(dir);
 
         eventBus = new SimpleEventBus();
         eventBus.subscribe(new LoggingEventListener(events));
         events.clear();
 
-        EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(dir));
+        EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(tempFolder.newFolder()));
         AggregateFactory<Aggregate> aggregateFactory = new GenericAggregateFactory<Aggregate>(Aggregate.class);
         repository = new CachingEventSourcingRepository<Aggregate>(aggregateFactory, eventStore);
         repository.setEventBus(eventBus);
@@ -164,8 +164,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         repository.add(new Aggregate(id));
         uow.commit();
 
-        printEvents(events);
-
         Aggregate verify = loadAggregate(id);
         assertEquals(2, verify.tokens.size());
         assertTrue(verify.tokens.containsAll(asList("1", "2")));
@@ -206,11 +204,14 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
         Aggregate verify = loadAggregate(id);
 
-        printEvents(events);
         assertEquals(id, verify.id);
         assertEquals(8, verify.tokens.size());
         assertTrue(verify.tokens.containsAll(asList(//
                                                     "UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9", "UOW10")));
+        for (int i=0;i<9;i++) {
+            assertTrue("Expected event with sequence number " + i + " but got :" + events.get(i),
+                       events.get(i).startsWith(i + " "));
+        }
     }
 
     private Aggregate loadAggregate(String id) {
@@ -218,26 +219,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         Aggregate verify = repository.load(id);
         uow.rollback();
         return verify;
-    }
-
-    static void delete(File file) {
-        if (!file.exists()) {
-            return;
-        }
-
-        if (file.isDirectory()) {
-            for (File child : file.listFiles()) {
-                delete(child);
-            }
-        }
-        file.delete();
-    }
-
-    static void printEvents(final List<String> events) {
-        Collections.sort(events);
-        for (String x : events) {
-            System.out.println(x);
-        }
     }
 
     /**
@@ -261,7 +242,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                                        e.getAggregateIdentifier(), //
                                        e.getIdentifier(), //
                                        e.getPayload());
-            System.out.println(str);
             events.add(str);
         }
     }
@@ -294,7 +274,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
             if (previousToken != null && payload instanceof AggregateUpdatedEvent) {
                 AggregateUpdatedEvent updated = (AggregateUpdatedEvent) payload;
-                if (updated.token == previousToken) {
+                if (updated.token.equals(previousToken)) {
                     UnitOfWork nested = uowFactory.createUnitOfWork();
                     Aggregate aggregate = repository.load(updated.id);
                     aggregate.update(token);
@@ -308,7 +288,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
      * Domain Model
 	 */
 
-    public static class AggregateCreatedEvent {
+    public static class AggregateCreatedEvent implements Serializable {
 
         @AggregateIdentifier
         final String id;
@@ -323,7 +303,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
-    public static class AggregateUpdatedEvent {
+    public static class AggregateUpdatedEvent implements Serializable {
 
         @AggregateIdentifier
         final String id;

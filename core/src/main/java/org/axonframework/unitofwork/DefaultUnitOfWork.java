@@ -187,10 +187,6 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
         listeners.add(listener);
     }
 
-    private void doPublish(EventMessage event, EventBus eventBus) {
-        eventsToPublishOn(eventBus).add(event);
-    }
-
     private List<EventMessage<?>> eventsToPublishOn(EventBus eventBus) {
         if (!eventsToPublish.containsKey(eventBus)) {
             eventsToPublish.put(eventBus, new ArrayList<EventMessage<?>>());
@@ -199,14 +195,14 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     }
 
     @Override
-    public void publishEvent(EventMessage<?> event, EventBus eventBus) {
+    public void registerForPublication(EventMessage<?> event, EventBus eventBus) {
         if (logger.isDebugEnabled()) {
             logger.debug("Staging event for publishing: [{}] on [{}]",
                          event.getPayloadType().getName(),
                          eventBus.getClass().getName());
         }
         event = invokeEventRegistrationListeners(event);
-        doPublish(event, eventBus);
+        eventsToPublishOn(eventBus).add(event);
     }
 
     @Override
@@ -324,7 +320,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
         @Override
         public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
             event = (DomainEventMessage<T>) invokeEventRegistrationListeners(event);
-            doPublish(event, eventBus);
+            eventsToPublishOn(eventBus).add(event);
             return event;
         }
     }
