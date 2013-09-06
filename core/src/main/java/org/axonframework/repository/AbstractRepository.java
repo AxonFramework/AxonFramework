@@ -167,6 +167,29 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
                 doSave(aggregate);
             }
             aggregate.commitEvents();
+            if (aggregate.isDeleted()) {
+                postDelete(aggregate);
+            } else {
+                postSave(aggregate);
+            }
         }
+    }
+
+    /**
+     * Perform action that needs to be done directly after updating an aggregate and committing the aggregate's
+     * uncommitted events.
+     *
+     * @param aggregate The aggregate instance being saved
+     */
+    protected void postSave(T aggregate) {
+    }
+
+    /**
+     * Perform action that needs to be done directly after deleting an aggregate and committing the aggregate's
+     * uncommitted events.
+     *
+     * @param aggregate The aggregate instance being saved
+     */
+    protected void postDelete(T aggregate) {
     }
 }
