@@ -16,6 +16,8 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,6 +144,25 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
     }
 
     @Override
+    public void publishEvent(EventMessage<?> event, EventBus eventBus) {
+        if (outerUnitOfWork != null) {
+            outerUnitOfWork.publishEvent(event, eventBus);
+        } else {
+            registerForPublication(event, eventBus);
+        }
+    }
+
+    /**
+     * Register the given <code>event</code> for publication on the given <code>eventBus</code> when the unit of work
+     * is committed. This method will only be invoked on the outer unit of work, as that one is responsible for
+     * maintaining the order of publication of events.
+     *
+     * @param event    The Event to publish
+     * @param eventBus The Event Bus to publish the Event on
+     */
+    protected abstract void registerForPublication(EventMessage<?> event, EventBus eventBus);
+
+    @Override
     public boolean isStarted() {
         return isStarted;
     }
@@ -197,7 +218,10 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
      * any listeners are notified of the commit.
      */
     protected void commitInnerUnitOfWork() {
-        for (NestableUnitOfWork unitOfWork : innerUnitsOfWork) {
+        // do not replace this for loop with an iterator based on, as it cannot handle concurrent modifications
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < innerUnitsOfWork.size(); i++) {
+            NestableUnitOfWork unitOfWork = innerUnitsOfWork.get(i);
             if (unitOfWork.isStarted()) {
                 unitOfWork.performInnerCommit();
             }
@@ -205,7 +229,11 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
     }
 
     private void registerInnerUnitOfWork(NestableUnitOfWork unitOfWork) {
-        innerUnitsOfWork.add(unitOfWork);
+        if (outerUnitOfWork != null && outerUnitOfWork instanceof NestableUnitOfWork) {
+            ((NestableUnitOfWork) outerUnitOfWork).registerInnerUnitOfWork(unitOfWork);
+        } else {
+            innerUnitsOfWork.add(unitOfWork);
+        }
     }
 
     /**
