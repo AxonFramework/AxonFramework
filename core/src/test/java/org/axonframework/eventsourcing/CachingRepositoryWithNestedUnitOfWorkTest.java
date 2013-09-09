@@ -157,8 +157,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     public void testMinimalScenario(String id) {
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventBus.subscribe(new CommandExecutingEventListener("1", null));
-        eventBus.subscribe(new CommandExecutingEventListener("2", null));
+        eventBus.subscribe(new CommandExecutingEventListener("1", null, true));
+        eventBus.subscribe(new CommandExecutingEventListener("2", null, true));
 
         UnitOfWork uow = uowFactory.createUnitOfWork();
         repository.add(new Aggregate(id));
@@ -174,7 +174,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         // root ("2")
         //		4
         //			8
-        // 				10
+        // 				10 <- rolled back
         //			9
         //		5
         //		3
@@ -183,17 +183,17 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         //
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventBus.subscribe(new CommandExecutingEventListener("UOW4", null));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW5", null));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW3", null));
+        eventBus.subscribe(new CommandExecutingEventListener("UOW4", null, true));
+        eventBus.subscribe(new CommandExecutingEventListener("UOW5", null, true));
+        eventBus.subscribe(new CommandExecutingEventListener("UOW3", null, true));
 
         // Execute commands to update after the previous update has been performed
-        eventBus.subscribe(new CommandExecutingEventListener("UOW7", "UOW6"));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW6", "UOW3"));
+        eventBus.subscribe(new CommandExecutingEventListener("UOW7", "UOW6", true));
+        eventBus.subscribe(new CommandExecutingEventListener("UOW6", "UOW3", true));
 
-        eventBus.subscribe(new CommandExecutingEventListener("UOW10", "UOW8"));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW9", "UOW4"));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW8", "UOW4"));
+        eventBus.subscribe(new CommandExecutingEventListener("UOW10", "UOW8", false)); // roll back
+        eventBus.subscribe(new CommandExecutingEventListener("UOW9", "UOW4", true));
+        eventBus.subscribe(new CommandExecutingEventListener("UOW8", "UOW4", true));
 
         Aggregate a = new Aggregate(id);
 
@@ -205,10 +205,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         Aggregate verify = loadAggregate(id);
 
         assertEquals(id, verify.id);
-        assertEquals(8, verify.tokens.size());
+        assertEquals(7, verify.tokens.size());
         assertTrue(verify.tokens.containsAll(asList(//
-                                                    "UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9", "UOW10")));
-        for (int i=0;i<9;i++) {
+                                                    "UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9")));
+        assertFalse(verify.tokens.contains("UOW10"));
+        for (int i = 0; i < verify.tokens.size(); i++) {
             assertTrue("Expected event with sequence number " + i + " but got :" + events.get(i),
                        events.get(i).startsWith(i + " "));
         }
@@ -253,10 +254,12 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
         final String token;
         final String previousToken;
+        private final boolean commit;
 
-        public CommandExecutingEventListener(String token, String previousToken) {
+        public CommandExecutingEventListener(String token, String previousToken, boolean commit) {
             this.token = token;
             this.previousToken = previousToken;
+            this.commit = commit;
         }
 
         @Override
@@ -278,7 +281,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                     UnitOfWork nested = uowFactory.createUnitOfWork();
                     Aggregate aggregate = repository.load(updated.id);
                     aggregate.update(token);
-                    nested.commit();
+                    if (commit) {
+                        nested.commit();
+                    } else {
+                        nested.rollback();
+                    }
                 }
             }
         }

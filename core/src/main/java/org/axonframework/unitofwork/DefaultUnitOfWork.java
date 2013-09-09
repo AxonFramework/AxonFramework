@@ -195,7 +195,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     }
 
     @Override
-    public void registerForPublication(EventMessage<?> event, EventBus eventBus) {
+    public void publishEvent(EventMessage<?> event, EventBus eventBus) {
         if (logger.isDebugEnabled()) {
             logger.debug("Staging event for publishing: [{}] on [{}]",
                          event.getPayloadType().getName(),
