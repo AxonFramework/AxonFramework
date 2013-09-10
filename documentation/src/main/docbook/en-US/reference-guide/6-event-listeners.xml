@@ -424,8 +424,7 @@ public class SubListener extends TopListener {
                     transmits electronic impulses from one Neuron to another.</para>
                 <para>For more detailed information, see <link
                         xmlns:xlink="http://www.w3.org/1999/xlink"
-                        xlink:href="http://en.wikipedia.org/wiki/Axon_terminal"
-                        >http://en.wikipedia.org/wiki/Axon_terminal</link>.</para>
+                        xlink:href="http://en.wikipedia.org/wiki/Axon_terminal">http://en.wikipedia.org/wiki/Axon_terminal</link>.</para>
             </note>
         </para>
         <sect2>
