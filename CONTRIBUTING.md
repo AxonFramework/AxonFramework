@@ -1,0 +1,1 @@
+To get started, <a href="http://www.clahub.com/agreements/AxonFramework/AxonFramework">sign the Contributor License Agreement</a>.
