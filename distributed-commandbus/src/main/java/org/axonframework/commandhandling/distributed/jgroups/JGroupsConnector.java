@@ -341,16 +341,20 @@ public class JGroupsConnector implements CommandBusConnector {
 
         private void processJoinMessage(Message msg, JoinMessage joinMessage) {
             String channelName = channel.getName(msg.getSrc());
+            if (channelName != null) {
+                consistentHash = consistentHash.withAdditionalNode(channelName, joinMessage.getLoadFactor(),
+                                                                   joinMessage.getCommandNames());
+                if (logger.isInfoEnabled() && !msg.getSrc().equals(channel.getAddress())) {
+                    logger.info("{} joined with load factor: {}", msg.getSrc(), joinMessage.getLoadFactor());
+                }
 
-            consistentHash = consistentHash.withAdditionalNode(channelName, joinMessage.getLoadFactor(),
-                                                               joinMessage.getCommandNames());
-            if (logger.isInfoEnabled() && !msg.getSrc().equals(channel.getAddress())) {
-                logger.info("{} joined with load factor: {}", msg.getSrc(), joinMessage.getLoadFactor());
-            }
-
-            if (msg.getSrc().equals(channel.getAddress())) {
-                joinedCondition.markJoined(true);
-                logger.info("Local segment successfully joined the distributed command bus");
+                if (msg.getSrc().equals(channel.getAddress())) {
+                    joinedCondition.markJoined(true);
+                    logger.info("Local segment successfully joined the distributed command bus");
+                }
+            } else {
+                logger.warn("Received join message from '{}', but a connection with the sender has been lost.",
+                            msg.getSrc().toString());
             }
         }
 
