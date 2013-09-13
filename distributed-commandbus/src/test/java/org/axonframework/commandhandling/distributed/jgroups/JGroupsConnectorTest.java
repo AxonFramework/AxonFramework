@@ -27,9 +27,12 @@ import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.stack.IpAddress;
 import org.junit.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -149,13 +152,39 @@ public class JGroupsConnectorTest {
         assertTrue(connector1.getConsistentHash().equals(connector2.getConsistentHash()));
     }
 
+    @Test
+    public void testJoinMessageReceivedForDisconnectedHost() throws Exception {
+        final AtomicInteger counter1 = new AtomicInteger(0);
+        final AtomicInteger counter2 = new AtomicInteger(0);
+
+        connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
+        connector1.connect(20);
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        connector2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        connector2.connect(80);
+        assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
+
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        ConsistentHash hashBefore = connector1.getConsistentHash();
+        // secretly insert an illegal message
+        channel1.getReceiver().receive(new Message(channel1.getAddress(), new IpAddress(12345),
+                                  new JoinMessage(10, Collections.<String>emptySet())));
+        ConsistentHash hash2After = connector1.getConsistentHash();
+        assertSame("That message should not have changed the ring", hashBefore, hash2After);
+    }
+
     private void waitForConnectorSync() throws InterruptedException {
         int t = 0;
         while (ConsistentHash.emptyRing().equals(connector1.getConsistentHash())
                 || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (t++ > 500) {
-                assertEquals("Connectors did not synchronize within 10 seconds.", connector1.getConsistentHash().toString(), connector2.getConsistentHash().toString());
+                assertEquals("Connectors did not synchronize within 10 seconds.",
+                             connector1.getConsistentHash().toString(),
+                             connector2.getConsistentHash().toString());
             }
             Thread.sleep(20);
         }
