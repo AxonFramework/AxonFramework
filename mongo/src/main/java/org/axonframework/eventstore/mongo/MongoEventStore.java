@@ -38,6 +38,7 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -185,8 +186,12 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                                      (MongoCriteria) criteria);
         cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
         CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null, true);
-        while (events.hasNext()) {
-            visitor.doWithEvent(events.next());
+        try {
+            while (events.hasNext()) {
+                visitor.doWithEvent(events.next());
+            }
+        } finally {
+            events.close();
         }
     }
 
@@ -212,7 +217,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         this.upcasterChain = upcasterChain;
     }
 
-    private class CursorBackedDomainEventStream implements DomainEventStream {
+    private class CursorBackedDomainEventStream implements DomainEventStream, Closeable {
 
         private Iterator<DomainEventMessage> messagesToReturn = Collections.<DomainEventMessage>emptyList().iterator();
         private DomainEventMessage next;
@@ -268,6 +273,11 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
                                                                         skipUnknownTypes).iterator();
             }
             next = messagesToReturn.hasNext() ? messagesToReturn.next() : null;
+        }
+
+        @Override
+        public void close() {
+            dbCursor.close();
         }
     }
 }

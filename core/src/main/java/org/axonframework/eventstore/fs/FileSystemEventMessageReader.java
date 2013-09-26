@@ -16,9 +16,11 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventData;
 
+import java.io.Closeable;
 import java.io.DataInput;
 import java.io.IOException;
 
@@ -28,7 +30,7 @@ import java.io.IOException;
  * @author Frank Versnel
  * @since 2.0
  */
-public class FileSystemEventMessageReader {
+public class FileSystemEventMessageReader implements Closeable {
 
     private final DataInput in;
 
@@ -74,5 +76,10 @@ public class FileSystemEventMessageReader {
                                         payloadType,
                                         payloadRevision,
                                         payload, metaData);
+    }
+
+    @Override
+    public void close() {
+        IOUtils.closeQuietlyIfCloseable(in);
     }
 }

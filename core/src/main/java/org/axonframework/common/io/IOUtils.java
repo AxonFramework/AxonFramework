@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
  * Utility methods for IO operations.
  *
  * @author Allard Buijze
+ * @author Knut-Olav Hoven
  * @since 2.0
  */
 public final class IOUtils {
@@ -49,6 +50,32 @@ public final class IOUtils {
             } catch (IOException e) { // NOSONAR - empty catch block on purpose
                 // ignore
             }
+        }
+    }
+
+    /**
+     * Closes any object if that object implements {@link Closeable}, while suppressing any IOExceptions it will
+     * generate. The given <code>closeable</code> may be <code>null</code>, in which case nothing happens.
+     *
+     * @param closeable the object to be closed
+     */
+    public static void closeQuietlyIfCloseable(Object closeable) {
+        if (closeable instanceof Closeable) {
+            closeQuietly((Closeable) closeable);
+        }
+    }
+
+    /**
+     * Close the given <code>closeable</code> if it implements the {@link Closeable} interface. Otherwise, nothing
+     * happens. Unlike {@link #closeQuietlyIfCloseable(Object)}, this method does not suppress any exceptions thrown
+     * while attempting to close the resource.
+     *
+     * @param closeable The object to close
+     * @throws IOException when an error occurs while closing the resource
+     */
+    public static void closeIfCloseable(Object closeable) throws IOException {
+        if (closeable instanceof Closeable) {
+            ((Closeable) closeable).close();
         }
     }
 }

@@ -24,6 +24,7 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.upcasting.UpcasterChain;
 
 import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -43,7 +44,7 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  * @author Frank Versnel
  * @since 0.5
  */
-public class FileSystemBufferedReaderDomainEventStream implements DomainEventStream {
+public class FileSystemBufferedReaderDomainEventStream implements DomainEventStream, Closeable {
 
     private Queue<DomainEventMessage> next;
     private final FileSystemEventMessageReader eventMessageReader;
@@ -115,5 +116,10 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
         } catch (IOException e) {
             throw new EventStoreException("An error occurred while reading from the underlying source", e);
         }
+    }
+    
+    @Override
+    public void close() throws IOException {
+    	eventMessageReader.close();
     }
 }

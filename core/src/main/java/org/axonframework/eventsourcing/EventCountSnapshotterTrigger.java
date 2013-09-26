@@ -17,12 +17,15 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.jsr107cache.Cache;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -140,7 +143,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         }
     }
 
-    private class CountingEventStream implements DomainEventStream {
+    private class CountingEventStream implements DomainEventStream, Closeable {
 
         private final DomainEventStream delegate;
         private final AtomicInteger counter;
@@ -174,6 +177,11 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
          */
         protected AtomicInteger getCounter() {
             return counter;
+        }
+
+        @Override
+        public void close() throws IOException {
+            IOUtils.closeIfCloseable(delegate);
         }
     }
 

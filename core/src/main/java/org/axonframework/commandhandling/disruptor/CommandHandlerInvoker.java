@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
 import net.sf.jsr107cache.Cache;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -185,8 +186,9 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             if (aggregateRoot == null) {
                 logger.debug("Aggregate {} not in first level cache, loading fresh one from Event Store",
                              aggregateIdentifier);
+                DomainEventStream events = null;
                 try {
-                    DomainEventStream events = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
+                    events = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
                     if (events.hasNext()) {
                         aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
                         aggregateRoot.initializeState(events);
@@ -199,6 +201,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                     + "finish the creation process. It will be rescheduled for publication when it "
                                     + "attempts to load an aggregate",
                             e);
+                } finally {
+                    IOUtils.closeQuietlyIfCloseable(events);
                 }
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
                 cache.put(aggregateIdentifier, aggregateRoot);
