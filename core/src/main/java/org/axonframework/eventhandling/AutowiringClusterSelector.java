@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.Ordered;
@@ -38,13 +37,17 @@ import java.util.TreeSet;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AutowiringClusterSelector implements ClusterSelector, ApplicationContextAware, InitializingBean {
+public class AutowiringClusterSelector implements ClusterSelector, ApplicationContextAware {
 
     private ApplicationContext applicationContext;
     private final List<ClusterSelector> selectors = new ArrayList<ClusterSelector>();
+    private volatile boolean initialized;
 
     @Override
     public Cluster selectCluster(EventListener eventListener) {
+        if (!initialized) {
+            initialize();
+        }
         Cluster cluster = null;
         Iterator<ClusterSelector> selectorIterator = selectors.iterator();
         while (cluster == null && selectorIterator.hasNext()) {
@@ -58,8 +61,12 @@ public class AutowiringClusterSelector implements ClusterSelector, ApplicationCo
         this.applicationContext = applicationContext;
     }
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
+    private void initialize() {
+        if (initialized) {
+            return;
+        }
+
+        this.initialized = true;
         Map<String, ClusterSelector> candidates = applicationContext.getBeansOfType(ClusterSelector.class);
         SortedSet<OrderedClusterSelector> orderedCandidates = new TreeSet<OrderedClusterSelector>();
         for (Map.Entry<String, ClusterSelector> entry : candidates.entrySet()) {
