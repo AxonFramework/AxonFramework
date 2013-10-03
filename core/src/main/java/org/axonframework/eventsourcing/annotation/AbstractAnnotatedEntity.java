@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
@@ -80,7 +82,10 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
 
     private void ensureInspectorInitialized() {
         if (inspector == null) {
-            inspector = AggregateAnnotationInspector.getInspector(getClass());
+            final ParameterResolverFactory parameterResolverFactory =
+                    AnnotationConfiguration.readFor(super.getAggregateRoot().getClass())
+                                           .getParameterResolverFactory();
+            inspector = AggregateAnnotationInspector.getInspector(getClass(), parameterResolverFactory);
         }
     }
 }

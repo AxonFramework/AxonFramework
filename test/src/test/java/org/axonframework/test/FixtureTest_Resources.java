@@ -88,7 +88,8 @@ public class FixtureTest_Resources {
         }
 
         @EventHandler
-        void handle(MyEvent event) {
+        void handle(MyEvent event, Executor resource) {
+            assertNotNull(resource);
             this.id = event.getAggregateIdentifier().toString();
         }
 

@@ -2,8 +2,8 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
 import org.springframework.beans.factory.FactoryBean;
@@ -45,7 +45,7 @@ public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoo
     @Override
     public void afterPropertiesSet() throws Exception {
         if (parameterResolverFactory == null) {
-            parameterResolverFactory = ClasspathParameterResolverFactory.forClass(aggregateType);
+            parameterResolverFactory = AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory();
         }
         handler = new AggregateAnnotationCommandHandler<T>(aggregateType, repository, commandTargetResolver,
                                                            parameterResolverFactory);

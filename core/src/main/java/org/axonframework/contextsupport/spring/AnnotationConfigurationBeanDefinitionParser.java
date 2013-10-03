@@ -20,10 +20,13 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBean
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
+
+import static org.axonframework.contextsupport.spring.SpringContextParameterResolverFactoryBuilder.getBeanReference;
 
 /**
  * The AnnotationConfigurationBeanDefinitionParser is responsible for parsing the annotation-config element from the
@@ -55,6 +58,14 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
      * The bean name used for registering the {@link AnnotationCommandHandlerBeanPostProcessor}.
      */
     private static final String COMMAND_HANDLER_BEAN_NAME = "__axon-annotation-command-handler-bean-post-processor";
+    /**
+     * The bean name used for registering the {@link org.axonframework.contextsupport.spring.AnnotatedAggregateConfigurationBeanPostProcessor}.
+     */
+    private static final String AGGREGATE_CONFIGURATION_BEAN_NAME = "__axon-aggregate-annotation-configuration-bean-post-processor";
+    /**
+     * The bean name used for registering the {@link org.axonframework.contextsupport.spring.AnnotatedSagaConfigurationBeanPostProcessor}.
+     */
+    private static final String SAGA_CONFIGURATION_BEAN_NAME = "__axon-saga-annotation-configuration-bean-post-processor";
 
     /**
      * {@inheritDoc}
@@ -63,7 +74,25 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         registerAnnotationCommandHandlerBeanPostProcessor(element, parserContext);
         registerAnnotationEventListenerBeanPostProcessor(element, parserContext);
+        registerAnnotatedAggregateConfigurationBeanPostProcessor(parserContext);
+        registerAnnotatedSagaConfigurationBeanPostProcessor(parserContext);
         return null;
+    }
+
+    private void registerAnnotatedSagaConfigurationBeanPostProcessor(ParserContext parserContext) {
+        AbstractBeanDefinition beanDefinition = BeanDefinitionBuilder
+                .genericBeanDefinition(AnnotatedSagaConfigurationBeanPostProcessor.class)
+                .addPropertyValue("parameterResolverFactory", getBeanReference(parserContext.getRegistry()))
+                .getBeanDefinition();
+        parserContext.getRegistry().registerBeanDefinition(SAGA_CONFIGURATION_BEAN_NAME, beanDefinition);
+    }
+
+    private void registerAnnotatedAggregateConfigurationBeanPostProcessor(ParserContext parserContext) {
+        AbstractBeanDefinition beanDefinition = BeanDefinitionBuilder
+                .genericBeanDefinition(AnnotatedAggregateConfigurationBeanPostProcessor.class)
+                .addPropertyValue("parameterResolverFactory", getBeanReference(parserContext.getRegistry()))
+                .getBeanDefinition();
+        parserContext.getRegistry().registerBeanDefinition(AGGREGATE_CONFIGURATION_BEAN_NAME, beanDefinition);
     }
 
     /**
@@ -77,7 +106,7 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationEventListenerBeanPostProcessor.class);
         beanDefinition.getPropertyValues().add("parameterResolverFactory",
-                                               SpringContextParameterResolverFactoryBuilder.getBeanReference(
+                                               getBeanReference(
                                                        parserContext.getRegistry()));
         if (element.hasAttribute(EVENT_BUS_ATTRIBUTE)) {
             String eventBusReference = element.getAttribute(EVENT_BUS_ATTRIBUTE);
@@ -98,7 +127,7 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationCommandHandlerBeanPostProcessor.class);
         beanDefinition.getPropertyValues().add("parameterResolverFactory",
-                                               SpringContextParameterResolverFactoryBuilder.getBeanReference(
+                                               getBeanReference(
                                                        parserContext.getRegistry()));
         if (element.hasAttribute(COMMAND_BUS_ATTRIBUTE)) {
             String commandBusReference = element.getAttribute(COMMAND_BUS_ATTRIBUTE);

@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.annotation;
 import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListenerProxy;
@@ -65,7 +66,8 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @param annotatedEventListener the annotated event listener
      */
     public AnnotationEventListenerAdapter(Object annotatedEventListener) {
-        this(annotatedEventListener, ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()));
+        this(annotatedEventListener, AnnotationConfiguration.readFor(annotatedEventListener.getClass())
+                                                            .getParameterResolverFactory());
     }
 
     /**

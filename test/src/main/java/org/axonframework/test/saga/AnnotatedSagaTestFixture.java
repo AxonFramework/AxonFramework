@@ -18,6 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
@@ -26,6 +27,7 @@ import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.test.FixtureResourceParameterResolverFactory;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.utils.AutowiredResourceInjector;
 import org.axonframework.test.utils.CallbackBehavior;
@@ -54,11 +56,13 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     private final StubEventScheduler eventScheduler;
     private final AnnotatedSagaManager sagaManager;
     private final List<Object> registeredResources = new LinkedList<Object>();
+    private final Class<? extends AbstractAnnotatedSaga> sagaType;
 
     private Map<Object, AggregateEventPublisherImpl> aggregatePublishers =
             new HashMap<Object, AggregateEventPublisherImpl>();
     private FixtureExecutionResultImpl fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
+    private final FixtureResourceParameterResolverFactory parameterResolverFactory;
 
     /**
      * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given <code>sagaType</code>.
@@ -67,12 +71,13 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
      */
     @SuppressWarnings({"unchecked"})
     public AnnotatedSagaTestFixture(Class<? extends AbstractAnnotatedSaga> sagaType) {
+        this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         GenericSagaFactory genericSagaFactory = new GenericSagaFactory();
         genericSagaFactory.setResourceInjector(new AutowiredResourceInjector(registeredResources));
         EventBus eventBus = new SimpleEventBus();
         InMemorySagaRepository sagaRepository = new InMemorySagaRepository();
-        sagaManager = new AnnotatedSagaManager(sagaRepository, genericSagaFactory, eventBus, sagaType);
+        sagaManager = new AnnotatedSagaManager(sagaRepository, genericSagaFactory, sagaType);
         sagaManager.setSuppressExceptions(false);
 
         registeredResources.add(eventBus);
@@ -82,29 +87,42 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus, commandBus,
                                                                 sagaType);
+        parameterResolverFactory = new FixtureResourceParameterResolverFactory(sagaType, registeredResources.toArray());
+        AnnotationConfiguration.reset(sagaType);
+        AnnotationConfiguration.configure(sagaType).useParameterResolverFactory(parameterResolverFactory);
     }
 
     @Override
     public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
-        fixtureExecutionResult.startRecording();
-        for (EventMessage event : eventScheduler.advanceTime(elapsedTime)) {
-            sagaManager.handle(event);
+        try {
+            fixtureExecutionResult.startRecording();
+            for (EventMessage event : eventScheduler.advanceTime(elapsedTime)) {
+                sagaManager.handle(event);
+            }
+        } finally {
+            AnnotationConfiguration.resetAll();
         }
         return fixtureExecutionResult;
     }
 
     @Override
     public FixtureExecutionResult whenTimeAdvancesTo(DateTime newDateTime) {
-        fixtureExecutionResult.startRecording();
-        for (EventMessage event : eventScheduler.advanceTime(newDateTime)) {
-            sagaManager.handle(event);
+        try {
+            fixtureExecutionResult.startRecording();
+            for (EventMessage event : eventScheduler.advanceTime(newDateTime)) {
+                sagaManager.handle(event);
+            }
+        } finally {
+            AnnotationConfiguration.resetAll();
         }
+
         return fixtureExecutionResult;
     }
 
     @Override
     public void registerResource(Object resource) {
         registeredResources.add(resource);
+        parameterResolverFactory.registerResource(resource);
     }
 
     @Override
@@ -158,8 +176,13 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public FixtureExecutionResult whenPublishingA(Object event) {
-        fixtureExecutionResult.startRecording();
-        sagaManager.handle(new GenericEventMessage<Object>(event));
+        try {
+            fixtureExecutionResult.startRecording();
+            sagaManager.handle(new GenericEventMessage<Object>(event));
+        } finally {
+            AnnotationConfiguration.resetAll();
+        }
+
         return fixtureExecutionResult;
     }
 
@@ -202,7 +225,11 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
         @Override
         public FixtureExecutionResult publishes(Object event) {
-            publish(event);
+            try {
+                publish(event);
+            } finally {
+                AnnotationConfiguration.resetAll();
+            }
             return fixtureExecutionResult;
         }
 

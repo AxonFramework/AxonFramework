@@ -21,11 +21,11 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.unitofwork.UnitOfWork;
 
 import java.lang.reflect.InvocationTargetException;
@@ -86,7 +86,8 @@ public class AnnotationCommandHandlerAdapter
     @Deprecated
     public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
         Assert.notNull(target, "target may not be null");
-        ParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(target.getClass());
+        ParameterResolverFactory factory = AnnotationConfiguration.readFor(target.getClass())
+                                                                  .getParameterResolverFactory();
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
                                                                                             CommandHandler.class,
                                                                                             factory,
@@ -107,8 +108,8 @@ public class AnnotationCommandHandlerAdapter
     public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler) {
         this(annotatedCommandHandler,
              new MultiParameterResolverFactory(new CurrentUnitOfWorkParameterResolverFactory(),
-                                               ClasspathParameterResolverFactory.forClass(annotatedCommandHandler
-                                                                                                  .getClass())));
+                                               AnnotationConfiguration.readFor(annotatedCommandHandler.getClass())
+                                                                      .getParameterResolverFactory()));
     }
 
     /**

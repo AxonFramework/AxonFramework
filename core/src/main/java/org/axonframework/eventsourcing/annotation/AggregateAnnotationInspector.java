@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.EventSourcedEntity;
@@ -56,20 +55,22 @@ public final class AggregateAnnotationInspector {
      * Returns (or creates) an inspector for the given <code>entityType</code>. If an instance is already created for
      * that type, that instance may be returned. Otherwise, a new inspector is created.
      *
-     * @param entityType The type of entity (aggregate root or simple member) to get an inspector for
+     * @param entityType               The type of entity (aggregate root or simple member) to get an inspector for
+     * @param parameterResolverFactory The factory providing access to the parameter resolvers
      * @return an inspector for the given entity type
      */
-    public static AggregateAnnotationInspector getInspector(Class<?> entityType) {
+    public static AggregateAnnotationInspector getInspector(Class<?> entityType,
+                                                            ParameterResolverFactory parameterResolverFactory) {
         AggregateAnnotationInspector inspector = INSTANCES.get(entityType);
-        if (inspector == null) {
-            inspector = new AggregateAnnotationInspector(entityType);
+        if (inspector == null || !parameterResolverFactory.equals(inspector.parameterResolverFactory)) {
+            inspector = new AggregateAnnotationInspector(entityType, parameterResolverFactory);
             INSTANCES.put(entityType, inspector);
         }
         return inspector;
     }
 
     @SuppressWarnings("unchecked")
-    private AggregateAnnotationInspector(Class<?> entityType) {
+    private AggregateAnnotationInspector(Class<?> entityType, ParameterResolverFactory parameterResolverFactory) {
         List<Field> annotatedFields = new ArrayList<Field>();
         for (Field field : ReflectionUtils.fieldsOf(entityType)) {
             if (field.isAnnotationPresent(EventSourcedMember.class)) {
@@ -83,7 +84,7 @@ public final class AggregateAnnotationInspector {
         } else {
             identifierField = null;
         }
-        parameterResolverFactory = ClasspathParameterResolverFactory.forClass(entityType);
+        this.parameterResolverFactory = parameterResolverFactory;
     }
 
     /**

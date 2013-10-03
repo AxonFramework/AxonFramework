@@ -16,14 +16,20 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
+import org.axonframework.domain.Message;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.*;
 
+import java.lang.annotation.Annotation;
 import java.util.UUID;
 import javax.persistence.Id;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -51,6 +57,21 @@ public class AbstractAnnotatedAggregateRootTest {
     public void testInitializeWithIdentifier() {
         testSubject = new SimpleAggregateRoot(UUID.randomUUID());
         assertEquals(0, testSubject.getUncommittedEventCount());
+    }
+
+    @Test
+    public void testHandleEventWithCustomParameter() {
+
+        final SomeResource resource = mock(SomeResource.class);
+        AnnotationConfiguration.configure(CustomParameterHandlerAggregateRoot.class)
+                               .useParameterResolverFactory(new SimpleParameterResolverFactory(resource));
+        try {
+            testSubject = new CustomParameterHandlerAggregateRoot();
+            assertEquals(1, testSubject.getUncommittedEventCount());
+            verify(resource).registerInvocation();
+        } finally {
+            AnnotationConfiguration.reset(CustomParameterHandlerAggregateRoot.class);
+        }
     }
 
     @Test
@@ -129,7 +150,33 @@ public class AbstractAnnotatedAggregateRootTest {
         public void doSomething() {
             apply(new StubDomainEvent());
         }
+    }
 
+
+    private static class CustomParameterHandlerAggregateRoot extends SimpleAggregateRoot {
+
+        private CustomParameterHandlerAggregateRoot() {
+            super();
+        }
+
+        private CustomParameterHandlerAggregateRoot(UUID identifier) {
+            super(identifier);
+        }
+
+        @EventHandler
+        public void myEventHandlerMethod(StubDomainEvent event, SomeResource resource) {
+            super.myEventHandlerMethod(event);
+            resource.registerInvocation();
+        }
+
+        public void doSomething() {
+            apply(new StubDomainEvent());
+        }
+    }
+
+    interface SomeResource {
+
+        void registerInvocation();
     }
 
     private static class SimpleEntity extends AbstractAnnotatedEntity {
@@ -139,6 +186,34 @@ public class AbstractAnnotatedAggregateRootTest {
         @EventHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             this.invocationCount++;
+        }
+    }
+
+    private static class SimpleParameterResolverFactory implements ParameterResolverFactory, ParameterResolver<Object> {
+
+        private final Object resource;
+
+        public SimpleParameterResolverFactory(Object resource) {
+            this.resource = resource;
+        }
+
+        @Override
+        public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                                Annotation[] parameterAnnotations) {
+            if (parameterType.isInstance(resource)) {
+                return this;
+            }
+            return null;
+        }
+
+        @Override
+        public Object resolveParameterValue(Message message) {
+            return resource;
+        }
+
+        @Override
+        public boolean matches(Message message) {
+            return true;
         }
     }
 }

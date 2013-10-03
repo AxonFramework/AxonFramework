@@ -27,6 +27,8 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -281,5 +283,15 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
+    }
+
+    /**
+     * Returns the set of Saga types managed by this instance.
+     *
+     * @return the set of Saga types managed by this instance.
+     */
+    @SuppressWarnings("unchecked")
+    public Set<Class<? extends Saga>> getManagedSagaTypes() {
+        return new HashSet<Class<? extends Saga>>(Arrays.asList(sagaTypes));
     }
 }

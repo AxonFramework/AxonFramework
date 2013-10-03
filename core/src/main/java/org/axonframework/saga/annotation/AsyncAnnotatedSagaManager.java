@@ -38,6 +38,7 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -62,8 +63,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     private static final int DEFAULT_BUFFER_SIZE = 512;
     private static final int DEFAULT_PROCESSOR_COUNT = 1;
 
-    private final SagaMethodMessageHandlerInspector[] sagaAnnotationInspectors;
     private final EventBus eventBus;
+    private final Class<? extends AbstractAnnotatedSaga>[] sagaTypes;
     private volatile Disruptor<AsyncSagaProcessingEvent> disruptor;
 
     private boolean shutdownExecutorOnStop = true;
@@ -93,10 +94,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     public AsyncAnnotatedSagaManager(EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         Assert.notNull(eventBus, "eventBus may not be null");
         this.eventBus = eventBus;
-        sagaAnnotationInspectors = new SagaMethodMessageHandlerInspector[sagaTypes.length];
-        for (int i = 0; i < sagaTypes.length; i++) {
-            sagaAnnotationInspectors[i] = SagaMethodMessageHandlerInspector.getInstance(sagaTypes[i]);
-        }
+        this.sagaTypes = Arrays.copyOf(sagaTypes, sagaTypes.length);
     }
 
     /**
@@ -108,10 +106,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
      */
     public AsyncAnnotatedSagaManager(Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         this.eventBus = null;
-        sagaAnnotationInspectors = new SagaMethodMessageHandlerInspector[sagaTypes.length];
-        for (int i = 0; i < sagaTypes.length; i++) {
-            sagaAnnotationInspectors[i] = SagaMethodMessageHandlerInspector.getInstance(sagaTypes[i]);
-        }
+        this.sagaTypes = Arrays.copyOf(sagaTypes, sagaTypes.length);
     }
 
     /**
@@ -173,7 +168,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     @Override
     public void handle(final EventMessage event) {
         if (disruptor != null) {
-            for (final SagaMethodMessageHandlerInspector inspector : sagaAnnotationInspectors) {
+            for (final Class<? extends AbstractAnnotatedSaga> sagaType : sagaTypes) {
+                SagaMethodMessageHandlerInspector inspector = SagaMethodMessageHandlerInspector.getInstance(sagaType);
                 final SagaMethodMessageHandler handler = inspector.getMessageHandler(event);
                 if (handler.isHandlerAvailable()) {
                     final AbstractAnnotatedSaga newSagaInstance;
@@ -195,7 +191,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
 
     @Override
     public Class<?> getTargetType() {
-        return sagaAnnotationInspectors[0].getSagaType();
+        return sagaTypes[0];
     }
 
     private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
@@ -389,8 +385,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
          * Initialize the Executor that delegates to the given <code>executor</code> and wait for at most
          * <code>timeoutMillis</code> for tasks to actually start.
          *
-         * @param executor
-         * @param timeoutMillis
+         * @param executor      The executor expected to provide a thread for execution
+         * @param timeoutMillis The maximum amount of time to wait for the thread to pick up the task
          */
         public ValidatingExecutor(Executor executor, long timeoutMillis) {
             this.delegate = executor;

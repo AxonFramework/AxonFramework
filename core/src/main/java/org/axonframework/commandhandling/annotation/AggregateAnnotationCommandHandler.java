@@ -23,10 +23,9 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -122,9 +121,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver) {
         this(aggregateType, repository, commandTargetResolver,
-             new MultiParameterResolverFactory(
-                     new CurrentUnitOfWorkParameterResolverFactory(),
-                     ClasspathParameterResolverFactory.forClass(aggregateType)));
+             AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory());
     }
 
     /**
@@ -194,7 +191,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         this.commandBus = commandBus;
         this.commandTargetResolver = commandTargetResolver;
         this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(
-                aggregateType, ClasspathParameterResolverFactory.forClass(aggregateType)));
+                aggregateType, AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory()));
     }
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {

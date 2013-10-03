@@ -101,4 +101,13 @@ public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
                 + "Is this entity properly registered as the child of an aggregate member?");
         aggregateRoot.apply(event, metaData);
     }
+
+    /**
+     * Returns the reference to the root of the aggregate this entity is a member of.
+     *
+     * @return the reference to the root of the aggregate this entity is a member of
+     */
+    protected AbstractEventSourcedAggregateRoot getAggregateRoot() {
+        return aggregateRoot;
+    }
 }

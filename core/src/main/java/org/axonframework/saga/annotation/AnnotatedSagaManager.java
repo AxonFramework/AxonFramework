@@ -26,9 +26,6 @@ import org.axonframework.saga.SagaCreationPolicy;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaRepository;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike
  * the SimpleSagaManager, this implementation can manage several types of Saga in a single AnnotatedSagaManager.
@@ -38,8 +35,6 @@ import java.util.Map;
  */
 public class AnnotatedSagaManager extends AbstractSagaManager {
 
-    private final Map<Class<? extends Saga>, SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>> managedSagaTypes =
-            new HashMap<Class<? extends Saga>, SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga>>();
 
     /**
      * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
@@ -72,9 +67,6 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory, EventBus eventBus,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(eventBus, sagaRepository, sagaFactory, sagaClasses);
-        for (Class<? extends AbstractAnnotatedSaga> sagaClass : sagaClasses) {
-            managedSagaTypes.put(sagaClass, SagaMethodMessageHandlerInspector.getInstance(sagaClass));
-        }
     }
 
     /**
@@ -99,20 +91,21 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(sagaRepository, sagaFactory, sagaClasses);
-        for (Class<? extends AbstractAnnotatedSaga> sagaClass : sagaClasses) {
-            managedSagaTypes.put(sagaClass, SagaMethodMessageHandlerInspector.getInstance(sagaClass));
-        }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
-        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector = managedSagaTypes.get(sagaType);
+        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
+                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType);
         return inspector.getMessageHandler(event).getCreationPolicy();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
-        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector = managedSagaTypes.get(sagaType);
+        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
+                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType);
         if (inspector == null) {
             return null;
         }
@@ -121,6 +114,6 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
 
     @Override
     public Class<?> getTargetType() {
-        return managedSagaTypes.keySet().iterator().next();
+        return getManagedSagaTypes().iterator().next();
     }
 }

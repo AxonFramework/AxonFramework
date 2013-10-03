@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
@@ -77,7 +78,9 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
 
     private void ensureInspectorInitialized() {
         if (inspector == null) {
-            inspector = AggregateAnnotationInspector.getInspector(getClass());
+            final Class<? extends AbstractAnnotatedAggregateRoot> aggregateType = getClass();
+            inspector = AggregateAnnotationInspector.getInspector(
+                    aggregateType, AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory());
         }
     }
 }

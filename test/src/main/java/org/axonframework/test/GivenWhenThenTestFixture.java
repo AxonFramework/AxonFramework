@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -107,9 +108,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
-        clearGivenWhenState();
+        parameterResolverFactory = new FixtureResourceParameterResolverFactory(aggregateType, eventBus, commandBus);
         this.aggregateType = aggregateType;
-        this.parameterResolverFactory = new FixtureResourceParameterResolverFactory(aggregateType, eventBus, commandBus);
+        AnnotationConfiguration.resetAll();
+        AnnotationConfiguration.configure(aggregateType).useParameterResolverFactory(parameterResolverFactory);
+        clearGivenWhenState();
     }
 
     @Override
@@ -210,17 +213,22 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         return when(command, MetaData.emptyInstance());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public ResultValidator when(Object command, Map<String, ?> metaData) {
-        finalizeConfiguration();
-        ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
-        commandBus.setHandlerInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
+        try {
+            finalizeConfiguration();
+            ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
+            commandBus.setHandlerInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
 
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
+            commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
-        detectIllegalStateChanges();
-        resultValidator.assertValidRecording();
-        return resultValidator;
+            detectIllegalStateChanges();
+            resultValidator.assertValidRecording();
+            return resultValidator;
+        } finally {
+            AnnotationConfiguration.resetAll();
+        }
     }
 
     private void ensureRepositoryConfiguration() {
@@ -239,8 +247,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         if (!explicitCommandHandlersSet) {
             AggregateAnnotationCommandHandler<T> handler =
                     new AggregateAnnotationCommandHandler<T>(aggregateType, repository,
-                                                             new AnnotationCommandTargetResolver(),
-                                                             parameterResolverFactory);
+                                                             new AnnotationCommandTargetResolver());
             for (String supportedCommand : handler.supportedCommands()) {
                 commandBus.subscribe(supportedCommand, handler);
             }

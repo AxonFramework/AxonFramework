@@ -17,10 +17,10 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
 
 import java.util.Set;
@@ -56,8 +56,8 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     public static <T extends AbstractAnnotatedSaga> SagaMethodMessageHandlerInspector<T> getInstance(
             Class<T> sagaType) {
         SagaMethodMessageHandlerInspector<T> sagaInspector = INSPECTORS.get(sagaType);
-        ClasspathParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(sagaType);
         if (sagaInspector == null) {
+            ParameterResolverFactory factory = AnnotationConfiguration.readFor(sagaType).getParameterResolverFactory();
             sagaInspector = new SagaMethodMessageHandlerInspector<T>(sagaType, factory);
             SagaMethodMessageHandlerInspector previous = INSPECTORS.putIfAbsent(sagaType, sagaInspector);
             if (previous != null && !previous.getParameterResolverFactory().equals(factory)) {
