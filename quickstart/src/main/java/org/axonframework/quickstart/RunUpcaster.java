@@ -17,6 +17,7 @@
 package org.axonframework.quickstart;
 
 import org.apache.commons.io.FileUtils;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -74,6 +75,7 @@ public class RunUpcaster {
             // and print them, so that we can see what we ended up with
             System.out.println(eventStream.next().getPayload().toString());
         }
+        IOUtils.closeQuietlyIfCloseable(eventStream);
     }
 
     /**

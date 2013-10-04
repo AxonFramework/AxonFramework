@@ -19,6 +19,7 @@ package org.axonframework.gae.eventstore;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -68,11 +69,15 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
     }
 
     public void createSnapshot(String typeIdentifier, String aggregateIdentifier) {
-        DomainEventStream eventStream =
-                eventStore.readEvents(typeIdentifier, aggregateIdentifier);
-        DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, eventStream);
-        if (snapshotEvent != null) {
-            eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
+        DomainEventStream eventStream = null;
+        try {
+            eventStream = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
+            DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, eventStream);
+            if (snapshotEvent != null) {
+                eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
+            }
+        } finally {
+            IOUtils.closeQuietlyIfCloseable(eventStream);
         }
     }
 

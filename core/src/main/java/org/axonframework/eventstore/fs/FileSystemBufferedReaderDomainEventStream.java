@@ -16,7 +16,6 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
@@ -54,7 +53,6 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
     private final FileSystemEventMessageReader eventMessageReader;
     private final UpcasterChain upcasterChain;
     private final Serializer serializer;
-    private final InputStream inputStream;
 
     /**
      * Initialize a BufferedReaderDomainEventStream using the given <code>inputStream</code> and
@@ -75,7 +73,6 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
     public FileSystemBufferedReaderDomainEventStream(InputStream inputStream,
                                                      Serializer serializer,
                                                      UpcasterChain upcasterChain) {
-        this.inputStream = inputStream;
         this.eventMessageReader = new FileSystemEventMessageReader(
                 new DataInputStream(new BufferedInputStream(inputStream)));
         this.upcasterChain = upcasterChain;
@@ -146,6 +143,6 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
     
     @Override
     public void close() throws IOException {
-    	IOUtils.closeQuietly(inputStream);
+    	eventMessageReader.close();
     }
 }

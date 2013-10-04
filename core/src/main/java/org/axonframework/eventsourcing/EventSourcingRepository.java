@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.io.CloseableUtils;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -31,6 +31,8 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -178,12 +180,15 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     @Override
     protected void doSaveWithLock(T aggregate) {
         DomainEventStream eventStream = aggregate.getUncommittedEvents();
-        Iterator<EventStreamDecorator> iterator = eventStreamDecorators.descendingIterator();
-        while (iterator.hasNext()) {
-            eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), aggregate, eventStream);
+        try {
+            Iterator<EventStreamDecorator> iterator = eventStreamDecorators.descendingIterator();
+            while (iterator.hasNext()) {
+                eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), aggregate, eventStream);
+            }
+            eventStore.appendEvents(getTypeIdentifier(), eventStream);
+        } finally {
+            IOUtils.closeQuietlyIfCloseable(eventStream);
         }
-        eventStore.appendEvents(getTypeIdentifier(), eventStream);
-        CloseableUtils.closeIfCloseable(eventStream);
     }
 
     /**
@@ -212,25 +217,33 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      */
     @Override
     protected T doLoad(Object aggregateIdentifier, final Long expectedVersion) {
-        DomainEventStream events;
+        DomainEventStream events = null;
+        DomainEventStream originalStream = null;
         try {
-            events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
-        } catch (EventStreamNotFoundException e) {
-            throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found", e);
-        }
-        for (EventStreamDecorator decorator : eventStreamDecorators) {
-            events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
-        }
+            try {
+                events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
+            } catch (EventStreamNotFoundException e) {
+                throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found", e);
+            }
+            originalStream = events;
+            for (EventStreamDecorator decorator : eventStreamDecorators) {
+                events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
+            }
 
-        final T aggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
-        List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
-        aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
-        CloseableUtils.closeIfCloseable(events);
-        if (aggregate.isDeleted()) {
-            throw new AggregateDeletedException(aggregateIdentifier);
+            final T aggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
+            List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
+            aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
+            if (aggregate.isDeleted()) {
+                throw new AggregateDeletedException(aggregateIdentifier);
+            }
+            CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
+
+            return aggregate;
+        } finally {
+            IOUtils.closeQuietlyIfCloseable(events);
+            // if a decorator doesn't implement closeable, we still want to be sure we close the original stream
+            IOUtils.closeQuietlyIfCloseable(originalStream);
         }
-        CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
-        return aggregate;
     }
 
     /**
@@ -350,7 +363,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * Wrapper around a DomainEventStream that captures all passing events of which the sequence number is larger than
      * the expected version number.
      */
-    private static final class CapturingEventStream implements DomainEventStream {
+    private static final class CapturingEventStream implements DomainEventStream, Closeable {
 
         private final DomainEventStream eventStream;
         private final List<DomainEventMessage> unseenEvents;
@@ -380,6 +393,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         @Override
         public DomainEventMessage peek() {
             return eventStream.peek();
+        }
+
+        @Override
+        public void close() throws IOException {
+            IOUtils.closeQuietlyIfCloseable(eventStream);
         }
     }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.quickstart;
 
 import org.apache.commons.io.FileUtils;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -59,6 +60,8 @@ public class RunUpcasterWithSpring {
             // and print them, so that we can see what we ended up with
             System.out.println(upcastEvents.next().getPayload().toString());
         }
+        IOUtils.closeQuietlyIfCloseable(upcastEvents);
+
         // to see the Upcaster doing the upcasting, see RunUpcaster, inner class ToDoItemUpcaster
 
         // we close the application context. It's just good habit
