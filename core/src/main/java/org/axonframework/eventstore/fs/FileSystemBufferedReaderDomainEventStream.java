@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
@@ -28,6 +29,7 @@ import org.axonframework.upcasting.UpcastSerializedDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 
 import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -46,12 +48,13 @@ import java.util.Queue;
  * @author Frank Versnel
  * @since 0.5
  */
-public class FileSystemBufferedReaderDomainEventStream implements DomainEventStream {
+public class FileSystemBufferedReaderDomainEventStream implements DomainEventStream, Closeable {
 
     private Queue<DomainEventMessage> next;
     private final FileSystemEventMessageReader eventMessageReader;
     private final UpcasterChain upcasterChain;
     private final Serializer serializer;
+    private final InputStream inputStream;
 
     /**
      * Initialize a BufferedReaderDomainEventStream using the given <code>inputStream</code> and
@@ -72,6 +75,7 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
     public FileSystemBufferedReaderDomainEventStream(InputStream inputStream,
                                                      Serializer serializer,
                                                      UpcasterChain upcasterChain) {
+        this.inputStream = inputStream;
         this.eventMessageReader = new FileSystemEventMessageReader(
                 new DataInputStream(new BufferedInputStream(inputStream)));
         this.upcasterChain = upcasterChain;
@@ -138,5 +142,10 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
             events.add(message);
         }
         return events;
+    }
+    
+    @Override
+    public void close() throws IOException {
+    	IOUtils.closeQuietly(inputStream);
     }
 }

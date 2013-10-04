@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.io.CloseableUtils;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -182,6 +183,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), aggregate, eventStream);
         }
         eventStore.appendEvents(getTypeIdentifier(), eventStream);
+        CloseableUtils.closeIfCloseable(eventStream);
     }
 
     /**
@@ -223,6 +225,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         final T aggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
         List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
         aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
+        CloseableUtils.closeIfCloseable(events);
         if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
