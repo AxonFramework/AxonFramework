@@ -33,6 +33,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.repository.Repository;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -48,7 +49,10 @@ import java.util.Map;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 /**
+ * BeanDefinitionParser that parses <code>&lt;disruptor-command-bus&gt;</code> elements in the Spring context
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
 public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
@@ -175,18 +179,18 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         String id = repository.getAttribute(ATTRIBUTE_ID);
         BeanDefinitionBuilder definitionBuilder =
                 genericBeanDefinition(RepositoryFactoryBean.class)
-                        .addConstructorArgReference(commandBusId);
+                        .addPropertyReference("commandBus", commandBusId);
         if (repository.hasAttribute(ATTRIBUTE_AGGREGATE_FACTORY)) {
             definitionBuilder = definitionBuilder
-                    .addConstructorArgReference(repository.getAttribute(ATTRIBUTE_AGGREGATE_FACTORY));
+                    .addPropertyReference("aggregateFactory", repository.getAttribute(ATTRIBUTE_AGGREGATE_FACTORY));
         } else {
             final String aggregateType = repository.getAttribute(ATTRIBUTE_AGGREGATE_TYPE);
-            Assert.notNull(aggregateType, "Either one of 'aggregate-type' or 'aggregate-factory' attributes must be "
+            Assert.notEmpty(aggregateType, "Either one of 'aggregate-type' or 'aggregate-factory' attributes must be "
                     + "set on repository elements in <disruptor-command-bus>");
             definitionBuilder = definitionBuilder
-                    .addConstructorArgValue(genericBeanDefinition(GenericAggregateFactory.class)
-                                                    .addConstructorArgValue(aggregateType)
-                                                    .getBeanDefinition());
+                    .addPropertyValue("aggregateFactory", genericBeanDefinition(GenericAggregateFactory.class)
+                            .addConstructorArgValue(aggregateType)
+                            .getBeanDefinition());
         }
         final AbstractBeanDefinition definition = definitionBuilder.getBeanDefinition();
         parserContext.getRegistry().registerBeanDefinition(id, definition);
@@ -295,21 +299,8 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
      */
     public static class RepositoryFactoryBean implements FactoryBean<Repository> {
 
-        private final DisruptorCommandBus commandBus;
-        private final AggregateFactory<? extends EventSourcedAggregateRoot> factory;
-
-        /**
-         * Initialize the factory bean to generate repositories for the given <code>commandBus</code>, using given
-         * <code>factory</code> to create aggregate instances
-         *
-         * @param commandBus The command bus to create repositories for
-         * @param factory    The factory creating uninitialized instances of aggregates
-         */
-        public RepositoryFactoryBean(DisruptorCommandBus commandBus,
-                                     AggregateFactory<? extends EventSourcedAggregateRoot> factory) {
-            this.commandBus = commandBus;
-            this.factory = factory;
-        }
+        private DisruptorCommandBus commandBus;
+        private AggregateFactory<? extends EventSourcedAggregateRoot> factory;
 
         @Override
         public Repository getObject() throws Exception {
@@ -324,6 +315,28 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         @Override
         public boolean isSingleton() {
             return true;
+        }
+
+        /**
+         * The DisruptorCommandBus instance to create the repository from. This is a required property, but cannot be
+         * set using constructor injection, as Spring will see it as a circular dependency.
+         *
+         * @param commandBus DisruptorCommandBus instance to create the repository from
+         */
+        @Required
+        public void setCommandBus(DisruptorCommandBus commandBus) {
+            this.commandBus = commandBus;
+        }
+
+        /**
+         * Sets the aggregate factory used to create instances for the repository to create. This is a required
+         * property, but cannot be set using constructor injection, as Spring will see it as a circular dependency.
+         *
+         * @param factory the aggregate factory used to create instances for the repository to create
+         */
+        @Required
+        public void setAggregateFactory(AggregateFactory<? extends EventSourcedAggregateRoot> factory) {
+            this.factory = factory;
         }
     }
 }
