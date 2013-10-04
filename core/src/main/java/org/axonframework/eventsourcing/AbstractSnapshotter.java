@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.DirectExecutor;
+import org.axonframework.common.io.CloseableUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Executor;
+
 import javax.annotation.Resource;
 
 /**
@@ -91,6 +93,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             if (snapshotEvent != null && snapshotEvent.getSequenceNumber() > firstEventSequenceNumber) {
                 eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
             }
+            CloseableUtils.closeIfCloseable(eventStream);
         }
     }
 
