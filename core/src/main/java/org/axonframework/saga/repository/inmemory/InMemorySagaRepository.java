@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2013. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -38,7 +38,7 @@ public class InMemorySagaRepository implements SagaRepository {
     @SuppressWarnings("unchecked")
     @Override
     public Set<String> find(Class<? extends Saga> type, AssociationValue associationValue) {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new TreeSet<String>();
         for (Saga saga : managedSagas.values()) {
             if (saga.getAssociationValues().contains(associationValue) && type.isInstance(saga)) {
                 result.add(saga.getSagaIdentifier());
