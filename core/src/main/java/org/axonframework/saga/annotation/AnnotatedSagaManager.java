@@ -106,9 +106,6 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
         SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
                 SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType);
-        if (inspector == null) {
-            return null;
-        }
         return inspector.getMessageHandler(event).getAssociationValue(event);
     }
 

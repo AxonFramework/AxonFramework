@@ -35,7 +35,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     private static final long serialVersionUID = 2385024168304711298L;
 
-    private final AssociationValues associationValues;
+    private final AssociationValues associationValues = new AssociationValuesImpl();
     private final String identifier;
     private transient volatile SagaEventHandlerInvoker eventHandlerInvoker;
     private volatile boolean isActive = true;
@@ -56,9 +56,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
      */
     protected AbstractAnnotatedSaga(String identifier) {
         this.identifier = identifier;
-        associationValues = new AssociationValuesImpl();
         associationValues.add(new AssociationValue("sagaIdentifier", identifier));
-        eventHandlerInvoker = new SagaEventHandlerInvoker(this);
     }
 
     @Override
@@ -73,18 +71,18 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     @Override
     public final void handle(EventMessage event) {
-        if (eventHandlerInvoker == null) {
-            eventHandlerInvoker = new SagaEventHandlerInvoker(this);
-        }
-        doHandle(event);
-    }
-
-    private void doHandle(EventMessage event) {
         if (isActive) {
+            ensureInvokerInitialized();
             eventHandlerInvoker.invokeSagaEventHandlerMethod(event);
             if (eventHandlerInvoker.isEndingEvent(event)) {
                 end();
             }
+        }
+    }
+
+    private void ensureInvokerInitialized() {
+        if (eventHandlerInvoker == null) {
+            eventHandlerInvoker = new SagaEventHandlerInvoker(this);
         }
     }
 
