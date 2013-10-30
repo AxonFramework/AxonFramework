@@ -58,8 +58,13 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
         SagaMethodMessageHandlerInspector<T> sagaInspector = INSPECTORS.get(sagaType);
         if (sagaInspector == null) {
             ParameterResolverFactory factory = AnnotationConfiguration.readFor(sagaType).getParameterResolverFactory();
-            sagaInspector = INSPECTORS.putIfAbsent(sagaType,
-                                                   new SagaMethodMessageHandlerInspector<T>(sagaType, factory));
+            final SagaMethodMessageHandlerInspector<T> newInspector =
+                    new SagaMethodMessageHandlerInspector<T>(sagaType, factory);
+
+            sagaInspector = INSPECTORS.putIfAbsent(sagaType, newInspector);
+            if (sagaInspector == null) {
+                sagaInspector = newInspector;
+            }
         }
         return sagaInspector;
     }
