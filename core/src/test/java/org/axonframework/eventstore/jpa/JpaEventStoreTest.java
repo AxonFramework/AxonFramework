@@ -244,6 +244,7 @@ public class JpaEventStoreTest {
         assertEquals(110L, t);
     }
 
+    @DirtiesContext
     @Test
     public void testLoad_LargeAmountOfEventsInSmallBatches() {
         testSubject.setBatchSize(10);
@@ -537,6 +538,7 @@ public class JpaEventStoreTest {
                                                       "Mock contents", MetaData.emptyInstance())));
     }
 
+    @DirtiesContext
     @Test
     public void testStoreDuplicateEvent_NoSqlExceptionTranslator() {
         testSubject.setPersistenceExceptionResolver(null);
@@ -558,6 +560,7 @@ public class JpaEventStoreTest {
         }
     }
 
+    @DirtiesContext
     @Test
     public void testPrunesSnaphotsWhenNumberOfSnapshotsExceedsConfiguredMaxSnapshotsArchived() {
         testSubject.setMaxSnapshotsArchived(1);
@@ -596,6 +599,7 @@ public class JpaEventStoreTest {
     }
 
     @SuppressWarnings({"PrimitiveArrayArgumentToVariableArgMethod", "unchecked"})
+    @DirtiesContext
     @Test
     public void testCustomEventEntryStore() {
         EventEntryStore eventEntryStore = mock(EventEntryStore.class);
