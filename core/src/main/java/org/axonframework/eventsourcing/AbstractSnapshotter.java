@@ -21,6 +21,7 @@ import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.repository.ConcurrencyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,6 +151,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         public void run() {
             try {
                 snapshotterTask.run();
+            } catch (ConcurrencyException e) {
+                logger.info("Failed to insert a snapshot. A snapshot entry already exists.");
             } catch (RuntimeException e) {
                 if (logger.isDebugEnabled()) {
                     logger.warn("An attempt to create and store a snapshot resulted in an exception:", e);
