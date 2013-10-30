@@ -20,7 +20,6 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 
@@ -28,20 +27,23 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.domain.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
 public class AnnotatedSagaManagerTest {
 
-    private SagaRepository sagaRepository;
+    private InMemorySagaRepository sagaRepository;
     private AnnotatedSagaManager manager;
 
     @Before
@@ -108,7 +110,7 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testNullAssociationValueDoesNotThrowNullPointer() {
-        manager.handle(GenericEventMessage.asEventMessage(new StartingEvent(null)));
+        manager.handle(asEventMessage(new StartingEvent(null)));
     }
 
     @Test
@@ -123,6 +125,25 @@ public class AnnotatedSagaManagerTest {
     public void testLifeCycle_IgnoredEventDoesNotCreateInstance() {
         manager.handle(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
+    }
+
+    @Test(timeout = 5000)
+    public void testEventForSagaIsHandledWhenSagaIsBeingCreated() throws InterruptedException {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        final CountDownLatch awaitStart = new CountDownLatch(1);
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                manager.handle(new GenericEventMessage<StartingEvent>(new SlowStartingEvent("12", awaitStart, 100)));
+            }
+        });
+        awaitStart.await();
+        manager.handle(asEventMessage(new MiddleEvent("12")));
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.SECONDS);
+
+        assertEquals(1, repositoryContents("12").size());
+        assertEquals(2, repositoryContents("12").iterator().next().getCapturedEvents().size());
     }
 
     private Set<MyTestSaga> repositoryContents(String lookupValue) {
@@ -144,6 +165,14 @@ public class AnnotatedSagaManagerTest {
         @SagaEventHandler(associationProperty = "myIdentifier")
         public void handleSomeEvent(StartingEvent event) {
             capturedEvents.add(event);
+        }
+
+        @StartSaga
+        @SagaEventHandler(associationProperty = "myIdentifier")
+        public void handleSomeEvent(SlowStartingEvent event) throws InterruptedException {
+            event.getStartCdl().countDown();
+            capturedEvents.add(event);
+            Thread.sleep(event.getDuration());
         }
 
         @StartSaga(forceNew = true)
@@ -185,6 +214,26 @@ public class AnnotatedSagaManagerTest {
 
         protected StartingEvent(String myIdentifier) {
             super(myIdentifier);
+        }
+    }
+    public static class SlowStartingEvent extends StartingEvent {
+
+
+        private final CountDownLatch startCdl;
+        private final long duration;
+
+        protected SlowStartingEvent(String myIdentifier, CountDownLatch startCdl, long duration) {
+            super(myIdentifier);
+            this.startCdl = startCdl;
+            this.duration = duration;
+        }
+
+        public long getDuration() {
+            return duration;
+        }
+
+        public CountDownLatch getStartCdl() {
+            return startCdl;
         }
     }
 

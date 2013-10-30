@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Default implementation of the AssociationValues interface. This implementation is fully serializable.
@@ -35,7 +36,7 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
 
     private static final long serialVersionUID = 8273718165811296962L;
 
-    private final Set<AssociationValue> values = new HashSet<AssociationValue>();
+    private final Set<AssociationValue> values = new CopyOnWriteArraySet<AssociationValue>();
     private transient Set<AssociationValue> addedValues = new HashSet<AssociationValue>();
     private transient Set<AssociationValue> removedValues = new HashSet<AssociationValue>();
 
