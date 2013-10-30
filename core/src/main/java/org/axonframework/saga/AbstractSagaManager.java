@@ -26,7 +26,10 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -50,6 +53,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
+    private Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
 
     /**
      * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code>.
@@ -84,7 +88,12 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private boolean invokeExistingSagas(EventMessage event, Class<? extends Saga> sagaType,
                                         AssociationValue associationValue) {
-        Set<String> sagas = sagaRepository.find(sagaType, associationValue);
+        Set<String> sagas = new TreeSet<String>(sagaRepository.find(sagaType, associationValue));
+        for (Saga sagaInCreation : sagasInCreation.values()) {
+            if (sagaInCreation.getAssociationValues().contains(associationValue)) {
+                sagas.add(sagaInCreation.getSagaIdentifier());
+            }
+        }
         boolean sagaOfTypeInvoked = false;
         for (final String sagaId : sagas) {
             if (synchronizeSagaAccess) {
@@ -108,23 +117,28 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     private void startNewSaga(EventMessage event, Class<? extends Saga> sagaType, AssociationValue associationValue) {
         Saga newSaga = sagaFactory.createSaga(sagaType);
         newSaga.getAssociationValues().add(associationValue);
-        if (synchronizeSagaAccess) {
-            lock.obtainLock(newSaga.getSagaIdentifier());
-            try {
-                doInvokeSaga(event, newSaga);
-            } finally {
+        sagasInCreation.put(newSaga.getSagaIdentifier(), newSaga);
+        try {
+            if (synchronizeSagaAccess) {
+                lock.obtainLock(newSaga.getSagaIdentifier());
                 try {
-                    sagaRepository.add(newSaga);
+                    doInvokeSaga(event, newSaga);
                 } finally {
-                    doReleaseLock(newSaga.getSagaIdentifier(), newSaga);
+                    try {
+                        sagaRepository.add(newSaga);
+                    } finally {
+                        doReleaseLock(newSaga.getSagaIdentifier(), newSaga);
+                    }
+                }
+            } else {
+                try {
+                    doInvokeSaga(event, newSaga);
+                } finally {
+                    sagaRepository.add(newSaga);
                 }
             }
-        } else {
-            try {
-                doInvokeSaga(event, newSaga);
-            } finally {
-                sagaRepository.add(newSaga);
-            }
+        } finally {
+            removeEntry(newSaga.getSagaIdentifier(), sagasInCreation);
         }
     }
 
@@ -137,6 +151,19 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
                 public void onCleanup(UnitOfWork unitOfWork) {
                     // a reference to the saga is maintained to prevent it from GC until after the UoW commit
                     lock.releaseLock(sagaInstance.getSagaIdentifier());
+                }
+            });
+        }
+    }
+
+    private void removeEntry(final String sagaIdentifier, final Map<String, ?> sagaMap) {
+        if (!CurrentUnitOfWork.isStarted()) {
+            sagaMap.remove(sagaIdentifier);
+        } else {
+            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
+                @Override
+                public void afterCommit(UnitOfWork unitOfWork) {
+                    sagaMap.remove(sagaIdentifier);
                 }
             });
         }
