@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2013. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,7 +152,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
         T similarAggregate = (T) findSimilarAggregate(aggregate.getClass(), aggregate.getIdentifier());
         if (similarAggregate != null) {
             if (logger.isInfoEnabled()) {
-                logger.info("Ignoring aggregate registration. An aggregate of same type and identifier was already"
+                logger.info("Ignoring aggregate registration. An aggregate of same type and identifier was already "
                                     + "registered in this Unit Of Work: type [{}], identifier [{}]",
                             aggregate.getClass().getSimpleName(),
                             aggregate.getIdentifier());
