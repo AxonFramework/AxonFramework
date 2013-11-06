@@ -75,9 +75,8 @@ public final class MethodMessageHandlerInspector {
         String key = annotationType.getName() + "@" + handlerClass.getName();
         MethodMessageHandlerInspector inspector = INSPECTORS.get(key);
         if (inspector == null) {
-            INSPECTORS.putIfAbsent(key, new MethodMessageHandlerInspector(handlerClass, annotationType,
-                                                                          allowDuplicates));
-            inspector = INSPECTORS.get(key);
+            inspector = new MethodMessageHandlerInspector(handlerClass, annotationType, allowDuplicates);
+            INSPECTORS.putIfAbsent(key, inspector);
         }
         return inspector;
     }
