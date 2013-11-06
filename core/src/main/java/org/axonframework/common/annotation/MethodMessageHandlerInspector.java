@@ -93,7 +93,7 @@ public final class MethodMessageHandlerInspector {
             boolean allowDuplicates, HandlerPayloadTypeResolver<T> payloadTypeResolver) {
         String key = annotationType.getName() + "@" + handlerClass.getName();
         MethodMessageHandlerInspector inspector = INSPECTORS.get(key);
-        if (inspector == null || !inspector.parameterResolver.equals(parameterResolverFactory)) {
+        while (inspector == null || !inspector.parameterResolver.equals(parameterResolverFactory)) {
             final MethodMessageHandlerInspector newInspector = new MethodMessageHandlerInspector(
                     parameterResolverFactory,
                     handlerClass,
