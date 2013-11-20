@@ -104,7 +104,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         eventsCollection.ensureIndex(new BasicDBObject(EventEntry.TIME_STAMP_PROPERTY, 1)
                                              .append(EventEntry.SEQUENCE_NUMBER_PROPERTY, 1),
                                      "orderedEventStreamIndex",
-                                     true);
+                                     false);
         snapshotsCollection.ensureIndex(new BasicDBObject(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
                                              .append(EventEntry.AGGREGATE_TYPE_PROPERTY, 1)
                                              .append(EventEntry.SEQUENCE_NUMBER_PROPERTY, 1),
