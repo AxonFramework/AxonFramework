@@ -22,11 +22,18 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -41,8 +48,9 @@ public class SagaManagerTest {
     private Saga mockSaga1;
     private Saga mockSaga2;
     private Saga mockSaga3;
-    private SagaFactory mockSagaFactory;
+    private SagaCreationPolicy sagaCreationPolicy;
     private AssociationValue associationValue;
+    private SagaFactory mockSagaFactory;
 
     @Before
     public void setUp() throws Exception {
@@ -62,13 +70,14 @@ public class SagaManagerTest {
         when(mockSagaRepository.load("saga2")).thenReturn(mockSaga2);
         when(mockSagaRepository.load("saga3")).thenReturn(mockSaga3);
         associationValue = new AssociationValue("association", "value");
-        for(Saga saga : setOf(mockSaga1, mockSaga2, mockSaga3)) {
+        for (Saga saga : setOf(mockSaga1, mockSaga2, mockSaga3)) {
             final AssociationValuesImpl associationValues = new AssociationValuesImpl();
             associationValues.add(associationValue);
             when(saga.getAssociationValues()).thenReturn(associationValues);
         }
         when(mockSagaRepository.find(isA(Class.class), eq(associationValue)))
                 .thenReturn(setOf("saga1", "saga2", "saga3"));
+        sagaCreationPolicy = SagaCreationPolicy.NONE;
 
         testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockSagaFactory, Saga.class);
     }
@@ -134,6 +143,42 @@ public class SagaManagerTest {
         verify(mockSagaRepository).commit(mockSaga2);
     }
 
+    @Test
+    public synchronized void testAccessToSagaWhileInCreation() throws InterruptedException {
+        when(mockSagaFactory.createSaga(isA(Class.class))).thenReturn(mockSaga1);
+        reset(mockSagaRepository);
+        when(mockSagaRepository.find(isA(Class.class), isA(AssociationValue.class)))
+                .thenReturn(Collections.<String>emptySet())
+                .thenReturn(singleton("saga1"));
+
+        sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
+        final AtomicInteger nestingCounter = new AtomicInteger(20);
+        final EventMessage event = GenericEventMessage.asEventMessage(new Object());
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                if (nestingCounter.decrementAndGet() > 0) {
+                    UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+                    try {
+                        testSubject.handle(event);
+                    } finally {
+                        uow.commit();
+                    }
+                }
+                return null;
+            }
+        }).when(mockSaga1).handle(isA(EventMessage.class));
+
+        testSubject.handle(event);
+
+        verify(mockSagaRepository).add(mockSaga1);
+        verify(mockSagaRepository, times(19)).commit(mockSaga1);
+
+        verify(mockSagaRepository, never()).load("saga1");
+    }
+
+
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
         return ListOrderedSet.decorate(Arrays.asList(items));
@@ -159,7 +204,7 @@ public class SagaManagerTest {
 
         @Override
         protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
-            return SagaCreationPolicy.NONE;
+            return sagaCreationPolicy;
         }
 
         @Override

@@ -215,7 +215,11 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     protected abstract AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event);
 
     private Saga loadAndInvoke(EventMessage event, String sagaId, AssociationValue association) {
-        Saga saga = sagaRepository.load(sagaId);
+        Saga saga = sagasInCreation.get(sagaId);
+        if (saga == null) {
+            saga = sagaRepository.load(sagaId);
+        }
+
         if (saga == null || !saga.isActive() || !saga.getAssociationValues().contains(association)) {
             return null;
         }
