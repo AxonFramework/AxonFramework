@@ -22,7 +22,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * CommandCallback implementation that simply logs the results of a command.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
 public class LoggingCallback implements CommandCallback<Object> {
 
@@ -30,6 +33,11 @@ public class LoggingCallback implements CommandCallback<Object> {
 
     private final CommandMessage<?> message;
 
+    /**
+     * Initialize a LoggingCallback for the given <code>message</code>.
+     *
+     * @param message The message for which the results are to be logged.
+     */
     public LoggingCallback(CommandMessage<?> message) {
         this.message = message;
     }

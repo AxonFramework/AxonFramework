@@ -56,7 +56,6 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     private final StubEventScheduler eventScheduler;
     private final AnnotatedSagaManager sagaManager;
     private final List<Object> registeredResources = new LinkedList<Object>();
-    private final Class<? extends AbstractAnnotatedSaga> sagaType;
 
     private Map<Object, AggregateEventPublisherImpl> aggregatePublishers =
             new HashMap<Object, AggregateEventPublisherImpl>();
@@ -71,7 +70,6 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
      */
     @SuppressWarnings({"unchecked"})
     public AnnotatedSagaTestFixture(Class<? extends AbstractAnnotatedSaga> sagaType) {
-        this.sagaType = sagaType;
         eventScheduler = new StubEventScheduler();
         GenericSagaFactory genericSagaFactory = new GenericSagaFactory();
         genericSagaFactory.setResourceInjector(new AutowiredResourceInjector(registeredResources));

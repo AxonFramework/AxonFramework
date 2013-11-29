@@ -374,7 +374,7 @@ public class GatewayProxyFactory {
                                               List<CommandDispatchInterceptor> commandDispatchInterceptors,
                                               MetaDataExtractor[] metaDataExtractors, boolean useCallbacks) {
             super(commandBus, retryScheduler, commandDispatchInterceptors);
-            this.metaDataExtractors = metaDataExtractors;
+            this.metaDataExtractors = metaDataExtractors; // NOSONAR
             this.useCallbacks = useCallbacks;
         }
 
@@ -434,14 +434,14 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class WrapNonDeclaredCheckedExceptions<R> implements InvocationHandler<R> {
+    private static final class WrapNonDeclaredCheckedExceptions<R> implements InvocationHandler<R> {
 
         private final Class<?>[] declaredExceptions;
         private final InvocationHandler<R> delegate;
 
         private WrapNonDeclaredCheckedExceptions(InvocationHandler<R> delegate, Class<?>[] declaredExceptions) {
             this.delegate = delegate;
-            this.declaredExceptions = declaredExceptions;
+            this.declaredExceptions = declaredExceptions; // NOSONAR
         }
 
         @Override

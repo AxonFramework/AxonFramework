@@ -7,16 +7,42 @@ import java.util.Properties;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
+ * RevisionResolver that uses Maven meta data to retrieve the application version. This application version is used
+ * as event revision.
+ * <p/>
+ * By default, Maven stores the meta-data in a file called 'pom.properties' in the JAR files under
+ * 'META-INF/maven/&lt;groupId&gt;/&lt;artifactId&gt;/'.
+ *
  * @author Allard Buijze
+ * @since 2.1
  */
 public class MavenArtifactRevisionResolver implements RevisionResolver {
 
     private final String version;
 
+    /**
+     * Initialize the RevisionResolver to look for the version in the Meta Data of the artifact with given
+     * <code>groupId</code> and <code>artifactId</code>.
+     * <p/>
+     * The class loader that loaded the MavenArtifactRevisionResolver class is used to load the artifact configuration.
+     *
+     * @param groupId    The groupId as defined in the pom.xml file of the module
+     * @param artifactId The artifactId as defined in the pom.xml file of the module
+     * @throws IOException When an exception occurs reading from the maven configuration file
+     */
     public MavenArtifactRevisionResolver(String groupId, String artifactId) throws IOException {
         this(groupId, artifactId, MavenArtifactRevisionResolver.class.getClassLoader());
     }
 
+    /**
+     * Initialize the RevisionResolver to look for the version in the Meta Data of the artifact with given
+     * <code>groupId</code> and <code>artifactId</code>.
+     *
+     * @param groupId     The groupId as defined in the pom.xml file of the module
+     * @param artifactId  The artifactId as defined in the pom.xml file of the module
+     * @param classLoader The class loader to load the artifact configuration with
+     * @throws IOException When an exception occurs reading from the maven configuration file
+     */
     public MavenArtifactRevisionResolver(String groupId, String artifactId, ClassLoader classLoader)
             throws IOException {
         final InputStream propFile = classLoader.getResourceAsStream(

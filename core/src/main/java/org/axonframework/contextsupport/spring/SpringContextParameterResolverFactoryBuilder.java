@@ -28,7 +28,6 @@ import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.ManagedList;
-import org.springframework.context.ApplicationContext;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -38,9 +37,12 @@ import org.springframework.util.ClassUtils;
  * @author Allard Buijze
  * @since 2.1
  */
-public class SpringContextParameterResolverFactoryBuilder {
+public final class SpringContextParameterResolverFactoryBuilder {
 
     private static final String PARAMETER_RESOLVER_FACTORY_BEAN_NAME = "__axon-parameter-resolver-factory";
+
+    private SpringContextParameterResolverFactoryBuilder() {
+    }
 
     /**
      * Create, if necessary, a bean definition for a ParameterResolverFactory and returns the reference to bean for use
@@ -78,7 +80,6 @@ public class SpringContextParameterResolverFactoryBuilder {
 
         @Override
         public Class<?> getObjectType() {
-            ApplicationContext c;
             return ClasspathParameterResolverFactory.class;
         }
 

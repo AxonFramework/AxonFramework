@@ -30,6 +30,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Spring Factory bean that creates a JGroupsConnector and starts it when the application context is started. This bean
@@ -53,6 +54,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private String beanName;
     private ApplicationContext applicationContext;
     private List<CommandHandlerInterceptor> interceptors;
+    private long joinTimeout = -1;
 
     @Override
     public Object getObject() throws Exception {
@@ -135,6 +137,21 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     }
 
     /**
+     * Sets the number of milliseconds to wait for this member to join the group. Setting this to a non-negative number
+     * will cause the start() method to block for at most the given number of milliseconds. After that timeout,
+     * attempts to join the cluster will be performed on the background.
+     * <p/>
+     * Setting a negative value will cause the {@link #start()} method to wait until the member joined the cluster.
+     * <p/>
+     * Defaults to -1, which causes the {@link #start()} to wait indefinitely, until the member has joined the cluster.
+     *
+     * @param joinTimeout The number of milliseconds to wait for the member to join the cluster
+     */
+    public void setJoinTimeout(long joinTimeout) {
+        this.joinTimeout = joinTimeout;
+    }
+
+    /**
      * Sets the CommandBus instance on which local commands must be dispatched. Defaults to a SimpleCommandBus.
      *
      * @param localSegment the CommandBus instance to dispatch local messages on
@@ -167,7 +184,11 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     public void start() {
         try {
             connector.connect(loadFactor);
-            connector.awaitJoined();
+            if (joinTimeout >= 0) {
+                connector.awaitJoined(joinTimeout, TimeUnit.MILLISECONDS);
+            } else {
+                connector.awaitJoined();
+            }
         } catch (Exception e) {
             throw new ConnectionFailedException("Could not start JGroups Connector", e);
         }

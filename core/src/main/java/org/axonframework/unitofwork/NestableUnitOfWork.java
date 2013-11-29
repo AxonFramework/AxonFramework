@@ -208,7 +208,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
     }
 
     private void registerInnerUnitOfWork(NestableUnitOfWork unitOfWork) {
-        if (outerUnitOfWork != null && outerUnitOfWork instanceof NestableUnitOfWork) {
+        if (outerUnitOfWork instanceof NestableUnitOfWork) {
             ((NestableUnitOfWork) outerUnitOfWork).registerInnerUnitOfWork(unitOfWork);
         } else {
             innerUnitsOfWork.add(unitOfWork);

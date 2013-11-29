@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Required;
 /**
  * Spring FactoryBean that creates an AggregateAnnotationCommandHandler instance.
  *
+ * @param <T> The aggregate type on which command handlers are declared.
  * @author Allard Buijze
  * @since 2.1
  */

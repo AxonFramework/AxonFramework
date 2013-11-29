@@ -39,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * @author Allard Buijze
  * @since 2.1
  */
-public class AnnotationConfiguration implements AnnotationConfigurationBuilder, AnnotationConfigurationReader {
+public final class AnnotationConfiguration implements AnnotationConfigurationBuilder, AnnotationConfigurationReader {
 
     private static final AnnotationConfiguration DEFAULT = new AnnotationConfiguration();
     private static final ConcurrentMap<Class<?>, AnnotationConfiguration> CONFIGS = new ConcurrentHashMap<Class<?>, AnnotationConfiguration>();

@@ -26,6 +26,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.interceptors.SerializationOptimizingInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
@@ -227,7 +228,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public void dispatch(final CommandMessage<?> command) {
-        dispatch(command, null);
+        dispatch(command, new LoggingCallback(command));
     }
 
     @Override

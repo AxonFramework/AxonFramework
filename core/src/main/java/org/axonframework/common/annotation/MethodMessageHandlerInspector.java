@@ -59,6 +59,7 @@ public final class MethodMessageHandlerInspector {
      * @param parameterResolverFactory The strategy for resolving parameter value for handler methods
      * @param allowDuplicates          Indicates whether to accept multiple handlers listening to Messages with the
      *                                 same payload type
+     * @param <T>                      The type of annotation used to mark handler methods
      * @return a MethodMessageHandlerInspector providing access to the handler methods
      */
     public static <T extends Annotation> MethodMessageHandlerInspector getInstance(
@@ -86,6 +87,7 @@ public final class MethodMessageHandlerInspector {
      *                                 same payload type
      * @param payloadTypeResolver      The resolver providing the explicitly configured payload type of a method, if
      *                                 any
+     * @param <T>                      The type of annotation used to mark handler methods
      * @return a MethodMessageHandlerInspector providing access to the handler methods
      */
     public static <T extends Annotation> MethodMessageHandlerInspector getInstance(

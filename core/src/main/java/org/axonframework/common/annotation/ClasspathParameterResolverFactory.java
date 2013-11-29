@@ -36,9 +36,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @see ServiceLoader
  * @since 2.1
  */
-public class ClasspathParameterResolverFactory implements ParameterResolverFactory {
+public final class ClasspathParameterResolverFactory implements ParameterResolverFactory {
 
-    private final List<ParameterResolverFactory> RESOLVERS = new CopyOnWriteArrayList<ParameterResolverFactory>();
+    private final List<ParameterResolverFactory> resolvers = new CopyOnWriteArrayList<ParameterResolverFactory>();
 
     private static final Object monitor = new Object();
     private static final Map<ClassLoader, WeakReference<ClasspathParameterResolverFactory>> factories =
@@ -84,14 +84,14 @@ public class ClasspathParameterResolverFactory implements ParameterResolverFacto
             classLoader = Thread.currentThread().getContextClassLoader();
         }
         for (ParameterResolverFactory factory : ServiceLoader.load(ParameterResolverFactory.class, classLoader)) {
-            RESOLVERS.add(factory);
+            resolvers.add(factory);
         }
     }
 
     @Override
     public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                             Annotation[] parameterAnnotations) {
-        for (ParameterResolverFactory factory : RESOLVERS) {
+        for (ParameterResolverFactory factory : resolvers) {
             ParameterResolver resolver = factory.createInstance(memberAnnotations, parameterType, parameterAnnotations);
             if (resolver != null) {
                 return resolver;
