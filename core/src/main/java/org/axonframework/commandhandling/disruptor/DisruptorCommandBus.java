@@ -122,6 +122,7 @@ public class DisruptorCommandBus implements CommandBus {
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
     private final int serializerCount;
+    private final CommandCallback<Object> failureLoggingCallback = new FailureLoggingCommandCallback();
 
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
@@ -224,7 +225,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     @Override
     public void dispatch(final CommandMessage<?> command) {
-        dispatch(command, null);
+        dispatch(command, failureLoggingCallback);
     }
 
     @Override
@@ -325,6 +326,18 @@ public class DisruptorCommandBus implements CommandBus {
         disruptor.shutdown();
         if (executorService != null) {
             executorService.shutdown();
+        }
+    }
+
+    private static class FailureLoggingCommandCallback implements CommandCallback<Object> {
+
+        @Override
+        public void onSuccess(Object result) {
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
+            logger.info("An error occurred while handling a command.", cause);
         }
     }
 
