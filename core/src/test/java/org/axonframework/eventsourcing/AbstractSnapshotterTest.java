@@ -25,6 +25,7 @@ import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.unitofwork.TransactionManager;
 import org.hamcrest.Matcher;
 import org.junit.*;
 import org.mockito.*;
@@ -134,6 +135,21 @@ public class AbstractSnapshotterTest {
                                                               "Mock contents", MetaData.emptyInstance())));
         testSubject.scheduleSnapshot("test", aggregateIdentifier);
         verify(mockEventStore, never()).appendSnapshotEvent(any(String.class), any(DomainEventMessage.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testScheduleSnapshot_WithTransaction() {
+        final TransactionManager txManager = mock(TransactionManager.class);
+        testSubject.setTxManager(txManager);
+
+        testScheduleSnapshot();
+
+        InOrder inOrder = inOrder(mockEventStore, txManager);
+        inOrder.verify(txManager).startTransaction();
+        inOrder.verify(mockEventStore).readEvents(isA(String.class), anyObject());
+        inOrder.verify(mockEventStore).appendSnapshotEvent(anyString(), isA(DomainEventMessage.class));
+        inOrder.verify(txManager).commitTransaction(anyObject());
     }
 
     private Matcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {
