@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.util.ArrayList;
@@ -51,15 +51,6 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
     private boolean autoDetectAggregateFactories = true;
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-
-    @Override
-    protected Runnable createSnapshotterTask(String typeIdentifier, Object aggregateIdentifier) {
-        Runnable command = super.createSnapshotterTask(typeIdentifier, aggregateIdentifier);
-        if (transactionManager != null) {
-            return new TransactionalRunnableWrapper(command);
-        }
-        return command;
-    }
 
     /**
      * Sets the transaction manager to manager underlying transaction with. If none is provided, an attempt is made to
@@ -103,6 +94,9 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
                 this.transactionManager = candidates.values().iterator().next();
             }
         }
+        if (transactionManager != null) {
+            setTxManager(new SpringTransactionManager(transactionManager, transactionDefinition));
+        }
     }
 
     /**
@@ -122,28 +116,4 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
         this.applicationContext = applicationContext;
     }
 
-    private class TransactionalRunnableWrapper implements Runnable {
-
-        private final Runnable command;
-
-        public TransactionalRunnableWrapper(Runnable command) {
-            this.command = command;
-        }
-
-        @Override
-        public void run() {
-            TransactionStatus transaction = transactionManager.getTransaction(transactionDefinition);
-            try {
-                command.run();
-                if (transaction.isNewTransaction()) {
-                    transactionManager.commit(transaction);
-                }
-            } catch (RuntimeException e) {
-                if (transaction.isNewTransaction()) {
-                    transactionManager.rollback(transaction);
-                }
-                throw e;
-            }
-        }
-    }
 }

@@ -22,6 +22,8 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.unitofwork.NoTransactionManager;
+import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +46,14 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     private SnapshotEventStore eventStore;
     private Executor executor = DirectExecutor.INSTANCE;
+    private TransactionManager transactionManager = new NoTransactionManager();
 
     @Override
     public void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier) {
-        executor.execute(new SilentTask(createSnapshotterTask(typeIdentifier, aggregateIdentifier)));
+        executor.execute(new SilentTask(
+                new TransactionalRunnableWrapper(transactionManager,
+                                                 createSnapshotterTask(typeIdentifier, aggregateIdentifier)
+                )));
     }
 
     /**
@@ -122,6 +128,16 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     /**
+     * Sets the transactionManager that wraps the snapshot creation in a transaction. By default, no transactions are
+     * created.
+     *
+     * @param transactionManager the transactionManager to create transactions with
+     */
+    public void setTxManager(TransactionManager<?> transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    /**
      * Returns the event store this snapshotter uses to load domain events and store snapshot events.
      *
      * @return the event store this snapshotter uses to load domain events and store snapshot events.
@@ -137,6 +153,30 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      */
     protected Executor getExecutor() {
         return executor;
+    }
+
+    private static class TransactionalRunnableWrapper implements Runnable {
+
+        private final Runnable command;
+        private final TransactionManager transactionManager;
+
+        public TransactionalRunnableWrapper(TransactionManager transactionManager, Runnable command) {
+            this.command = command;
+            this.transactionManager = transactionManager;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void run() {
+            Object transaction = transactionManager.startTransaction();
+            try {
+                command.run();
+                transactionManager.commitTransaction(transaction);
+            } catch (RuntimeException e) {
+                transactionManager.rollbackTransaction(transaction);
+                throw e;
+            }
+        }
     }
 
     private static class SilentTask implements Runnable {
