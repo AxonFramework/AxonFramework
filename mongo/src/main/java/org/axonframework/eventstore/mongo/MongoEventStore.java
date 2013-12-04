@@ -24,6 +24,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.PartialStreamSupport;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.EventStoreManagement;
@@ -55,7 +56,7 @@ import javax.annotation.PostConstruct;
  * @author Jettro Coenradie
  * @since 2.0 (in incubator since 0.7)
  */
-public class MongoEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware {
+public class MongoEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware, PartialStreamSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStore.class);
 
@@ -166,6 +167,27 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     }
 
     @Override
+    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber) {
+        return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
+    }
+
+    @Override
+    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                        long lastSequenceNumber) {
+        final DBCursor dbCursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
+                                                             type,
+                                                             identifier.toString(),
+                                                             firstSequenceNumber);
+
+        DomainEventStream stream = new CursorBackedDomainEventStream(dbCursor, null, identifier, lastSequenceNumber,
+                                                                     false);
+        if (!stream.hasNext()) {
+            throw new EventStreamNotFoundException(type, identifier);
+        }
+        return stream;
+    }
+
+    @Override
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         final DBObject dbObject = storageStrategy.createDocuments(type, eventSerializer,
                                                                   Collections.singletonList(snapshotEvent))[0];
@@ -223,6 +245,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         private DomainEventMessage next;
         private final DBCursor dbCursor;
         private final Object actualAggregateIdentifier;
+        private final long lastSequenceNumber;
         private boolean skipUnknownTypes;
 
         /**
@@ -234,11 +257,33 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
          *                                  available
          * @param actualAggregateIdentifier The actual aggregateIdentifier instance used to perform the lookup, or
          *                                  <code>null</code> if unknown
+         * @param skipUnknownTypes          Whether or not the stream should ignore events that cannot be deserialized
          */
         public CursorBackedDomainEventStream(DBCursor dbCursor, List<DomainEventMessage> lastSnapshotCommit,
                                              Object actualAggregateIdentifier, boolean skipUnknownTypes) {
+            this(dbCursor, lastSnapshotCommit, actualAggregateIdentifier, Long.MAX_VALUE, skipUnknownTypes);
+        }
+
+        /**
+         * Initializes the DomainEventStream, streaming events obtained from the given <code>dbCursor</code> and
+         * optionally the given <code>lastSnapshotEvent</code>, which stops streaming once an event with a sequence
+         * number higher given than <code>lastSequenceNumber</code>.
+         *
+         * @param dbCursor                  The cursor providing access to the query results in the Mongo instance
+         * @param lastSnapshotCommit        The last snapshot event read, or <code>null</code> if no snapshot is
+         *                                  available
+         * @param actualAggregateIdentifier The actual aggregateIdentifier instance used to perform the lookup, or
+         *                                  <code>null</code> if unknown
+         * @param lastSequenceNumber        The highest sequence number this stream may return before indicating
+         *                                  end-of-stream
+         * @param skipUnknownTypes          Whether or not the stream should ignore events that cannot be deserialized
+         */
+        public CursorBackedDomainEventStream(DBCursor dbCursor, List<DomainEventMessage> lastSnapshotCommit,
+                                             Object actualAggregateIdentifier, long lastSequenceNumber,
+                                             boolean skipUnknownTypes) {
             this.dbCursor = dbCursor;
             this.actualAggregateIdentifier = actualAggregateIdentifier;
+            this.lastSequenceNumber = lastSequenceNumber;
             this.skipUnknownTypes = skipUnknownTypes;
             if (lastSnapshotCommit != null) {
                 messagesToReturn = lastSnapshotCommit.iterator();
@@ -248,7 +293,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
 
         @Override
         public boolean hasNext() {
-            return next != null;
+            return next != null && next.getSequenceNumber() <= lastSequenceNumber;
         }
 
         @Override

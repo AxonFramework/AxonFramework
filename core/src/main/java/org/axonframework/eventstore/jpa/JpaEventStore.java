@@ -23,6 +23,7 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.PartialStreamSupport;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.jpa.criteria.JpaCriteria;
 import org.axonframework.eventstore.jpa.criteria.JpaCriteriaBuilder;
@@ -67,7 +68,7 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  * @author Allard Buijze
  * @since 0.5
  */
-public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware {
+public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware, PartialStreamSupport {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaEventStore.class);
 
@@ -76,11 +77,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
     private final MessageSerializer serializer;
     private final EventEntryStore eventEntryStore;
+    private final JpaCriteriaBuilder criteriaBuilder = new JpaCriteriaBuilder();
+    private final EntityManagerProvider entityManagerProvider;
+
     private int batchSize = DEFAULT_BATCH_SIZE;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
-    private final EntityManagerProvider entityManagerProvider;
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
-
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
     /**
@@ -202,17 +204,34 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
             }
         }
 
-        EntityManager entityManager1 = entityManagerProvider.getEntityManager();
-        Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(type,
-                                                                                                     identifier,
-                                                                                                     snapshotSequenceNumber
-                                                                                                             + 1,
-                                                                                                     batchSize,
-                                                                                                     entityManager1);
+        Iterator<? extends SerializedDomainEventData> entries =
+                eventEntryStore.fetchAggregateStream(type, identifier, snapshotSequenceNumber + 1,
+                                                     batchSize, entityManager);
         if (snapshotEvent == null && !entries.hasNext()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
         return new CursorBackedDomainEventStream(snapshotEvent, entries, identifier, false);
+    }
+
+    @Override
+    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber) {
+        return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
+    }
+
+    @Override
+    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                        long lastSequenceNumber) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        int minimalBatchSize = (int) Math.min(batchSize, (lastSequenceNumber - firstSequenceNumber) + 2);
+        Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(type,
+                                                                                                     identifier,
+                                                                                                     firstSequenceNumber,
+                                                                                                     minimalBatchSize,
+                                                                                                     entityManager);
+        if (!entries.hasNext()) {
+            throw new EventStreamNotFoundException(type, identifier);
+        }
+        return new CursorBackedDomainEventStream(null, entries, identifier, lastSequenceNumber, false);
     }
 
     /**
@@ -251,7 +270,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
     @Override
     public CriteriaBuilder newCriteriaBuilder() {
-        return new JpaCriteriaBuilder();
+        return criteriaBuilder;
     }
 
     private void doVisitEvents(EventVisitor visitor, String whereClause, Map<String, Object> parameters) {
@@ -330,12 +349,21 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         private DomainEventMessage next;
         private final Iterator<? extends SerializedDomainEventData> cursor;
         private final Object aggregateIdentifier;
+        private final long lastSequenceNumber;
         private final boolean skipUnknownTypes;
 
         public CursorBackedDomainEventStream(DomainEventMessage snapshotEvent,
                                              Iterator<? extends SerializedDomainEventData> cursor,
                                              Object aggregateIdentifier, boolean skipUnknownTypes) {
+            this(snapshotEvent, cursor, aggregateIdentifier, Long.MAX_VALUE, skipUnknownTypes);
+        }
+
+        public CursorBackedDomainEventStream(DomainEventMessage snapshotEvent,
+                                             Iterator<? extends SerializedDomainEventData> cursor,
+                                             Object aggregateIdentifier, long lastSequenceNumber,
+                                             boolean skipUnknownTypes) {
             this.aggregateIdentifier = aggregateIdentifier;
+            this.lastSequenceNumber = lastSequenceNumber;
             this.skipUnknownTypes = skipUnknownTypes;
             if (snapshotEvent != null) {
                 currentBatch = Collections.singletonList(snapshotEvent).iterator();
@@ -348,7 +376,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
         @Override
         public boolean hasNext() {
-            return next != null;
+            return next != null && next.getSequenceNumber() <= lastSequenceNumber;
         }
 
         @Override

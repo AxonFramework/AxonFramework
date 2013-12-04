@@ -201,6 +201,46 @@ public class MongoEventStoreTest {
 
     @DirtiesContext
     @Test
+    public void testLoadPartiallyWithSnapshotEvent() {
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        aggregate1.changeState();
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+
+        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier(), 3);
+        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        while (actualEventStream.hasNext()) {
+            domainEvents.add(actualEventStream.next());
+        }
+
+        assertEquals(8, domainEvents.size());
+        assertEquals(3, domainEvents.get(0).getSequenceNumber());
+    }
+
+    @DirtiesContext
+    @Test
+    public void testLoadPartiallyWithEndWithSnapshotEvent() {
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        aggregate1.changeState();
+        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        aggregate1.commitEvents();
+
+        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier(), 3, 6);
+        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        while (actualEventStream.hasNext()) {
+            domainEvents.add(actualEventStream.next());
+        }
+
+        assertEquals(4, domainEvents.size());
+        assertEquals(3, domainEvents.get(0).getSequenceNumber());
+    }
+
+    @DirtiesContext
+    @Test
     public void testLoadWithMultipleSnapshotEvents() {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();

@@ -707,6 +707,69 @@ public class JpaEventStoreTest {
         verify(eventEntryStore).loadLastSnapshotEvent("test", "1", entityManager);
     }
 
+    @Test
+    @Transactional
+    public void testReadPartialStream_WithoutEnd() {
+        final UUID aggregateIdentifier = UUID.randomUUID();
+        testSubject.appendEvents("test", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 4,
+                                                      "Mock contents", MetaData.emptyInstance())));
+        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>(aggregateIdentifier,
+                                                                                      (long) 3,
+                                                                                      "Mock contents",
+                                                                                      MetaData.emptyInstance()));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        DomainEventStream actual = testSubject.readEvents("test", aggregateIdentifier, 2);
+        for (int i=2;i<=4;i++) {
+            assertTrue(actual.hasNext());
+            assertEquals(i, actual.next().getSequenceNumber());
+        }
+        assertFalse(actual.hasNext());
+    }
+
+    @Test
+    @Transactional
+    public void testReadPartialStream_WithEnd() {
+        final UUID aggregateIdentifier = UUID.randomUUID();
+        testSubject.appendEvents("test", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
+                                                      "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 4,
+                                                      "Mock contents", MetaData.emptyInstance())));
+
+        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>(aggregateIdentifier,
+                                                                                      (long) 3,
+                                                                                      "Mock contents",
+                                                                                      MetaData.emptyInstance()));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        DomainEventStream actual = testSubject.readEvents("test", aggregateIdentifier, 2, 3);
+        for (int i=2;i<=3;i++) {
+            assertTrue(actual.hasNext());
+            assertEquals(i, actual.next().getSequenceNumber());
+        }
+        assertFalse(actual.hasNext());
+    }
+
     private SerializedObject<byte[]> mockSerializedObject(byte[] bytes) {
         return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "java.lang.String", "0");
     }
