@@ -25,6 +25,7 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.PartialStreamSupport;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -52,7 +53,7 @@ public class CachingEventSourcingRepositoryTest {
 
     @Before
     public void setUp() {
-        mockEventStore = new InMemoryEventStore();
+        mockEventStore = spy(new InMemoryEventStore());
         testSubject = new CachingEventSourcingRepository<StubAggregate>(new StubAggregateFactory(), mockEventStore);
         mockEventBus = mock(EventBus.class);
         testSubject.setEventBus(mockEventBus);
@@ -161,6 +162,59 @@ public class CachingEventSourcingRepositoryTest {
     }
 
     @Test
+    public void testLoadAggregateFromCacheWithExpectedVersion_ConcurrentModificationsDetected() {
+        // configure a repository that uses a PartialStreamSupport Event store
+        mockEventStore = spy(new PartialReadingInMemoryEventStore());
+        testSubject = new CachingEventSourcingRepository<StubAggregate>(new StubAggregateFactory(), mockEventStore);
+        testSubject.setEventBus(mockEventBus);
+        testSubject.setCache(cache);
+
+
+        final ConflictResolver conflictResolver = mock(ConflictResolver.class);
+        testSubject.setConflictResolver(conflictResolver);
+        StubAggregate aggregate1 = new StubAggregate();
+
+        DefaultUnitOfWork.startAndGet();
+        aggregate1.doSomething();
+        aggregate1.doSomething();
+        testSubject.add(aggregate1);
+        CurrentUnitOfWork.commit();
+
+        assertNotNull(((StubAggregate) cache.get(aggregate1.getIdentifier())).getVersion());
+
+        DefaultUnitOfWork.startAndGet();
+        StubAggregate loadedAggregate = testSubject.load(aggregate1.getIdentifier(), 0L);
+        loadedAggregate.doSomething();
+        CurrentUnitOfWork.commit();
+
+        assertEquals(3, mockEventStore.readEventsAsList(aggregate1.getIdentifier()).size());
+
+        verify(mockEventStore, never()).readEvents(anyString(), anyObject());
+
+        verify(conflictResolver).resolveConflicts(argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+            @Override
+            public boolean matchesSafely(List<DomainEventMessage> item) {
+                return item.size() == 1 && item.get(0).getSequenceNumber() == 2;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("a list with 1 event, having sequence number 2");
+            }
+        }), argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+            @Override
+            public boolean matchesSafely(List<DomainEventMessage> item) {
+                return item.size() == 1 && item.get(0).getSequenceNumber() == 1;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("a list with 1 event, having sequence number 1");
+            }
+        }));
+    }
+
+    @Test
     public void testLoadDeletedAggregate() {
         DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate1 = new StubAggregate();
@@ -218,9 +272,34 @@ public class CachingEventSourcingRepositoryTest {
         }
     }
 
+    private class PartialReadingInMemoryEventStore extends InMemoryEventStore implements PartialStreamSupport {
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber) {
+            return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
+        }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            if (!store.containsKey(identifier)) {
+                throw new AggregateNotFoundException(identifier, "Aggregate not found");
+            }
+            final List<DomainEventMessage> events = store.get(identifier);
+            List<DomainEventMessage> filteredEvents = new ArrayList<DomainEventMessage>();
+            for (DomainEventMessage message : events) {
+                if (message.getSequenceNumber() >= firstSequenceNumber
+                        && message.getSequenceNumber() <= lastSequenceNumber) {
+                    filteredEvents.add(message);
+                }
+            }
+            return new SimpleDomainEventStream(filteredEvents);
+        }
+    }
+
     private class InMemoryEventStore implements EventStore {
 
-        private Map<Object, List<DomainEventMessage>> store = new HashMap<Object, List<DomainEventMessage>>();
+        protected Map<Object, List<DomainEventMessage>> store = new HashMap<Object, List<DomainEventMessage>>();
 
         @Override
         public void appendEvents(String identifier, DomainEventStream events) {

@@ -31,9 +31,9 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
-import java.util.ArrayDeque;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -65,7 +65,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * aggregate instances of given <code>aggregateType</code>.
      *
      * @param aggregateType The type of aggregate stored in this repository
-     * @param eventStore The event store that holds the event streams for this repository
+     * @param eventStore    The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore) {
@@ -77,7 +77,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * create new aggregate instances.
      *
      * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore The event store that holds the event streams for this repository
+     * @param eventStore       The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore) {
@@ -91,7 +91,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * Initialize a repository with the given locking strategy.
      *
      * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore The event store that holds the event streams for this repository
+     * @param eventStore       The event store that holds the event streams for this repository
      * @param lockManager      the locking strategy to apply to this repository
      */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
@@ -107,7 +107,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * instances.
      *
      * @param aggregateType The type of aggregate to store in this repository
-     * @param eventStore The event store that holds the event streams for this repository
+     * @param eventStore    The event store that holds the event streams for this repository
      * @param lockManager   the locking strategy to apply to this
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
@@ -155,8 +155,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @return the fully initialized aggregate
      *
      * @throws AggregateDeletedException in case an aggregate existed in the past, but has been deleted
-     * @throws org.axonframework.repository.AggregateNotFoundException
-     *                                   when an aggregate with the given identifier does not exist
+     * @throws AggregateNotFoundException when an aggregate with the given identifier does not exist
      */
     @Override
     protected T doLoad(Object aggregateIdentifier, final Long expectedVersion) {
@@ -196,6 +195,17 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      */
     public AggregateFactory<T> getAggregateFactory() {
         return aggregateFactory;
+    }
+
+    /**
+     * Resolve (potential) conflicts for the given <code>aggregate</code>, where given <code>unseenEvents</code> may
+     * have been concurrently applied.
+     *
+     * @param aggregate    The aggregate containing the potential conflicts
+     * @param unseenEvents The events that have been concurrenly applied
+     */
+    protected void resolveConflicts(T aggregate, DomainEventStream unseenEvents) {
+        CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, asList(unseenEvents)));
     }
 
     private List<DomainEventMessage> asList(DomainEventStream domainEventStream) {
