@@ -16,9 +16,9 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
+
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
@@ -114,7 +114,8 @@ public class DisruptorCommandBusTest {
                 inMemoryEventStore, eventBus,
                 new DisruptorConfiguration().setInvokerInterceptors(Arrays.asList(mockHandlerInterceptor))
                                             .setDispatchInterceptors(Arrays.asList(mockDispatchInterceptor))
-                                            .setClaimStrategy(new SingleThreadedClaimStrategy(8))
+                                            .setBufferSize(8)
+                                            .setProducerType(ProducerType.SINGLE)
                                             .setWaitStrategy(new SleepingWaitStrategy())
                                             .setExecutor(customExecutor)
                                             .setInvokerThreadCount(2)
@@ -297,7 +298,8 @@ public class DisruptorCommandBusTest {
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore, eventBus,
                 new DisruptorConfiguration().setInvokerInterceptors(Arrays.asList(mockInterceptor))
-                                            .setClaimStrategy(new MultiThreadedClaimStrategy(8))
+                                            .setBufferSize(8)
+                                            .setProducerType(ProducerType.MULTI)
                                             .setWaitStrategy(new SleepingWaitStrategy())
                                             .setExecutor(customExecutor)
                                             .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
@@ -343,7 +345,8 @@ public class DisruptorCommandBusTest {
 
         testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus,
                                               new DisruptorConfiguration()
-                                                      .setClaimStrategy(new SingleThreadedClaimStrategy(8))
+                                                      .setBufferSize(8)
+                                                      .setProducerType(ProducerType.SINGLE)
                                                       .setWaitStrategy(new SleepingWaitStrategy())
                                                       .setInvokerThreadCount(2)
                                                       .setPublisherThreadCount(3));

@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
+import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
@@ -166,8 +167,9 @@ public class DisruptorCommandBus implements CommandBus {
         TransactionManager transactionManager = configuration.getTransactionManager();
         disruptor = new Disruptor<CommandHandlingEntry>(
                 new CommandHandlingEntry.Factory(configuration.getTransactionManager() != null),
+                configuration.getBufferSize(),
                 executor,
-                configuration.getClaimStrategy(),
+                configuration.getProducerType(),
                 configuration.getWaitStrategy());
         commandTargetResolver = configuration.getCommandTargetResolver();
 

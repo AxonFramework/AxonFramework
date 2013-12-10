@@ -17,9 +17,8 @@
 package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.ClaimStrategy;
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 import net.sf.jsr107cache.Cache;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
@@ -51,7 +50,8 @@ public class DisruptorConfiguration {
      */
     public static final int DEFAULT_BUFFER_SIZE = 4096;
 
-    private ClaimStrategy claimStrategy;
+    private int bufferSize;
+    private ProducerType producerType;
     private WaitStrategy waitStrategy;
     private Executor executor;
     private RollbackConfiguration rollbackConfiguration;
@@ -71,43 +71,17 @@ public class DisruptorConfiguration {
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
-     * multi-threaded claim strategy.
+     * multi-threaded producer type.
      */
     public DisruptorConfiguration() {
-        this.claimStrategy = new MultiThreadedClaimStrategy(DEFAULT_BUFFER_SIZE);
+        this.bufferSize = DEFAULT_BUFFER_SIZE;
+        this.producerType = ProducerType.MULTI;
         this.waitStrategy = new BlockingWaitStrategy();
         coolingDownPeriod = 1000;
         cache = NoCache.INSTANCE;
         rescheduleCommandsOnCorruptState = true;
         rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
         commandTargetResolver = new AnnotationCommandTargetResolver();
-    }
-
-    /**
-     * Returns the ClaimStrategy currently configured.
-     *
-     * @return the ClaimStrategy currently configured
-     */
-    public ClaimStrategy getClaimStrategy() {
-        return claimStrategy;
-    }
-
-    /**
-     * Sets the ClaimStrategy (including buffer size) which prescribes how threads get access to provide commands to
-     * the CommandBus' RingBuffer.
-     * <p/>
-     * Defaults to a MultiThreadedClaimStrategy with 4096 elements in the RingBuffer.
-     *
-     * @param claimStrategy The ClaimStrategy to use
-     * @return <code>this</code> for method chaining
-     *
-     * @see com.lmax.disruptor.MultiThreadedClaimStrategy MultiThreadedClaimStrategy
-     * @see com.lmax.disruptor.SingleThreadedClaimStrategy SingleThreadedClaimStrategy
-     */
-    public DisruptorConfiguration setClaimStrategy(ClaimStrategy claimStrategy) { //NOSONAR (setter may hide field)
-        Assert.notNull(claimStrategy, "claimStrategy must not be null");
-        this.claimStrategy = claimStrategy;
-        return this;
     }
 
     /**
@@ -528,6 +502,48 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setTransactionManager(TransactionManager newTransactionManager) {
         this.transactionManager = newTransactionManager;
+        return this;
+    }
+
+    /**
+     * Returns the buffer size to use.
+     *
+     * @return the buffer size to use.
+     */
+    public int getBufferSize() {
+        return bufferSize;
+    }
+
+    /**
+     * Sets the buffer size to use.
+     * The default is 4096.
+     *
+     * @param newBufferSize the buffer size to use
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setBufferSize(int newBufferSize) {
+        this.bufferSize = newBufferSize;
+        return this;
+    }
+
+    /**
+     * Returns the producer type to use.
+     *
+     * @return the producer type to use.
+     */
+    public ProducerType getProducerType() {
+        return producerType;
+    }
+
+    /**
+     * Sets the producer type to use.
+     * The default is to use a multi-threaded producer type.
+     *
+     * @param newProducerType the producer type to use
+     * @return <code>this</code> for method chaining
+     */
+    public DisruptorConfiguration setProducerType(ProducerType newProducerType) {
+        this.producerType = newProducerType;
         return this;
     }
 }
