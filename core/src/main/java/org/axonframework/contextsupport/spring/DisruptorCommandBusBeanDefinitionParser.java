@@ -18,12 +18,11 @@ package org.axonframework.contextsupport.spring;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.BusySpinWaitStrategy;
-import com.lmax.disruptor.ClaimStrategy;
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
-import com.lmax.disruptor.SingleThreadedClaimStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
+
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.disruptor.DisruptorConfiguration;
 import org.axonframework.common.Assert;
@@ -65,9 +64,8 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
 
     private static final String PROPERTY_WAIT_STRATEGY = "waitStrategy";
     private static final String ATTRIBUTE_WAIT_STRATEGY = "wait-strategy";
-    private static final String PROPERTY_CLAIM_STRATEGY = "claimStrategy";
-    private static final String ATTRIBUTE_CLAIM_STRATEGY = "claim-strategy";
-    private static final String ATTRIBUTE_BUFFER_SIZE = "buffer-size";
+    private static final String PROPERTY_PRODUCER_TYPE = "producerType";
+    private static final String ATTRIBUTE_PRODUCER_TYPE = "producer-type";
     private static final String ELEMENT_REPOSITORIES = "repositories";
 
     private static final String ATTRIBUTE_TRANSACTION_MANAGER = "transaction-manager";
@@ -126,7 +124,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                 builder.addPropertyValue(entry.getValue(), element.getAttribute(entry.getKey()));
             }
         }
-        parseClaimStrategy(element, builder);
+        parseProducerType(element, builder);
         parseWaitStrategy(element, builder);
         parseTransactionManager(element, builder);
 
@@ -152,16 +150,13 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         }
     }
 
-    private void parseClaimStrategy(Element element, BeanDefinitionBuilder builder) {
-        if (element.hasAttribute(ATTRIBUTE_BUFFER_SIZE) || element.hasAttribute(ATTRIBUTE_CLAIM_STRATEGY)) {
-            final BeanDefinitionBuilder claimStrategy = BeanDefinitionBuilder
-                    .genericBeanDefinition(ClaimStrategyFactoryBean.class)
-                    .addPropertyValue("strategy", element.getAttribute(ATTRIBUTE_CLAIM_STRATEGY));
-            if (element.hasAttribute(ATTRIBUTE_BUFFER_SIZE)) {
-                claimStrategy.addPropertyValue("bufferSize", element.getAttribute(ATTRIBUTE_BUFFER_SIZE));
-            }
-            builder.addPropertyValue(PROPERTY_CLAIM_STRATEGY, claimStrategy.getBeanDefinition());
+    private void parseProducerType(Element element, BeanDefinitionBuilder builder) {
+        final BeanDefinitionBuilder producerType = BeanDefinitionBuilder
+                .genericBeanDefinition(ProducerTypeFactoryBean.class);
+        if (element.hasAttribute(ATTRIBUTE_PRODUCER_TYPE)) {
+            producerType.addPropertyValue("type", element.getAttribute(ATTRIBUTE_PRODUCER_TYPE));
         }
+        builder.addPropertyValue(PROPERTY_PRODUCER_TYPE, producerType.getBeanDefinition());
     }
 
     private void parseWaitStrategy(Element element, BeanDefinitionBuilder builder) {
@@ -201,22 +196,21 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     }
 
     /**
-     * Factory bean that creates a ClaimStrategy instance.
+     * Factory bean that creates a ProducerType instance.
      */
-    private static final class ClaimStrategyFactoryBean implements FactoryBean<ClaimStrategy>, InitializingBean {
+    private static final class ProducerTypeFactoryBean implements FactoryBean<ProducerType>, InitializingBean {
 
-        private ClaimStrategy claimStrategy;
-        private int bufferSize = DisruptorConfiguration.DEFAULT_BUFFER_SIZE;
-        private String strategy;
+        private ProducerType producerType;
+        private String type;
 
         @Override
-        public ClaimStrategy getObject() throws Exception {
-            return claimStrategy;
+        public ProducerType getObject() throws Exception {
+            return producerType;
         }
 
         @Override
         public Class<?> getObjectType() {
-            return ClaimStrategy.class;
+            return ProducerType.class;
         }
 
         @Override
@@ -226,34 +220,24 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
 
         @Override
         public void afterPropertiesSet() throws Exception {
-            if ("single-threaded".equals(strategy)) {
-                claimStrategy = new SingleThreadedClaimStrategy(bufferSize);
+            if ("single-threaded".equals(type)) {
+                producerType = ProducerType.SINGLE;
             } else {
-                claimStrategy = new MultiThreadedClaimStrategy(bufferSize);
+                producerType = ProducerType.MULTI;
             }
         }
 
         /**
-         * Sets the size of the Disruptor's buffer.
+         * Sets the name of the producer type to use.
          *
-         * @param bufferSize the size of the Disruptor's buffer
+         * @param type the name of the producer type to use
          */
         @SuppressWarnings("UnusedDeclaration")
-        public void setBufferSize(int bufferSize) {
-            this.bufferSize = bufferSize;
-        }
-
-        /**
-         * Sets the name of the claim strategy to use.
-         *
-         * @param strategy the name of the claim strategy to use
-         */
-        @SuppressWarnings("UnusedDeclaration")
-        public void setStrategy(String strategy) {
-            Assert.isTrue("single-threaded".equals(strategy) || "multi-threaded".equals(strategy),
-                          "The given value for claim strategy (" + strategy
+        public void setType(String type) {
+            Assert.isTrue("single-threaded".equals(type) || "multi-threaded".equals(type),
+                          "The given value for producer type (" + type
                                   + ") is not valid. It must either be 'single-threaded' or 'multi-threaded'.");
-            this.strategy = strategy;
+            this.type = type;
         }
     }
 

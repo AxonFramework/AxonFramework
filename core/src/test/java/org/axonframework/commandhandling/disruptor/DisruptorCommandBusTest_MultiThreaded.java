@@ -16,8 +16,9 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.SleepingWaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
+
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
@@ -87,7 +88,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Throwable {
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore, eventBus,
-                new DisruptorConfiguration().setClaimStrategy(new MultiThreadedClaimStrategy(4))
+                new DisruptorConfiguration().setBufferSize(4)
+                                            .setProducerType(ProducerType.MULTI)
                                             .setWaitStrategy(new SleepingWaitStrategy())
                                             .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
                                             .setInvokerThreadCount(2)
