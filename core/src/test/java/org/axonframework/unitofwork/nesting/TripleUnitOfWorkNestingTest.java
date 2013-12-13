@@ -32,6 +32,7 @@ import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -206,7 +207,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
             return identifier;
         }
 
-        @EventHandler
+        @EventSourcingHandler
         private void handle(CreateEvent event) {
             this.identifier = event.getIdentifier();
         }
@@ -230,7 +231,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         public AggregateB() {
         }
 
-        @EventHandler
+        @EventSourcingHandler
         private void handle(CreateEvent event) {
             this.identifier = event.getIdentifier();
         }

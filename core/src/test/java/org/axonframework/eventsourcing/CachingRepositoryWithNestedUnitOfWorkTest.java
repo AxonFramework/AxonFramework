@@ -24,9 +24,9 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
@@ -347,12 +347,12 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
             apply(new AggregateUpdatedEvent(id, token));
         }
 
-        @EventHandler
+        @EventSourcingHandler
         private void created(AggregateCreatedEvent event) {
             this.id = event.id;
         }
 
-        @EventHandler
+        @EventSourcingHandler
         private void updated(AggregateUpdatedEvent event) {
             tokens.add(event.token);
         }

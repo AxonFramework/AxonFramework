@@ -17,14 +17,17 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.HandlerDefinition;
+import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -38,11 +41,13 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
 
 /**
  * Inspects objects to find aggregate specific annotations, such as {@link AggregateIdentifier} and {@link
- * EventSourcedMember}. The inspector can also create {@link AnnotationEventHandlerInvoker} instances to invoke {@link
- * org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
+ * EventSourcedMember}. The inspector can also create {@link org.axonframework.common.annotation.MessageHandlerInvoker}
+ * instances to invoke {@link org.axonframework.eventsourcing.annotation.EventSourcingHandler} annotated methods.
  *
  * @author Allard Buijze
  * @since 2.0
+ * @see org.axonframework.eventsourcing.annotation.EventSourcingHandler
+ * @see org.axonframework.eventhandling.annotation.EventHandler
  */
 public final class AggregateAnnotationInspector {
 
@@ -88,13 +93,14 @@ public final class AggregateAnnotationInspector {
     }
 
     /**
-     * Creates a new EventHandlerInvoker that invokes methods on the given <code>instance</code>.
+     * Creates a new MessageHandlerInvoker that invokes methods on the given <code>instance</code>.
      *
-     * @param instance The object (typically an entity) to create the EventHandlerInvoker for
-     * @return an AnnotationEventHandlerInvoker that invokes annotated methods on given <code>instance</code>
+     * @param instance The object (typically an entity) to create the MessageHandlerInvoker for
+     * @return a MessageHandlerInvoker that invokes handler methods on given <code>instance</code>
      */
-    public AnnotationEventHandlerInvoker createEventHandlerInvoker(Object instance) {
-        return new AnnotationEventHandlerInvoker(instance, parameterResolverFactory);
+    public MessageHandlerInvoker createEventHandlerInvoker(Object instance) {
+        return new MessageHandlerInvoker(instance, parameterResolverFactory, false,
+                                         AggregatedEventSourcingHandlerDefinition.INSTANCE);
     }
 
     /**
@@ -177,5 +183,36 @@ public final class AggregateAnnotationInspector {
             }
         }
         return false;
+    }
+
+    private static class AggregatedEventSourcingHandlerDefinition implements HandlerDefinition<Method> {
+
+        private static final AggregatedEventSourcingHandlerDefinition INSTANCE = new AggregatedEventSourcingHandlerDefinition();
+
+        @Override
+        public boolean isMessageHandler(Method member) {
+            return member.isAnnotationPresent(EventSourcingHandler.class)
+                    || member.isAnnotationPresent(EventHandler.class);
+        }
+
+        @Override
+        public Class<?> resolvePayloadFor(Method member) {
+            EventSourcingHandler handlerAnnotation = member.getAnnotation(EventSourcingHandler.class);
+            Class<?> definedPayload = null;
+            if (handlerAnnotation != null) {
+                definedPayload = handlerAnnotation.eventType();
+            } else {
+                EventHandler legacyAnnotation = member.getAnnotation(EventHandler.class);
+                if (legacyAnnotation != null) {
+                    definedPayload = legacyAnnotation.eventType();
+                }
+            }
+            return definedPayload == Void.class ? null : definedPayload;
+        }
+
+        @Override
+        public String toString() {
+            return "AnnotatedEventSourcingMemberDefinition";
+        }
     }
 }

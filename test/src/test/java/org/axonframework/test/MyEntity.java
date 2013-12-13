@@ -16,8 +16,8 @@
 
 package org.axonframework.test;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 /**
  *
@@ -26,7 +26,7 @@ public class MyEntity extends AbstractAnnotatedEntity {
 
     private Integer lastNumber;
 
-    @EventHandler
+    @EventSourcingHandler
     public void handleMyEvent(MyEvent event) {
         lastNumber = event.getSomeValue();
     }

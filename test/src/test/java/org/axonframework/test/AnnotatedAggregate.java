@@ -19,13 +19,13 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -68,7 +68,7 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot implements Annot
         lastNumber = command.getNewIllegalValue();
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void handleMyEvent(MyEvent event) {
         identifier = event.getAggregateIdentifier();
         lastNumber = event.getSomeValue();
@@ -77,14 +77,14 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot implements Annot
         }
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void deleted(MyAggregateDeletedEvent event) {
         if (!event.isWithIllegalStateChange()) {
             markDeleted();
         }
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void handleAll(DomainEventMessage event) {
         // we don't care about events
     }

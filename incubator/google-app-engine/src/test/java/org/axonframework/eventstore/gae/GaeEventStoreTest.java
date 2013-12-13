@@ -26,8 +26,8 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.junit.*;
@@ -150,7 +150,7 @@ public class GaeEventStoreTest {
             return identifier;
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void handleStateChange(StubStateChangedEvent event) {
         }
 

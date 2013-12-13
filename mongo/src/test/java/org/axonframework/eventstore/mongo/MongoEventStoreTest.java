@@ -22,8 +22,8 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
@@ -417,7 +417,7 @@ public class MongoEventStoreTest {
             return identifier;
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void handleStateChange(StubStateChangedEvent event) {
         }
 

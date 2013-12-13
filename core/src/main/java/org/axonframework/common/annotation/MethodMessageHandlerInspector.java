@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
- * Utility class that inspects handler methods for a given class and annotation type. For each annotated method, it
+ * Utility class that inspects handler methods for a given class and handler definition. For each handler method, it
  * keeps track of a MethodMessageHandler that describes the capabilities of that method (in terms of supported
  * messages).
  *
@@ -65,9 +65,8 @@ public final class MethodMessageHandlerInspector {
     public static <T extends Annotation> MethodMessageHandlerInspector getInstance(
             Class<?> handlerClass, Class<T> annotationType, ParameterResolverFactory parameterResolverFactory,
             boolean allowDuplicates) {
-        return getInstance(handlerClass, annotationType, parameterResolverFactory,
-                           allowDuplicates,
-                           new UndefinedPayloadResolver<T>());
+        return getInstance(handlerClass, parameterResolverFactory, allowDuplicates,
+                           new AnnotatedHandlerDefinition<T>(annotationType));
     }
 
     /**
@@ -81,27 +80,24 @@ public final class MethodMessageHandlerInspector {
      * same handler class and for the same annotation type, that uses the same parameterResolverFactory.
      *
      * @param handlerClass             The Class containing the handler methods to evaluate
-     * @param annotationType           The annotation marking handler methods
      * @param parameterResolverFactory The strategy for resolving parameter value for handler methods
      * @param allowDuplicates          Indicates whether to accept multiple handlers listening to Messages with the
      *                                 same payload type
-     * @param payloadTypeResolver      The resolver providing the explicitly configured payload type of a method, if
-     *                                 any
-     * @param <T>                      The type of annotation used to mark handler methods
+     * @param handlerDefinition        The definition indicating which methods are message handlers
      * @return a MethodMessageHandlerInspector providing access to the handler methods
      */
-    public static <T extends Annotation> MethodMessageHandlerInspector getInstance(
-            Class<?> handlerClass, Class<T> annotationType, ParameterResolverFactory parameterResolverFactory,
-            boolean allowDuplicates, HandlerPayloadTypeResolver<T> payloadTypeResolver) {
-        String key = annotationType.getName() + "@" + handlerClass.getName();
+    public static MethodMessageHandlerInspector getInstance(Class<?> handlerClass,
+                                                            ParameterResolverFactory parameterResolverFactory,
+                                                            boolean allowDuplicates,
+                                                            HandlerDefinition<? super Method> handlerDefinition) {
+        String key = handlerDefinition.toString() + "@" + handlerClass.getName();
         MethodMessageHandlerInspector inspector = INSPECTORS.get(key);
         while (inspector == null || !inspector.parameterResolver.equals(parameterResolverFactory)) {
             final MethodMessageHandlerInspector newInspector = new MethodMessageHandlerInspector(
                     parameterResolverFactory,
                     handlerClass,
-                    annotationType,
                     allowDuplicates,
-                    payloadTypeResolver);
+                    handlerDefinition);
             if (inspector == null) {
                 INSPECTORS.putIfAbsent(key, newInspector);
             } else {
@@ -113,26 +109,23 @@ public final class MethodMessageHandlerInspector {
     }
 
     /**
-     * Initialize an MethodMessageHandlerInspector, where the given <code>annotationType</code> is used to annotate the
-     * Handler methods.
+     * Initialize an MethodMessageHandlerInspector, where the given <code>handlerDefinition</code> is used to detect
+     * which methods are message handlers.
      *
-     * @param targetType          The targetType to inspect methods on
-     * @param annotationType      The annotation used on the Event Handler methods.
-     * @param payloadTypeResolver The resolver providing information about explicitly configured expected payload
-     * @param <T>                 The type of annotation this inspector should check for
+     * @param targetType        The targetType to inspect methods on
+     * @param allowDuplicates   Whether of not duplicate handlers (handlers for the same message types) are allowed
+     * @param handlerDefinition The definition indicating which methods are message handlers
      */
-    private <T extends Annotation> MethodMessageHandlerInspector(ParameterResolverFactory parameterResolverFactory,
-                                                                 Class<?> targetType, Class<T> annotationType,
-                                                                 boolean allowDuplicates,
-                                                                 HandlerPayloadTypeResolver<T> payloadTypeResolver) {
+    private MethodMessageHandlerInspector(ParameterResolverFactory parameterResolverFactory,
+                                          Class<?> targetType, boolean allowDuplicates,
+                                          HandlerDefinition<? super Method> handlerDefinition) {
         this.parameterResolver = parameterResolverFactory;
         this.targetType = targetType;
         Iterable<Method> methods = methodsOf(targetType);
         NavigableSet<MethodMessageHandler> uniqueHandlers = new TreeSet<MethodMessageHandler>();
         for (Method method : methods) {
-            final T annotation = method.getAnnotation(annotationType);
-            if (annotation != null) {
-                final Class<?> explicitPayloadType = payloadTypeResolver.resolvePayloadFor(annotation);
+            if (handlerDefinition.isMessageHandler(method)) {
+                final Class<?> explicitPayloadType = handlerDefinition.resolvePayloadFor(method);
                 MethodMessageHandler handlerMethod = MethodMessageHandler.createFor(method,
                                                                                     explicitPayloadType,
                                                                                     parameterResolverFactory
@@ -187,10 +180,20 @@ public final class MethodMessageHandlerInspector {
         return targetType;
     }
 
-    private static class UndefinedPayloadResolver<T extends Annotation> implements HandlerPayloadTypeResolver<T> {
+    private static class AnnotatedHandlerDefinition<T extends Annotation>
+            extends AbstractAnnotatedHandlerDefinition<T> {
+
+        /**
+         * Initialize the Definition, using where handlers are annotated with given <code>annotationType</code>.
+         *
+         * @param annotationType The type of annotation that marks the handlers
+         */
+        protected AnnotatedHandlerDefinition(Class<T> annotationType) {
+            super(annotationType);
+        }
 
         @Override
-        public Class<?> resolvePayloadFor(T annotation) {
+        protected Class<?> getDefinedPayload(T annotation) {
             return null;
         }
     }

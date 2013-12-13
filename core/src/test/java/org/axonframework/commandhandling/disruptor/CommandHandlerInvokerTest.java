@@ -7,10 +7,10 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -144,7 +144,7 @@ public class CommandHandlerInvokerTest {
             apply(id);
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void handle(String id) {
             this.id = id;
         }

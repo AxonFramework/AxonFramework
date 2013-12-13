@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
@@ -38,7 +39,7 @@ import javax.annotation.PreDestroy;
  */
 public class AnnotationEventListenerAdapter implements Subscribable, EventListenerProxy, ReplayAware {
 
-    private final AnnotationEventHandlerInvoker invoker;
+    private final MessageHandlerInvoker invoker;
     private final EventBus eventBus;
     private final ReplayAware replayAware;
     private final Class<?> listenerType;
@@ -79,7 +80,8 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      */
     public AnnotationEventListenerAdapter(Object annotatedEventListener,
                                           ParameterResolverFactory parameterResolverFactory) {
-        this.invoker = new AnnotationEventHandlerInvoker(annotatedEventListener, parameterResolverFactory);
+        this.invoker = new MessageHandlerInvoker(annotatedEventListener, parameterResolverFactory, false,
+                                                 AnnotatedEventHandlerDefinition.INSTANCE);
         this.listenerType = annotatedEventListener.getClass();
         if (annotatedEventListener instanceof ReplayAware) {
             this.replayAware = (ReplayAware) annotatedEventListener;
@@ -104,7 +106,8 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     public AnnotationEventListenerAdapter(Object annotatedEventListener, EventBus eventBus) {
         ParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(annotatedEventListener
                                                                                               .getClass());
-        this.invoker = new AnnotationEventHandlerInvoker(annotatedEventListener, factory);
+        this.invoker = new MessageHandlerInvoker(annotatedEventListener, factory, false,
+                                                 AnnotatedEventHandlerDefinition.INSTANCE);
         this.listenerType = annotatedEventListener.getClass();
         this.eventBus = eventBus;
         if (annotatedEventListener instanceof ReplayAware) {
@@ -120,7 +123,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      */
     @Override
     public void handle(EventMessage event) {
-        invoker.invokeEventHandlerMethod(event);
+        invoker.invokeHandlerMethod(event);
     }
 
     /**

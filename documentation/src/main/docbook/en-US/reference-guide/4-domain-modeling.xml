@@ -279,30 +279,27 @@
                 <title><code>AbstractAnnotatedAggregateRoot</code>
                 </title>
                 <para>As you see in the example above, the implementation of the
-                    <code>handle()</code>
-                    method can become quite verbose and hard to read. The
-                    <code>AbstractAnnotatedAggregateRoot</code>
-                    can help. The
-                    <code>AbstractAnnotatedAggregateRoot</code>
-                    is a specialization of the
-                    <code>AbstractAggregateRoot</code>
-                    that provides
-                    <code>@EventHandler</code>
-                    annotation support to your aggregate. Instead of a single
-                    <code>handle()</code>
-                    method, you can split the logic in separate methods, with names that you may
-                    define yourself. Just annotate the event handler methods with
-                    <code>@EventHandler</code>, and the
-                    <code>AbstractAnnotatedAggregateRoot</code>
-                    will invoke the right method for
-                    you.
-                </para>
+                        <code>handle()</code> method can become quite verbose and hard to read. The
+                        <code>AbstractAnnotatedAggregateRoot</code> can help. The
+                        <code>AbstractAnnotatedAggregateRoot</code> is a specialization of the
+                        <code>AbstractAggregateRoot</code> that provides
+                        <code>@EventSourcingHandler</code> annotation support to your aggregate.
+                    Instead of a single <code>handle()</code> method, you can split the logic in
+                    separate methods, with names that you may define yourself. Just annotate the
+                    event handler methods with <code>@EventSourcingHandler</code>, and the
+                        <code>AbstractAnnotatedAggregateRoot</code> will invoke the right method for
+                    you. </para>
                 <note>
+                    <title>Backwards compatibility with @EventHandler</title>
+                    <para>The <code>@EventSourcingHandler</code> has been introduced in Axon 2.1,
+                        and replaces the @EventHandler annotation for use inside Aggregates. For
+                        backwards compatibility, Axon 2.x will still support the
+                            <code>@EventHandler</code> annotation for Event Sourced Aggregates. </para>
                     <para>Note that <code>@EventHandler</code> annotated methods on an
-                            <code>AbstractAnnotatedAggregateRoot</code> are only called when events
-                        are applied directly to the aggregate locally. This should not be confused
-                        with annotating event handler methods on <code>EventListener</code> classes,
-                        in which case event handler methods handle events dispatched by the
+                            <code>AbstractAnnotatedAggregateRoot</code> are called immediately when
+                        events are applied to the local aggregate. This should not be confused with
+                        annotating event handler methods on <code>EventListener</code> classes, in
+                        which case event handler methods handle events dispatched by the
                             <code>EventBus</code>. See <xref linkend="event-listeners"/>. </para>
                 </note>
                 <programlisting language="java">public class MyAggregateRoot extends AbstractAnnotatedAggregateRoot {
@@ -319,16 +316,16 @@
     protected MyAggregateRoot() {
     }
 
-    @EventHandler
+    @EventSourcingHandler
     private void handleMyAggregateCreatedEvent(MyAggregateCreatedEvent event) {
         // make sure identifier is always initialized properly
         this.aggregateIdentifier = event.getMyAggregateIdentifier();
         // do something with someProperty
     }
 }                </programlisting>
-                <para><code>@EventHandler</code> annotated methods are resolved using specific
-                    rules. These rules are thorougly explained in <xref
-                        linkend="annotated-event-handlers"/>. </para>
+                <para><code>@EventSourcingHandler</code> annotated methods are resolved using specific
+                    rules. These rules are the same for the <code>@EventHandler</code> annotated methods, 
+                    and are thorougly explained in <xref linkend="annotated-event-handlers"/>. </para>
                 <note>
                     <title>Using private methods</title>
                     <para>Event handler methods may be private, as long as the security settings of the JVM
@@ -346,7 +343,6 @@
                         <code>@AggregateIdentifier</code>. If you use JPA and have JPA annotations
                     on the aggregate, Axon can also use the <code>@Id</code> annotation provided by
                     JPA.</para>
-
             </simplesect>
         </sect2>
         <sect2>
@@ -374,7 +370,7 @@
                 automatically register the Aggregate Root with an Entity before applying any Events
                 to it. This means that Entities (in constrast to the Aggregate Root) should never
                 apply an Event in their constructor. Non-Aggregate Root Entities should be created
-                in an <code>@EventHandler</code> annotated method in their parent Entity (as
+                in an <code>@EventSourcingHandler</code> annotated method in their parent Entity (as
                 creation of an entity can be considered a state change of the Aggregate). Axon will
                 ensure that the Aggregate Root is properly registered in time. This also means that
                 a single Entity cannot be part of more than one aggregate at any time.</para>

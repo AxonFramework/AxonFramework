@@ -16,9 +16,9 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 /**
  * @author Allard Buijze
@@ -50,13 +50,13 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
         super.markDeleted();
     }
 
-    @EventHandler
+    @EventSourcingHandler
     private void onCreated(StubAggregateCreatedEvent event) {
         this.identifier = event.getAggregateIdentifier();
         changeCounter = 0;
     }
 
-    @EventHandler
+    @EventSourcingHandler
     private void onChange(StubAggregateChangedEvent event) {
         changeCounter++;
     }

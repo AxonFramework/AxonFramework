@@ -16,7 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
+import org.axonframework.common.annotation.AbstractAnnotatedHandlerDefinition;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
@@ -79,8 +79,8 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     protected SagaMethodMessageHandlerInspector(Class<T> sagaType, ParameterResolverFactory parameterResolverFactory) {
         this.parameterResolverFactory = parameterResolverFactory;
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(
-                sagaType, SagaEventHandler.class, parameterResolverFactory, true,
-                AnnotationPayloadTypeResolver.INSTANCE);
+                sagaType, parameterResolverFactory, true,
+                AnnotatedHandlerDefinition.INSTANCE);
         for (MethodMessageHandler handler : inspector.getHandlers()) {
             handlers.add(SagaMethodMessageHandler.getInstance(handler));
         }
@@ -123,11 +123,13 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
         return parameterResolverFactory;
     }
 
-    private static final class AnnotationPayloadTypeResolver extends AbstractPayloadTypeResolver<SagaEventHandler> {
+    private static final class AnnotatedHandlerDefinition extends
+            AbstractAnnotatedHandlerDefinition<SagaEventHandler> {
 
-        private static final AnnotationPayloadTypeResolver INSTANCE = new AnnotationPayloadTypeResolver();
+        private static final AnnotatedHandlerDefinition INSTANCE = new AnnotatedHandlerDefinition();
 
-        private AnnotationPayloadTypeResolver() {
+        private AnnotatedHandlerDefinition() {
+            super(SagaEventHandler.class);
         }
 
         @Override

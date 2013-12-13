@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.domain;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 /**
  * @author Allard Buijze
@@ -29,7 +29,7 @@ public class StructuredEntity extends AbstractAnnotatedEntity {
     public StructuredEntity() {
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void handleEvent(InvocationEvent event) {
         this.invocations = event.getInvocationCount();
     }

@@ -18,17 +18,16 @@ package org.axonframework.common.annotation;
 
 import org.axonframework.domain.Message;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Abstract class to support implementations that need to invoke methods based on an annotation.
  *
- * @param <T> The type of annotation marking the handler method
  * @author Allard Buijze
  * @since 0.6
  */
-public final class MessageHandlerInvoker<T extends Annotation> {
+public final class MessageHandlerInvoker {
 
     private final Object target;
     private final MethodMessageHandlerInspector inspector;
@@ -39,19 +38,13 @@ public final class MessageHandlerInvoker<T extends Annotation> {
      *
      * @param target                   The target to invoke methods on
      * @param parameterResolverFactory The factory to create ParameterResolvers with
-     * @param annotationType           The type of annotation used to demarcate the handler methods
-     * @param allowDuplicates          Whether or not to accept multiple handlers listening to messages with the same
-     *                                 payload type
-     * @param payloadTypeResolver      The resolver providing the explicitly configured payload, if any
+     * @param allowDuplicates          Whether or not to accept multiple message handlers with the same payload type
+     * @param handlerDefinition        The definition indicating which methods are message handlers
      */
     public MessageHandlerInvoker(Object target, ParameterResolverFactory parameterResolverFactory,
-                                 Class<T> annotationType, boolean allowDuplicates,
-                                 HandlerPayloadTypeResolver<T> payloadTypeResolver) {
-        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
-                                                                   annotationType,
-                                                                   parameterResolverFactory,
-                                                                   allowDuplicates,
-                                                                   payloadTypeResolver);
+                                 boolean allowDuplicates, HandlerDefinition<? super Method> handlerDefinition) {
+        this.inspector = MethodMessageHandlerInspector.getInstance(target.getClass(), parameterResolverFactory,
+                                                                   allowDuplicates, handlerDefinition);
         this.target = target;
     }
 
@@ -62,17 +55,24 @@ public final class MessageHandlerInvoker<T extends Annotation> {
      *
      * @param parameter the event to handle
      * @return the return value of the invocation
-     *
-     * @throws IllegalAccessException    when the security manager does not allow the invocation
-     * @throws InvocationTargetException when the handler throws a checked Exception
+     * @throws MessageHandlerInvocationException when a checked exception is thrown by the handler method
      */
-    public Object invokeHandlerMethod(Message parameter) throws InvocationTargetException, IllegalAccessException {
+    public Object invokeHandlerMethod(Message parameter) {
         MethodMessageHandler m = findHandlerMethod(parameter);
         if (m == null) {
             // event listener doesn't support this type of event
             return null;
         }
-        return m.invoke(target, parameter);
+        try {
+            return m.invoke(target, parameter);
+        } catch (IllegalAccessException e) {
+            throw new MessageHandlerInvocationException("Access to the message handler method was denied.", e);
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.", e);
+        }
     }
 
     /**

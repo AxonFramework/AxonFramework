@@ -20,9 +20,9 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +58,7 @@ public class DisruptorContextConfigurationTest {
             apply(new SimpleEvent(command.id));
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void on(SimpleEvent event) {
             this.id = event.getAggregateIdentifier();
         }

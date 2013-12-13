@@ -97,7 +97,7 @@ public class AbstractAnnotatedAggregateRootTest {
             apply(new StubDomainEvent());
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             aggregateIdentifier = "lateIdentifier";
         }
@@ -112,7 +112,7 @@ public class AbstractAnnotatedAggregateRootTest {
             apply(new StubDomainEvent());
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             aggregateIdentifier = "lateIdentifier";
         }
@@ -135,7 +135,7 @@ public class AbstractAnnotatedAggregateRootTest {
             this.identifier = identifier;
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             this.invocationCount++;
             if (entity == null) {
@@ -163,7 +163,7 @@ public class AbstractAnnotatedAggregateRootTest {
             super(identifier);
         }
 
-        @EventHandler
+        @EventHandler // the legacy annotation must still work
         public void myEventHandlerMethod(StubDomainEvent event, SomeResource resource) {
             super.myEventHandlerMethod(event);
             resource.registerInvocation();
@@ -183,7 +183,7 @@ public class AbstractAnnotatedAggregateRootTest {
 
         private int invocationCount;
 
-        @EventHandler
+        @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             this.invocationCount++;
         }

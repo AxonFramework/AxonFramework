@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling.annotation;
+package org.axonframework.common.annotation;
 
 import org.axonframework.common.AxonException;
 
 /**
- * EventHandlerInvocationException is a runtime exception that wraps an exception thrown by an invoked event handler.
+ * MessageHandlerInvocationException is a runtime exception that wraps an exception thrown by an invoked message
+ * handler.
  *
  * @author Allard Buijze
- * @since 0.5
+ * @since 2.1
  */
-public class EventHandlerInvocationException extends AxonException {
+public class MessageHandlerInvocationException extends AxonException {
 
     private static final long serialVersionUID = 664867158607341533L;
 
     /**
-     * Initialize the EventHandlerInvocationException using given <code>message</code> and <code>cause</code>.
+     * Initialize the MessageHandlerInvocationException using given <code>message</code> and <code>cause</code>.
      *
      * @param message A message describing the cause of the exception
      * @param cause   The exception thrown by the Event Handler
      */
-    public EventHandlerInvocationException(String message, Throwable cause) {
+    public MessageHandlerInvocationException(String message, Throwable cause) {
         super(message, cause);
     }
 }

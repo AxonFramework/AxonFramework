@@ -16,15 +16,12 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.common.annotation.AbstractPayloadTypeResolver;
+import org.axonframework.common.annotation.AbstractAnnotatedHandlerDefinition;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.annotation.EventHandlerInvocationException;
 import org.axonframework.saga.Saga;
-
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Utility class that invokes annotated Event Handlers on Sagas.
@@ -43,9 +40,9 @@ public class SagaEventHandlerInvoker {
      * @param target The target to invoke methods on
      */
     public SagaEventHandlerInvoker(Saga target) {
-        invoker = new MessageHandlerInvoker<SagaEventHandler>(
+        invoker = new MessageHandlerInvoker(
                 target, AnnotationConfiguration.readFor(target.getClass()).getParameterResolverFactory(),
-                SagaEventHandler.class, false, AnnotationPayloadTypeResolver.INSTANCE);
+                false, AnnotatedHandlerDefinition.INSTANCE);
     }
 
     /**
@@ -54,7 +51,7 @@ public class SagaEventHandlerInvoker {
      *
      * @param event The event to investigate the handler for
      * @return <code>true</code> if handling the given <code>event</code> should end the lifecycle of the Saga,
-     *         <code>false</code> otherwise.
+     * <code>false</code> otherwise.
      */
     public boolean isEndingEvent(EventMessage event) {
         MethodMessageHandler handler = invoker.findHandlerMethod(event);
@@ -67,20 +64,16 @@ public class SagaEventHandlerInvoker {
      * @param event The event to invoke the Event Handler for
      */
     public void invokeSagaEventHandlerMethod(EventMessage event) {
-        try {
-            invoker.invokeHandlerMethod(event);
-        } catch (IllegalAccessException e) {
-            throw new EventHandlerInvocationException("Access to the Saga Event handler method was denied.", e);
-        } catch (InvocationTargetException e) {
-            throw new EventHandlerInvocationException("An exception occurred while invoking the handler method.", e);
-        }
+        invoker.invokeHandlerMethod(event);
     }
 
-    private static final class AnnotationPayloadTypeResolver extends AbstractPayloadTypeResolver<SagaEventHandler> {
+    private static final class AnnotatedHandlerDefinition
+            extends AbstractAnnotatedHandlerDefinition<SagaEventHandler> {
 
-        private static final AnnotationPayloadTypeResolver INSTANCE = new AnnotationPayloadTypeResolver();
+        private static final AnnotatedHandlerDefinition INSTANCE = new AnnotatedHandlerDefinition();
 
-        private AnnotationPayloadTypeResolver() {
+        private AnnotatedHandlerDefinition() {
+            super(SagaEventHandler.class);
         }
 
         @Override

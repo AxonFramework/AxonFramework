@@ -16,10 +16,10 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedEntity;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 
@@ -45,7 +45,7 @@ import java.util.Collection;
 public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity {
 
     private transient AggregateAnnotationInspector inspector;
-    private transient AnnotationEventHandlerInvoker eventHandlerInvoker;
+    private transient MessageHandlerInvoker eventHandlerInvoker;
 
     /**
      * Default constructor.
@@ -54,10 +54,10 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
     }
 
     /**
-     * Calls the appropriate {@link org.axonframework.eventhandling.annotation.EventHandler} annotated handler with the
-     * provided event.
+     * Calls the appropriate handler method with the provided event.
      *
      * @param event The event to handle
+     * @see org.axonframework.eventsourcing.annotation.EventSourcingHandler
      * @see org.axonframework.eventhandling.annotation.EventHandler
      */
     @Override
@@ -65,7 +65,7 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
         // some deserialization mechanisms don't use the default constructor to initialize a class.
         ensureInspectorInitialized();
         ensureInvokerInitialized();
-        eventHandlerInvoker.invokeEventHandlerMethod(event);
+        eventHandlerInvoker.invokeHandlerMethod(event);
     }
 
     @Override

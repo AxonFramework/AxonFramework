@@ -16,10 +16,10 @@
 
 package org.axonframework.integrationtests.domain;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcedMember;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 
@@ -42,7 +42,7 @@ public class StructuredAggregateRoot extends AbstractAnnotatedAggregateRoot<UUID
         apply(new InvocationEvent(identifier, invocations + 1));
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void handleEvent(InvocationEvent event) {
         if (identifier == null) {
             identifier = event.getAggregateIdentifier();

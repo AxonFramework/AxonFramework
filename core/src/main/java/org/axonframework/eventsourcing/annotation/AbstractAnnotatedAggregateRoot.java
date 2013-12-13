@@ -16,9 +16,9 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.eventhandling.annotation.AnnotationEventHandlerInvoker;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 
@@ -27,12 +27,14 @@ import javax.persistence.MappedSuperclass;
 
 /**
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
- * org.axonframework.eventhandling.annotation.EventHandler} annotation.
+ * org.axonframework.eventsourcing.annotation.EventSourcingHandler} annotation (and {@link
+ * org.axonframework.eventhandling.annotation.EventHandler} for backwards compatibility).
  * <p/>
  * Implementations can call the {@link #apply(Object)} method to have an event applied.
  *
  * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
+ * @see org.axonframework.eventsourcing.annotation.EventSourcingHandler
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
@@ -40,21 +42,21 @@ import javax.persistence.MappedSuperclass;
 public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSourcedAggregateRoot<I> {
 
     private static final long serialVersionUID = -1206026570158467937L;
-    private transient AnnotationEventHandlerInvoker eventHandlerInvoker; // NOSONAR
+    private transient MessageHandlerInvoker eventHandlerInvoker; // NOSONAR
     private transient AggregateAnnotationInspector inspector; // NOSONAR
 
     /**
-     * Calls the appropriate {@link org.axonframework.eventhandling.annotation.EventHandler} annotated handler with the
-     * provided event.
+     * Calls the appropriate handler method with the provided event.
      *
      * @param event The event to handle
+     * @see org.axonframework.eventsourcing.annotation.EventSourcingHandler
      * @see org.axonframework.eventhandling.annotation.EventHandler
      */
     @Override
     protected void handle(DomainEventMessage event) {
         ensureInspectorInitialized();
         ensureInvokerInitialized();
-        eventHandlerInvoker.invokeEventHandlerMethod(event);
+        eventHandlerInvoker.invokeHandlerMethod(event);
     }
 
     @SuppressWarnings("unchecked")

@@ -2,9 +2,9 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.junit.*;
 
 import java.util.concurrent.Executor;
@@ -87,7 +87,7 @@ public class FixtureTest_Resources {
             return commandBus;
         }
 
-        @EventHandler
+        @EventSourcingHandler
         void handle(MyEvent event, Executor resource) {
             assertNotNull(resource);
             this.id = event.getAggregateIdentifier().toString();

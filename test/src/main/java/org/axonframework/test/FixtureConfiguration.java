@@ -136,9 +136,10 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
     FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler);
 
     /**
-     * Registers a resource that is eligible for injection in {@link
-     * org.axonframework.commandhandling.annotation.CommandHandler @CommandHandler} and {@link
-     * org.axonframework.eventhandling.annotation.EventHandler @EventHandler} annotated methods. These resource must be
+     * Registers a resource that is eligible for injection in handler method (e.g. methods annotated with {@link
+     * org.axonframework.commandhandling.annotation.CommandHandler @CommandHandler}, {@link
+     * org.axonframework.eventsourcing.annotation.EventSourcingHandler @EventSourcingHandler} and {@link
+     * org.axonframework.eventhandling.annotation.EventHandler @EventHandler}. These resource must be
      * registered <em>before</em> registering any command handler.
      *
      * @param resource The resource eligible for injection

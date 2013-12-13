@@ -17,9 +17,9 @@
 package org.axonframework.quickstart.annotated;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
@@ -47,7 +47,7 @@ public class ToDoItem extends AbstractAnnotatedAggregateRoot {
         apply(new ToDoItemCompletedEvent(command.getTodoId()));
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void on(ToDoItemCreatedEvent event) {
         this.id = event.getTodoId();
     }

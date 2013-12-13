@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.jpa;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 import javax.persistence.Basic;
@@ -47,7 +47,7 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
         apply(new SomeEvent());
     }
 
-    @EventHandler
+    @EventSourcingHandler
     private void onSomeEvent(SomeEvent event) {
         counter++;
     }

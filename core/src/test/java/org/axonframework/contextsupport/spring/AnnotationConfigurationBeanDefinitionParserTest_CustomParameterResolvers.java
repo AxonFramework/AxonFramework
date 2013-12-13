@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.EndSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
@@ -109,7 +110,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest_CustomParameterReso
             apply(new SimpleEvent("abc"));
         }
 
-        @EventHandler
+        @EventSourcingHandler
         public void on(SimpleEvent event, Executor someResourceFromSpringContext) {
             this.id = event.getAggregateIdentifier();
             someResourceFromSpringContext.execute(new Runnable() {

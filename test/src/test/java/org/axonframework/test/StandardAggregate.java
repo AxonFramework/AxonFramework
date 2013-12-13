@@ -17,10 +17,10 @@
 package org.axonframework.test;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 
@@ -55,7 +55,7 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
         lastNumber = newIllegalValue;
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void handleMyEvent(MyEvent event) {
         identifier = event.getAggregateIdentifier();
         lastNumber = event.getSomeValue();
@@ -64,14 +64,14 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
         }
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void deleted(MyAggregateDeletedEvent event) {
         if (!event.isWithIllegalStateChange()) {
             markDeleted();
         }
     }
 
-    @EventHandler
+    @EventSourcingHandler
     public void handleAll(DomainEventMessage event) {
         // we don't care about events
     }
