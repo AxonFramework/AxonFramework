@@ -85,7 +85,7 @@
     </bean>
 
     <bean id="mockCache" class="org.axonframework.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="net.sf.jsr107cache.Cache"/>
+        <property name="mockType" value="javax.cache.Cache"/>
     </bean>
 
     <bean id="mockSerializer" class="org.axonframework.testutils.MockitoMockFactoryBean">

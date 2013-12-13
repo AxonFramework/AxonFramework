@@ -20,7 +20,6 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.ClaimStrategy;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
-import net.sf.jsr107cache.Cache;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandTargetResolver;
@@ -35,6 +34,7 @@ import org.axonframework.unitofwork.TransactionManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import javax.cache.Cache;
 
 /**
  * Configuration object for the DisruptorCommandBus. The DisruptorConfiguration provides access to the options to

@@ -479,6 +479,17 @@
                 Association Values and Saga instances, respectively. The latter two arguments may
                 refer to the same cache, or to different ones. This depends on the eviction
                 requirements of your specific application.</para>
+            <note>
+                <title>Cache API compatibility warning</title>
+                <para>The Cache API has only been recently defined. As at the moment Axon was
+                    developed, the most recent version of the specification was not implemented,
+                    version 0.5 has been used. This API version is implemented by EhCache-JCache
+                    version "1.0.5-0.5". Axon 2.1 has been tested against this version.</para>
+                <para>In a future version of Axon, the 1.0 version of the Cache API will be
+                    implemented, if the Cache providers have done that migration as well. Until
+                    then, you might have to select your cache implementation version
+                    carefully.</para>
+            </note>
             <simplesect>
                 <title>Spring namespace support</title>
                 <para>Spring users can use the <code>&lt;axon:cache-config></code> element to add

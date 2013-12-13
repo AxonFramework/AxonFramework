@@ -15,7 +15,8 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
@@ -39,7 +40,9 @@
                     <instructions>
                         <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
-                        <Bundle-Description>High Performance and Scalability framework for Java application based on the CQRS principles</Bundle-Description>
+                        <Bundle-Description>High Performance and Scalability framework for Java application based on the
+                            CQRS principles
+                        </Bundle-Description>
                         <Bundle-Version>${project.version}</Bundle-Version>
                         <Export-Package>
                             org.axonframework.*
@@ -48,22 +51,11 @@
                             org.slf4j.*,
                             *;resolution:=optional
                         </Import-Package>
-
-                        <!--
-                        <Require-Capability>
-                            osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)",osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)",osgi.serviceloader;filter:="(osgi.serviceloader=org.axonframework.serializer.ContentTypeConverter)";cardinality:=multiple,osgi.serviceloader;filter:="(osgi.serviceloader=org.axonframework.common.property.PropertyAccessStrategy)";cardinality:=multiple,osgi.serviceloader;filter:="(osgi.serviceloader=org.axonframework.common.annotation.ParameterResolverFactory)";cardinality:=multiple
-                        </Require-Capability>
-                        <Provide-Capability> 
-                            osgi.serviceloader;osgi.serviceloader=org.axonframework.serializer.ContentTypeConverter,osgi.serviceloader;osgi.serviceloader=org.axonframework.common.property.PropertyAccessStrategy,osgi.serviceloader;osgi.serviceloader=org.axonframework.common.annotation.ParameterResolverFactory
-                        </Provide-Capability>
-                        -->
-                        
                     </instructions>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-
 
     <dependencies>
         <dependency>
@@ -106,9 +98,9 @@
             <version>2.4</version>
         </dependency>
         <dependency>
-            <groupId>net.sf.jsr107cache</groupId>
-            <artifactId>jsr107cache</artifactId>
-            <version>1.1</version>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>0.5</version>
         </dependency>
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
@@ -132,12 +124,16 @@
         <dependency>
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache-jcache</artifactId>
-            <version>1.2</version>
+            <version>1.5.0-0.5</version>
             <optional>true</optional>
             <exclusions>
                 <exclusion>
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.sf.ehcache</groupId>
+                    <artifactId>ehcache-core</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -220,6 +216,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>net.sf.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>2.7.4</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>c3p0</groupId>
             <artifactId>c3p0</artifactId>
             <version>0.9.1.2</version>
@@ -235,13 +238,4 @@
         </dependency>
     </dependencies>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>net.sf.ehcache</groupId>
-                <artifactId>ehcache-core</artifactId>
-                <version>2.6.6</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 </project>

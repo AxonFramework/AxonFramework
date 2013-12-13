@@ -16,7 +16,6 @@
 
 package org.axonframework.saga.repository;
 
-import net.sf.jsr107cache.Cache;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.IdentifierBasedLock;
 import org.axonframework.saga.AssociationValue;
@@ -25,6 +24,7 @@ import org.axonframework.saga.SagaRepository;
 
 import java.util.HashSet;
 import java.util.Set;
+import javax.cache.Cache;
 
 /**
  * Saga Repository implementation that adds caching behavior to the repository it wraps. Both associations and sagas

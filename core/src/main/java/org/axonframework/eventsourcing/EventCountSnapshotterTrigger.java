@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import net.sf.jsr107cache.Cache;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -30,6 +29,11 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.cache.Cache;
+import javax.cache.event.CacheEntryEvent;
+import javax.cache.event.CacheEntryExpiredListener;
+import javax.cache.event.CacheEntryListenerException;
+import javax.cache.event.CacheEntryRemovedListener;
 
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. This
@@ -102,7 +106,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      * <p/>
      * By setting this value to false, event counters are kept in memory. This is particularly useful when repositories
      * use caches, preventing events from being loaded. Consider registering the Caches use using {@link
-     * #setAggregateCache(net.sf.jsr107cache.Cache)} or {@link #setAggregateCaches(java.util.List)}
+     * #setAggregateCache(javax.cache.Cache)} or {@link #setAggregateCaches(java.util.List)}
      *
      * @param clearCountersAfterAppend indicator whether to clear counters after appending events
      */
@@ -126,7 +130,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      */
     public void setAggregateCache(Cache cache) {
         this.clearCountersAfterAppend = false;
-        cache.addListener(new CacheListener());
+        cache.registerCacheEntryListener(new CacheListener());
     }
 
     /**
@@ -212,31 +216,16 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         }
     }
 
-    private final class CacheListener implements net.sf.jsr107cache.CacheListener {
+    private final class CacheListener implements CacheEntryRemovedListener, CacheEntryExpiredListener {
 
         @Override
-        public void onLoad(Object key) {
+        public void entryExpired(CacheEntryEvent cacheEntryEvent) throws CacheEntryListenerException {
+            counters.remove(cacheEntryEvent.getKey());
         }
 
         @Override
-        public void onPut(Object key) {
-        }
-
-        @SuppressWarnings({"SuspiciousMethodCalls"})
-        @Override
-        public void onEvict(Object key) {
-            counters.remove(key);
-        }
-
-        @SuppressWarnings({"SuspiciousMethodCalls"})
-        @Override
-        public void onRemove(Object key) {
-            counters.remove(key);
-        }
-
-        @Override
-        public void onClear() {
-            counters.clear();
+        public void entryRemoved(CacheEntryEvent cacheEntryEvent) throws CacheEntryListenerException {
+            entryExpired(cacheEntryEvent);
         }
     }
 

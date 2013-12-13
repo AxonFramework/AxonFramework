@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import net.sf.jsr107cache.Cache;
 import org.axonframework.common.NoCache;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.PartialStreamSupport;
@@ -25,6 +24,8 @@ import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
+
+import javax.cache.Cache;
 
 /**
  * Implementation of the event sourcing repository that uses a cache to improve loading performance. The cache removes

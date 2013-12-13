@@ -16,192 +16,317 @@
 
 package org.axonframework.common;
 
-import net.sf.jsr107cache.Cache;
-import net.sf.jsr107cache.CacheEntry;
-import net.sf.jsr107cache.CacheException;
-import net.sf.jsr107cache.CacheListener;
-import net.sf.jsr107cache.CacheStatistics;
-
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import javax.cache.Cache;
+import javax.cache.CacheConfiguration;
+import javax.cache.CacheLoader;
+import javax.cache.CacheManager;
+import javax.cache.CacheStatistics;
+import javax.cache.CacheWriter;
+import javax.cache.Status;
+import javax.cache.event.CacheEntryListener;
+import javax.cache.mbeans.CacheMXBean;
+import javax.cache.transaction.IsolationLevel;
+import javax.cache.transaction.Mode;
 
 /**
- * Cache implementation that does absolutely nothing. Objects aren't cached, making it a special case implementation for
+ * Cache implementation that does absolutely nothing. Objects aren't cached, making it a special case implementation
+ * for
  * the case when caching is disabled.
  *
  * @author Allard Buijze
  * @since 0.3
  */
-public final class NoCache implements Cache {
+public final class NoCache implements Cache<Object, Object> {
 
     /**
      * Creates a singleton reference the the NoCache implementation.
      */
     public static final NoCache INSTANCE = new NoCache();
+    private static final CacheConfiguration.Duration IMMEDIATE = new CacheConfiguration.Duration(TimeUnit.SECONDS, 0);
 
     private NoCache() {
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean containsKey(Object key) {
-        return false;
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean containsValue(Object value) {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Set entrySet() {
-        return Collections.emptySet();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isEmpty() {
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Set keySet() {
-        return Collections.emptySet();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void putAll(Map t) {
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int size() {
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Collection values() {
-        return Collections.emptyList();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object get(Object key) {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Map getAll(Collection keys) throws CacheException {
+    public Map<Object, Object> getAll(Set keys) {
         return Collections.emptyMap();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void load(Object key) throws CacheException {
+    public boolean containsKey(Object key) {
+        return false;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void loadAll(Collection keys) throws CacheException {
+    public Future<Object> load(Object key) {
+        return new Now<Object>(null);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Object peek(Object key) {
+    public Future<Map<Object, ?>> loadAll(Set<?> keys) {
+        return new Now<Map<Object, ?>>(Collections.<Object, Object>emptyMap());
+    }
+
+    @Override
+    public CacheStatistics getStatistics() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Object put(Object key, Object value) {
+    public void put(Object key, Object value) {
+    }
+
+    @Override
+    public Object getAndPut(Object key, Object value) {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public CacheEntry getCacheEntry(Object key) {
+    public void putAll(Map map) {
+    }
+
+    @Override
+    public boolean putIfAbsent(Object key, Object value) {
+        return true;
+    }
+
+    @Override
+    public boolean remove(Object key) {
+        return false;
+    }
+
+    @Override
+    public boolean remove(Object key, Object oldValue) {
+        return false;
+    }
+
+    @Override
+    public Object getAndRemove(Object key) {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public CacheStatistics getCacheStatistics() {
+    public boolean replace(Object key, Object oldValue, Object newValue) {
+        return true;
+    }
+
+    @Override
+    public boolean replace(Object key, Object value) {
+        return true;
+    }
+
+    @Override
+    public Object getAndReplace(Object key, Object value) {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Object remove(Object key) {
+    public void removeAll(Set keys) {
+    }
+
+    @Override
+    public void removeAll() {
+    }
+
+    @Override
+    public CacheConfiguration<Object, Object> getConfiguration() {
+        return new CacheConfiguration<Object, Object>() {
+            @Override
+            public boolean isReadThrough() {
+                return false;
+            }
+
+            @Override
+            public boolean isWriteThrough() {
+                return false;
+            }
+
+            @Override
+            public boolean isStoreByValue() {
+                return false;
+            }
+
+            @Override
+            public boolean isStatisticsEnabled() {
+                return false;
+            }
+
+            @Override
+            public void setStatisticsEnabled(boolean enableStatistics) {
+            }
+
+            @Override
+            public boolean isTransactionEnabled() {
+                return false;
+            }
+
+            @Override
+            public IsolationLevel getTransactionIsolationLevel() {
+                return IsolationLevel.NONE;
+            }
+
+            @Override
+            public Mode getTransactionMode() {
+                return Mode.NONE;
+            }
+
+            @Override
+            public CacheLoader<Object, ?> getCacheLoader() {
+                return null;
+            }
+
+            @Override
+            public CacheWriter<? super Object, ? super Object> getCacheWriter() {
+                return null;
+            }
+
+            @Override
+            public Duration getExpiry(ExpiryType type) {
+                return IMMEDIATE;
+            }
+        };
+    }
+
+    @Override
+    public boolean registerCacheEntryListener(CacheEntryListener<? super Object, ? super Object> cacheEntryListener) {
+        return false;
+    }
+
+    @Override
+    public boolean unregisterCacheEntryListener(CacheEntryListener<?, ?> cacheEntryListener) {
+        return false;
+    }
+
+    @Override
+    public Object invokeEntryProcessor(Object key, EntryProcessor<Object, Object> entryProcessor) {
+        return entryProcessor.process(new NoCacheEntry(key));
+    }
+
+    @Override
+    public String getName() {
+        return "NoCache";
+    }
+
+    @Override
+    public CacheManager getCacheManager() {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void clear() {
+    public Iterator<Entry<Object, Object>> iterator() {
+        return Collections.<Entry<Object, Object>>emptyList().iterator();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void evict() {
+    public CacheMXBean getMBean() {
+        return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @SuppressWarnings("unchecked")
     @Override
-    public void addListener(CacheListener listener) {
+    public <T> T unwrap(Class<T> clazz) {
+        if (clazz.isInstance(this)) {
+            return (T) this;
+        }
+        throw new IllegalArgumentException("NoCache implementation cannot be unwrapped to a " + clazz.getName());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void removeListener(CacheListener listener) {
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
+    }
+
+    @Override
+    public Status getStatus() {
+        return Status.STARTED;
+    }
+
+
+    private static class NoCacheEntry implements MutableEntry<Object, Object> {
+
+        private final Object key;
+        private Object value;
+
+        public NoCacheEntry(Object key) {
+            this.key = key;
+            value = null;
+        }
+
+        @Override
+        public boolean exists() {
+            return false;
+        }
+
+        @Override
+        public void remove() {
+        }
+
+        @Override
+        public void setValue(Object value) {
+            this.value = value;
+        }
+
+        @Override
+        public Object getKey() {
+            return key;
+        }
+
+        @Override
+        public Object getValue() {
+            return value;
+        }
+
+    }
+
+    private class Now<T> implements Future<T> {
+
+        private final T value;
+
+        public Now(T value) {
+            this.value = value;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+
+        @Override
+        public T get() throws InterruptedException, ExecutionException {
+            return value;
+        }
+
+        @Override
+        public T get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
+            return value;
+        }
     }
 }

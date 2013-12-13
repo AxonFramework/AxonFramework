@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import net.sf.jsr107cache.Cache;
-import net.sf.jsr107cache.CacheListener;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
@@ -30,7 +28,13 @@ import org.junit.*;
 import org.mockito.internal.matchers.*;
 
 import java.util.Arrays;
+import javax.cache.Cache;
+import javax.cache.event.CacheEntryEvent;
+import javax.cache.event.CacheEntryExpiredListener;
+import javax.cache.event.CacheEntryListener;
+import javax.cache.event.CacheEntryRemovedListener;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -41,8 +45,8 @@ public class EventCountSnapshotterTriggerTest {
     private EventCountSnapshotterTrigger testSubject;
     private Snapshotter mockSnapshotter;
     private Object aggregateIdentifier;
-    private Cache mockCache;
-    private CapturingMatcher<CacheListener> listener;
+    private Cache<Object, Object> mockCache;
+    private CapturingMatcher<CacheEntryListener<Object, Object>> listenerConfiguration;
     private EventSourcedAggregateRoot aggregate;
 
     private UnitOfWork unitOfWork;
@@ -58,9 +62,10 @@ public class EventCountSnapshotterTriggerTest {
         testSubject.setSnapshotter(mockSnapshotter);
         aggregateIdentifier = "aggregateIdentifier";
         aggregate = new StubAggregate(aggregateIdentifier);
+        //noinspection unchecked
         mockCache = mock(Cache.class);
-        listener = new CapturingMatcher<CacheListener>();
-        doNothing().when(mockCache).addListener(argThat(listener));
+        listenerConfiguration = new CapturingMatcher<CacheEntryListener<Object, Object>>();
+        doReturn(false).when(mockCache).registerCacheEntryListener(argThat(listenerConfiguration));
 
         unitOfWork = DefaultUnitOfWork.startAndGet();
     }
@@ -161,7 +166,7 @@ public class EventCountSnapshotterTriggerTest {
 
     @Test
     public void testCounterResetWhenCacheEvictsEntry() {
-        testSubject.setAggregateCaches(Arrays.asList(mockCache));
+        testSubject.setAggregateCaches(Arrays.<Cache>asList(mockCache));
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
@@ -173,7 +178,10 @@ public class EventCountSnapshotterTriggerTest {
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
-        listener.getLastValue().onEvict(aggregateIdentifier);
+        final CacheEntryListener<? super Object, ? super Object> listener = listenerConfiguration
+                .getLastValue();
+        assertTrue(listener instanceof CacheEntryExpiredListener<?, ?>);
+        ((CacheEntryExpiredListener) listener).entryExpired(new StubCacheEntryEvent());
 
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
@@ -187,7 +195,7 @@ public class EventCountSnapshotterTriggerTest {
 
     @Test
     public void testCounterResetWhenCacheRemovesEntry() {
-        testSubject.setAggregateCaches(Arrays.asList(mockCache));
+        testSubject.setAggregateCaches(Arrays.<Cache>asList(mockCache));
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
@@ -199,33 +207,10 @@ public class EventCountSnapshotterTriggerTest {
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
-        listener.getLastValue().onRemove(aggregateIdentifier);
-
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
-
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
-        CurrentUnitOfWork.commit();
-        verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
-    }
-
-    @Test
-    public void testCounterResetWhenCacheCleared() {
-        testSubject.setAggregateCaches(Arrays.asList(mockCache));
-        readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
-
-        listener.getLastValue().onClear();
+        final CacheEntryListener<? super Object, ? super Object> listener = listenerConfiguration
+                .getLastValue();
+        assertTrue(listener instanceof CacheEntryRemovedListener<?, ?>);
+        ((CacheEntryRemovedListener) listener).entryRemoved(new StubCacheEntryEvent());
 
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
@@ -249,6 +234,23 @@ public class EventCountSnapshotterTriggerTest {
     private void readAllFrom(DomainEventStream events) {
         while (events.hasNext()) {
             events.next();
+        }
+    }
+
+    private class StubCacheEntryEvent extends CacheEntryEvent {
+
+        public StubCacheEntryEvent() {
+            super(EventCountSnapshotterTriggerTest.this.mockCache);
+        }
+
+        @Override
+        public Object getKey() {
+            return aggregateIdentifier;
+        }
+
+        @Override
+        public Object getValue() {
+            return null;
         }
     }
 }

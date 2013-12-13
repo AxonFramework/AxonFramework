@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
+import net.sf.ehcache.jcache.JCacheManager;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -58,7 +59,11 @@ public class CachingEventSourcingRepositoryTest {
         mockEventBus = mock(EventBus.class);
         testSubject.setEventBus(mockEventBus);
 
-        cache = spy(new JCache(CacheManager.getInstance().getCache("testCache")));
+        final CacheManager cacheManager = CacheManager.getInstance();
+        final ClassLoader classLoader = getClass().getClassLoader();
+        cache = spy(new JCache(cacheManager.getCache("testCache"),
+                               new JCacheManager("test", cacheManager, classLoader),
+                               classLoader));
         testSubject.setCache(cache);
     }
 
@@ -69,6 +74,7 @@ public class CachingEventSourcingRepositoryTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testAggregatesRetrievedFromCache() {
         DefaultUnitOfWork.startAndGet();
@@ -76,7 +82,8 @@ public class CachingEventSourcingRepositoryTest {
         aggregate1.doSomething();
 
         // ensure the cached aggregate has been committed before being cached.
-        when(cache.put(eq(aggregate1.getIdentifier()), argThat(new TypeSafeMatcher<StubAggregate>() {
+        doThrow(new AssertionError("Aggregate should not have a null version when cached"))
+                .when(cache).put(eq(aggregate1.getIdentifier()), argThat(new TypeSafeMatcher<StubAggregate>() {
             @Override
             public boolean matchesSafely(StubAggregate item) {
                 return item.getVersion() == null;
@@ -86,7 +93,7 @@ public class CachingEventSourcingRepositoryTest {
             public void describeTo(Description description) {
                 description.appendText("An aggregate with a non-null version");
             }
-        }))).thenThrow(new AssertionError("Aggregate should not have a null version when cached"));
+        }));
 
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
@@ -108,7 +115,7 @@ public class CachingEventSourcingRepositoryTest {
         verify(mockEventBus).publish(isA(EventMessage.class));
         verify(mockEventBus).publish(isA(EventMessage.class), isA(EventMessage.class));
         verifyNoMoreInteractions(mockEventBus);
-        cache.clear();
+        cache.removeAll();
 
         reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
 

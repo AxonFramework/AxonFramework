@@ -19,6 +19,7 @@ package org.axonframework.saga.repository;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
+import net.sf.ehcache.jcache.JCacheManager;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
@@ -50,7 +51,10 @@ public class CachingSagaRepositoryTest {
         final Cache cch = new Cache("test", 100, false, false, 10, 10);
         cacheManager = CacheManager.create();
         cacheManager.addCache(cch);
-        final JCache cache = new JCache(cch);
+        final ClassLoader classLoader = getClass().getClassLoader();
+        final JCache cache = new JCache(cch,
+                                        new JCacheManager("test", cacheManager, classLoader),
+                                        classLoader);
         associationsCache = spy(cache);
         sagaCache = spy(cache);
         repository = mock(SagaRepository.class);
@@ -99,8 +103,8 @@ public class CachingSagaRepositoryTest {
         final StubSaga saga = new StubSaga("id");
         saga.associate("key", "value");
         testSubject.add(saga);
-        sagaCache.clear();
-        associationsCache.clear();
+        sagaCache.removeAll();
+        associationsCache.removeAll();
         reset(sagaCache, associationsCache);
 
         final AssociationValue associationValue = new AssociationValue("key", "value");
@@ -118,8 +122,8 @@ public class CachingSagaRepositoryTest {
         final StubSaga saga = new StubSaga("id");
         saga.associate("key", "value");
         testSubject.add(saga);
-        sagaCache.clear();
-        associationsCache.clear();
+        sagaCache.removeAll();
+        associationsCache.removeAll();
         reset(sagaCache, associationsCache);
 
         when(repository.load("id")).thenReturn(saga);
@@ -136,8 +140,8 @@ public class CachingSagaRepositoryTest {
         final StubSaga saga = new StubSaga("id");
         saga.associate("key", "value");
         testSubject.add(saga);
-        sagaCache.clear();
-        associationsCache.clear();
+        sagaCache.removeAll();
+        associationsCache.removeAll();
         reset(sagaCache, associationsCache);
 
         saga.associate("new", "id");

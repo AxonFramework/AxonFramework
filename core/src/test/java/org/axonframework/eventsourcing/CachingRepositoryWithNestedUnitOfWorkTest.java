@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.jcache.JCache;
+import net.sf.ehcache.jcache.JCacheManager;
 import org.axonframework.common.NoCache;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -116,7 +117,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Before
     public void setUp() throws Exception {
-        cache = new JCache(CacheManager.getInstance().addCacheIfAbsent("name"));
+        final CacheManager cacheManager = CacheManager.getInstance();
+        ClassLoader classLoader = getClass().getClassLoader();
+        cache = new JCache(cacheManager.addCacheIfAbsent("name"),
+                           new JCacheManager("test", cacheManager, classLoader),
+                           classLoader);
 
         eventBus = new SimpleEventBus();
         eventBus.subscribe(new LoggingEventListener(events));
