@@ -516,6 +516,29 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="claim-strategy">
+                        <xsd:annotation>
+                            <xsd:documentation>The strategy to use to claim positions in the Comman
+dBus' buffer.
+                                Defaults to a 'multi-threaded' strategy. If only a single thread ev
+er produces commands
+                                for this Command Bus, consider using the 'single-threaded' strategy
+.
+                                Deprecated, use producer-type instead.  Will be removed in AxonFramework 3.0.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                        <xsd:simpleType>
+                            <xsd:union memberTypes="xsd:string">
+                                <!-- Trick to support IDE auto-complete -->
+                                <xsd:simpleType>
+                                    <xsd:restriction base="xsd:string">
+                                        <xsd:enumeration value="multi-threaded"/>
+                                        <xsd:enumeration value="single-threaded"/>
+                                    </xsd:restriction>
+                                </xsd:simpleType>
+                            </xsd:union>
+                        </xsd:simpleType>
+                    </xsd:attribute>
                     <xsd:attribute name="producer-type">
                         <xsd:annotation>
                             <xsd:documentation>The producer type to use with the CommandBus' buffer.

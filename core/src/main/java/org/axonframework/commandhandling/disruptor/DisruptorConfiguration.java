@@ -539,11 +539,12 @@ public class DisruptorConfiguration {
      * Sets the producer type to use.
      * The default is to use a multi-threaded producer type.
      *
-     * @param newProducerType the producer type to use
+     * @param producerType the producer type to use
      * @return <code>this</code> for method chaining
      */
-    public DisruptorConfiguration setProducerType(ProducerType newProducerType) {
-        this.producerType = newProducerType;
+    public DisruptorConfiguration setProducerType(ProducerType producerType) {
+        Assert.notNull(producerType, "producerType must not be null");
+        this.producerType = producerType;
         return this;
     }
 }

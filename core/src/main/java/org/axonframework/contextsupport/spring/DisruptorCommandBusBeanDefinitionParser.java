@@ -64,6 +64,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
 
     private static final String PROPERTY_WAIT_STRATEGY = "waitStrategy";
     private static final String ATTRIBUTE_WAIT_STRATEGY = "wait-strategy";
+    private static final String ATTRIBUTE_CLAIM_STRATEGY = "claim-strategy";
     private static final String PROPERTY_PRODUCER_TYPE = "producerType";
     private static final String ATTRIBUTE_PRODUCER_TYPE = "producer-type";
     private static final String ELEMENT_REPOSITORIES = "repositories";
@@ -124,6 +125,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                 builder.addPropertyValue(entry.getValue(), element.getAttribute(entry.getKey()));
             }
         }
+        parseClaimStrategy(element, builder);
         parseProducerType(element, builder);
         parseWaitStrategy(element, builder);
         parseTransactionManager(element, builder);
@@ -148,6 +150,16 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                                                                                 txManagerId)
                                                           .getBeanDefinition());
         }
+    }
+
+    @Deprecated
+    private void parseClaimStrategy(Element element, BeanDefinitionBuilder builder) {
+        final BeanDefinitionBuilder producerType = BeanDefinitionBuilder
+                .genericBeanDefinition(ProducerTypeFactoryBean.class);
+        if (element.hasAttribute(ATTRIBUTE_CLAIM_STRATEGY)) {
+            producerType.addPropertyValue("type", element.getAttribute(ATTRIBUTE_CLAIM_STRATEGY));
+        }
+        builder.addPropertyValue(PROPERTY_PRODUCER_TYPE, producerType.getBeanDefinition());
     }
 
     private void parseProducerType(Element element, BeanDefinitionBuilder builder) {
