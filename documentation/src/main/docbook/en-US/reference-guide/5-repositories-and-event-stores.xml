@@ -582,7 +582,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         List&lt;SerializedObject&lt;?>> upcastedEvents = new ArrayList&lt;SerializedObject&lt;?>>();
         upcastedEvents.add(new SimpleSerializedObject&lt;Document>(
                 addressUpdatedEvent, Document.class, expectedTypes.get(0)));
-        upcastedEvents.add(new SimpleSerializedObject>Document>(
+        upcastedEvents.add(new SimpleSerializedObject&lt;Document>(
                 insurancePolicyUpdatedEvent, Document.class, expectedTypes.get(1)));
         return upcastedEvents;
     }
