@@ -572,12 +572,12 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         Document addressUpdatedEvent =
                 new DOMDocument(new DOMElement("org.example.InsurancePolicyUpdatedEvent"));
         addressUpdatedEvent.getRootElement()
-                .add(administrativeDetailsUpdatedEvent.getRootElement().element("address"));
+                .add(administrativeDetailsUpdatedEvent.getRootElement().element("address").createCopy());
 
         Document insurancePolicyUpdatedEvent =
-                new DOMDocument(new DOMElement("org.example.InsurancePolicyUpdatedEvent"));
+                new DOMDocument(new DOMElement("org.example.InsurancePolicyUpdatedEvent").createCopy());
         insurancePolicyUpdatedEvent.getRootElement()
-                .add(administrativeDetailsUpdatedEvent.getRootElement().element("policy"));
+                .add(administrativeDetailsUpdatedEvent.getRootElement().element("policy").createCopy());
 
         List&lt;SerializedObject&lt;?>> upcastedEvents = new ArrayList&lt;SerializedObject&lt;?>>();
         upcastedEvents.add(new SimpleSerializedObject&lt;Document>(
