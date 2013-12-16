@@ -23,10 +23,10 @@ import org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.io.Closeable;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +44,6 @@ import java.util.List;
  */
 public class JdbcEventEntryStore implements EventEntryStore {
 
-	private static final Logger logger = LoggerFactory.getLogger(JdbcEventEntryStore.class);
 	private static final String unprefixedFields = "eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, payloadType, payloadRevision, payload, metaData";
     private static final String stdFields = "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData";
 
@@ -83,10 +82,14 @@ public class JdbcEventEntryStore implements EventEntryStore {
 		}
 	}
 
-	private static SimpleSerializedDomainEventData createSimpleSerializedDomainEventData(ResultSet rs) throws SQLException {
-		return new SimpleSerializedDomainEventData(rs.getString(1), rs.getString(2),
-				rs.getLong(3), rs.getTimestamp(4), rs.getString(5), rs.getString(6),
-				rs.getBytes(7), rs.getBytes(8));
+	private static SimpleSerializedDomainEventData createSimpleSerializedDomainEventData(ResultSet rs)  {
+		try {
+			return new SimpleSerializedDomainEventData(rs.getString(1), rs.getString(2),
+					rs.getLong(3), rs.getTimestamp(4), rs.getString(5), rs.getString(6),
+					rs.getBytes(7), rs.getBytes(8));
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 
@@ -94,7 +97,13 @@ public class JdbcEventEntryStore implements EventEntryStore {
 	@SuppressWarnings({"unchecked"})
 	public Iterator<SerializedDomainEventData> fetchFiltered(String whereClause, List<Object> parameters,
 			int batchSize) {
-		return new BatchingIterator(whereClause,parameters,  batchSize, dataSource);
+		ResultSet resultSet = fetchAll(batchSize, whereClause, parameters);
+		return new BatchingIterator(resultSet);
+	}
+
+
+	private String getWhereClause(String whereClause) {
+		return whereClause != null ? "WHERE " + whereClause : "";
 	}
 
 	@Override
@@ -203,211 +212,107 @@ public class JdbcEventEntryStore implements EventEntryStore {
 			long firstSequenceNumber,
 			int batchSize) {
 
-		return new BatchingAggregateStreamIterator(firstSequenceNumber,
-				identifier,
-				aggregateType,
-				batchSize,
-				dataSource);
+		ResultSet resultSet = fetchFromSequenceNumber(firstSequenceNumber, identifier, aggregateType, batchSize);
+		return new BatchingIterator(resultSet);
 	}
 
-	@SuppressWarnings("JpaQueryApiInspection")
-	private static final class BatchingAggregateStreamIterator implements Iterator<SerializedDomainEventData> {
+	@SuppressWarnings("unchecked")
+	private ResultSet fetchFromSequenceNumber(long firstSequenceNumber, Object id, String typeId, int batchSize) {
+		try {
+			String sql = "select " + stdFields + " from DomainEventEntry e "
+					+ "WHERE e.aggregateIdentifier = ? AND type = ? "
+					+ "AND e.sequenceNumber >= ? "
+					+ "ORDER BY e.sequenceNumber ASC";
+			PreparedStatement ps = getPreparedStatement(batchSize, dataSource, sql);
+			ps.setString(1, id.toString());
+			ps.setString(2, typeId);
+			ps.setLong(3, firstSequenceNumber);
+			return ps.executeQuery();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-		private int currentBatchSize;
-		private Iterator<SerializedDomainEventData> currentBatch;
-		private SerializedDomainEventData next;
-		private final Object id;
-		private final String typeId;
-		private final int batchSize;
-		private final DataSource ds;
-
-		private BatchingAggregateStreamIterator(long firstSequenceNumber, Object id, String typeId, int batchSize,
-				DataSource con) {
-			this.id = id;
-			this.typeId = typeId;
-			this.batchSize = batchSize;
-			this.ds = con;
-			List<SerializedDomainEventData> firstBatch = fetchBatch(firstSequenceNumber);
-			this.currentBatchSize = firstBatch.size();
-			this.currentBatch = firstBatch.iterator();
-			if (currentBatch.hasNext()) {
-				next = currentBatch.next();
+	@SuppressWarnings("unchecked")
+	private ResultSet fetchAll(int batchSize, String whereClause, List<Object> parameters) {
+		try {
+			final String sql1 = "select " + stdFields + " from DomainEventEntry e " + getWhereClause(whereClause) +
+					" ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC ";
+			PreparedStatement preparedStatement = getPreparedStatement(batchSize, dataSource, sql1);
+			int startWhere = 1;
+			for (int i = 0; i < parameters.size(); i++) {
+				Object x = parameters.get(i);
+				if (x instanceof DateTime) x = new Timestamp(((DateTime) x).getMillis());
+				preparedStatement.setObject(startWhere + i, x);
 			}
+			return preparedStatement.executeQuery();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private PreparedStatement getPreparedStatement(int batchSize, DataSource dataSource,
+			String sql1) throws SQLException {
+		Connection con = dataSource.getConnection();
+		con.setAutoCommit(false);
+		PreparedStatement preparedStatement = con.prepareStatement(sql1);
+		preparedStatement.setFetchSize(batchSize);
+		return preparedStatement;
+	}
+
+
+	private static class BatchingIterator implements Iterator<SerializedDomainEventData>, Closeable {
+		private final ResultSet rs;
+		boolean hasCalledNext = false;
+		boolean hasNext;
+
+		public BatchingIterator(ResultSet resultSet) {
+			this.rs = resultSet;
 		}
 
 		@Override
 		public boolean hasNext() {
-            return next != null;
-		}
-
-		@Override
-		public SerializedDomainEventData next() {
-			SerializedDomainEventData current = next;
-			if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
-				logger.debug("Fetching new batch for Aggregate [{}]", id);
-				List<SerializedDomainEventData> entries = fetchBatch(next.getSequenceNumber() + 1);
-
-				currentBatchSize = entries.size();
-				currentBatch = entries.iterator();
-			}
-			next = currentBatch.hasNext() ? currentBatch.next() : null;
-			return current;
-		}
-
-		@SuppressWarnings("unchecked")
-		private List<SerializedDomainEventData> fetchBatch(long firstSequenceNumber) {
 			try {
-				Connection con = ds.getConnection();
-				PreparedStatement ps =  con.prepareStatement("select " + stdFields + " from DomainEventEntry e "
-						+ "WHERE e.aggregateIdentifier = ? AND type = ? "
-						+ "AND e.sequenceNumber >= ? "
-						+ "ORDER BY e.sequenceNumber ASC");
-				ps.setString(1, id.toString());
-				ps.setString(2, typeId);
-				ps.setLong(3, firstSequenceNumber);
-				ps.setMaxRows(batchSize);
-				ResultSet rs = ps.executeQuery();
-				List<SerializedDomainEventData> result = new ArrayList<SerializedDomainEventData>();
-				while (rs.next()){
-					result.add( createSimpleSerializedDomainEventData(rs) );
-				}
-				closeAllQuietly(ps);
-				return result;
-
+				establishNext();
+				return hasNext;
 			} catch (SQLException e) {
 				throw new RuntimeException(e);
 			}
 		}
 
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException("Remove is not supported");
-		}
-	}
-
-	private static class BatchingIterator implements Iterator<SerializedDomainEventData> {
-
-		private int currentBatchSize;
-		private Iterator<SerializedDomainEventData> currentBatch;
-		private SerializedDomainEventData next;
-		private SerializedDomainEventData lastItem;
-		private final String whereClause;
-        private final List<Object> parameters;
-        private final int batchSize;
-		private final DataSource ds;
-
-		public BatchingIterator(
-                String whereClause, List<Object> parameters, int batchSize,
-                DataSource con) {
-			this.whereClause = whereClause;
-            this.parameters = parameters;
-            this.batchSize = batchSize;
-			this.ds = con;
-			List<SerializedDomainEventData> firstBatch = fetchBatch();
-
-			this.currentBatchSize = firstBatch.size();
-			this.currentBatch = firstBatch.iterator();
-			if (currentBatch.hasNext()) {
-				next = currentBatch.next();
+		private void establishNext() throws SQLException {
+			if (!hasCalledNext) {
+				hasNext = rs.next();
+				hasCalledNext = true;
 			}
-		}
-
-			@SuppressWarnings("unchecked")
-		private List<SerializedDomainEventData> fetchBatch() {
-			try {
-				Connection con = ds.getConnection();
-                final String sql1 = "select " + stdFields + " from DomainEventEntry e " +
-                        getWhereClause() +
-                        " ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC " ;
-                PreparedStatement preparedStatement =  con.prepareStatement(sql1);
-				preparedStatement.setMaxRows(batchSize);
-                int startWhere = 1;
-				if (shouldAddWhereClause()){
-					Timestamp ts = new Timestamp(lastItem.getTimestamp().getMillis());
-					preparedStatement.setTimestamp(1, ts);
-					preparedStatement.setTimestamp(2, ts);
-					preparedStatement.setLong(3, lastItem.getSequenceNumber());
-					preparedStatement.setTimestamp(4, ts);
-					preparedStatement.setLong(5, lastItem.getSequenceNumber());
-					preparedStatement.setString(6, lastItem.getAggregateIdentifier().toString());
-                    startWhere = 7;
-				}
-                for (int i = 0; i < parameters.size(); i++){
-                    Object x = parameters.get(i);
-                    if (x instanceof DateTime) x = new Timestamp(((DateTime) x).getMillis());
-                    preparedStatement.setObject( startWhere+i, x);
-                }
-				ResultSet rs = preparedStatement.executeQuery();
-				List<SerializedDomainEventData> result = new ArrayList<SerializedDomainEventData>();
-				while (rs.next()){
-					result.add( createSimpleSerializedDomainEventData(rs) );
-				}
-
-				if (!result.isEmpty()) {
-					lastItem = result.get(result.size() - 1);
-				}
-				closeAllQuietly(preparedStatement);
-				return result;
-
-			} catch (SQLException e) {
-				throw new RuntimeException(e);
-			}
-
-		}
-
-		private String getWhereClause() {
-			if (lastItem == null && whereClause == null) {
-				return "";
-			}
-			StringBuilder sb = new StringBuilder("WHERE ");
-			if (shouldAddWhereClause()) {
-				// although this may look like a long and inefficient where clause, it is (so far) the fastest way
-				// to find the next batch of items
-				sb.append("((")
-						.append("e.timeStamp > ?")
-						.append(") OR (")
-						.append("e.timeStamp = ? AND e.sequenceNumber > ?")
-						.append(") OR (")
-						.append("e.timeStamp = ? AND e.sequenceNumber = ? AND ")
-						.append("e.aggregateIdentifier > ?))");
-			}
-			if (whereClause != null && whereClause.length() > 0) {
-				if (shouldAddWhereClause()) {
-					sb.append(" AND (");
-				}
-				sb.append(whereClause);
-				if (shouldAddWhereClause()) {
-					sb.append(")");
-				}
-			}
-			return sb.toString();
-		}
-
-		private boolean shouldAddWhereClause() {
-			return lastItem != null;
-		}
-
-		@Override
-		public boolean hasNext() {
-			return next != null;
 		}
 
 		@Override
 		public SerializedDomainEventData next() {
-			SerializedDomainEventData current = next;
-			if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
-				List<SerializedDomainEventData> entries = fetchBatch();
-
-				currentBatchSize = entries.size();
-				currentBatch = entries.iterator();
+			try {
+				establishNext();
+				return createSimpleSerializedDomainEventData(rs);
+			} catch (SQLException e) {
+				throw new RuntimeException(e);
+			} finally {
+				hasCalledNext = false;
 			}
-			next = currentBatch.hasNext() ? currentBatch.next() : null;
-			return current;
 		}
 
 		@Override
 		public void remove() {
-			throw new UnsupportedOperationException("Not implemented yet");
+			throw new UnsupportedOperationException("Not implemented");
+		}
+
+		@Override
+		public void close() throws IOException {
+			try {
+				Statement statement = rs.getStatement();
+				statement.getConnection().setAutoCommit(true);
+				closeAllQuietly(statement);
+			} catch (SQLException e) {
+				throw new IOException(e);
+			}
 		}
 	}
 

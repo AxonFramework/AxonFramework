@@ -33,23 +33,24 @@ public class JdbcEventEntryStoreTest {
     private final String aggregateIdentifier = "agg1";
     private String aggregateType = "foz";
     private String snap_aggregateType = "snap";
-    private EventEntryStore es;
+    private JdbcEventEntryStore es;
     private Connection connection;
 
     @Before
     public void createDatabase() throws SQLException {
         JDBCDataSource dataSource = new org.hsqldb.jdbc.JDBCDataSource();
-        dataSource.setUrl("jdbc:hsqldb:file:~/testDb");
+        dataSource.setUrl("jdbc:hsqldb:mem:test");
+
 
         connection = dataSource.getConnection();
-        ///	connection.createStatement().execute(JdbcEventEntryStore.sql);
-        //  connection.commit();
         es = new JdbcEventEntryStore(dataSource);
+		es.createSchema();
     }
 
     @After
     public void shutDown() throws SQLException {
-        connection.close();
+		connection.createStatement().execute("SHUTDOWN");
+		connection.close();
     }
 
     @Test

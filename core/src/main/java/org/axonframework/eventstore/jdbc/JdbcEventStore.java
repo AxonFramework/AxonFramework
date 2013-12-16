@@ -17,6 +17,7 @@
 package org.axonframework.eventstore.jdbc;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -43,6 +44,8 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -294,7 +297,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         this.maxSnapshotsArchived = maxSnapshotsArchived;
     }
 
-    private final class CursorBackedDomainEventStream implements DomainEventStream {
+    private final class CursorBackedDomainEventStream implements DomainEventStream, Closeable {
 
         private Iterator<DomainEventMessage> currentBatch;
         private DomainEventMessage next;
@@ -325,6 +328,8 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
             initializeNextItem();
         }
 
+
+
         @Override
         public boolean hasNext() {
             return next != null && next.getSequenceNumber() <= lastSequenceNumber;
@@ -351,5 +356,10 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         public DomainEventMessage peek() {
             return next;
         }
-    }
+
+		@Override
+		public void close() throws IOException {
+			IOUtils.closeIfCloseable(currentBatch);
+		}
+	}
 }
