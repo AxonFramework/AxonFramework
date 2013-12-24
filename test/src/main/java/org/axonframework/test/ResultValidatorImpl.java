@@ -112,7 +112,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         Iterator<DomainEventMessage> iterator = storedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             DomainEventMessage actualEvent = iterator.next();
-            if (!verifyEventEquality(expectedEvent, actualEvent)) {
+            if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
                 reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }

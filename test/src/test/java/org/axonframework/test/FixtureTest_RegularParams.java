@@ -82,6 +82,8 @@ public class FixtureTest_RegularParams {
                 .given(givenEvents)
                 .when(new TestCommand("aggregateId"))
                 .expectEvents(new MyEvent("aggregateId", 4))
+                .expectStoredEvents(new MyEvent("aggregateId", 4))
+                .expectPublishedEvents(new MyEvent("aggregateId", 4))
                 .expectVoidReturnType();
     }
 
