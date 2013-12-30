@@ -32,7 +32,9 @@ import org.axonframework.unitofwork.UnitOfWorkListenerCollection;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Specialized UnitOfWork instance for the DisruptorCommandBus. It expects the executing command to target a single
@@ -54,6 +56,8 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private EventSourcedAggregateRoot aggregate;
     private String aggregateType;
     private final boolean transactional;
+    private final Map<String, Object> resources = new HashMap<String, Object>();
+    private final Map<String, Object> inheritedResources = new HashMap<String, Object>();
 
     /**
      * Creates a new Unit of Work for use in the DisruptorCommandBus.
@@ -107,6 +111,8 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         // clear the lists of events to make them garbage-collectible
         eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
         eventsToPublish.clear();
+        this.resources.clear();
+        this.inheritedResources.clear();
     }
 
     /**
@@ -172,6 +178,35 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         aggregate.addEventRegistrationCallback(this);
 
         return (T) aggregate;
+    }
+
+    @Override
+    public void attachResource(String name, Object resource) {
+        this.resources.put(name, resource);
+        this.inheritedResources.remove(name);
+    }
+
+    @Override
+    public void attachResource(String name, Object resource, boolean inherited) {
+        this.resources.put(name, resource);
+        if (inherited) {
+            inheritedResources.put(name, resource);
+        } else {
+            inheritedResources.remove(name);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getResource(String name) {
+        return (T) resources.get(name);
+    }
+
+    @Override
+    public void attachInheritedResources(UnitOfWork inheritingUnitOfWork) {
+        for (Map.Entry<String, Object> entry : inheritedResources.entrySet()) {
+            inheritingUnitOfWork.attachResource(entry.getKey(), entry.getValue(), true);
+        }
     }
 
     @Override

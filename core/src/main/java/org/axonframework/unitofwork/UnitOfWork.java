@@ -113,7 +113,7 @@ public interface UnitOfWork {
      * @return The actual aggregate instance to use
      *
      * @throws IllegalStateException if this Unit Of Work does not support registrations of aggregates with identical
-     *                               type and identifier
+     * type and identifier
      */
     <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
                                                   SaveAggregateCallback<T> saveAggregateCallback);
@@ -126,4 +126,55 @@ public interface UnitOfWork {
      * @param eventBus The event bus on which to publish the event
      */
     void publishEvent(EventMessage<?> event, EventBus eventBus);
+
+    /**
+     * Attaches the given <code>resource</code> to this Unit of Work under the given <code>name</code>. The attached
+     * resource is not inherited by any nested Unit of Work (see {@link #attachResource(String, Object, boolean)}.
+     * <p/>
+     * If a resource was already attached under this name, it is overwritten.
+     * <p/>
+     * By convention, resources should be attached using the fully Qualified name of their type (or main interface).
+     * For example, a JDBC Connection should be attached using the name "java.sql.Connection". When there is a
+     * requirement to distinguish between different resources of the same type, their name may differ from this
+     * convention.
+     *
+     * @param name     The name under which to attach the resource
+     * @param resource The resource to attach
+     */
+    void attachResource(String name, Object resource);
+
+    /**
+     * Attaches the given <code>resource</code> to this Unit of Work under the given <code>name</code>. The attached
+     * resource is <code>inherited</code> as indicated. Inherited resources are automatically attached to a nested
+     * Unit of Work.
+     * <p/>
+     * If a resource was already attached under this name, it is overwritten.
+     * <p/>
+     * By convention, resources should be attached using the fully Qualified name of their type (or main interface).
+     * For example, a JDBC Connection should be attached using the name "java.sql.Connection". When there is a
+     * requirement to distinguish between different resources of the same type, their name may differ from this
+     * convention.
+     *
+     * @param name     The name under which to attach the resource
+     * @param resource The resource to attach
+     */
+    void attachResource(String name, Object resource, boolean inherited);
+
+    /**
+     * Returns the resource previously attached under given <code>name</code>, or <code>null</code> if no such resource
+     * is available.
+     *
+     * @param name The name under which the resource was attached
+     * @param <T>  The type of resource
+     * @return The resource attached under the given <code>name</code>, or <code>null</code> if no such resource is
+     * available.
+     */
+    <T> T getResource(String name);
+
+    /**
+     * Attach all inherited resources to the given <code>unitOfWork</code>.
+     *
+     * @param inheritingUnitOfWork the Unit of Work inheriting the resources from this instance.
+     */
+    void attachInheritedResources(UnitOfWork inheritingUnitOfWork);
 }

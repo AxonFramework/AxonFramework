@@ -20,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract implementation of the UnitOfWork interface. Provides the necessary implementations to support most actions
@@ -38,6 +40,8 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
     private boolean isStarted;
     private UnitOfWork outerUnitOfWork;
     private List<NestableUnitOfWork> innerUnitsOfWork = new ArrayList<NestableUnitOfWork>();
+    private Map<String, Object> resources = new HashMap<String, Object>();
+    private Map<String, Object> inheritedResources = new HashMap<String, Object>();
 
     @Override
     public void commit() {
@@ -130,6 +134,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
         if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
             this.outerUnitOfWork = CurrentUnitOfWork.get();
+            this.outerUnitOfWork.attachInheritedResources(this);
             if (outerUnitOfWork instanceof NestableUnitOfWork) {
                 ((NestableUnitOfWork) outerUnitOfWork).registerInnerUnitOfWork(this);
             } else {
@@ -225,6 +230,35 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
      * java.util.List)} notification to all registered listeners.
      */
     protected abstract void notifyListenersPrepareCommit();
+
+    @Override
+    public void attachResource(String name, Object resource) {
+        this.resources.put(name, resource);
+        this.inheritedResources.remove(name);
+    }
+
+    @Override
+    public void attachResource(String name, Object resource, boolean inherited) {
+        this.resources.put(name, resource);
+        if (inherited) {
+            this.inheritedResources.put(name, resource);
+        } else {
+            this.inheritedResources.remove(name);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T getResource(String name) {
+        return (T) resources.get(name);
+    }
+
+    @Override
+    public void attachInheritedResources(UnitOfWork inheritingUnitOfWork) {
+        for (Map.Entry<String, Object> entry : inheritedResources.entrySet()) {
+            inheritingUnitOfWork.attachResource(entry.getKey(), entry.getValue(), true);
+        }
+    }
 
     private final class CommitOnOuterCommitTask extends UnitOfWorkListenerAdapter {
 

@@ -26,6 +26,13 @@ import static org.mockito.Mockito.*;
  */
 public class UnitOfWorkNestingTest {
 
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
+
     @Test
     public void testUowRolledBackOnOuterRollback() {
         UnitOfWork outerUnit = new UnitOfWork() {
@@ -93,6 +100,23 @@ public class UnitOfWorkNestingTest {
             @Override
             public void publishEvent(EventMessage<?> event, EventBus eventBus) {
             }
+
+            @Override
+            public void attachResource(String name, Object resource) {
+            }
+
+            @Override
+            public void attachResource(String name, Object resource, boolean inherited) {
+            }
+
+            @Override
+            public <T> T getResource(String name) {
+                throw new UnsupportedOperationException("Not implemented");
+            }
+
+            @Override
+            public void attachInheritedResources(UnitOfWork inheritingUnitOfWork) {
+            }
         }; // This is a unit that does not extend from NestableUnitOfWork
 
         outerUnit.start();
@@ -138,5 +162,29 @@ public class UnitOfWorkNestingTest {
 
         assertEquals("Expected inner Unit of Work to have been rolled back", 2, rolledBack.size());
         assertFalse("Expected all UoW to have been cleared", CurrentUnitOfWork.isStarted());
+    }
+
+    @Test
+    public void testResourceInheritance() {
+        UnitOfWork outerUoW = DefaultUnitOfWork.startAndGet();
+        outerUoW.attachResource("notInherited", "resourceA");
+        outerUoW.attachResource("explicitlyNotInherited", "resourceA", false);
+        outerUoW.attachResource("inherited", "resourceA", true);
+
+        outerUoW.attachResource("inheritanceOverwritten", "resourceA", true);
+        outerUoW.attachResource("inheritanceOverwritten", "resourceA");
+
+        outerUoW.attachResource("inheritedAfterAll", "resourceA");
+        outerUoW.attachResource("inheritedAfterAll", "resourceA", true);
+
+        UnitOfWork innerUoW = DefaultUnitOfWork.startAndGet();
+        assertNotNull(innerUoW.getResource("inherited"));
+        assertNotNull(innerUoW.getResource("inheritedAfterAll"));
+        assertNull(innerUoW.getResource("notInherited"));
+        assertNull(innerUoW.getResource("explicitlyNotInherited"));
+        assertNull(innerUoW.getResource("inheritanceOverwritten"));
+
+        innerUoW.commit();
+        outerUoW.commit();
     }
 }
