@@ -53,6 +53,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
     private static final String BATCH_SIZE_ATTRIBUTE = "batch-size";
     private static final String ENTITY_MANAGER_PROVIDER = "entity-manager-provider";
     private static final String UPCASTERS_ELEMENT = "upcasters";
+    private static final String EVENT_ENTRY_STORE_ATTRIBUTE = "event-entry-store";
 
     /**
      * {@inheritDoc}
@@ -81,6 +82,10 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
             serializer = createAutowiredBeanWithFallback(new XStreamSerializer(), Serializer.class);
         }
         builder.addConstructorArgValue(serializer);
+        if (element.hasAttribute(EVENT_ENTRY_STORE_ATTRIBUTE)) {
+        	Object eventEntryStore = new RuntimeBeanReference(element.getAttribute(EVENT_ENTRY_STORE_ATTRIBUTE));
+            builder.addConstructorArgValue(eventEntryStore);
+        }
         if (element.hasAttribute(DATA_SOURCE_ATTRIBUTE)) {
             builder.addPropertyReference("dataSource", element.getAttribute(DATA_SOURCE_ATTRIBUTE));
         }
