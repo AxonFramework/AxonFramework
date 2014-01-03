@@ -10,6 +10,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.hsqldb.jdbc.JDBCDataSource;
+import org.hsqldb.jdbc.JDBCPool;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,10 +36,12 @@ public class JdbcEventEntryStoreTest {
     private String snap_aggregateType = "snap";
     private JdbcEventEntryStore es;
     private Connection connection;
+	private JDBCPool dataSource;
 
     @Before
     public void createDatabase() throws SQLException {
-        JDBCDataSource dataSource = new org.hsqldb.jdbc.JDBCDataSource();
+		dataSource = new JDBCPool(2);
+       // JDBCDataSource dataSource = new org.hsqldb.jdbc.JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
 
 
@@ -51,6 +54,7 @@ public class JdbcEventEntryStoreTest {
     public void shutDown() throws SQLException {
 		connection.createStatement().execute("SHUTDOWN");
 		connection.close();
+		dataSource.close(1);
     }
 
     @Test
