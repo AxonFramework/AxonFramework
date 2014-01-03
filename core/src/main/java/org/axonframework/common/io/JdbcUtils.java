@@ -46,16 +46,7 @@ public class JdbcUtils {
         }
     }
 
-    public static void closeQuietly(Statement statement) {
-        if (statement != null) {
-            try {
-                statement.close();
-            } catch (SQLException ignore) {
-            }
-        }
-    }
-
-    private static void closeQuietly(Connection connection) {
+	private static void closeQuietly(Connection connection) {
         if (connection != null) {
             try {
                 connection.close();
@@ -90,7 +81,7 @@ public class JdbcUtils {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            closeQuietly(preparedStatement);
+            closeAllQuietly(preparedStatement);
         }
     }
 
@@ -100,7 +91,7 @@ public class JdbcUtils {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            closeQuietly(preparedStatement);
+            closeAllQuietly(preparedStatement);
         }
     }
 
@@ -124,26 +115,7 @@ public class JdbcUtils {
         }
     }
 
-    public static void executeStatement(String sql, DataSource dataSource1) {
-        try {
-            Statement statement = createStatement(dataSource1);
-            statement.execute(sql);
-            statement.getConnection().commit();
-            closeAllQuietly(statement);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Statement createStatement(DataSource dataSource1) {
-        try {
-            return createStatement(dataSource1.getConnection());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static Connection getConnection(DataSource dataSource){
+	public static Connection getConnection(DataSource dataSource){
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
@@ -160,15 +132,8 @@ public class JdbcUtils {
             throw new RuntimeException(e);
         }
     }
-    public static Statement createStatement(Connection conn) {
-        try {
-            return conn.createStatement();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    public static ResultSet executeBatchingQuery(PreparedStatement preparedStatement, int fetchSize) {
+	public static ResultSet executeBatchingQuery(PreparedStatement preparedStatement, int fetchSize) {
         try {
             preparedStatement.setFetchSize(fetchSize);
             return preparedStatement.executeQuery();

@@ -250,9 +250,13 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
                                                                                             batchSize
                                                                                             );
         DomainEventStream eventStream = new CursorBackedDomainEventStream(null, batch, null, true);
-        while (eventStream.hasNext()) {
-            visitor.doWithEvent(eventStream.next());
-        }
+		try {
+			while (eventStream.hasNext()) {
+				visitor.doWithEvent(eventStream.next());
+			}
+		} finally {
+			IOUtils.closeQuietlyIfCloseable(eventStream);
+		}
     }
 
     /**
