@@ -146,12 +146,21 @@ public class JdbcUtils {
     public static void closeBatchingPreparedStatement(ResultSet rs) {
         try {
             Statement statement = rs.getStatement();
-            statement.getConnection().setAutoCommit(true);
+            Connection connection = safeGetConnection(statement);
+            if (connection != null) {
+                connection.setAutoCommit(true);
+            }
             closeAllQuietly(statement);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
+
+    private static Connection safeGetConnection(Statement statement) throws SQLException {
+        if (statement == null) return null;
+        return statement.getConnection();
+    }
+
 
     public static interface ResultSetParser<T> {
         T createItem(ResultSet rs) throws SQLException;

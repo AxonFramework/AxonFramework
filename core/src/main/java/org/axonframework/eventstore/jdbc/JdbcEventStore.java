@@ -363,7 +363,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
 
 		@Override
 		public void close() throws IOException {
-			IOUtils.closeIfCloseable(currentBatch);
+			IOUtils.closeIfCloseable(cursor);
 		}
 	}
 }
