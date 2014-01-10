@@ -116,7 +116,8 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
                                         AssociationValue associationValue) {
         Set<String> sagas = new TreeSet<String>(sagaRepository.find(sagaType, associationValue));
         for (Saga sagaInCreation : sagasInCreation.values()) {
-            if (sagaInCreation.getAssociationValues().contains(associationValue)) {
+            if (sagaType.isInstance(sagaInCreation)
+                    && sagaInCreation.getAssociationValues().contains(associationValue)) {
                 sagas.add(sagaInCreation.getSagaIdentifier());
             }
         }

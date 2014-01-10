@@ -16,10 +16,12 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 
@@ -55,14 +57,14 @@ public class AnnotatedSagaManagerTest {
     @Test
     public void testCreationPolicy_NoneExists() {
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
-        assertEquals(1, repositoryContents("123").size());
+        assertEquals(1, repositoryContents("123", MyTestSaga.class).size());
     }
 
     @Test
     public void testCreationPolicy_OneAlreadyExists() {
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("123")));
-        assertEquals(1, repositoryContents("123").size());
+        assertEquals(1, repositoryContents("123", MyTestSaga.class).size());
     }
 
     @Test
@@ -76,7 +78,7 @@ public class AnnotatedSagaManagerTest {
         StartingEvent startingEvent = new StartingEvent("123");
         manager.handle(new GenericEventMessage<StartingEvent>(startingEvent));
         manager.handle(new GenericEventMessage<ForcingStartEvent>(new ForcingStartEvent("123")));
-        Set<MyTestSaga> sagas = repositoryContents("123");
+        Set<MyTestSaga> sagas = repositoryContents("123", MyTestSaga.class);
         assertEquals(2, sagas.size());
         for (MyTestSaga saga : sagas) {
             if (saga.getCapturedEvents().contains(startingEvent)) {
@@ -89,7 +91,7 @@ public class AnnotatedSagaManagerTest {
     @Test
     public void testCreationPolicy_SagaNotCreated() {
         manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("123")));
-        assertEquals(0, repositoryContents("123").size());
+        assertEquals(0, repositoryContents("123", MyTestSaga.class).size());
     }
 
     @Test
@@ -98,14 +100,14 @@ public class AnnotatedSagaManagerTest {
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("23")));
         manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("12")));
         manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23")));
-        assertEquals(1, repositoryContents("12").size());
-        assertEquals(1, repositoryContents("23").size());
+        assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
+        assertEquals(1, repositoryContents("23", MyTestSaga.class).size());
         manager.handle(new GenericEventMessage<EndingEvent>(new EndingEvent("12")));
-        assertEquals(1, repositoryContents("23").size());
-        assertEquals(0, repositoryContents("12").size());
+        assertEquals(1, repositoryContents("23", MyTestSaga.class).size());
+        assertEquals(0, repositoryContents("12", MyTestSaga.class).size());
         manager.handle(new GenericEventMessage<EndingEvent>(new EndingEvent("23")));
-        assertEquals(0, repositoryContents("23").size());
-        assertEquals(0, repositoryContents("12").size());
+        assertEquals(0, repositoryContents("23", MyTestSaga.class).size());
+        assertEquals(0, repositoryContents("12", MyTestSaga.class).size());
     }
 
     @Test
@@ -117,14 +119,35 @@ public class AnnotatedSagaManagerTest {
     public void testLifeCycle_ExistingInstanceIgnoresEvent() {
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("12")));
         manager.handle(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
-        assertEquals(1, repositoryContents("12").size());
-        assertEquals(1, repositoryContents("12").iterator().next().getCapturedEvents().size());
+        assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
+        assertEquals(1, repositoryContents("12", MyTestSaga.class).iterator().next().getCapturedEvents().size());
     }
 
     @Test
     public void testLifeCycle_IgnoredEventDoesNotCreateInstance() {
         manager.handle(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
-        assertEquals(0, repositoryContents("12").size());
+        assertEquals(0, repositoryContents("12", MyTestSaga.class).size());
+    }
+
+    @Test
+    public void testSagaTypeTakenIntoConsiderationWhenCheckingForSagasIncreation() throws InterruptedException {
+        manager = new AnnotatedSagaManager(sagaRepository, new SimpleEventBus(),
+                                           MyOtherTestSaga.class, MyTestSaga.class);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(8);
+        for (int i = 0; i < 100; i++) {
+            executorService.execute(new HandleEventTask(
+                    GenericEventMessage.asEventMessage(new StartingEvent("id" + i))));
+            executorService.execute(new HandleEventTask(
+                    GenericEventMessage.asEventMessage(new OtherStartingEvent("id" + i))));
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(10, TimeUnit.SECONDS);
+
+        for (int i = 0; i < 100; i++) {
+            assertEquals("MyTestSaga missing for id" + i, 1, repositoryContents("id" + i, MyTestSaga.class).size());
+            assertEquals("MyOtherTestSaga missing for id" + i, 1, repositoryContents("id" + i, MyOtherTestSaga.class).size());
+        }
     }
 
     @Test(timeout = 5000)
@@ -142,18 +165,26 @@ public class AnnotatedSagaManagerTest {
         executor.shutdown();
         executor.awaitTermination(1, TimeUnit.SECONDS);
 
-        assertEquals(1, repositoryContents("12").size());
-        assertEquals(2, repositoryContents("12").iterator().next().getCapturedEvents().size());
+        assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
+        assertEquals(2, repositoryContents("12", MyTestSaga.class).iterator().next().getCapturedEvents().size());
     }
 
-    private Set<MyTestSaga> repositoryContents(String lookupValue) {
-        final Set<String> identifiers = sagaRepository.find(MyTestSaga.class, new AssociationValue("myIdentifier",
-                                                                                                    lookupValue));
-        Set<MyTestSaga> sagas = new HashSet<MyTestSaga>();
+    private <T extends Saga> Set<T> repositoryContents(String lookupValue, Class<T> sagaType) {
+        final Set<String> identifiers = sagaRepository.find(sagaType, new AssociationValue("myIdentifier",
+                                                                                           lookupValue));
+        Set<T> sagas = new HashSet<T>();
         for (String identifier : identifiers) {
-            sagas.add((MyTestSaga) sagaRepository.load(identifier));
+            sagas.add((T) sagaRepository.load(identifier));
         }
         return sagas;
+    }
+
+    public static class MyOtherTestSaga extends AbstractAnnotatedSaga {
+
+        @StartSaga
+        @SagaEventHandler(associationProperty = "myIdentifier")
+        public void handleSomeEvent(OtherStartingEvent event) throws InterruptedException {
+        }
     }
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
@@ -163,7 +194,7 @@ public class AnnotatedSagaManagerTest {
 
         @StartSaga
         @SagaEventHandler(associationProperty = "myIdentifier")
-        public void handleSomeEvent(StartingEvent event) {
+        public void handleSomeEvent(StartingEvent event) throws InterruptedException {
             capturedEvents.add(event);
         }
 
@@ -216,6 +247,21 @@ public class AnnotatedSagaManagerTest {
             super(myIdentifier);
         }
     }
+
+    public static class OtherStartingEvent extends MyIdentifierEvent {
+
+        private final CountDownLatch countDownLatch;
+
+        protected OtherStartingEvent(String myIdentifier) {
+            this(myIdentifier, null);
+        }
+
+        public OtherStartingEvent(String id, CountDownLatch countDownLatch) {
+            super(id);
+            this.countDownLatch = countDownLatch;
+        }
+    }
+
     public static class SlowStartingEvent extends StartingEvent {
 
 
@@ -255,6 +301,20 @@ public class AnnotatedSagaManagerTest {
 
         protected MiddleEvent(String myIdentifier) {
             super(myIdentifier);
+        }
+    }
+
+    private class HandleEventTask implements Runnable {
+
+        private final EventMessage<?> eventMessage;
+
+        public HandleEventTask(EventMessage<?> eventMessage) {
+            this.eventMessage = eventMessage;
+        }
+
+        @Override
+        public void run() {
+            manager.handle(eventMessage);
         }
     }
 }
