@@ -20,6 +20,8 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 
+import java.util.List;
+
 /**
  * Interface of a mechanism that receives Messages dispatched to a Cluster that is in Replay mode. The implementation
  * defines if, how and when the cluster should handle events while a replay is in progress.
@@ -27,10 +29,11 @@ import org.axonframework.eventhandling.Cluster;
  * When replying is finished, the handler is asked to flush any backlog it may have gathered during the replay.
  * <p/>
  * Implementations must ensure thread safety. The {@link #prepareForReplay(org.axonframework.eventhandling.Cluster)},
- * {@link #releaseMessage(org.axonframework.domain.DomainEventMessage)} and {@link
- * #processBacklog(org.axonframework.eventhandling.Cluster)} methods are invoked by the thread performing the replay.
- * The {@link #onIncomingMessages(org.axonframework.eventhandling.Cluster, org.axonframework.domain.EventMessage[])}
- * method is invoked in the thread that attempts to publish events to a cluster while it is in replay mode.
+ * {@link #releaseMessage(org.axonframework.eventhandling.Cluster, org.axonframework.domain.DomainEventMessage)} and
+ * {@link #processBacklog(org.axonframework.eventhandling.Cluster)} methods are invoked by the thread performing the
+ * replay. The {@link #onIncomingMessages(org.axonframework.eventhandling.Cluster,
+ * org.axonframework.domain.EventMessage[])} method is invoked in the thread that attempts to publish events to a
+ * cluster while it is in replay mode.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -52,30 +55,46 @@ public interface IncomingMessageHandler {
     /**
      * Invoked while the ReplayingCluster is in replay mode and an Event is being dispatched to the Cluster. If the
      * timestamp of the given <code>message</code> is before the timestamp of any message reported via {@link
-     * #releaseMessage(org.axonframework.domain.DomainEventMessage)}, consider discarding the incoming message.
+     * #releaseMessage(org.axonframework.eventhandling.Cluster, org.axonframework.domain.DomainEventMessage)}, consider
+     * discarding the incoming message.
+     * <p/>
+     * This method returns the list of messages that must be considered as handled. May be <code>null</code> to
+     * indicate all given <code>messages</code> have been stored for processing later.
      * <p/>
      * This method is invoked in the thread that attempts to publish the given messages to the given destination.
      *
      * @param destination The cluster to receive the message
      * @param messages    The messages to dispatch to the cluster
+     * @return a list of messages that may be considered as handled
      */
-    void onIncomingMessages(Cluster destination, EventMessage... messages);
+    List<EventMessage> onIncomingMessages(Cluster destination, EventMessage... messages);
 
     /**
      * Invoked when a message has been replayed from the event store. If such a message has been received with {@link
      * #onIncomingMessages(org.axonframework.eventhandling.Cluster, org.axonframework.domain.EventMessage[])}, it
-     * should
-     * be discarded.
+     * should be discarded.
      * <p/>
      * After this invocation, any invocation of {@link #onIncomingMessages(org.axonframework.eventhandling.Cluster,
-     * org.axonframework.domain.EventMessage[])} with a message who's timestamp is lower that this message's timestamp
-     * can be safely discarded.
+     * org.axonframework.domain.EventMessage[])} with a message who's timestamp (minus a safety buffer to account for
+     * clock differences) is lower that this message's timestamp can be safely discarded. It is recommended that
+     * non-Domain EventMessages in the backlog are forwarded to the cluster provided, instead of discarded. They must
+     * then also be included in the returned list.
+     * <p/>
+     * This method returns the list of EventMessages that must be considered processed, regardless of whether they have
+     * been forwarded to the original <code>destination</code> or not. These EventMessages have been registered in a
+     * call to {@link #onIncomingMessages(org.axonframework.eventhandling.Cluster, org.axonframework.domain.EventMessage[])}.
+     * <p/>
+     * It is highly recommended to return the instance used in the {@link #onIncomingMessages(org.axonframework.eventhandling.Cluster,
+     * org.axonframework.domain.EventMessage[])} invocation, over the given <code>message</code>, even if they refer to
+     * the save Event.
      * <p/>
      * This method is invoked in the thread that executes the replay process
      *
-     * @param message The message replayed from the event store
+     * @param destination The original destination of the message to be released
+     * @param message     The message replayed from the event store
+     * @return The list of messages that have been released
      */
-    void releaseMessage(DomainEventMessage message);
+    List<EventMessage> releaseMessage(Cluster destination, DomainEventMessage message);
 
     /**
      * Invoked when all events from the Event Store have been processed. Any remaining backlog, as well as any messages

@@ -22,6 +22,9 @@ import org.axonframework.eventhandling.Cluster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * IncomingMessageHandler implementation that simply discards all messages dispatch during a replay process. This
  * handler is typically useful when not expecting to perform a replay while the cluster is actively listening to events
@@ -39,7 +42,7 @@ public class DiscardingIncomingMessageHandler implements IncomingMessageHandler 
     }
 
     @Override
-    public void onIncomingMessages(Cluster destination, EventMessage... messages) {
+    public List<EventMessage> onIncomingMessages(Cluster destination, EventMessage... messages) {
         if (messages != null && messages.length > 0 && logger.isInfoEnabled()) {
             final StringBuilder msg = new StringBuilder("Discarding ")
                     .append(messages.length)
@@ -57,11 +60,13 @@ public class DiscardingIncomingMessageHandler implements IncomingMessageHandler 
             msg.append("]");
             logger.info(msg.toString());
         }
+        return messages == null ? null : Arrays.asList(messages);
     }
 
     @Override
-    public void releaseMessage(DomainEventMessage message) {
+    public List<EventMessage> releaseMessage(Cluster destination, DomainEventMessage message) {
         // do nothing
+        return null;
     }
 
     @Override

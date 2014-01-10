@@ -17,9 +17,12 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.domain.EventMessage;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -38,6 +41,8 @@ public abstract class AbstractCluster implements Cluster {
     private final Set<EventListener> eventListeners;
     private final Set<EventListener> immutableEventListeners;
     private final ClusterMetaData clusterMetaData = new DefaultClusterMetaData();
+    private final EventProcessingMonitorCollection subscribedMonitors = new EventProcessingMonitorCollection();
+    private final MultiplexingEventProcessingMonitor eventProcessingMonitor = new MultiplexingEventProcessingMonitor(subscribedMonitors);
 
     /**
      * Initializes the cluster with given <code>name</code>. The order in which listeners are organized in the cluster
@@ -68,6 +73,36 @@ public abstract class AbstractCluster implements Cluster {
     }
 
     @Override
+    public void publish(EventMessage... events) {
+        doPublish(Arrays.asList(events), eventListeners, eventProcessingMonitor);
+    }
+
+    /**
+     * Publish the given list of <code>events</code> to the given set of <code>eventListeners</code>, and notify the
+     * given <code>eventProcessingMonitor</code> after completion. The given set of <code>eventListeners</code> is a
+     * live view on the memberships of the cluster. Any subscription changes are immediately visible in this set.
+     * Iterators created on the set iterate over an immutable view reflecting the state at the moment the iterator was
+     * created.
+     * <p/>
+     * When this method is invoked as part of a Unit of Work (see
+     * {@link org.axonframework.unitofwork.CurrentUnitOfWork#isStarted()}), the monitor invocation should be postponed
+     * until the Unit of Work is committed or rolled back, to ensure any transactions are properly propagated when the
+     * monitor is invoked.
+     * <p/>
+     * It is the implementation's responsibility to ensure that &ndash;eventually&ndash; the each of the given
+     * <code>events</code> is provided to the <code>eventProcessingMonitor</code>, either to the {@link
+     * org.axonframework.eventhandling.EventProcessingMonitor#onEventProcessingCompleted(java.util.List)} or the {@link
+     * org.axonframework.eventhandling.EventProcessingMonitor#onEventProcessingFailed(java.util.List, Throwable)}
+     * method.
+     *
+     * @param events                 The events to publish
+     * @param eventListeners         The event listeners subscribed at the moment the event arrived
+     * @param eventProcessingMonitor The monitor to notify after completion.
+     */
+    protected abstract void doPublish(List<EventMessage> events, Set<EventListener> eventListeners,
+                                      MultiplexingEventProcessingMonitor eventProcessingMonitor);
+
+    @Override
     public String getName() {
         return name;
     }
@@ -75,6 +110,9 @@ public abstract class AbstractCluster implements Cluster {
     @Override
     public void subscribe(EventListener eventListener) {
         eventListeners.add(eventListener);
+        if (eventListener instanceof EventProcessingMonitorSupport) {
+            ((EventProcessingMonitorSupport) eventListener).subscribeEventProcessingMonitor(eventProcessingMonitor);
+        }
     }
 
     @Override
@@ -98,5 +136,15 @@ public abstract class AbstractCluster implements Cluster {
     @Override
     public Set<EventListener> getMembers() {
         return immutableEventListeners;
+    }
+
+    @Override
+    public void subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+        subscribedMonitors.subscribeEventProcessingMonitor(monitor);
+    }
+
+    @Override
+    public void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+        subscribedMonitors.unsubscribeEventProcessingMonitor(monitor);
     }
 }

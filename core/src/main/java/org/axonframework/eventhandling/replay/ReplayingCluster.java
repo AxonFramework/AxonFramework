@@ -22,12 +22,14 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.unitofwork.TransactionManager;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
@@ -60,7 +62,8 @@ public class ReplayingCluster implements Cluster {
     private final IncomingMessageHandler incomingMessageHandler;
     private final Set<ReplayAware> replayAwareListeners = new CopyOnWriteArraySet<ReplayAware>();
 
-    private volatile boolean inReplay = false;
+    private volatile Status status = Status.LIVE;
+    private final EventProcessingListeners eventHandlingListeners = new EventProcessingListeners();
 
     /**
      * Initializes a ReplayingCluster that wraps the given <code>delegate</code>, to allow it to replay event from the
@@ -84,6 +87,7 @@ public class ReplayingCluster implements Cluster {
         this.transactionManager = transactionManager;
         this.commitThreshold = commitThreshold;
         this.incomingMessageHandler = incomingMessageHandler;
+        this.delegate.subscribeEventProcessingMonitor(eventHandlingListeners);
     }
 
 
@@ -163,7 +167,7 @@ public class ReplayingCluster implements Cluster {
      * @return <code>true</code> if this cluster is in replay mode, <code>false</code> otherwise.
      */
     public boolean isInReplayMode() {
-        return inReplay;
+        return status != Status.LIVE;
     }
 
     @Override
@@ -173,10 +177,13 @@ public class ReplayingCluster implements Cluster {
 
     @Override
     public void publish(EventMessage... events) {
-        if (inReplay) {
-            incomingMessageHandler.onIncomingMessages(delegate, events);
-        } else {
+        if (status == Status.LIVE) {
             delegate.publish(events);
+        } else {
+            List<EventMessage> acknowledgedMessages = incomingMessageHandler.onIncomingMessages(delegate, events);
+            if (acknowledgedMessages != null && !acknowledgedMessages.isEmpty()) {
+                eventHandlingListeners.onEventProcessingCompleted(acknowledgedMessages);
+            }
         }
     }
 
@@ -229,6 +236,16 @@ public class ReplayingCluster implements Cluster {
         return delegate.getMetaData();
     }
 
+    @Override
+    public void subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+        eventHandlingListeners.delegates.add(monitor);
+    }
+
+    @Override
+    public void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+        eventHandlingListeners.delegates.remove(monitor);
+    }
+
     private class ReplayEventsTask implements Runnable {
 
         private Criteria criteria;
@@ -241,7 +258,7 @@ public class ReplayingCluster implements Cluster {
         @Override
         public void run() {
             incomingMessageHandler.prepareForReplay(delegate);
-            inReplay = true;
+            status = Status.REPLAYING;
             Object tx = transactionManager.startTransaction();
             final ReplayingEventVisitor visitor = new ReplayingEventVisitor(tx);
             try {
@@ -256,6 +273,7 @@ public class ReplayingCluster implements Cluster {
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.afterReplay();
                 }
+                status = Status.PROCESSING_BACKLOG;
                 incomingMessageHandler.processBacklog(delegate);
                 transactionManager.commitTransaction(visitor.getTransaction());
             } catch (Throwable t) {
@@ -269,7 +287,7 @@ public class ReplayingCluster implements Cluster {
                 }
                 throw new ReplayFailedException("Replay failed due to an exception.", t);
             } finally {
-                inReplay = false;
+                status = Status.LIVE;
             }
         }
 
@@ -291,12 +309,42 @@ public class ReplayingCluster implements Cluster {
                     currentTransaction = transactionManager.startTransaction();
                 }
                 delegate.publish(domainEvent);
-                incomingMessageHandler.releaseMessage(domainEvent);
+                List<EventMessage> releasedMessages = incomingMessageHandler.releaseMessage(delegate, domainEvent);
+                if (releasedMessages != null && !releasedMessages.isEmpty()) {
+                    eventHandlingListeners.onEventProcessingCompleted(releasedMessages);
+                }
             }
 
             public Object getTransaction() {
                 return currentTransaction;
             }
         }
+    }
+
+    private final class EventProcessingListeners implements EventProcessingMonitor {
+
+        private Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<EventProcessingMonitor>();
+
+        @Override
+        public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {
+            if (status != Status.REPLAYING) {
+                for (EventProcessingMonitor delegate : delegates) {
+                    delegate.onEventProcessingCompleted(eventMessages);
+                }
+            }
+        }
+
+        @Override
+        public void onEventProcessingFailed(List<? extends EventMessage> eventMessages, Throwable cause) {
+            if (status != Status.REPLAYING) {
+                for (EventProcessingMonitor delegate : delegates) {
+                    delegate.onEventProcessingFailed(eventMessages, cause);
+                }
+            }
+        }
+    }
+
+    private static enum Status {
+        LIVE, REPLAYING, PROCESSING_BACKLOG
     }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.MultiThreadedClaimStrategy;
@@ -27,6 +28,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Subscribable;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventProcessingMonitor;
+import org.axonframework.eventhandling.EventProcessingMonitorCollection;
+import org.axonframework.eventhandling.EventProcessingMonitorSupport;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
@@ -38,7 +42,9 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -57,7 +63,7 @@ import java.util.concurrent.TimeUnit;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
+public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, EventProcessingMonitorSupport {
 
     private static final WaitStrategy DEFAULT_WAIT_STRATEGY = new BlockingWaitStrategy();
     private static final int DEFAULT_BUFFER_SIZE = 512;
@@ -78,6 +84,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
     private SagaManagerStatus sagaManagerStatus = new SagaManagerStatus();
     private long startTimeout = 5000;
+    private final EventProcessingMonitorCollection processingMonitors = new EventProcessingMonitorCollection();
 
     /**
      * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code> to listen to
@@ -124,8 +131,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
             disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository,
                                                                                unitOfWorkFactory, processorCount,
                                                                                disruptor.getRingBuffer(),
-                                                                               sagaManagerStatus));
-
+                                                                               sagaManagerStatus))
+            .then(new MonitorNotifier(processingMonitors));
             disruptor.start();
         }
         subscribe();
@@ -192,6 +199,16 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
     @Override
     public Class<?> getTargetType() {
         return sagaTypes[0];
+    }
+
+    @Override
+    public void subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+        processingMonitors.subscribeEventProcessingMonitor(monitor);
+    }
+
+    @Override
+    public void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+        processingMonitors.unsubscribeEventProcessingMonitor(monitor);
     }
 
     private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
@@ -441,6 +458,25 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable {
          */
         public boolean awaitStarted(long timeout, TimeUnit unit) throws InterruptedException {
             return cdl.await(timeout, unit);
+        }
+    }
+
+    private static class MonitorNotifier implements EventHandler<AsyncSagaProcessingEvent> {
+
+        private final EventProcessingMonitor monitor;
+        private final List<EventMessage> processedMessages = new ArrayList<EventMessage>();
+
+        public MonitorNotifier(EventProcessingMonitor monitor) {
+            this.monitor = monitor;
+        }
+
+        @Override
+        public void onEvent(AsyncSagaProcessingEvent event, long sequence, boolean endOfBatch) throws Exception {
+            processedMessages.add(event.getPublishedEvent());
+            if (endOfBatch) {
+                monitor.onEventProcessingCompleted(processedMessages);
+                processedMessages.clear();
+            }
         }
     }
 }

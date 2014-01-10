@@ -28,7 +28,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 1.2
  */
-public interface Cluster {
+public interface Cluster extends EventProcessingMonitorSupport {
 
     /**
      * Returns the name of this cluster. This name is used to detect distributed instances of the

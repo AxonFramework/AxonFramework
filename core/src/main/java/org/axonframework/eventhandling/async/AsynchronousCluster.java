@@ -19,6 +19,8 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.AbstractCluster;
+import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerOrderComparator;
 import org.axonframework.eventhandling.OrderResolver;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
@@ -27,6 +29,8 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -167,39 +171,46 @@ public class AsynchronousCluster extends AbstractCluster {
     }
 
     @Override
-    public void publish(EventMessage... events) {
+    protected void doPublish(List<EventMessage> events, Set<EventListener> eventListeners,
+                             MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         for (EventMessage event : events) {
-            schedule(event);
+            schedule(event, eventProcessingMonitor);
         }
     }
 
     /**
      * Schedules this task for execution when all pre-conditions have been met.
      *
-     * @param task The task to schedule for processing.
+     * @param task                   The task to schedule for processing.
+     * @param eventProcessingMonitor The monitor to invoke after completion
      */
-    protected void schedule(EventMessage<?> task) {
+    protected void schedule(EventMessage<?> task, MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         final Object sequenceIdentifier = sequencingPolicy.getSequenceIdentifierFor(task);
         if (sequenceIdentifier == null) {
             logger.debug("Scheduling Event for full concurrent processing {}",
                          task.getClass().getSimpleName());
-            EventProcessor scheduler = newProcessingScheduler(new NoActionCallback());
+            EventProcessor scheduler = newProcessingScheduler(new NoActionCallback(),
+                                                              getMembers(),
+                                                              eventProcessingMonitor);
             scheduler.scheduleEvent(task);
         } else {
             logger.debug("Scheduling task of type [{}] for sequential processing in group [{}]",
                          task.getClass().getSimpleName(),
                          sequenceIdentifier.toString());
-            assignEventToScheduler(task, sequenceIdentifier);
+            assignEventToScheduler(task, sequenceIdentifier, eventProcessingMonitor);
         }
     }
 
-    private void assignEventToScheduler(EventMessage<?> task, Object sequenceIdentifier) {
+    private void assignEventToScheduler(EventMessage<?> task, Object sequenceIdentifier,
+                                        MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         boolean taskScheduled = false;
         while (!taskScheduled) {
             EventProcessor currentScheduler = currentSchedulers.get(sequenceIdentifier);
             if (currentScheduler == null) {
                 currentSchedulers.putIfAbsent(sequenceIdentifier,
-                                              newProcessingScheduler(new SchedulerCleanUp(sequenceIdentifier)));
+                                              newProcessingScheduler(new SchedulerCleanUp(sequenceIdentifier),
+                                                                     getMembers(),
+                                                                     eventProcessingMonitor));
             } else {
                 taskScheduled = currentScheduler.scheduleEvent(task);
                 if (!taskScheduled) {
@@ -213,13 +224,21 @@ public class AsynchronousCluster extends AbstractCluster {
     /**
      * Creates a new scheduler instance that schedules tasks on the executor service for the managed EventListener.
      *
-     * @param shutDownCallback The callback that needs to be notified when the scheduler stops processing.
-     * @return a new scheduler instance
+     * @param shutDownCallback       The callback that needs to be notified when the scheduler stops processing.
+     * @param eventListeners         The listeners to process the event with
+     * @param eventProcessingMonitor @return a new scheduler instance
+     * @return The processing scheduler created
      */
     protected EventProcessor newProcessingScheduler(
-            EventProcessor.ShutdownCallback shutDownCallback) {
+            EventProcessor.ShutdownCallback shutDownCallback, Set<EventListener> eventListeners,
+            MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         logger.debug("Initializing new processing scheduler.");
-        return new EventProcessor(executor, shutDownCallback, errorHandler, unitOfWorkFactory, getMembers());
+        return new EventProcessor(executor,
+                                  shutDownCallback,
+                                  errorHandler,
+                                  unitOfWorkFactory,
+                                  eventListeners,
+                                  eventProcessingMonitor);
     }
 
     private static class NoActionCallback implements EventProcessor.ShutdownCallback {

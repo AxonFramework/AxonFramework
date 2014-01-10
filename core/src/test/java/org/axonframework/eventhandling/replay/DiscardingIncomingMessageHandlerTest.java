@@ -43,7 +43,7 @@ public class DiscardingIncomingMessageHandlerTest {
         // Event non-domain event messages are discarded
         testSubject.onIncomingMessages(mockCluster, GenericEventMessage.asEventMessage("Test"));
         testSubject.processBacklog(mockCluster);
-        testSubject.releaseMessage(new GenericDomainEventMessage<String>("aggregate", 0, "Testing"));
+        testSubject.releaseMessage(mockCluster, new GenericDomainEventMessage<String>("aggregate", 0, "Testing"));
 
         // the cluster name may be asked for logging
         verify(mockCluster, atMost(1)).getName();
@@ -55,7 +55,7 @@ public class DiscardingIncomingMessageHandlerTest {
         // Event non-domain event messages are discarded
         testSubject.onIncomingMessages(mockCluster);
         testSubject.processBacklog(mockCluster);
-        testSubject.releaseMessage(new GenericDomainEventMessage<String>("aggregate", 0, "Testing"));
+        testSubject.releaseMessage(mockCluster, new GenericDomainEventMessage<String>("aggregate", 0, "Testing"));
 
         // the cluster name may be asked for logging
         verifyZeroInteractions(mockCluster);

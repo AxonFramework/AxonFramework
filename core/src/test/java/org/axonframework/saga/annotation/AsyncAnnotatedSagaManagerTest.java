@@ -21,12 +21,16 @@ import org.apache.log4j.Logger;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 import org.mockito.internal.stubbing.answers.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -52,6 +56,9 @@ public class AsyncAnnotatedSagaManagerTest {
     private EventBus eventBus;
     private AsyncAnnotatedSagaManagerTest.StubInMemorySagaRepository sagaRepository;
     private ExecutorService executorService;
+    private EventProcessingMonitor mockMonitor;
+    private List<EventMessage> ackedMessages;
+    private List<EventMessage> failedMessages;
 
     @BeforeClass
     public static void disableLogging() {
@@ -68,13 +75,23 @@ public class AsyncAnnotatedSagaManagerTest {
     @Before
     public void setUp() {
         eventBus = mock(EventBus.class);
-        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class);
+        testSubject = new AsyncAnnotatedSagaManager(StubAsyncSaga.class);
         sagaRepository = new StubInMemorySagaRepository();
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
         testSubject.setExecutor(executorService);
         testSubject.setProcessorCount(3);
         testSubject.setBufferSize(64);
+
+        mockMonitor = mock(EventProcessingMonitor.class);
+        ackedMessages = Collections.synchronizedList(new ArrayList());
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                ackedMessages.addAll(((List) invocationOnMock.getArguments()[0]));
+                return null;
+            }
+        }).when(mockMonitor).onEventProcessingCompleted(isA(List.class));
     }
 
     @After
@@ -147,6 +164,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
     @Test
     public void testSingleSagaLifeCycle_FinalAttemptOnClose() throws InterruptedException {
+        testSubject.subscribeEventProcessingMonitor(mockMonitor);
         final StubInMemorySagaRepository spy = spy(sagaRepository);
         testSubject.setSagaRepository(spy);
         Exception failure = new RuntimeException("Mock Exception");
@@ -154,12 +172,15 @@ public class AsyncAnnotatedSagaManagerTest {
         doThrow(failure).when(spy).add(isA(Saga.class));
         testSubject.start();
         assertEquals(0, sagaRepository.getKnownSagas());
-        for (EventMessage message : createSimpleLifeCycle("one", "two", true)) {
+
+
+        final List<EventMessage> simpleLifeCycle = createSimpleLifeCycle("one", "two", true);
+        for (EventMessage message : simpleLifeCycle) {
             testSubject.handle(message);
         }
         Thread.sleep(500);
         // to make sure at least one failed call was made...
-//        verify(spy, atLeastOnce()).add(isA(Saga.class));
+        verify(spy, atLeastOnce()).add(isA(Saga.class));
         doCallRealMethod().when(spy).commit(isA(Saga.class));
         doCallRealMethod().when(spy).add(isA(Saga.class));
         testSubject.stop();
@@ -167,15 +188,21 @@ public class AsyncAnnotatedSagaManagerTest {
         assertTrue("Service refused to stop in 1 seconds", executorService.awaitTermination(1, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
+
+        assertEquals(simpleLifeCycle, ackedMessages);
     }
 
     @Test
     public void testMultipleDisconnectedSagaLifeCycle() throws InterruptedException {
+        testSubject.subscribeEventProcessingMonitor(mockMonitor);
         testSubject.start();
         assertEquals(0, sagaRepository.getKnownSagas());
+        int expectedMessageCount = 0;
         for (int t = 0; t < 1000; t++) {
-            for (EventMessage message : createSimpleLifeCycle("association-" + t, "newAssociation-" + t,
-                                                              (t & 1) == 0)) {
+            final List<EventMessage> lifeCycle = createSimpleLifeCycle("association-" + t, "newAssociation-" + t,
+                                                                       (t & 1) == 0);
+            expectedMessageCount += lifeCycle.size();
+            for (EventMessage message : lifeCycle) {
                 testSubject.handle(message);
             }
         }
@@ -184,6 +211,8 @@ public class AsyncAnnotatedSagaManagerTest {
         assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1000, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
+
+        assertEquals(expectedMessageCount, ackedMessages.size());
     }
 
     @SuppressWarnings("unchecked")

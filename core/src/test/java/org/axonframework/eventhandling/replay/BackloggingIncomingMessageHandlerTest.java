@@ -17,7 +17,9 @@
 package org.axonframework.eventhandling.replay;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.eventhandling.Cluster;
 import org.joda.time.DateTime;
@@ -50,11 +52,11 @@ public class BackloggingIncomingMessageHandlerTest {
         DateTimeUtils.setCurrentMillisFixed(START_TIME.getMillis());
         this.testSubject = new BackloggingIncomingMessageHandler();
         this.mockCluster = mock(Cluster.class);
-        messages.put(MINUTE_BEFORE_START, newMessage("id1", MINUTE_BEFORE_START));
-        messages.put(SECOND_BEFORE_START, newMessage("id2", SECOND_BEFORE_START));
-        messages.put(START_TIME, newMessage("id3", START_TIME));
-        messages.put(SECOND_AFTER_START, newMessage("id4", SECOND_AFTER_START));
-        messages.put(MINUTE_AFTER_START, newMessage("id5", MINUTE_AFTER_START));
+        messages.put(MINUTE_BEFORE_START, newDomainEventMessage("id1", MINUTE_BEFORE_START));
+        messages.put(SECOND_BEFORE_START, newDomainEventMessage("id2", SECOND_BEFORE_START));
+        messages.put(START_TIME, newDomainEventMessage("id3", START_TIME));
+        messages.put(SECOND_AFTER_START, newDomainEventMessage("id4", SECOND_AFTER_START));
+        messages.put(MINUTE_AFTER_START, newDomainEventMessage("id5", MINUTE_AFTER_START));
 
         this.testSubject.prepareForReplay(mockCluster);
     }
@@ -87,9 +89,9 @@ public class BackloggingIncomingMessageHandlerTest {
         testSubject.onIncomingMessages(mockCluster, messages.get(SECOND_AFTER_START));
         testSubject.onIncomingMessages(mockCluster, messages.get(MINUTE_AFTER_START));
 
-        testSubject.releaseMessage(messages.get(SECOND_BEFORE_START));
-        testSubject.releaseMessage(messages.get(START_TIME));
-        testSubject.releaseMessage(messages.get(SECOND_AFTER_START));
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_BEFORE_START));
+        testSubject.releaseMessage(mockCluster, messages.get(START_TIME));
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_AFTER_START));
         verifyZeroInteractions(mockCluster);
 
         testSubject.processBacklog(mockCluster);
@@ -99,9 +101,9 @@ public class BackloggingIncomingMessageHandlerTest {
     }
     @Test
     public void testReleasedEventsRemovedFromBacklog_ReleasedBeforeIncoming() throws Exception {
-        testSubject.releaseMessage(messages.get(SECOND_BEFORE_START));
-        testSubject.releaseMessage(messages.get(START_TIME));
-        testSubject.releaseMessage(messages.get(SECOND_AFTER_START));
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_BEFORE_START));
+        testSubject.releaseMessage(mockCluster, messages.get(START_TIME));
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_AFTER_START));
 
         testSubject.onIncomingMessages(mockCluster, messages.get(MINUTE_BEFORE_START));
         testSubject.onIncomingMessages(mockCluster, messages.get(SECOND_BEFORE_START));
@@ -118,9 +120,9 @@ public class BackloggingIncomingMessageHandlerTest {
 
     @Test
     public void testEventsPublishedImmediatelyAfterReplayFinished() {
-        testSubject.releaseMessage(messages.get(SECOND_BEFORE_START));
-        testSubject.releaseMessage(messages.get(START_TIME));
-        testSubject.releaseMessage(messages.get(SECOND_AFTER_START));
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_BEFORE_START));
+        testSubject.releaseMessage(mockCluster, messages.get(START_TIME));
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_AFTER_START));
 
         testSubject.onIncomingMessages(mockCluster, messages.get(MINUTE_BEFORE_START));
         testSubject.onIncomingMessages(mockCluster, messages.get(SECOND_BEFORE_START));
@@ -136,8 +138,31 @@ public class BackloggingIncomingMessageHandlerTest {
 
     }
 
-    private GenericDomainEventMessage<String> newMessage(String identifier, DateTime timestamp) {
+    @Test
+    public void testEventMessagesArePublishedWhenLaterDomainEventMessageIsReleased() {
+        EventMessage intermediateEventMessage = newEventMessage("idBla", START_TIME);
+        testSubject.onIncomingMessages(mockCluster, messages.get(MINUTE_BEFORE_START));
+        testSubject.onIncomingMessages(mockCluster, messages.get(SECOND_BEFORE_START));
+        testSubject.onIncomingMessages(mockCluster, intermediateEventMessage);
+        testSubject.onIncomingMessages(mockCluster, messages.get(START_TIME));
+        testSubject.releaseMessage(mockCluster, messages.get(MINUTE_BEFORE_START));
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_BEFORE_START));
+        verifyZeroInteractions(mockCluster);
+
+        testSubject.releaseMessage(mockCluster, messages.get(START_TIME));
+        verify(mockCluster).publish(intermediateEventMessage);
+
+        testSubject.releaseMessage(mockCluster, messages.get(SECOND_AFTER_START));
+        verifyNoMoreInteractions(mockCluster);
+    }
+
+    private DomainEventMessage<String> newDomainEventMessage(String identifier, DateTime timestamp) {
         return new GenericDomainEventMessage<String>(identifier, timestamp, "aggregate", 0, "payload@" + timestamp.toString(),
+                                                     MetaData.emptyInstance());
+    }
+
+    private EventMessage<String> newEventMessage(String identifier, DateTime timestamp) {
+        return new GenericEventMessage<String>(identifier, timestamp, "payload@" + timestamp.toString(),
                                                      MetaData.emptyInstance());
     }
 }

@@ -157,6 +157,7 @@ public interface UnitOfWork {
      *
      * @param name     The name under which to attach the resource
      * @param resource The resource to attach
+     * @param inherited Whether or not the resource may be inherited by a nested Unit of Work
      */
     void attachResource(String name, Object resource, boolean inherited);
 

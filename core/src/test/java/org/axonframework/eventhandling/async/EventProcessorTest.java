@@ -19,7 +19,9 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
@@ -35,8 +37,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
-import static org.mockito.AdditionalMatchers.gt;
+import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
 
 /**
  * @author Allard Buijze
@@ -46,11 +49,15 @@ public class EventProcessorTest {
 
     private EventProcessor testSubject;
     private TransactionManager mockTransactionManager;
+    private EventProcessingMonitor eventProcessingMonitor;
+    private MultiplexingEventProcessingMonitor multiplexingEventProcessingMonitor;
 
     @Before
     public void setUp() throws Exception {
         mockTransactionManager = mock(TransactionManager.class);
         when(mockTransactionManager.startTransaction()).thenReturn(new Object());
+        eventProcessingMonitor = mock(EventProcessingMonitor.class);
+        multiplexingEventProcessingMonitor = new MultiplexingEventProcessingMonitor(eventProcessingMonitor);
     }
 
     @Test
@@ -82,7 +89,7 @@ public class EventProcessorTest {
         testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
                                          new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
-                                         Collections.singleton(listener));
+                                         Collections.singleton(listener), multiplexingEventProcessingMonitor);
 
         doThrow(new MockException()).doNothing().when(listener).handle(event1);
 
@@ -113,7 +120,7 @@ public class EventProcessorTest {
         testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
                                          new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
-                                         Collections.singleton(listener));
+                                         Collections.singleton(listener), multiplexingEventProcessingMonitor);
         doThrow(new MockException()).doNothing().when(listener).handle(event1);
         testSubject.scheduleEvent(event1);
         testSubject.scheduleEvent(event2);
@@ -150,7 +157,7 @@ public class EventProcessorTest {
         testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
                                          new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
-                                         Collections.singleton(listener));
+                                         Collections.singleton(listener), multiplexingEventProcessingMonitor);
 
         doThrow(new MockException()).doReturn(new Object()).when(mockTransactionManager).startTransaction();
         testSubject.scheduleEvent(event1);
@@ -176,7 +183,8 @@ public class EventProcessorTest {
         testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
                                          new DefaultErrorHandler(policy),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
-                                         Collections.<EventListener>singleton(listener));
+                                         Collections.<EventListener>singleton(listener),
+                                         multiplexingEventProcessingMonitor);
         doNothing().doThrow(new RejectedExecutionException()).when(mockExecutorService).execute(isA(Runnable.class));
         testSubject.scheduleEvent(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
         listener.failOnEvent = 2;

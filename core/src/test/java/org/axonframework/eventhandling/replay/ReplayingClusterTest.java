@@ -132,7 +132,7 @@ public class ReplayingClusterTest {
         inOrder.verify(mockEventStore).visitEvents(isA(EventVisitor.class));
         for (int i = 0; i < 10; i++) {
             inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
-            inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));
+            inOrder.verify(mockMessageHandler).releaseMessage(eq(delegateCluster), isA(DomainEventMessage.class));
         }
         inOrder.verify(mockMessageHandler).processBacklog(delegateCluster);
         inOrder.verify(mockTransactionManager).commitTransaction(anyObject());
@@ -174,7 +174,7 @@ public class ReplayingClusterTest {
         inOrder.verify(mockEventStore).visitEvents(refEq(criteria), isA(EventVisitor.class));
         for (int i = 0; i < 10; i++) {
             inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
-            inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));
+            inOrder.verify(mockMessageHandler).releaseMessage(eq(delegateCluster), isA(DomainEventMessage.class));
         }
         inOrder.verify(mockMessageHandler).processBacklog(delegateCluster);
         inOrder.verify(mockTransactionManager).commitTransaction(anyObject());
@@ -210,7 +210,7 @@ public class ReplayingClusterTest {
         inOrder.verify(mockEventStore).visitEvents(isA(EventVisitor.class));
         for (int i = 0; i < 5; i++) {
             inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
-            inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));
+            inOrder.verify(mockMessageHandler).releaseMessage(eq(delegateCluster), isA(DomainEventMessage.class));
         }
         inOrder.verify(mockMessageHandler).onReplayFailed(delegateCluster, toBeThrown);
         inOrder.verify(mockTransactionManager).rollbackTransaction(anyObject());
@@ -249,7 +249,7 @@ public class ReplayingClusterTest {
         inOrder.verify(mockMessageHandler).onIncomingMessages(delegateCluster, concurrentMessage);
         for (int i = 0; i < 10; i++) {
             inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
-            inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));
+            inOrder.verify(mockMessageHandler).releaseMessage(eq(delegateCluster), isA(DomainEventMessage.class));
         }
         inOrder.verify(listener).afterReplay();
         inOrder.verify(mockMessageHandler).processBacklog(delegateCluster);
@@ -283,14 +283,14 @@ public class ReplayingClusterTest {
         inOrder.verify(mockEventStore).visitEvents(isA(EventVisitor.class));
         for (int i = 0; i < 5; i++) {
             inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
-            inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));
+            inOrder.verify(mockMessageHandler).releaseMessage(eq(delegateCluster), isA(DomainEventMessage.class));
         }
         inOrder.verify(mockTransactionManager).commitTransaction(anyObject());
         inOrder.verify(mockTransactionManager).startTransaction();
 
         for (int i = 5; i < 10; i++) {
             inOrder.verify(delegateCluster).publish(isA(DomainEventMessage.class));
-            inOrder.verify(mockMessageHandler).releaseMessage(isA(DomainEventMessage.class));
+            inOrder.verify(mockMessageHandler).releaseMessage(eq(delegateCluster), isA(DomainEventMessage.class));
         }
         inOrder.verify(mockMessageHandler).processBacklog(delegateCluster);
         inOrder.verify(mockTransactionManager).commitTransaction(anyObject());

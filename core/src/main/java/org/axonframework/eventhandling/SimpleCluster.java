@@ -17,6 +17,12 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * A simple Cluster implementation that invokes each of the members of a cluster when an Event is published. When an
@@ -51,11 +57,53 @@ public class SimpleCluster extends AbstractCluster {
     }
 
     @Override
-    public void publish(EventMessage... events) {
-        for (EventMessage event : events) {
-            for (EventListener eventListener : getMembers()) {
-                eventListener.handle(event);
+    public void doPublish(final List<EventMessage> events, final Set<EventListener> eventListeners,
+                          final MultiplexingEventProcessingMonitor monitor) {
+        try {
+            for (EventMessage event : events) {
+                for (EventListener eventListener : eventListeners) {
+                    eventListener.handle(event);
+                }
             }
+            notifyMonitors(events, monitor, null);
+        } catch (RuntimeException e) {
+            notifyMonitors(events, monitor, e);
+            throw e;
+        }
+    }
+
+    private void notifyMonitors(final List<EventMessage> events, final EventProcessingMonitor monitor,
+                                     final RuntimeException exception) {
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().registerListener(new MonitorInvoker(monitor, events, exception));
+        } else if (exception == null) {
+            monitor.onEventProcessingCompleted(events);
+        } else {
+            monitor.onEventProcessingFailed(events, exception);
+        }
+    }
+
+    private static class MonitorInvoker extends UnitOfWorkListenerAdapter {
+
+        private final EventProcessingMonitor monitor;
+        private final List<EventMessage> events;
+        private final RuntimeException exception;
+
+        public MonitorInvoker(EventProcessingMonitor monitor, List<EventMessage> events,
+                              RuntimeException exception) {
+            this.monitor = monitor;
+            this.events = events;
+            this.exception = exception;
+        }
+
+        @Override
+        public void afterCommit(UnitOfWork unitOfWork) {
+            monitor.onEventProcessingCompleted(events);
+        }
+
+        @Override
+        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
+            monitor.onEventProcessingFailed(events, exception == null ? failureCause : exception);
         }
     }
 }

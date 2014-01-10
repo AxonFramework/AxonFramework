@@ -17,14 +17,19 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -43,6 +48,7 @@ public class EventProcessor implements Runnable {
 
     private final ShutdownCallback shutDownCallback;
     private final UnitOfWorkFactory unitOfWorkFactory;
+    private final MultiplexingEventProcessingMonitor eventProcessingMonitor;
     private final Executor executor;
     private final ErrorHandler errorHandler;
     // guarded by "this"
@@ -52,20 +58,24 @@ public class EventProcessor implements Runnable {
     private volatile boolean cleanedUp;
     private final Set<EventListener> listeners;
     private volatile long retryAfter = 0;
+    private final List<EventMessage> processedEvents = new ArrayList<EventMessage>();
 
     /**
      * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule
      * events.
      *
-     * @param executor          The executor service that will process the events
-     * @param shutDownCallback  The callback to notify when the scheduler finishes processing events
-     * @param errorHandler      The error handler to invoke when an error occurs while committing a Unit of Work
-     * @param unitOfWorkFactory The factory providing instances of the Unit of Work
-     * @param eventListeners    The event listeners that should handle incoming events
+     * @param executor                The executor service that will process the events
+     * @param shutDownCallback        The callback to notify when the scheduler finishes processing events
+     * @param errorHandler            The error handler to invoke when an error occurs while committing a Unit of Work
+     * @param unitOfWorkFactory       The factory providing instances of the Unit of Work
+     * @param eventListeners          The event listeners that should handle incoming events
+     * @param eventProcessingMonitor The listener to notify when processing completed
      */
     public EventProcessor(Executor executor, ShutdownCallback shutDownCallback, ErrorHandler errorHandler,
-                          UnitOfWorkFactory unitOfWorkFactory, Set<EventListener> eventListeners) {
+                          UnitOfWorkFactory unitOfWorkFactory, Set<EventListener> eventListeners,
+                          MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         this.unitOfWorkFactory = unitOfWorkFactory;
+        this.eventProcessingMonitor = eventProcessingMonitor;
         this.eventQueue = new LinkedList<EventMessage<?>>();
         this.shutDownCallback = shutDownCallback;
         this.executor = executor;
@@ -120,6 +130,7 @@ public class EventProcessor implements Runnable {
      * @return true if yielding succeeded, false otherwise.
      */
     private synchronized boolean yield() {
+        notifyProcessingHandlers();
         if (eventQueue.isEmpty()) {
             cleanUp();
         } else {
@@ -189,39 +200,60 @@ public class EventProcessor implements Runnable {
                     && !result.requiresRescheduleEvent())
                     || !yield();
         }
+        notifyProcessingHandlers();
+    }
+
+    private void notifyProcessingHandlers() {
+        if (!processedEvents.isEmpty()) {
+            eventProcessingMonitor.onEventProcessingCompleted(processedEvents);
+        }
+        processedEvents.clear();
     }
 
     @SuppressWarnings("unchecked")
     private RetryPolicy processNextEntry() {
         final EventMessage<?> event = nextEvent();
-        RetryPolicy policy = RetryPolicy.proceed();
+        ProcessingResult processingResult = ProcessingResult.REGULAR;
         if (event != null) {
             UnitOfWork uow = null;
             try {
                 uow = unitOfWorkFactory.createUnitOfWork();
-                policy = doHandle(event);
-                if (policy.requiresRollback()) {
+                processingResult = doHandle(event);
+                if (processingResult.requiresRollback()) {
                     uow.rollback();
                 } else {
                     uow.commit();
                 }
-                if (policy.requiresRescheduleEvent()) {
+                if (processingResult.requiresRescheduleEvent()) {
                     eventQueue.addFirst(event);
+                } else if(processingResult.isFailure()) {
+                    notifyProcessingHandlers();
+                    eventProcessingMonitor.onEventProcessingFailed(Arrays.<EventMessage>asList(event),
+                                                                   processingResult.getError());
+                } else {
+                    processedEvents.add(event);
                 }
-                retryAfter = System.currentTimeMillis() + policy.waitTime();
+                retryAfter = System.currentTimeMillis() + processingResult.waitTime();
             } catch (RuntimeException e) {
-                policy = errorHandler.handleError(e, event, null);
-                if (policy.requiresRescheduleEvent()) {
+                processingResult = new ProcessingResult(errorHandler.handleError(e, event, null), e);
+                if (processingResult.requiresRescheduleEvent()) {
                     eventQueue.addFirst(event);
-                    retryAfter = System.currentTimeMillis() + policy.waitTime();
+                    retryAfter = System.currentTimeMillis() + processingResult.waitTime();
                 }
                 // the batch failed.
                 if (uow != null && uow.isStarted()) {
                     uow.rollback();
                 }
+
+                if (!processingResult.requiresRescheduleEvent()) {
+                    // report successful messages to far...
+                    notifyProcessingHandlers();
+                    // report the failed message immediately after...
+                    eventProcessingMonitor.onEventProcessingFailed(Collections.<EventMessage>singletonList(event), e);
+                }
             }
         }
-        return policy;
+        return processingResult;
     }
 
     /**
@@ -231,18 +263,22 @@ public class EventProcessor implements Runnable {
      * @param event The event to handle
      * @return the policy for retrying/proceeding with this event
      */
-    protected RetryPolicy doHandle(EventMessage<?> event) {
+    protected ProcessingResult doHandle(EventMessage<?> event) {
+        RuntimeException failure = null;
+        eventProcessingMonitor.prepare(event);
         for (EventListener member : listeners) {
             try {
+                eventProcessingMonitor.prepareForInvocation(event, member);
                 member.handle(event);
             } catch (RuntimeException e) {
                 RetryPolicy policy = errorHandler.handleError(e, event, member);
                 if (policy.requiresRescheduleEvent() || policy.requiresRollback()) {
-                    return policy;
+                    return new ProcessingResult(policy, e);
                 }
+                failure = e;
             }
         }
-        return RetryPolicy.proceed();
+        return new ProcessingResult(RetryPolicy.proceed(), failure);
     }
 
     private synchronized void cleanUp() {
@@ -264,5 +300,41 @@ public class EventProcessor implements Runnable {
          * @param scheduler the scheduler that completed processing.
          */
         void afterShutdown(EventProcessor scheduler);
+    }
+
+    private static class ProcessingResult extends RetryPolicy {
+
+        private static final ProcessingResult REGULAR = new ProcessingResult(RetryPolicy.proceed(), null);
+
+        private final RetryPolicy retryPolicy;
+        private final Throwable error;
+
+        public ProcessingResult(RetryPolicy retryPolicy, Throwable error) {
+            this.retryPolicy = retryPolicy;
+            this.error = error;
+        }
+
+        public boolean isFailure() {
+            return error != null;
+        }
+
+        public Throwable getError() {
+            return error;
+        }
+
+        @Override
+        public long waitTime() {
+            return retryPolicy.waitTime();
+        }
+
+        @Override
+        public boolean requiresRescheduleEvent() {
+            return retryPolicy.requiresRescheduleEvent();
+        }
+
+        @Override
+        public boolean requiresRollback() {
+            return retryPolicy.requiresRollback();
+        }
     }
 }
