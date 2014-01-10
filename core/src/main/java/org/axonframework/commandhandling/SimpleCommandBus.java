@@ -98,8 +98,8 @@ public class SimpleCommandBus implements CommandBus {
      */
     @SuppressWarnings({"unchecked"})
     protected <R> void doDispatch(CommandMessage<?> command, CommandCallback<R> callback) {
-        CommandHandler handler = findCommandHandlerFor(command);
         try {
+            CommandHandler handler = findCommandHandlerFor(command);
             Object result = doDispatch(command, handler);
             callback.onSuccess((R) result);
         } catch (Throwable throwable) {

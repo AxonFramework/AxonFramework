@@ -113,6 +113,14 @@ public class AsynchronousCommandBusTest {
     }
 
     @Test
+    public void testCallbackIsInvokedWhenNoHandlerIsRegistered() {
+        final CommandCallback callback = mock(CommandCallback.class);
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+
+        verify(callback).onFailure(isA(NoHandlerForCommandException.class));
+    }
+
+    @Test
     public void testShutdown_ExecutorUsed() {
         Executor executor = mock(Executor.class);
         new AsynchronousCommandBus(executor).shutdown();
