@@ -158,17 +158,24 @@ public class SimpleCommandBusTest {
     }
 
 
-    @Test(expected = NoHandlerForCommandException.class)
-    public void testDispatchCommand_NoHandlerSubscribed() throws Exception {
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"));
+    @Test
+    public void testDispatchCommand_NoHandlerSubscribed() {
+        final CommandCallback callback = mock(CommandCallback.class);
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+
+        verify(callback).onFailure(isA(NoHandlerForCommandException.class));
     }
 
-    @Test(expected = NoHandlerForCommandException.class)
+    @Test
     public void testDispatchCommand_HandlerUnsubscribed() throws Exception {
+        final CommandCallback callback = mock(CommandCallback.class);
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
         testSubject.subscribe(String.class.getName(), commandHandler);
         testSubject.unsubscribe(String.class.getName(), commandHandler);
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"));
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"), callback);
+
+        verify(callback).onFailure(isA(NoHandlerForCommandException.class));
+
     }
 
     @Test
