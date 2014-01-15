@@ -16,19 +16,23 @@
 
 package org.axonframework.test;
 
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.Message;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import static org.axonframework.common.Priority.LAST;
+
 /**
- * ParameterResolverFactory implementation that is aware of test-specific use cases. It can be disabled after the
- * necessary annotated handler have been processed.
+ * ParameterResolverFactory implementation that is aware of test-specific use cases. It uses a ThreadLocal to keep
+ * track of injectable resources.
+ * <p/>
+ * Although all access to this fixture should be done using the static accessor methods, creation of an instance is
+ * still possible to comply with the ServiceLoader specification.
  * <p/>
  * Furthermore, this factory creates lazy parameter resolver, which mean that unsupported parameters are only detected
  * when a specific handler is invoked. This ensures that only the resources that are actually used inside a test need
@@ -37,32 +41,15 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.1
  */
+@Priority(LAST)
 public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
-    private final List<Object> injectableResources = new ArrayList<Object>();
-    private final ParameterResolverFactory delegate;
-
-    /**
-     * Initializes the ParameterResolverFactory that allows for the given <code>initialResources</code> to be injected
-     * as handler method parameters.
-     *
-     * @param targetClass      The class for which the injected parameters must be available
-     * @param initialResources The resources to make available for injection
-     */
-    public FixtureResourceParameterResolverFactory(Class<?> targetClass, Object... initialResources) {
-        injectableResources.addAll(Arrays.asList(initialResources));
-        delegate = ClasspathParameterResolverFactory.forClass(targetClass);
-    }
+    private static final ThreadLocal<List<Object>> RESOURCES = new ThreadLocal<List<Object>>();
 
     @Override
     public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                             Annotation[] parameterAnnotations) {
-        ParameterResolver parameterResolver = delegate.createInstance(memberAnnotations, parameterType,
-                                                                      parameterAnnotations);
-        if (parameterResolver != null) {
-            return parameterResolver;
-        }
-        return new LazyParameterResolver(parameterType, injectableResources);
+        return new LazyParameterResolver(parameterType);
     }
 
     /**
@@ -70,27 +57,38 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
      *
      * @param injectableResource the resource to inject into handler methods
      */
-    public void registerResource(Object injectableResource) {
-        if (!injectableResources.contains(injectableResource)) {
-            injectableResources.add(injectableResource);
+    public static void registerResource(Object injectableResource) {
+        if (RESOURCES.get() == null) {
+            RESOURCES.set(new ArrayList<Object>());
         }
+        if (!RESOURCES.get().contains(injectableResource)) {
+            RESOURCES.get().add(injectableResource);
+        }
+    }
+
+    /**
+     * Clears the injectable resources registered to the current thread.
+     */
+    public static void clear() {
+        RESOURCES.remove();
     }
 
     private static class LazyParameterResolver implements ParameterResolver {
 
         private final Class<?> parameterType;
-        private final List<Object> injectableResources;
 
-        public LazyParameterResolver(Class<?> parameterType, List<Object> injectableResources) {
+        public LazyParameterResolver(Class<?> parameterType) {
             this.parameterType = parameterType;
-            this.injectableResources = injectableResources;
         }
 
         @Override
         public Object resolveParameterValue(Message message) {
-            for (Object resource : injectableResources) {
-                if (parameterType.isInstance(resource)) {
-                    return resource;
+            final List<Object> objects = RESOURCES.get();
+            if (objects != null) {
+                for (Object resource : objects) {
+                    if (parameterType.isInstance(resource)) {
+                        return resource;
+                    }
                 }
             }
             throw new FixtureExecutionException("No resource of type [" + parameterType.getName()
@@ -99,7 +97,7 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
 
         @Override
         public boolean matches(Message message) {
-            return true;
+            return RESOURCES.get() != null;
         }
     }
 }

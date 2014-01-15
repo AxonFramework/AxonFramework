@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.Message;
@@ -31,6 +32,7 @@ import java.lang.annotation.Annotation;
  * @author Allard Buijze
  * @since 2.0
  */
+@Priority(Priority.FIRST)
 public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResolverFactory, ParameterResolver {
 
     @Override

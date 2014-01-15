@@ -26,6 +26,8 @@ import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventProcessingMonitor;
@@ -77,6 +79,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     private Executor executor = Executors.newCachedThreadPool();
 
     private SagaRepository sagaRepository = new InMemorySagaRepository();
+    private final ParameterResolverFactory parameterResolverFactory;
     private volatile SagaFactory sagaFactory = new GenericSagaFactory();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private int processorCount = DEFAULT_PROCESSOR_COUNT;
@@ -102,6 +105,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
         Assert.notNull(eventBus, "eventBus may not be null");
         this.eventBus = eventBus;
         this.sagaTypes = Arrays.copyOf(sagaTypes, sagaTypes.length);
+        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(sagaTypes[0]);
     }
 
     /**
@@ -112,6 +116,18 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
      * @param sagaTypes The types of Saga this saga manager will process incoming events for
      */
     public AsyncAnnotatedSagaManager(Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
+        this(ClasspathParameterResolverFactory.forClass(sagaTypes[0]), sagaTypes);
+    }
+
+    /**
+     * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code>.
+     * <p/>
+     * After initialization, the SagaManager must be explicitly started using the {@link #start()} method.
+     *
+     * @param sagaTypes The types of Saga this saga manager will process incoming events for
+     */
+    public AsyncAnnotatedSagaManager(ParameterResolverFactory parameterResolverFactory, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
+        this.parameterResolverFactory = parameterResolverFactory;
         this.eventBus = null;
         this.sagaTypes = Arrays.copyOf(sagaTypes, sagaTypes.length);
     }
@@ -128,7 +144,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
                                                                 new MultiThreadedClaimStrategy(bufferSize),
                                                                 waitStrategy);
             disruptor.handleExceptionsWith(new LoggingExceptionHandler());
-            disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository,
+            disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository, parameterResolverFactory,
                                                                                unitOfWorkFactory, processorCount,
                                                                                disruptor.getRingBuffer(),
                                                                                sagaManagerStatus))
@@ -176,7 +192,9 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     public void handle(final EventMessage event) {
         if (disruptor != null) {
             for (final Class<? extends AbstractAnnotatedSaga> sagaType : sagaTypes) {
-                SagaMethodMessageHandlerInspector inspector = SagaMethodMessageHandlerInspector.getInstance(sagaType);
+                SagaMethodMessageHandlerInspector inspector = SagaMethodMessageHandlerInspector.getInstance(sagaType,
+                                                                                                            ClasspathParameterResolverFactory.forClass(
+                                                                                                                    sagaType));
                 final SagaMethodMessageHandler handler = inspector.getMessageHandler(event);
                 if (handler.isHandlerAvailable()) {
                     final AbstractAnnotatedSaga newSagaInstance;

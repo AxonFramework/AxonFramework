@@ -20,7 +20,6 @@ import org.axonframework.common.annotation.AbstractAnnotatedHandlerDefinition;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
 
 import java.util.Set;
@@ -49,17 +48,17 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
      * information about @SagaEventHandler annotated handler methods.
      *
      * @param sagaType The type of Saga to get the inspector for
+     * @param parameterResolverFactory
      * @param <T>      The type of Saga to get the inspector for
      * @return The inspector for the given saga type
      */
     @SuppressWarnings("unchecked")
     public static <T extends AbstractAnnotatedSaga> SagaMethodMessageHandlerInspector<T> getInstance(
-            Class<T> sagaType) {
+            Class<T> sagaType, ParameterResolverFactory parameterResolverFactory) {
         SagaMethodMessageHandlerInspector<T> sagaInspector = INSPECTORS.get(sagaType);
         if (sagaInspector == null) {
-            ParameterResolverFactory factory = AnnotationConfiguration.readFor(sagaType).getParameterResolverFactory();
             final SagaMethodMessageHandlerInspector<T> newInspector =
-                    new SagaMethodMessageHandlerInspector<T>(sagaType, factory);
+                    new SagaMethodMessageHandlerInspector<T>(sagaType, parameterResolverFactory);
 
             sagaInspector = INSPECTORS.putIfAbsent(sagaType, newInspector);
             if (sagaInspector == null) {

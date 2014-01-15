@@ -19,7 +19,7 @@ package org.axonframework.saga.annotation;
 import org.axonframework.common.annotation.AbstractAnnotatedHandlerDefinition;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.configuration.AnnotationConfiguration;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.Saga;
 
@@ -37,12 +37,12 @@ public class SagaEventHandlerInvoker {
      * Initialize a handler invoker for the given <code>target</code> object, using ParameterResolverFactory instances
      * found on the class path.
      *
-     * @param target The target to invoke methods on
+     * @param target                   The target to invoke methods on
+     * @param parameterResolverFactory The Factory providing access to the Parameter Resolvers for this instance's type
      */
-    public SagaEventHandlerInvoker(Saga target) {
-        invoker = new MessageHandlerInvoker(
-                target, AnnotationConfiguration.readFor(target.getClass()).getParameterResolverFactory(),
-                false, AnnotatedHandlerDefinition.INSTANCE);
+    public SagaEventHandlerInvoker(Saga target, ParameterResolverFactory parameterResolverFactory) {
+        invoker = new MessageHandlerInvoker(target, parameterResolverFactory, false,
+                                            AnnotatedHandlerDefinition.INSTANCE);
     }
 
     /**

@@ -16,8 +16,9 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
-import org.axonframework.common.configuration.AnnotationConfiguration;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
@@ -74,6 +75,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
 
     private void ensureInvokerInitialized() {
         if (eventHandlerInvoker == null) {
+            ensureInspectorInitialized();
             eventHandlerInvoker = inspector.createEventHandlerInvoker(this);
         }
     }
@@ -81,8 +83,11 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
     private void ensureInspectorInitialized() {
         if (inspector == null) {
             final Class<? extends AbstractAnnotatedAggregateRoot> aggregateType = getClass();
-            inspector = AggregateAnnotationInspector.getInspector(
-                    aggregateType, AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory());
+            inspector = AggregateAnnotationInspector.getInspector(aggregateType, createParameterResolverFactory());
         }
+    }
+
+    protected ParameterResolverFactory createParameterResolverFactory() {
+        return ClasspathParameterResolverFactory.forClass(getClass());
     }
 }

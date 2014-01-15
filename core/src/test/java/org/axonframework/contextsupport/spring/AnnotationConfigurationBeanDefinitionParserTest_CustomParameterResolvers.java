@@ -54,6 +54,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest_CustomParameterReso
     }
 
     @Test
+    @Ignore("Spring bean injection has been disabled in aggregate's event handlers")
     @DirtiesContext
     public void testSpringBeanProperlyInjectedInAnnotatedAggregates() throws Exception {
         new StubAggregate().doSomething();
@@ -61,6 +62,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest_CustomParameterReso
     }
 
     @Test
+    @Ignore("Spring bean injection has been disabled in aggregate's event handlers")
     @DirtiesContext
     public void testSpringBeanProperlyInjectedInAnnotatedAggregates_Again() throws Exception {
         // this test ensures that shutting down and starting a spring context doesn't affect behavior

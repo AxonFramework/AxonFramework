@@ -48,6 +48,6 @@ public interface ParameterResolverFactory {
      * @param parameterAnnotations annotations placed on the parameter
      * @return a suitable ParameterResolver, or <code>null</code> if none is found
      */
-    public abstract ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                                     Annotation[] parameterAnnotations);
+    ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                     Annotation[] parameterAnnotations);
 }

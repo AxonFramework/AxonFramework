@@ -18,7 +18,6 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
-import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
@@ -61,7 +60,6 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
             new HashMap<Object, AggregateEventPublisherImpl>();
     private FixtureExecutionResultImpl fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
-    private final FixtureResourceParameterResolverFactory parameterResolverFactory;
 
     /**
      * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given <code>sagaType</code>.
@@ -78,6 +76,8 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         sagaManager = new AnnotatedSagaManager(sagaRepository, genericSagaFactory, sagaType);
         sagaManager.setSuppressExceptions(false);
 
+        // TODO: Use ThreadLocalParameterResolverFactory
+
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
@@ -85,9 +85,9 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus, commandBus,
                                                                 sagaType);
-        parameterResolverFactory = new FixtureResourceParameterResolverFactory(sagaType, registeredResources.toArray());
-        AnnotationConfiguration.reset(sagaType);
-        AnnotationConfiguration.configure(sagaType).useParameterResolverFactory(parameterResolverFactory);
+        for (Object resource : registeredResources) {
+            FixtureResourceParameterResolverFactory.registerResource(resource);
+        }
     }
 
     @Override
@@ -98,7 +98,6 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                 sagaManager.handle(event);
             }
         } finally {
-            AnnotationConfiguration.resetAll();
         }
         return fixtureExecutionResult;
     }
@@ -111,7 +110,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                 sagaManager.handle(event);
             }
         } finally {
-            AnnotationConfiguration.resetAll();
+            FixtureResourceParameterResolverFactory.clear();
         }
 
         return fixtureExecutionResult;
@@ -120,7 +119,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     @Override
     public void registerResource(Object resource) {
         registeredResources.add(resource);
-        parameterResolverFactory.registerResource(resource);
+        FixtureResourceParameterResolverFactory.registerResource(resource);
     }
 
     @Override
@@ -178,7 +177,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
             fixtureExecutionResult.startRecording();
             sagaManager.handle(new GenericEventMessage<Object>(event));
         } finally {
-            AnnotationConfiguration.resetAll();
+            FixtureResourceParameterResolverFactory.clear();
         }
 
         return fixtureExecutionResult;
@@ -226,7 +225,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
             try {
                 publish(event);
             } finally {
-                AnnotationConfiguration.resetAll();
+                FixtureResourceParameterResolverFactory.clear();
             }
             return fixtureExecutionResult;
         }

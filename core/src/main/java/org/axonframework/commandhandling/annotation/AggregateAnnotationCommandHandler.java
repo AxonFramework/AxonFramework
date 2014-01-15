@@ -23,9 +23,9 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -121,7 +121,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver) {
         this(aggregateType, repository, commandTargetResolver,
-             AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory());
+             ClasspathParameterResolverFactory.forClass(aggregateType));
     }
 
     /**
@@ -155,10 +155,10 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      * @param repository    The repository providing access to aggregate instances
      * @param commandBus    The command bus to register command handlers to
      * @deprecated Use {@link #AggregateAnnotationCommandHandler(Class, org.axonframework.repository.Repository)}
-     *             and subscribe the adapter to the command bus using
-     *             {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
-     *             org.axonframework.commandhandling.CommandHandler)}. Alternatively, use
-     *             {@link #subscribe(Class, org.axonframework.repository.Repository, org.axonframework.commandhandling.CommandBus)}.
+     * and subscribe the adapter to the command bus using
+     * {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
+     * org.axonframework.commandhandling.CommandHandler)}. Alternatively, use
+     * {@link #subscribe(Class, org.axonframework.repository.Repository, org.axonframework.commandhandling.CommandBus)}.
      */
     @Deprecated
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
@@ -175,11 +175,11 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      * @param commandBus            The command bus to register command handlers to
      * @param commandTargetResolver The target resolution strategy
      * @deprecated Use {@link #AggregateAnnotationCommandHandler(Class, org.axonframework.repository.Repository,
-     *             org.axonframework.commandhandling.CommandTargetResolver)} and subscribe the handler to the command
-     *             bus using {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
-     *             org.axonframework.commandhandling.CommandHandler)}. Alternatively, use
-     *             {@link #subscribe(Class, org.axonframework.repository.Repository, org.axonframework.commandhandling.CommandBus,
-     *             org.axonframework.commandhandling.CommandTargetResolver)}.
+     * org.axonframework.commandhandling.CommandTargetResolver)} and subscribe the handler to the command
+     * bus using {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
+     * org.axonframework.commandhandling.CommandHandler)}. Alternatively, use
+     * {@link #subscribe(Class, org.axonframework.repository.Repository, org.axonframework.commandhandling.CommandBus,
+     * org.axonframework.commandhandling.CommandTargetResolver)}.
      */
     @Deprecated
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
@@ -191,7 +191,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         this.commandBus = commandBus;
         this.commandTargetResolver = commandTargetResolver;
         this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(
-                aggregateType, AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory()));
+                aggregateType, ClasspathParameterResolverFactory.forClass(aggregateType)));
     }
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
@@ -211,8 +211,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      * {@inheritDoc}
      *
      * @deprecated unsubscribing this handler should be done using {@link CommandBus#unsubscribe(String,
-     *             org.axonframework.commandhandling.CommandHandler)}. Retrieve the supported commands with {@link
-     *             #supportedCommands()}.
+     * org.axonframework.commandhandling.CommandHandler)}. Retrieve the supported commands with {@link
+     * #supportedCommands()}.
      */
     @Override
     @PreDestroy
@@ -229,8 +229,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      * {@inheritDoc}
      *
      * @deprecated subscribing this handler should be done using {@link CommandBus#subscribe(String,
-     *             org.axonframework.commandhandling.CommandHandler)}. Retrieve the supported commands with {@link
-     *             #supportedCommands()}.
+     * org.axonframework.commandhandling.CommandHandler)}. Retrieve the supported commands with {@link
+     * #supportedCommands()}.
      */
     @PostConstruct
     @Override

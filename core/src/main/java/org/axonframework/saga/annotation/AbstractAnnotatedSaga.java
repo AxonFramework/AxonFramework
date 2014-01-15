@@ -16,6 +16,8 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.saga.AssociationValue;
@@ -39,6 +41,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private final String identifier;
     private transient volatile SagaEventHandlerInvoker eventHandlerInvoker;
     private volatile boolean isActive = true;
+    private transient ParameterResolverFactory parameterResolverFactory;
 
     /**
      * Initialize the saga with a random identifier. The identifier used is provided by {@link
@@ -82,8 +85,21 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     private void ensureInvokerInitialized() {
         if (eventHandlerInvoker == null) {
-            eventHandlerInvoker = new SagaEventHandlerInvoker(this);
+            if (parameterResolverFactory == null) {
+                parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
+            }
+            eventHandlerInvoker = new SagaEventHandlerInvoker(this, parameterResolverFactory);
         }
+    }
+
+    /**
+     * Sets the ParameterResolverFactory for this instance to use. This is typically set by the SagaManager that will
+     * manage the lifecycle of this instance.
+     *
+     * @param parameterResolverFactory The parameterResolverFactory for this instance to use
+     */
+    protected void registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
     }
 
     @Override

@@ -19,6 +19,7 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
@@ -50,8 +51,11 @@ public class SyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBean
     }
 
     @Override
-    protected void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition) {
-        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(2, types);
+    protected void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition,
+                                 RuntimeBeanReference parameterResolverFactoryReference) {
+        sagaManagerDefinition.getConstructorArgumentValues()
+                             .addIndexedArgumentValue(2, parameterResolverFactoryReference);
+        sagaManagerDefinition.getConstructorArgumentValues().addIndexedArgumentValue(3, types);
     }
 
     @Override
@@ -61,7 +65,7 @@ public class SyncSagaManagerBeanDefinitionParser extends AbstractSagaManagerBean
     }
 
     @Override
-    protected void parseSuppressExceptionsAttribute(Element element, MutablePropertyValues beanDefinition)  {
+    protected void parseSuppressExceptionsAttribute(Element element, MutablePropertyValues beanDefinition) {
         if (element.hasAttribute(SUPPRESS_EXCEPTIONS_ATTRIBUTE)) {
             beanDefinition.addPropertyValue("suppressExceptions", element.getAttribute(SUPPRESS_EXCEPTIONS_ATTRIBUTE));
         }

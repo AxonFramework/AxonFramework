@@ -17,6 +17,7 @@
 package org.axonframework.common.annotation;
 
 import org.axonframework.common.CollectionUtils;
+import org.axonframework.common.Priority;
 import org.axonframework.domain.Message;
 
 import java.lang.annotation.Annotation;
@@ -30,6 +31,7 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
  * @author Allard Buijze
  * @since 2.0
  */
+@Priority(Priority.FIRST)
 public class DefaultParameterResolverFactory implements ParameterResolverFactory {
 
     @Override

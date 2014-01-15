@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.Message;
@@ -28,6 +29,7 @@ import org.joda.time.DateTime;
  * @author Allard Buijze
  * @since 2.0
  */
+@Priority(Priority.HIGH)
 public final class TimestampParameterResolverFactory
         extends AbstractAnnotatedParameterResolverFactory<Timestamp, DateTime> {
 

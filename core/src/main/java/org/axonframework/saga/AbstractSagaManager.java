@@ -66,7 +66,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * @param sagaFactory    The factory providing new saga instances
      * @param sagaTypes      The types of Saga supported by this Saga Manager
      * @deprecated use {@link #AbstractSagaManager(SagaRepository, SagaFactory, Class[])} and register using {@link
-     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @Deprecated
     public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory,
@@ -144,6 +144,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     private void startNewSaga(EventMessage event, Class<? extends Saga> sagaType, AssociationValue associationValue) {
         Saga newSaga = sagaFactory.createSaga(sagaType);
         newSaga.getAssociationValues().add(associationValue);
+        preProcessSaga(newSaga);
         sagasInCreation.put(newSaga.getSagaIdentifier(), newSaga);
         try {
             if (synchronizeSagaAccess) {
@@ -224,6 +225,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         if (saga == null || !saga.isActive() || !saga.getAssociationValues().contains(association)) {
             return null;
         }
+        preProcessSaga(saga);
         try {
             try {
                 saga.handle(event);
@@ -241,6 +243,15 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
             commit(saga);
         }
         return saga;
+    }
+
+    /**
+     * Perform pre-processing of sagas that have been newly created or have been loaded from the repository. This
+     * method is invoked prior to invocation of the saga instance itself.
+     *
+     * @param saga The saga instance for preprocessing
+     */
+    protected void preProcessSaga(Saga saga) {
     }
 
     private void doInvokeSaga(EventMessage event, Saga saga) {
@@ -271,7 +282,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * Unsubscribe the EventListener with the configured EventBus.
      *
      * @deprecated Use {@link EventBus#unsubscribe(org.axonframework.eventhandling.EventListener)} to unsubscribe this
-     *             instance
+     * instance
      */
     @Override
     @PreDestroy
@@ -286,7 +297,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * Subscribe the EventListener with the configured EventBus.
      *
      * @deprecated Use {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)} to subscribe this
-     *             instance
+     * instance
      */
     @Override
     @PostConstruct

@@ -16,6 +16,7 @@
 
 package org.axonframework.common.annotation;
 
+import org.axonframework.common.Priority;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -36,6 +37,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.1
  */
+@Priority(Priority.LOW)
 public class SpringBeanParameterResolverFactory implements ParameterResolverFactory, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringBeanParameterResolverFactory.class);
@@ -46,6 +48,9 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
     @Override
     public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                             Annotation[] parameterAnnotations) {
+        if (applicationContext == null) {
+            return null;
+        }
         Map<String, ?> beansFound = applicationContext.getBeansOfType(parameterType);
         if (beansFound.isEmpty()) {
             return null;

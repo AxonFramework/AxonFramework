@@ -20,7 +20,6 @@ import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListenerProxy;
@@ -52,7 +51,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @return an AnnotationEventListenerAdapter that wraps the listener. Can be used to unsubscribe.
      *
      * @deprecated Use {@link #AnnotationEventListenerAdapter(Object)} and subscribe the listener to the event bus
-     *             using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @Deprecated
     public static AnnotationEventListenerAdapter subscribe(Object annotatedEventListener, EventBus eventBus) {
@@ -67,8 +66,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @param annotatedEventListener the annotated event listener
      */
     public AnnotationEventListenerAdapter(Object annotatedEventListener) {
-        this(annotatedEventListener, AnnotationConfiguration.readFor(annotatedEventListener.getClass())
-                                                            .getParameterResolverFactory());
+        this(annotatedEventListener, ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()));
     }
 
     /**
@@ -100,7 +98,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @param annotatedEventListener the event listener
      * @param eventBus               the event bus to register the event listener to
      * @deprecated Use {@link #AnnotationEventListenerAdapter(Object)} and subscribe the listener to the event bus
-     *             using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @Deprecated
     public AnnotationEventListenerAdapter(Object annotatedEventListener, EventBus eventBus) {
@@ -130,7 +128,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * Unsubscribe the EventListener with the configured EventBus.
      *
      * @deprecated Use {@link EventBus#unsubscribe(org.axonframework.eventhandling.EventListener)} and
-     *             pass this adapter instance to unsubscribe it.
+     * pass this adapter instance to unsubscribe it.
      */
     @Override
     @PreDestroy
@@ -146,7 +144,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * <p/>
      *
      * @deprecated Use {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)} and
-     *             pass this adapter instance to subscribe it.
+     * pass this adapter instance to subscribe it.
      */
     @Override
     @PostConstruct

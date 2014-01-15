@@ -117,6 +117,7 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * given <code>parameterTypes</code>, where each ParameterResolver corresponds with the parameter type at the same
      * location.
      *
+     *
      * @param parameterResolverFactory The factory to create the ParameterResolvers with
      * @param memberAnnotations        The annotations on the member (e.g. method)
      * @param parameterTypes           The parameter type of the member

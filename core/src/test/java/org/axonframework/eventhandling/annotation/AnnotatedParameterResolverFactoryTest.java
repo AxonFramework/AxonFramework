@@ -69,7 +69,8 @@ public class AnnotatedParameterResolverFactoryTest {
         Class<?>[] parameterTypes = method.getParameterTypes();
         Annotation[][] annotations = method.getParameterAnnotations();
         for(int param = 0; param < parameterTypes.length; param++) {
-            ParameterResolver resolver = factory.createInstance(new Annotation[]{}, parameterTypes[param], annotations[param]);
+            ParameterResolver resolver = factory.createInstance(
+                    new Annotation[]{}, parameterTypes[param], annotations[param]);
             assertEquals("Result incorrect for param: " + param, expectedResolvers[param], resolver != null ? resolver.getClass() : null);
         }
     }

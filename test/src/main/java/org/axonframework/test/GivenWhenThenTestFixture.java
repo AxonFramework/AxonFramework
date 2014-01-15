@@ -27,7 +27,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
-import org.axonframework.common.configuration.AnnotationConfiguration;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -97,7 +97,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private boolean reportIllegalStateChange = true;
     private final Class<T> aggregateType;
     private boolean explicitCommandHandlersSet;
-    private final FixtureResourceParameterResolverFactory parameterResolverFactory;
 
     /**
      * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
@@ -108,10 +107,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
-        parameterResolverFactory = new FixtureResourceParameterResolverFactory(aggregateType, eventBus, commandBus);
+        FixtureResourceParameterResolverFactory.clear();
+        FixtureResourceParameterResolverFactory.registerResource(eventBus);
+        FixtureResourceParameterResolverFactory.registerResource(commandBus);
+        FixtureResourceParameterResolverFactory.registerResource(eventStore);
         this.aggregateType = aggregateType;
-        AnnotationConfiguration.resetAll();
-        AnnotationConfiguration.configure(aggregateType).useParameterResolverFactory(parameterResolverFactory);
         clearGivenWhenState();
     }
 
@@ -131,8 +131,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(annotatedCommandHandler,
-                                                                                      parameterResolverFactory);
+        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(
+                annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(aggregateType));
         for (String supportedCommand : adapter.supportedCommands()) {
             commandBus.subscribe(supportedCommand, adapter);
         }
@@ -162,28 +162,32 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                                                         + "registerCommandHandler() or "
                                                         + "registerAnnotatedCommandHandler()");
         }
-        parameterResolverFactory.registerResource(resource);
+        FixtureResourceParameterResolverFactory.registerResource(resource);
         return this;
     }
 
     @Override
     public TestExecutor given(Object... domainEvents) {
-        ensureRepositoryConfiguration();
         return given(Arrays.asList(domainEvents));
     }
 
     @Override
     public TestExecutor given(List<?> domainEvents) {
+        ensureRepositoryConfiguration();
         clearGivenWhenState();
-        for (Object event : domainEvents) {
-            Object payload = event;
-            MetaData metaData = null;
-            if (event instanceof Message) {
-                payload = ((Message) event).getPayload();
-                metaData = ((Message) event).getMetaData();
+        try {
+            for (Object event : domainEvents) {
+                Object payload = event;
+                MetaData metaData = null;
+                if (event instanceof Message) {
+                    payload = ((Message) event).getPayload();
+                    metaData = ((Message) event).getMetaData();
+                }
+                this.givenEvents.add(new GenericDomainEventMessage<Object>(aggregateIdentifier, sequenceNumber++,
+                                                                           payload, metaData));
             }
-            this.givenEvents.add(new GenericDomainEventMessage<Object>(aggregateIdentifier, sequenceNumber++,
-                                                                       payload, metaData));
+        } catch (RuntimeException e) {
+            FixtureResourceParameterResolverFactory.clear();
         }
         return this;
     }
@@ -197,14 +201,19 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     public TestExecutor givenCommands(List<?> commands) {
         finalizeConfiguration();
         clearGivenWhenState();
-        for (Object command : commands) {
-            ExecutionExceptionAwareCallback callback = new ExecutionExceptionAwareCallback();
-            commandBus.dispatch(GenericCommandMessage.asCommandMessage(command), callback);
-            callback.assertSuccessful();
-            givenEvents.addAll(storedEvents);
-            storedEvents.clear();
+        try {
+            for (Object command : commands) {
+                ExecutionExceptionAwareCallback callback = new ExecutionExceptionAwareCallback();
+                commandBus.dispatch(GenericCommandMessage.asCommandMessage(command), callback);
+                callback.assertSuccessful();
+                givenEvents.addAll(storedEvents);
+                storedEvents.clear();
+            }
+            publishedEvents.clear();
+        } catch (RuntimeException e) {
+            FixtureResourceParameterResolverFactory.clear();
+            throw e;
         }
-        publishedEvents.clear();
         return this;
     }
 
@@ -227,7 +236,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
             resultValidator.assertValidRecording();
             return resultValidator;
         } finally {
-            AnnotationConfiguration.resetAll();
+            FixtureResourceParameterResolverFactory.clear();
         }
     }
 

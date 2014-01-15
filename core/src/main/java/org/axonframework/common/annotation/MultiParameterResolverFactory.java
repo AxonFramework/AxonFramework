@@ -18,6 +18,7 @@ package org.axonframework.common.annotation;
 
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * ParameterResolverFactory instance that delegates to multiple other instances, in the order provided.
@@ -30,12 +31,23 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
     private final ParameterResolverFactory[] factories;
 
     /**
-     * Initializes an instance that delegates to the given <code>delegates</code>, in the order provided.
+     * Initializes an instance that delegates to the given <code>delegates</code>, in the order provided. Changes in
+     * the given array are not reflected in the created instance.
      *
      * @param delegates The factories providing the parameter values to use
      */
     public MultiParameterResolverFactory(ParameterResolverFactory... delegates) {
         this.factories = Arrays.copyOf(delegates, delegates.length);
+    }
+
+    /**
+     * Initializes an instance that delegates to the given <code>delegates</code>, in the order provided. Changes in
+     * the given List are not reflected in the created instance.
+     *
+     * @param delegates The list of factories providing the parameter values to use
+     */
+    public MultiParameterResolverFactory(List<ParameterResolverFactory> delegates) {
+        this.factories = delegates.toArray(new ParameterResolverFactory[delegates.size()]);
     }
 
     @Override

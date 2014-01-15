@@ -43,6 +43,7 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
      * (if not <code>null</code>) defining the payload of the message it supports. If <code>null</code>, the payload
      * type is deducted from the first parameter of the method.
      *
+     *
      * @param method                   The method to create a Handler for
      * @param explicitPayloadType      The payload type explicitly defined on the method, or <code>null</code>
      * @param parameterResolverFactory The strategy for resolving parameter values of handler methods
@@ -52,7 +53,8 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
      */
     public static MethodMessageHandler createFor(Method method, Class<?> explicitPayloadType,
                                                  ParameterResolverFactory parameterResolverFactory) {
-        ParameterResolver[] resolvers = findResolvers(parameterResolverFactory,
+        ParameterResolver[] resolvers = findResolvers(
+                parameterResolverFactory,
                                                       method.getAnnotations(),
                                                       method.getParameterTypes(),
                                                       method.getParameterAnnotations(),

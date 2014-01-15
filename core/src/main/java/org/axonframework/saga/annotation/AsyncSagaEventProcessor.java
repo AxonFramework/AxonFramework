@@ -20,6 +20,7 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.RingBuffer;
 import org.axonframework.common.AxonNonTransientException;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
@@ -46,6 +47,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private final SagaRepository sagaRepository;
     private final Map<String, Saga> processedSagas = new TreeMap<String, Saga>();
     private final Map<String, Saga> newlyCreatedSagas = new TreeMap<String, Saga>();
+    private final ParameterResolverFactory parameterResolverFactory;
     private final int processorCount;
     private final int processorId;
     private final RingBuffer<AsyncSagaProcessingEvent> ringBuffer;
@@ -57,29 +59,34 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
      * Creates the Disruptor Event Handlers for invoking Sagas. The size of the array returned is equal to the given
      * <code>processorCount</code>.
      *
-     * @param sagaRepository    The repository which provides access to the Sagas
-     * @param unitOfWorkFactory The factory to create Unit of Work instances with
-     * @param processorCount    The number of processors to create
-     * @param ringBuffer        The ringBuffer on which the Processor will operate
-     * @param status            The object providing insight in the status of the SagaManager
-     * @return an array containing the Disruptor Event Handlers to invoke Sagas.
+     * @param sagaRepository           The repository which provides access to the Sagas
+     * @param parameterResolverFactory
+     * @param unitOfWorkFactory        The factory to create Unit of Work instances with
+     * @param processorCount           The number of processors to create
+     * @param ringBuffer               The ringBuffer on which the Processor will operate
+     * @param status                   The object providing insight in the status of the SagaManager     @return an
+     *                                 array containing the Disruptor Event Handlers to invoke Sagas.
      */
     static EventHandler<AsyncSagaProcessingEvent>[] createInstances(
-            SagaRepository sagaRepository, UnitOfWorkFactory unitOfWorkFactory, int processorCount,
+            SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
+            UnitOfWorkFactory unitOfWorkFactory, int processorCount,
             RingBuffer<AsyncSagaProcessingEvent> ringBuffer, AsyncAnnotatedSagaManager.SagaManagerStatus status) {
         AsyncSagaEventProcessor[] processors = new AsyncSagaEventProcessor[processorCount];
         for (int processorId = 0; processorId < processorCount; processorId++) {
-            processors[processorId] = new AsyncSagaEventProcessor(sagaRepository, processorCount, processorId,
+            processors[processorId] = new AsyncSagaEventProcessor(sagaRepository, parameterResolverFactory,
+                                                                  processorCount, processorId,
                                                                   unitOfWorkFactory, ringBuffer, status);
         }
         return processors;
     }
 
-    private AsyncSagaEventProcessor(SagaRepository sagaRepository, int processorCount, int processorId,
+    private AsyncSagaEventProcessor(SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
+                                    int processorCount, int processorId,
                                     UnitOfWorkFactory unitOfWorkFactory,
                                     RingBuffer<AsyncSagaProcessingEvent> ringBuffer,
                                     AsyncAnnotatedSagaManager.SagaManagerStatus status) {
         this.sagaRepository = sagaRepository;
+        this.parameterResolverFactory = parameterResolverFactory;
         this.processorCount = processorCount;
         this.processorId = processorId;
         this.unitOfWorkFactory = unitOfWorkFactory;
@@ -139,7 +146,11 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         for (String sagaId : sagaIds) {
             if (ownedByCurrentProcessor(sagaId) && !processedSagas.containsKey(sagaId)) {
                 ensureActiveUnitOfWork();
-                processedSagas.put(sagaId, sagaRepository.load(sagaId));
+                final Saga saga = sagaRepository.load(sagaId);
+                if (parameterResolverFactory != null) {
+                    ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(parameterResolverFactory);
+                }
+                processedSagas.put(sagaId, saga);
             }
         }
         for (Saga saga : processedSagas.values()) {
@@ -196,10 +207,14 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
 
     private void processNewSagaInstance(AsyncSagaProcessingEvent entry, AssociationValue associationValue) {
         ensureActiveUnitOfWork();
-        entry.getNewSaga().handle(entry.getPublishedEvent());
-        entry.getNewSaga().associateWith(associationValue);
-        processedSagas.put(entry.getNewSaga().getSagaIdentifier(), entry.getNewSaga());
-        newlyCreatedSagas.put(entry.getNewSaga().getSagaIdentifier(), entry.getNewSaga());
+        final AbstractAnnotatedSaga newSaga = entry.getNewSaga();
+        if (parameterResolverFactory != null) {
+            newSaga.registerParameterResolverFactory(parameterResolverFactory);
+        }
+        newSaga.handle(entry.getPublishedEvent());
+        newSaga.associateWith(associationValue);
+        processedSagas.put(newSaga.getSagaIdentifier(), newSaga);
+        newlyCreatedSagas.put(newSaga.getSagaIdentifier(), newSaga);
     }
 
     private void ensureActiveUnitOfWork() {

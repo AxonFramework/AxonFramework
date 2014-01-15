@@ -16,6 +16,8 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.AbstractSagaManager;
@@ -35,6 +37,7 @@ import org.axonframework.saga.SagaRepository;
  */
 public class AnnotatedSagaManager extends AbstractSagaManager {
 
+    private final ParameterResolverFactory parameterResolverFactory;
 
     /**
      * Initialize the AnnotatedSagaManager using the given resources, and using a <code>GenericSagaFactory</code>.
@@ -43,8 +46,8 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      * @param eventBus       The event bus publishing the events
      * @param sagaClasses    The types of Saga that this instance should manage
      * @deprecated use {@link #AnnotatedSagaManager(org.axonframework.saga.SagaRepository,
-     *             Class[])} instead and register this instance using {@link
-     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * Class[])} instead and register this instance using {@link
+     * EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @Deprecated
     public AnnotatedSagaManager(SagaRepository sagaRepository,
@@ -60,13 +63,14 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      * @param eventBus       The event bus publishing the events
      * @param sagaClasses    The types of Saga that this instance should manage
      * @deprecated use {@link #AnnotatedSagaManager(org.axonframework.saga.SagaRepository,
-     *             org.axonframework.saga.SagaFactory, Class[])} instead and register this instance using {@link
-     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * org.axonframework.saga.SagaFactory, Class[])} instead and register this instance using {@link
+     * EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @Deprecated
     public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory, EventBus eventBus,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(eventBus, sagaRepository, sagaFactory, sagaClasses);
+        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(sagaClasses[0]);
     }
 
     /**
@@ -78,7 +82,21 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      */
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        this(sagaRepository, new GenericSagaFactory(), sagaClasses);
+        this(sagaRepository, ClasspathParameterResolverFactory.forClass(sagaClasses[0]), sagaClasses);
+    }
+
+    /**
+     * Initialize the AnnotatedSagaManager using given <code>repository</code> to load sagas and supporting given
+     * annotated <code>sagaClasses</code>.
+     *
+     * @param sagaRepository           The repository providing access to the Saga instances
+     * @param parameterResolverFactory The parameterResolverFactory to resolve parameters with for the saga instance's
+     *                                 handler methods
+     * @param sagaClasses              The types of Saga that this instance should manage
+     */
+    public AnnotatedSagaManager(SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
+                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
+        this(sagaRepository, new GenericSagaFactory(), parameterResolverFactory, sagaClasses);
     }
 
     /**
@@ -90,14 +108,31 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      */
     public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
+        this(sagaRepository, sagaFactory, ClasspathParameterResolverFactory.forClass(sagaClasses[0]), sagaClasses);
+    }
+
+    /**
+     * Initialize the AnnotatedSagaManager using the given resources.
+     *
+     * @param sagaRepository           The repository providing access to the Saga instances
+     * @param sagaFactory              The factory creating new instances of a Saga
+     * @param parameterResolverFactory The parameterResolverFactory to resolve parameters with for the saga instance's
+     *                                 handler methods
+     * @param sagaClasses              The types of Saga that this instance should manage
+     */
+    public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
+                                ParameterResolverFactory parameterResolverFactory,
+                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
         super(sagaRepository, sagaFactory, sagaClasses);
+        this.parameterResolverFactory = parameterResolverFactory;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
         SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
-                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType);
+                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType,
+                                                              parameterResolverFactory);
         return inspector.getMessageHandler(event).getCreationPolicy();
     }
 
@@ -105,8 +140,16 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
     @Override
     protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
         SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
-                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType);
+                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType,
+                                                              parameterResolverFactory);
         return inspector.getMessageHandler(event).getAssociationValue(event);
+    }
+
+    @Override
+    protected void preProcessSaga(Saga saga) {
+        if (parameterResolverFactory != null) {
+            ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(parameterResolverFactory);
+        }
     }
 
     @Override

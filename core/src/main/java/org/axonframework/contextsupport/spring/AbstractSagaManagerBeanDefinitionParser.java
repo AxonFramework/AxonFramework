@@ -25,6 +25,7 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -65,7 +66,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         parseResourceInjectorAttribute(element);
         parseSagaRepositoryAttribute(element, parserContext, sagaManagerDefinition);
         parseSagaFactoryAttribute(element, sagaManagerDefinition);
-        parseTypesElement(element, sagaManagerDefinition);
+        parseTypesElement(element, sagaManagerDefinition, parserContext.getRegistry());
         parseSuppressExceptionsAttribute(element, sagaManagerDefinition.getPropertyValues());
 
         registerSpecificProperties(element, parserContext, sagaManagerDefinition);
@@ -102,8 +103,10 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
      *
      * @param types                 The types of sagas found in the bean definition
      * @param sagaManagerDefinition The definition of the saga manager to register the types in.
+     * @param parameterResolverFactoryReference
      */
-    protected abstract void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition);
+    protected abstract void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition,
+                                          RuntimeBeanReference parameterResolverFactoryReference);
 
     /**
      * Registers any implementation specific properties found in the given <code>element</code> in the given
@@ -149,7 +152,8 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         }
     }
 
-    private void parseTypesElement(Element element, GenericBeanDefinition sagaManagerDefinition) {
+    private void parseTypesElement(Element element, GenericBeanDefinition sagaManagerDefinition,
+                                   BeanDefinitionRegistry registry) {
         Set<String> filteredTypes = new HashSet<String>();
 
         // find explicitly names types
@@ -176,7 +180,9 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
                 }
             }
         }
-        registerTypes(filteredTypes.toArray(new String[filteredTypes.size()]), sagaManagerDefinition);
+        registerTypes(filteredTypes.toArray(new String[filteredTypes.size()]), sagaManagerDefinition,
+                      SpringContextParameterResolverFactoryBuilder.getBeanReference(
+                              registry));
     }
 
     /**

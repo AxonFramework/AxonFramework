@@ -16,13 +16,22 @@
 
 package org.axonframework.common.annotation;
 
+import org.axonframework.common.Priority;
+import org.slf4j.LoggerFactory;
+
 import java.lang.annotation.Annotation;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.WeakHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+
+import static java.util.ServiceLoader.load;
 
 /**
  * ParameterResolverFactory instance that locates other ParameterResolverFactory instances on the class path. It uses
@@ -38,11 +47,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public final class ClasspathParameterResolverFactory implements ParameterResolverFactory {
 
-    private final List<ParameterResolverFactory> resolvers = new CopyOnWriteArrayList<ParameterResolverFactory>();
-
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathParameterResolverFactory.class);
     private static final Object monitor = new Object();
-    private static final Map<ClassLoader, WeakReference<ClasspathParameterResolverFactory>> factories =
+    private static final Map<ClassLoader, WeakReference<ClasspathParameterResolverFactory>> FACTORIES =
             new WeakHashMap<ClassLoader, WeakReference<ClasspathParameterResolverFactory>>();
+
+    private final ParameterResolverFactory delegate;
 
     /**
      * Creates an instance for the given <code>clazz</code>. Effectively, the class loader of the given class is used
@@ -51,7 +61,7 @@ public final class ClasspathParameterResolverFactory implements ParameterResolve
      * @param clazz The class for which the parameter resolver must be returned
      * @return a ClasspathParameterResolverFactory that can resolve parameters for the given class
      */
-    public static ClasspathParameterResolverFactory forClass(Class<?> clazz) {
+    public static ParameterResolverFactory forClass(Class<?> clazz) {
         return forClassLoader(clazz == null ? null : clazz.getClassLoader());
     }
 
@@ -65,15 +75,15 @@ public final class ClasspathParameterResolverFactory implements ParameterResolve
     public static ClasspathParameterResolverFactory forClassLoader(ClassLoader classLoader) {
         synchronized (monitor) {
             ClasspathParameterResolverFactory factory;
-            if (!factories.containsKey(classLoader)) {
+            if (!FACTORIES.containsKey(classLoader)) {
                 factory = new ClasspathParameterResolverFactory(classLoader);
-                factories.put(classLoader, new WeakReference<ClasspathParameterResolverFactory>(factory));
+                FACTORIES.put(classLoader, new WeakReference<ClasspathParameterResolverFactory>(factory));
                 return factory;
             }
-            factory = factories.get(classLoader).get();
+            factory = FACTORIES.get(classLoader).get();
             if (factory == null) {
                 factory = new ClasspathParameterResolverFactory(classLoader);
-                factories.put(classLoader, new WeakReference<ClasspathParameterResolverFactory>(factory));
+                FACTORIES.put(classLoader, new WeakReference<ClasspathParameterResolverFactory>(factory));
             }
             return factory;
         }
@@ -83,20 +93,37 @@ public final class ClasspathParameterResolverFactory implements ParameterResolve
         if (classLoader == null) {
             classLoader = Thread.currentThread().getContextClassLoader();
         }
-        for (ParameterResolverFactory factory : ServiceLoader.load(ParameterResolverFactory.class, classLoader)) {
-            resolvers.add(factory);
+        Iterator<ParameterResolverFactory> iterator = load(ParameterResolverFactory.class, classLoader).iterator();
+        //noinspection WhileLoopReplaceableByForEach
+        final List<ParameterResolverFactory> factories = new ArrayList<ParameterResolverFactory>();
+        while (iterator.hasNext()) {
+            try {
+                ParameterResolverFactory factory = iterator.next();
+                factories.add(factory);
+            } catch (ServiceConfigurationError e) {
+                logger.info("ParameterResolverFactory instance ignored, as one of the required classes is not available"
+                                    + "on the classpath: {}", e.getMessage());
+            } catch (NoClassDefFoundError e) {
+                logger.info("ParameterResolverFactory instance ignored. It relies on a class that cannot be found: {}", e.getMessage());
+            }
         }
+        Collections.sort(factories, new Comparator<ParameterResolverFactory>() {
+            @Override
+            public int compare(ParameterResolverFactory o1, ParameterResolverFactory o2) {
+                Priority annotation1 = o1.getClass().getAnnotation(Priority.class);
+                Priority annotation2 = o2.getClass().getAnnotation(Priority.class);
+                int prio1 = annotation1 == null ? Priority.NEUTRAL : annotation1.value();
+                int prio2 = annotation2 == null ? Priority.NEUTRAL : annotation2.value();
+
+                return Integer.compare(prio2, prio1);
+            }
+        });
+        this.delegate = new MultiParameterResolverFactory(factories);
     }
 
     @Override
     public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                             Annotation[] parameterAnnotations) {
-        for (ParameterResolverFactory factory : resolvers) {
-            ParameterResolver resolver = factory.createInstance(memberAnnotations, parameterType, parameterAnnotations);
-            if (resolver != null) {
-                return resolver;
-            }
-        }
-        return null;
+        return delegate.createInstance(memberAnnotations, parameterType, parameterAnnotations);
     }
 }

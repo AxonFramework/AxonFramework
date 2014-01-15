@@ -2,13 +2,18 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.configuration.AnnotationConfiguration;
+import org.axonframework.common.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 /**
  * Spring FactoryBean that creates an AggregateAnnotationCommandHandler instance.
@@ -18,7 +23,7 @@ import org.springframework.beans.factory.annotation.Required;
  * @since 2.1
  */
 public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoot<?>>
-        implements FactoryBean<AggregateAnnotationCommandHandler<T>>, InitializingBean {
+        implements FactoryBean<AggregateAnnotationCommandHandler<T>>, InitializingBean, ApplicationContextAware {
 
     private CommandBus commandBus;
     private Class<T> aggregateType;
@@ -27,6 +32,7 @@ public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoo
     private ParameterResolverFactory parameterResolverFactory;
 
     private AggregateAnnotationCommandHandler<T> handler;
+    private ApplicationContext applicationContext;
 
     @Override
     public AggregateAnnotationCommandHandler<T> getObject() throws Exception {
@@ -46,7 +52,11 @@ public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoo
     @Override
     public void afterPropertiesSet() throws Exception {
         if (parameterResolverFactory == null) {
-            parameterResolverFactory = AnnotationConfiguration.readFor(aggregateType).getParameterResolverFactory();
+            SpringBeanParameterResolverFactory springBeanParameterResolverFactory = new SpringBeanParameterResolverFactory();
+            springBeanParameterResolverFactory.setApplicationContext(applicationContext);
+            parameterResolverFactory = new MultiParameterResolverFactory(
+                    ClasspathParameterResolverFactory.forClass(aggregateType),
+                    springBeanParameterResolverFactory);
         }
         handler = new AggregateAnnotationCommandHandler<T>(aggregateType, repository, commandTargetResolver,
                                                            parameterResolverFactory);
@@ -105,5 +115,10 @@ public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoo
      */
     public void setParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
         this.parameterResolverFactory = parameterResolverFactory;
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 }

@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.configuration.AnnotationConfiguration;
 import org.axonframework.domain.Message;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.annotation.EventHandler;
@@ -29,7 +28,6 @@ import java.util.UUID;
 import javax.persistence.Id;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -57,21 +55,6 @@ public class AbstractAnnotatedAggregateRootTest {
     public void testInitializeWithIdentifier() {
         testSubject = new SimpleAggregateRoot(UUID.randomUUID());
         assertEquals(0, testSubject.getUncommittedEventCount());
-    }
-
-    @Test
-    public void testHandleEventWithCustomParameter() {
-
-        final SomeResource resource = mock(SomeResource.class);
-        AnnotationConfiguration.configure(CustomParameterHandlerAggregateRoot.class)
-                               .useParameterResolverFactory(new SimpleParameterResolverFactory(resource));
-        try {
-            testSubject = new CustomParameterHandlerAggregateRoot();
-            assertEquals(1, testSubject.getUncommittedEventCount());
-            verify(resource).registerInvocation();
-        } finally {
-            AnnotationConfiguration.reset(CustomParameterHandlerAggregateRoot.class);
-        }
     }
 
     @Test
@@ -152,7 +135,6 @@ public class AbstractAnnotatedAggregateRootTest {
         }
     }
 
-
     private static class CustomParameterHandlerAggregateRoot extends SimpleAggregateRoot {
 
         private CustomParameterHandlerAggregateRoot() {
@@ -198,7 +180,8 @@ public class AbstractAnnotatedAggregateRootTest {
         }
 
         @Override
-        public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+        public ParameterResolver createInstance(Annotation[] memberAnnotations,
+                                                Class<?> parameterType,
                                                 Annotation[] parameterAnnotations) {
             if (parameterType.isInstance(resource)) {
                 return this;

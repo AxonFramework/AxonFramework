@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.Message;
@@ -30,6 +31,7 @@ import org.axonframework.domain.Message;
  * @author Mark Ingram
  * @since 2.1
  */
+@Priority(Priority.HIGH)
 public final class SequenceNumberParameterResolverFactory extends
         AbstractAnnotatedParameterResolverFactory<SequenceNumber, Long> {
 
