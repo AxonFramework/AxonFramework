@@ -24,7 +24,7 @@
     <context:property-placeholder />
 
     <axon:disruptor-command-bus id="disruptorCommandBus" event-bus="eventBus" event-store="eventStore"
-                                buffer-size="${value:2048}" cache="mockCache" claim-strategy="${does-not-exist:single-threaded}"
+                                buffer-size="${value:2048}" cache="mockCache" producer-type="${does-not-exist:single-threaded}"
                                 executor="executor" cooling-down-period="${val:20}" invoker-threads="${val:2}"
                                 publisher-threads="2" rollback-configuration="rollbackConfig"
                                 reschedule-commands-on-corrupt-state="false" command-target-resolver="ctr"

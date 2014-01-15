@@ -166,8 +166,9 @@ public class DisruptorCommandBus implements CommandBus {
         TransactionManager transactionManager = configuration.getTransactionManager();
         disruptor = new Disruptor<CommandHandlingEntry>(
                 new CommandHandlingEntry.Factory(configuration.getTransactionManager() != null),
+                configuration.getBufferSize(),
                 executor,
-                configuration.getClaimStrategy(),
+                configuration.getProducerType(),
                 configuration.getWaitStrategy());
         commandTargetResolver = configuration.getCommandTargetResolver();
 

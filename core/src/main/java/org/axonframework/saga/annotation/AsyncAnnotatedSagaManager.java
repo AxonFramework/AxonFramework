@@ -20,9 +20,9 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.ExceptionHandler;
-import com.lmax.disruptor.MultiThreadedClaimStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Subscribable;
@@ -140,8 +140,9 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
         if (disruptor == null) {
             sagaManagerStatus.setStatus(true);
             disruptor = new Disruptor<AsyncSagaProcessingEvent>(new AsyncSagaProcessingEvent.Factory(),
+                                                                bufferSize,
                                                                 new ValidatingExecutor(executor, startTimeout),
-                                                                new MultiThreadedClaimStrategy(bufferSize),
+                                                                ProducerType.MULTI,
                                                                 waitStrategy);
             disruptor.handleExceptionsWith(new LoggingExceptionHandler());
             disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository, parameterResolverFactory,
