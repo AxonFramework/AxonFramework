@@ -729,74 +729,111 @@
             <xsd:complexContent>
                 <xsd:extension base="eventStoreType">
                     <xsd:all>
-                        <xsd:element name="upcasters" type="upcasterChainType" minOccurs="0" maxOccurs="1">
+                        <xsd:element name="upcasters"
+                                     type="upcasterChainType" minOccurs="0" maxOccurs="1">
                             <xsd:annotation>
-                                <xsd:documentation>Sets the Upcasters to use to transform old revisions of Events into
-                                    their current revision. The given upcasters are chained in order to allow each
-                                    instance to convert based on the outcome of any previous Upcasters.
-                                    Each of the beans defined inside this element must implement the Upcaster interface.
+                                <xsd:documentation>
+                                    Sets the Upcasters to use to
+                                    transform old revisions of Events
+                                    into their current revision. The
+                                    given upcasters are chained in order
+                                    to allow each instance to convert
+                                    based on the outcome of any previous
+                                    Upcasters. Each of the beans defined
+                                    inside this element must implement
+                                    the Upcaster interface.
                                 </xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:all>
-                    <xsd:attribute name="data-source" use="optional" type="xsd:string">
+                    <xsd:attribute name="data-source" use="optional"
+                                   type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Data Source that provides access to the backing database. This data
-                                source is used to detect database type, and define which error codes represent
-                                concurrency related errors.
-                            </xsd:documentation>
-                            <xsd:appinfo>
-                                <tool:annotation kind="ref">
-                                    <tool:expected-type type="javax.sql.DataSource"/>
-                                </tool:annotation>
-                            </xsd:appinfo>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                    <xsd:attribute name="persistence-exception-resolver" use="optional" type="xsd:string">
-                        <xsd:annotation>
-                            <xsd:documentation>Sets the persistence exception resolver to use to detect concurrency
-                                related errors in database generated exceptions.
+                            <xsd:documentation>
+                                Data Source that provides access to the
+                                backing database. This data source is
+                                used to detect database type, and define
+                                which error codes represent concurrency
+                                related errors.
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.eventstore.jpa.PersistenceExceptionResolver"/>
+                                            type="javax.sql.DataSource" />
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="entity-manager-provider" use="optional" type="xsd:string">
+                    <xsd:attribute name="persistence-exception-resolver"
+                                   use="optional" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Sets the instance that provides the Event Store with an EntityManager
-                                implementation. Defaults to an autowired (container managed) EntityManager, which
-                                requires a single EntityManagerFactoryBean to be configured.<br/>Applications that have
-                                multiple Persistence Units will need to create a custom EntityManagerProvider
-                                implementation
-                                with the correct @PersistenceContext(unitName=...) annotation.
+                            <xsd:documentation>
+                                Sets the persistence exception resolver
+                                to use to detect concurrency related
+                                errors in database generated exceptions.
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.util.jpa.EntityManagerProvider"/>
+                                            type="org.axonframework.eventstore.jpa.PersistenceExceptionResolver" />
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="max-snapshots-archived" use="optional" type="xsd:string">
+                    <xsd:attribute name="entity-manager-provider"
+                                   use="optional" type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Sets the maximum number of snapshots to archive for an aggregate.
-                                The EventStore will keep at most this number of snapshots per aggregate. Defaults to 1.
+                            <xsd:documentation>
+                                Sets the instance that provides the
+                                Event Store with an EntityManager
+                                implementation. Defaults to an autowired
+                                (container managed) EntityManager, which
+                                requires a single
+                                EntityManagerFactoryBean to be
+                                configured.
+                                <br />
+                                Applications that have multiple
+                                Persistence Units will need to create a
+                                custom EntityManagerProvider
+                                implementation with the correct
+                                @PersistenceContext(unitName=...)
+                                annotation.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type
+                                            type="org.axonframework.util.jpa.EntityManagerProvider" />
+                                </tool:annotation>
+                            </xsd:appinfo>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="max-snapshots-archived"
+                                   use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>
+                                Sets the maximum number of snapshots to
+                                archive for an aggregate. The EventStore
+                                will keep at most this number of
+                                snapshots per aggregate. Defaults to 1.
                                 A value less than 1 disables pruning.
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
-                    <xsd:attribute name="batch-size" use="optional" type="xsd:string">
+                    <xsd:attribute name="batch-size" use="optional"
+                                   type="xsd:string">
                         <xsd:annotation>
-                            <xsd:documentation>Sets the number of events that should be read at each database access.
-                                When more than this number of events must be read to rebuild an aggregate's state, the
-                                events are read in batches of this size. Defaults to 100.
+                            <xsd:documentation>
+                                Sets the number of events that should be
+                                read at each database access. When more
+                                than this number of events must be read
+                                to rebuild an aggregate's state, the
+                                events are read in batches of this size.
+                                Defaults to 100.
                             </xsd:documentation>
                         </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="event-entry-store"
+                                   type="xsd:string">
                     </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>

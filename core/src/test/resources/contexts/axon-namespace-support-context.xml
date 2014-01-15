@@ -191,7 +191,14 @@
             </bean>
         </axon:upcasters>
     </axon:jpa-event-store>
-
+    
+    <axon:jpa-event-store id="eventStoreWithCustomEventEntryStore" event-serializer="eventSerializer" 
+        event-entry-store-ref="customEventEntryStore"/>
+	
+	<bean id="customEventEntryStore" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.eventstore.jpa.EventEntryStore"/>
+	</bean>
+	
     <bean id="converterFactory" class="org.axonframework.serializer.ChainingConverterFactory"/>
     <bean id="myEntityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
 
