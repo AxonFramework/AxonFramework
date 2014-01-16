@@ -115,7 +115,7 @@ public final class ClasspathParameterResolverFactory implements ParameterResolve
                 int prio1 = annotation1 == null ? Priority.NEUTRAL : annotation1.value();
                 int prio2 = annotation2 == null ? Priority.NEUTRAL : annotation2.value();
 
-                return Integer.compare(prio2, prio1);
+                return (prio1 > prio2) ? -1 : ((prio2 == prio1) ? 0 : 1);
             }
         });
         this.delegate = new MultiParameterResolverFactory(factories);
