@@ -31,7 +31,6 @@
         <module>amqp</module>
         <module>monitoring-jmx</module>
         <module>quickstart</module>
-        <module>osgi</module>
     </modules>
     <packaging>pom</packaging>
 

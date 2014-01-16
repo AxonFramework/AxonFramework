@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package orgaxonframework.osgi;
+package org.axonframework.integrationtests.osgi;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.junit.*;
+import org.junit.runner.*;
 import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.wiring.BundleWiring;
 
-import javax.inject.Inject;
 import java.io.File;
-import java.util.Map;
+import java.lang.annotation.Annotation;
 import java.util.HashMap;
+import java.util.Map;
+import javax.inject.Inject;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static junit.framework.Assert.assertNotSame;
+import static org.junit.Assert.*;
 import static org.ops4j.pax.exam.CoreOptions.*;
 
 /**
@@ -75,7 +81,7 @@ public class OSGiBundleTest {
     }
 
     @Test
-    public void checkBundles() {
+    public void checkBundles() throws ClassNotFoundException {
         Map<String,Bundle> axonBundles = new HashMap<String,Bundle>();
 
         for(Bundle bundle : context.getBundles()) {
@@ -87,8 +93,10 @@ public class OSGiBundleTest {
         }
 
         for(String artifact : AXON_ARTIFACTS) {
-            assertTrue(axonBundles.containsKey(AXON_GROUP + "." + artifact));
-            assertTrue(axonBundles.get(AXON_GROUP + "." + artifact).getState() == Bundle.ACTIVE);
+            assertTrue("Bundle " + artifact + " isn't deployed", axonBundles.containsKey(AXON_GROUP + "." + artifact));
+            assertEquals("Bundle " + artifact + " isn't started",
+                         axonBundles.get(AXON_GROUP + "." + artifact).getState(),
+                         Bundle.ACTIVE);
         }
     }
 }

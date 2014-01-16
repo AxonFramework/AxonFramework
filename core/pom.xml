@@ -63,7 +63,7 @@
                             <goal>manifest</goal>
                         </goals>
                     </execution>
-             </executions>
+                </executions>
             </plugin>
         </plugins>
     </build>
