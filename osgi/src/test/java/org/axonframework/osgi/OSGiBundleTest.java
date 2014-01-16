@@ -25,6 +25,8 @@ import org.osgi.framework.BundleContext;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.util.Map;
+import java.util.HashMap;
 
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -35,6 +37,10 @@ import static org.ops4j.pax.exam.CoreOptions.*;
  */
 @RunWith(PaxExam.class)
 public class OSGiBundleTest {
+
+    private static final String   AXON_GROUP     = "org.axonframework";
+    private static final String[] AXON_ARTIFACTS = new String[] {"axon-core","axon-amqp","axon-distributed-commandbus"};
+
     @Inject
     BundleContext context;
 
@@ -43,12 +49,20 @@ public class OSGiBundleTest {
         return options(
             systemProperty("org.osgi.framework.storage.clean").value("true"),
             systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("WARN"),
+            repository("http://repository.springsource.com/maven/bundles/release@id=spring.ebr.release"),
             mavenBundle("org.slf4j","slf4j-api",System.getProperty("slf4j.version")),
             mavenBundle("org.slf4j","slf4j-log4j12",System.getProperty("slf4j.version")).noStart(),
             mavenBundle("log4j","log4j",System.getProperty("log4j.version")),
+            mavenBundle("com.rabbitmq","amqp-client","2.8.6"),
             new File("core/target/classes").exists()
                 ?  bundle("reference:file:core/target/classes")
                 :  bundle("reference:file:../core/target/classes"),
+            new File("amqp/target/classes").exists()
+                ?  bundle("reference:file:amqp/target/classes")
+                :  bundle("reference:file:../amqp/target/classes"),
+            new File("distributed-commandbus/target/classes").exists()
+                ?  bundle("reference:file:distributed-commandbus/target/classes")
+                :  bundle("reference:file:../distributed-commandbus/target/classes"),
             junitBundles(),
             systemPackage("com.sun.tools.attach"),
             cleanCaches()
@@ -61,27 +75,20 @@ public class OSGiBundleTest {
     }
 
     @Test
-    public void checkBundle() {
-        Boolean bundleFound = false;
-        Boolean bundleActive = false;
+    public void checkBundles() {
+        Map<String,Bundle> axonBundles = new HashMap<String,Bundle>();
 
-        Bundle[] bundles = context.getBundles();
-        for(Bundle bundle : bundles)
-        {
-            if(bundle != null)
-            {
-                if(bundle.getSymbolicName().equals("org.axonframework.axon-core"))
-                {
-                    bundleFound = true;
-                    if(bundle.getState() == Bundle.ACTIVE)
-                    {
-                        bundleActive = true;
-                    }
+        for(Bundle bundle : context.getBundles()) {
+            if(bundle != null) {
+                if(bundle.getSymbolicName().startsWith(AXON_GROUP)) {
+                    axonBundles.put(bundle.getSymbolicName(),bundle);
                 }
             }
         }
 
-        assertTrue(bundleFound);
-        assertTrue(bundleActive);
+        for(String artifact : AXON_ARTIFACTS) {
+            assertTrue(axonBundles.containsKey(AXON_GROUP + "." + artifact));
+            assertTrue(axonBundles.get(AXON_GROUP + "." + artifact).getState() == Bundle.ACTIVE);
+        }
     }
 }
