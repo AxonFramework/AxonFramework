@@ -1,13 +1,7 @@
-# 
-# Thanks to  Joseph Wilkicki for submitting this file's contents
-#
-# In your Quartz properties file, you'll need to set 
-# org.quartz.jobStore.driverDelegateClass = org.quartz.impl.jdbcjobstore.HSQLDBDelegate
-#
-# Some users report the need to change the fields
-# with datatype "OTHER" to datatype "BINARY" with
-# particular versions (e.g. 1.7.1) of HSQLDB
-#
+--
+-- In your Quartz properties file, you'll need to set
+-- org.quartz.jobStore.driverDelegateClass = org.quartz.impl.jdbcjobstore.HSQLDBDelegate
+--
 
 DROP TABLE qrtz_locks IF EXISTS;
 DROP TABLE qrtz_scheduler_state IF EXISTS;
@@ -85,7 +79,7 @@ REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
 );
 
 CREATE TABLE qrtz_simprop_triggers
-  (          
+  (
     SCHED_NAME VARCHAR(120) NOT NULL,
     TRIGGER_NAME LONGVARCHAR(200) NOT NULL,
     TRIGGER_GROUP LONGVARCHAR(200) NOT NULL,
@@ -101,7 +95,7 @@ CREATE TABLE qrtz_simprop_triggers
     BOOL_PROP_1 BOOLEAN NULL,
     BOOL_PROP_2 BOOLEAN NULL,
     PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
-    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP) 
+    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
     REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
 );
 
@@ -122,7 +116,7 @@ SCHED_NAME VARCHAR(120) NOT NULL,
 CALENDAR_NAME LONGVARCHAR(200) NOT NULL,
 CALENDAR VARBINARY(64000) NOT NULL,
 PRIMARY KEY (SCHED_NAME,CALENDAR_NAME)
-); 
+);
 
 CREATE TABLE qrtz_paused_trigger_grps
   (
@@ -131,7 +125,7 @@ CREATE TABLE qrtz_paused_trigger_grps
     PRIMARY KEY (SCHED_NAME,TRIGGER_GROUP)
 );
 
-CREATE TABLE qrtz_fired_triggers 
+CREATE TABLE qrtz_fired_triggers
   (
     SCHED_NAME VARCHAR(120) NOT NULL,
     ENTRY_ID LONGVARCHAR(95) NOT NULL,
@@ -139,6 +133,7 @@ CREATE TABLE qrtz_fired_triggers
     TRIGGER_GROUP LONGVARCHAR(200) NOT NULL,
     INSTANCE_NAME LONGVARCHAR(200) NOT NULL,
     FIRED_TIME NUMERIC(13) NOT NULL,
+    SCHED_TIME NUMERIC(13) NOT NULL,
     PRIORITY INTEGER NOT NULL,
     STATE LONGVARCHAR(16) NOT NULL,
     JOB_NAME LONGVARCHAR(200) NULL,
@@ -148,7 +143,7 @@ CREATE TABLE qrtz_fired_triggers
     PRIMARY KEY (SCHED_NAME,ENTRY_ID)
 );
 
-CREATE TABLE qrtz_scheduler_state 
+CREATE TABLE qrtz_scheduler_state
   (
     SCHED_NAME VARCHAR(120) NOT NULL,
     INSTANCE_NAME LONGVARCHAR(200) NOT NULL,
@@ -160,6 +155,6 @@ CREATE TABLE qrtz_scheduler_state
 CREATE TABLE qrtz_locks
   (
     SCHED_NAME VARCHAR(120) NOT NULL,
-    LOCK_NAME  LONGVARCHAR(40) NOT NULL, 
+    LOCK_NAME  LONGVARCHAR(40) NOT NULL,
     PRIMARY KEY (SCHED_NAME,LOCK_NAME)
 );

@@ -28,7 +28,6 @@ import org.mockito.stubbing.*;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -150,7 +149,7 @@ public class SimpleCommandBusTest {
 
             @Override
             public void onFailure(Throwable cause) {
-                assertThat(cause, is(Exception.class));
+                assertEquals(cause.getClass(), Exception.class);
             }
         });
 

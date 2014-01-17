@@ -58,6 +58,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -627,9 +629,11 @@ public class JpaEventStoreTest {
         } catch (ConcurrencyException ex) {
             fail("Didn't expect exception to be translated");
         } catch (Exception ex) {
+            final StringWriter writer = new StringWriter();
+            ex.printStackTrace(new PrintWriter(writer));
             assertTrue("Got the right exception, "
                                + "but the message doesn't seem to mention 'DomainEventEntry': " + ex.getMessage(),
-                       ex.getMessage().toLowerCase().contains("domainevententry"));
+                       writer.toString().toLowerCase().contains("domainevententry"));
         }
     }
 

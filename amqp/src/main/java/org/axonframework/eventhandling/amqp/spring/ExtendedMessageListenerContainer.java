@@ -277,6 +277,12 @@ public class ExtendedMessageListenerContainer extends SimpleMessageListenerConta
         }
 
         @Override
+        public void basicPublish(String exchange, String routingKey, boolean mandatory, AMQP.BasicProperties props,
+                                 byte[] body) throws IOException {
+            delegate.basicPublish(exchange, routingKey, mandatory, props, body);
+        }
+
+        @Override
         public void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate,
                                  AMQP.BasicProperties props, byte[] body) throws IOException {
             delegate.basicPublish(exchange, routingKey, mandatory, immediate, props, body);

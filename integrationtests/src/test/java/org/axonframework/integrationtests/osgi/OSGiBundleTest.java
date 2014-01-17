@@ -15,8 +15,6 @@
  */
 package org.axonframework.integrationtests.osgi;
 
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.junit.*;
 import org.junit.runner.*;
 import org.ops4j.pax.exam.Configuration;
@@ -24,17 +22,14 @@ import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.wiring.BundleWiring;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNotSame;
 import static org.junit.Assert.*;
 import static org.ops4j.pax.exam.CoreOptions.*;
 
@@ -44,8 +39,10 @@ import static org.ops4j.pax.exam.CoreOptions.*;
 @RunWith(PaxExam.class)
 public class OSGiBundleTest {
 
-    private static final String   AXON_GROUP     = "org.axonframework";
-    private static final String[] AXON_ARTIFACTS = new String[] {"axon-core","axon-amqp","axon-distributed-commandbus"};
+    private static final String AXON_GROUP = "org.axonframework";
+    private static final String[] AXON_ARTIFACTS = new String[]{"axon-core",
+            "axon-amqp",
+            "axon-distributed-commandbus"};
 
     @Inject
     BundleContext context;
@@ -53,25 +50,22 @@ public class OSGiBundleTest {
     @Configuration
     public Option[] config() {
         return options(
-            systemProperty("org.osgi.framework.storage.clean").value("true"),
-            systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("WARN"),
-            repository("http://repository.springsource.com/maven/bundles/release@id=spring.ebr.release"),
-            mavenBundle("org.slf4j","slf4j-api",System.getProperty("slf4j.version")),
-            mavenBundle("org.slf4j","slf4j-log4j12",System.getProperty("slf4j.version")).noStart(),
-            mavenBundle("log4j","log4j",System.getProperty("log4j.version")),
-            mavenBundle("com.rabbitmq","amqp-client","2.8.6"),
-            new File("core/target/classes").exists()
-                ?  bundle("reference:file:core/target/classes")
-                :  bundle("reference:file:../core/target/classes"),
-            new File("amqp/target/classes").exists()
-                ?  bundle("reference:file:amqp/target/classes")
-                :  bundle("reference:file:../amqp/target/classes"),
-            new File("distributed-commandbus/target/classes").exists()
-                ?  bundle("reference:file:distributed-commandbus/target/classes")
-                :  bundle("reference:file:../distributed-commandbus/target/classes"),
-            junitBundles(),
-            systemPackage("com.sun.tools.attach"),
-            cleanCaches()
+                systemProperty("org.osgi.framework.storage.clean").value("true"),
+                systemProperty("org.ops4j.pax.logging.DefaultServiceLog.level").value("WARN"),
+                mavenBundle("com.rabbitmq", "amqp-client", System.getProperty("rabbitmq.version")),
+                new File("core/target/classes").exists()
+                        ? bundle("reference:file:core/target/classes")
+                        : bundle("reference:file:../core/target/classes"),
+                new File("amqp/target/classes").exists()
+                        ? bundle("reference:file:amqp/target/classes")
+                        : bundle("reference:file:../amqp/target/classes"),
+                new File("distributed-commandbus/target/classes").exists()
+                        ? bundle("reference:file:distributed-commandbus/target/classes")
+                        : bundle("reference:file:../distributed-commandbus/target/classes"),
+                junitBundles(),
+                systemPackage("org.slf4j;version=1.7.0"),
+                systemPackage("com.sun.tools.attach"),
+                cleanCaches()
         );
     }
 
@@ -82,17 +76,17 @@ public class OSGiBundleTest {
 
     @Test
     public void checkBundles() throws ClassNotFoundException {
-        Map<String,Bundle> axonBundles = new HashMap<String,Bundle>();
+        Map<String, Bundle> axonBundles = new HashMap<String, Bundle>();
 
-        for(Bundle bundle : context.getBundles()) {
-            if(bundle != null) {
-                if(bundle.getSymbolicName().startsWith(AXON_GROUP)) {
-                    axonBundles.put(bundle.getSymbolicName(),bundle);
+        for (Bundle bundle : context.getBundles()) {
+            if (bundle != null) {
+                if (bundle.getSymbolicName().startsWith(AXON_GROUP)) {
+                    axonBundles.put(bundle.getSymbolicName(), bundle);
                 }
             }
         }
 
-        for(String artifact : AXON_ARTIFACTS) {
+        for (String artifact : AXON_ARTIFACTS) {
             assertTrue("Bundle " + artifact + " isn't deployed", axonBundles.containsKey(AXON_GROUP + "." + artifact));
             assertEquals("Bundle " + artifact + " isn't started",
                          axonBundles.get(AXON_GROUP + "." + artifact).getState(),
