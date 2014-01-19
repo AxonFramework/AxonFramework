@@ -76,8 +76,6 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         sagaManager = new AnnotatedSagaManager(sagaRepository, genericSagaFactory, sagaType);
         sagaManager.setSuppressExceptions(false);
 
-        // TODO: Use ThreadLocalParameterResolverFactory
-
         registeredResources.add(eventBus);
         commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
@@ -85,6 +83,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus, commandBus,
                                                                 sagaType);
+        FixtureResourceParameterResolverFactory.clear();
         for (Object resource : registeredResources) {
             FixtureResourceParameterResolverFactory.registerResource(resource);
         }
@@ -98,6 +97,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                 sagaManager.handle(event);
             }
         } finally {
+            FixtureResourceParameterResolverFactory.clear();
         }
         return fixtureExecutionResult;
     }
