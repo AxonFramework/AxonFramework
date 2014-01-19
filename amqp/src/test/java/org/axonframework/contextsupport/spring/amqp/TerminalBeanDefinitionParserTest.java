@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ public class TerminalBeanDefinitionParserTest {
         assertEquals("serializer", property(terminal1, "serializer", BeanReference.class).getBeanName());
         assertEquals("true", property(terminal1, "durable", String.class));
         assertEquals("false", property(terminal1, "transactional", String.class));
+        assertEquals("true", property(terminal1, "waitForPublisherAck", String.class));
         assertEquals("Exchange", property(terminal1, "exchangeName", String.class));
 
         final BeanDefinition containerManager = beanFactory.getBeanDefinition("terminal1$containerManager");
