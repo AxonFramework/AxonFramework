@@ -194,16 +194,21 @@
     // this method will also wait, caller decides how long
     void sendCommandAndWait(MyPayloadType command, long timeout, TimeUnit unit) 
                          throws TimeoutException, InterruptedException;
-}</programlisting>
+}
+
+// To create an instance:
+GatewayProxyFactory factory = new GatewayProxyFactory(commandBus);
+MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
             <simplesect>
-                <!--TODO: Show code sample to create command gateway.-->
                 <title>Configuring a custom Command Gateway in Spring</title>
                 <para>When using Spring, the easiest way to create a custom Command Gateway is by
                     using the <code>CommandGatewayFactoryBean</code>. It uses setter injection,
                     making it easier to configure. Only the "commandBus" property is mandatory. </para>
-                <!--TODO: Example. "gatewayInterface" property is not mandatory!!-->
+                <programlisting>&lt;bean id="myGateway" class="org.axonframework.commandhandling.gateway.CommandGatewayFactoryBean">
+    &lt;property name="commandBus" ref="commandBus"/>
+    &lt;property name="gatewayInterface" value="package.to.MyGateway"/>
+&lt;/bean></programlisting>
             </simplesect>
-            <!--TODO: Explain the danger of blocking for a result, while locks are being held-->
         </sect2>
     </sect1>
     <sect1 xml:id="command-bus">

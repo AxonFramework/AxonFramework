@@ -653,7 +653,14 @@ public class SubListener extends TopListener {
                 present, Axon will automatically wrap the cluster in a <code>ReplayingCluster</code>
                 using the provided configuration. This also means that
                     <code>applicationContext.getBean(clusterName)</code> will return a bean of type
-                    <code>ReplayingCluster</code>.<!--TODO: Example--></para>
+                    <code>ReplayingCluster</code>.</para>
+            <programlisting>&lt;axon:cluster id="replayingCluster">
+    &lt;!-- the next element makes this Cluster replayable -->
+    &lt;axon:replay-config event-store="eventStore" transaction-manager="transactionManager"/>
+    &lt;axon:selectors>
+        &lt;axon:package prefix="package.with.replayable.listeners"/>
+    &lt;/axon:selectors>
+&lt;/axon:cluster></programlisting>
         </simplesect>
         <simplesect>
             <title>Preparing for a replay</title>
