@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.common.AxonConfigurationException;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,12 +44,24 @@ import static org.axonframework.common.ReflectionUtils.*;
  */
 public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
+    private final Class<? extends Annotation> annotationType;
+
     /**
      * Initializes a Routing Strategy that fails when an incoming command does not define an AggregateIdentifier to
      * base the routing key on.
      */
     public AnnotationRoutingStrategy() {
-        super(UnresolvedRoutingKeyPolicy.ERROR);
+        this(TargetAggregateIdentifier.class);
+    }
+
+    /**
+     * Initializes a Routing Strategy that uses the given annotation to resolve the targeted identifier.
+     *
+     * @param annotationType The type of annotation marking the field or method providing the identifier of the
+     *                       targeted aggregate.
+     */
+    public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType) {
+        this(annotationType, UnresolvedRoutingKeyPolicy.ERROR);
     }
 
     /**
@@ -59,7 +72,23 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
      *                                   information about the routing key to use.
      */
     public AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
+        this(TargetAggregateIdentifier.class, unresolvedRoutingKeyPolicy);
+    }
+
+    /**
+     * Initializes a Routing Strategy that uses the given annotation to resolve the targeted identifier and the given
+     * <code>unresolvedRoutingKeyPolicy</code> when an incoming command does not define an AggregateIdentifier to base
+     * the routing key on.
+     *
+     * @param annotationType             The type of annotation marking the field or method providing the identifier of
+     *                                   the targeted aggregate.
+     * @param unresolvedRoutingKeyPolicy The policy indication what should be done when a Command does not contain
+     *                                   information about the routing key to use.
+     */
+    public AnnotationRoutingStrategy(Class<? extends Annotation> annotationType,
+                                     UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
         super(unresolvedRoutingKeyPolicy);
+        this.annotationType = annotationType;
     }
 
     @Override
@@ -80,13 +109,13 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
     @SuppressWarnings("unchecked")
     private <I> I findIdentifier(CommandMessage<?> command) throws InvocationTargetException, IllegalAccessException {
         for (Method m : methodsOf(command.getPayloadType())) {
-            if (m.isAnnotationPresent(TargetAggregateIdentifier.class)) {
+            if (m.isAnnotationPresent(annotationType)) {
                 ensureAccessible(m);
                 return (I) m.invoke(command.getPayload());
             }
         }
         for (Field f : fieldsOf(command.getPayloadType())) {
-            if (f.isAnnotationPresent(TargetAggregateIdentifier.class)) {
+            if (f.isAnnotationPresent(annotationType)) {
                 return (I) getFieldValue(f, command.getPayload());
             }
         }
