@@ -446,7 +446,8 @@
                 model, for example, it is harder to "transfer" events from one aggregate to another
                 if they are included in a "commit document".</para>
             <para>The MongoDB doesn't take a lot of configuration. All it needs is a reference to
-                the collections to store the Events in, and you're set to go.</para>
+                the collections to store the Events in, and you're set to go. For production
+                environments, you may want to doublecheck the indexes on your collections.</para>
         </sect2>
         <sect2>
             <title>Implementing your own event store</title>
@@ -527,6 +528,11 @@
                 <code>FixedValueRevisionResolver</code>, which always returns a predefined value.
             The latter is useful when injecting the current application version. This will allow you
             to see which version of the application generated a specific event.</para>
+        <para>Maven users can use the <code>MavenArtifactRevisionResolver</code> to automatically
+            use the project version. It is initialized using the groupId and artifactId of the
+            project to obtain the version for. Since this only works in JAR files created by Maven,
+            the version cannot always be resolved by an IDE. If a version cannot be resolved,
+                <code>null</code> is returned.</para>
         <sect2>
             <title>Writing an upcaster</title>
             <para>To explain how to write an upcaster for Axon we'll walk through a small example,

@@ -291,10 +291,10 @@
                     you. </para>
                 <note>
                     <title>Backwards compatibility with @EventHandler</title>
-                    <para>The <code>@EventSourcingHandler</code> has been introduced in Axon 2.1,
-                        and replaces the @EventHandler annotation for use inside Aggregates. For
-                        backwards compatibility, Axon 2.x will still support the
-                            <code>@EventHandler</code> annotation for Event Sourced Aggregates. </para>
+                    <para>The <code>@EventSourcingHandler</code> annotation has been introduced in
+                        Axon 2.1, and replaces the <code>@EventHandler</code> annotation for use
+                        inside Aggregates. For backwards compatibility, Axon 2.x will still support
+                        the <code>@EventHandler</code> annotation for Event Sourced Aggregates. </para>
                     <para>Note that <code>@EventHandler</code> annotated methods on an
                             <code>AbstractAnnotatedAggregateRoot</code> are called immediately when
                         events are applied to the local aggregate. This should not be confused with
@@ -336,6 +336,7 @@
                     <para>Most IDE's have an option to ignore "unused private method" warnings for
                         methods with a specific annotation. Alternatively, you can add an
                             <code>@SuppressWarnings("UnusedDeclaration")</code> annotation to the
+                        method to make sure you don't accidentally delete an Event handler
                         method.</para>
                 </note>
                 <para>The <code>AbstractAnnotatedAggregateRoot</code> also requires that the field

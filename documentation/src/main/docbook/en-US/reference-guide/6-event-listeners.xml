@@ -126,6 +126,32 @@
                         xmlns:xlink="http://www.w3.org/1999/xlink" linkend="distributed-event-bus"/>
                     for more information.</para>
             </simplesect>
+            <simplesect>
+                <title>Organizing Event Listeners in Clusters</title>
+                <para>By default, all Event Listeners are combined into a single cluster. The order
+                    in which the listeners are invoked is undefined. However, when an application
+                    defines several clusters, sensible choices need to be made about which Cluster
+                    instance to assign to each Event Listener.</para>
+                <para>As a rule of thumb, Event Listeners that require information managed by
+                    another Listener should be in the same cluster. Putting them in the same cluster
+                    allows them you to influence the way they are invoked. Once they are assigned to
+                    different clusters, this is much harder to do. Furthermore, listeners that may
+                    not be replayed, such as ones sending emails, as well as Saga Manager should be
+                    placed in a separate cluster. Care should be taken never replay events on a
+                    cluster containing this type of Listener.</para>
+                <para>In some circumstances, it is desirable to ensure a specific handler is invoked
+                    before another. To achieve this, some clusters allow an OrderResolver to be
+                    configured. The OrderResolver provides an integer value for each given handler,
+                    which defines the relative order in which handlers need to be invoked. Listeners
+                    for which the resolver provide a lower value are invoked before those with a
+                    higher value. The order in which Listeners with the same value are invoked is
+                    undefined. </para>
+                <para>Clusters that have been defined in a Spring context using the
+                        <code>&lt;axon:cluster /></code> element automatically check for Spring's
+                        <code>@Order</code> annotation on handler classes. Alternatively, an
+                    "order-resolver-ref" attribute can be used to refer to another Order resolver to
+                    use.</para>
+            </simplesect>
         </sect2>
     </sect1>
     <sect1 xml:id="event-listeners">
@@ -165,12 +191,21 @@
                 <para>The <code>AnnotationEventListenerAdapter</code>, as well as the
                         <code>AbstractAnnotatedAggregateRoot</code>, use
                         <code>ParameterResolver</code>s to resolve the value that should be passed
-                    in the parameters of methods annotated with <code>@EventHandler</code>. By
-                    default, Axon provides a number of parameter resolvers that allow you to use the
-                    following parameter types: <itemizedlist>
+                    in the parameters of methods annotated with <code>@EventHandler</code>.  The
+                        <code>AnnotationEventListenerAdapter</code> uses a ParameterResolverFactory
+                    to resolve the values for the parameters of the annotated methods. By default,
+                    Axon uses a <code>ClasspathParameterResolverFactory</code>, that looks for
+                        <code>ParameterResolverFactory</code> instances using the SerivceLoader
+                    mechanism.</para>
+                <para>Axon provides out-of-the-box support for the following parameter types: <itemizedlist>
                         <listitem>
-                            <para>The first parameter is always the payload of the Event
-                                message</para>
+                            <para>The first parameter is always the payload of the Event message. In
+                                the case the Event Handlers doesn't need access to the payload of
+                                the message, you can specify the expected payload type on the
+                                    <code>@EventHandler</code> annotation. When specified, the first
+                                parameter is resolved using the rules specified below. Do not
+                                configure the payload type on the annotation if you want the payload
+                                to be passed as a parameter.</para>
                         </listitem>
                         <listitem>
                             <para>Parameters annotated with <code>@MetaData</code> will resolve to
@@ -194,9 +229,9 @@
                         </listitem>
                         <listitem>
                             <para>Parameters annotated with <code>@SequenceNumber</code> and of type
-                                <code>java.lang.Long</code> or <code>long</code> will resolve to the
-                                sequenceNumber of a <code>DomainEventMessage</code>. This provides the order in
-                                which the Event was generated.</para>
+                                    <code>java.lang.Long</code> or <code>long</code> will resolve to
+                                the sequenceNumber of a <code>DomainEventMessage</code>. This
+                                provides the order in which the Event was generated.</para>
                         </listitem>
                         <listitem>
                             <para>Parameters assignable to Message will have the entire
@@ -213,18 +248,16 @@
                                 declared, any other parameters will resolve to autowired beans, if
                                 exactly one autowirable candidate is available in the application
                                 context. This allows you to inject resources directly into
-                                    <code>@EventHandler</code> annotated methods.</para>
+                                    <code>@EventHandler</code> annotated methods. Note that this
+                                only works for Spring-managed beans. Event Sourcing handlers on
+                                Aggregate instances don't get resources injected.</para>
                         </listitem>
                     </itemizedlist></para>
-                <para>You can configure additional <code>ParameterResolver</code>s by extending the
-                        <code>ParameterResolverFactory</code> class and creating a file named
+                <para>You can configure additional <code>ParameterResolver</code>s by implementing
+                    the <code>ParameterResolverFactory</code> interface and creating a file named
                         <code>/META-INF/service/org.axonframework.common.annotation.ParameterResolverFactory</code>
-                    containing the fully qualified name of the implementing class. Alternatively,
-                    you can register your implementation at runtime using
-                        <code>ParameterResolverFactory.registerFactory()</code>. Make sure to do so
-                    before any adapters are created, otherwise handlers may have been initialized
-                    without those parameter resolvers.</para>
-                <para>In all circumstances, exactly one event handler method is invoked per listener
+                    containing the fully qualified name of the implementing class.</para>
+                <para>In all circumstances, at most one event handler method is invoked per listener
                     instance. Axon will search the most specific method to invoke, in the following
                     order: <orderedlist>
                         <listitem>
@@ -273,12 +306,11 @@ public class SubListener extends TopListener {
                         <code>EventA</code> is not assignable to <code>EventB</code> (it's its
                     superclass), those will be processed by <code>TopListener</code>.</para>
                 <para>The constructor of the <code>AnnotationEventListenerAdapter</code> takes two
-                    parameters: the annotated bean, and the <code>EventBus</code>, to which the
-                    listener should subscribe. You can subscribe and unsubscribe the event listener
-                    using the <code>subscribe()</code> and <code>unsubscribe()</code> methods on the
-                    adapter. Alternatively, you can use
-                        <code>AnnotationEventListenerAdapter.subscribe(listener, eventBus)</code> to
-                    create and subscribe the listener in one invocation.</para>
+                    parameters: the annotated bean, and optionally a
+                        <code>ParameterResolverFactory</code>, which defines how parameters are
+                    resolved, defaulting to the mechanism described above. The adapter instance can
+                    then be registered to the Event Bus using the <code>subscribe()</code> method on
+                    the <code>EventBus</code>.</para>
                 <tip>
                     <para>If you use Spring, you can automatically wrap all annotated event
                         listeners with an adapter automatically by adding
@@ -489,6 +521,14 @@ public class SubListener extends TopListener {
                                     completely, or not at all.</para>
                             </listitem>
                             <listitem>
+                                <para>wait-for-publisher-ack: some brokers support publisher
+                                    acknowledgements. They are a lightweight form of transactions
+                                    that allow client code to wait for an acknowledgement from the
+                                    server that all messages have arrived. This cannot be combined
+                                    with transactions (hence the transactional property must be
+                                    omitted or set to <code>false</code>).</para>
+                            </listitem>
+                            <listitem>
                                 <para>durable: indicates whether messsages should be durable (i.e.
                                     survive a Broker shutdown) or not. Obviously, message durability
                                     involves a performance impact.</para>
@@ -632,6 +672,11 @@ public class SubListener extends TopListener {
                 calling thread, meaning that the call will return when the replay is finished. The
                 latter will execute the replay using the given executor and return a Future object
                 that allows the caller to check if the replay is finished.</para>
+            <para>Optionally, an extra <code>Criteria</code> parameter may be provided with the
+                    <code>startReplay(...)</code> methods. When provided, only Events that match the
+                given criteria are replayed. The other events are skipped. You can obtain a
+                    <code>Criteria</code> instance from the EventStore using the Criteria
+                Builder.</para>
             <note>
                 <para>Note that a replay may take a long time to finish, depending on the number of
                     Events that need to be processed. Therefore, ensure that it is not possible to

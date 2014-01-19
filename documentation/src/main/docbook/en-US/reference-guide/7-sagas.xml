@@ -357,9 +357,10 @@
                         <code>SagaFactory</code> is provided, a <code>GenericSagaFactory</code> is
                     used. It assumes that all Saga classes have a public no-arg constructor.</para>
                 <para>If you use Spring, you can use the <code>axon</code> namespace to configure an
-                    AnnotatedSagaManager. The supported Saga types are provided as a comma separated
-                    list. This will also automatically configure a SpringResourceInjector, which
-                    injects any annotated fields with resources from the Spring Application
+                        <code>AnnotatedSagaManager</code>. The supported Saga types are provided as
+                    a comma separated list, or using component scanning by providng a package name.
+                    This will also automatically configure a <code>SpringResourceInjector</code>,
+                    which injects any annotated fields with resources from the Spring Application
                     Context.</para>
                 <programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
                    saga-repository="sagaRepository" event-bus="eventBus">
@@ -367,7 +368,14 @@
         fully.qualified.ClassName,
         another.fq.ClassName
     &lt;/axon:types>
-&lt;/axon:saga-manager></programlisting>
+&lt;/axon:saga-manager>
+
+&lt;axon:saga-manager id="scanningSagaManager" base-package="package.to.scan"
+                   saga-repository="sagaRepostory" event-bus="eventBus">
+    &lt;axon:types>
+       some.more.SagaClasses
+    &lt;/axon:types>
+&lt;/axon:saga-manager/></programlisting>
             </simplesect>
             <simplesect>
                 <title>Asynchronous Event Handling for Sagas</title>

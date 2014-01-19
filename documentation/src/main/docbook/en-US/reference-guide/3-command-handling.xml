@@ -200,8 +200,7 @@
                 <title>Configuring a custom Command Gateway in Spring</title>
                 <para>When using Spring, the easiest way to create a custom Command Gateway is by
                     using the <code>CommandGatewayFactoryBean</code>. It uses setter injection,
-                    making it easier to configure. Only the "commandBus" and "gatewayInterface"
-                    properties are mandatory. </para>
+                    making it easier to configure. Only the "commandBus" property is mandatory. </para>
                 <!--TODO: Example. "gatewayInterface" property is not mandatory!!-->
             </simplesect>
             <!--TODO: Explain the danger of blocking for a result, while locks are being held-->
@@ -326,12 +325,14 @@
                     specific environment. Spring users can use the &lt;axon:disruptor-command-bus>
                     element for easier configuration of the <code>DisruptorCommandBus</code>.<itemizedlist>
                         <listitem>
-                            <para>ClaimStrategy: Sets the ClaimStrategy instance, which defines how
-                                a Thread dispatching a command can claim a "position" in the
-                                DisruptorCommandBus. Defaults to a
-                                    <code>MultiThreadedClaimStrategy</code> with 4096 positions,
-                                which is safe to use when multiple threads can publish to the
-                                CommandBus.</para>
+                            <para>Buffer size: The number of slots on the ring buffer to register
+                                incoming commands. Higer values may increase throughput, but also
+                                cause higher latency. Must always be a power of 2. Defaults to
+                                4096.</para>
+                        </listitem>
+                        <listitem>
+                            <para>ProducerType: Indicates whether the entries are produced by a
+                                single thread, or multiple. Defaults to multiple. </para>
                         </listitem>
                         <listitem>
                             <para>WaitStrategy: The strategy to use when the processor threads (the
@@ -483,23 +484,23 @@ commandBus.subscribe("MyCustomCommand", myCommandHandler);</programlisting></par
                 bus. </para>
             <annotation>
                 <para>You can use the <code>AnnotationCommandHandlerAdapter</code> to turn your
-                    annotated class into a <code>CommandHandler</code>. The adapter also takes a
-                        <code>CommandBus</code> instance. Use the <code>subscribe()</code> method on
-                    the adapter to subscribe all the annotated handlers to the command bus using the
-                    correct command type. </para>
+                    annotated class into a <code>CommandHandler</code>. To register the adapter to
+                    the Command Bus, you can use the <code>supportedCommands()</code> method to
+                    obtain the set of command types the adapter can handle. Register the adapter
+                    with the command bus for each of those commands.</para>
                 <para>The <code>AnnotationCommandHandlerAdapter</code>, as well as the
                         <code>AggregateCommandHandlerAdapter</code>, use
                         <code>ParameterResolver</code>s to resolve the value that should be passed
                     in the parameters of methods annotated with <code>@CommandHandler</code>. By
-                    default, Axon provides a number of parameter resolvers that allow you to use the
-                    following parameter types: <itemizedlist>
+                    default, Axon uses an instance that allows you to use the following parameter
+                    types: <itemizedlist>
                         <listitem>
                             <para>The first parameter is always the payload of the Command Message.
                                 It may also be of type <code>Message</code> or
-                                    <code>CommandMessage</code>, if the @CommandHandler annotation
-                                explicitly defined the name of the Command the handler can process.
-                                By default, a Command name is the fully qualified class name of the
-                                Command's payload.</para>
+                                    <code>CommandMessage</code>, if the <code>@CommandHandler</code>
+                                annotation explicitly defined the name of the Command the handler
+                                can process. By default, a Command name is the fully qualified class
+                                name of the Command's payload.</para>
                         </listitem>
                         <listitem>
                             <para>Parameters annotated with <code>@MetaData</code> will resolve to
@@ -514,6 +515,12 @@ commandBus.subscribe("MyCustomCommand", myCommandHandler);</programlisting></par
                             <para>Parameters of type <code>MetaData</code> will have the entire
                                     <code>MetaData</code> of a <code>CommandMessage</code>
                                 injected.</para>
+                        </listitem>
+                        <listitem>
+                            <para>Parameters of type <code>UnitOfWork</code> get the current Unit of
+                                Work injected. This allows command handlers to register actions to
+                                be performed at specific stages of the Unit of Work, or gain access
+                                to the resources registered with it.</para>
                         </listitem>
                         <listitem>
                             <para>When using Spring and <code>&lt;axon:annotation-config/></code> is
@@ -539,19 +546,20 @@ commandBus.subscribe("MyCustomCommand", myCommandHandler);</programlisting></par
 }
 
 // To register the annotated handlers to the command bus:
-AnnotationCommandHandlerAdapter handler = AnnotationCommandHandlerAdapter.subscribe(new MyAnnotatedHandler(), commandBus);
+AnnotationCommandHandlerAdapter handler = new AnnotationCommandHandlerAdapter(new MyAnnotatedHandler());
+for (String supportedCommand : handler.supportedCommands()) {
+    commandBus.subscribe(supportedCommand, handler);
+}
 
 // and to unsubscribe again:
-handler.unsubscribe();</programlisting>
+for (String supportedCommand : handler.supportedCommands()) {
+    commandBus.unsubscribe(supportedCommand, handler);
+}</programlisting>
                 </para>
                 <para>You can configure additional <code>ParameterResolver</code>s by extending the
                         <code>ParameterResolverFactory</code> class and creating a file named
                         <code>/META-INF/service/org.axonframework.common.annotation.ParameterResolverFactory</code>
-                    containing the fully qualified name of the implementing class. Alternatively,
-                    you can register your implementation at runtime using
-                        <code>ParameterResolverFactory.registerFactory()</code>. Make sure to do so
-                    before any adapters are created, otherwise handlers may have been initialized
-                    without those parameter resolvers.</para>
+                    containing the fully qualified name of the implementing class.</para>
             </annotation>
             <note>
                 <para>If you use Spring, you can add the <code>&lt;axon:annotation-config/></code>
@@ -654,12 +662,19 @@ public class DoSomethingCommand {
 }
 
 // to generate the command handlers for this aggregate:
-AggregateAnnotationCommandHandler handler = AggregateAnnotationCommandHandler.subscribe(MyAggregate.class, repository, commandBus);
+AggregateAnnotationCommandHandler handler = AggregateAnnotationCommandHandler.subscribe(MyAggregate.class, repository);
 // or when using another type of CommandTargetResolver:
-AggregateAnnotationCommandHandler handler = AggregateAnnotationCommandHandler.subscribe(MyAggregate.class, repository, commandBus, myOwnCommandTargetResolver);
+AggregateAnnotationCommandHandler handler = AggregateAnnotationCommandHandler.subscribe(MyAggregate.class, repository, myOwnCommandTargetResolver);
+
+// to subscribe:
+for (String supportedCommand : handler.supportedCommands()) {
+    commandBus.subscribe(supportedCommand, handler);
+}
 
 // to unsubscribe:
-handler.unsubscribe();</programlisting>
+for (String supportedCommand : handler.supportedCommands()) {
+    commandBus.unsubscribe(supportedCommand, handler);
+}</programlisting>
             </simplesect>
         </sect2>
     </sect1>
@@ -801,6 +816,17 @@ try {
                     <code>DefaultUnitOfWorkFactory</code> with a <code>TransactionManager</code> to
                 allow it to create Transaction-bound Unit of Work.</para>
         </simplesect>
+        <simplesect>
+            <title>Attaching resources to a Unit of Work</title>
+            <para>When application components need resources at different stages of Command
+                processing, such as a Database Connection or an EntityManager, these resources can
+                be attached to the Unit of Work. By using the <code>attachResource(String name,
+                    Object resource)</code> method, you attach a resource to the Unit of Work, which
+                can be retrieved using the <code>getResource(String name)</code> method. You can
+                also attach a resource that is also used by any nested Unit of Work using the
+                    <code>attachResource(String name, Object resource, boolean inherited)</code>, by
+                providing inherited as <code>true</code>.</para>
+        </simplesect>
     </sect1>
     <sect1 xml:id="command-handler-interceptors">
         <title>Command Interceptors</title>
@@ -877,6 +903,19 @@ try {
                         response times for the client. When important, make sure logging is done
                         asynchronously from the command handling thread. </para>
                 </note>
+                <para>Event Messages are immutable. The Unit of Work listeners allow you to alter
+                    information in an Event Message in the onEventRegistered() method. However, in
+                    some cases, you need to attach information to Events after all events have been
+                    registered with the Unit of Work. Axon provides the abstract
+                        <code>MetaDataMutatingUnitOfWorkListenerAdapter</code>, which allows you to
+                    assign meta-data to Events just before the Unit of Work is committed. Simply
+                    extend the MetaDataMutatingUnitOfWorkListenerAdapter class and implement the
+                    abstract <code>assignMetaData(EventMessage event, List&lt;EventMessage> events,
+                        int index)</code> method. The first parameter is the EventMessage to provide
+                    the Meta Data for. The <code>List&lt;EventMessage></code> and the
+                        <code>index</code> are respectively the complete list of events part of this
+                    commit and the index at which the first parameter can be found in the
+                    list.</para>
             </sect3>
         </sect2>
     </sect1>
