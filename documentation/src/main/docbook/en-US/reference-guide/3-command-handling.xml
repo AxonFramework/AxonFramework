@@ -567,6 +567,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                     containing the fully qualified name of the implementing class.</para>
             </annotation>
             <note>
+                <title>Using Spring</title>
                 <para>If you use Spring, you can add the <code>&lt;axon:annotation-config/></code>
                     element to your application context. It will turn any bean with
                         <code>@CommandHandler</code> annotated methods into a command handler. They
@@ -574,6 +575,16 @@ for (String supportedCommand : handler.supportedCommands()) {
                     combination with Spring's classpath scanning (<code>@Component</code>), this
                     will automatically subscribe any command handler in your application. </para>
             </note>
+            <caution>
+                <title>Detecting ParameterResolverFactories in an OSGi container</title>
+                <para>At this moment, OSGi support is limited to the fact that the required headers
+                    are mentioned in the manifest file. The automatic detection of
+                    ParameterResolverFactory instances works in OSGi, but due to classloader
+                    limitations, it might be necessary to copy the contents of the
+                        <code>/META-INF/service/org.axonframework.common.annotation.ParameterResolverFactory</code>
+                    file to the OSGi bundle containing the classes to resolve parameters for (i.e.
+                    the event handler).</para>
+            </caution>
             <simplesect>
                 <title><code>AggregateAnnotationCommandHandler</code>
                 </title>
