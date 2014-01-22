@@ -74,6 +74,9 @@ public class JGroupsConnectorTest {
     @SuppressWarnings("unchecked")
     @Test(timeout = 30000)
     public void testConnectAndDispatchMessages_Balanced() throws Exception {
+        assertNull(connector1.getNodeName());
+        assertNull(connector2.getNodeName());
+
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
@@ -109,6 +112,9 @@ public class JGroupsConnectorTest {
         verify(mockCommandBus1, atMost(40)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         verify(mockCommandBus2, atLeast(60)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         assertEquals(connector1.getMembers(), connector2.getMembers());
+        assertNotNull(connector1.getNodeName());
+        assertNotNull(connector2.getNodeName());
+        assertNotEquals(connector1.getNodeName(), connector2.getNodeName());
     }
 
     @Test(expected = ConnectionFailedException.class, timeout = 30000)

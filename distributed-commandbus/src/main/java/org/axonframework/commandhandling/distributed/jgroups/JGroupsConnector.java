@@ -258,6 +258,15 @@ public class JGroupsConnector implements CommandBusConnector {
         return consistentHash.getMembers();
     }
 
+    /**
+     * Returns the name of this node in the cluster, or null if this member is not connected.
+     *
+     * @return the name of this node in the cluster
+     */
+    public String getNodeName() {
+        return channel.getName();
+    }
+
     private class MessageReceiver extends ReceiverAdapter {
 
         private volatile View currentView;
