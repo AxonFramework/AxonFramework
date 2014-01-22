@@ -17,6 +17,8 @@
 package org.axonframework.eventstore.mongo;
 
 import com.mongodb.Mongo;
+import de.flapdoodle.embed.mongo.MongodExecutable;
+import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -26,6 +28,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.axonframework.mongoutils.MongoLauncher;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
@@ -37,6 +40,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +62,8 @@ import static org.mockito.Mockito.*;
 public class MongoEventStoreTest_DBObjectSerialization {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStoreTest_DBObjectSerialization.class);
+    private static MongodProcess mongod;
+    private static MongodExecutable mongoExe;
 
     private MongoEventStore testSubject;
     private Mongo mongo;
@@ -68,6 +74,22 @@ public class MongoEventStoreTest_DBObjectSerialization {
 
     @Autowired
     private ApplicationContext context;
+
+    @BeforeClass
+    public static void start() throws IOException {
+        mongoExe = MongoLauncher.prepareExecutable();
+        mongod = mongoExe.start();
+    }
+
+    @AfterClass
+    public static void shutdown() {
+        if (mongod != null) {
+            mongod.stop();
+        }
+        if (mongoExe != null) {
+            mongoExe.stop();
+        }
+    }
 
     @Before
     public void setUp() {

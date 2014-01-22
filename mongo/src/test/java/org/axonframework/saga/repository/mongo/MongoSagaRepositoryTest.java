@@ -19,8 +19,11 @@ package org.axonframework.saga.repository.mongo;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
+import de.flapdoodle.embed.mongo.MongodExecutable;
+import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventstore.mongo.MongoEventStore;
+import org.axonframework.mongoutils.MongoLauncher;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
@@ -38,6 +41,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,6 +55,8 @@ import static org.junit.Assert.*;
 public class MongoSagaRepositoryTest {
 
     private final static Logger logger = LoggerFactory.getLogger(MongoSagaRepositoryTest.class);
+    private static MongodProcess mongod;
+    private static MongodExecutable mongoExe;
 
     @Autowired
     private MongoSagaRepository repository;
@@ -61,6 +67,22 @@ public class MongoSagaRepositoryTest {
 
     @Autowired
     private ApplicationContext context;
+
+    @BeforeClass
+    public static void start() throws IOException {
+        mongoExe = MongoLauncher.prepareExecutable();
+        mongod = mongoExe.start();
+    }
+
+    @AfterClass
+    public static void shutdown() {
+        if (mongod != null) {
+            mongod.stop();
+        }
+        if (mongoExe != null) {
+            mongoExe.stop();
+        }
+    }
 
     @Before
     public void setUp() throws Exception {

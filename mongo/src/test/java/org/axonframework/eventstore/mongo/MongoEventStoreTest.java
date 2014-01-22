@@ -18,6 +18,8 @@ package org.axonframework.eventstore.mongo;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.Mongo;
+import de.flapdoodle.embed.mongo.MongodExecutable;
+import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -27,6 +29,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.axonframework.mongoutils.MongoLauncher;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
@@ -51,6 +54,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -75,8 +79,10 @@ public class MongoEventStoreTest {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStoreTest.class);
 
+    private static MongodExecutable mongoExe;
+    private static MongodProcess mongod;
+
     private MongoEventStore testSubject;
-    private Mongo mongo;
     private DefaultMongoTemplate mongoTemplate;
 
     private StubAggregateRoot aggregate1;
@@ -85,10 +91,26 @@ public class MongoEventStoreTest {
     @Autowired
     private ApplicationContext context;
 
+    @BeforeClass
+    public static void start() throws IOException {
+        mongoExe = MongoLauncher.prepareExecutable();
+        mongod = mongoExe.start();
+    }
+
+    @AfterClass
+    public static void shutdown() {
+        if (mongod != null) {
+            mongod.stop();
+        }
+        if (mongoExe != null) {
+            mongoExe.stop();
+        }
+    }
+
     @Before
     public void setUp() {
         try {
-            mongo = context.getBean(Mongo.class);
+            Mongo mongo = context.getBean(Mongo.class);
             testSubject = context.getBean(MongoEventStore.class);
             mongoTemplate = new DefaultMongoTemplate(mongo);
             mongoTemplate.domainEventCollection().remove(new BasicDBObject());
