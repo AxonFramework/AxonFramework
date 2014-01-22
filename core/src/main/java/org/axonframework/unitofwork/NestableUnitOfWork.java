@@ -40,6 +40,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
     private boolean isStarted;
     private UnitOfWork outerUnitOfWork;
     private List<NestableUnitOfWork> innerUnitsOfWork = new ArrayList<NestableUnitOfWork>();
+    private boolean isCommitted = false;
 
     @Override
     public void commit() {
@@ -48,13 +49,17 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
         try {
             notifyListenersPrepareCommit();
             saveAggregates();
+            isCommitted = true;
             if (outerUnitOfWork == null) {
                 logger.debug("This Unit Of Work is not nested. Finalizing commit...");
                 doCommit();
                 stop();
                 performCleanup();
-            } else if (logger.isDebugEnabled()) {
-                logger.debug("This Unit Of Work is nested. Commit will be finalized by outer Unit Of Work.");
+            } else {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("This Unit Of Work is nested. Commit will be finalized by outer Unit Of Work.");
+                }
+                registerScheduledEvents(outerUnitOfWork);
             }
         } catch (RuntimeException e) {
             logger.debug("An error occurred while committing this UnitOfWork. Performing rollback...");
@@ -69,6 +74,16 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
             clear();
         }
     }
+
+    /**
+     * Invokes when a child Unit of Work should register its scheduled events with the given <code>unitOfWork</code>.
+     * Typically, the given <code>unitOfWork</code> is the parent of the current.
+     *
+     * @param unitOfWork The Wnit of Work to register scheduled events with
+     * @see org.axonframework.unitofwork.UnitOfWork#publishEvent(org.axonframework.domain.EventMessage,
+     * org.axonframework.eventhandling.EventBus)
+     */
+    protected abstract void registerScheduledEvents(UnitOfWork unitOfWork);
 
     private void performCleanup() {
         for (NestableUnitOfWork uow : innerUnitsOfWork) {
@@ -145,22 +160,23 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
 
     @Override
     public void publishEvent(EventMessage<?> event, EventBus eventBus) {
-        if (outerUnitOfWork != null) {
-            outerUnitOfWork.publishEvent(event, eventBus);
-        } else {
-            registerForPublication(event, eventBus);
-        }
+        registerForPublication(event, eventBus, !isCommitted);
     }
 
     /**
      * Register the given <code>event</code> for publication on the given <code>eventBus</code> when the unit of work
      * is committed. This method will only be invoked on the outer unit of work, as that one is responsible for
      * maintaining the order of publication of events.
+     * <p/>
+     * The <code>notifyRegistrationHandlers</code> parameter indicates whether the registration handlers should be
+     * notified of the registration of this event.
      *
-     * @param event    The Event to publish
-     * @param eventBus The Event Bus to publish the Event on
+     * @param event                      The Event to publish
+     * @param eventBus                   The Event Bus to publish the Event on
+     * @param notifyRegistrationHandlers Indicates whether event registration handlers should be notified of this event
      */
-    protected abstract void registerForPublication(EventMessage<?> event, EventBus eventBus);
+    protected abstract void registerForPublication(EventMessage<?> event, EventBus eventBus,
+                                                   boolean notifyRegistrationHandlers);
 
     @Override
     public boolean isStarted() {

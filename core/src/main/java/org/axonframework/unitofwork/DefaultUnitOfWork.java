@@ -136,13 +136,25 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     @SuppressWarnings("unchecked")
     @Override
     protected void doCommit() {
-        publishEvents();
-        commitInnerUnitOfWork();
+        do {
+            publishEvents();
+            commitInnerUnitOfWork();
+        } while (!this.eventsToPublish.isEmpty());
         if (isTransactional()) {
             notifyListenersPrepareTransactionCommit(backingTransaction);
             transactionManager.commitTransaction(backingTransaction);
         }
         notifyListenersAfterCommit();
+    }
+
+    @Override
+    protected void registerScheduledEvents(UnitOfWork unitOfWork) {
+        for (Map.Entry<EventBus, List<EventMessage<?>>> entry : eventsToPublish.entrySet()) {
+            for (EventMessage<?> eventMessage : entry.getValue()) {
+                unitOfWork.publishEvent(eventMessage, entry.getKey());
+            }
+        }
+        eventsToPublish.clear();
     }
 
     @SuppressWarnings({"unchecked"})
@@ -195,13 +207,15 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     }
 
     @Override
-    public void registerForPublication(EventMessage<?> event, EventBus eventBus) {
+    public void registerForPublication(EventMessage<?> event, EventBus eventBus, boolean notifyRegistrationHandlers) {
         if (logger.isDebugEnabled()) {
             logger.debug("Staging event for publishing: [{}] on [{}]",
                          event.getPayloadType().getName(),
                          eventBus.getClass().getName());
         }
-        event = invokeEventRegistrationListeners(event);
+        if (notifyRegistrationHandlers) {
+            event = invokeEventRegistrationListeners(event);
+        }
         eventsToPublishOn(eventBus).add(event);
     }
 
