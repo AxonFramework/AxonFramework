@@ -125,6 +125,11 @@
         <para>Axon Framework consists of a number of modules that target specific problem areas of
             CQRS. Depending on the exact needs of your project, you will need to include one or more
             of these modules.</para>
+        <para>As of Axon 2.1, all modules are OSGi compatible bundles. This means they contain the
+            required headers in the manifest file and declare the packages they import and export.
+            At the moment, only the Slf4J bundle (1.7.0 &lt;= version &lt; 2.0.0) is required. All
+            other imports are marked as optional, although you're very likely to need others, like
+                <code>org.joda.time</code>.</para>
         <sect2>
             <title>Main modules</title>
             <para>Axon's main modules are the modules that have been thorouhgly tested and are
@@ -150,13 +155,6 @@
                     can be used to distribute commands over multiple nodes. It comes with a
                     JGroupsConnector that is used to connect DistributedCommandBus implementation on
                     these nodes.</para>
-            </simplesect>
-            <simplesect>
-                <title>Axon Disruptor CommandBus</title>
-                <para>The SimpleCommandBus implementation provides pretty good performance, but the
-                    Disruptor CommandBus module allows you to squeeze more juice out of the same
-                    CPU. It provides an implementation that uses the Disruptor (a lightweight
-                    high-performance computing framework) to speed up processing.</para>
             </simplesect>
             <simplesect>
                 <title>Axon AMQP</title>

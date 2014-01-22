@@ -152,6 +152,25 @@
                     "order-resolver-ref" attribute can be used to refer to another Order resolver to
                     use.</para>
             </simplesect>
+            <simplesect>
+                <title>Commit Handlers</title>
+                <para>In some cases, you want to know when a cluster has handled a specific event.
+                    For example, when a cluster handles an Event asynchronously, but you need send
+                    an acknowledgement to the sender. Generaly, you are unlikely to require this
+                    feature directly. It is mainly used by infrastructure components.</para>
+                <para>The EventProcessingMonitorSupport interface, which was introduced in Axon 2.1,
+                    defines class capable of notifying subscribed monitors. <code>Cluster</code>
+                    extends this interface, meaning each Cluster implementation must be able to deal
+                    with the Event Processing Monitors. Event Listeners that handle Events
+                    asynchronously, such as the <code>AsyncAnnotatedSagaManager</code> also
+                    implement this interface.</para>
+                <para>To register a Monitor with a Cluster (or Event Listener), call the
+                        <code>subscribeEventProcessingMonitor(...)</code> method. It will be invoked
+                    each time an Event has been successfully handled by that listener (by invoking
+                    the <code>onEventProcessingCompleted</code> method) or when event handling has
+                    failed (by invoking <code>onEventProcessingFailed</code>). A single notification
+                    may contain any number of Events.</para>
+            </simplesect>
         </sect2>
     </sect1>
     <sect1 xml:id="event-listeners">
