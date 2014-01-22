@@ -173,7 +173,7 @@ public class JGroupsConnectorTest {
         channel1.getReceiver().receive(new Message(channel1.getAddress(), new IpAddress(12345),
                                   new JoinMessage(10, Collections.<String>emptySet())));
         ConsistentHash hash2After = connector1.getConsistentHash();
-        assertSame("That message should not have changed the ring", hashBefore, hash2After);
+        assertEquals("That message should not have changed the ring", hashBefore, hash2After);
     }
 
     private void waitForConnectorSync() throws InterruptedException {
@@ -182,7 +182,7 @@ public class JGroupsConnectorTest {
                 || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (t++ > 1500) {
-                assertEquals("Connectors did not synchronize within 10 seconds.",
+                assertEquals("Connectors did not synchronize within 30 seconds.",
                              connector1.getConsistentHash().toString(),
                              connector2.getConsistentHash().toString());
             }
