@@ -22,6 +22,7 @@ import com.lmax.disruptor.RingBuffer;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -29,6 +30,7 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -98,15 +100,15 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     public void onEvent(AsyncSagaProcessingEvent entry, long sequence, boolean endOfBatch) throws Exception {
         boolean sagaInvoked = invokeExistingSagas(entry);
         AssociationValue associationValue;
-        switch (entry.getHandler().getCreationPolicy()) {
+        switch (entry.getCreationHandler().getCreationPolicy()) {
             case ALWAYS:
-                associationValue = entry.getAssociationValue();
+                associationValue = entry.getInitialAssociationValue();
                 if (associationValue != null && ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier())) {
                     processNewSagaInstance(entry, associationValue);
                 }
                 break;
             case IF_NONE_FOUND:
-                associationValue = entry.getAssociationValue();
+                associationValue = entry.getInitialAssociationValue();
                 boolean shouldCreate = associationValue != null && entry.waitForSagaCreationVote(
                         sagaInvoked, processorCount, ownedByCurrentProcessor(entry.getNewSaga().getSagaIdentifier()));
                 if (shouldCreate) {
@@ -142,7 +144,10 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private boolean invokeExistingSagas(AsyncSagaProcessingEvent entry) {
         boolean sagaInvoked = false;
         final Class<? extends Saga> sagaType = entry.getSagaType();
-        Set<String> sagaIds = sagaRepository.find(sagaType, entry.getAssociationValue());
+        Set<String> sagaIds = new HashSet<String>();
+        for (AssociationValue associationValue : entry.getAssociationValues()) {
+            sagaIds.addAll(sagaRepository.find(sagaType, associationValue));
+        }
         for (String sagaId : sagaIds) {
             if (ownedByCurrentProcessor(sagaId) && !processedSagas.containsKey(sagaId)) {
                 ensureActiveUnitOfWork();
@@ -155,7 +160,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         }
         for (Saga saga : processedSagas.values()) {
             if (sagaType.isInstance(saga) && saga.isActive()
-                    && saga.getAssociationValues().contains(entry.getAssociationValue())) {
+                    && containsAny(saga.getAssociationValues(), entry.getAssociationValues())) {
                 try {
                     ensureActiveUnitOfWork();
                     saga.handle(entry.getPublishedEvent());
@@ -168,6 +173,14 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         return sagaInvoked;
     }
 
+    private boolean containsAny(AssociationValues associationValues, Collection<AssociationValue> toFind) {
+        for (AssociationValue valueToFind : toFind) {
+            if (associationValues.contains(valueToFind)) {
+                return true;
+            }
+        }
+        return false;
+    }
     @SuppressWarnings("unchecked")
     private boolean persistProcessedSagas(boolean logExceptions) throws Exception {
         try {
@@ -211,8 +224,8 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         if (parameterResolverFactory != null) {
             newSaga.registerParameterResolverFactory(parameterResolverFactory);
         }
-        newSaga.handle(entry.getPublishedEvent());
         newSaga.associateWith(associationValue);
+        newSaga.handle(entry.getPublishedEvent());
         processedSagas.put(newSaga.getSagaIdentifier(), newSaga);
         newlyCreatedSagas.put(newSaga.getSagaIdentifier(), newSaga);
     }

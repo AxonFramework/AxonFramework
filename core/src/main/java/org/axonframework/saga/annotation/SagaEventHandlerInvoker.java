@@ -16,12 +16,11 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.common.annotation.AbstractAnnotatedHandlerDefinition;
-import org.axonframework.common.annotation.MessageHandlerInvoker;
-import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.saga.Saga;
+import org.axonframework.saga.AssociationValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class that invokes annotated Event Handlers on Sagas.
@@ -31,7 +30,9 @@ import org.axonframework.saga.Saga;
  */
 public class SagaEventHandlerInvoker {
 
-    private MessageHandlerInvoker invoker;
+    private static final Logger logger = LoggerFactory.getLogger(SagaEventHandlerInvoker.class);
+    private final SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector;
+    private final AbstractAnnotatedSaga target;
 
     /**
      * Initialize a handler invoker for the given <code>target</code> object, using ParameterResolverFactory instances
@@ -40,9 +41,9 @@ public class SagaEventHandlerInvoker {
      * @param target                   The target to invoke methods on
      * @param parameterResolverFactory The Factory providing access to the Parameter Resolvers for this instance's type
      */
-    public SagaEventHandlerInvoker(Saga target, ParameterResolverFactory parameterResolverFactory) {
-        invoker = new MessageHandlerInvoker(target, parameterResolverFactory, false,
-                                            AnnotatedHandlerDefinition.INSTANCE);
+    public SagaEventHandlerInvoker(AbstractAnnotatedSaga target, ParameterResolverFactory parameterResolverFactory) {
+        this.target = target;
+        inspector = SagaMethodMessageHandlerInspector.getInstance(target.getClass(), parameterResolverFactory);
     }
 
     /**
@@ -54,8 +55,22 @@ public class SagaEventHandlerInvoker {
      * <code>false</code> otherwise.
      */
     public boolean isEndingEvent(EventMessage event) {
-        MethodMessageHandler handler = invoker.findHandlerMethod(event);
-        return handler != null && handler.getMethod().isAnnotationPresent(EndSaga.class);
+        return findHandlerMethod(event).isEndingHandler();
+    }
+
+    private SagaMethodMessageHandler findHandlerMethod(EventMessage event) {
+        for (SagaMethodMessageHandler handler : inspector.getMessageHandlers(event)) {
+            final AssociationValue associationValue = handler.getAssociationValue(event);
+            if (target.getAssociationValues().contains(associationValue)) {
+                return handler;
+            } else if (logger.isDebugEnabled()) {
+                logger.debug("Skipping handler [{}], it requires an association value [{}:{}] that this Saga is not associated with",
+                             handler.getName(), associationValue.getKey(), associationValue.getValue());
+            }
+        }
+        if (logger.isDebugEnabled())
+        logger.debug("No suitable handler was found for event of type", event.getPayloadType().getName());
+        return SagaMethodMessageHandler.noHandler();
     }
 
     /**
@@ -64,21 +79,6 @@ public class SagaEventHandlerInvoker {
      * @param event The event to invoke the Event Handler for
      */
     public void invokeSagaEventHandlerMethod(EventMessage event) {
-        invoker.invokeHandlerMethod(event);
-    }
-
-    private static final class AnnotatedHandlerDefinition
-            extends AbstractAnnotatedHandlerDefinition<SagaEventHandler> {
-
-        private static final AnnotatedHandlerDefinition INSTANCE = new AnnotatedHandlerDefinition();
-
-        private AnnotatedHandlerDefinition() {
-            super(SagaEventHandler.class);
-        }
-
-        @Override
-        protected Class<?> getDefinedPayload(SagaEventHandler annotation) {
-            return annotation.payloadType();
-        }
+        findHandlerMethod(event).invoke(target, event);
     }
 }

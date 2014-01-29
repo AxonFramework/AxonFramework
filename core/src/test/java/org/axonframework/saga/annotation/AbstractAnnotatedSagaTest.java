@@ -34,7 +34,9 @@ public class AbstractAnnotatedSagaTest {
     @Test
     public void testInvokeSaga() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+        testSubject.associateWith("propertyName", "id");
         testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
+        testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("wrongId")));
         testSubject.handle(new GenericEventMessage<Object>(new Object()));
         assertEquals(1, testSubject.invocationCount);
     }
@@ -42,7 +44,9 @@ public class AbstractAnnotatedSagaTest {
     @Test
     public void testSerializeAndInvokeSaga() throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new ObjectOutputStream(baos).writeObject(new StubAnnotatedSaga());
+        final StubAnnotatedSaga original = new StubAnnotatedSaga();
+        original.associateWith("propertyName", "id");
+        new ObjectOutputStream(baos).writeObject(original);
         StubAnnotatedSaga testSubject = (StubAnnotatedSaga) new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))
                 .readObject();
         testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
@@ -53,6 +57,7 @@ public class AbstractAnnotatedSagaTest {
     @Test
     public void testEndedAfterInvocation_BeanProperty() {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+        testSubject.associateWith("propertyName", "id");
         testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
         testSubject.handle(new GenericEventMessage<Object>(new Object()));
         testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));
@@ -63,6 +68,7 @@ public class AbstractAnnotatedSagaTest {
     @Test
     public void testEndedAfterInvocation_UniformAccessPrinciple() {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
+        testSubject.associateWith("propertyName", "id");
         testSubject.handle(new GenericEventMessage<UniformAccessEvent>(new UniformAccessEvent("id")));
         testSubject.handle(new GenericEventMessage<Object>(new Object()));
         testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static java.util.Collections.singleton;
 import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.eq;
@@ -57,7 +58,8 @@ public class SimpleSagaManagerTest {
         sagasFromRepository.add("saga1");
         when(repository.load("saga1")).thenReturn(saga1);
         associationValue = new AssociationValue("key", "val");
-        when(associationValueResolver.extractAssociationValue(isA(EventMessage.class))).thenReturn(associationValue);
+        when(associationValueResolver.extractAssociationValues(isA(EventMessage.class)))
+                .thenReturn(singleton(associationValue));
         when(repository.find(eq(Saga.class), eq(associationValue))).thenReturn(sagasFromRepository);
         Saga sagaFromFactory = mock(Saga.class);
         when(sagaFromFactory.getSagaIdentifier()).thenReturn("sagaFromFactory");

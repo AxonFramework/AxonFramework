@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.annotation.MetaData;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubDomainEvent;
@@ -25,6 +26,7 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,13 +97,29 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
+    public void testMostSpecificHandlerEvaluatedFirst() {
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("12")));
+        manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("23")));
+        assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
+        assertEquals(1, repositoryContents("23", MyTestSaga.class).size());
+
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("12")));
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23"), Collections.singletonMap("catA", "value")));
+        assertEquals(0, repositoryContents("12", MyTestSaga.class).iterator().next().getSpecificHandlerInvocations());
+        assertEquals(1, repositoryContents("23", MyTestSaga.class).iterator().next().getSpecificHandlerInvocations());
+    }
+
+    @Test
     public void testLifecycle_DestroyedOnEnd() {
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("12")));
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("23")));
         manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("12")));
-        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23")));
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23"), Collections.singletonMap("catA",
+                                                                                                            "value")));
         assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
         assertEquals(1, repositoryContents("23", MyTestSaga.class).size());
+        assertEquals(0, repositoryContents("12", MyTestSaga.class).iterator().next().getSpecificHandlerInvocations());
+        assertEquals(1, repositoryContents("23", MyTestSaga.class).iterator().next().getSpecificHandlerInvocations());
         manager.handle(new GenericEventMessage<EndingEvent>(new EndingEvent("12")));
         assertEquals(1, repositoryContents("23", MyTestSaga.class).size());
         assertEquals(0, repositoryContents("12", MyTestSaga.class).size());
@@ -191,6 +209,7 @@ public class AnnotatedSagaManagerTest {
 
         private List<Object> capturedEvents = new LinkedList<Object>();
         private static final long serialVersionUID = -1562911263884220240L;
+        private int specificHandlerInvocations = 0;
 
         @StartSaga
         @SagaEventHandler(associationProperty = "myIdentifier")
@@ -223,8 +242,19 @@ public class AnnotatedSagaManagerTest {
             capturedEvents.add(event);
         }
 
+        @SagaEventHandler(associationProperty = "myIdentifier")
+        public void handleSpecificMiddleEvent(MiddleEvent event, @MetaData(value = "catA", required = true) String category) {
+            // this handler is more specific, but requires meta data that not all events might have
+            capturedEvents.add(event);
+            specificHandlerInvocations++;
+        }
+
         public List<Object> getCapturedEvents() {
             return capturedEvents;
+        }
+
+        public int getSpecificHandlerInvocations() {
+            return specificHandlerInvocations;
         }
     }
 

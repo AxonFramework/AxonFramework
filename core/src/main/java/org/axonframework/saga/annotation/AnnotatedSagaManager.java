@@ -26,7 +26,12 @@ import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaCreationPolicy;
 import org.axonframework.saga.SagaFactory;
+import org.axonframework.saga.SagaInitializationPolicy;
 import org.axonframework.saga.SagaRepository;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike
@@ -129,20 +134,32 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+    protected SagaInitializationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
         SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
                 SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType,
                                                               parameterResolverFactory);
-        return inspector.getMessageHandler(event).getCreationPolicy();
+        final List<SagaMethodMessageHandler> handlers = inspector.getMessageHandlers(event);
+        for (SagaMethodMessageHandler handler : handlers) {
+            if (handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
+                return new SagaInitializationPolicy(handler.getCreationPolicy(), handler.getAssociationValue(event));
+            }
+        }
+        return SagaInitializationPolicy.NONE;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
+    protected Set<AssociationValue> extractAssociationValues(Class<? extends Saga> sagaType,
+                                                                    EventMessage event) {
         SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
                 SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType,
                                                               parameterResolverFactory);
-        return inspector.getMessageHandler(event).getAssociationValue(event);
+        final List<SagaMethodMessageHandler> handlers = inspector.getMessageHandlers(event);
+        Set<AssociationValue> values = new HashSet<AssociationValue>(handlers.size());
+        for (SagaMethodMessageHandler handler : handlers) {
+            values.add(handler.getAssociationValue(event));
+        }
+        return values;
     }
 
     @Override

@@ -18,6 +18,8 @@ package org.axonframework.saga;
 
 import org.axonframework.domain.EventMessage;
 
+import java.util.Set;
+
 /**
  * Interface describing the mechanism that resolves Association Values from events. The Association Values are used to
  * find Saga's potentially interested in this Event.
@@ -33,5 +35,5 @@ public interface AssociationValueResolver {
      * @param event The event to extract Association Value from
      * @return The Association Value extracted from the Event, or <code>null</code> if none found.
      */
-    AssociationValue extractAssociationValue(EventMessage event);
+    Set<AssociationValue> extractAssociationValues(EventMessage event);
 }

@@ -22,6 +22,8 @@ import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,23 +49,19 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
      * Returns a SagaMethodMessageHandlerInspector for the given <code>sagaType</code>. The inspector provides
      * information about @SagaEventHandler annotated handler methods.
      *
-     * @param sagaType The type of Saga to get the inspector for
+     * @param sagaType                 The type of Saga to get the inspector for
      * @param parameterResolverFactory
-     * @param <T>      The type of Saga to get the inspector for
+     * @param <T>                      The type of Saga to get the inspector for
      * @return The inspector for the given saga type
      */
     @SuppressWarnings("unchecked")
     public static <T extends AbstractAnnotatedSaga> SagaMethodMessageHandlerInspector<T> getInstance(
             Class<T> sagaType, ParameterResolverFactory parameterResolverFactory) {
         SagaMethodMessageHandlerInspector<T> sagaInspector = INSPECTORS.get(sagaType);
-        if (sagaInspector == null) {
-            final SagaMethodMessageHandlerInspector<T> newInspector =
-                    new SagaMethodMessageHandlerInspector<T>(sagaType, parameterResolverFactory);
+        if (sagaInspector == null || sagaInspector.getParameterResolverFactory() != parameterResolverFactory) {
+            sagaInspector = new SagaMethodMessageHandlerInspector<T>(sagaType, parameterResolverFactory);
 
-            sagaInspector = INSPECTORS.putIfAbsent(sagaType, newInspector);
-            if (sagaInspector == null) {
-                sagaInspector = newInspector;
-            }
+            INSPECTORS.put(sagaType, sagaInspector);
         }
         return sagaInspector;
     }
@@ -87,20 +85,22 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     }
 
     /**
-     * Find the configuration for the handler on the given <code>sagaType</code> for the given <code>event</code>. If
-     * no
-     * suitable handler is found, the NoOpHandler is returned, that does nothing when invoked.
+     * Find the configuration for the handlers on the given <code>sagaType</code> for the given <code>event</code>. If
+     * no suitable handler is found, an empty list is returned.
+     * The handlers are returned in the order they should be inspected to match against the association value. The
+     * first handler in the list to match an association value of the Saga instance should be used to invoke that saga.
      *
      * @param event The Event to investigate the handler for
-     * @return the configuration of the handler, as defined by the annotations.
+     * @return the configuration of the handlers, as defined by the annotations.
      */
-    public SagaMethodMessageHandler getMessageHandler(EventMessage event) {
+    public List<SagaMethodMessageHandler> getMessageHandlers(EventMessage event) {
+        List<SagaMethodMessageHandler> found = new ArrayList<SagaMethodMessageHandler>(1);
         for (SagaMethodMessageHandler handler : handlers) {
             if (handler.matches(event)) {
-                return handler;
+                found.add(handler);
             }
         }
-        return SagaMethodMessageHandler.noHandler();
+        return found;
     }
 
     /**

@@ -20,6 +20,12 @@ import com.lmax.disruptor.EventFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
+import org.axonframework.saga.SagaCreationPolicy;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Placeholder for information required by the AsyncSagaEventProcessor for processing Events.
@@ -30,11 +36,13 @@ import org.axonframework.saga.Saga;
 public class AsyncSagaProcessingEvent {
 
     private EventMessage publishedEvent;
-    private SagaMethodMessageHandler handler;
+    private List<SagaMethodMessageHandler> handlers = new ArrayList<SagaMethodMessageHandler>();
     private Class<? extends AbstractAnnotatedSaga> sagaType;
     private AbstractAnnotatedSaga newSaga;
-    private AssociationValue associationValue;
     private final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
+    private SagaMethodMessageHandler creationHandler;
+    private AssociationValue initialAssociationValue;
+    private Set<AssociationValue> associationValues = new HashSet<AssociationValue>();
 
     /**
      * Returns the event that has been published on the EventBus. This is the event that will trigger Sagas.
@@ -50,20 +58,8 @@ public class AsyncSagaProcessingEvent {
      *
      * @return the handler that can process the published Event
      */
-    public SagaMethodMessageHandler getHandler() {
-        return handler;
-    }
-
-    /**
-     * Returns the association value based on the handler.
-     *
-     * @return the association value based on the handler
-     */
-    public AssociationValue getAssociationValue() {
-        if (handler == null) {
-            return null;
-        }
-        return associationValue;
+    public List<SagaMethodMessageHandler> getHandlers() {
+        return handlers;
     }
 
     /**
@@ -101,19 +97,41 @@ public class AsyncSagaProcessingEvent {
     /**
      * Reset this entry for processing a new EventMessage
      *
-     * @param nextEvent           The EventMessage to process
-     * @param nextSagaType        The type of Saga to process this EventMessage
-     * @param nextHandler         The handler handling this message
+     * @param nextEvent        The EventMessage to process
+     * @param nextSagaType     The type of Saga to process this EventMessage
+     * @param nextHandlers     The handlers potentially handling this message
      * @param nextSagaInstance The saga instance to use when a new saga is to be created
      */
     public void reset(EventMessage nextEvent, Class<? extends AbstractAnnotatedSaga> nextSagaType,
-                      SagaMethodMessageHandler nextHandler, AbstractAnnotatedSaga nextSagaInstance) {
+                      List<SagaMethodMessageHandler> nextHandlers, AbstractAnnotatedSaga nextSagaInstance) {
         this.elector.clear();
         this.publishedEvent = nextEvent;
         this.sagaType = nextSagaType;
-        this.handler = nextHandler;
+        this.handlers.clear();
+        this.handlers.addAll(nextHandlers);
+        this.creationHandler = SagaMethodMessageHandler.noHandler();
+        this.initialAssociationValue = null;
+        this.associationValues.clear();
+        for (SagaMethodMessageHandler handler : handlers) {
+            if (!this.creationHandler.isHandlerAvailable() && handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
+                this.creationHandler = handler;
+                this.initialAssociationValue = creationHandler.getAssociationValue(nextEvent);
+            }
+            this.associationValues.add(handler.getAssociationValue(nextEvent));
+        }
         this.newSaga = nextSagaInstance;
-        this.associationValue = nextHandler.getAssociationValue(nextEvent);
+    }
+
+    public SagaMethodMessageHandler getCreationHandler() {
+        return creationHandler;
+    }
+
+    public AssociationValue getInitialAssociationValue() {
+        return initialAssociationValue;
+    }
+
+    public Set<AssociationValue> getAssociationValues() {
+        return associationValues;
     }
 
     /**

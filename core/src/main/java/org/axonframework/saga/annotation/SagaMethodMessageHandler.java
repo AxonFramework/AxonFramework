@@ -17,6 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
@@ -24,6 +25,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaCreationPolicy;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static java.lang.String.format;
@@ -150,6 +152,16 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         return handlerMethod != null && handlerMethod.matches(message);
     }
 
+    /**
+     * Indicates whether this handler is one that ends the Saga lifecycle
+     *
+     * @return <code>true</code> if the Saga lifecycle ends unconditionally after this call, otherwise
+     * <code>false</code>
+     */
+    public boolean isEndingHandler() {
+        return handlerMethod != null && handlerMethod.getMethod().isAnnotationPresent(EndSaga.class);
+    }
+
     @Override
     public int compareTo(SagaMethodMessageHandler o) {
         if (this.handlerMethod == null && o.handlerMethod == null) {
@@ -159,7 +171,12 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         } else if (o.handlerMethod == null) {
             return 1;
         }
-        return handlerMethod.compareTo(o.handlerMethod);
+        final int handlerEquality = handlerMethod.compareTo(o.handlerMethod);
+        if (handlerEquality == 0) {
+            return o.handlerMethod.getMethod().getParameterTypes().length
+                    - this.handlerMethod.getMethod().getParameterTypes().length;
+        }
+        return handlerEquality;
     }
 
     @Override
@@ -173,11 +190,31 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
 
         SagaMethodMessageHandler that = (SagaMethodMessageHandler) o;
 
-        return !(handlerMethod != null ? !handlerMethod.equals(that.handlerMethod) : that.handlerMethod != null);
+        return this.compareTo(that) != 0;
     }
 
     @Override
     public int hashCode() {
         return handlerMethod != null ? handlerMethod.hashCode() : 0;
+    }
+
+    public void invoke(Object target, EventMessage message) {
+        if (!isHandlerAvailable()) {
+            return;
+        }
+        try {
+            handlerMethod.invoke(target, message);
+        } catch (IllegalAccessException e) {
+            throw new MessageHandlerInvocationException("Access to the message handler method was denied.", e);
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.", e);
+        }
+    }
+
+    public String getName() {
+        return handlerMethod.getMethodName();
     }
 }

@@ -203,13 +203,13 @@ public class SagaManagerTest {
         }
 
         @Override
-        protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
-            return sagaCreationPolicy;
+        protected SagaInitializationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+            return new SagaInitializationPolicy(sagaCreationPolicy, associationValue);
         }
 
         @Override
-        protected AssociationValue extractAssociationValue(Class<? extends Saga> sagaType, EventMessage event) {
-            return associationValue;
+        protected Set<AssociationValue> extractAssociationValues(Class<? extends Saga> sagaType, EventMessage event) {
+            return singleton(associationValue);
         }
     }
 }

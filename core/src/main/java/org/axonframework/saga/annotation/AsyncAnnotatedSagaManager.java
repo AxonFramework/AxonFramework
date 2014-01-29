@@ -34,6 +34,7 @@ import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.eventhandling.EventProcessingMonitorCollection;
 import org.axonframework.eventhandling.EventProcessingMonitorSupport;
 import org.axonframework.saga.GenericSagaFactory;
+import org.axonframework.saga.SagaCreationPolicy;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
@@ -98,7 +99,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
      * @param eventBus  The Event Bus from which the Saga Manager will process events
      * @param sagaTypes The types of Saga this saga manager will process incoming events for
      * @deprecated use {@link #AsyncAnnotatedSagaManager(Class[])} and register with the event bus using {@link
-     *             EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @Deprecated
     public AsyncAnnotatedSagaManager(EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
@@ -126,7 +127,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
      *
      * @param sagaTypes The types of Saga this saga manager will process incoming events for
      */
-    public AsyncAnnotatedSagaManager(ParameterResolverFactory parameterResolverFactory, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
+    public AsyncAnnotatedSagaManager(ParameterResolverFactory parameterResolverFactory,
+                                     Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         this.parameterResolverFactory = parameterResolverFactory;
         this.eventBus = null;
         this.sagaTypes = Arrays.copyOf(sagaTypes, sagaTypes.length);
@@ -149,7 +151,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
                                                                                unitOfWorkFactory, processorCount,
                                                                                disruptor.getRingBuffer(),
                                                                                sagaManagerStatus))
-            .then(new MonitorNotifier(processingMonitors));
+                     .then(new MonitorNotifier(processingMonitors));
             disruptor.start();
         }
         subscribe();
@@ -193,22 +195,18 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     public void handle(final EventMessage event) {
         if (disruptor != null) {
             for (final Class<? extends AbstractAnnotatedSaga> sagaType : sagaTypes) {
-                SagaMethodMessageHandlerInspector inspector = SagaMethodMessageHandlerInspector.getInstance(sagaType,
-                                                                                                            ClasspathParameterResolverFactory.forClass(
-                                                                                                                    sagaType));
-                final SagaMethodMessageHandler handler = inspector.getMessageHandler(event);
-                if (handler.isHandlerAvailable()) {
-                    final AbstractAnnotatedSaga newSagaInstance;
-                    switch (handler.getCreationPolicy()) {
-                        case ALWAYS:
-                        case IF_NONE_FOUND:
-                            newSagaInstance = (AbstractAnnotatedSaga) sagaFactory.createSaga(inspector.getSagaType());
-                            break;
-                        default:
-                            newSagaInstance = null;
-                            break;
+                SagaMethodMessageHandlerInspector inspector =
+                        SagaMethodMessageHandlerInspector.getInstance(sagaType, parameterResolverFactory);
+                final List<SagaMethodMessageHandler> handlers = inspector.getMessageHandlers(event);
+                if (!handlers.isEmpty()) {
+                    AbstractAnnotatedSaga newSagaInstance = null;
+                    for (SagaMethodMessageHandler handler : handlers) {
+                        if (newSagaInstance == null && handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
+                            newSagaInstance = (AbstractAnnotatedSaga) sagaFactory.createSaga(inspector
+                                                                                                     .getSagaType());
+                        }
                     }
-                    disruptor.publishEvent(new SagaProcessingEventTranslator(event, inspector, handler,
+                    disruptor.publishEvent(new SagaProcessingEventTranslator(event, inspector, handlers,
                                                                              newSagaInstance));
                 }
             }
@@ -234,21 +232,21 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
 
         private final EventMessage event;
         private final SagaMethodMessageHandlerInspector annotationInspector;
-        private final SagaMethodMessageHandler handler;
+        private final List<SagaMethodMessageHandler> handlers;
         private final AbstractAnnotatedSaga newSagaInstance;
 
         private SagaProcessingEventTranslator(EventMessage event, SagaMethodMessageHandlerInspector annotationInspector,
-                                              SagaMethodMessageHandler handler, AbstractAnnotatedSaga newSagaInstance) {
+                                              List<SagaMethodMessageHandler> handlers, AbstractAnnotatedSaga newSagaInstance) {
             this.event = event;
             this.annotationInspector = annotationInspector;
-            this.handler = handler;
+            this.handlers = handlers;
             this.newSagaInstance = newSagaInstance;
         }
 
         @SuppressWarnings({"unchecked"})
         @Override
         public void translateTo(AsyncSagaProcessingEvent entry, long sequence) {
-            entry.reset(event, annotationInspector.getSagaType(), handler, newSagaInstance);
+            entry.reset(event, annotationInspector.getSagaType(), handlers, newSagaInstance);
         }
     }
 

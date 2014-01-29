@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.EventBus;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Simple SagaManager implementation. This implementation requires the Event that should cause new Saga's to be
@@ -48,7 +49,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
      * @param associationValueResolver The instance providing AssociationValues for incoming Events
      * @param eventBus                 The event bus that the manager should register to
      * @deprecated use {@link #SimpleSagaManager(Class, SagaRepository, AssociationValueResolver)} and register using
-     *             {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @Deprecated
     public SimpleSagaManager(Class<? extends Saga> sagaType, SagaRepository sagaRepository,
@@ -66,7 +67,7 @@ public class SimpleSagaManager extends AbstractSagaManager {
      * @param sagaFactory              The factory creating new Saga instances
      * @param eventBus                 The event bus that the manager should register to
      * @deprecated use {@link #SimpleSagaManager(Class, SagaRepository, AssociationValueResolver, SagaFactory)} and
-     *             register using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
+     * register using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
     @SuppressWarnings("unchecked")
     @Deprecated
@@ -107,23 +108,32 @@ public class SimpleSagaManager extends AbstractSagaManager {
     }
 
     @Override
-    protected SagaCreationPolicy getSagaCreationPolicy(Class<? extends Saga> type, EventMessage event) {
+    protected SagaInitializationPolicy getSagaCreationPolicy(Class<? extends Saga> type, EventMessage event) {
+        AssociationValue initialAssociationValue = initialAssociationValue(event);
         if (isAssignableClassIn(event.getPayloadType(), eventsToOptionallyCreateNewSagasFor)) {
-            return SagaCreationPolicy.IF_NONE_FOUND;
+            return new SagaInitializationPolicy(SagaCreationPolicy.IF_NONE_FOUND, initialAssociationValue);
         } else if (isAssignableClassIn(event.getPayloadType(), eventsToAlwaysCreateNewSagasFor)) {
-            return SagaCreationPolicy.ALWAYS;
+            return new SagaInitializationPolicy(SagaCreationPolicy.ALWAYS, initialAssociationValue);
         } else {
-            return SagaCreationPolicy.NONE;
+            return SagaInitializationPolicy.NONE;
         }
     }
 
     @Override
-    protected AssociationValue extractAssociationValue(Class<? extends Saga> type, EventMessage event) {
-        return associationValueResolver.extractAssociationValue(event);
+    protected Set<AssociationValue> extractAssociationValues(Class<? extends Saga> type, EventMessage event) {
+        return associationValueResolver.extractAssociationValues(event);
+    }
+
+    protected AssociationValue initialAssociationValue(EventMessage event) {
+        Set<AssociationValue> associations = associationValueResolver.extractAssociationValues(event);
+        if (associations.isEmpty()) {
+            return null;
+        }
+        return associations.iterator().next();
     }
 
     private boolean isAssignableClassIn(Class<?> aClass, Collection<Class<?>> classCollection) {
-        for (Class clazz : classCollection) {
+        for (Class<?> clazz : classCollection) {
             if (aClass != null && clazz.isAssignableFrom(aClass)) {
                 return true;
             }

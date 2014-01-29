@@ -199,6 +199,21 @@
                     if the invoice is not paid in time. What if the shipment cannot be delivered?
                     The Saga should be able to cope with those scenarios as well. </para>
             </simplesect>
+            <simplesect>
+                <title>Order of evaluation of <code>@SagaEventHandler</code> annotated
+                    methods</title>
+                <para>The order in which <code>@SagaEventHandler</code> annotated methed are
+                    evaluated is similar to that of <code>@EventHandler</code> methods (see <xref
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                        linkend="annotated-event-handlers"/>). However, unlike
+                        <code>@EventHandler</code> methods, you may have multiple
+                        <code>@SagaEventHandler</code> methods for the same event type. In that
+                    case, the number of parameters defines the evaluation order of the method, where
+                    the largest number of parameters comes first. A method matches if the parameters
+                    of the handler method match the incoming Event, and if the saga has an
+                    association with the property defined on the handler method. When two methods
+                    have the same number of arguments, the order is undefined.</para>
+            </simplesect>
         </sect2>
         <sect2>
             <title>Keeping track of Deadlines</title>
