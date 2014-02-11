@@ -127,6 +127,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>xom</groupId>
+            <artifactId>xom</artifactId>
+            <version>1.2.5</version>
+            <optional>true</optional>
+        </dependency>
+
 
         <!-- Optional dependencies -->
         <dependency>
