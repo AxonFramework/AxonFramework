@@ -111,7 +111,7 @@ public abstract class AbstractEntityCustomizableEventEntryStore implements Event
 				serializedPayload, serializedMetaData));
 	}
 
-	protected abstract DomainEventEntry aDomainEventEntryWith(
+	protected abstract AbstractEventEntry aDomainEventEntryWith(
 			String aggregateType, DomainEventMessage event,
 			SerializedObject serializedPayload,
 			SerializedObject serializedMetaData);
@@ -120,7 +120,7 @@ public abstract class AbstractEntityCustomizableEventEntryStore implements Event
 
 	protected abstract String domainEventEntryEntityName();
 
-	protected abstract SnapshotEventEntry aSnapshotEventEntryWith(
+	protected abstract AbstractEventEntry aSnapshotEventEntryWith(
 			String aggregateType, DomainEventMessage snapshotEvent,
 			SerializedObject serializedPayload,
 			SerializedObject serializedMetaData);

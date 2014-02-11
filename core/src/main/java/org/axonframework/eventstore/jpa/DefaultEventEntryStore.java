@@ -35,7 +35,7 @@ import org.axonframework.serializer.SerializedObject;
  */
 public class DefaultEventEntryStore extends AbstractEntityCustomizableEventEntryStore {
 	@Override
-	protected DomainEventEntry aDomainEventEntryWith(String aggregateType,
+	protected AbstractEventEntry aDomainEventEntryWith(String aggregateType,
 			DomainEventMessage event, SerializedObject serializedPayload,
 			SerializedObject serializedMetaData) {
 		return new DomainEventEntry(aggregateType, event, serializedPayload,
@@ -48,7 +48,7 @@ public class DefaultEventEntryStore extends AbstractEntityCustomizableEventEntry
 	}
 
 	@Override
-	protected SnapshotEventEntry aSnapshotEventEntryWith(String aggregateType,
+	protected AbstractEventEntry aSnapshotEventEntryWith(String aggregateType,
 			DomainEventMessage snapshotEvent,
 			SerializedObject serializedPayload,
 			SerializedObject serializedMetaData) {
