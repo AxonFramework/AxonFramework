@@ -24,7 +24,7 @@ import org.axonframework.serializer.AbstractContentTypeConverter;
  * Converter that converts XOM Document instances to a byte array. The Document is written as XML string, and
  * converted to bytes using the UTF-8 character set.
  *
- * @author Allard Buijze
+ * @author Jochen Munz
  * @since 2.0.10
  */
 public class XomToByteArrayConverter extends AbstractContentTypeConverter<Document, byte[]> {

@@ -2,3 +2,5 @@ org.axonframework.serializer.converters.ByteArrayToInputStreamConverter
 org.axonframework.serializer.converters.InputStreamToByteArrayConverter
 org.axonframework.serializer.converters.ByteArrayToStringConverter
 org.axonframework.serializer.converters.StringToByteArrayConverter
+org.axonframework.serializer.xml.XomToByteArrayConverter
+org.axonframework.serializer.xml.InputStreamToXomConverter

@@ -27,7 +27,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * @author Allard Buijze
+ * @author Jochen Munz
  */
 public class XomToByteArrayConverterTest {
 

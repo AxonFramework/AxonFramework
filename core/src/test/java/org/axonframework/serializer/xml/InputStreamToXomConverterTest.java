@@ -29,7 +29,7 @@ import java.io.InputStream;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Allard Buijze
+ * @author Jochen Munz
  */
 public class InputStreamToXomConverterTest {
 

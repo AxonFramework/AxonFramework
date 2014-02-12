@@ -30,7 +30,7 @@ import java.io.InputStreamReader;
  * Converter that converts an input stream to a XOM document. It assumes that the input stream provides UTF-8
  * formatted XML.
  *
- * @author Allard Buijze
+ * @author Jochen Munz
  * @since 2.0.10
  */
 public class InputStreamToXomConverter extends AbstractContentTypeConverter<InputStream, Document> {
@@ -50,9 +50,9 @@ public class InputStreamToXomConverter extends AbstractContentTypeConverter<Inpu
         try {
             return new Builder().build(new InputStreamReader(original));
         } catch (ParsingException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to dom4j Document.", e);
+            throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to XOM Document.", e);
         } catch (IOException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to dom4j Document.", e);
+            throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to XOM Document.", e);
         }
 
     }
