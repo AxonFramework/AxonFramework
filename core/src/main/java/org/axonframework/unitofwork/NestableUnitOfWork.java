@@ -55,7 +55,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
                 logger.debug("This Unit Of Work is nested. Commit will be finalized by outer Unit Of Work.");
             }
         } catch (RuntimeException e) {
-            logger.debug("An error occurred while committing this UnitOfWork. Performing rollback...");
+            logger.debug("An error occurred while committing this UnitOfWork. Performing rollback...", e);
             doRollback(e);
             stop();
             if (outerUnitOfWork == null) {
