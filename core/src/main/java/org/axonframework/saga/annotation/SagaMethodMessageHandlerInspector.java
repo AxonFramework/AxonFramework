@@ -21,6 +21,9 @@ import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.saga.AssociationValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +41,8 @@ import java.util.concurrent.ConcurrentMap;
  * @since 0.7
  */
 public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SagaMethodMessageHandlerInspector.class);
 
     private static final ConcurrentMap<Class<?>, SagaMethodMessageHandlerInspector> INSPECTORS = new ConcurrentHashMap<Class<?>, SagaMethodMessageHandlerInspector>();
 
@@ -85,8 +90,8 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
     }
 
     /**
-     * Find the configuration for the handlers on the given <code>sagaType</code> for the given <code>event</code>. If
-     * no suitable handler is found, an empty list is returned.
+     * Find the configuration for the handlers for the given <code>event</code>. If no suitable handler is found, an
+     * empty list is returned.
      * The handlers are returned in the order they should be inspected to match against the association value. The
      * first handler in the list to match an association value of the Saga instance should be used to invoke that saga.
      *
@@ -101,6 +106,25 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
             }
         }
         return found;
+    }
+
+    public SagaMethodMessageHandler findHandlerMethod(AbstractAnnotatedSaga target, EventMessage event) {
+        for (SagaMethodMessageHandler handler : getMessageHandlers(event)) {
+            final AssociationValue associationValue = handler.getAssociationValue(event);
+            if (target.getAssociationValues().contains(associationValue)) {
+                return handler;
+            } else if (logger.isDebugEnabled()) {
+                logger.debug(
+                        "Skipping handler [{}], it requires an association value [{}:{}] that this Saga is not associated with",
+                        handler.getName(),
+                        associationValue.getKey(),
+                        associationValue.getValue());
+            }
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("No suitable handler was found for event of type", event.getPayloadType().getName());
+        }
+        return SagaMethodMessageHandler.noHandler();
     }
 
     /**
