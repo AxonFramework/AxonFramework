@@ -66,6 +66,17 @@ public class AbstractAnnotatedSagaTest {
     }
 
     @Test
+    public void testEndedAfterInvocation_WhenAssociationIsRemoved() {
+        StubAnnotatedSaga testSubject = new StubAnnotatedSagaWithExplicitAssociationRemoval();
+        testSubject.associateWith("propertyName", "id");
+        testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
+        testSubject.handle(new GenericEventMessage<Object>(new Object()));
+        testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));
+        assertEquals(2, testSubject.invocationCount);
+        assertFalse(testSubject.isActive());
+    }
+
+    @Test
     public void testEndedAfterInvocation_UniformAccessPrinciple() {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
         testSubject.associateWith("propertyName", "id");
@@ -95,6 +106,16 @@ public class AbstractAnnotatedSagaTest {
         @SagaEventHandler(associationProperty = "propertyName")
         public void handleStubDomainEvent(SagaEndEvent event) {
             invocationCount++;
+        }
+    }
+
+    private static class StubAnnotatedSagaWithExplicitAssociationRemoval extends StubAnnotatedSaga {
+
+        @Override
+        public void handleStubDomainEvent(SagaEndEvent event) {
+            // since this method overrides a handler, it doesn't need the annotations anymore
+            super.handleStubDomainEvent(event);
+            removeAssociationWith("propertyName", event.getPropertyName());
         }
     }
 

@@ -39,7 +39,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     private final AssociationValues associationValues = new AssociationValuesImpl();
     private final String identifier;
-    private transient volatile SagaEventHandlerInvoker eventHandlerInvoker;
+    private transient volatile SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector;
     private volatile boolean isActive = true;
     private transient ParameterResolverFactory parameterResolverFactory;
 
@@ -75,20 +75,21 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     @Override
     public final void handle(EventMessage event) {
         if (isActive) {
-            ensureInvokerInitialized();
-            eventHandlerInvoker.invokeSagaEventHandlerMethod(event);
-            if (eventHandlerInvoker.isEndingEvent(event)) {
+            ensureInspectorInitialized();
+            SagaMethodMessageHandler handler = inspector.findHandlerMethod(this, event);
+            handler.invoke(this, event);
+            if (handler.isEndingHandler()) {
                 end();
             }
         }
     }
 
-    private void ensureInvokerInitialized() {
-        if (eventHandlerInvoker == null) {
+    private void ensureInspectorInitialized() {
+        if (inspector == null) {
             if (parameterResolverFactory == null) {
                 parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
             }
-            eventHandlerInvoker = new SagaEventHandlerInvoker(this, parameterResolverFactory);
+            inspector = SagaMethodMessageHandlerInspector.getInstance(getClass(), parameterResolverFactory);
         }
     }
 
