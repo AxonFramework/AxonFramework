@@ -16,6 +16,7 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
@@ -26,9 +27,7 @@ import org.junit.*;
 
 import java.util.UUID;
 
-import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
-import static org.axonframework.test.matchers.Matchers.messageWithPayload;
-import static org.axonframework.test.matchers.Matchers.noEvents;
+import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.isA;
@@ -45,8 +44,9 @@ public class AnnotatedSagaTest {
         UUID aggregate2 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         FixtureExecutionResult validator = fixture
-                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()),
-                                                      new TriggerExistingSagaEvent(aggregate1.toString()))
+                .givenAggregate(aggregate1).published(
+                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1.toString())),
+                        new TriggerExistingSagaEvent(aggregate1.toString()))
                 .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(aggregate2.toString()))
                 .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1.toString()));
 
@@ -111,11 +111,11 @@ public class AnnotatedSagaTest {
         FixtureExecutionResult validator = fixture
                 // event schedules a TriggerEvent after 10 minutes from t0
                 .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()))
-                // time shifts to t0+5
+                        // time shifts to t0+5
                 .andThenTimeElapses(Duration.standardMinutes(5))
-                // reset event schedules a TriggerEvent after 10 minutes from t0+5
+                        // reset event schedules a TriggerEvent after 10 minutes from t0+5
                 .andThenAggregate(aggregate1).published(new ResetTriggerEvent(aggregate1.toString()))
-                // when time shifts to t0+10
+                        // when time shifts to t0+10
                 .whenTimeElapses(Duration.standardMinutes(6));
 
         validator.expectActiveSagas(1);
@@ -165,10 +165,10 @@ public class AnnotatedSagaTest {
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
                .expectNoAssociationWith("identifier", identifier2)
-               .expectNoScheduledEvents()
-                // since we return null for the command, the other is never sent...
-               .expectDispatchedCommandsEqualTo("Say hi!")
-               .expectPublishedEventsMatching(noEvents());
+                .expectNoScheduledEvents()
+                        // since we return null for the command, the other is never sent...
+                .expectDispatchedCommandsEqualTo("Say hi!")
+                .expectPublishedEventsMatching(noEvents());
     }
 
     @Test
