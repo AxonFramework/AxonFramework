@@ -31,14 +31,14 @@ import java.util.List;
  * @since 2.0
  */
 public class PayloadsMatcher extends BaseMatcher<List<?>> {
-    private final Matcher<List<?>> matcher;
+    private final Matcher<? extends Iterable<?>> matcher;
 
     /**
      * Constructs an instance that uses the given <code>matcher</code> to match the payloads.
      *
      * @param matcher             The matcher to match the payloads with
      */
-    public PayloadsMatcher(Matcher<List<?>> matcher) {
+    public PayloadsMatcher(Matcher<? extends Iterable<?>> matcher) {
         this.matcher = matcher;
     }
 

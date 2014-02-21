@@ -18,8 +18,6 @@ package org.axonframework.test;
 
 import org.hamcrest.Matcher;
 
-import java.util.List;
-
 /**
  * Interface describing the operations available on the "validate result" (a.k.a. "then") stage of the test execution.
  * The underlying fixture expects a test to have been executed succesfully using a {@link
@@ -60,7 +58,7 @@ public interface ResultValidator {
      * @param matcher The matcher to match with the actually published events
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectEventsMatching(Matcher<List<?>> matcher);
+    ResultValidator expectEventsMatching(Matcher<? extends Iterable<?>> matcher);
 
     /**
      * Expect the given set of events to have been published on the events bus. If you expect the same events to be
@@ -87,7 +85,7 @@ public interface ResultValidator {
      * @param matcher The matcher which validates the actual list of published events.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectPublishedEventsMatching(Matcher<List<?>> matcher);
+    ResultValidator expectPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher);
 
     /**
      * Expect the given set of events to have been stored in the event store. If you expect the same events to be
@@ -113,7 +111,7 @@ public interface ResultValidator {
      * @param matcher The matcher which validates the actual list of stored events.
      * @return the current ResultValidator, for fluent interfacing
      */
-    ResultValidator expectStoredEventsMatching(Matcher<List<?>> matcher);
+    ResultValidator expectStoredEventsMatching(Matcher<? extends Iterable<?>> matcher);
 
     /**
      * Expect the command handler to return the given <code>expectedReturnValue</code> after execution. The actual and

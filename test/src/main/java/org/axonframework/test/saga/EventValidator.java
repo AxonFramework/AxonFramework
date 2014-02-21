@@ -55,7 +55,7 @@ public class EventValidator implements EventListener {
      *
      * @param matcher The matcher that will validate the actual events
      */
-    public void assertPublishedEventsMatching(Matcher<List<?>> matcher) {
+    public void assertPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             StringDescription expectedDescription = new StringDescription();
             StringDescription actualDescription = new StringDescription();

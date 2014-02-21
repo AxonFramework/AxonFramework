@@ -26,7 +26,6 @@ import org.hamcrest.StringDescription;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 import static org.hamcrest.CoreMatchers.*;
 
@@ -66,7 +65,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectEventsMatching(Matcher<List<?>> matcher) {
+    public ResultValidator expectEventsMatching(Matcher<? extends Iterable<?>> matcher) {
         if (publishedEvents.size() != storedEvents.size()) {
             reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
         }
@@ -91,7 +90,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectPublishedEventsMatching(Matcher<List<?>> matcher) {
+    public ResultValidator expectPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
         }
@@ -120,7 +119,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectStoredEventsMatching(Matcher<List<?>> matcher) {
+    public ResultValidator expectStoredEventsMatching(Matcher<? extends Iterable<?>> matcher) {
         if (!matcher.matches(storedEvents)) {
             reporter.reportWrongEvent(storedEvents, descriptionOf(matcher), actualException);
         }

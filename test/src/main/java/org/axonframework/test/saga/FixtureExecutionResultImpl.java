@@ -130,7 +130,7 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<List<?>> matcher) {
+    public FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<? extends Iterable<?>> matcher) {
         commandValidator.assertDispatchedMatching(matcher);
         return this;
     }
@@ -148,7 +148,7 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectPublishedEventsMatching(Matcher<List<?>> matcher) {
+    public FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher) {
         eventValidator.assertPublishedEventsMatching(matcher);
         return this;
     }

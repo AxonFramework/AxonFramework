@@ -40,7 +40,7 @@ public abstract class Matchers {
      * @param matcher The mather to match against the Message payloads
      * @return a Matcher that matches against the Message payloads
      */
-    public static Matcher<List<?>> payloadsMatching(final Matcher<List<?>> matcher) {
+    public static Matcher<List<?>> payloadsMatching(final Matcher<? extends Iterable<?>> matcher) {
         return new PayloadsMatcher(matcher);
     }
 

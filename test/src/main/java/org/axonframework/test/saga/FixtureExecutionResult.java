@@ -20,8 +20,6 @@ import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-import java.util.List;
-
 /**
  * Interface towards an object that contains the results of a Fixture execution. It provides methods to assert that
  * certain actions have taken place.
@@ -151,7 +149,7 @@ public interface FixtureExecutionResult {
      * @param matcher The matcher that describes the expected list of commands
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<List<?>> matcher);
+    FixtureExecutionResult expectDispatchedCommandsMatching(Matcher<? extends Iterable<?>> matcher);
 
     /**
      * Asserts that the sagas did not dispatch any commands. Only commands as a result of the event in the "when" stage
@@ -176,7 +174,7 @@ public interface FixtureExecutionResult {
      * @param matcher The matcher that defines the expected list of published events.
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectPublishedEventsMatching(Matcher<List<?>> matcher);
+    FixtureExecutionResult expectPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher);
 
     /**
      * Assert that the saga published events on the EventBus in the exact sequence of the given <code>expected</code>
