@@ -172,6 +172,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     @Override
+    public TestExecutor givenNoPriorActivity() {
+        return given(Collections.emptyList());
+    }
+
+    @Override
     public TestExecutor given(List<?> domainEvents) {
         ensureRepositoryConfiguration();
         clearGivenWhenState();

@@ -102,6 +102,15 @@ public interface FixtureConfiguration {
     ContinuedGivenState givenAPublished(Object event);
 
     /**
+     * Indicates that no relevant activity has occurred in the past.
+     *
+     * @return an object that allows the definition of the activity to measure Saga behavior
+     *
+     * @since 2.1.1
+     */
+    WhenState givenNoPriorActivity();
+
+    /**
      * Returns the time as "known" by the fixture. This is the time at which the fixture was created, plus the amount
      * of
      * time the fixture was told to simulate a "wait".

@@ -140,6 +140,11 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
+    public WhenState givenNoPriorActivity() {
+        return this;
+    }
+
+    @Override
     public GivenAggregateEventPublisher andThenAggregate(Object aggregateIdentifier) {
         return givenAggregate(aggregateIdentifier);
     }
