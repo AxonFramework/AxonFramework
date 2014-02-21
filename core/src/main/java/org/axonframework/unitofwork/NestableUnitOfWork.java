@@ -66,7 +66,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
                 registerScheduledEvents(outerUnitOfWork);
             }
         } catch (RuntimeException e) {
-            logger.debug("An error occurred while committing this UnitOfWork. Performing rollback...");
+            logger.debug("An error occurred while committing this UnitOfWork. Performing rollback...", e);
             doRollback(e);
             stop();
             if (outerUnitOfWork == null) {
