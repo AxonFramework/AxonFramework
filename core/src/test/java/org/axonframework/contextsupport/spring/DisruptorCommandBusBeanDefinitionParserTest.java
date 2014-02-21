@@ -83,6 +83,7 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
             assertEquals(property + " has wrong value", 2, interceptors.size());
         }
         assertTrue(config.getPropertyValues().getPropertyValue("serializer").getValue() instanceof BeanReference);
+        assertEquals("2048", config.getPropertyValues().getPropertyValue("bufferSize").getValue());
         assertEquals("3", config.getPropertyValues().getPropertyValue("serializerThreadCount").getValue());
         assertEquals("org.dom4j.Document", config.getPropertyValues().getPropertyValue("serializedRepresentation").getValue());
     }

@@ -89,6 +89,7 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         VALUE_PROPERTY_MAPPING.put("publisher-threads", "publisherThreadCount");
         VALUE_PROPERTY_MAPPING.put("reschedule-commands-on-corrupt-state", "rescheduleCommandsOnCorruptState");
         VALUE_PROPERTY_MAPPING.put("serialized-representation", "serializedRepresentation");
+        VALUE_PROPERTY_MAPPING.put("buffer-size", "bufferSize");
 
         LIST_PROPERTY_MAPPING.put("invoker-interceptors", "invokerInterceptors");
         LIST_PROPERTY_MAPPING.put("publisher-interceptors", "publisherInterceptors");
