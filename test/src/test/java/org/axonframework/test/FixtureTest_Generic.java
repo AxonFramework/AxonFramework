@@ -79,7 +79,7 @@ public class FixtureTest_Generic {
     public void testAggregateIdentifier_ServerGeneratedIdentifier() {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
-        fixture.given()
+        fixture.givenNoPriorActivity()
                .when(new CreateAggregateCommand());
     }
 

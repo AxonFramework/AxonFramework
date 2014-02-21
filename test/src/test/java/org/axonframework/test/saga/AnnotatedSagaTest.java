@@ -68,6 +68,15 @@ public class AnnotatedSagaTest {
     }
 
     @Test
+    public void testFixtureApi_NoHistoricActivity() {
+        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", "id");
+    }
+
+    @Test
     public void testFixtureApi_WithApplicationEvents() {
         UUID aggregate1 = UUID.randomUUID();
         UUID aggregate2 = UUID.randomUUID();

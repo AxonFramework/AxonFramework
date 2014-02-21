@@ -161,6 +161,16 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
     TestExecutor given(Object... domainEvents);
 
     /**
+     * Indicates that no relevant activity has occurred in the past. The behavior of this method is identical to giving
+     * no events in the {@link #given(java.util.List)} method.
+     *
+     * @return a TestExecutor instance that can execute the test with this configuration
+     *
+     * @since 2.1.1
+     */
+    TestExecutor givenNoPriorActivity();
+
+    /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
      * <p/>
