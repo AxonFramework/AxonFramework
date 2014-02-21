@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -134,7 +135,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public ContinuedGivenState givenAPublished(Object event) {
-        sagaManager.handle(new GenericEventMessage<Object>(event));
+        sagaManager.handle(GenericEventMessage.asEventMessage(event));
         return this;
     }
 
@@ -161,7 +162,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public ContinuedGivenState andThenAPublished(Object event) {
-        sagaManager.handle(new GenericEventMessage<Object>(event));
+        sagaManager.handle(GenericEventMessage.asEventMessage(event));
         return this;
     }
 
@@ -204,14 +205,18 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     private AggregateEventPublisherImpl getPublisherFor(Object aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
-            aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl());
+            aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
         }
         return aggregatePublishers.get(aggregateIdentifier);
     }
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
-        public AggregateEventPublisherImpl() {
+        private final Object aggregateIdentifier;
+        private int sequenceNumber = 0;
+
+        public AggregateEventPublisherImpl(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
         }
 
         @Override
@@ -235,7 +240,19 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
             try {
                 for (Object event : events) {
-                    sagaManager.handle(new GenericEventMessage<Object>(event));
+                    if (event instanceof EventMessage) {
+                        EventMessage eventMessage = (EventMessage) event;
+                        sagaManager.handle(new GenericDomainEventMessage<Object>(eventMessage.getIdentifier(),
+                                                                                 eventMessage.getTimestamp(),
+                                                                                 aggregateIdentifier,
+                                                                                 sequenceNumber++,
+                                                                                 eventMessage.getPayload(),
+                                                                                 eventMessage.getMetaData()));
+                    } else {
+                        sagaManager.handle(new GenericDomainEventMessage<Object>(aggregateIdentifier,
+                                                                                 sequenceNumber++,
+                                                                                 event));
+                    }
                 }
             } finally {
                 DateTimeUtils.setCurrentMillisSystem();
