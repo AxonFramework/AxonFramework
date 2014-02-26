@@ -295,7 +295,7 @@ public final class NoCache implements Cache<Object, Object> {
 
     }
 
-    private class Now<T> implements Future<T> {
+    private static class Now<T> implements Future<T> {
 
         private final T value;
 
