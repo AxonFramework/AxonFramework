@@ -276,14 +276,14 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                 are multiple threads, each taking care of a piece of the process. The
                     <code>DisruptorCommandBus</code> uses the Disruptor (<link
                     xmlns:ns1="http://www.w3.org/1999/xlink"
-                    ns1:href="http://code.google.com/p/disruptor"
-                    >http://code.google.com/p/disruptor</link>), a small framework for concurrent
-                programming, to achieve much better performance, by just taking a different approach
-                to multithreading. Instead of doing the processing in the calling thread, the tasks
-                are handed of to two groups of threads, that each take care of a part of the
-                processing. The first group of threads will execute the command handler, changing an
-                aggregate's state. The second group will store and publish the events to the Event
-                Store and Event Bus. </para>
+                    ns1:href="http://lmax-exchange.github.io/disruptor/"
+                    >http://lmax-exchange.github.io/disruptor/</link>), a small framework for
+                concurrent programming, to achieve much better performance, by just taking a
+                different approach to multithreading. Instead of doing the processing in the calling
+                thread, the tasks are handed of to two groups of threads, that each take care of a
+                part of the processing. The first group of threads will execute the command handler,
+                changing an aggregate's state. The second group will store and publish the events to
+                the Event Store and Event Bus. </para>
             <para>While the <code>DisruptorCommandBus</code> easily outperforms the
                     <code>SimpleCommandBus</code> by a factor 4(!), there are a few limitations: <itemizedlist>
                     <listitem>
@@ -294,7 +294,12 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                     </listitem>
                     <listitem>
                         <para>A Command can only result in a state change in a single aggregate
-                            instance. </para>
+                            instance.</para>
+                    </listitem>
+                    <listitem>
+                        <para>When using a Cache, it allows only a single aggregate for a given
+                            identifier. This means it is not possible to have two aggregates of
+                            different types with the same identifier.</para>
                     </listitem>
                     <listitem>
                         <para>Commands should generally not cause a failure that requires a rollback
