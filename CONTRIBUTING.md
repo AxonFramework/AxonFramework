@@ -30,11 +30,11 @@ To sign the CLA, visit: http://www.axonframework.org/cla. You can sign using a G
 ### Code style
 
 We're trying very hard to maintain a consistent style of coding throughout the code base. Thingk of things like
-indenting using 4 spaces, putting opening brackets (the '{') on the same line and  putting proper Javadoc on all
+indenting using 4 spaces, putting opening brackets (the '{') on the same line and putting proper Javadoc on all
 non-private members.
 
 If you're using IntelliJ IDEA, you can download the code style definition from
-http://www.axonframework.org/axon_code_style.xml. Simply copy the file to ~/.IntelliJIdea12/config/codestyles. After
+http://www.axonframework.org/axon_code_style.xml. Simply copy the file to ~/.IntelliJIdea13/config/codestyles. After
 (re)starting IntelliJ, you can pick this code style from the project settings.
 
 
