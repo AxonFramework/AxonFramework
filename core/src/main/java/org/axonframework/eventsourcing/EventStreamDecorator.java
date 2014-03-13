@@ -35,8 +35,7 @@ public interface EventStreamDecorator {
      *
      * @param aggregateType       The type of aggregate events are being read for
      * @param aggregateIdentifier The identifier of the aggregate events are loaded for
-     * @param eventStream         The eventStream containing the events to append to the event store  @return The
-     *                            decorated event stream
+     * @param eventStream         The eventStream containing the events to append to the event store
      * @return the decorated event stream
      */
     DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
@@ -51,8 +50,7 @@ public interface EventStreamDecorator {
      *
      * @param aggregateType The type of aggregate events are being appended for
      * @param aggregate     The aggregate for which the events are being stored
-     * @param eventStream   The eventStream containing the events to append to the event store  @return The decorated
-     *                      event stream
+     * @param eventStream   The eventStream containing the events to append to the event store
      * @return the decorated event stream
      */
     DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
