@@ -60,6 +60,8 @@ public class EventProcessor implements Runnable {
     private volatile long retryAfter = 0;
     private final List<EventMessage> processedEvents = new ArrayList<EventMessage>();
 
+    private final Object runnerMonitor = new Object();
+
     /**
      * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule
      * events.
@@ -187,20 +189,22 @@ public class EventProcessor implements Runnable {
      */
     @Override
     public void run() {
-        boolean mayContinue = true;
-        waitUntilAllowedStartingTime();
-        int itemsAtStart = eventQueue.size();
-        int processedItems = 0;
-        while (mayContinue) {
-            RetryPolicy result = processNextEntry();
-            processedItems++;
-            // Continue processing if there is no rescheduling involved and there are events in the queue, or if yielding failed
-            mayContinue = (processedItems < itemsAtStart
-                    && !eventQueue.isEmpty()
-                    && !result.requiresRescheduleEvent())
-                    || !yield();
+        synchronized (runnerMonitor) {
+            boolean mayContinue = true;
+            waitUntilAllowedStartingTime();
+            int itemsAtStart = eventQueue.size();
+            int processedItems = 0;
+            while (mayContinue) {
+                RetryPolicy result = processNextEntry();
+                processedItems++;
+                // Continue processing if there is no rescheduling involved and there are events in the queue, or if yielding failed
+                mayContinue = (processedItems < itemsAtStart
+                        && !eventQueue.isEmpty()
+                        && !result.requiresRescheduleEvent())
+                        || !yield();
+            }
+            notifyProcessingHandlers();
         }
-        notifyProcessingHandlers();
     }
 
     private void notifyProcessingHandlers() {
