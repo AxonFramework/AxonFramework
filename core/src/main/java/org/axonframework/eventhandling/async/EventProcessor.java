@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -64,11 +64,11 @@ public class EventProcessor implements Runnable {
      * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule
      * events.
      *
-     * @param executor                The executor service that will process the events
-     * @param shutDownCallback        The callback to notify when the scheduler finishes processing events
-     * @param errorHandler            The error handler to invoke when an error occurs while committing a Unit of Work
-     * @param unitOfWorkFactory       The factory providing instances of the Unit of Work
-     * @param eventListeners          The event listeners that should handle incoming events
+     * @param executor               The executor service that will process the events
+     * @param shutDownCallback       The callback to notify when the scheduler finishes processing events
+     * @param errorHandler           The error handler to invoke when an error occurs while committing a Unit of Work
+     * @param unitOfWorkFactory      The factory providing instances of the Unit of Work
+     * @param eventListeners         The event listeners that should handle incoming events
      * @param eventProcessingMonitor The listener to notify when processing completed
      */
     public EventProcessor(Executor executor, ShutdownCallback shutDownCallback, ErrorHandler errorHandler,
@@ -226,7 +226,7 @@ public class EventProcessor implements Runnable {
                 }
                 if (processingResult.requiresRescheduleEvent()) {
                     eventQueue.addFirst(event);
-                } else if(processingResult.isFailure()) {
+                } else if (processingResult.isFailure()) {
                     notifyProcessingHandlers();
                     eventProcessingMonitor.onEventProcessingFailed(Arrays.<EventMessage>asList(event),
                                                                    processingResult.getError());
@@ -302,22 +302,45 @@ public class EventProcessor implements Runnable {
         void afterShutdown(EventProcessor scheduler);
     }
 
-    private static class ProcessingResult extends RetryPolicy {
+    /**
+     * Class indicating the result of Event Processing and the policy for resuming or retrying in case of errors.
+     */
+    protected static class ProcessingResult extends RetryPolicy {
 
-        private static final ProcessingResult REGULAR = new ProcessingResult(RetryPolicy.proceed(), null);
+        /**
+         * Instance indicating processing was successful and should proceed normally.
+         */
+        public static final ProcessingResult REGULAR = new ProcessingResult(RetryPolicy.proceed(), null);
 
         private final RetryPolicy retryPolicy;
         private final Throwable error;
 
+        /**
+         * Creates an instance requiring the given <code>retryPolicy</code> and reporting the given (optional)
+         * <code>error</code> to indicate a failure.
+         *
+         * @param retryPolicy The policy indication how to continue processing
+         * @param error       An (optional) error to indicate a failure occurred
+         */
         public ProcessingResult(RetryPolicy retryPolicy, Throwable error) {
             this.retryPolicy = retryPolicy;
             this.error = error;
         }
 
+        /**
+         * Indicates whether processing failed
+         *
+         * @return <code>true</code> if an error was reported, otherwise <code>false</code>
+         */
         public boolean isFailure() {
             return error != null;
         }
 
+        /**
+         * Returns the exception that caused the processing to fail
+         *
+         * @return the exception that caused the processing to fail, or <code>null</code> if no failure was reported
+         */
         public Throwable getError() {
             return error;
         }
