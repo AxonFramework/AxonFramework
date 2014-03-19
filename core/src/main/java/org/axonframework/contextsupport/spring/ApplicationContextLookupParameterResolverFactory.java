@@ -19,7 +19,7 @@ import java.util.Map;
  * ParameterResolverFactory beans in the application context.
  *
  * @author Allard Buijze
- * @since 2.1.1
+ * @since 2.1.2
  */
 public class ApplicationContextLookupParameterResolverFactory implements FactoryBean<ParameterResolverFactory>,
         ApplicationContextAware, InitializingBean {
