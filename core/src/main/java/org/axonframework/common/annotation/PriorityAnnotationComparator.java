@@ -9,7 +9,7 @@ import java.util.Comparator;
  * annotation.
  *
  * @author Allard Buijze
- * @since 2.1.1
+ * @since 2.1.2
  */
 public class PriorityAnnotationComparator<T> implements Comparator<T> {
 
