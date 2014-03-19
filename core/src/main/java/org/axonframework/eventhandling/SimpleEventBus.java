@@ -51,12 +51,12 @@ public class SimpleEventBus implements EventBus {
      */
     @Override
     public void unsubscribe(EventListener eventListener) {
-        Class<?> listenerType = getActualListenerType(eventListener);
+        String listenerType = classNameOf(eventListener);
         if (listeners.remove(eventListener)) {
-            statistics.recordUnregisteredListener(listenerType.getSimpleName());
-            logger.debug("EventListener {} unsubscribed successfully", listenerType.getSimpleName());
+            statistics.recordUnregisteredListener(listenerType);
+            logger.debug("EventListener {} unsubscribed successfully", listenerType);
         } else {
-            logger.info("EventListener {} not removed. It was already unsubscribed", listenerType.getSimpleName());
+            logger.info("EventListener {} not removed. It was already unsubscribed", listenerType);
         }
     }
 
@@ -65,23 +65,13 @@ public class SimpleEventBus implements EventBus {
      */
     @Override
     public void subscribe(EventListener eventListener) {
-        Class<?> listenerType = getActualListenerType(eventListener);
+        String listenerType = classNameOf(eventListener);
         if (listeners.add(eventListener)) {
-            statistics.listenerRegistered(listenerType.getSimpleName());
-            logger.debug("EventListener [{}] subscribed successfully", listenerType.getSimpleName());
+            statistics.listenerRegistered(listenerType);
+            logger.debug("EventListener [{}] subscribed successfully", listenerType);
         } else {
-            logger.info("EventListener [{}] not added. It was already subscribed", listenerType.getSimpleName());
+            logger.info("EventListener [{}] not added. It was already subscribed", listenerType);
         }
-    }
-
-    private Class<?> getActualListenerType(EventListener eventListener) {
-        Class<?> listenerType;
-        if (eventListener instanceof EventListenerProxy) {
-            listenerType = ((EventListenerProxy) eventListener).getTargetType();
-        } else {
-            listenerType = eventListener.getClass();
-        }
-        return listenerType;
     }
 
     /**
@@ -95,15 +85,21 @@ public class SimpleEventBus implements EventBus {
                 for (EventListener listener : listeners) {
                     if (logger.isDebugEnabled()) {
                         logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                                     event.getPayloadType().getSimpleName(),
-                                     listener instanceof EventListenerProxy
-                                             ? ((EventListenerProxy) listener).getTargetType().getClass()
-                                                                              .getSimpleName()
-                                             : listener.getClass().getSimpleName());
+                                     event.getPayloadType().getSimpleName(), classNameOf(listener));
                     }
                     listener.handle(event);
                 }
             }
         }
+    }
+
+    private String classNameOf(EventListener eventListener) {
+        Class<?> listenerType;
+        if (eventListener instanceof EventListenerProxy) {
+            listenerType = ((EventListenerProxy) eventListener).getTargetType();
+        } else {
+            listenerType = eventListener.getClass();
+        }
+        return listenerType.getSimpleName();
     }
 }
