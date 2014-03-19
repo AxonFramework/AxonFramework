@@ -17,7 +17,6 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.SpringBeanParameterResolverFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -59,7 +58,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringBeanParameterResolverFactory.class)
                                                .getBeanDefinition());
             AbstractBeanDefinition def =
-                    BeanDefinitionBuilder.genericBeanDefinition(MultiParameterResolverFactory.class)
+                    BeanDefinitionBuilder.genericBeanDefinition(ApplicationContextLookupParameterResolverFactory.class)
                                          .addConstructorArgValue(factories)
                                          .getBeanDefinition();
             registry.registerBeanDefinition(PARAMETER_RESOLVER_FACTORY_BEAN_NAME, def);

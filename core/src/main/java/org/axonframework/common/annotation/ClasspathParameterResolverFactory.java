@@ -16,14 +16,12 @@
 
 package org.axonframework.common.annotation;
 
-import org.axonframework.common.Priority;
 import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -107,17 +105,7 @@ public final class ClasspathParameterResolverFactory implements ParameterResolve
                 logger.info("ParameterResolverFactory instance ignored. It relies on a class that cannot be found: {}", e.getMessage());
             }
         }
-        Collections.sort(factories, new Comparator<ParameterResolverFactory>() {
-            @Override
-            public int compare(ParameterResolverFactory o1, ParameterResolverFactory o2) {
-                Priority annotation1 = o1.getClass().getAnnotation(Priority.class);
-                Priority annotation2 = o2.getClass().getAnnotation(Priority.class);
-                int prio1 = annotation1 == null ? Priority.NEUTRAL : annotation1.value();
-                int prio2 = annotation2 == null ? Priority.NEUTRAL : annotation2.value();
-
-                return (prio1 > prio2) ? -1 : ((prio2 == prio1) ? 0 : 1);
-            }
-        });
+        Collections.sort(factories, PriorityAnnotationComparator.getInstance());
         this.delegate = new MultiParameterResolverFactory(factories);
     }
 
