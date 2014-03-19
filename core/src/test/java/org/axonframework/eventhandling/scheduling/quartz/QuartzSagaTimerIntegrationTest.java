@@ -44,6 +44,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -65,6 +68,24 @@ public class QuartzSagaTimerIntegrationTest {
 
     @Autowired
     private Scheduler scheduler;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Before
+    public void setUp() throws Exception {
+        // the serialized form of the Saga exceeds the default length of a blob.
+        // So we must alter the table to prevent data truncation
+        new TransactionTemplate(transactionManager)
+                .execute(new TransactionCallbackWithoutResult() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        entityManager.createNativeQuery(
+                                "ALTER TABLE SagaEntry ALTER COLUMN serializedSaga VARBINARY(1024)")
+                                     .executeUpdate();
+                    }
+                });
+    }
 
     @Test
     public void testJobExecutesInTime() throws InterruptedException, SchedulerException {

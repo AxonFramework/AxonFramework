@@ -58,6 +58,11 @@ public class JpaSagaRepositoryTest {
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
         entityManager.createQuery("DELETE FROM AssociationValueEntry");
+
+        // the serialized form of the Saga exceeds the default length of a blob.
+        // So we must alter the table to prevent data truncation
+        entityManager.createNativeQuery("ALTER TABLE SagaEntry ALTER COLUMN serializedSaga VARBINARY(1024)")
+                     .executeUpdate();
         serializer = new XStreamSerializer();
         repository.setSerializer(serializer);
     }

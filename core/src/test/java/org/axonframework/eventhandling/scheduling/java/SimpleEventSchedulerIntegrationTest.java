@@ -35,6 +35,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
 
@@ -56,6 +58,24 @@ public class SimpleEventSchedulerIntegrationTest {
 
     @Autowired
     private ResultStoringScheduledExecutorService executorService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Before
+    public void setUp() throws Exception {
+        // the serialized form of the Saga exceeds the default length of a blob.
+        // So we must alter the table to prevent data truncation
+        new TransactionTemplate(transactionManager)
+                .execute(new TransactionCallbackWithoutResult() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        entityManager.createNativeQuery(
+                                "ALTER TABLE SagaEntry ALTER COLUMN serializedSaga VARBINARY(1024)")
+                                     .executeUpdate();
+                    }
+                });
+    }
 
     @Test
     public void testTimerExecution() throws InterruptedException, ExecutionException {
