@@ -16,9 +16,9 @@
 
 package org.axonframework.integrationtests.cache;
 
-import net.sf.ehcache.jcache.JCache;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.cache.CacheUtils;
 import org.junit.*;
 import org.junit.runner.*;
 import org.ops4j.pax.exam.util.Transactional;
@@ -27,6 +27,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.atomic.AtomicLong;
+import javax.cache.Cache;
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.CacheEntryListenerException;
 import javax.cache.event.CacheEntryRemovedListener;
@@ -44,7 +45,7 @@ import static org.junit.Assert.*;
 public class JCacheIntegrationTest {
 
     @Autowired
-    private JCache jCache;
+    private Cache jCache;
 
     @Autowired
     private CommandGateway commandGateway;
@@ -52,7 +53,7 @@ public class JCacheIntegrationTest {
     @Test
     public void testEntriesEvictedOnProcessingException() throws Exception {
         final AtomicLong counter = new AtomicLong();
-        jCache.registerCacheEntryListener(new CacheEntryRemovedListener() {
+        CacheUtils.registerCacheEntryListener(jCache, new CacheEntryRemovedListener() {
             @Override
             public void entryRemoved(CacheEntryEvent event) throws CacheEntryListenerException {
                 counter.incrementAndGet();
@@ -71,13 +72,13 @@ public class JCacheIntegrationTest {
             @Override
             public void onFailure(Throwable cause) {
 //                These lines prove that JCache doesn't work properly..
-//                assertTrue("Got an exception, as expected, but it seems to be the wrong one: " + cause.getClass()
-//                                                                                                      .getName(),
-//                           cause.getMessage().contains("I don't like this"));
+                assertTrue("Got an exception, as expected, but it seems to be the wrong one: " + cause.getClass()
+                                                                                                      .getName(),
+                           cause.getMessage().contains("I don't like this"));
             }
         });
         assertFalse(jCache.containsKey("1234"));
-//        assertEquals(1, counter.get());
+        assertEquals(1, counter.get());
     }
 
     @Test

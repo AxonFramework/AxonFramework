@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.cache.CacheUtils;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -130,7 +131,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      */
     public void setAggregateCache(Cache cache) {
         this.clearCountersAfterAppend = false;
-        cache.registerCacheEntryListener(new CacheListener());
+        CacheUtils.registerCacheEntryListener(cache, new CacheListener());
     }
 
     /**
