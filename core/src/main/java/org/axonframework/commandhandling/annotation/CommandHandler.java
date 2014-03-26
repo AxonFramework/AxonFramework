@@ -26,16 +26,20 @@ import java.lang.annotation.Target;
  * Marker annotation to mark any method on an object as being a CommandHandler. Use the {@link
  * AnnotationCommandHandlerAdapter} to subscribe the annotated class to the command bus.
  * <p/>
- * Alternatively, the annotations may be placed on an AggregateRoot, in which case the {@link
+ * Alternatively, the annotations may be placed on an Aggregate members, in which case the {@link
  * AggregateAnnotationCommandHandler} can be used to subscribe the handlers to the command bus. When the annotation
- * appears on an Aggregate's constructor, that command will cause a new aggregate to be created and stored in the
- * repository provided with the {@link AggregateAnnotationCommandHandler}.
+ * appears on an Aggregate root's constructor, that command will cause a new aggregate to be created and stored in the
+ * repository provided with the {@link AggregateAnnotationCommandHandler}. If a non-root entity of the Aggregate is
+ * to handle a command, the field declaring that entity must be annotated with {@link
+ * org.axonframework.commandhandling.annotation.CommandHandlingMember}. Note that the annotation may not be placed on
+ * a non-root Entity's constructor.
  * <p/>
  * The annotated method's first parameter is the command handled by that method. Optionally, the command handler may
  * specify a second parameter of type {@link org.axonframework.unitofwork.UnitOfWork}. The active Unit of Work will be
  * passed if that parameter is supplied.
  *
  * @author Allard Buijze
+ * @see org.axonframework.commandhandling.annotation.CommandHandlingMember
  * @since 0.5
  */
 @Documented

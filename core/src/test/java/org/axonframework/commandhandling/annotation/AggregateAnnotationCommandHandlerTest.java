@@ -24,6 +24,7 @@ import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -90,7 +91,8 @@ public class AggregateAnnotationCommandHandlerTest {
                                 public void onFailure(Throwable cause) {
                                     assertEquals("parameter", cause.getMessage());
                                 }
-                            });
+                            }
+        );
     }
 
     @Test
@@ -104,7 +106,10 @@ public class AggregateAnnotationCommandHandlerTest {
                 UpdateCommandWithAnnotatedField.class.getName(),
                 UpdateCommandWithAnnotatedFieldAndVersion.class.getName(),
                 UpdateCommandWithAnnotatedFieldAndIntegerVersion.class.getName(),
-                FailingUpdateCommand.class.getName()));
+                FailingUpdateCommand.class.getName(),
+                // declared in the entities
+                UpdateNestedEntityStateCommand.class.getName(),
+                UpdateEntityStateCommand.class.getName()));
 
         assertEquals(expected, actual);
     }
@@ -141,7 +146,8 @@ public class AggregateAnnotationCommandHandlerTest {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
-                            });
+                            }
+        );
 
         verify(mockRepository).load(aggregateIdentifier, null);
     }
@@ -152,7 +158,7 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
-                new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
+                                    new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {
@@ -164,7 +170,8 @@ public class AggregateAnnotationCommandHandlerTest {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
-                            });
+                            }
+        );
 
         verify(mockRepository).load(aggregateIdentifier, 12L);
     }
@@ -175,7 +182,7 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
-                new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
+                                    new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {
@@ -187,7 +194,8 @@ public class AggregateAnnotationCommandHandlerTest {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
-                            });
+                            }
+        );
 
         verify(mockRepository).load(aggregateIdentifier, null);
     }
@@ -209,7 +217,8 @@ public class AggregateAnnotationCommandHandlerTest {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
-                            });
+                            }
+        );
 
         verify(mockRepository).load(aggregateIdentifier, null);
     }
@@ -220,7 +229,7 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
-                new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
+                                    new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {
@@ -232,7 +241,8 @@ public class AggregateAnnotationCommandHandlerTest {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
-                            });
+                            }
+        );
 
         verify(mockRepository).load(aggregateIdentifier, 321L);
     }
@@ -243,7 +253,7 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(Object.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
-                new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
+                                    new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
                             new CommandCallback<Object>() {
                                 @Override
                                 public void onSuccess(Object result) {
@@ -255,9 +265,87 @@ public class AggregateAnnotationCommandHandlerTest {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
-                            });
+                            }
+        );
 
         verify(mockRepository).load(aggregateIdentifier, 321L);
+    }
+
+    @Test
+    public void testCommandForEntityRejectedWhenNoInstanceIsAvailable() {
+        Object aggregateIdentifier = "abc123";
+        when(mockRepository.load(any(Object.class), anyLong()))
+                .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                                    new UpdateEntityStateCommand("abc123")),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    fail("Expected an exception, as the entity was not initialized");
+                                }
+
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    if (!cause.getMessage().contains("'entity'")) {
+                                        cause.printStackTrace();
+                                        fail("Got an exception, but not the right one.");
+                                    }
+                                }
+                            }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
+    }
+
+    @Test
+    public void testCommandHandledByEntity() {
+        Object aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        aggregate.initializeEntity();
+        when(mockRepository.load(any(Object.class), anyLong())).thenReturn(aggregate);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                                    new UpdateEntityStateCommand("abc123")),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    assertEquals("entity command handled just fine", result);
+                                }
+
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    cause.printStackTrace();
+                                    fail("Did not expect exception");
+                                }
+                            }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
+    }
+
+    @Test
+    public void testCommandHandledByNestedEntity() {
+        Object aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        aggregate.initializeEntity();
+        aggregate.initializeEntity();
+        when(mockRepository.load(any(Object.class), anyLong())).thenReturn(aggregate);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                                    new UpdateNestedEntityStateCommand("abc123")),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    assertEquals("nested entity command handled just fine", result);
+                                }
+
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    cause.printStackTrace();
+                                    fail("Did not expect exception");
+                                }
+                            }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
     private abstract static class AbstractStubCommandAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
@@ -278,6 +366,9 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     private static class StubCommandAnnotatedAggregate extends AbstractStubCommandAnnotatedAggregate {
+
+        @CommandHandlingMember
+        private StubCommandAnnotatedEntity entity;
 
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
@@ -326,6 +417,47 @@ public class AggregateAnnotationCommandHandlerTest {
         @CommandHandler
         public void handleFailingUpdate(FailingUpdateCommand updateCommand) {
             throw new RuntimeException(updateCommand.getMessage());
+        }
+
+        public void initializeEntity() {
+            if (this.entity == null) {
+                this.entity = new StubCommandAnnotatedEntity();
+            } else {
+                this.entity.initializeEntity();
+            }
+        }
+    }
+
+    private static class StubCommandAnnotatedEntity extends AbstractAnnotatedEntity {
+
+        @CommandHandlingMember
+        private StubNestedCommandAnnotatedEntity entity;
+
+        @CommandHandler
+        public String handle(UpdateEntityStateCommand command) {
+            return "entity command handled just fine";
+        }
+
+        public void initializeEntity() {
+            this.entity = new StubNestedCommandAnnotatedEntity();
+        }
+    }
+
+    private static class StubNestedCommandAnnotatedEntity extends AbstractAnnotatedEntity {
+
+        @CommandHandler
+        public String handle(UpdateNestedEntityStateCommand command) {
+            return "nested entity command handled just fine";
+        }
+    }
+
+    private static class UpdateNestedEntityStateCommand {
+
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private UpdateNestedEntityStateCommand(String aggregateId) {
+            this.aggregateId = aggregateId;
         }
     }
 
@@ -437,6 +569,16 @@ public class AggregateAnnotationCommandHandlerTest {
         private UpdateCommandWithAnnotatedFieldAndIntegerVersion(String aggregateIdentifier, int expectedVersion) {
             this.aggregateIdentifier = aggregateIdentifier;
             this.expectedVersion = expectedVersion;
+        }
+    }
+
+    private static class UpdateEntityStateCommand {
+
+        @TargetAggregateIdentifier
+        private final String aggregateIdentifier;
+
+        private UpdateEntityStateCommand(String aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
         }
     }
 }

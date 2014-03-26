@@ -49,9 +49,21 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      */
     protected AbstractMessageHandler(Class<?> payloadType, Class<?> declaringClass,
                                      ParameterResolver... parameterValueResolvers) {
-        score = new Score(payloadType, declaringClass);
+        this.score = new Score(payloadType, declaringClass);
         this.payloadType = payloadType;
         this.parameterValueResolvers = Arrays.copyOf(parameterValueResolvers, parameterValueResolvers.length);
+    }
+
+    /**
+     * Constructor used for implementations that delegate activity to another handler. Required information is gathered
+     * from the target handler.
+     *
+     * @param delegate The handler to which actual invocations are being forwarded
+     */
+    protected AbstractMessageHandler(AbstractMessageHandler delegate) {
+        this.score = delegate.score;
+        this.payloadType = delegate.payloadType;
+        this.parameterValueResolvers = delegate.parameterValueResolvers;
     }
 
     /**
@@ -82,7 +94,7 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * @return The result of the handler invocation
      *
      * @throws InvocationTargetException when the handler throws a checked exception
-     * @throws IllegalAccessException    if the SecurityManager refuses the handler invocation
+     * @throws IllegalAccessException if the SecurityManager refuses the handler invocation
      */
     public abstract Object invoke(Object target, Message message)
             throws InvocationTargetException, IllegalAccessException;
@@ -116,7 +128,6 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * Finds ParameterResolvers for the given Member details. The returning array contains as many elements as the
      * given <code>parameterTypes</code>, where each ParameterResolver corresponds with the parameter type at the same
      * location.
-     *
      *
      * @param parameterResolverFactory The factory to create the ParameterResolvers with
      * @param memberAnnotations        The annotations on the member (e.g. method)

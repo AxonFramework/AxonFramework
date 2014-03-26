@@ -16,14 +16,26 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.domain.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+
+import static org.axonframework.common.ReflectionUtils.fieldsOf;
 
 /**
  * Handler inspector that finds annotated constructors and methods on a given aggregate type and provides handlers for
@@ -35,9 +47,11 @@ import java.util.List;
  */
 public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
 
+    private static final Logger logger = LoggerFactory.getLogger(AggregateCommandHandlerInspector.class);
+
     private final List<ConstructorCommandMessageHandler<T>> constructorCommandHandlers =
             new LinkedList<ConstructorCommandMessageHandler<T>>();
-    private final MethodMessageHandlerInspector inspector;
+    private final List<AbstractMessageHandler> handlers;
 
     /**
      * Initialize an MethodMessageHandlerInspector, where the given <code>annotationType</code> is used to annotate the
@@ -48,14 +62,61 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
      */
     @SuppressWarnings({"unchecked"})
     protected AggregateCommandHandlerInspector(Class<T> targetType, ParameterResolverFactory parameterResolverFactory) {
-        inspector = MethodMessageHandlerInspector.getInstance(targetType, CommandHandler.class, parameterResolverFactory,
-                                                              true);
+        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(targetType,
+                                                                                            CommandHandler.class,
+                                                                                            parameterResolverFactory,
+                                                                                            true);
+        handlers = new ArrayList<AbstractMessageHandler>(inspector.getHandlers());
+        processNestedEntityCommandHandlers(targetType, targetType, parameterResolverFactory);
         for (Constructor constructor : targetType.getConstructors()) {
             if (constructor.isAnnotationPresent(CommandHandler.class)) {
                 constructorCommandHandlers.add(
                         ConstructorCommandMessageHandler.forConstructor(constructor, parameterResolverFactory));
             }
         }
+    }
+
+    private void processNestedEntityCommandHandlers(Class<?> aggregateRoot, Class<?> targetType,
+                                                    ParameterResolverFactory parameterResolverFactory,
+                                                    Field... fieldStack) {
+        for (Field field : fieldsOf(targetType)) {
+            if (field.isAnnotationPresent(CommandHandlingMember.class)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Field {}.{} is annotated with @CommandHandlingMember. "
+                                         + "Checking {} for Command Handlers",
+                                 targetType.getSimpleName(), field.getName(), field.getType().getSimpleName()
+                    );
+                }
+                MethodMessageHandlerInspector fieldInspector = MethodMessageHandlerInspector
+                        .getInstance(field.getType(), CommandHandler.class, parameterResolverFactory, true);
+                Field[] stack;
+                if (fieldStack == null) {
+                    stack = new Field[]{field};
+                } else {
+                    stack = Arrays.copyOf(fieldStack, fieldStack.length + 1);
+                }
+                stack[stack.length - 1] = field;
+                ReflectionUtils.ensureAccessible(field);
+                for (MethodMessageHandler fieldHandler : fieldInspector.getHandlers()) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Found a Command Handler in {} on path {}.{}",
+                                     field.getType().getSimpleName(), aggregateRoot.getSimpleName(), createPath(stack));
+                    }
+                    handlers.add(new FieldForwardingMethodMessageHandler(stack, fieldHandler));
+                }
+                processNestedEntityCommandHandlers(aggregateRoot, field.getType(), parameterResolverFactory, stack);
+            }
+        }
+    }
+
+    private String createPath(Field[] fields) {
+        StringBuilder sb = new StringBuilder();
+        for (Field field : fields) {
+            sb.append(field.getName())
+              .append(".");
+        }
+        sb.setLength(sb.length() - 1);
+        return sb.toString();
     }
 
     /**
@@ -72,7 +133,39 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
      *
      * @return the list of handlers found on target type
      */
-    public List<MethodMessageHandler> getHandlers() {
-        return inspector.getHandlers();
+    public List<AbstractMessageHandler> getHandlers() {
+        return handlers;
+    }
+
+    private static class FieldForwardingMethodMessageHandler extends AbstractMessageHandler {
+
+        private final Field[] fields;
+        private final AbstractMessageHandler handler;
+
+        public FieldForwardingMethodMessageHandler(Field[] fields, AbstractMessageHandler handler) {
+            super(handler);
+            this.fields = fields;
+            this.handler = handler;
+        }
+
+        @Override
+        public Object invoke(Object target, Message message) throws InvocationTargetException, IllegalAccessException {
+            Object entity = target;
+            for (Field field : fields) {
+                entity = field.get(entity);
+                if (entity == null) {
+                    throw new IllegalStateException(
+                            "There is no instance available in the '" + field.getName() + "' field, declared in '" +
+                                    field.getDeclaringClass().getName() + "'. The command cannot be handled."
+                    );
+                }
+            }
+            return handler.invoke(entity, message);
+        }
+
+        @Override
+        public <T extends Annotation> T getAnnotation(Class<T> annotationType) {
+            return handler.getAnnotation(annotationType);
+        }
     }
 }

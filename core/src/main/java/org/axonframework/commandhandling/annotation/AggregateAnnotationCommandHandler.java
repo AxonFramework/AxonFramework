@@ -23,8 +23,8 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
+import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.repository.Repository;
@@ -196,7 +196,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
         Map<String, CommandHandler<Object>> handlersFound = new HashMap<String, CommandHandler<Object>>();
-        for (final MethodMessageHandler commandHandler : inspector.getHandlers()) {
+        for (final AbstractMessageHandler commandHandler : inspector.getHandlers()) {
             handlersFound.put(resolveAcceptedCommandName(commandHandler),
                               new AggregateCommandHandler(commandHandler));
         }
@@ -284,9 +284,9 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
 
     private class AggregateCommandHandler implements CommandHandler<Object> {
 
-        private final MethodMessageHandler commandHandler;
+        private final AbstractMessageHandler commandHandler;
 
-        public AggregateCommandHandler(MethodMessageHandler commandHandler) {
+        public AggregateCommandHandler(AbstractMessageHandler commandHandler) {
             this.commandHandler = commandHandler;
         }
 
