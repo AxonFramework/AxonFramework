@@ -16,29 +16,32 @@
 
 package org.axonframework.saga.repository.jdbc;
 
-import org.axonframework.common.io.JdbcUtils;
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.DataSourceConnectionProvider;
+import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.ResourceInjector;
 import org.axonframework.saga.Saga;
+import org.axonframework.saga.SagaStorageException;
 import org.axonframework.saga.repository.AbstractSagaRepository;
 import org.axonframework.saga.repository.jpa.SagaEntry;
-import org.axonframework.saga.repository.jpa.SerializedSaga;
-import org.axonframework.serializer.JavaSerializer;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.sql.DataSource;
 
-import static org.axonframework.common.io.JdbcUtils.*;
+import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
+
 
 /**
  * Jdbc implementation of the Saga Repository.
@@ -55,36 +58,75 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
 
     private ResourceInjector injector;
     private Serializer serializer;
-    private final DataSource dataSource;
+    private final ConnectionProvider connectionProvider;
 
-    private final GenricSagaSqlSchema sqldef;
-
+    private final SagaSqlSchema sqldef;
 
     /**
-     * Initializes a Saga Repository.
+     * Initializes a Saga Repository, using given code>connectionProvider</code> to obtain connections to the database,
+     * using a Generic SQL Schema.
      *
-     * @param dataSource The datasource to use
-     * @param sqldef The sql schema&command definition
+     * @param connectionProvider The data source to obtain connections from
      */
-    public JdbcSagaRepository(DataSource dataSource, GenricSagaSqlSchema sqldef) {
-        this.dataSource = dataSource;
+    public JdbcSagaRepository(ConnectionProvider connectionProvider) {
+        this(connectionProvider, new GenericSagaSqlSchema());
+    }
+
+    /**
+     * Initializes a Saga Repository, using given <code>dataSource</code> to obtain connections to the database, and
+     * given <code>sqldef</code> to exectute SQL statements.
+     *
+     * @param dataSource The data source to obtain connections from
+     * @param sqldef     The definition of SQL operations to execute
+     */
+    public JdbcSagaRepository(DataSource dataSource, SagaSqlSchema sqldef) {
+        this(new UnitOfWorkAwareConnectionProviderWrapper(new DataSourceConnectionProvider(dataSource)), sqldef);
+    }
+
+    /**
+     * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
+     * database, and given <code>sqldef</code> to exectute SQL statements.
+     *
+     * @param connectionProvider The provider to obtain connections from
+     * @param sqldef             The definition of SQL operations to execute
+     */
+    public JdbcSagaRepository(ConnectionProvider connectionProvider, SagaSqlSchema sqldef) {
+        this(connectionProvider, sqldef, new XStreamSerializer());
+    }
+
+    /**
+     * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
+     * database, and given <code>sqldef</code> to exectute SQL statements and <code>serializer</code> to serialize
+     * Sagas.
+     *
+     * @param connectionProvider The provider to obtain connections from
+     * @param sqldef             The definition of SQL operations to execute
+     */
+    public JdbcSagaRepository(ConnectionProvider connectionProvider,
+                              SagaSqlSchema sqldef, Serializer serializer) {
+        this.connectionProvider = connectionProvider;
         this.sqldef = sqldef;
-        serializer = new JavaSerializer();
+        this.serializer = serializer;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Saga load(String sagaId) {
-        PreparedStatement ps = sqldef.sql_loadSaga(conn(), sagaId);
-        ResultSet resultSet = executeQuery(ps);
-
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        Connection conn = null;
         try {
-            List<SerializedSaga> serializedSagaList = JdbcUtils.createList(resultSet, getFactory());
-            // Jpa uses setMaxResults==1. This seems a bit nondeterministic wrt jpa if there's ever more than 1...?
-            if (serializedSagaList == null || serializedSagaList.isEmpty()) {
+            conn = connectionProvider.getConnection();
+            statement = sqldef.sql_loadSaga(conn, sagaId);
+            resultSet = statement.executeQuery();
+
+            SerializedObject<?> serializedSaga = null;
+            if (resultSet.next()) {
+                serializedSaga = sqldef.readSerializedSaga(resultSet);
+            }
+            if (serializedSaga == null) {
                 return null;
             }
-            SerializedSaga serializedSaga = serializedSagaList.get(0);
             Saga loadedSaga = serializer.deserialize(serializedSaga);
             if (injector != null) {
                 injector.injectResources(loadedSaga);
@@ -93,32 +135,39 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
                 logger.debug("Loaded saga id [{}] of type [{}]", sagaId, loadedSaga.getClass().getName());
             }
             return loadedSaga;
+        } catch (SQLException e) {
+            throw new SagaStorageException("Exception while loading a Saga", e);
         } finally {
-            JdbcUtils.closeAllQuietly(resultSet);
+            closeQuietly(statement);
+            closeQuietly(resultSet);
+            closeQuietly(conn);
         }
-
-    }
-
-    private ResultSetParser<SerializedSaga> getFactory() {
-        return new ResultSetParser<SerializedSaga>() {
-            @Override
-            public SerializedSaga createItem(ResultSet rs) throws SQLException {
-                return new SerializedSaga(rs.getBytes(1), rs.getString(2), rs.getString(3));
-            }
-        };
     }
 
 
     @SuppressWarnings({"unchecked"})
     @Override
     protected void removeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
-        PreparedStatement sql = sqldef.sql_removeAssocValue(conn(), associationValue.getKey(), associationValue.getValue(), sagaType, sagaIdentifier);
-        int updateCount = JdbcUtils.executeUpdate(sql);
-        if (updateCount == 0 && logger.isWarnEnabled()) {
-            logger.warn("Wanted to remove association value, but it was already gone: sagaId= {}, key={}, value={}",
-                    new Object[]{sagaIdentifier,
+        Connection conn = null;
+        try {
+            conn = connectionProvider.getConnection();
+            PreparedStatement preparedStatement = sqldef.sql_removeAssocValue(conn,
+                                                                              associationValue.getKey(),
+                                                                              associationValue.getValue(),
+                                                                              sagaType,
+                                                                              sagaIdentifier);
+            int updateCount = preparedStatement.executeUpdate();
+
+            if (updateCount == 0 && logger.isWarnEnabled()) {
+                logger.warn("Wanted to remove association value, but it was already gone: sagaId= {}, key={}, value={}",
+                            sagaIdentifier,
                             associationValue.getKey(),
-                            associationValue.getValue()});
+                            associationValue.getValue());
+            }
+        } catch (SQLException e) {
+            throw new SagaStorageException("Exception occurred while attempting to remove an AssociationValue", e);
+        } finally {
+            closeQuietly(conn);
         }
     }
 
@@ -129,38 +178,96 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
 
     @Override
     protected void storeAssociationValue(AssociationValue associationValue, String sagaType, String sagaIdentifier) {
-        executeUpdate(sqldef.sql_storeAssocValue(conn(), associationValue.getKey(), associationValue.getValue(), sagaType, sagaIdentifier));
+        PreparedStatement statement = null;
+        Connection conn = null;
+        try {
+            conn = connectionProvider.getConnection();
+            statement = sqldef.sql_storeAssocValue(conn,
+                                                   associationValue.getKey(),
+                                                   associationValue.getValue(),
+                                                   sagaType,
+                                                   sagaIdentifier);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new SagaStorageException("Exception while storing an association value", e);
+        } finally {
+            closeQuietly(statement);
+            closeQuietly(conn);
+        }
     }
 
     @SuppressWarnings("unchecked")
     @Override
     protected Set<String> findAssociatedSagaIdentifiers(Class<? extends Saga> type, AssociationValue associationValue) {
-        ResultSet resultSet = executeQuery(sqldef.sql_findAssocSagaIdentifiers(conn(), associationValue.getKey(), associationValue.getValue(), typeOf(type)));
-
-        final List<String> list = JdbcUtils.createList(resultSet, new ResultSetParser<String>() {
-            @Override
-            public String createItem(ResultSet rs) throws SQLException {
-                return rs.getString(1);
+        ResultSet resultSet = null;
+        PreparedStatement statement = null;
+        Connection conn = null;
+        try {
+            conn = connectionProvider.getConnection();
+            statement = sqldef.sql_findAssocSagaIdentifiers(conn, associationValue.getKey(),
+                                                            associationValue.getValue(), typeOf(type));
+            resultSet = statement.executeQuery();
+            Set<String> result = new TreeSet<String>();
+            while (resultSet.next()) {
+                result.add(resultSet.getString(1));
             }
-        });
-        return new TreeSet<String>(list);
+            return result;
+        } catch (SQLException e) {
+            throw new SagaStorageException("Exception while reading saga associations", e);
+        } finally {
+            closeQuietly(statement);
+            closeQuietly(resultSet);
+            closeQuietly(conn);
+        }
     }
 
     @Override
     protected void deleteSaga(Saga saga) {
-        executeUpdate(sqldef.sql_deleteAssocValueEntry(conn(), saga.getSagaIdentifier()));
-        executeUpdate(sqldef.sql_deleteSagaEntry(conn(),  saga.getSagaIdentifier()));
+        PreparedStatement statement1 = null;
+        PreparedStatement statement2 = null;
+        Connection conn = null;
+        try {
+            conn = connectionProvider.getConnection();
+            statement1 = sqldef.sql_deleteAssociationEntries(conn, saga.getSagaIdentifier());
+            statement2 = sqldef.sql_deleteSagaEntry(conn, saga.getSagaIdentifier());
+            statement1.executeUpdate();
+            statement2.executeUpdate();
+        } catch (SQLException e) {
+            throw new SagaStorageException("Exception occurred while attempting to delete a saga entry", e);
+        } finally {
+            closeQuietly(statement1);
+            closeQuietly(statement2);
+            closeQuietly(conn);
+        }
     }
+
 
     @Override
     protected void updateSaga(Saga saga) {
         SagaEntry entry = new SagaEntry(saga, serializer);
         if (logger.isDebugEnabled()) {
             logger.debug("Updating saga id {} as {}", saga.getSagaIdentifier(), new String(entry.getSerializedSaga(),
-                    Charset.forName("UTF-8")));
+                                                                                           Charset.forName("UTF-8")));
         }
 
-        int updateCount = executeUpdate(sqldef.sql_updateSaga(conn(), entry.getSerializedSaga(), entry.getRevision(), entry.getSagaId(), entry.getSagaType()));
+        int updateCount = 0;
+        PreparedStatement statement = null;
+        Connection conn = null;
+        try {
+            conn = connectionProvider.getConnection();
+            statement = sqldef.sql_updateSaga(conn,
+                                              entry.getSagaId(),
+                                              entry.getSerializedSaga(),
+                                              entry.getSagaType(),
+                                              entry.getRevision()
+            );
+            updateCount = statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new SagaStorageException("Exception occurred while attempting to update a saga", e);
+        } finally {
+            closeQuietly(statement);
+            closeQuietly(conn);
+        }
 
         if (updateCount == 0) {
             logger.warn("Expected to be able to update a Saga instance, but no rows were found. Inserting instead.");
@@ -171,10 +278,22 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
     @Override
     protected void storeSaga(Saga saga) {
         SagaEntry entry = new SagaEntry(saga, serializer);
-        executeUpdate(sqldef.sql_storeSaga(conn(), entry.getSagaId(), entry.getRevision(), entry.getSagaType(), entry.getSerializedSaga()));
         if (logger.isDebugEnabled()) {
             logger.debug("Storing saga id {} as {}", saga.getSagaIdentifier(), new String(entry.getSerializedSaga(),
-                    Charset.forName("UTF-8")));
+                                                                                          Charset.forName("UTF-8")));
+        }
+        Connection conn = null;
+        PreparedStatement statement = null;
+        try {
+            conn = connectionProvider.getConnection();
+            statement = sqldef.sql_storeSaga(conn, entry.getSagaId(), entry.getRevision(), entry.getSagaType(),
+                                             entry.getSerializedSaga());
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            throw new SagaStorageException("Exception occurred while attempting to store a Saga Entry", e);
+        } finally {
+            closeQuietly(statement);
+            closeQuietly(conn);
         }
     }
 
@@ -198,17 +317,12 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
     }
 
     public void createSchema() throws SQLException {
-        execute(sqldef.sql_createTableSagaEntry(conn()));
-        execute(sqldef.sql_createTableAssocValueEntry(conn()));
+        final Connection connection = connectionProvider.getConnection();
+        try {
+            sqldef.sql_createTableSagaEntry(connection).executeUpdate();
+            sqldef.sql_createTableAssocValueEntry(connection).executeUpdate();
+        } finally {
+            closeQuietly(connection);
+        }
     }
-
-    public void deleteAllEventData() throws SQLException {
-        execute(sqldef.sql_deleteAllAssocValueEntries(conn()));
-        execute(sqldef.sql_deleteAllSagaEntries(conn()));
-    }
-
-    private Connection conn(){
-        return getConnection(dataSource);
-    }
-
 }

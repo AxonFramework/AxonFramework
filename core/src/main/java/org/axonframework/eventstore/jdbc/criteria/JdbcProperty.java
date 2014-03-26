@@ -20,12 +20,11 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.Property;
 
 /**
- * Property implementation for JPA Event Store.
+ * Property implementation for Jdbc Event Store.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
- *
- * @since 2.1
+ * @since 2.2
  */
 public class JdbcProperty implements Property {
 
@@ -87,8 +86,10 @@ public class JdbcProperty implements Property {
      * @param stringBuilder The builder to append the expression to
      */
     public void parse(String entryKey, StringBuilder stringBuilder) {
-        stringBuilder.append(entryKey)
-                     .append(".")
-                     .append(propertyName);
+        if (entryKey != null && entryKey.length() > 0) {
+            stringBuilder.append(entryKey)
+                         .append(".");
+        }
+        stringBuilder.append(propertyName);
     }
 }

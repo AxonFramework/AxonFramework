@@ -21,8 +21,7 @@ package org.axonframework.eventstore.jdbc.criteria;
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
- *
- * @since 2.1
+ * @since 2.2
  */
 public class CollectionOperator extends JdbcCriteria {
 

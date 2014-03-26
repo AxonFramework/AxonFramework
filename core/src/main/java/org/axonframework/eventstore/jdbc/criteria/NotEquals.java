@@ -17,12 +17,11 @@
 package org.axonframework.eventstore.jdbc.criteria;
 
 /**
- * Implementations of the NOT EQUALS operator for a JPA Event Store.
+ * Implementations of the NOT EQUALS operator for a Jdbc Event Store.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
- *
- * @since 2.1
+ * @since 2.2
  */
 public class NotEquals extends JdbcCriteria {
 

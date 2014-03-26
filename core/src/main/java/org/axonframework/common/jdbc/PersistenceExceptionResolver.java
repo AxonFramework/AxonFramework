@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.jpa;
+package org.axonframework.common.jdbc;
 
 /**
  * The PersistenceExceptionResolver is used to find out if an exception is caused by  duplicate keys.
  *
  * @author Martin Tilma
- * @since 0.7
- * @deprecated Implement {@link org.axonframework.common.jdbc.PersistenceExceptionResolver} instead.
+ * @since 2.2
  */
-@Deprecated
-public interface PersistenceExceptionResolver extends org.axonframework.common.jdbc.PersistenceExceptionResolver {
+public interface PersistenceExceptionResolver {
 
+    /**
+     * Indicates whether the given <code>exception</code> represents a duplicate key violation. Typically, duplicate key
+     * violations indicates concurrent access to an entity in the application. Two users might be accessing the same
+     * Aggregate, for example.
+     *
+     * @param exception The exception to evaluate
+     * @return <code>true</code> if the given exception represents a Duplicate Key Violation, <code>false</code>
+     *         otherwise.
+     */
+    boolean isDuplicateKeyViolation(Exception exception);
 }

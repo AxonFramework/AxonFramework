@@ -20,12 +20,11 @@ import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.Property;
 
 /**
- * CriteriaBuilder implementation for the Jpa Event Store
+ * CriteriaBuilder implementation for the Jdbc Event Store
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
- *
- * @since 2.1
+ * @since 2.2
  */
 public class JdbcCriteriaBuilder implements CriteriaBuilder {
 

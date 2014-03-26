@@ -10,10 +10,7 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.hsqldb.jdbc.JDBCPool;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -28,25 +25,23 @@ import static org.junit.Assert.*;
  * @author Kristian Rosenvold
  */
 @SuppressWarnings("unchecked")
-public class JdbcEventEntryStoreTest {
+public class DefaultEventEntryStoreTest {
 
     private static final byte[] payloadBytes = "Hello World".getBytes();
     private final String aggregateIdentifier = "agg1";
     private String aggregateType = "foz";
     private String snap_aggregateType = "snap";
-    private JdbcEventEntryStore es;
+    private DefaultEventEntryStore es;
     private Connection connection;
-	private JDBCPool dataSource;
+	private JDBCDataSource dataSource;
 
     @Before
     public void createDatabase() throws SQLException {
-		dataSource = new JDBCPool(2);
-       // JDBCDataSource dataSource = new org.hsqldb.jdbc.JDBCDataSource();
+		dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
 
-
         connection = dataSource.getConnection();
-        es = new JdbcEventEntryStore(dataSource, new GenericEventSqlSchema());
+        es = new DefaultEventEntryStore(dataSource, new GenericEventSqlSchema());
 		es.createSchema();
     }
 
@@ -54,7 +49,6 @@ public class JdbcEventEntryStoreTest {
     public void shutDown() throws SQLException {
 		connection.createStatement().execute("SHUTDOWN");
 		connection.close();
-		dataSource.close(1);
     }
 
     @Test
@@ -138,7 +132,7 @@ public class JdbcEventEntryStoreTest {
 
         StringBuilder query = new StringBuilder();
         ParameterRegistry parameters = new ParameterRegistry();
-        criteria.parse("e", query, parameters);
+        criteria.parse("", query, parameters);
 
         final List<Object> parameters1 = parameters.getParameters();
         final Iterator<? extends SerializedDomainEventData> iterator = es.fetchFiltered(query.toString(), parameters1, 1);

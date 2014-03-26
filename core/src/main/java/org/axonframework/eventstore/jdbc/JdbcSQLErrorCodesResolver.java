@@ -16,7 +16,8 @@
 
 package org.axonframework.eventstore.jdbc;
 
-import org.axonframework.eventstore.jpa.PersistenceExceptionResolver;
+
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 
 /**
  * SQLErrorCodesResolver is an implementation of PersistenceExceptionResolver used to resolve sql error codes to see if
@@ -24,7 +25,7 @@ import org.axonframework.eventstore.jpa.PersistenceExceptionResolver;
  * <p/>
  *
  * @author Kristian Rosenvold
- * @since 2.1
+ * @since 2.2
  */
 public class JdbcSQLErrorCodesResolver implements PersistenceExceptionResolver {
 

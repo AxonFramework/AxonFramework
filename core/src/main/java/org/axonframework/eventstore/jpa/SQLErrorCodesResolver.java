@@ -54,7 +54,7 @@ import javax.sql.DataSource;
  * @author Allard Buijze
  * @since 0.7
  */
-public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
+public class SQLErrorCodesResolver implements org.axonframework.common.jdbc.PersistenceExceptionResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(SQLErrorCodesResolver.class);
     private static final String SQL_ERROR_CODES_PROPERTIES = "SQLErrorCode.properties";

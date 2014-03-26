@@ -18,6 +18,9 @@ package org.axonframework.eventstore.jdbc;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.DataSourceConnectionProvider;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -28,7 +31,6 @@ import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.jdbc.criteria.JdbcCriteria;
 import org.axonframework.eventstore.jdbc.criteria.JdbcCriteriaBuilder;
 import org.axonframework.eventstore.jdbc.criteria.ParameterRegistry;
-import org.axonframework.eventstore.jpa.PersistenceExceptionResolver;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
@@ -50,6 +52,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
@@ -86,15 +89,12 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
-    /**
-     * Initialize a JdbcEventStore using an {@link org.axonframework.serializer.xml.XStreamSerializer}, which
-     * serializes events as XML and the default Event Entry store.
-     * <p/>
-     *
-     * @param eventEntryStore1 The event entry store
-     */
-    public JdbcEventStore(JdbcEventEntryStore eventEntryStore1) {
-        this(new XStreamSerializer(), eventEntryStore1);
+    public JdbcEventStore(EventEntryStore eventEntryStore, Serializer serializer) {
+        Assert.notNull(serializer, "serializer may not be null");
+        Assert.notNull(eventEntryStore, "eventEntryStore may not be null");
+        this.persistenceExceptionResolver = new JdbcSQLErrorCodesResolver();
+        this.serializer = new MessageSerializer(serializer);
+        this.eventEntryStore = eventEntryStore;
     }
 
     /**
@@ -104,22 +104,25 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
      * @param eventEntryStore       The instance providing persistence logic for Domain Event entries
      */
     public JdbcEventStore(EventEntryStore eventEntryStore) {
-        this(new XStreamSerializer(), eventEntryStore);
+        this(eventEntryStore, new XStreamSerializer());
     }
 
     /**
-     * Initialize a JdbcEventStore which serializes events using the given <code>eventSerializer</code> and stores the
-     * events in the database using the given <code>eventEntryStore</code>.
+     * Initialize a JdbcEventStore using the given <code>eventEntryStore</code> and an {@link
+     * org.axonframework.serializer.xml.XStreamSerializer}, which serializes events as XML.
      *
-     * @param serializer            The serializer to (de)serialize domain events with.
-     * @param eventEntryStore       The instance providing persistence logic for Domain Event entries
      */
-    public JdbcEventStore(Serializer serializer, EventEntryStore eventEntryStore) {
-        Assert.notNull(serializer, "serializer may not be null");
-        Assert.notNull(eventEntryStore, "eventEntryStore may not be null");
-        this.persistenceExceptionResolver = new JdbcSQLErrorCodesResolver();
-        this.serializer = new MessageSerializer(serializer);
-        this.eventEntryStore = eventEntryStore;
+    public JdbcEventStore(ConnectionProvider connectionProvider) {
+        this(new DefaultEventEntryStore(connectionProvider), new XStreamSerializer());
+    }
+
+    /**
+     * Initialize a JdbcEventStore using the given <code>eventEntryStore</code> and an {@link
+     * org.axonframework.serializer.xml.XStreamSerializer}, which serializes events as XML.
+     *
+     */
+    public JdbcEventStore(DataSource dataSource) {
+        this(new DefaultEventEntryStore(new DataSourceConnectionProvider(dataSource)), new XStreamSerializer());
     }
 
     /**
@@ -235,7 +238,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
     public void visitEvents(Criteria criteria, EventVisitor visitor) {
         StringBuilder sb = new StringBuilder();
         ParameterRegistry parameters = new ParameterRegistry();
-        ((JdbcCriteria) criteria).parse("e", sb, parameters);
+        ((JdbcCriteria) criteria).parse("", sb, parameters);
         doVisitEvents(visitor, sb.toString(), parameters.getParameters());
     }
 

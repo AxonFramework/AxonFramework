@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.jpa;
-
 /**
- * The PersistenceExceptionResolver is used to find out if an exception is caused by  duplicate keys.
- *
- * @author Martin Tilma
- * @since 0.7
- * @deprecated Implement {@link org.axonframework.common.jdbc.PersistenceExceptionResolver} instead.
+ * JDBC Implementation of the EventStore. This package contains all classes needed to provide such an implementation
  */
-@Deprecated
-public interface PersistenceExceptionResolver extends org.axonframework.common.jdbc.PersistenceExceptionResolver {
-
-}
+package org.axonframework.eventstore.jdbc;

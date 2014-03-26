@@ -800,7 +800,7 @@
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.eventstore.jpa.PersistenceExceptionResolver"/>
+                                            type="org.axonframework.common.jdbc.PersistenceExceptionResolver"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>

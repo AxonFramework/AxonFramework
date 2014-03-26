@@ -86,7 +86,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     private int batchSize = DEFAULT_BATCH_SIZE;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
-    private PersistenceExceptionResolver persistenceExceptionResolver;
+    private org.axonframework.common.jdbc.PersistenceExceptionResolver persistenceExceptionResolver;
 
     /**
      * Initialize a JpaEventStore using an {@link org.axonframework.serializer.xml.XStreamSerializer}, which
@@ -198,12 +198,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
-                            ex.getMessage());
+                            ex.getMessage() );
             } catch (LinkageError error) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             error.getClass().getName(),
-                            error.getMessage());
+                            error.getMessage() );
             }
         }
 
@@ -292,7 +292,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * Registers the data source that allows the EventStore to detect the database type and define the error codes that
      * represent concurrent access failures.
      * <p/>
-     * Should not be used in combination with {@link #setPersistenceExceptionResolver(PersistenceExceptionResolver)},
+     * Should not be used in combination with {@link #setPersistenceExceptionResolver(org.axonframework.common.jdbc.PersistenceExceptionResolver)},
      * but rather as a shorthand alternative for most common database types.
      *
      * @param dataSource A data source providing access to the backing database
@@ -310,7 +310,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * @param persistenceExceptionResolver the persistenceExceptionResolver that will help detect concurrency
      *                                     exceptions
      */
-    public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+    public void setPersistenceExceptionResolver(
+            org.axonframework.common.jdbc.PersistenceExceptionResolver persistenceExceptionResolver) {
         this.persistenceExceptionResolver = persistenceExceptionResolver;
     }
 
@@ -405,9 +406,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
             return next;
         }
 
-		@Override
-		public void close() throws IOException {
-			IOUtils.closeIfCloseable(currentBatch);
-		}
-	}
+        @Override
+        public void close() throws IOException {
+            IOUtils.closeIfCloseable(currentBatch);
+        }
+    }
 }

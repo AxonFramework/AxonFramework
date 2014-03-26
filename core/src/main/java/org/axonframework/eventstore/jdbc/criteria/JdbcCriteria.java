@@ -19,12 +19,11 @@ package org.axonframework.eventstore.jdbc.criteria;
 import org.axonframework.eventstore.management.Criteria;
 
 /**
- * Abstract implementation of the Criteria interface for a JPA Event Store.
+ * Abstract implementation of the Criteria interface for a Jdbc Event Store.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
- *
- * @since 2.1
+ * @since 2.2
  */
 public abstract class JdbcCriteria implements Criteria {
 

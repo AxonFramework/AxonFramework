@@ -17,12 +17,12 @@
 package org.axonframework.eventstore.jdbc.criteria;
 
 /**
- * Implementation of all simple operators (i.e. those with a structor of <code>value operator value</code>.
+ * Implementation of all simple operators (i.e. those with a structure of <code>value operator value</code>.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
  *
- * @since 2.1
+ * @since 2.2
  */
 public class SimpleOperator extends JdbcCriteria {
 

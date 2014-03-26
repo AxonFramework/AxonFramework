@@ -17,12 +17,11 @@
 package org.axonframework.eventstore.jdbc.criteria;
 
 /**
- * Implementation of the EQUALS operator for a JPA Event Store.
+ * Implementation of the EQUALS operator for a Jdbc Event Store.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
- *
- * @since 2.1
+ * @since 2.2
  */
 public class Equals extends JdbcCriteria {
 

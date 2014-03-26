@@ -17,6 +17,7 @@
 package org.axonframework.testutils;
 
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Required;
 
 import static org.mockito.Mockito.*;
 
@@ -48,6 +49,7 @@ public class MockitoMockFactoryBean<T> implements FactoryBean<T> {
         return singleton;
     }
 
+    @Required
     public void setMockType(Class<T> mockType) {
         this.mockType = mockType;
     }

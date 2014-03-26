@@ -16,7 +16,9 @@
 
 package org.axonframework.eventstore.jdbc.criteria;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The registry that keeps track of parameterized values. This ensures proper escaping of literal values.
@@ -24,7 +26,7 @@ import java.util.*;
  * @author Allard Buijze
  * @author Kristian Rosenvold
  *
- * @since 2.1
+ * @since 2.2
  */
 public class ParameterRegistry {
 

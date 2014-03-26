@@ -28,20 +28,21 @@ import java.util.List;
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
- * @since 2.1
+ * @since 2.2
  */
 public interface EventEntryStore {
 
     /**
-     * These events should be returned by the <code>fetchAggregateStream(...)</code> methods.
+     * Stores the given <code>event</code> (serialized as <code>serializedPayload</code> and
+     * <code>serializedMetaData</code> in the Event Store.
      *
      * @param aggregateType      The type identifier of the aggregate that generated the event
      * @param event              The actual event instance. May be used to extract relevant meta data
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized MetaData of the event
-	 */
+     */
     void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,
-			SerializedObject serializedMetaData);
+                      SerializedObject serializedMetaData);
 
     /**
      * Load the last known snapshot event for aggregate of given <code>type</code> with given <code>identifier</code>.
@@ -66,7 +67,7 @@ public interface EventEntryStore {
      * @return a List of serialized representations of Events included in this batch
      */
     Iterator<? extends SerializedDomainEventData> fetchAggregateStream(String aggregateType, Object identifier,
-			long firstSequenceNumber, int batchSize);
+                                                                       long firstSequenceNumber, int batchSize);
 
     /**
      * Creates an iterator that iterates through the Events that conform to the given sql <code>whereClause</code>.
@@ -80,13 +81,13 @@ public interface EventEntryStore {
      * ensure that events originating from the same aggregate are always returned with the lowest sequence number
      * first.
      *
-     * @param whereClause   The JPA clause to be included after the WHERE keyword
-     * @param parameters    A map containing all the parameter values for parameter keys included in the where clause
-     * @param batchSize     The total number of events to return in this batch
+     * @param whereClause The JPA clause to be included after the WHERE keyword
+     * @param parameters  A map containing all the parameter values for parameter keys included in the where clause
+     * @param batchSize   The total number of events to return in this batch
      * @return a List of serialized representations of Events included in this batch
      */
     Iterator<? extends SerializedDomainEventData> fetchFiltered(String whereClause, List<Object> parameters,
-			int batchSize);
+                                                                int batchSize);
 
     /**
      * Removes old snapshots from the storage for an aggregate of given <code>type</code> that generated the given
@@ -96,7 +97,7 @@ public interface EventEntryStore {
      * @param type                    the type of the aggregate for which to prune snapshots
      * @param mostRecentSnapshotEvent the last appended snapshot event
      * @param maxSnapshotsArchived    the number of snapshots that may remain archived
-	 */
+     */
     void pruneSnapshots(String type, DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived);
 
     /**
@@ -108,7 +109,7 @@ public interface EventEntryStore {
      * @param snapshotEvent      The actual snapshot event instance. May be used to extract relevant meta data
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized MetaData of the event
-	 */
+     */
     void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent, SerializedObject serializedPayload,
-			SerializedObject serializedMetaData);
+                         SerializedObject serializedMetaData);
 }
