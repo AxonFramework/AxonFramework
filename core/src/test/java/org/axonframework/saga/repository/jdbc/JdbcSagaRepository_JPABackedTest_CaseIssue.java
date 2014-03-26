@@ -48,7 +48,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "/META-INF/spring/jdbc-saga-repository-test.xml")
 @Transactional
-public class JdbcSagaRepository_JpaBackedTest {
+public class JdbcSagaRepository_JPABackedTest_CaseIssue {
 
     @Autowired
     private JdbcSagaRepository repository;
