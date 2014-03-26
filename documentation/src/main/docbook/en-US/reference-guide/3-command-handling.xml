@@ -696,6 +696,14 @@ for (String supportedCommand : handler.supportedCommands()) {
 for (String supportedCommand : handler.supportedCommands()) {
     commandBus.unsubscribe(supportedCommand, handler);
 }</programlisting>
+                <note>
+                    <title>Using Spring</title>
+                    <para>If you use Spring, you can use the
+                            <code>&lt;axon:aggregate-command-handler/></code> element in your
+                        application context to create a Command Handler that delegates commands to
+                        an aggregate instance. It will also be automatically subscribed to the
+                            <code>CommandBus</code>. </para>
+                </note>
             </simplesect>
         </sect2>
     </sect1>
