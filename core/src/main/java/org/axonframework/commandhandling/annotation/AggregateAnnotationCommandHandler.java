@@ -219,8 +219,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     @Deprecated
     public synchronized void unsubscribe() {
         if (commandBus != null) {
-            for (Map.Entry<String, CommandHandler<Object>> handlerEntry : handlers.entrySet()) {
-                commandBus.unsubscribe(handlerEntry.getKey(), handlerEntry.getValue());
+            for (String commandType : handlers.keySet()) {
+                commandBus.unsubscribe(commandType, this);
             }
         }
     }
@@ -237,8 +237,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     @Deprecated
     public synchronized void subscribe() {
         if (commandBus != null) {
-            for (Map.Entry<String, CommandHandler<Object>> handlerEntry : handlers.entrySet()) {
-                commandBus.subscribe(handlerEntry.getKey(), handlerEntry.getValue());
+            for (String commandType : handlers.keySet()) {
+                commandBus.subscribe(commandType, this);
             }
         }
     }

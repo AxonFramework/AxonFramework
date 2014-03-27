@@ -256,7 +256,7 @@ public class DisruptorCommandBus implements CommandBus {
         int invokerSegment = 0;
         int publisherSegment = 0;
         int serializerSegment = 0;
-        if ((commandHandlerInvokers.length > 1 || publisherCount > 1 || serializerCount > 0)) {
+        if ((commandHandlerInvokers.length > 1 || publisherCount > 1 || serializerCount > 1)) {
             Object aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
             if (aggregateIdentifier != null) {
                 int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
