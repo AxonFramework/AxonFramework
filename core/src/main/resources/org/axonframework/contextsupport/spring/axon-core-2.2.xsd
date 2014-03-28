@@ -1227,7 +1227,7 @@
                             <xsd:documentation>Reference to the cache that stores aggregates.</xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="javax.cache.Cache"/>
+                                    <tool:expected-type type="org.axonframework.cache.Cache"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1452,7 +1452,7 @@
                                         <xsd:documentation>Reference to the cache that stores Sagas.</xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="javax.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>
@@ -1463,7 +1463,7 @@
                                         </xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="javax.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>
@@ -1547,7 +1547,7 @@
                                         <xsd:documentation>Reference to the cache that stores Sagas.</xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="javax.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>
@@ -1558,7 +1558,7 @@
                                         </xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="javax.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>

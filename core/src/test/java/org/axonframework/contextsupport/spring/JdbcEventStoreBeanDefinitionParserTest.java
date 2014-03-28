@@ -16,10 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.common.NoCache;
 import org.axonframework.eventstore.jdbc.JdbcEventStore;
-import org.axonframework.saga.repository.CachingSagaRepository;
-import org.axonframework.saga.repository.jdbc.JdbcSagaRepository;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;

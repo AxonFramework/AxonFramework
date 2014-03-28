@@ -16,9 +16,9 @@
 
 package org.axonframework.integrationtests.cache;
 
+import org.axonframework.cache.Cache;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.common.cache.CacheUtils;
 import org.junit.*;
 import org.junit.runner.*;
 import org.ops4j.pax.exam.util.Transactional;
@@ -27,10 +27,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.atomic.AtomicLong;
-import javax.cache.Cache;
-import javax.cache.event.CacheEntryEvent;
-import javax.cache.event.CacheEntryListenerException;
-import javax.cache.event.CacheEntryRemovedListener;
 
 import static org.junit.Assert.*;
 
@@ -42,10 +38,10 @@ import static org.junit.Assert.*;
         "/META-INF/spring/infrastructure-context.xml",
         "/META-INF/spring/caching-repository-context.xml"})
 @Transactional
-public class JCacheIntegrationTest {
+public class CacheIntegrationTest {
 
     @Autowired
-    private Cache jCache;
+    private Cache cache;
 
     @Autowired
     private CommandGateway commandGateway;
@@ -53,15 +49,15 @@ public class JCacheIntegrationTest {
     @Test
     public void testEntriesEvictedOnProcessingException() throws Exception {
         final AtomicLong counter = new AtomicLong();
-        CacheUtils.registerCacheEntryListener(jCache, new CacheEntryRemovedListener() {
+        cache.registerCacheEntryListener(new Cache.EntryListenerAdapter() {
             @Override
-            public void entryRemoved(CacheEntryEvent event) throws CacheEntryListenerException {
+            public void onEntryRemoved(Object key) {
                 counter.incrementAndGet();
             }
         });
         commandGateway.send(new TestAggregateRoot.CreateCommand("1234"));
 
-        assertTrue(jCache.containsKey("1234"));
+        assertTrue(cache.containsKey("1234"));
 
         commandGateway.send(new TestAggregateRoot.FailCommand("1234"), new CommandCallback<Object>() {
             @Override
@@ -77,13 +73,14 @@ public class JCacheIntegrationTest {
                            cause.getMessage().contains("I don't like this"));
             }
         });
-        assertFalse(jCache.containsKey("1234"));
+
+        assertFalse(cache.containsKey("1234"));
         assertEquals(1, counter.get());
     }
 
     @Test
     public void testEntriesNeverStoredOnProcessingException() throws Exception {
         commandGateway.send(new TestAggregateRoot.FailingCreateCommand("1234"));
-        assertFalse(jCache.containsKey("1234"));
+        assertFalse(cache.containsKey("1234"));
     }
 }

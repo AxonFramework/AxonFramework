@@ -16,13 +16,13 @@
 
 package org.axonframework.common;
 
+import org.axonframework.cache.Cache;
+import org.axonframework.cache.NoCache;
 import org.junit.*;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.cache.CacheException;
-import javax.cache.event.CacheEntryListener;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -36,18 +36,13 @@ public class NoCacheTest {
     public void testCacheDoesNothing() throws CacheException {
         // this is pretty stupid, but we're testing that it does absolutely nothing
         NoCache cache = NoCache.INSTANCE;
-        cache.registerCacheEntryListener(mock(CacheEntryListener.class));
-        cache.removeAll();
+        cache.registerCacheEntryListener(mock(Cache.EntryListener.class));
         assertFalse(cache.containsKey(new Object()));
-        assertFalse(cache.iterator().hasNext());
         assertNull(cache.get(new Object()));
-        assertEquals(Collections.<Object, Object>emptyMap(), cache.getAll(Collections.singleton(new Object())));
-        cache.loadAll(Collections.singleton(new Object()));
         cache.put(new Object(), new Object());
         Map<Object, Object> map = new HashMap<Object, Object>();
         map.put(new Object(), new Object());
-        cache.putAll(map);
         assertFalse(cache.remove(new Object()));
-        cache.unregisterCacheEntryListener(mock(CacheEntryListener.class));
+        cache.unregisterCacheEntryListener(mock(Cache.EntryListener.class));
     }
 }

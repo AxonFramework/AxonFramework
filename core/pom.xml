@@ -110,7 +110,8 @@
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
-            <version>0.5</version>
+            <version>1.0.0</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
@@ -131,18 +132,6 @@
         </dependency>
 
         <!-- Optional dependencies -->
-        <dependency>
-            <groupId>net.sf.ehcache</groupId>
-            <artifactId>ehcache-jcache</artifactId>
-            <version>1.5.0-0.5</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-orm</artifactId>
@@ -215,8 +204,8 @@
         <dependency>
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache</artifactId>
-            <version>2.8.0</version>
-            <scope>test</scope>
+            <version>2.8.1</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>

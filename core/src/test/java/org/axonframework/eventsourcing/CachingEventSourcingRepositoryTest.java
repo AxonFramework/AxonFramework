@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.jcache.JCache;
-import net.sf.ehcache.jcache.JCacheManager;
+import org.axonframework.cache.Cache;
+import org.axonframework.cache.EhCacheAdapter;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
@@ -31,8 +31,8 @@ import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;
-import org.junit.internal.matchers.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +50,8 @@ public class CachingEventSourcingRepositoryTest {
     private CachingEventSourcingRepository<StubAggregate> testSubject;
     private EventBus mockEventBus;
     private InMemoryEventStore mockEventStore;
-    private JCache cache;
+    private Cache cache;
+    private net.sf.ehcache.Cache ehCache;
 
     @Before
     public void setUp() {
@@ -60,10 +61,8 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.setEventBus(mockEventBus);
 
         final CacheManager cacheManager = CacheManager.getInstance();
-        final ClassLoader classLoader = getClass().getClassLoader();
-        cache = spy(new JCache(cacheManager.getCache("testCache"),
-                               new JCacheManager("test", cacheManager, classLoader),
-                               classLoader));
+        ehCache = cacheManager.getCache("testCache");
+        cache = spy(new EhCacheAdapter(ehCache));
         testSubject.setCache(cache);
     }
 
@@ -78,7 +77,7 @@ public class CachingEventSourcingRepositoryTest {
     @Test
     public void testAggregatesRetrievedFromCache() {
         DefaultUnitOfWork.startAndGet();
-        StubAggregate aggregate1 = new StubAggregate();
+        final StubAggregate aggregate1 = new StubAggregate();
         aggregate1.doSomething();
 
         // ensure the cached aggregate has been committed before being cached.
@@ -115,7 +114,7 @@ public class CachingEventSourcingRepositoryTest {
         verify(mockEventBus).publish(isA(EventMessage.class));
         verify(mockEventBus).publish(isA(EventMessage.class), isA(EventMessage.class));
         verifyNoMoreInteractions(mockEventBus);
-        cache.removeAll();
+        ehCache.removeAll();
 
         reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
 
