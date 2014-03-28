@@ -1,5 +1,6 @@
 package org.axonframework.commandhandling.disruptor;
 
+import org.axonframework.cache.Cache;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
@@ -18,7 +19,6 @@ import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
 import java.util.Collections;
-import javax.cache.Cache;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;

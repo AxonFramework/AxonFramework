@@ -16,10 +16,9 @@
 
 package org.axonframework.saga.repository;
 
-import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.jcache.JCache;
-import net.sf.ehcache.jcache.JCacheManager;
+import org.axonframework.cache.Cache;
+import org.axonframework.cache.EhCacheAdapter;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
@@ -40,23 +39,20 @@ import static org.mockito.Mockito.*;
  */
 public class CachingSagaRepositoryTest {
 
-    private JCache associationsCache;
-    private JCache sagaCache;
+    private Cache associationsCache;
+    private org.axonframework.cache.Cache sagaCache;
     private SagaRepository repository;
     private CachingSagaRepository testSubject;
     private CacheManager cacheManager;
+    private net.sf.ehcache.Cache ehCache;
 
     @Before
     public void setUp() throws Exception {
-        final Cache cch = new Cache("test", 100, false, false, 10, 10);
+        ehCache = new net.sf.ehcache.Cache("test", 100, false, false, 10, 10);
         cacheManager = CacheManager.create();
-        cacheManager.addCache(cch);
-        final ClassLoader classLoader = getClass().getClassLoader();
-        final JCache cache = new JCache(cch,
-                                        new JCacheManager("test", cacheManager, classLoader),
-                                        classLoader);
-        associationsCache = spy(cache);
-        sagaCache = spy(cache);
+        cacheManager.addCache(ehCache);
+        associationsCache = spy(new EhCacheAdapter(ehCache));
+        sagaCache = spy(new EhCacheAdapter(ehCache));
         repository = mock(SagaRepository.class);
         testSubject = new CachingSagaRepository(repository, associationsCache, sagaCache);
     }
@@ -85,7 +81,8 @@ public class CachingSagaRepositoryTest {
         testSubject.commit(saga);
 
         // to make sure this saga is found
-        when(repository.find(any(Class.class), any(AssociationValue.class))).thenReturn(new HashSet<String>(Arrays.asList(saga.getSagaIdentifier())));
+        when(repository.find(any(Class.class), any(AssociationValue.class)))
+                .thenReturn(new HashSet<String>(Arrays.asList(saga.getSagaIdentifier())));
 
         Set<String> found = testSubject.find(StubSaga.class, new AssociationValue("key", "value"));
         Iterator<String> iterator = found.iterator();
@@ -103,8 +100,7 @@ public class CachingSagaRepositoryTest {
         final StubSaga saga = new StubSaga("id");
         saga.associate("key", "value");
         testSubject.add(saga);
-        sagaCache.removeAll();
-        associationsCache.removeAll();
+        ehCache.removeAll();
         reset(sagaCache, associationsCache);
 
         final AssociationValue associationValue = new AssociationValue("key", "value");
@@ -114,7 +110,7 @@ public class CachingSagaRepositoryTest {
         assertEquals(actual, singleton("id"));
         verify(associationsCache, atLeast(1)).get("org.axonframework.saga.repository.StubSaga/key=value");
         verify(associationsCache).put("org.axonframework.saga.repository.StubSaga/key=value",
-                                      Collections.singleton("id"));
+                                                  Collections.singleton("id"));
     }
 
     @Test
@@ -122,14 +118,15 @@ public class CachingSagaRepositoryTest {
         final StubSaga saga = new StubSaga("id");
         saga.associate("key", "value");
         testSubject.add(saga);
-        sagaCache.removeAll();
-        associationsCache.removeAll();
+        ehCache.removeAll();
+
         reset(sagaCache, associationsCache);
 
         when(repository.load("id")).thenReturn(saga);
 
         Saga actual = testSubject.load("id");
         assertSame(saga, actual);
+
         verify(sagaCache).get("id");
         verify(sagaCache).put("id", saga);
         verify(associationsCache, never()).put(any(), any());
@@ -140,9 +137,7 @@ public class CachingSagaRepositoryTest {
         final StubSaga saga = new StubSaga("id");
         saga.associate("key", "value");
         testSubject.add(saga);
-        sagaCache.removeAll();
-        associationsCache.removeAll();
-        reset(sagaCache, associationsCache);
+        ehCache.removeAll();
 
         saga.associate("new", "id");
         saga.removeAssociationValue("key", "value");

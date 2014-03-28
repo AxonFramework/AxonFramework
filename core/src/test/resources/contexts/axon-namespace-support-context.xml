@@ -76,7 +76,7 @@
     </axon:jpa-saga-repository>
 
     <axon:jpa-saga-repository id="noCacheSagaRepository" resource-injector="mockResourceInjector">
-        <axon:cache-config />
+        <axon:cache-config/>
     </axon:jpa-saga-repository>
 
     <axon:cluster id="defaultOrderedCluster">
@@ -191,14 +191,14 @@
             </bean>
         </axon:upcasters>
     </axon:jpa-event-store>
-    
-    <axon:jpa-event-store id="eventStoreWithCustomEventEntryStore" event-serializer="eventSerializer" 
-        event-entry-store-ref="customEventEntryStore"/>
-	
-	<bean id="customEventEntryStore" class="org.axonframework.testutils.MockitoMockFactoryBean">
+
+    <axon:jpa-event-store id="eventStoreWithCustomEventEntryStore" event-serializer="eventSerializer"
+                          event-entry-store-ref="customEventEntryStore"/>
+
+    <bean id="customEventEntryStore" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.eventstore.jpa.EventEntryStore"/>
-	</bean>
-	
+    </bean>
+
     <bean id="converterFactory" class="org.axonframework.serializer.ChainingConverterFactory"/>
     <bean id="myEntityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
 
@@ -237,7 +237,8 @@
     </axon:event-sourcing-repository>
 
     <bean id="mockFactory" class="org.axonframework.eventsourcing.GenericAggregateFactory">
-        <constructor-arg value="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
+        <constructor-arg
+                value="org.axonframework.contextsupport.spring.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
     </bean>
 
     <axon:jpa-repository id="simpleJpaRepository"
@@ -250,8 +251,12 @@
                          event-bus="eventBus" event-store="eventStore" lock-manager="nullLockManager"
                          aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
 
-    <bean id="mockCache" class="org.axonframework.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="javax.cache.Cache"/>
+    <bean id="mockCache" class="org.axonframework.cache.JCacheAdapter">
+        <constructor-arg>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="javax.cache.Cache"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="customEntityManagerProvider" class="org.axonframework.testutils.MockitoMockFactoryBean">

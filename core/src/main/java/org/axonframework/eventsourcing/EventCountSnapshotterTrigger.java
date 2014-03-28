@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.common.cache.CacheUtils;
+import org.axonframework.cache.Cache;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -30,11 +30,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.cache.Cache;
-import javax.cache.event.CacheEntryEvent;
-import javax.cache.event.CacheEntryExpiredListener;
-import javax.cache.event.CacheEntryListenerException;
-import javax.cache.event.CacheEntryRemovedListener;
 
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. This
@@ -107,7 +102,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      * <p/>
      * By setting this value to false, event counters are kept in memory. This is particularly useful when repositories
      * use caches, preventing events from being loaded. Consider registering the Caches use using {@link
-     * #setAggregateCache(javax.cache.Cache)} or {@link #setAggregateCaches(java.util.List)}
+     * #setAggregateCache(org.axonframework.cache.Cache)} or {@link #setAggregateCaches(java.util.List)}
      *
      * @param clearCountersAfterAppend indicator whether to clear counters after appending events
      */
@@ -131,7 +126,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      */
     public void setAggregateCache(Cache cache) {
         this.clearCountersAfterAppend = false;
-        CacheUtils.registerCacheEntryListener(cache, new CacheListener());
+        cache.registerCacheEntryListener(new CacheListener());
     }
 
     /**
@@ -217,16 +212,16 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         }
     }
 
-    private final class CacheListener implements CacheEntryRemovedListener, CacheEntryExpiredListener {
+    private final class CacheListener extends Cache.EntryListenerAdapter {
 
         @Override
-        public void entryExpired(CacheEntryEvent cacheEntryEvent) throws CacheEntryListenerException {
-            counters.remove(cacheEntryEvent.getKey());
+        public void onEntryExpired(Object key) {
+            counters.remove(key);
         }
 
         @Override
-        public void entryRemoved(CacheEntryEvent cacheEntryEvent) throws CacheEntryListenerException {
-            entryExpired(cacheEntryEvent);
+        public void onEntryRemoved(Object key) {
+            counters.remove(key);
         }
     }
 

@@ -84,8 +84,12 @@
         <property name="mockType" value="org.axonframework.eventstore.EventStore"/>
     </bean>
 
-    <bean id="mockCache" class="org.axonframework.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="javax.cache.Cache"/>
+    <bean id="mockCache" class="org.axonframework.cache.JCacheAdapter">
+        <constructor-arg>
+            <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                <property name="mockType" value="javax.cache.Cache"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="mockSerializer" class="org.axonframework.testutils.MockitoMockFactoryBean">
