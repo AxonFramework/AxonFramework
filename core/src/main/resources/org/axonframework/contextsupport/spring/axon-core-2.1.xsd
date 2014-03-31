@@ -520,8 +520,9 @@
                         <xsd:annotation>
                             <xsd:documentation>The strategy to use to claim positions in the CommandBus' buffer.
                                 Defaults to a 'multi-threaded' strategy. If only a single thread ever produces commands
-                                for this Command Bus, consider using the 'single-threaded' strategy.<br/>
-                                Deprecated, use producer-type instead.  Will be removed in AxonFramework 3.0.
+                                for this Command Bus, consider using the 'single-threaded' strategy.
+                                <br/>
+                                Deprecated, use producer-type instead. Will be removed in AxonFramework 3.0.
                             </xsd:documentation>
                         </xsd:annotation>
                         <xsd:simpleType>
@@ -682,6 +683,20 @@
                             <tool:expected-type type="org.axonframework.eventhandling.EventBus"/>
                         </tool:annotation>
                     </xsd:appinfo>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="unsubscribe-handlers-on-shutdown" type="xsd:boolean" use="optional" default="true">
+                <xsd:annotation>
+                    <xsd:documentation>Indicates whether registered handlers should be unsubscribed from the
+                        event/command bus when the application is shut down.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:attribute>
+            <xsd:attribute name="phase" type="xsd:int" use="optional">
+                <xsd:annotation>
+                    <xsd:documentation>Sets the Spring lifecycle phase in which the beans are subscribed and
+                        unsubscribed. Defaults to 0.
+                    </xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
         </xsd:complexType>
@@ -846,7 +861,7 @@
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="event-entry-store-ref" type="xsd:string">
-                    <xsd:annotation>
+                        <xsd:annotation>
                             <xsd:documentation>
                                 Reference to the Event Entry Store, which is responsible for storing the Events in the
                                 database.

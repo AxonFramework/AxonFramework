@@ -57,6 +57,8 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
      * The bean name used for registering the {@link AnnotationCommandHandlerBeanPostProcessor}.
      */
     private static final String COMMAND_HANDLER_BEAN_NAME = "__axon-annotation-command-handler-bean-post-processor";
+    private static final String PHASE_ATTRIBUTE = "phase";
+    private static final String UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE = "unsubscribe-handlers-on-shutdown";
 
     /**
      * {@inheritDoc}
@@ -79,8 +81,14 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationEventListenerBeanPostProcessor.class);
         beanDefinition.getPropertyValues().add("parameterResolverFactory",
-                                               getBeanReference(
-                                                       parserContext.getRegistry()));
+                                               getBeanReference(parserContext.getRegistry()));
+        if (element.hasAttribute(PHASE_ATTRIBUTE)) {
+            beanDefinition.getPropertyValues().add("phase", element.getAttribute(PHASE_ATTRIBUTE));
+        }
+        if (element.hasAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE)) {
+            beanDefinition.getPropertyValues().add("unsubscribeOnShutdown",
+                                                   element.getAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE));
+        }
         if (element.hasAttribute(EVENT_BUS_ATTRIBUTE)) {
             String eventBusReference = element.getAttribute(EVENT_BUS_ATTRIBUTE);
             RuntimeBeanReference beanReference = new RuntimeBeanReference(eventBusReference);
@@ -102,6 +110,14 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
         beanDefinition.getPropertyValues().add("parameterResolverFactory",
                                                getBeanReference(
                                                        parserContext.getRegistry()));
+        if (element.hasAttribute(PHASE_ATTRIBUTE)) {
+            beanDefinition.getPropertyValues().add("phase", element.getAttribute(PHASE_ATTRIBUTE));
+        }
+        if (element.hasAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE)) {
+            beanDefinition.getPropertyValues().add("unsubscribeOnShutdown",
+                                                   element.getAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE));
+        }
+
         if (element.hasAttribute(COMMAND_BUS_ATTRIBUTE)) {
             String commandBusReference = element.getAttribute(COMMAND_BUS_ATTRIBUTE);
             RuntimeBeanReference beanReference = new RuntimeBeanReference(commandBusReference);
