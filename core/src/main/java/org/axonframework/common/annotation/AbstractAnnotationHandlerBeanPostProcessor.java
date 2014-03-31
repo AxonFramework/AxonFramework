@@ -58,6 +58,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     private ParameterResolverFactory parameterResolverFactory;
     private ApplicationContext applicationContext;
     private volatile boolean running = false;
+    private int phase = 0;
+    private boolean unsubscribeOnShutdown = true;
 
     /**
      * {@inheritDoc}
@@ -134,7 +136,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      * Note: this *must* be an interface. It may not be an (abstract) class.
      *
      * @return the interface that the adapter implements to connect the annotated method to the actual interface
-     *         definition
+     * definition
      */
     protected abstract Class<I> getAdapterInterface();
 
@@ -167,8 +169,10 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
     @Override
     public void stop() {
-        for (Map.Entry<String, T> entry : managedAdapters.entrySet()) {
-            unsubscribe(managedProxies.get(entry.getKey()), entry.getValue());
+        if (unsubscribeOnShutdown) {
+            for (Map.Entry<String, T> entry : managedAdapters.entrySet()) {
+                unsubscribe(managedProxies.get(entry.getKey()), entry.getValue());
+            }
         }
         running = false;
     }
@@ -180,7 +184,16 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
     @Override
     public int getPhase() {
-        return 0;
+        return phase;
+    }
+
+    /**
+     * Sets the phase in which handlers are subscribed and unsubscribed. Defaults to 0.
+     *
+     * @param phase The phase in which handlers are subsribed and unsubscribed
+     */
+    public void setPhase(int phase) {
+        this.phase = phase;
     }
 
     /**
@@ -190,7 +203,9 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     public void postProcessBeforeDestruction(Object bean, String beanName) throws BeansException {
         if (running && managedProxies.containsKey(beanName)) {
             try {
-                unsubscribe(managedProxies.get(beanName), managedAdapters.get(beanName));
+                if (unsubscribeOnShutdown) {
+                    unsubscribe(managedProxies.get(beanName), managedAdapters.get(beanName));
+                }
             } catch (Exception e) {
                 logger.error("An exception occurred while unsubscribing an event listener", e);
             } finally {
@@ -256,6 +271,16 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    /**
+     * Indicates whether handlers should be unsubscribed on shutdown. Defaults to <code>true</code>.
+     *
+     * @param unsubscribeOnShutdown <code>true</code> to unsubscribe beans explicitly from their command/event bus or
+     *                              <code>false</code> to shutdown without unsubscribing explicitly.
+     */
+    public void setUnsubscribeOnShutdown(boolean unsubscribeOnShutdown) {
+        this.unsubscribeOnShutdown = unsubscribeOnShutdown;
     }
 
     /**

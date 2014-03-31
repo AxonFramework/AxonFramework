@@ -19,7 +19,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
-    <axon:annotation-config />
+    <axon:annotation-config unsubscribe-handlers-on-shutdown="true" phase="-200" />
 
     <axon:event-sourcing-repository id="repository"
                                     aggregate-type="org.axonframework.contextsupport.spring.AnnotationConfigurationBeanDefinitionParserTest_CustomParameterResolvers.StubAggregate"
