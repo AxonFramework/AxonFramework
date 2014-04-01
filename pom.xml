@@ -19,7 +19,7 @@
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>2.1.2-SNAPSHOT</version>
+    <version>2.1.2</version>
     <modules>
         <module>core</module>
         <module>integration</module>
@@ -384,7 +384,7 @@
         <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
         <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
         <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>HEAD</tag>
+        <tag>axon-2.1.2</tag>
     </scm>
 
     <developers>
