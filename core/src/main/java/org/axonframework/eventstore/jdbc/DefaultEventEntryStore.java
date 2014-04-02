@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
 import javax.sql.DataSource;
 
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
@@ -346,12 +347,13 @@ public class DefaultEventEntryStore implements EventEntryStore {
                         .append(" OR ")
                         .append("(e.timeStamp = ? AND e.sequenceNumber = ? AND e.aggregateIdentifier > ?)")
                         .append(")");
-                params.add(0, lastItem.getTimestamp());
+                String dateTimeString = sqldef.sql_dateTimeString(lastItem.getTimestamp());
+                params.add(0, dateTimeString);
 
-                params.add(1, lastItem.getTimestamp());
+                params.add(1, dateTimeString);
                 params.add(2, lastItem.getSequenceNumber());
 
-                params.add(3, lastItem.getTimestamp());
+                params.add(3, dateTimeString);
                 params.add(4, lastItem.getSequenceNumber());
                 params.add(5, lastItem.getAggregateIdentifier());
             }

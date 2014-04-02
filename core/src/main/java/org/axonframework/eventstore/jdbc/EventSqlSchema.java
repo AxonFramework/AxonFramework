@@ -191,4 +191,13 @@ public interface EventSqlSchema {
      * @see org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData
      */
     SerializedDomainEventData createSerializedDomainEventData(ResultSet resultSet) throws SQLException;
+
+    /**
+     * Converts a {@link DateTime} to String.
+     * Useful when inserting date time values into the database and when filtering data, such as events.
+     *
+     * @param input {@link DateTime} to convert
+     * @return a string representing the date time suitable for the current sql scheme
+     */
+    String sql_dateTimeString(DateTime input);
 }
