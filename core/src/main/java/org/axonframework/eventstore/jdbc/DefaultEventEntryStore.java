@@ -23,7 +23,6 @@ import org.axonframework.common.jdbc.DataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.saga.SagaStorageException;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
@@ -104,7 +103,8 @@ public class DefaultEventEntryStore implements EventEntryStore {
             }
             return null;
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new EventStoreException("Exception while attempting to load last snapshot event of "
+                                          + aggregateType + "/" + identifier, e);
         } finally {
             closeQuietly(result);
         }
@@ -174,7 +174,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
             );
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new SagaStorageException("Exception occurred while attempting to persist an event", e);
+            throw new EventStoreException("Exception occurred while attempting to persist an event", e);
         } finally {
             closeQuietly(preparedStatement);
         }
