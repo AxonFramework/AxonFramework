@@ -371,12 +371,12 @@
     <distributionManagement>
         <snapshotRepository>
             <id>sonatype</id>
-            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
             <uniqueVersion>true</uniqueVersion>
         </snapshotRepository>
         <repository>
             <id>sonatype</id>
-            <url>http://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
             <uniqueVersion>false</uniqueVersion>
         </repository>
     </distributionManagement>
