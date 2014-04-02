@@ -167,6 +167,28 @@ public class DefaultEventEntryStoreTest {
         assertFalse(iterator.hasNext());
     }
 
+    @Test
+    public void filteredFetchLargerBatchSize() throws SQLException {
+        deleteCurrentPersistentEvents();
+        DomainEventMessage dem1 = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
+        es.persistEvent(aggregateType, dem1, getPayload(), getMetaData());
+        DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
+        es.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
+
+        final Iterator<? extends SerializedDomainEventData> iterator = es.fetchFiltered(
+                null, Collections.<Object>emptyList(), 100);
+
+        assertTrue(iterator.hasNext());
+        final SerializedDomainEventData ret1 = iterator.next();
+        assertEquals(122, ret1.getSequenceNumber());
+
+        assertTrue(iterator.hasNext());
+        final SerializedDomainEventData ret2 = iterator.next();
+        assertEquals(123, ret2.getSequenceNumber());
+
+        assertFalse(iterator.hasNext());
+    }
+
     private void checkSame(DomainEventMessage expected, SerializedDomainEventData actual) {
         assertNotNull(actual);
         assertEquals(expected.getAggregateIdentifier(), actual.getAggregateIdentifier());
