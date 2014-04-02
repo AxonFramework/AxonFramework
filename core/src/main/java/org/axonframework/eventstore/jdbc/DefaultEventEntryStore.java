@@ -94,7 +94,6 @@ public class DefaultEventEntryStore implements EventEntryStore {
     }
 
     @Override
-    @SuppressWarnings({"unchecked"})
     public SerializedDomainEventData loadLastSnapshotEvent(String aggregateType, Object identifier) {
         ResultSet result = null;
         try {
