@@ -17,6 +17,7 @@
 
 package org.axonframework.eventstore.jdbc;
 
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.DataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
@@ -35,6 +36,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import javax.sql.DataSource;
 
@@ -47,6 +49,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
+ * @author Knut-Olav Hoven
  * @since 2.2
  */
 public class DefaultEventEntryStore implements EventEntryStore {
@@ -109,16 +112,15 @@ public class DefaultEventEntryStore implements EventEntryStore {
     }
 
     @Override
-    @SuppressWarnings({"unchecked"})
     public Iterator<SerializedDomainEventData> fetchFiltered(String whereClause, List<Object> parameters,
                                                              int batchSize) {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
             connection = connectionProvider.getConnection();
-            statement = sqldef.sql_getFetchAll(connection, whereClause, parameters.toArray());
-            statement.setFetchSize(batchSize);
-            return new ResultSetIterator(statement.executeQuery(), statement, connection);
+            return new ConnectionResourceManagingIterator(
+                    new FilteredBatchingIterator(whereClause, parameters, batchSize, sqldef, connection),
+                    connection);
         } catch (SQLException e) {
             closeQuietly(connection);
             closeQuietly(statement);
@@ -205,7 +207,6 @@ public class DefaultEventEntryStore implements EventEntryStore {
      * @param maxSnapshotsArchived the number of snapshots that may remain archived
      * @return an iterator over the snapshots found
      */
-    @SuppressWarnings({"unchecked"})
     private Iterator<Long> findRedundantSnapshots(String type, DomainEventMessage snapshotEvent,
                                                   int maxSnapshotsArchived) {
         ResultSet resultSet = null;
@@ -236,7 +237,6 @@ public class DefaultEventEntryStore implements EventEntryStore {
         }
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public Iterator<SerializedDomainEventData> fetchAggregateStream(String aggregateType, Object identifier,
                                                                     long firstSequenceNumber, int fetchSize) {
@@ -247,7 +247,9 @@ public class DefaultEventEntryStore implements EventEntryStore {
             statement = sqldef.sql_fetchFromSequenceNumber(connection, aggregateType, identifier,
                                                            firstSequenceNumber);
             statement.setFetchSize(fetchSize);
-            return new ResultSetIterator(statement.executeQuery(), statement, connection);
+            return new ConnectionResourceManagingIterator(
+                    new PreparedStatementIterator(statement, sqldef),
+                    connection);
         } catch (SQLException e) {
             closeQuietly(connection);
             closeQuietly(statement);
@@ -255,19 +257,200 @@ public class DefaultEventEntryStore implements EventEntryStore {
         }
     }
 
-
-    private class ResultSetIterator implements Iterator<SerializedDomainEventData>, Closeable {
-
-        private final ResultSet rs;
-        private final PreparedStatement statement;
+    private static class ConnectionResourceManagingIterator implements Iterator<SerializedDomainEventData>, Closeable {
+        private final Iterator<SerializedDomainEventData> inner;
         private final Connection connection;
+
+        public ConnectionResourceManagingIterator(Iterator<SerializedDomainEventData> inner, Connection connection) {
+            this.inner = inner;
+            this.connection = connection;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return inner.hasNext();
+        }
+
+        @Override
+        public SerializedDomainEventData next() {
+            return inner.next();
+        }
+
+        @Override
+        public void remove() {
+            inner.remove();
+        }
+
+        @Override
+        public void close() throws IOException {
+            IOUtils.closeQuietlyIfCloseable(inner);
+            closeQuietly(connection);
+        }
+    }
+
+    /**
+     * This class will NOT close the connection pass into its constructor.
+     */
+    private static class FilteredBatchingIterator implements Iterator<SerializedDomainEventData>, Closeable {
+        private final Connection connection;
+        private PreparedStatementIterator currentBatch;
+        private SerializedDomainEventData next;
+        private SerializedDomainEventData lastItem;
+        private final String whereClause;
+        private final List<Object> parameters;
+        private final int batchSize;
+        private final EventSqlSchema sqldef;
+
+        public FilteredBatchingIterator(
+                String whereClause,
+                List<Object> parameters,
+                int batchSize,
+                EventSqlSchema sqldef,
+                Connection connection) {
+            this.whereClause = whereClause;
+            this.parameters = parameters;
+            this.batchSize = batchSize;
+            this.connection = connection;
+            this.sqldef = sqldef;
+
+            this.currentBatch = fetchBatch();
+            if (currentBatch.hasNext()) {
+                next = currentBatch.next();
+            }
+        }
+
+        private PreparedStatementIterator fetchBatch() {
+            LinkedList<Object> params = new LinkedList<Object>(parameters);
+            String batchWhereClause = buildWhereClause(params);
+            try {
+                final PreparedStatement sql = sqldef.sql_getFetchAll(
+                        connection,
+                        batchWhereClause,
+                        params.toArray());
+                sql.setMaxRows(batchSize);
+                return new PreparedStatementIterator(sql, sqldef);
+            } catch (SQLException e) {
+                throw new EventStoreException("Exception occurred while attempting to execute prepared statement", e);
+            }
+        }
+
+        private String buildWhereClause(LinkedList<Object> params) {
+            if (lastItem == null && whereClause == null) {
+                return "";
+            }
+            StringBuilder sb = new StringBuilder();
+            if (lastItem != null) {
+                sb.append("(")
+                        .append("(e.timeStamp > ?)")
+                        .append(" OR ")
+                        .append("(e.timeStamp = ? AND e.sequenceNumber > ?)")
+                        .append(" OR ")
+                        .append("(e.timeStamp = ? AND e.sequenceNumber = ? AND e.aggregateIdentifier > ?)")
+                        .append(")");
+                params.add(0, lastItem.getTimestamp());
+
+                params.add(1, lastItem.getTimestamp());
+                params.add(2, lastItem.getSequenceNumber());
+
+                params.add(3, lastItem.getTimestamp());
+                params.add(4, lastItem.getSequenceNumber());
+                params.add(5, lastItem.getAggregateIdentifier());
+            }
+            if (whereClause != null && whereClause.length() > 0) {
+                if (lastItem != null) {
+                    sb.append(" AND (");
+                }
+                sb.append(whereClause);
+                if (lastItem != null) {
+                    sb.append(")");
+                }
+            }
+            if (sb.length() > 0) {
+                sb.insert(0, "WHERE ");
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return next != null;
+        }
+
+        @Override
+        public SerializedDomainEventData next() {
+            SerializedDomainEventData current = next;
+            lastItem = next;
+            if (next != null && !currentBatch.hasNext() && currentBatch.readCount() >= batchSize) {
+                IOUtils.closeQuietly(currentBatch);
+                currentBatch = fetchBatch();
+            }
+            next = currentBatch.hasNext() ? currentBatch.next() : null;
+            return current;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public void close() throws IOException {
+            IOUtils.closeQuietly(currentBatch);
+        }
+    }
+
+    private static class PreparedStatementIterator implements Iterator<SerializedDomainEventData>, Closeable {
+        private final PreparedStatement statement;
+        private final EventSqlSchema sqldef;
+        private final ResultSetIterator rsIterator;
+
+        public PreparedStatementIterator(PreparedStatement statement, EventSqlSchema sqldef) {
+            this.statement = statement;
+            this.sqldef = sqldef;
+            try {
+                ResultSet resultSet = statement.executeQuery();
+                rsIterator = new ResultSetIterator(resultSet, sqldef);
+            } catch (SQLException e) {
+                throw new EventStoreException("Exception occurred while attempting to execute query on statement", e);
+            }
+        }
+
+        public int readCount() {
+            return rsIterator.readCount();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return rsIterator.hasNext();
+        }
+
+        @Override
+        public SerializedDomainEventData next() {
+            return rsIterator.next();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public void close() throws IOException {
+            rsIterator.close();
+            closeQuietly(statement);
+        }
+    }
+
+    private static class ResultSetIterator implements Iterator<SerializedDomainEventData>, Closeable {
+        private final ResultSet rs;
+        private final EventSqlSchema sqldef;
         boolean hasCalledNext = false;
         boolean hasNext;
+        private int counter = 0;
 
-        public ResultSetIterator(ResultSet resultSet, PreparedStatement statement, Connection connection) {
+        public ResultSetIterator(ResultSet resultSet, EventSqlSchema sqldef) {
             this.rs = resultSet;
-            this.statement = statement;
-            this.connection = connection;
+            this.sqldef = sqldef;
         }
 
         @Override
@@ -291,12 +474,21 @@ public class DefaultEventEntryStore implements EventEntryStore {
         public SerializedDomainEventData next() {
             try {
                 establishNext();
-                return sqldef.createSerializedDomainEventData(rs);
+                if (hasNext) {
+                    counter++;
+                }
+                SerializedDomainEventData eventData = sqldef.createSerializedDomainEventData(rs);
+                return eventData;
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new EventStoreException("Exception occurred while attempting to read next event from ResultSet",
+                                              e);
             } finally {
                 hasCalledNext = false;
             }
+        }
+
+        public int readCount() {
+            return counter;
         }
 
         @Override
@@ -307,8 +499,6 @@ public class DefaultEventEntryStore implements EventEntryStore {
         @Override
         public void close() throws IOException {
             closeQuietly(rs);
-            closeQuietly(statement);
-            closeQuietly(connection);
         }
     }
 
@@ -316,7 +506,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
         try {
             return preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            throw new SagaStorageException("Exception occurred while attempting to " + description, e);
+            throw new EventStoreException("Exception occurred while attempting to " + description, e);
         } finally {
             closeQuietly(preparedStatement);
         }

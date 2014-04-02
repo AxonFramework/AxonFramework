@@ -156,7 +156,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     @Override
     public PreparedStatement sql_getFetchAll(Connection connection, String whereClause,
                                              Object[] params) throws SQLException {
-        final String sql = "select " + STD_FIELDS + " from DomainEventEntry e " + getWhereClause(whereClause) +
+        final String sql = "select " + STD_FIELDS + " from DomainEventEntry e " + whereClause +
                 " ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC ";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < params.length; i++) {
@@ -180,10 +180,6 @@ public class GenericEventSqlSchema implements EventSqlSchema {
 
     protected Object readTimeStamp(ResultSet resultSet, int rowIndex) throws SQLException {
         return resultSet.getString(rowIndex);
-    }
-
-    private String getWhereClause(String whereClause) {
-        return whereClause != null ? "WHERE " + whereClause : "";
     }
 
     @Override
