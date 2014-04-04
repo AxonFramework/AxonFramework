@@ -38,6 +38,12 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     private static final String STD_FIELDS = "eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, "
             + "payloadType, payloadRevision, payload, metaData";
 
+    private boolean forceUtc = false;
+
+    public void setForceUtc(boolean forceUtc) {
+        this.forceUtc = forceUtc;
+    }
+
     @Override
     public PreparedStatement sql_loadLastSnapshot(Connection connection, Object identifier, String aggregateType)
             throws SQLException {
@@ -225,6 +231,10 @@ public class GenericEventSqlSchema implements EventSqlSchema {
 
     @Override
     public String sql_dateTimeString(DateTime input) {
-        return input.toString(UTC_FORMATTER);
+        if (forceUtc) {
+            return input.toString(UTC_FORMATTER);
+        } else {
+            return input.toString();
+        }
     }
 }
