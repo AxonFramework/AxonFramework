@@ -37,6 +37,7 @@ public abstract class AuthenticatingMongoTemplate {
     private final String userName;
     private final char[] password;
     private final DB database;
+    private final DB authenticationDatabase;
 
     /**
      * Initializes the MongoTemplate to connect using the given <code>mongo</code> instance and a database with default
@@ -63,7 +64,23 @@ public abstract class AuthenticatingMongoTemplate {
      */
     protected AuthenticatingMongoTemplate(Mongo mongo, String databaseName, String userName,
                                           char[] password) { // NOSONAR
+        this(mongo, databaseName, databaseName, userName, password);
+    }
+
+    /**
+     * Initializes the MongoTemplate to connect using the given <code>mongo</code> instance and the database with given
+     * <code>databaseName</code>. The given <code>userName</code> and <code>password</code>, when not
+     * <code>null</code>, are used to authenticate against the database.
+     *
+     * @param mongo        The Mongo instance configured to connect to the Mongo Server
+     * @param databaseName The name of the database containing the data
+     * @param userName     The username to authenticate with. Use <code>null</code> to skip authentication
+     * @param password     The password to authenticate with. Use <code>null</code> to skip authentication
+     */
+    protected AuthenticatingMongoTemplate(Mongo mongo, String databaseName, String authenticationDatabaseName, String userName,
+            char[] password) { // NOSONAR
         this.database = mongo.getDB(databaseName);
+        this.authenticationDatabase = databaseName.equals(authenticationDatabaseName) ? database : mongo.getDB(authenticationDatabaseName);
         this.userName = userName;
         this.password = password;
     }
@@ -81,10 +98,10 @@ public abstract class AuthenticatingMongoTemplate {
      * @see DB#authenticate(String, char[])
      */
     protected DB database() {
-        if (!database.isAuthenticated()
+        if (!authenticationDatabase.isAuthenticated()
                 && (userName != null || password != null)
-                && !database.authenticate(userName, password)) {
-            logger.warn("Failed to authenticate user '{}' against database. Incorrect credentials.", userName);
+                && !authenticationDatabase.authenticate(userName, password)) {
+            logger.warn("Failed to authenticate user '{}' against database '{}'. Incorrect credentials.", userName, authenticationDatabase.getName());
         }
         return database;
     }

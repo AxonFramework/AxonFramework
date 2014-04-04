@@ -222,15 +222,11 @@
                 combination with a pessimistic locking strategy.
             </para>
             <note>
-                <title>Cache API compatibility warning</title>
-                <para>The Cache API has only been recently defined. As at the moment Axon was
-                    developed, the most recent version of the specification was not implemented,
-                    version 0.5 has been used. This API version is implemented by EhCache-JCache
-                    version "1.0.5-0.5". Axon 2.1 has been tested against this version.</para>
-                <para>In a future version of Axon, the 1.0 version of the Cache API will be
-                    implemented, if the Cache providers have done that migration as well. Until
-                    then, you might have to select your cache implementation version
-                    carefully.</para>
+                <title>Cache API</title>
+                <para>While waiting for Cache providers to implement the JSR 107 Cache API, Axon
+                    comes with a proprietary API. Adapters are implemented for JSR 107 as well as
+                    EhCache. In a future version of Axon, the proprietary API may be removed and the
+                    1.0 version of the Cache API will be used instead.</para>
             </note>
             <note>
                 <para>Using a cache with optimistic locking could cause undesired side-effects.
