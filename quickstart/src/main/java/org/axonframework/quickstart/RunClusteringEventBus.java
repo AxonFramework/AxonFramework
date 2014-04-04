@@ -68,8 +68,8 @@ public class RunClusteringEventBus {
         // create the event bus and subscribe two listeners
         // notice how the registration process itself is unaware of clustering
         EventBus eventBus = new ClusteringEventBus(clusterSelector);
-        AnnotationEventListenerAdapter.subscribe(new ThreadPrintingEventListener(), eventBus);
-        AnnotationEventListenerAdapter.subscribe(new AnotherThreadPrintingEventListener(), eventBus);
+        eventBus.subscribe(new AnnotationEventListenerAdapter(new ThreadPrintingEventListener()));
+        eventBus.subscribe(new AnnotationEventListenerAdapter(new AnotherThreadPrintingEventListener()));
 
         // publish an event
         eventBus.publish(asEventMessage(new ToDoItemCompletedEvent("todo1")));
