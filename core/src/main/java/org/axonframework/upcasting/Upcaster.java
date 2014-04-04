@@ -76,9 +76,15 @@ public interface Upcaster<T> {
      * revision. Sometimes, it is also necessary to alter the type's name (in case of a renamed class, for example).
      * The order and the size of the list returned has to match with the order and size of the list of the upcast
      * IntermediateRepresentations by this upcaster.
+     * <p/>
+     * To base the type on the actual contents of the Serialized Object, implement the {@link
+     * org.axonframework.upcasting.ExtendedUpcaster} interface instead.
      *
      * @param serializedType The serialized type to upcast
      * @return the upcast serialized type
+     *
+     * @see org.axonframework.upcasting.ExtendedUpcaster#upcast(org.axonframework.serializer.SerializedType,
+     * org.axonframework.serializer.SerializedObject)
      */
     List<SerializedType> upcast(SerializedType serializedType);
 }

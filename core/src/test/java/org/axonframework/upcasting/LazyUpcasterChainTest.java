@@ -72,6 +72,39 @@ public class LazyUpcasterChainTest extends UpcasterChainTest {
         verify(thirdUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testUpcastingChainWithExtendedUpcaster() {
+        Upcaster<String> firstUpcaster = spy(new StubUpcaster("1", "2"));
+        Upcaster<String> secondUpcaster = spy(new StubExtendedUpcaster("2", "3"));
+        Upcaster<String> thirdUpcaster = spy(new StubUpcaster("never", "ever"));
+        LazyUpcasterChain testSubject = new LazyUpcasterChain(Arrays.<Upcaster>asList(firstUpcaster,
+                                                                                      thirdUpcaster,
+                                                                                      secondUpcaster));
+
+        List<SerializedObject> actualResult = testSubject.upcast(
+                new SimpleSerializedObject<String>("object", String.class, "type", "1"), null);
+        // the second upcaster accessed the serialized object, so we expect a call here
+        verify(firstUpcaster).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        verify(secondUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        verify(thirdUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        assertEquals(4, actualResult.size());
+        assertEquals("3", actualResult.get(0).getType().getRevision());
+        assertEquals("3", actualResult.get(1).getType().getRevision());
+        assertEquals("3", actualResult.get(2).getType().getRevision());
+        assertEquals("3", actualResult.get(3).getType().getRevision());
+        verify(firstUpcaster).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        verify(secondUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        verify(thirdUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        assertEquals("upcast upcast object", actualResult.get(0).getData().toString());
+        assertEquals("upcast upcast object", actualResult.get(1).getData().toString());
+        assertEquals("upcast upcast object", actualResult.get(2).getData().toString());
+        assertEquals("upcast upcast object", actualResult.get(3).getData().toString());
+        verify(firstUpcaster).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        verify(secondUpcaster, times(2)).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+        verify(thirdUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
+    }
+
     private class StubUpcaster implements Upcaster<String> {
 
         private final String workingRevision;
@@ -108,6 +141,52 @@ public class LazyUpcasterChainTest extends UpcasterChainTest {
         public List<SerializedType> upcast(SerializedType serializedType) {
             SerializedType upcastType = new SimpleSerializedType(serializedType.getName(), newRevision);
             return Arrays.asList(upcastType, upcastType);
+        }
+    }
+
+    private class StubExtendedUpcaster implements ExtendedUpcaster<String> {
+
+        private final String workingRevision;
+        private final String newRevision;
+
+        public StubExtendedUpcaster(String workingRevision, String newRevision) {
+            this.workingRevision = workingRevision;
+            this.newRevision = newRevision;
+        }
+
+        @Override
+        public boolean canUpcast(SerializedType serializedType) {
+            return workingRevision.equals(serializedType.getRevision());
+        }
+
+        @Override
+        public Class<String> expectedRepresentationType() {
+            return String.class;
+        }
+
+        @Override
+        public List<SerializedObject<?>> upcast(SerializedObject<String> intermediateRepresentation,
+                                                List<SerializedType> expectedTypes, UpcastingContext context) {
+            List<SerializedObject<?>> upcastObjects = new ArrayList<SerializedObject<?>>(expectedTypes.size());
+            for (SerializedType expectedType : expectedTypes) {
+                SerializedObject<String> upcastObject = new SimpleSerializedObject<String>(
+                        "upcast " + intermediateRepresentation.getData(), String.class, expectedType);
+                upcastObjects.add(upcastObject);
+            }
+            return upcastObjects;
+        }
+
+        @Override
+        public List<SerializedType> upcast(SerializedType serializedType,
+                                           SerializedObject<String> intermediateRepresentation) {
+            assertEquals("upcast object", intermediateRepresentation.getData());
+            SerializedType upcastType = new SimpleSerializedType(serializedType.getName(), newRevision);
+            return Arrays.asList(upcastType, upcastType);
+        }
+
+        @Override
+        public List<SerializedType> upcast(SerializedType serializedType) {
+            throw new UnsupportedOperationException("Not supported");
         }
     }
 }

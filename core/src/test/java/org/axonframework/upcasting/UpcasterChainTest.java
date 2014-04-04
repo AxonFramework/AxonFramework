@@ -28,6 +28,7 @@ import org.junit.*;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -104,7 +105,7 @@ public abstract class UpcasterChainTest {
         UpcasterChain chain = createUpcasterChain(mockConverterFactory, mockUpcaster12);
 
         List<SerializedObject> actualObjects = chain.upcast(object1, upcastingContext);
-        for (SerializedObject actual :  actualObjects) {
+        for (SerializedObject actual : actualObjects) {
             // chaining may be lazy
             actual.getData();
         }
