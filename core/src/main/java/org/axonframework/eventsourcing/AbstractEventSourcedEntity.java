@@ -32,7 +32,7 @@ import java.util.Collection;
  */
 public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
 
-    private volatile AbstractEventSourcedAggregateRoot aggregateRoot;
+    private transient volatile AbstractEventSourcedAggregateRoot aggregateRoot;
 
     @Override
     public void registerAggregateRoot(AbstractEventSourcedAggregateRoot aggregateRootToRegister) {

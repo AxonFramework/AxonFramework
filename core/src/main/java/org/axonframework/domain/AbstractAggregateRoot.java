@@ -36,10 +36,10 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
     private static final long serialVersionUID = 6330592271927197888L;
 
     @Transient
-    private volatile EventContainer eventContainer;
+    private transient volatile EventContainer eventContainer;
 
     @Transient
-    private boolean deleted = false;
+    private transient boolean deleted = false;
 
     @Basic(optional = true)
     private Long lastEventSequenceNumber;
