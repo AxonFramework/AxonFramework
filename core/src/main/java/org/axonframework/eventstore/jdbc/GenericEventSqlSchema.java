@@ -41,8 +41,19 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     private boolean forceUtc = false;
 
     /**
-     * Set true to force all date times to use UTC time zone. You should not change this after going into production,
+     * Control if date time in the SQL scheme
+     * should use UTC time zone or system local time zone.
+     *
+     * <p>
+     * Default is to use system local time zone.
+     * </p>
+     *
+     * <p>
+     * You should not change this after going into production,
      * since it would affect the batching iterator when fetching events.
+     * </p>
+     *
+     * @param forceUtc set true to force all date times to use UTC time zone
      */
     public void setForceUtc(boolean forceUtc) {
         this.forceUtc = forceUtc;
