@@ -193,11 +193,10 @@ public interface EventSqlSchema {
     SerializedDomainEventData createSerializedDomainEventData(ResultSet resultSet) throws SQLException;
 
     /**
-     * Converts a {@link DateTime} to String.
-     * Useful when inserting date time values into the database and when filtering data, such as events.
+     * Converts a {@link DateTime} to a data value suitable for the database scheme.
      *
      * @param input {@link DateTime} to convert
-     * @return a string representing the date time suitable for the current sql scheme
+     * @return data representing the date time suitable for the current SQL scheme
      */
-    String sql_dateTimeString(DateTime input);
+    Object sql_dateTime(DateTime input);
 }

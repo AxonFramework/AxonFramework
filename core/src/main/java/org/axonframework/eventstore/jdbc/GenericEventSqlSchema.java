@@ -119,7 +119,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         preparedStatement.setString(2, aggregateType);
         preparedStatement.setString(3, aggregateIdentifier);
         preparedStatement.setLong(4, sequenceNumber);
-        preparedStatement.setString(5, sql_dateTimeString(timestamp));
+        preparedStatement.setString(5, sql_dateTime(timestamp));
         preparedStatement.setString(6, eventType);
         preparedStatement.setString(7, eventRevision);
         preparedStatement.setBytes(8, eventPayload);
@@ -175,7 +175,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         for (int i = 0; i < params.length; i++) {
             Object param = params[i];
             if (param instanceof DateTime) {
-                param = sql_dateTimeString((DateTime) param);
+                param = sql_dateTime((DateTime) param);
             }
 
             if (param instanceof byte[]) {
@@ -234,7 +234,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     }
 
     @Override
-    public String sql_dateTimeString(DateTime input) {
+    public String sql_dateTime(DateTime input) {
         if (forceUtc) {
             return input.toString(UTC_FORMATTER);
         } else {

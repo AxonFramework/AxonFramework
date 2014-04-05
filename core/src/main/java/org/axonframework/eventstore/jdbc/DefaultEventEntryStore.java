@@ -347,13 +347,13 @@ public class DefaultEventEntryStore implements EventEntryStore {
                         .append(" OR ")
                         .append("(e.timeStamp = ? AND e.sequenceNumber = ? AND e.aggregateIdentifier > ?)")
                         .append(")");
-                String dateTimeString = sqldef.sql_dateTimeString(lastItem.getTimestamp());
-                params.add(0, dateTimeString);
+                Object dateTimeSql = sqldef.sql_dateTime(lastItem.getTimestamp());
+                params.add(0, dateTimeSql);
 
-                params.add(1, dateTimeString);
+                params.add(1, dateTimeSql);
                 params.add(2, lastItem.getSequenceNumber());
 
-                params.add(3, dateTimeString);
+                params.add(3, dateTimeSql);
                 params.add(4, lastItem.getSequenceNumber());
                 params.add(5, lastItem.getAggregateIdentifier());
             }
