@@ -391,7 +391,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Not implemented yet");
+            throw new UnsupportedOperationException("Iterator is read-only");
         }
 
         @Override
@@ -432,7 +432,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Not implemented");
+            throw new UnsupportedOperationException("Iterator is read-only");
         }
 
         @Override
@@ -494,7 +494,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Not implemented");
+            throw new UnsupportedOperationException("Iterator is read-only");
         }
 
         @Override
