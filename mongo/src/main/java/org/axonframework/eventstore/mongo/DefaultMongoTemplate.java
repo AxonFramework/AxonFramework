@@ -79,6 +79,29 @@ public class DefaultMongoTemplate extends AuthenticatingMongoTemplate implements
     }
 
     /**
+     * Creates a template connecting to given <code>mongo</code> instance, and loads events in the collection with
+     * given <code>domainEventsCollectionName</code> and snapshot events from <code>snapshotEventsCollectionName</code>,
+     * in a database with given <code>databaseName</code>. When not <code>null</code>, the given <code>userName</code>
+     * and <code>password</code> are used to authenticate against the database.
+     *
+     * @param mongo                        The Mongo instance configured to connect to the Mongo Server
+     * @param databaseName                 The name of the database containing the data
+     * @param domainEventsCollectionName   The name of the collection containing domain events
+     * @param snapshotEventsCollectionName The name of the collection containing snapshot events
+     * @param authenticationDatabase       The name of the database to authenticate to
+     * @param userName                     The username to authenticate with. Use <code>null</code> to skip
+     *                                     authentication
+     * @param password                     The password to authenticate with. Use <code>null</code> to skip
+     *                                     authentication
+     */
+    public DefaultMongoTemplate(Mongo mongo, String databaseName, String domainEventsCollectionName,
+            String snapshotEventsCollectionName, String authenticationDatabase, String userName, char[] password) {
+        super(mongo, databaseName, authenticationDatabase, userName, password);
+        this.domainEventsCollectionName = domainEventsCollectionName;
+        this.snapshotEventsCollectionName = snapshotEventsCollectionName;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
