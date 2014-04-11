@@ -22,7 +22,8 @@ import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -36,19 +37,37 @@ public class XStreamSerializerTest {
 
     private XStreamSerializer testSubject;
     private static final String SPECIAL__CHAR__STRING = "Special chars: '\"&;\n\\<>/\n\t";
+    private static final String REGULAR_STRING = "Henk";
+    private TestEvent testEvent;
 
     @Before
     public void setUp() {
         this.testSubject = new XStreamSerializer();
+        this.testEvent = new TestEvent(REGULAR_STRING);
     }
 
     @Test
     public void testSerializeAndDeserializeDomainEvent() {
-        SerializedObject<byte[]> serializedEvent = testSubject.serialize(new TestEvent("Henk"), byte[].class);
+        SerializedObject<byte[]> serializedEvent = testSubject.serialize(testEvent, byte[].class);
         Object actualResult = testSubject.deserialize(serializedEvent);
         assertTrue(actualResult instanceof TestEvent);
         TestEvent actualEvent = (TestEvent) actualResult;
-        assertEquals("Henk", actualEvent.getName());
+        assertEquals(testEvent, actualEvent);
+    }
+
+    
+    @Test
+    public void testSerializeAndDeserializeDomainEvent_WithXomUpcasters(){
+        SerializedObject<nu.xom.Document> serializedEvent = testSubject.serialize(testEvent, nu.xom.Document.class);
+        Object actualResult = testSubject.deserialize(serializedEvent);
+        assertEquals(testEvent, actualResult);
+    }
+
+    @Test
+    public void testSerializeAndDeserializeDomainEvent_WithDom4JUpcasters() {
+        SerializedObject<org.dom4j.Document> serializedEvent = testSubject.serialize(testEvent, org.dom4j.Document.class);
+        Object actualResult = testSubject.deserialize(serializedEvent);
+        assertEquals(testEvent, actualResult);
     }
 
     @Test
@@ -58,7 +77,7 @@ public class XStreamSerializerTest {
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
         String asString = new String(serialized.getData(), "UTF-8");
-        assertFalse("Package name found in:" + asString, asString.contains("org.axonframework.domain"));
+        assertFalse("Package name found in:" +  asString, asString.contains("org.axonframework.domain"));
         StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
         assertTrue(asString.contains("axondomain"));
@@ -80,7 +99,7 @@ public class XStreamSerializerTest {
     public void testFieldAlias() throws UnsupportedEncodingException {
         testSubject.addFieldAlias("relevantPeriod", TestEvent.class, "period");
 
-        SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent("hello"), byte[].class);
+        SerializedObject<byte[]> serialized = testSubject.serialize(testEvent, byte[].class);
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("<relevantPeriod"));
@@ -149,5 +168,42 @@ public class XStreamSerializerTest {
         public String getName() {
             return name;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            TestEvent testEvent = (TestEvent) o;
+
+            if (date != null ? !date.equals(testEvent.date) : testEvent.date != null) {
+                return false;
+            }
+            if (dateTime != null ? !dateTime.equals(testEvent.dateTime) : testEvent.dateTime != null) {
+                return false;
+            }
+            if (name != null ? !name.equals(testEvent.name) : testEvent.name != null) {
+                return false;
+            }
+            if (period != null ? !period.equals(testEvent.period) : testEvent.period != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + (date != null ? date.hashCode() : 0);
+            result = 31 * result + (dateTime != null ? dateTime.hashCode() : 0);
+            result = 31 * result + (period != null ? period.hashCode() : 0);
+            return result;
+        }
+
     }
 }
