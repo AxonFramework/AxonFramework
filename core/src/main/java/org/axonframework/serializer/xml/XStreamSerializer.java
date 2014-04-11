@@ -18,6 +18,7 @@ package org.axonframework.serializer.xml;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.Dom4JReader;
+import com.thoughtworks.xstream.io.xml.XomReader;
 import org.axonframework.serializer.AbstractXStreamSerializer;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ConverterFactory;
@@ -135,7 +136,10 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     @Override
     public Object doDeserialize(SerializedObject serializedObject, XStream xStream) {
         if ("org.dom4j.Document".equals(serializedObject.getContentType().getName())) {
-            return xStream.unmarshal(new Dom4JReader((Document) serializedObject.getData()));
+            return xStream.unmarshal(new Dom4JReader((org.dom4j.Document) serializedObject.getData()));
+        }
+        if("nu.xom.Document".equals(serializedObject.getContentType().getName())) {
+            return xStream.unmarshal(new XomReader((nu.xom.Document) serializedObject.getData()));
         }
         InputStream serializedData = (InputStream) convert(serializedObject.getContentType(), InputStream.class,
                                                            serializedObject.getData());
@@ -146,5 +150,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     protected void registerConverters(ChainingConverterFactory converterFactory) {
         converterFactory.registerConverter(Dom4JToByteArrayConverter.class);
         converterFactory.registerConverter(InputStreamToDom4jConverter.class);
+        converterFactory.registerConverter(XomToByteArrayConverter.class);
+        converterFactory.registerConverter(InputStreamToXomConverter.class);
     }
 }
