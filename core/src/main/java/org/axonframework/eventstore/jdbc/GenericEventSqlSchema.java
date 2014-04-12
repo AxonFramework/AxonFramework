@@ -18,6 +18,8 @@ package org.axonframework.eventstore.jdbc;
 import org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,9 +33,31 @@ import java.sql.SQLException;
  */
 @SuppressWarnings("JpaQueryApiInspection")
 public class GenericEventSqlSchema implements EventSqlSchema {
+    private static final DateTimeFormatter UTC_FORMATTER = ISODateTimeFormat.dateTime().withZoneUTC();
 
     private static final String STD_FIELDS = "eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, "
             + "payloadType, payloadRevision, payload, metaData";
+
+    private boolean forceUtc = false;
+
+    /**
+     * Control if date time in the SQL scheme
+     * should use UTC time zone or system local time zone.
+     *
+     * <p>
+     * Default is to use system local time zone.
+     * </p>
+     *
+     * <p>
+     * You should not change this after going into production,
+     * since it would affect the batching iterator when fetching events.
+     * </p>
+     *
+     * @param forceUtc set true to force all date times to use UTC time zone
+     */
+    public void setForceUtc(boolean forceUtc) {
+        this.forceUtc = forceUtc;
+    }
 
     @Override
     public PreparedStatement sql_loadLastSnapshot(Connection connection, Object identifier, String aggregateType)
@@ -106,7 +130,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         preparedStatement.setString(2, aggregateType);
         preparedStatement.setString(3, aggregateIdentifier);
         preparedStatement.setLong(4, sequenceNumber);
-        preparedStatement.setString(5, timestamp.toString());
+        preparedStatement.setString(5, sql_dateTime(timestamp));
         preparedStatement.setString(6, eventType);
         preparedStatement.setString(7, eventRevision);
         preparedStatement.setBytes(8, eventPayload);
@@ -156,13 +180,13 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     @Override
     public PreparedStatement sql_getFetchAll(Connection connection, String whereClause,
                                              Object[] params) throws SQLException {
-        final String sql = "select " + STD_FIELDS + " from DomainEventEntry e " + getWhereClause(whereClause) +
+        final String sql = "select " + STD_FIELDS + " from DomainEventEntry e " + whereClause +
                 " ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC ";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < params.length; i++) {
             Object param = params[i];
             if (param instanceof DateTime) {
-                param = convertTimestampForWriting((DateTime) param);
+                param = sql_dateTime((DateTime) param);
             }
 
             if (param instanceof byte[]) {
@@ -174,16 +198,8 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         return preparedStatement;
     }
 
-    protected Object convertTimestampForWriting(DateTime param) {
-        return param.toString();
-    }
-
     protected Object readTimeStamp(ResultSet resultSet, int rowIndex) throws SQLException {
         return resultSet.getString(rowIndex);
-    }
-
-    private String getWhereClause(String whereClause) {
-        return whereClause != null ? "WHERE " + whereClause : "";
     }
 
     @Override
@@ -226,5 +242,14 @@ public class GenericEventSqlSchema implements EventSqlSchema {
                                                    resultSet.getLong(3), readTimeStamp(resultSet, 4),
                                                    resultSet.getString(5), resultSet.getString(6),
                                                    resultSet.getBytes(7), resultSet.getBytes(8));
+    }
+
+    @Override
+    public String sql_dateTime(DateTime input) {
+        if (forceUtc) {
+            return input.toString(UTC_FORMATTER);
+        } else {
+            return input.toString();
+        }
     }
 }
