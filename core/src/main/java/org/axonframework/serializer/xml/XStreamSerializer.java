@@ -24,7 +24,6 @@ import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ConverterFactory;
 import org.axonframework.serializer.RevisionResolver;
 import org.axonframework.serializer.SerializedObject;
-import org.dom4j.Document;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -141,7 +140,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         if("nu.xom.Document".equals(serializedObject.getContentType().getName())) {
             return xStream.unmarshal(new XomReader((nu.xom.Document) serializedObject.getData()));
         }
-        InputStream serializedData = (InputStream) convert(serializedObject.getContentType(), InputStream.class,
+        InputStream serializedData = convert(serializedObject.getContentType(), InputStream.class,
                                                            serializedObject.getData());
         return xStream.fromXML(new InputStreamReader(serializedData, getCharset()));
     }
@@ -150,7 +149,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     protected void registerConverters(ChainingConverterFactory converterFactory) {
         converterFactory.registerConverter(Dom4JToByteArrayConverter.class);
         converterFactory.registerConverter(InputStreamToDom4jConverter.class);
-        converterFactory.registerConverter(XomToByteArrayConverter.class);
+        converterFactory.registerConverter(XomToStringConverter.class);
         converterFactory.registerConverter(InputStreamToXomConverter.class);
     }
 }

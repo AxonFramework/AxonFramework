@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,15 @@
 package org.axonframework.serializer.xml;
 
 import nu.xom.Document;
-import org.axonframework.common.io.IOUtils;
 import org.axonframework.serializer.AbstractContentTypeConverter;
 
 /**
- * Converter that converts XOM Document instances to a byte array. The Document is written as XML string, and
- * converted to bytes using the UTF-8 character set.
+ * Converter that converts XOM Document instances to a String. The Document is written as XML string.
  *
  * @author Jochen Munz
- * @since 2.1.2
+ * @since 2.2
  */
-public class XomToByteArrayConverter extends AbstractContentTypeConverter<Document, byte[]> {
+public class XomToStringConverter extends AbstractContentTypeConverter<Document, String> {
 
     @Override
     public Class<Document> expectedSourceType() {
@@ -35,12 +33,12 @@ public class XomToByteArrayConverter extends AbstractContentTypeConverter<Docume
     }
 
     @Override
-    public Class<byte[]> targetType() {
-        return byte[].class;
+    public Class<String> targetType() {
+        return String.class;
     }
 
     @Override
-    public byte[] convert(Document original) {
-        return original.toXML().getBytes(IOUtils.UTF8);
+    public String convert(Document original) {
+        return original.toXML();
     }
 }

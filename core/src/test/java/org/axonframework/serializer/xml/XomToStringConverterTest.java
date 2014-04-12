@@ -29,21 +29,21 @@ import static org.junit.Assert.*;
 /**
  * @author Jochen Munz
  */
-public class XomToByteArrayConverterTest {
+public class XomToStringConverterTest {
 
-    private XomToByteArrayConverter testSubject;
+    private XomToStringConverter testSubject;
     private SimpleSerializedType serializedType;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new XomToByteArrayConverter();
+        testSubject = new XomToStringConverter();
         serializedType = new SimpleSerializedType("custom", "0");
     }
 
     @Test
     public void testCanConvert() {
         assertEquals(Document.class, testSubject.expectedSourceType());
-        assertEquals(byte[].class, testSubject.targetType());
+        assertEquals(String.class, testSubject.targetType());
     }
 
     @Test
@@ -53,11 +53,11 @@ public class XomToByteArrayConverterTest {
         SimpleSerializedObject<Document> original = new SimpleSerializedObject<Document>(doc,
                 Document.class,
                 serializedType);
-        SerializedObject<byte[]> actual = testSubject.convert(original);
+        SerializedObject<String> actual = testSubject.convert(original);
 
         assertNotNull(actual);
-        assertNotNull(actual.getData());
-        String actualString = new String(actual.getData());
+        String actualString = actual.getData();
+        assertNotNull(actualString);
 
         assertTrue("Wrong output: " + actualString, actualString.contains("rootElement"));
     }
