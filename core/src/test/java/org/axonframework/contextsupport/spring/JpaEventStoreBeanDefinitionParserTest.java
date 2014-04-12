@@ -16,19 +16,13 @@
 
 package org.axonframework.contextsupport.spring;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
-import java.util.List;
-
 import org.axonframework.eventstore.jpa.EventEntryStore;
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.SimpleUpcasterChain;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.*;
+import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -37,6 +31,10 @@ import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
@@ -75,11 +73,14 @@ public class JpaEventStoreBeanDefinitionParserTest {
                                                               .getGenericArgumentValue(RuntimeBeanReference.class);
         ValueHolder upcasterList = upcasterChainDefinition.getConstructorArgumentValues()
                                                           .getIndexedArgumentValue(1, List.class);
+        BeanDefinition eventEntryStoreDefinition = (BeanDefinition) definition.getConstructorArgumentValues()
+                                                                              .getArgumentValue(2, EventEntryStore.class)
+                                                                              .getValue();
         assertNotNull(upcasterList);
         assertEquals(1, ((List) upcasterList.getValue()).size());
         assertNotNull(converterFactory);
         assertEquals("converterFactory", ((RuntimeBeanReference) converterFactory.getValue()).getBeanName());
-
+        assertEquals("true", eventEntryStoreDefinition.getConstructorArgumentValues().getArgumentValue(0, Boolean.class).getValue());
         assertNotNull(beanFactory.getBean("eventStore2"));
     }
 
@@ -97,16 +98,16 @@ public class JpaEventStoreBeanDefinitionParserTest {
 
         assertNotNull(beanFactory.getBean("eventStore3"));
     }
-    
+
     @Test
     public void jpaEventStore_withCustomEventEntryStore() {
         BeanDefinition definition = beanFactory.getBeanDefinition("eventStoreWithCustomEventEntryStore");
-        
+
         ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(2, EventEntryStore.class);
         assertNotNull("Event entry store reference is wrong", reference);
         RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
         assertEquals("Event entry store reference is wrong", "customEventEntryStore", beanReference.getBeanName());
-        
+
         assertNotNull(beanFactory.getBean("eventStoreWithCustomEventEntryStore"));
     }
 }

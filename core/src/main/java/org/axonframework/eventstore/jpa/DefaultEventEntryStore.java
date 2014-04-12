@@ -20,6 +20,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +47,31 @@ import javax.persistence.Query;
 public class DefaultEventEntryStore implements EventEntryStore {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultEventEntryStore.class);
+
+    private final boolean forceUtc;
+
+    /**
+     * Initialize the Event Entry Store, storing timestamps in the system timezone.
+     *
+     * @see #DefaultEventEntryStore(boolean)
+     */
+    public DefaultEventEntryStore() {
+        this(false);
+    }
+
+    /**
+     * Initializes the EventEntryStore, with the possibility to force timestamps to be stored in UTC timezone. Although
+     * it is strongly recommended to set this value to <code>true</code>, it defaults to <code>false</code>, for
+     * backwards compatibility reasons.
+     * <p/>
+     * Providing <code>false</code> will store the timestamps in the system timezone.
+     *
+     * @param forceUtcTimestamp whether to store dates in UTC format.
+     */
+    public DefaultEventEntryStore(boolean forceUtcTimestamp) {
+        this.forceUtc = forceUtcTimestamp;
+    }
+
 
     @Override
     @SuppressWarnings({"unchecked"})
@@ -112,6 +138,10 @@ public class DefaultEventEntryStore implements EventEntryStore {
     protected DomainEventEntry createDomainEventEntry(String aggregateType, DomainEventMessage event,
                                                       SerializedObject<byte[]> serializedPayload,
                                                       SerializedObject<byte[]> serializedMetaData) {
+        if (forceUtc) {
+            return new DomainEventEntry(aggregateType, event, event.getTimestamp().toDateTime(DateTimeZone.UTC),
+                                        serializedPayload, serializedMetaData);
+        }
         return new DomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData);
     }
 

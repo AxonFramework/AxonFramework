@@ -73,6 +73,20 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
      */
     protected AbstractEventEntry(String type, DomainEventMessage event,
                                  SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
+        this(type, event, event.getTimestamp(), payload, metaData);
+    }
+
+    /**
+     * Initialize an Event entry for the given <code>event</code>.
+     *
+     * @param type      The type identifier of the aggregate root the event belongs to
+     * @param event     The event to store in the EventStore
+     * @param timestamp The timestamp to store
+     * @param payload   The serialized payload of the Event
+     * @param metaData  The serialized metaData of the Event
+     */
+    protected AbstractEventEntry(String type, DomainEventMessage event, DateTime timestamp,
+                                 SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
         this.eventIdentifier = event.getIdentifier();
         this.type = type;
         this.payloadType = payload.getType().getName();
@@ -81,7 +95,7 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
         this.aggregateIdentifier = event.getAggregateIdentifier().toString();
         this.sequenceNumber = event.getSequenceNumber();
         this.metaData = Arrays.copyOf(metaData.getData(), metaData.getData().length);
-        this.timeStamp = event.getTimestamp().toString();
+        this.timeStamp = timestamp.toString();
     }
 
     /**
@@ -95,6 +109,7 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
      *
      * @return the Aggregate Identifier of the associated event.
      */
+    @Override
     public Object getAggregateIdentifier() {
         return aggregateIdentifier;
     }

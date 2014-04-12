@@ -790,6 +790,16 @@
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:all>
+                    <xsd:attribute name="force-utc-timestamp" use="optional" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation>Indicates whether or not the timestamps of events should be forced to
+                                UTC. When false, timestamps are stored with the system timezone information. Although
+                                it is strongly recommended to set this value to true, it defaults to false, for
+                                backwards compatibility reasons. This setting is ignored when an entity-manager-provider
+                                attribute is also specified.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                     <xsd:attribute name="data-source" use="optional"
                                    type="xsd:string">
                         <xsd:annotation>
@@ -922,7 +932,7 @@
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="persistence-exception-resolver" use="optional" type="xsd:string">
-                    <xsd:annotation>
+                        <xsd:annotation>
                             <xsd:documentation>
                                 Sets the persistence exception resolver to use to detect concurrency related errors in
                                 database generated exceptions.
@@ -936,7 +946,7 @@
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="connection-provider" use="optional" type="xsd:string">
-                    <xsd:annotation>
+                        <xsd:annotation>
                             <xsd:documentation>
                                 Reference to the bean providing connections to the backing database. This allows for
                                 more fine-grained control over how connections are managed.
@@ -950,7 +960,7 @@
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="max-snapshots-archived" use="optional" type="xsd:string">
-                    <xsd:annotation>
+                        <xsd:annotation>
                             <xsd:documentation>
                                 Sets the maximum number of snapshots to archive for an aggregate. The EventStore will
                                 keep at most this number of snapshots per aggregate. Defaults to 1. A value less than 1
@@ -959,7 +969,7 @@
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="batch-size" use="optional" type="xsd:string">
-                    <xsd:annotation>
+                        <xsd:annotation>
                             <xsd:documentation>
                                 Sets the number of events that should be read at each database access. When more than
                                 this number of events must be read to rebuild an aggregate's state, the events are read
@@ -968,16 +978,16 @@
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="sql-schema" use="optional" type="xsd:string">
-                    <xsd:annotation>
+                        <xsd:annotation>
                             <xsd:documentation>
                                 Reference to the bean that defines the SQL statements to use for different Event Store
                                 operations
                             </xsd:documentation>
-                        <xsd:appinfo>
-                            <tool:annotation kind="ref">
-                                <tool:expected-type type="org.axonframework.eventstore.jdbc.EventSqlSchema"/>
-                            </tool:annotation>
-                        </xsd:appinfo>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.eventstore.jdbc.EventSqlSchema"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                     <xsd:attribute name="event-entry-store-ref" type="xsd:string">

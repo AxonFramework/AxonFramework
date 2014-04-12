@@ -17,6 +17,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
+import org.axonframework.eventstore.jpa.DefaultEventEntryStore;
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
@@ -42,6 +43,7 @@ import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowi
  */
 public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
+    private static final String FORCE_UTC_TIMESTAMP_ATTRIBUTE = "force-utc-timestamp";
     private UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
     /**
      * the event serializer attribute.
@@ -73,7 +75,8 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         } else {
             builder.addConstructorArgValue(
                     BeanDefinitionBuilder.genericBeanDefinition(ContainerManagedEntityManagerProvider.class)
-                                         .getBeanDefinition());
+                                         .getBeanDefinition()
+            );
         }
         Object serializer;
         if (element.hasAttribute(EVENT_SERIALIZER_ATTRIBUTE)) {
@@ -83,9 +86,16 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         }
         builder.addConstructorArgValue(serializer);
         if (element.hasAttribute(EVENT_ENTRY_STORE_ATTRIBUTE)) {
-        	Object eventEntryStore = new RuntimeBeanReference(element.getAttribute(EVENT_ENTRY_STORE_ATTRIBUTE));
+            Object eventEntryStore = new RuntimeBeanReference(element.getAttribute(EVENT_ENTRY_STORE_ATTRIBUTE));
             builder.addConstructorArgValue(eventEntryStore);
+        } else if (element.hasAttribute(FORCE_UTC_TIMESTAMP_ATTRIBUTE)) {
+            builder.addConstructorArgValue(
+                    BeanDefinitionBuilder.genericBeanDefinition(DefaultEventEntryStore.class)
+                                         .addConstructorArgValue(element.getAttribute(FORCE_UTC_TIMESTAMP_ATTRIBUTE))
+                                         .getBeanDefinition()
+            );
         }
+
         if (element.hasAttribute(DATA_SOURCE_ATTRIBUTE)) {
             builder.addPropertyReference("dataSource", element.getAttribute(DATA_SOURCE_ATTRIBUTE));
         }

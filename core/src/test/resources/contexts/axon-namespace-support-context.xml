@@ -172,7 +172,8 @@
                           event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000"/>
 
     <axon:jpa-event-store id="eventStore2" data-source="dataSource" entity-manager-provider="myEntityManagerProvider"
-                          event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000">
+                          event-serializer="eventSerializer" force-utc-timestamp="true" max-snapshots-archived="2"
+                          batch-size="1000">
         <axon:upcasters converter-factory="converterFactory" strategy="eager">
             <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
                 <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
