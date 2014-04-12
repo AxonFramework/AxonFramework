@@ -188,7 +188,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         if (snapshotEvent == null && !entries.hasNext()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new CursorBackedDomainEventStream(snapshotEvent, entries, identifier, false);
+        return new IteratorDomainEventStream(snapshotEvent, entries, identifier, false);
     }
 
     @Override
@@ -207,7 +207,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         if (!entries.hasNext()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
-        return new CursorBackedDomainEventStream(null, entries, identifier, lastSequenceNumber, false);
+        return new IteratorDomainEventStream(null, entries, identifier, lastSequenceNumber, false);
     }
 
     /**
@@ -252,7 +252,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
                                                                                             parameters,
                                                                                             batchSize
                                                                                             );
-        DomainEventStream eventStream = new CursorBackedDomainEventStream(null, batch, null, true);
+        DomainEventStream eventStream = new IteratorDomainEventStream(null, batch, null, true);
 		try {
 			while (eventStream.hasNext()) {
 				visitor.doWithEvent(eventStream.next());
@@ -304,23 +304,23 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         this.maxSnapshotsArchived = maxSnapshotsArchived;
     }
 
-    private final class CursorBackedDomainEventStream implements DomainEventStream, Closeable {
+    private final class IteratorDomainEventStream implements DomainEventStream, Closeable {
 
         private Iterator<DomainEventMessage> currentBatch;
         private DomainEventMessage next;
-        private final Iterator<? extends SerializedDomainEventData> cursor;
+        private final Iterator<? extends SerializedDomainEventData> iterator;
         private final Object aggregateIdentifier;
         private final long lastSequenceNumber;
         private final boolean skipUnknownTypes;
 
-        public CursorBackedDomainEventStream(DomainEventMessage snapshotEvent,
-                                             Iterator<? extends SerializedDomainEventData> cursor,
+        public IteratorDomainEventStream(DomainEventMessage snapshotEvent,
+                                             Iterator<? extends SerializedDomainEventData> iterator,
                                              Object aggregateIdentifier, boolean skipUnknownTypes) {
-            this(snapshotEvent, cursor, aggregateIdentifier, Long.MAX_VALUE, skipUnknownTypes);
+            this(snapshotEvent, iterator, aggregateIdentifier, Long.MAX_VALUE, skipUnknownTypes);
         }
 
-        public CursorBackedDomainEventStream(DomainEventMessage snapshotEvent,
-                                             Iterator<? extends SerializedDomainEventData> cursor,
+        public IteratorDomainEventStream(DomainEventMessage snapshotEvent,
+                                             Iterator<? extends SerializedDomainEventData> iterator,
                                              Object aggregateIdentifier, long lastSequenceNumber,
                                              boolean skipUnknownTypes) {
             this.aggregateIdentifier = aggregateIdentifier;
@@ -331,7 +331,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
             } else {
                 currentBatch = Collections.<DomainEventMessage>emptyList().iterator();
             }
-            this.cursor = cursor;
+            this.iterator = iterator;
             initializeNextItem();
         }
 
@@ -350,8 +350,8 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         }
 
         private void initializeNextItem() {
-            while (!currentBatch.hasNext() && cursor.hasNext()) {
-                final SerializedDomainEventData entry = cursor.next();
+            while (!currentBatch.hasNext() && iterator.hasNext()) {
+                final SerializedDomainEventData entry = iterator.next();
                 currentBatch = upcastAndDeserialize(entry, aggregateIdentifier, serializer, upcasterChain,
                                                     skipUnknownTypes)
                         .iterator();
@@ -366,7 +366,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
 
 		@Override
 		public void close() throws IOException {
-			IOUtils.closeIfCloseable(cursor);
+			IOUtils.closeIfCloseable(iterator);
 		}
 	}
 }

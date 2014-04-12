@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -120,10 +121,10 @@ public class DefaultEventEntryStoreTest {
     }
 
     @Test
-    public void filteredFetch() throws SQLException {
+    public void filteredFetchPayloadRevision() throws SQLException {
         deleteCurrentPersistentEvents();
-        DomainEventMessage dem = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        es.persistEvent(aggregateType, dem, getPayload(), getMetaData());
+        DomainEventMessage dem1 = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
+        es.persistEvent(aggregateType, dem1, getPayload(), getMetaData());
         DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
         es.persistEvent(aggregateType, dem2, getPayloadv4(), getMetaData());
 
@@ -136,9 +137,56 @@ public class DefaultEventEntryStoreTest {
 
         final List<Object> parameters1 = parameters.getParameters();
         final Iterator<? extends SerializedDomainEventData> iterator = es.fetchFiltered(query.toString(), parameters1, 1);
+
         assertTrue( iterator.hasNext());
-        final SerializedDomainEventData next = iterator.next();
-        assertEquals(122, next.getSequenceNumber());
+        final SerializedDomainEventData ret1 = iterator.next();
+        assertEquals(122, ret1.getSequenceNumber());
+
+        assertFalse( iterator.hasNext());
+    }
+
+    @Test
+    public void filteredFetch() throws SQLException {
+        deleteCurrentPersistentEvents();
+        DomainEventMessage dem1 = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
+        es.persistEvent(aggregateType, dem1, getPayload(), getMetaData());
+        DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
+        es.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
+
+        final Iterator<? extends SerializedDomainEventData> iterator = es.fetchFiltered(
+                null, Collections.<Object>emptyList(), 1);
+
+        assertTrue(iterator.hasNext());
+        final SerializedDomainEventData ret1 = iterator.next();
+        assertEquals(122, ret1.getSequenceNumber());
+
+        assertTrue(iterator.hasNext());
+        final SerializedDomainEventData ret2 = iterator.next();
+        assertEquals(123, ret2.getSequenceNumber());
+
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void filteredFetchLargerBatchSize() throws SQLException {
+        deleteCurrentPersistentEvents();
+        DomainEventMessage dem1 = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
+        es.persistEvent(aggregateType, dem1, getPayload(), getMetaData());
+        DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
+        es.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
+
+        final Iterator<? extends SerializedDomainEventData> iterator = es.fetchFiltered(
+                null, Collections.<Object>emptyList(), 100);
+
+        assertTrue(iterator.hasNext());
+        final SerializedDomainEventData ret1 = iterator.next();
+        assertEquals(122, ret1.getSequenceNumber());
+
+        assertTrue(iterator.hasNext());
+        final SerializedDomainEventData ret2 = iterator.next();
+        assertEquals(123, ret2.getSequenceNumber());
+
+        assertFalse(iterator.hasNext());
     }
 
     private void checkSame(DomainEventMessage expected, SerializedDomainEventData actual) {
