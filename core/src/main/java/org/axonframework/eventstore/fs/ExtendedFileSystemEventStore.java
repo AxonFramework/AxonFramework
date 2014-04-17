@@ -42,7 +42,6 @@ public class ExtendedFileSystemEventStore extends FileSystemEventStore implement
                 DomainEventStream eventStream=readEvents(eventType, identifier);
                 while (eventStream.hasNext()) {
                     DomainEventMessage<?> eventMessage=eventStream.next();
-                    System.err.println(eventMessage);
                     visitor.doWithEvent(eventMessage);
                 }
             }
