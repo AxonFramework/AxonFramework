@@ -39,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.eq;
 
 /**
  * @author Allard Buijze

@@ -110,14 +110,14 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
     }
 
     @Override
-    public <T> SerializedObject<T> serializePayload(Serializer serializer,
-                                                    Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializePayload(Serializer serializer,
+                                                    Class<R> expectedRepresentation) {
         return serializedObjectHolder.serializePayload(serializer, expectedRepresentation);
     }
 
     @Override
-    public <T> SerializedObject<T> serializeMetaData(Serializer serializer,
-                                                     Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializeMetaData(Serializer serializer,
+                                                     Class<R> expectedRepresentation) {
         return serializedObjectHolder.serializeMetaData(serializer, expectedRepresentation);
     }
 

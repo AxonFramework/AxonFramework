@@ -52,7 +52,8 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
      * already attached to the Unit of Work. Given <code>attachAsInheritedResource</code> flag indicates whether
      * the resource should be inherited by nested Unit of Work.
      *
-     * @param delegate The connection provider creating connections, when required
+     * @param delegate                  The connection provider creating connections, when required
+     * @param attachAsInheritedResource whether or not nested Units of Work should inherit connections
      */
     public UnitOfWorkAwareConnectionProviderWrapper(ConnectionProvider delegate, boolean attachAsInheritedResource) {
         this.delegate = delegate;

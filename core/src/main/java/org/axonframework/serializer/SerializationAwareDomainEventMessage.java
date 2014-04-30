@@ -98,6 +98,7 @@ public class SerializationAwareDomainEventMessage<T> extends SerializationAwareE
      *
      * @return the DomainEventMessage wrapped by this message
      */
+    @Override
     protected Object writeReplace() {
         return domainEventMessage;
     }

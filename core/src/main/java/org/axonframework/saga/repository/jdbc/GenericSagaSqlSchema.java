@@ -29,6 +29,7 @@ import java.sql.SQLException;
  *
  * @author Kristian Rosenvold
  * @author Allard Buijze
+ * @since 2.2
  */
 public class GenericSagaSqlSchema implements SagaSqlSchema {
 
@@ -111,7 +112,8 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     }
 
     @Override
-    public PreparedStatement sql_storeSaga(Connection connection, String sagaIdentifier, String revision, String sagaType,
+    public PreparedStatement sql_storeSaga(Connection connection, String sagaIdentifier, String revision,
+                                           String sagaType,
                                            byte[] serializedSaga) throws SQLException {
         final String sql = "INSERT INTO SagaEntry(sagaId, revision, sagaType, serializedSaga) VALUES(?,?,?,?)";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);

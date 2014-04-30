@@ -165,7 +165,7 @@ public class SpringAggregateSnapshotterTest {
 
             @Override
             public void describeTo(Description description) {
-                description.appendText("exected event with sequence number: ");
+                description.appendText("expected event with sequence number: ");
                 description.appendValue(sequenceNumber);
             }
         });

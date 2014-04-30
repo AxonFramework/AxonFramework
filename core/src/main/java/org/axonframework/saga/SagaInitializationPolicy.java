@@ -25,6 +25,9 @@ package org.axonframework.saga;
  */
 public class SagaInitializationPolicy {
 
+    /**
+     * Value indicating there is no Initialization required
+     */
     public static final SagaInitializationPolicy NONE = new SagaInitializationPolicy(SagaCreationPolicy.NONE, null);
 
     private final SagaCreationPolicy creationPolicy;

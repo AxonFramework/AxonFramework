@@ -49,6 +49,6 @@
             repository="exampleRepository" command-bus="commandBus"/>
 
 
-    <bean id="xStreamSerialiser"
+    <bean id="xStreamSerializer"
           class="org.axonframework.serializer.xml.XStreamSerializer"/>
 </beans>

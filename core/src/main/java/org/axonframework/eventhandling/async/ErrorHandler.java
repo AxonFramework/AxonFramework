@@ -40,9 +40,8 @@ public interface ErrorHandler {
      *
      * @param exception     The exception thrown by the handler (or unit of work)
      * @param eventMessage  The message being processed
-     * @param eventListener The listener throwing the exception, or <code>null</code> if an error occured in the Unit
-     *                      of
-     *                      Work
+     * @param eventListener The listener throwing the exception, or <code>null</code> if an error occurred in the Unit
+     *                      of Work
      * @return the policy the Event Processor should apply to resolve the issue
      */
     RetryPolicy handleError(Throwable exception, EventMessage<?> eventMessage, EventListener eventListener);

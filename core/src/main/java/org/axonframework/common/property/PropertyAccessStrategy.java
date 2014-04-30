@@ -74,9 +74,9 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
     }
 
     /**
-     * Iterates over all known {@link PropertyAccessStrategy} implementations to create a {@link Property}
-     * instance for the given parameters. Strategies are invoked in the order they are found on the classpath.
-     * The first to provide a suitable Property instance will be used.
+     * Iterates over all known PropertyAccessStrategy implementations to create a {@link Property} instance for the
+     * given parameters. Strategies are invoked in the order they are found on the classpath. The first to provide a
+     * suitable Property instance will be used.
      *
      * @param targetClass  class that contains property
      * @param propertyName name of the property to create propertyReader for
@@ -126,7 +126,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
      * @param property    The name of the property to find
      * @param <T>         The type of class on which to find the property
      * @return the Property instance providing access to the property value, or <code>null</code> if property could not
-     *         be found.
+     * be found.
      */
     protected abstract <T> Property<T> propertyFor(Class<T> targetClass, String property);
 }

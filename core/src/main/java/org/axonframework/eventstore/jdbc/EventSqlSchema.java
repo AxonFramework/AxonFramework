@@ -185,7 +185,7 @@ public interface EventSqlSchema {
      *
      * @param resultSet The result set returned from executing one of the Prepared Statements declared on this
      *                  interface
-     * @return a single SerializedDomeinEventData
+     * @return a single SerializedDomainEventData instance
      *
      * @throws SQLException when an exception occurs while creating the prepared statement
      * @see org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData

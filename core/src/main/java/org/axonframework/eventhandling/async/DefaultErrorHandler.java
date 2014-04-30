@@ -52,18 +52,20 @@ public class DefaultErrorHandler implements ErrorHandler {
         }
 
         if (retryPolicy.requiresRescheduleEvent()) {
-            logger.warn("Got a [{}] while handling an event of type [{}] in [{}]. Will retry in {} millis", new Object[]{
-                    exception.toString(),
-                    eventMessage.getPayloadType().getSimpleName(),
-                    typeOf(eventListener),
-                    retryPolicy.waitTime()});
+            logger.warn("Got a [{}] while handling an event of type [{}] in [{}]. Will retry in {} millis",
+                        exception.toString(),
+                        eventMessage.getPayloadType().getSimpleName(),
+                        typeOf(eventListener),
+                        retryPolicy.waitTime());
         } else {
-            logger.warn("Handler [{}] threw an exception while handling event of type [{}]. {}", new Object[]{
-                    typeOf(eventListener),
-                    eventMessage.getPayloadType().getSimpleName(),
-                    retryPolicy.requiresRollback() ? "Rolling back Unit of Work and proceeding with next event"
-                            : "Continuing processing with next handler",
-                    exception});
+            logger.warn("Handler [{}] threw an exception while handling event of type [{}]. {}",
+                        typeOf(eventListener),
+                        eventMessage.getPayloadType().getSimpleName(),
+                        retryPolicy.requiresRollback()
+                                ? "Rolling back Unit of Work and proceeding with next event"
+                                : "Continuing processing with next handler",
+                        exception
+            );
         }
         return retryPolicy;
     }

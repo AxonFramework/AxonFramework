@@ -36,7 +36,7 @@ import static java.util.Arrays.asList;
  * For details about the structure of compatible interfaces, see {@link GatewayProxyFactory}.
  *
  * @param <T> The type of gateway to be created by this factory bean. Note that the correct interface must also be set
- *            using {@link #setGatewayInterface(Class)}. Failure to do so may result in class cast execptions.
+ *            using {@link #setGatewayInterface(Class)}. Failure to do so may result in class cast exceptions.
  * @author Allard Buijze
  * @see GatewayProxyFactory
  * @since 2.0
@@ -64,6 +64,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void afterPropertiesSet() throws Exception {
         if (commandBus == null) {

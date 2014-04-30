@@ -80,7 +80,7 @@ public class AssociationValuesImplTest {
     }
 
     @Test
-    public void testContaines() {
+    public void testContains() {
         assertFalse(testSubject.contains(associationValue));
         testSubject.add(associationValue);
         assertTrue(testSubject.contains(associationValue));

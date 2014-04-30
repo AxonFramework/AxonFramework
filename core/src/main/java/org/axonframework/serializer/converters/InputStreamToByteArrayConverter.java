@@ -47,7 +47,7 @@ public class InputStreamToByteArrayConverter extends AbstractContentTypeConverte
         try {
             return bytesFrom(original);
         } catch (IOException e) {
-            throw new CannotConvertBetweenTypesException("Unable to convert inputstream to byte[]. "
+            throw new CannotConvertBetweenTypesException("Unable to convert InputStream to byte[]. "
                                                                  + "Error while reading from Stream.", e);
         }
     }

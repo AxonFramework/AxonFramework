@@ -104,8 +104,8 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                         .addConstructorArgReference(element.getAttribute(ATTRIBUTE_EVENT_BUS))
                         .addConstructorArgValue(createConfiguration(element, parserContext))
                         .getBeanDefinition();
-        Element reposElement = DomUtils.getChildElementByTagName(element, ELEMENT_REPOSITORIES);
-        List<Element> repositories = DomUtils.getChildElementsByTagName(reposElement, ELEMENT_REPOSITORY);
+        Element repoElement = DomUtils.getChildElementByTagName(element, ELEMENT_REPOSITORIES);
+        List<Element> repositories = DomUtils.getChildElementsByTagName(repoElement, ELEMENT_REPOSITORY);
         String id = super.resolveId(element, definition, parserContext);
         for (Element repository : repositories) {
             parseRepository(repository, id, parserContext);

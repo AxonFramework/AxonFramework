@@ -38,9 +38,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 
 /**

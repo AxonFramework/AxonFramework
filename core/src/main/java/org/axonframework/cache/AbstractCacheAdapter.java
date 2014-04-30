@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * Abstract implementation of the Cache interface which makes it easier to implement Adapters.
  *
+ * @param <L> The type of event listener the cache uses
  * @author Allard Buijze
  * @since 2.1.2
  */

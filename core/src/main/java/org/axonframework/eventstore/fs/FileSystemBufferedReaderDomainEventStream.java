@@ -46,7 +46,7 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  */
 public class FileSystemBufferedReaderDomainEventStream implements DomainEventStream, Closeable {
 
-    private Queue<DomainEventMessage> next;
+    private final Queue<DomainEventMessage> next;
     private final FileSystemEventMessageReader eventMessageReader;
     private final UpcasterChain upcasterChain;
     private final Serializer serializer;

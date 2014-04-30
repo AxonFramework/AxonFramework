@@ -39,7 +39,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      * given message. Otherwise, the given <code>event</code> is wrapped into a GenericEventMessage as its payload.
      *
      * @param event the event to wrap as EventMessage
-     * @param <T>   The generic type of the expected payload of the resuling object
+     * @param <T>   The generic type of the expected payload of the resulting object
      * @return an EventMessage containing given <code>event</code> as payload, or <code>event</code> if it already
      *         implements EventMessage.
      */

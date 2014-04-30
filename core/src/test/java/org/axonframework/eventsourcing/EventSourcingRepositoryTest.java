@@ -56,14 +56,14 @@ public class EventSourcingRepositoryTest {
     private EventBus mockEventBus;
     private EventSourcingRepository<TestAggregate> testSubject;
     private UnitOfWork unitOfWork;
-    private SubtAggregateFactory subtAggregateFactory;
+    private StubAggregateFactory stubAggregateFactory;
 
     @Before
     public void setUp() {
         mockEventStore = mock(SnapshotEventStore.class);
         mockEventBus = mock(EventBus.class);
-        subtAggregateFactory = new SubtAggregateFactory();
-        testSubject = new EventSourcingRepository<TestAggregate>(subtAggregateFactory, mockEventStore);
+        stubAggregateFactory = new StubAggregateFactory();
+        testSubject = new EventSourcingRepository<TestAggregate>(stubAggregateFactory, mockEventStore);
         testSubject.setEventBus(mockEventBus);
         unitOfWork = DefaultUnitOfWork.startAndGet();
     }
@@ -168,7 +168,8 @@ public class EventSourcingRepositoryTest {
                 new SimpleDomainEventStream(new GenericDomainEventMessage<String>(identifier, (long) 1,
                                                                                   "Mock contents",
                                                                                   MetaData.emptyInstance()
-                ), event2, event3));
+                ), event2, event3)
+        );
 
         try {
             testSubject.load(identifier, 1L);
@@ -268,7 +269,7 @@ public class EventSourcingRepositoryTest {
 
     @Test
     public void testSaveEventsWithDecorators() {
-        testSubject = new EventSourcingRepository<TestAggregate>(subtAggregateFactory, new EventStore() {
+        testSubject = new EventSourcingRepository<TestAggregate>(stubAggregateFactory, new EventStore() {
             @Override
             public void appendEvents(String type, DomainEventStream events) {
                 while (events.hasNext()) {
@@ -305,7 +306,7 @@ public class EventSourcingRepositoryTest {
         inOrder.verify(decorator2.lastSpy).next();
     }
 
-    private static class SubtAggregateFactory extends AbstractAggregateFactory<TestAggregate> {
+    private static class StubAggregateFactory extends AbstractAggregateFactory<TestAggregate> {
 
         @Override
         public TestAggregate doCreateAggregate(Object aggregateIdentifier,
@@ -353,6 +354,7 @@ public class EventSourcingRepositoryTest {
             return handledEvents;
         }
 
+        @Override
         public UUID getIdentifier() {
             return identifier;
         }

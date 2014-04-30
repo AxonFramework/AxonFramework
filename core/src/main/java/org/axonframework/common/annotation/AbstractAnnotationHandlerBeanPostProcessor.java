@@ -190,7 +190,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     /**
      * Sets the phase in which handlers are subscribed and unsubscribed. Defaults to 0.
      *
-     * @param phase The phase in which handlers are subsribed and unsubscribed
+     * @param phase The phase in which handlers are subscribed and unsubscribed
      */
     public void setPhase(int phase) {
         this.phase = phase;
@@ -343,7 +343,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     private static final class AdapterIntroductionInterceptor implements IntroductionInfo, IntroductionInterceptor {
 
         private final Object adapter;
-        private Class<?> adapterInterface;
+        private final Class<?> adapterInterface;
 
         private AdapterIntroductionInterceptor(Object adapter, Class<?> adapterInterface) {
             this.adapter = adapter;

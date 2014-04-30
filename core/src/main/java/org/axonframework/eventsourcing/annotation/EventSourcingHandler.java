@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * that aggregate. The parameters of the annotated method are resolved using parameter resolvers.
  * <p/>
  * Axon provides a number of parameter resolvers that allow you to use the following parameter types:<ul>
- * <li>The first parameter is always the payload of the Event message, unless the <code>payloadType</code> paremeter is
+ * <li>The first parameter is always the payload of the Event message, unless the <code>payloadType</code> parameter is
  * provided. In that case, the first parameter any other type of parameter described below.</li>
  * <li>Parameters annotated with <code>@MetaData</code> will resolve to the Meta Data value with the key as indicated
  * on the annotation. If required is false (default), null is passed when the meta data value is not present. If

@@ -92,6 +92,7 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
             CacheEntryUpdatedListener<K, V>, CacheEntryCreatedListener<K, V>, CacheEntryExpiredListener<K, V>,
             CacheEntryRemovedListener<K, V>, Factory<CacheEntryListener<? super K, ? super V>>, Serializable {
 
+        private static final long serialVersionUID = 3260575514029378445L;
         private final EntryListener delegate;
 
         public JCacheListenerAdapter(EntryListener delegate) {

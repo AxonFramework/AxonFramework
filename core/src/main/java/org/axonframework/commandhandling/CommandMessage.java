@@ -48,6 +48,7 @@ public interface CommandMessage<T> extends Message<T> {
      * @param metaData The new MetaData for the Message
      * @return a copy of this message with the given MetaData
      */
+    @Override
     CommandMessage<T> withMetaData(Map<String, ?> metaData);
 
     /**
@@ -57,5 +58,6 @@ public interface CommandMessage<T> extends Message<T> {
      * @param metaData The MetaData to merge with
      * @return a copy of this message with the given MetaData
      */
+    @Override
     CommandMessage<T> andMetaData(Map<String, ?> metaData);
 }

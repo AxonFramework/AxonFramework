@@ -38,7 +38,7 @@ import org.axonframework.repository.NullLockManager;
 public class HybridJpaRepository<T extends AggregateRoot> extends GenericJpaRepository<T> {
 
     private EventStore eventStore;
-    private String aggregateTypeIdentifier;
+    private final String aggregateTypeIdentifier;
 
     /**
      * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> and the locking

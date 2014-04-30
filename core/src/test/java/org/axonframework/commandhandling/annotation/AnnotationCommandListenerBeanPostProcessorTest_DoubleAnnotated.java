@@ -37,7 +37,6 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -71,7 +70,7 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
         SecurityContextHolder.setContext(new SecurityContext() {
             @Override
             public Authentication getAuthentication() {
-                return new TestingAuthenticationToken("Princpipal", "Credentials",
+                return new TestingAuthenticationToken("Principal", "Credentials",
                                                       "ROLE_ADMINISTRATOR", "ROLE_INTERFACE");
             }
 

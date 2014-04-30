@@ -33,7 +33,7 @@ public abstract class Assert {
      * Asserts that the value of <code>state</code> is true. If not, an IllegalStateException is thrown.
      *
      * @param state   the state validation expression
-     * @param message The message that the excetion contains if state evaluates to false
+     * @param message The message that the exception contains if state evaluates to false
      */
     public static void state(boolean state, String message) {
         if (!state) {

@@ -86,7 +86,7 @@ public abstract class ReflectionUtils {
      * @param instanceClass  The class on which to look for the method
      * @param methodName     The name of the method
      * @param parameterTypes The parameter types of the method
-     * @return The class on which the method is decalred, or <code>null</code> if not found
+     * @return The class on which the method is declared, or <code>null</code> if not found
      */
     public static Class<?> declaringClass(Class<?> instanceClass, String methodName, Class<?>... parameterTypes) {
         try {
@@ -114,7 +114,7 @@ public abstract class ReflectionUtils {
      * <code>false</code>.
      *
      * @param value      One of the values to compare
-     * @param otherValue other value to compate
+     * @param otherValue other value to compare
      * @return <code>true</code> if these objects explicitly indicate they are not equal, <code>false</code> otherwise.
      */
     @SuppressWarnings("unchecked")

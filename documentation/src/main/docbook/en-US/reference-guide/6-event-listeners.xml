@@ -172,6 +172,34 @@
                     may contain any number of Events.</para>
             </simplesect>
         </sect2>
+        <sect2>
+            <title>Publishing Events</title>
+            <para>In the vast majority of cases, the Aggregates will publish events by registering
+                events and storing the aggregates in their respective repository. However,
+                occasionally, it is necessary to publish an event from another component, directly
+                to the Event Bus. To publish an event, simply wrap the payload describing the event
+                in an <code>EventMessage</code>. The
+                    <code>GenericEventMessage.asEventMessage(Object)</code> method allows you wrap
+                any object into an <code>EventMessage</code>. If the passed object is already an
+                    <code>EventMessage</code>, it is simply returned.</para>
+            <para>Publishing Events to the Event Bus directly could, in some cases, give unwanted
+                behavior. When multiple events are published in sequence, and a handler will publish
+                another event based on one of the earlier events, other handlers may receive these
+                events in a different order. Therefore, it is recommended to check for an active
+                Unit of Work before publishing to the Event Bus and use the Unit of Work to publish
+                the event on the bus.</para>
+            <simplesect>
+                <title><code>EventTemplate</code></title>
+                <para>To make the publication process easier, and safer, Axon provides the
+                        <code>EventTemplate</code> class. It is initialized by providing the
+                        <code>EventBus</code> instance on which it should publish the events.
+                    Optionally, you may also provide meta data which you would like to attach to
+                    each event sent through this template. Use the <code>publishEvent(Object)</code>
+                    or <code>publishEvent(Object, Map&lt;String,Object))</code> to publish events.
+                    The latter allows you to add meta data to the event, before it is published.
+                </para>
+            </simplesect>
+        </sect2>
     </sect1>
     <sect1 xml:id="event-listeners">
         <title>Event Listeners</title>

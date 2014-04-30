@@ -241,8 +241,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     private static class ErrorCommand extends StubCommand {
 
-        public ErrorCommand(Object agregateIdentifier) {
-            super(agregateIdentifier);
+        public ErrorCommand(Object aggregateIdentifier) {
+            super(aggregateIdentifier);
         }
     }
 
@@ -262,8 +262,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     private static class CreateCommand extends StubCommand {
 
-        public CreateCommand(Object agregateIdentifier) {
-            super(agregateIdentifier);
+        public CreateCommand(Object aggregateIdentifier) {
+            super(aggregateIdentifier);
         }
     }
 

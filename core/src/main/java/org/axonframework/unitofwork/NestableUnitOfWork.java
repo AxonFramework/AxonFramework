@@ -41,10 +41,10 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
 
     private boolean isStarted;
     private UnitOfWork outerUnitOfWork;
-    private List<NestableUnitOfWork> innerUnitsOfWork = new ArrayList<NestableUnitOfWork>();
+    private final List<NestableUnitOfWork> innerUnitsOfWork = new ArrayList<NestableUnitOfWork>();
     private boolean isCommitted = false;
-    private Map<String, Object> resources = new HashMap<String, Object>();
-    private Map<String, Object> inheritedResources = new HashMap<String, Object>();
+    private final Map<String, Object> resources = new HashMap<String, Object>();
+    private final Map<String, Object> inheritedResources = new HashMap<String, Object>();
 
     @Override
     public void commit() {
@@ -83,7 +83,7 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
      * Invokes when a child Unit of Work should register its scheduled events with the given <code>unitOfWork</code>.
      * Typically, the given <code>unitOfWork</code> is the parent of the current.
      *
-     * @param unitOfWork The Wnit of Work to register scheduled events with
+     * @param unitOfWork The Unit of Work to register scheduled events with
      * @see org.axonframework.unitofwork.UnitOfWork#publishEvent(org.axonframework.domain.EventMessage,
      * org.axonframework.eventhandling.EventBus)
      */

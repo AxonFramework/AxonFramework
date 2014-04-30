@@ -86,6 +86,15 @@ public abstract class AbstractAnnotatedEntity extends AbstractEventSourcedEntity
         }
     }
 
+    /**
+     * Creates (or returns) a ParameterResolverFactory which is used by this aggregate root to resolve the parameters
+     * for @EventSourcingHandler annotated methods.
+     * <p/>
+     * This implementation uses the parameter resolver of the aggregate root. This method may be overridden to alter
+     * this behavior.
+     *
+     * @return the parameter resolver with which to resolve parameters for event handler methods.
+     */
     protected ParameterResolverFactory createParameterResolverFactory() {
         return ((AbstractAnnotatedAggregateRoot) getAggregateRoot()).createParameterResolverFactory();
     }

@@ -190,7 +190,7 @@
                     aggregate is saved to a repository.</para>
             </simplesect>
         </sect2>
-        <sect2>
+        <sect2 xml:id="event-sourced-aggregates">
             <title>Event sourced aggregates</title>
             <para>Axon framework provides a few repository implementations that can use event
                 sourcing as storage method for aggregates. These repositories require that

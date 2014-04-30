@@ -36,7 +36,7 @@ import java.util.ServiceLoader;
 public abstract class MonitorRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(MonitorRegistry.class);
-    private static List<MonitorRegistry> registries;
+    private static final List<MonitorRegistry> registries;
 
     static {
         registries = new ArrayList<MonitorRegistry>();
@@ -58,9 +58,9 @@ public abstract class MonitorRegistry {
             try {
                 registry.registerBean(monitoringBean, componentType);
             } catch (Exception e) {
-                logger.warn("Exception when registering {} with {} ", new Object[]{monitoringBean, registry, e});
+                logger.warn("Exception when registering {} with {} ", monitoringBean, registry, e);
             } catch (Error e) {
-                logger.warn("Error when registering {} with {} ", new Object[]{monitoringBean, registry, e});
+                logger.warn("Error when registering {} with {} ", monitoringBean, registry, e);
             }
         }
     }

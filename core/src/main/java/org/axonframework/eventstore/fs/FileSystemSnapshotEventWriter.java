@@ -38,9 +38,9 @@ import java.io.OutputStream;
  */
 public class FileSystemSnapshotEventWriter {
 
-    private InputStream eventFile;
-    private OutputStream snapshotEventFile;
-    private Serializer eventSerializer;
+    private final InputStream eventFile;
+    private final OutputStream snapshotEventFile;
+    private final Serializer eventSerializer;
 
     /**
      * Creates a snapshot event writer that writes any given <code>snapshotEvent</code> to the given

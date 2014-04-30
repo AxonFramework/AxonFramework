@@ -26,7 +26,7 @@ public class SagaManagerBeanDefinitionParserTest {
 
     @Qualifier("explicitManager")
     @Autowired
-    private SagaManager excplicitManager;
+    private SagaManager explicitManager;
 
     @Qualifier("autowiredManager")
     @Autowired
@@ -35,7 +35,7 @@ public class SagaManagerBeanDefinitionParserTest {
     @Test
     public void testSagaManagerSubscribedToEventBus() throws Exception {
         verify(mockEventBus).subscribe(autowiredManager);
-        verify(mockEventBus).subscribe(excplicitManager);
+        verify(mockEventBus).subscribe(explicitManager);
     }
 
     @ImportResource("classpath:/contexts/saga-manager-context.xml")

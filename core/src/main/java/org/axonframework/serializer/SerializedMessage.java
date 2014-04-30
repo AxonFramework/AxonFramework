@@ -67,7 +67,7 @@ public class SerializedMessage<T> implements Message<T>, SerializationAware {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(serializedPayload.getSerializer())) {
             final SerializedObject serializedObject = serializedPayload.getSerializedObject();
             return CONVERTER_FACTORY.getConverter(serializedObject.getContentType(), expectedRepresentation)
@@ -78,7 +78,7 @@ public class SerializedMessage<T> implements Message<T>, SerializationAware {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> SerializedObject<T> serializeMetaData(Serializer serializer, Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
         if (serializer.equals(serializedMetaData.getSerializer())) {
             final SerializedObject serializedObject = serializedMetaData.getSerializedObject();
             return CONVERTER_FACTORY.getConverter(serializedObject.getContentType(), expectedRepresentation)

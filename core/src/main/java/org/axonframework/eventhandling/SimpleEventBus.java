@@ -37,7 +37,7 @@ public class SimpleEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
-    private volatile SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
+    private final SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
 
     /**
      * Initializes the SimpleEventBus and registers the mbeans for management information.

@@ -30,7 +30,11 @@ import java.util.List;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 
 /**
+ * Abstract implementation of a CommandGateway, which handles the dispatch interceptors and retrying on failure. The
+ * actual dispatching of commands is left to the subclasses.
+ *
  * @author Allard Buijze
+ * @since 2.2
  */
 public abstract class AbstractCommandGateway {
 

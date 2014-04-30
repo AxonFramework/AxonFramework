@@ -43,8 +43,9 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  */
 public class JdbcEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
-    private UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
+    private final UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
 
+    private static final String FORCE_UTC_TIMESTAMP_ATTRIBUTE = "force-utc-timestamp";
     private static final String EVENT_SERIALIZER_ATTRIBUTE = "event-serializer";
     private static final String DATA_SOURCE_ATTRIBUTE = "data-source";
     private static final String PERSISTENCE_EXCEPTION_RESOLVER_ATTRIBUTE = "persistence-exception-resolver";
@@ -65,6 +66,16 @@ public class JdbcEventStoreBeanDefinitionParser extends AbstractSingleBeanDefini
         if (element.hasAttribute(EVENT_ENTRY_STORE_ATTRIBUTE)) {
             Object eventEntryStore = new RuntimeBeanReference(element.getAttribute(EVENT_ENTRY_STORE_ATTRIBUTE));
             builder.addConstructorArgValue(eventEntryStore);
+            if (element.hasAttribute(SQL_SCHEMA)) {
+                parserContext.getReaderContext().warning(
+                        "Attribute '" + SQL_SCHEMA + "' is ignored, as an '" + EVENT_ENTRY_STORE_ATTRIBUTE
+                                + "' is already provided.", element);
+            }
+            if (element.hasAttribute(FORCE_UTC_TIMESTAMP_ATTRIBUTE)) {
+                parserContext.getReaderContext().warning(
+                        "Attribute '" + FORCE_UTC_TIMESTAMP_ATTRIBUTE + "' is ignored, as an '" + EVENT_ENTRY_STORE_ATTRIBUTE
+                                + "' is already provided.", element);
+            }
         } else {
             BeanDefinitionBuilder eventEntryStore = genericBeanDefinition(DefaultEventEntryStore.class);
             if (element.hasAttribute(CONNECTION_PROVIDER)) {
@@ -89,10 +100,17 @@ public class JdbcEventStoreBeanDefinitionParser extends AbstractSingleBeanDefini
 
             if (element.hasAttribute(SQL_SCHEMA)) {
                 eventEntryStore.addConstructorArgReference(element.getAttribute(SQL_SCHEMA));
+                if (element.hasAttribute(FORCE_UTC_TIMESTAMP_ATTRIBUTE)) {
+                    parserContext.getReaderContext().warning(
+                            "Attribute '" + FORCE_UTC_TIMESTAMP_ATTRIBUTE + "' is ignored, as an '" + SQL_SCHEMA
+                                    + "' is already provided.", element.getAttributeNode(FORCE_UTC_TIMESTAMP_ATTRIBUTE));
+                }
             } else {
-                eventEntryStore.addConstructorArgValue(
-                        genericBeanDefinition(GenericEventSqlSchema.class).getBeanDefinition()
-                );
+                final BeanDefinitionBuilder schemaDefinition = genericBeanDefinition(GenericEventSqlSchema.class);
+                if (element.hasAttribute(FORCE_UTC_TIMESTAMP_ATTRIBUTE)) {
+                    schemaDefinition.addPropertyValue("forceUtc", element.getAttribute(FORCE_UTC_TIMESTAMP_ATTRIBUTE));
+                }
+                eventEntryStore.addConstructorArgValue(schemaDefinition.getBeanDefinition());
             }
             builder.addConstructorArgValue(eventEntryStore.getBeanDefinition());
         }

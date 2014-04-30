@@ -33,9 +33,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SimpleEventBusStatistics implements SimpleEventBusStatisticsMXBean {
 
-    private AtomicLong listenerCount = new AtomicLong(0);
-    private AtomicLong publishedEventCounter = new AtomicLong(0);
-    private List<String> listeners = new CopyOnWriteArrayList<String>();
+    private final AtomicLong listenerCount = new AtomicLong(0);
+    private final AtomicLong publishedEventCounter = new AtomicLong(0);
+    private final List<String> listeners = new CopyOnWriteArrayList<String>();
 
     /**
      * Creates an instance of this statistics MBean.

@@ -31,7 +31,6 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

@@ -85,18 +85,18 @@ public class LockManagerTest {
 
         @Override
         public void run() {
-            int locksAquired = 0;
+            int locksAcquired = 0;
             int locksReleased = 0;
             try {
                 lockManager.obtainLock(aggregateIdentifier);
-                locksAquired++;
+                locksAcquired++;
                 lockManager.releaseLock(aggregateIdentifier);
                 locksReleased++;
 
                 success = true;
             } catch (Exception e) {
                 StringWriter sw = new StringWriter();
-                sw.append("Failed " + instanceIndex + " aquired=" + locksAquired + " release=" + locksReleased
+                sw.append("Failed " + instanceIndex + " aquired=" + locksAcquired + " release=" + locksReleased
                                   + " Exception:");
                 PrintWriter writer = new PrintWriter(sw);
                 e.printStackTrace(writer);

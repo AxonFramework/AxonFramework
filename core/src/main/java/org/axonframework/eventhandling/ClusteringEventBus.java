@@ -124,7 +124,7 @@ public class ClusteringEventBus implements EventBus {
 
     private static class SimpleEventBusTerminal implements EventBusTerminal {
 
-        private List<Cluster> clusters = new CopyOnWriteArrayList<Cluster>();
+        private final List<Cluster> clusters = new CopyOnWriteArrayList<Cluster>();
 
         @Override
         public void publish(EventMessage... events) {

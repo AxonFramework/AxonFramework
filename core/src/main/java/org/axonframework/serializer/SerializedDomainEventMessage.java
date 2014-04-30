@@ -83,12 +83,12 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     }
 
     @Override
-    public <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
         return eventMessage.serializePayload(serializer, expectedRepresentation);
     }
 
     @Override
-    public <T> SerializedObject<T> serializeMetaData(Serializer serializer, Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
         return eventMessage.serializeMetaData(serializer, expectedRepresentation);
     }
 

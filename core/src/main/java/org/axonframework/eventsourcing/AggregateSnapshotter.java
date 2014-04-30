@@ -36,7 +36,7 @@ import javax.annotation.Resource;
  */
 public class AggregateSnapshotter extends AbstractSnapshotter {
 
-    private Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();
+    private final Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();
 
     @Override
     protected DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,

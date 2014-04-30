@@ -62,10 +62,29 @@ public class EventTemplate {
         this.additionalMetaData = MetaData.from(additionalMetaData);
     }
 
+    /**
+     * Publishes an event with given <code>payload</code> on the configured Event Bus.
+     * <p/>
+     * This method takes into account that a Unit of Work may be active, using that Unit of Work to ensure
+     * correct publication of the event.
+     *
+     * @param payload The payload of the event to publish
+     */
     public void publishEvent(Object payload) {
         doPublish(createEventMessage(payload));
     }
 
+    /**
+     * Publishes an event with given <code>payload</code> on the configured Event Bus, with given <code>metaData</code>
+     * attached. If meta data is also configured on this template, the given <code>metaData</code> will override any
+     * existing entries under the same key.
+     * <p/>
+     * This method takes into account that a Unit of Work may be active, using that Unit of Work to ensure
+     * correct publication of the event.
+     *
+     * @param payload  The payload of the event to publish
+     * @param metaData Additional meta data to attach to the event
+     */
     public void publishEvent(Object payload, Map<String, ?> metaData) {
         doPublish(createEventMessage(payload).andMetaData(metaData));
     }

@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DefaultClusterMetaData implements ClusterMetaData {
 
-    private Map<String, Object> properties = new ConcurrentHashMap<String, Object>();
+    private final Map<String, Object> properties = new ConcurrentHashMap<String, Object>();
     private static final Object NULL_REPLACEMENT = new Object();
 
     @Override

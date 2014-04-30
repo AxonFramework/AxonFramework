@@ -1,7 +1,6 @@
 package org.axonframework.common.property;
 
 
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 public class UniformPropertyAccessStrategyTest
@@ -32,6 +31,7 @@ public class UniformPropertyAccessStrategyTest
         return new UniformPropertyAccessStrategy().propertyFor(TestMessage.class, property);
     }
 
+    @Override
     protected String voidPropertyName() {
         return "voidMethod";
     }

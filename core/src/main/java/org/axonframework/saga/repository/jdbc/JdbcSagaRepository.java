@@ -74,7 +74,7 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
 
     /**
      * Initializes a Saga Repository, using given <code>dataSource</code> to obtain connections to the database, and
-     * given <code>sqldef</code> to exectute SQL statements.
+     * given <code>sqldef</code> to execute SQL statements.
      *
      * @param dataSource The data source to obtain connections from
      * @param sqldef     The definition of SQL operations to execute
@@ -85,7 +85,7 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
 
     /**
      * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
-     * database, and given <code>sqldef</code> to exectute SQL statements.
+     * database, and given <code>sqldef</code> to execute SQL statements.
      *
      * @param connectionProvider The provider to obtain connections from
      * @param sqldef             The definition of SQL operations to execute
@@ -96,11 +96,12 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
 
     /**
      * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
-     * database, and given <code>sqldef</code> to exectute SQL statements and <code>serializer</code> to serialize
+     * database, and given <code>sqldef</code> to execute SQL statements and <code>serializer</code> to serialize
      * Sagas.
      *
      * @param connectionProvider The provider to obtain connections from
      * @param sqldef             The definition of SQL operations to execute
+     * @param serializer         The serializer to serialize and deserialize Saga instances with
      */
     public JdbcSagaRepository(ConnectionProvider connectionProvider,
                               SagaSqlSchema sqldef, Serializer serializer) {
@@ -316,6 +317,11 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
         this.serializer = serializer;
     }
 
+    /**
+     * Creates the SQL Schema required to store Sagas and their associations,.
+     *
+     * @throws SQLException When an error occurs preparing of executing the required statements
+     */
     public void createSchema() throws SQLException {
         final Connection connection = connectionProvider.getConnection();
         try {

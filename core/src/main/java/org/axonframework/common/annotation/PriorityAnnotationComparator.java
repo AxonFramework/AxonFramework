@@ -24,6 +24,7 @@ import java.util.Comparator;
  * Comparator that compares objects based on the value on an {@link org.axonframework.common.Priority @Priority}
  * annotation.
  *
+ * @param <T> The type of object to compare
  * @author Allard Buijze
  * @since 2.1.2
  */
@@ -31,6 +32,12 @@ public class PriorityAnnotationComparator<T> implements Comparator<T> {
 
     private static final PriorityAnnotationComparator INSTANCE = new PriorityAnnotationComparator();
 
+    /**
+     * Returns the instance of the comparator.
+     *
+     * @param <T> The type of values to compare
+     * @return a comparator comparing objects based on their @Priority annotations
+     */
     @SuppressWarnings("unchecked")
     public static <T> PriorityAnnotationComparator<T> getInstance() {
         return INSTANCE;

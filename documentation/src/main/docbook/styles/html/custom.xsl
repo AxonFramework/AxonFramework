@@ -48,8 +48,7 @@
     <xsl:param name="admon.graphics.extension">.png</xsl:param>
 	<xsl:param name="callout.graphics" select="1"/>
 	<xsl:param name="callout.defaultcolumn">120</xsl:param>
-    <!--<xsl:param name="callout.graphics.path">images/callouts/</xsl:param>-->
-    <xsl:param name="callout.graphics.path">images/callouts</xsl:param>
+    <xsl:param name="callout.graphics.path">images/callouts/</xsl:param>
 	<xsl:param name="callout.graphics.extension">.png</xsl:param>
 
 	<xsl:param name="table.borders.with.css" select="1"/>

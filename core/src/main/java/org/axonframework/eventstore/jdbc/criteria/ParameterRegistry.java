@@ -36,7 +36,7 @@ public class ParameterRegistry {
      * Registers the given <code>expression</code> as parameter and returns the value to use to refer to this
      * expression.
      *
-     * @param expression The expression to parameterize in the query
+     * @param expression The expression to parametrize in the query
      * @return The placeholder to use in the query to refer to the given parameter
      */
     public String register(Object expression) {

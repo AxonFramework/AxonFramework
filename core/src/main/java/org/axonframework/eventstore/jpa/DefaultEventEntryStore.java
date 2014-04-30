@@ -110,6 +110,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
         return new BatchingIterator(whereClause, parameters, batchSize, domainEventEntryEntityName(), entityManager);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent,
                                 SerializedObject serializedPayload, SerializedObject serializedMetaData,
@@ -161,8 +162,8 @@ public class DefaultEventEntryStore implements EventEntryStore {
      * @see #snapshotEventEntryEntityName()
      */
     protected SnapshotEventEntry createSnapshotEventEntry(String aggregateType, DomainEventMessage snapshotEvent,
-                                                          SerializedObject serializedPayload,
-                                                          SerializedObject serializedMetaData) {
+                                                          SerializedObject<byte[]> serializedPayload,
+                                                          SerializedObject<byte[]> serializedMetaData) {
         return new SnapshotEventEntry(aggregateType, snapshotEvent, serializedPayload,
                                       serializedMetaData);
     }

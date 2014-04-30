@@ -163,7 +163,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
             }
             entityManager.flush();
         } catch (RuntimeException exception) {
-            if (persistenceExceptionResolver != null
+            if (event != null
+                    && persistenceExceptionResolver != null
                     && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
                 throw new ConcurrencyException(
                         String.format("Concurrent modification detected for Aggregate identifier [%s], sequence: [%s]",

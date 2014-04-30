@@ -52,12 +52,12 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private final EventBus eventBus;
     private final SagaRepository sagaRepository;
-    private SagaFactory sagaFactory;
+    private final SagaFactory sagaFactory;
     private final Class<? extends Saga>[] sagaTypes;
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
-    private Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
+    private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
 
     /**
      * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code>.
@@ -267,7 +267,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * Perform pre-processing of sagas that have been newly created or have been loaded from the repository. This
      * method is invoked prior to invocation of the saga instance itself.
      *
-     * @param saga The saga instance for preprocessing
+     * @param saga The saga instance for pre-processing
      */
     protected void preProcessSaga(Saga saga) {
     }

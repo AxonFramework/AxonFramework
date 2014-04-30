@@ -31,7 +31,7 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
 
     private final T data;
     private final SerializedType type;
-    private Class<T> dataType;
+    private final Class<T> dataType;
 
     /**
      * Initializes a SimpleSerializedObject using given <code>data</code> and <code>serializedType</code>.

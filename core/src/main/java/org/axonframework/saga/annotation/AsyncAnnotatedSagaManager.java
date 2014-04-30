@@ -57,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * A SagaManager implementation that processes Sagas asynchronously. Incoming events are placed on a queue and
  * processed by a given number of processors. Modified saga state is persisted in batches to the repository, to
- * minimize communication overhead with backends.
+ * minimize communication overhead with back-ends.
  * <p/>
  * This SagaManager implementation guarantees a "happens before" type processing for each Saga. That means that the
  * behavior of asynchronously processed events is exactly identical as the behavior if the events were processed
@@ -86,7 +86,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     private int processorCount = DEFAULT_PROCESSOR_COUNT;
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
-    private SagaManagerStatus sagaManagerStatus = new SagaManagerStatus();
+    private final SagaManagerStatus sagaManagerStatus = new SagaManagerStatus();
     private long startTimeout = 5000;
     private final EventProcessingMonitorCollection processingMonitors = new EventProcessingMonitorCollection();
 
@@ -125,7 +125,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
      * <p/>
      * After initialization, the SagaManager must be explicitly started using the {@link #start()} method.
      *
-     * @param sagaTypes The types of Saga this saga manager will process incoming events for
+     * @param parameterResolverFactory The parameter resolver factory to resolve parameters of annotated handlers
+     * @param sagaTypes                The types of Saga this saga manager will process incoming events for
      */
     public AsyncAnnotatedSagaManager(ParameterResolverFactory parameterResolverFactory,
                                      Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
@@ -236,7 +237,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
         private final AbstractAnnotatedSaga newSagaInstance;
 
         private SagaProcessingEventTranslator(EventMessage event, SagaMethodMessageHandlerInspector annotationInspector,
-                                              List<SagaMethodMessageHandler> handlers, AbstractAnnotatedSaga newSagaInstance) {
+                                              List<SagaMethodMessageHandler> handlers,
+                                              AbstractAnnotatedSaga newSagaInstance) {
             this.event = event;
             this.annotationInspector = annotationInspector;
             this.handlers = handlers;

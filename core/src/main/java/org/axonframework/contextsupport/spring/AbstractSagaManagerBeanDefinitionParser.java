@@ -101,9 +101,9 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
     /**
      * Registers the given Saga <code>types</code> in the given <code>sagaManagerDefinition</code>.
      *
-     * @param types                 The types of sagas found in the bean definition
-     * @param sagaManagerDefinition The definition of the saga manager to register the types in.
-     * @param parameterResolverFactoryReference
+     * @param types                             The types of sagas found in the bean definition
+     * @param sagaManagerDefinition             The definition of the saga manager to register the types in.
+     * @param parameterResolverFactoryReference the reference to the ParameterResolverFactory bean
      */
     protected abstract void registerTypes(String[] types, GenericBeanDefinition sagaManagerDefinition,
                                           RuntimeBeanReference parameterResolverFactoryReference);
@@ -182,11 +182,12 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         }
         registerTypes(filteredTypes.toArray(new String[filteredTypes.size()]), sagaManagerDefinition,
                       SpringContextParameterResolverFactoryBuilder.getBeanReference(
-                              registry));
+                              registry)
+        );
     }
 
     /**
-     * Process the "supress-exceptions" setting on the given <code>element</code>.
+     * Process the "suppress-exceptions" setting on the given <code>element</code>.
      *
      * @param element        The element representing the saga manager's bean definition
      * @param beanDefinition The bean definition of the Saga Manager

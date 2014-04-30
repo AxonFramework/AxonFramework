@@ -19,7 +19,7 @@ package org.axonframework.common.lock;
 import org.axonframework.common.AxonNonTransientException;
 
 /**
- * Exception indicating that an illegal use of a lock was detect (e.g. releasing a lock that wasn't previoysly
+ * Exception indicating that an illegal use of a lock was detect (e.g. releasing a lock that wasn't previously
  * obtained)
  * <p/>
  * Typically, operations failing with this exception cannot be retried without the application taking appropriate

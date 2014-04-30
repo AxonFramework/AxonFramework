@@ -496,21 +496,21 @@ public class DisruptorCommandBusTest {
     private static class StubCommand {
 
         @TargetAggregateIdentifier
-        private Object agregateIdentifier;
+        private Object aggregateIdentifier;
 
-        public StubCommand(Object agregateIdentifier) {
-            this.agregateIdentifier = agregateIdentifier;
+        public StubCommand(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
         }
 
         public Object getAggregateIdentifier() {
-            return agregateIdentifier;
+            return aggregateIdentifier;
         }
     }
 
     private static class ErrorCommand extends StubCommand {
 
-        public ErrorCommand(Object agregateIdentifier) {
-            super(agregateIdentifier);
+        public ErrorCommand(Object aggregateIdentifier) {
+            super(aggregateIdentifier);
         }
     }
 
@@ -530,8 +530,8 @@ public class DisruptorCommandBusTest {
 
     private static class CreateCommand extends StubCommand {
 
-        public CreateCommand(Object agregateIdentifier) {
-            super(agregateIdentifier);
+        public CreateCommand(Object aggregateIdentifier) {
+            super(aggregateIdentifier);
         }
     }
 

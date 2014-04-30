@@ -918,9 +918,18 @@
                             </xsd:annotation>
                         </xsd:element>
                     </xsd:all>
-                    <xsd:attribute name="data-source" use="optional"
-                                   type="xsd:string">
+                    <xsd:attribute name="force-utc-timestamp" use="optional" type="xsd:boolean">
                         <xsd:annotation>
+                            <xsd:documentation>Indicates whether or not the timestamps of events should be forced to
+                                UTC. When false, timestamps are stored with the system timezone information. Although
+                                it is strongly recommended to set this value to true, it defaults to false, for
+                                backwards compatibility reasons. This setting is ignored when an entity-manager-provider
+                                attribute is also specified.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="data-source" use="optional" type="xsd:string">
+                    <xsd:annotation>
                             <xsd:documentation>
                                 Data Source that provides access to the backing database.
                             </xsd:documentation>

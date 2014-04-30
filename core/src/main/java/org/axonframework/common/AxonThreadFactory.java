@@ -44,7 +44,7 @@ public class AxonThreadFactory implements ThreadFactory {
      * Initializes a ThreadFactory instance that create each thread in the given <code>group</code> with default
      * priority.
      *
-     * @param group The ThreadGroup to create each thead in
+     * @param group The ThreadGroup to create each thread in
      * @see Thread#setPriority(int)
      */
     public AxonThreadFactory(ThreadGroup group) {
@@ -56,7 +56,7 @@ public class AxonThreadFactory implements ThreadFactory {
      * <code>priority</code>.
      *
      * @param priority The priority of the threads to create
-     * @param group    The ThreadGroup to create each thead in
+     * @param group    The ThreadGroup to create each thread in
      * @see Thread#setPriority(int)
      */
     public AxonThreadFactory(int priority, ThreadGroup group) {

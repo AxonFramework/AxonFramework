@@ -77,7 +77,7 @@ public class OptimisticLockManager implements LockManager {
     private final class OptimisticLock {
 
         private Long versionNumber;
-        private Map<Thread, Integer> threadsHoldingLock = new WeakHashMap<Thread, Integer>();
+        private final Map<Thread, Integer> threadsHoldingLock = new WeakHashMap<Thread, Integer>();
         private boolean closed = false;
 
         private OptimisticLock() {

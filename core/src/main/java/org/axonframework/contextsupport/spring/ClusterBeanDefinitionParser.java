@@ -273,7 +273,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     private static final class MetaDataOverridingCluster implements FactoryBean<Cluster> {
 
-        private Cluster delegate;
+        private final Cluster delegate;
 
         @SuppressWarnings("UnusedDeclaration")
         private MetaDataOverridingCluster(Cluster delegate, Map<String, Object> metaData) {
@@ -301,8 +301,8 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     private static final class OrderedClusterSelector implements Ordered, ClusterSelector {
 
-        private int order;
-        private List<ClusterSelector> selectors;
+        private final int order;
+        private final List<ClusterSelector> selectors;
 
         @SuppressWarnings("UnusedDeclaration")
         private OrderedClusterSelector(int order, List<ClusterSelector> selectors) {

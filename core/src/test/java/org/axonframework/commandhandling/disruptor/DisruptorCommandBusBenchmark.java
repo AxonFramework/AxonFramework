@@ -132,14 +132,14 @@ public class DisruptorCommandBusBenchmark {
     private static class StubCommand {
 
         @TargetAggregateIdentifier
-        private Object agregateIdentifier;
+        private Object aggregateIdentifier;
 
-        public StubCommand(Object agregateIdentifier) {
-            this.agregateIdentifier = agregateIdentifier;
+        public StubCommand(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
         }
 
         public Object getAggregateIdentifier() {
-            return agregateIdentifier;
+            return aggregateIdentifier;
         }
     }
 

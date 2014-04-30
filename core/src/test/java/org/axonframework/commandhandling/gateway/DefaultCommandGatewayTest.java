@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

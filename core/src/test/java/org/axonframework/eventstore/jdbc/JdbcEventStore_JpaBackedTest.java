@@ -69,7 +69,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

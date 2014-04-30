@@ -27,6 +27,8 @@ import org.axonframework.repository.AggregateNotFoundException;
  */
 public class AggregateDeletedException extends AggregateNotFoundException {
 
+    private static final long serialVersionUID = 6814686444144567614L;
+
     /**
      * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
      * given <code>message</code>.

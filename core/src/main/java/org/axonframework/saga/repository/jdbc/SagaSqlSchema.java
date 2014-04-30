@@ -103,7 +103,7 @@ public interface SagaSqlSchema {
     PreparedStatement sql_deleteSagaEntry(Connection connection, String sagaIdentifier) throws SQLException;
 
     /**
-     * Creates a PreparedStatement that deletes all association entires for a Saga with given
+     * Creates a PreparedStatement that deletes all association entries for a Saga with given
      * <code>sagaIdentifier</code>.
      *
      * @param connection     The connection to create the PreparedStatement for

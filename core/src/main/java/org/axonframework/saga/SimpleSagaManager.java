@@ -124,6 +124,14 @@ public class SimpleSagaManager extends AbstractSagaManager {
         return associationValueResolver.extractAssociationValues(event);
     }
 
+    /**
+     * Returns the association value to assign to a Saga when the given <code>event</code> triggers the creation of
+     * a new instance. If there are no creation handlers for the given <code>event</code>, <code>null</code> is
+     * returned.
+     *
+     * @param event The event to resolve the initial association for
+     * @return The association value to assign, or <code>null</code>
+     */
     protected AssociationValue initialAssociationValue(EventMessage event) {
         Set<AssociationValue> associations = associationValueResolver.extractAssociationValues(event);
         if (associations.isEmpty()) {

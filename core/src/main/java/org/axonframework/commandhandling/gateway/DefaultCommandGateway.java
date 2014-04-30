@@ -97,6 +97,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @throws org.axonframework.commandhandling.CommandExecutionException
      *          when command execution threw a checked exception
      */
+    @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) {
         FutureCallback<Object> futureCallback = new FutureCallback<Object>();
@@ -119,6 +120,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @throws org.axonframework.commandhandling.CommandExecutionException
      *          when command execution threw a checked exception
      */
+    @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
         FutureCallback<Object> futureCallback = new FutureCallback<Object>();
@@ -131,6 +133,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      *
      * @param command The command to send
      */
+    @Override
     public void send(Object command) {
         send(command, new NoOpCallback());
     }

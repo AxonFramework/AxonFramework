@@ -210,7 +210,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     private static final class Route {
 
         private final ContentTypeConverter[] nodes;
-        private Class endPoint;
+        private final Class endPoint;
 
         private Route(ContentTypeConverter initialVertex) {
             this.nodes = new ContentTypeConverter[]{initialVertex};

@@ -28,7 +28,10 @@ import org.w3c.dom.Element;
 import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
 
 /**
+ * BeanDefinitionParser for the jpa-repository elements in a Spring context.
+ *
  * @author Allard Buijze
+ * @since 2.0
  */
 public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
@@ -54,7 +57,8 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
         } else {
             builder.addConstructorArgValue(
                     BeanDefinitionBuilder.genericBeanDefinition(ContainerManagedEntityManagerProvider.class)
-                                         .getBeanDefinition());
+                                         .getBeanDefinition()
+            );
         }
         builder.addConstructorArgValue(element.getAttribute(AGGREGATE_TYPE));
         parseLockManager(element, builder);

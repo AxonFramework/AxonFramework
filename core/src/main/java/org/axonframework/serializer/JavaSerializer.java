@@ -57,6 +57,7 @@ public class JavaSerializer implements Serializer {
         this.revisionResolver = revisionResolver;
     }
 
+    @SuppressWarnings("NonSerializableObjectPassedToObjectStream")
     @Override
     public <T> SerializedObject<T> serialize(Object instance, Class<T> expectedType) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -95,8 +96,7 @@ public class JavaSerializer implements Serializer {
         } catch (ClassNotFoundException e) {
             throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         } catch (IOException e) {
-            throw new SerializationException("The theoretically impossible has just happened: "
-                                                     + "An IOException while reading to a ByteArrayInputStream.", e);
+            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         } finally {
             IOUtils.closeQuietly(ois);
         }

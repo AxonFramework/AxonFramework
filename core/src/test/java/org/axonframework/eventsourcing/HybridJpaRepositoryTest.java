@@ -41,9 +41,6 @@ import javax.persistence.PersistenceContext;
 
 import static org.axonframework.common.MatcherUtils.isEventWith;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 
 /**

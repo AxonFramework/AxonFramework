@@ -151,6 +151,7 @@ public class AbstractAnnotatedAggregateRootTest {
             resource.registerInvocation();
         }
 
+        @Override
         public void doSomething() {
             apply(new StubDomainEvent());
         }

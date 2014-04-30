@@ -37,10 +37,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
 
 /**

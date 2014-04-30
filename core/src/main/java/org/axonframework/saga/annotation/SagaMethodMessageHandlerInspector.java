@@ -55,7 +55,8 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
      * information about @SagaEventHandler annotated handler methods.
      *
      * @param sagaType                 The type of Saga to get the inspector for
-     * @param parameterResolverFactory
+     * @param parameterResolverFactory The factory for parameter resolvers that resolve parameters for the annotated
+     *                                 methods
      * @param <T>                      The type of Saga to get the inspector for
      * @return The inspector for the given saga type
      */
@@ -108,6 +109,13 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
         return found;
     }
 
+    /**
+     * Finds the handler method on given <code>target</code> for the given <code>event</code>.
+     *
+     * @param target The instance to find a handler method on
+     * @param event  The event to find a handler for
+     * @return the most suitable handler for the event on the target, or an instance describing no such handler exists
+     */
     public SagaMethodMessageHandler findHandlerMethod(AbstractAnnotatedSaga target, EventMessage event) {
         for (SagaMethodMessageHandler handler : getMessageHandlers(event)) {
             final AssociationValue associationValue = handler.getAssociationValue(event);

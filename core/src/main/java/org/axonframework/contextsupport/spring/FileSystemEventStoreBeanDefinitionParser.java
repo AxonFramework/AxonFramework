@@ -43,7 +43,7 @@ import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowi
  */
 public class FileSystemEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
-    private UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
+    private final UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
 
     /**
      * The base directory attribute.

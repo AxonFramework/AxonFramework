@@ -65,16 +65,17 @@ public class IntervalRetryScheduler implements RetryScheduler {
             if (logger.isInfoEnabled()) {
                 logger.info("Processing of Command [{}] resulted in an exception. Will retry {} more time(s)... "
                                     + "Exception was {}, {}",
-                            new Object[]{commandMessage.getPayloadType().getSimpleName(),
-                                    maxRetryCount - failureCount,
-                                    lastFailure.getClass().getName(),
-                                    lastFailure.getMessage()});
+                            commandMessage.getPayloadType().getSimpleName(),
+                            maxRetryCount - failureCount,
+                            lastFailure.getClass().getName(),
+                            lastFailure.getMessage()
+                );
             }
             return scheduleRetry(dispatchTask, retryInterval);
         } else {
             if (failureCount >= maxRetryCount && logger.isInfoEnabled()) {
                 logger.info("Processing of Command [{}] resulted in an exception {} times. Giving up permanently. ",
-                            new Object[]{commandMessage.getPayloadType().getSimpleName(), failureCount, lastFailure});
+                            commandMessage.getPayloadType().getSimpleName(), failureCount, lastFailure);
             } else if (logger.isInfoEnabled()) {
                 logger.info("Processing of Command [{}] resulted in an exception and will not be retried. ",
                             commandMessage.getPayloadType().getSimpleName(), lastFailure);
@@ -91,7 +92,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
      *
      * @param failure The exception that occurred while processing a command
      * @return <code>true</code> if the exception is clearly non-transient and the command should <em>not</em> be
-     *         retried, or <code>false</code> when the command has a chance of succeeding if it retried.
+     * retried, or <code>false</code> when the command has a chance of succeeding if it retried.
      */
     protected boolean isExplicitlyNonTransient(Throwable failure) {
         return failure instanceof AxonNonTransientException

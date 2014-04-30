@@ -188,7 +188,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     private final class TriggeringEventStream extends CountingEventStream {
 
         private final String aggregateType;
-        private Object aggregateIdentifier;
+        private final Object aggregateIdentifier;
 
         private TriggeringEventStream(String aggregateType, Object aggregateIdentifier,
                                       DomainEventStream delegate, AtomicInteger counter) {

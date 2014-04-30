@@ -39,7 +39,7 @@ public class BlacklistDetectingCallback<R>
     private final CommandMessage command;
     private final RingBuffer<CommandHandlingEntry> ringBuffer;
     private final DisruptorCommandBus commandBus;
-    private boolean rescheduleOnCorruptState;
+    private final boolean rescheduleOnCorruptState;
 
     /**
      * Initializes the callback which allows the given <code>command</code> to be rescheduled on the given

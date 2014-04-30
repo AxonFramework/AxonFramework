@@ -102,11 +102,11 @@ public class SimpleEventFileResolver implements EventFileResolver {
         try {
             return URLEncoder.encode(id.toString(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException("System doesnt support UTF-8?", e);
+            throw new IllegalStateException("System doesn't support UTF-8?", e);
 		}
 	}
 
-    private File getBaseDirForType(String type) throws IOException {
+    private File getBaseDirForType(String type) {
 
         File typeSpecificDir = new File(baseDir, type);
         if (!typeSpecificDir.exists() && !typeSpecificDir.mkdirs() && !typeSpecificDir.exists()) {

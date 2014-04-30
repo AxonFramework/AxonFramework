@@ -74,7 +74,8 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
                                                                 + "defined on the Event it declares to handle (%s)",
                                                         methodHandler.getMethod().getDeclaringClass().getName(),
                                                         methodHandler.getMethodName(), associationPropertyName,
-                                                        methodHandler.getPayloadType().getName()));
+                                                        methodHandler.getPayloadType().getName()
+            ));
         }
         String associationKey = handlerAnnotation.keyName().isEmpty()
                 ? associationPropertyName
@@ -124,6 +125,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param eventMessage The event message containing the value of the association
      * @return the AssociationValue to find the saga instance with, or <code>null</code> if none found
      */
+    @SuppressWarnings("unchecked")
     public AssociationValue getAssociationValue(EventMessage eventMessage) {
         if (associationProperty == null) {
             return null;
@@ -198,6 +200,12 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         return handlerMethod != null ? handlerMethod.hashCode() : 0;
     }
 
+    /**
+     * Invoke a handler on given <code>target</code> for given <code>message</code>.
+     *
+     * @param target  The instance to invoke a method on
+     * @param message The message to use to resolve the parameters of the handler to invoke
+     */
     public void invoke(Object target, EventMessage message) {
         if (!isHandlerAvailable()) {
             return;
@@ -214,6 +222,11 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         }
     }
 
+    /**
+     * Returns the name of the handler.
+     *
+     * @return the name of the handler
+     */
     public String getName() {
         return handlerMethod.getMethodName();
     }

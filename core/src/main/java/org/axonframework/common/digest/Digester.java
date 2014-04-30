@@ -32,7 +32,7 @@ import java.security.NoSuchAlgorithmException;
  */
 public final class Digester {
 
-    private MessageDigest messageDigest;
+    private final MessageDigest messageDigest;
 
     /**
      * Creates a new Digester instance for the given <code>algorithm</code>.

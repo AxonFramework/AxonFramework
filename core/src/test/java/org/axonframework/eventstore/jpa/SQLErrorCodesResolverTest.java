@@ -109,7 +109,7 @@ public class SQLErrorCodesResolverTest {
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testInitialization_UnkownProductName() throws Exception {
+    public void testInitialization_UnknownProductName() throws Exception {
         DataSource dataSource = createMockDataSource("Some weird unknown DB type");
 
         new SQLErrorCodesResolver(dataSource);

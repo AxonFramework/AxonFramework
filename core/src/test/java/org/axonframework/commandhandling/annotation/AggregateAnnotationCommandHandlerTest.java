@@ -35,10 +35,6 @@ import java.util.Set;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 
 /**

@@ -21,12 +21,20 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 
 /**
+ * ConnectionProvider implementation that obtains a connection from a given DataSource.
+ *
  * @author Allard Buijze
+ * @since 2.2
  */
 public class DataSourceConnectionProvider implements ConnectionProvider {
 
     private final DataSource dataSource;
 
+    /**
+     * Initialize the Connection Provider, using given <code>dataSource</code> to obtain new connections.
+     *
+     * @param dataSource The DataSource to obtain connections from
+     */
     public DataSourceConnectionProvider(DataSource dataSource) {
         this.dataSource = dataSource;
     }

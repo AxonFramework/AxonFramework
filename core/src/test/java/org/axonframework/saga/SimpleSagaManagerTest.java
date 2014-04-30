@@ -30,7 +30,6 @@ import java.util.Set;
 import static java.util.Collections.singleton;
 import static org.mockito.AdditionalMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.eq;
 
 /**
  * @author Allard Buijze

@@ -21,6 +21,7 @@ import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.DataSourceConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -67,7 +68,8 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  * maximum number of snapshots to archive}. By default snapshot pruning is configured to archive only {@value
  * #DEFAULT_MAX_SNAPSHOTS_ARCHIVED} snapshot per aggregate.
  * <p/>
- * The serializer used to serialize the events is configurable. By default, the {@link org.axonframework.serializer.xml.XStreamSerializer} is used.
+ * The serializer used to serialize the events is configurable. By default, the {@link
+ * org.axonframework.serializer.xml.XStreamSerializer} is used.
  *
  * @author Allard Buijze
  * @author Kristian Rosenvold
@@ -89,6 +91,12 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
+    /**
+     * Initializes a JdbcEventStore using the given <code>eventEntryStore</code> and <code>serializer</code>.
+     *
+     * @param eventEntryStore The EventEntryStore that stores individual entries in the underlying data source
+     * @param serializer      The serializer to serialize and deserialize events with
+     */
     public JdbcEventStore(EventEntryStore eventEntryStore, Serializer serializer) {
         Assert.notNull(serializer, "serializer may not be null");
         Assert.notNull(eventEntryStore, "eventEntryStore may not be null");
@@ -101,16 +109,18 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
      * Initialize a JdbcEventStore using the given <code>eventEntryStore</code> and an {@link
      * org.axonframework.serializer.xml.XStreamSerializer}, which serializes events as XML.
      *
-     * @param eventEntryStore       The instance providing persistence logic for Domain Event entries
+     * @param eventEntryStore The instance providing persistence logic for Domain Event entries
      */
     public JdbcEventStore(EventEntryStore eventEntryStore) {
         this(eventEntryStore, new XStreamSerializer());
     }
 
     /**
-     * Initialize a JdbcEventStore using the given <code>eventEntryStore</code> and an {@link
+     * Initialize a JdbcEventStore using the default <code>EntryStore</code> and an {@link
      * org.axonframework.serializer.xml.XStreamSerializer}, which serializes events as XML.
+     * The given <code>connectionProvider</code> is used to obtain connections to the underlying data source
      *
+     * @param connectionProvider The connection provider to obtain connections from
      */
     public JdbcEventStore(ConnectionProvider connectionProvider) {
         this(new DefaultEventEntryStore(connectionProvider), new XStreamSerializer());
@@ -119,10 +129,17 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
     /**
      * Initialize a JdbcEventStore using the given <code>eventEntryStore</code> and an {@link
      * org.axonframework.serializer.xml.XStreamSerializer}, which serializes events as XML.
+     * <p/>
+     * Obtains connection from the given <code>dataSource</code>, unless a connection was already obtained in the same
+     * Unit of Work, in which case that connection is re-used instead.
      *
+     * @param dataSource The DataSource to obtain connections from, when necessary.
      */
     public JdbcEventStore(DataSource dataSource) {
-        this(new DefaultEventEntryStore(new DataSourceConnectionProvider(dataSource)), new XStreamSerializer());
+        this(new DefaultEventEntryStore(
+                     new UnitOfWorkAwareConnectionProviderWrapper(new DataSourceConnectionProvider(dataSource))),
+             new XStreamSerializer()
+        );
     }
 
     /**
@@ -147,7 +164,8 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
                         String.format("Concurrent modification detected for Aggregate identifier [%s], sequence: [%s]",
                                       event.getAggregateIdentifier(),
                                       event.getSequenceNumber()),
-                        exception);
+                        exception
+                );
             }
             throw exception;
         }
@@ -174,12 +192,14 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
-                            ex.getMessage());
+                            ex.getMessage()
+                );
             } catch (LinkageError error) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             error.getClass().getName(),
-                            error.getMessage());
+                            error.getMessage()
+                );
             }
         }
 
@@ -231,7 +251,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
 
     @Override
     public void visitEvents(EventVisitor visitor) {
-        doVisitEvents(visitor, null, Collections.<Object>emptyList());
+        doVisitEvents(visitor, null, Collections.emptyList());
     }
 
     @Override
@@ -251,15 +271,15 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         Iterator<? extends SerializedDomainEventData> batch = eventEntryStore.fetchFiltered(whereClause,
                                                                                             parameters,
                                                                                             batchSize
-                                                                                            );
+        );
         DomainEventStream eventStream = new IteratorDomainEventStream(null, batch, null, true);
-		try {
-			while (eventStream.hasNext()) {
-				visitor.doWithEvent(eventStream.next());
-			}
-		} finally {
-			IOUtils.closeQuietlyIfCloseable(eventStream);
-		}
+        try {
+            while (eventStream.hasNext()) {
+                visitor.doWithEvent(eventStream.next());
+            }
+        } finally {
+            IOUtils.closeQuietlyIfCloseable(eventStream);
+        }
     }
 
     /**
@@ -314,15 +334,15 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         private final boolean skipUnknownTypes;
 
         public IteratorDomainEventStream(DomainEventMessage snapshotEvent,
-                                             Iterator<? extends SerializedDomainEventData> iterator,
-                                             Object aggregateIdentifier, boolean skipUnknownTypes) {
+                                         Iterator<? extends SerializedDomainEventData> iterator,
+                                         Object aggregateIdentifier, boolean skipUnknownTypes) {
             this(snapshotEvent, iterator, aggregateIdentifier, Long.MAX_VALUE, skipUnknownTypes);
         }
 
         public IteratorDomainEventStream(DomainEventMessage snapshotEvent,
-                                             Iterator<? extends SerializedDomainEventData> iterator,
-                                             Object aggregateIdentifier, long lastSequenceNumber,
-                                             boolean skipUnknownTypes) {
+                                         Iterator<? extends SerializedDomainEventData> iterator,
+                                         Object aggregateIdentifier, long lastSequenceNumber,
+                                         boolean skipUnknownTypes) {
             this.aggregateIdentifier = aggregateIdentifier;
             this.lastSequenceNumber = lastSequenceNumber;
             this.skipUnknownTypes = skipUnknownTypes;
@@ -334,7 +354,6 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
             this.iterator = iterator;
             initializeNextItem();
         }
-
 
 
         @Override
@@ -364,9 +383,9 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
             return next;
         }
 
-		@Override
-		public void close() throws IOException {
-			IOUtils.closeIfCloseable(iterator);
-		}
-	}
+        @Override
+        public void close() throws IOException {
+            IOUtils.closeIfCloseable(iterator);
+        }
+    }
 }

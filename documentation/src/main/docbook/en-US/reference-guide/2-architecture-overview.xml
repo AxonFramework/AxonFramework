@@ -217,7 +217,7 @@
         <annotation>
             <para>CQRS is an architectural pattern, making it impossible to provide a single
                 solution that fits all projects. Axon Framework does not try to provide that one
-                sulution, obviously. Instead, Axon provides implementations that follow best
+                solution, obviously. Instead, Axon provides implementations that follow best
                 practices and the means to tweak each of those implementations to your specific
                 requirements.</para>
             <para>Almost all infrastructure building blocks will provide hook points (such as

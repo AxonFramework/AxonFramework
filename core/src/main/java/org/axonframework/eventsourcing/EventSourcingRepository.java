@@ -57,7 +57,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
 
     private final EventStore eventStore;
     private ConflictResolver conflictResolver;
-    private Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<EventStreamDecorator>();
+    private final Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<EventStreamDecorator>();
     private final AggregateFactory<T> aggregateFactory;
 
     /**
@@ -202,7 +202,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * have been concurrently applied.
      *
      * @param aggregate    The aggregate containing the potential conflicts
-     * @param unseenEvents The events that have been concurrenly applied
+     * @param unseenEvents The events that have been concurrently applied
      */
     protected void resolveConflicts(T aggregate, DomainEventStream unseenEvents) {
         CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, asList(unseenEvents)));

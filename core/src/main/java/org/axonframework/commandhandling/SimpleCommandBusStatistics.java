@@ -33,9 +33,9 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXBean {
 
-    private AtomicLong handlerCounter = new AtomicLong(0);
-    private AtomicLong receivedCommandCounter = new AtomicLong(0);
-    private List<String> handlerTypes = new CopyOnWriteArrayList<String>();
+    private final AtomicLong handlerCounter = new AtomicLong(0);
+    private final AtomicLong receivedCommandCounter = new AtomicLong(0);
+    private final List<String> handlerTypes = new CopyOnWriteArrayList<String>();
 
     /**
      * Creates an instance of this statistics MBean.

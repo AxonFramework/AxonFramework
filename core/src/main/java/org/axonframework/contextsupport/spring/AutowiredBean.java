@@ -22,7 +22,7 @@ import org.springframework.beans.factory.support.GenericBeanDefinition;
  * Special type of BeanDefinition that references can be use to explicitly define a property as being autowired.
  * Autowiring is only successful if exactly one bean is available of the given type.
  * <p/>
- * Internally, this BeanDefintion creates a FactoryBean definition that loads the class from the application context.
+ * Internally, this BeanDefinition creates a FactoryBean definition that loads the class from the application context.
  *
  * @author Allard Buijze
  * @since 1.0

@@ -30,7 +30,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

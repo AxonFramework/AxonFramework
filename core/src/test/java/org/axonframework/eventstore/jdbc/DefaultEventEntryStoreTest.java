@@ -76,7 +76,7 @@ public class DefaultEventEntryStoreTest {
     }
 
     @Test
-    public void fetchAggragateStreamWorks() throws SQLException {
+    public void fetchAggregateStreamWorks() throws SQLException {
         deleteCurrentPersistentEvents();
         DomainEventMessage dem = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
         es.persistEvent(aggregateType, dem, getPayload(), getMetaData());

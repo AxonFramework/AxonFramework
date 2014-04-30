@@ -248,7 +248,7 @@ public class ReplayingCluster implements Cluster {
 
     private class ReplayEventsTask implements Runnable {
 
-        private Criteria criteria;
+        private final Criteria criteria;
 
         public ReplayEventsTask(Criteria criteria) {
             this.criteria = criteria;
@@ -323,7 +323,7 @@ public class ReplayingCluster implements Cluster {
 
     private final class EventProcessingListeners implements EventProcessingMonitor {
 
-        private Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<EventProcessingMonitor>();
+        private final Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<EventProcessingMonitor>();
 
         @Override
         public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {

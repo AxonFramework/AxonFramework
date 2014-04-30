@@ -36,13 +36,13 @@ import java.util.Set;
 public class AsyncSagaProcessingEvent {
 
     private EventMessage publishedEvent;
-    private List<SagaMethodMessageHandler> handlers = new ArrayList<SagaMethodMessageHandler>();
+    private final List<SagaMethodMessageHandler> handlers = new ArrayList<SagaMethodMessageHandler>();
     private Class<? extends AbstractAnnotatedSaga> sagaType;
     private AbstractAnnotatedSaga newSaga;
     private final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
     private SagaMethodMessageHandler creationHandler;
     private AssociationValue initialAssociationValue;
-    private Set<AssociationValue> associationValues = new HashSet<AssociationValue>();
+    private final Set<AssociationValue> associationValues = new HashSet<AssociationValue>();
 
     /**
      * Returns the event that has been published on the EventBus. This is the event that will trigger Sagas.
@@ -122,14 +122,30 @@ public class AsyncSagaProcessingEvent {
         this.newSaga = nextSagaInstance;
     }
 
+    /**
+     * Returns the event handler which is used to create a new saga instance based on the incoming event.
+     *
+     * @return a SagaMethodMessageHandler instance describing the creation rules
+     */
     public SagaMethodMessageHandler getCreationHandler() {
         return creationHandler;
     }
 
+    /**
+     * Returns the association to assign to an event when handling an incoming event that creates a Saga. If the
+     * incoming event is not a creation event, this method returns <code>null</code>.
+     *
+     * @return the association to assign to an event when handling an incoming event that creates a Saga
+     */
     public AssociationValue getInitialAssociationValue() {
         return initialAssociationValue;
     }
 
+    /**
+     * Returns all association values that could potentially link a saga instance with the incoming event.
+     *
+     * @return all association values that could potentially link a saga instance with the incoming event
+     */
     public Set<AssociationValue> getAssociationValues() {
         return associationValues;
     }

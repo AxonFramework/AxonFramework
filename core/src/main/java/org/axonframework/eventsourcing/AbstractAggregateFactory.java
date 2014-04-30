@@ -41,7 +41,7 @@ public abstract class AbstractAggregateFactory<T extends EventSourcedAggregateRo
     }
 
     /**
-     * Perform any processing that must be done on an aggregate instance that was reconstructured from a Snapshot
+     * Perform any processing that must be done on an aggregate instance that was reconstructed from a Snapshot
      * Event. Implementations may choose to modify the existing instance, or return a new instance.
      * <p/>
      * This method can be safely overridden. This implementation does nothing.

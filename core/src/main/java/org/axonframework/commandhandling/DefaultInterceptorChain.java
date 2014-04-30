@@ -30,8 +30,8 @@ public class DefaultInterceptorChain implements InterceptorChain {
 
     private CommandMessage<?> command;
     private final CommandHandler handler;
-    private Iterator<? extends CommandHandlerInterceptor> chain;
-    private UnitOfWork unitOfWork;
+    private final Iterator<? extends CommandHandlerInterceptor> chain;
+    private final UnitOfWork unitOfWork;
 
     /**
      * Initialize the default interceptor chain to dispatch the given <code>command</code>, through the

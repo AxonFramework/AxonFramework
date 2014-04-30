@@ -131,7 +131,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
         assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
 
-        assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier().toString()));
+        assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier()));
     }
 
     @Override

@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * FactoryBean implementation that create a ParameterResolverFactory, which autodetects beans implementing
+ * FactoryBean implementation that create a ParameterResolverFactory, which auto-detects beans implementing
  * ParameterResolverFactory beans in the application context.
  *
  * @author Allard Buijze

@@ -38,8 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.domain.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -148,7 +146,7 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testSagaTypeTakenIntoConsiderationWhenCheckingForSagasIncreation() throws InterruptedException {
+    public void testSagaTypeTakenIntoConsiderationWhenCheckingForSagasInCreation() throws InterruptedException {
         manager = new AnnotatedSagaManager(sagaRepository, new SimpleEventBus(),
                                            MyOtherTestSaga.class, MyTestSaga.class);
 

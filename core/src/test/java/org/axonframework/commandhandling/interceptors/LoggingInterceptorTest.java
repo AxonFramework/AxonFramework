@@ -31,10 +31,7 @@ import java.lang.reflect.Field;
 
 import static org.junit.Assert.*;
 import static org.mockito.AdditionalMatchers.*;
-import static org.mockito.Matchers.contains;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.eq;
 
 /**
  * @author Allard Buijze

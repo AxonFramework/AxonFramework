@@ -39,9 +39,9 @@ public class FileSystemSnapshotEventReader {
 
     private static final Logger logger = LoggerFactory.getLogger(FileSystemSnapshotEventReader.class);
 
-    private InputStream eventFile;
-    private InputStream snapshotEventFile;
-    private Serializer eventSerializer;
+    private final InputStream eventFile;
+    private final InputStream snapshotEventFile;
+    private final Serializer eventSerializer;
 
     /**
      * Creates a snapshot event reader that reads the latest snapshot from the <code>snapshotEventFile</code>.

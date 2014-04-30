@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

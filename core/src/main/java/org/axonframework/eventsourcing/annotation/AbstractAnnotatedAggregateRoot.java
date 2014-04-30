@@ -87,6 +87,17 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
         }
     }
 
+    /**
+     * Creates (or returns) a ParameterResolverFactory which is used by this aggregate root to resolve the parameters
+     * for @EventSourcingHandler annotated methods.
+     * <p/>
+     * This implementation uses the aggregate root's class loader to find parameter resolver factory implementations
+     * on the classpath.
+     *
+     * @return the parameter resolver with which to resolve parameters for event handler methods.
+     *
+     * @see org.axonframework.common.annotation.ClasspathParameterResolverFactory
+     */
     protected ParameterResolverFactory createParameterResolverFactory() {
         return ClasspathParameterResolverFactory.forClass(getClass());
     }

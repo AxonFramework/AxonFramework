@@ -55,7 +55,7 @@ public class AsynchronousCluster extends AbstractCluster {
     private final ConcurrentMap<Object, EventProcessor> currentSchedulers =
             new ConcurrentHashMap<Object, EventProcessor>();
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
-    private UnitOfWorkFactory unitOfWorkFactory;
+    private final UnitOfWorkFactory unitOfWorkFactory;
 
     /**
      * Creates an AsynchronousCluster implementation using the given <code>executor</code>,

@@ -44,7 +44,7 @@ import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowi
 public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinitionParser {
 
     private static final String FORCE_UTC_TIMESTAMP_ATTRIBUTE = "force-utc-timestamp";
-    private UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
+    private final UpcasterChainBeanDefinitionParser upcasterChainParser = new UpcasterChainBeanDefinitionParser();
     /**
      * the event serializer attribute.
      */

@@ -62,12 +62,13 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
      * <code>processorCount</code>.
      *
      * @param sagaRepository           The repository which provides access to the Sagas
-     * @param parameterResolverFactory
+     * @param parameterResolverFactory The parameter resolver to resolve parameters of annotated methods
      * @param unitOfWorkFactory        The factory to create Unit of Work instances with
      * @param processorCount           The number of processors to create
      * @param ringBuffer               The ringBuffer on which the Processor will operate
      * @param status                   The object providing insight in the status of the SagaManager     @return an
      *                                 array containing the Disruptor Event Handlers to invoke Sagas.
+     * @return the processor instances that will process the incoming events
      */
     static EventHandler<AsyncSagaProcessingEvent>[] createInstances(
             SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,

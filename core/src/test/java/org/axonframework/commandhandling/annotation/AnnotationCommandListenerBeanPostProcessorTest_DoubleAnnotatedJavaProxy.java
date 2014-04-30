@@ -54,7 +54,7 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotatedJavaP
         SecurityContextHolder.setContext(new SecurityContext() {
             @Override
             public Authentication getAuthentication() {
-                return new TestingAuthenticationToken("Princpipal", "Credentials", "ROLE_ADMINISTRATOR");
+                return new TestingAuthenticationToken("Principal", "Credentials", "ROLE_ADMINISTRATOR");
             }
 
             @Override

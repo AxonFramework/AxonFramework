@@ -108,9 +108,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
                                        .executeUpdate();
         if (updateCount == 0 && logger.isWarnEnabled()) {
             logger.warn("Wanted to remove association value, but it was already gone: sagaId= {}, key={}, value={}",
-                        new Object[]{sagaIdentifier,
-                                associationValue.getKey(),
-                                associationValue.getValue()});
+                        sagaIdentifier, associationValue.getKey(), associationValue.getValue());
         }
     }
 

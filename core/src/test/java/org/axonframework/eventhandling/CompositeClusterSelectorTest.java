@@ -26,7 +26,6 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

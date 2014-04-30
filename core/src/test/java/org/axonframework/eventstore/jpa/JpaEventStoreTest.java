@@ -69,13 +69,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.same;
 
 /**
  * @author Allard Buijze

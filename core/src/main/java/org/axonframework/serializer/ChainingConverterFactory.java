@@ -83,7 +83,7 @@ public class ChainingConverterFactory implements ConverterFactory {
         return converter;
     }
 
-    private <S, T> boolean canConvert(ContentTypeConverter converter, Class<S> sourceContentType,
+    private <S, T> boolean canConvert(ContentTypeConverter<?, ?> converter, Class<S> sourceContentType,
                                       Class<T> targetContentType) {
         try {
             if (converter.expectedSourceType().isAssignableFrom(sourceContentType)
@@ -104,7 +104,7 @@ public class ChainingConverterFactory implements ConverterFactory {
      * Registers the given <code>converter</code> with this factory. The converter which is registered <em>last</em>
      * will be inspected <em>first</em> when finding a suitable converter for a given input and output type.
      * <p/>
-     * An alternative to explicit converter registration (but without the ordering guarantees) is to creaate a file
+     * An alternative to explicit converter registration (but without the ordering guarantees) is to create a file
      * called <code>org.axonframework.serializer.ContentTypeConverter</code> in <code>/META-INF/services/</code> on the
      * class path which contains the fully qualified class names of the converters, separated by newlines. These
      * implementations must have a public no-arg constructor.
@@ -124,7 +124,7 @@ public class ChainingConverterFactory implements ConverterFactory {
      * The converter which is registered <em>last</em> will be inspected <em>first</em> when finding a suitable
      * converter for a given input and output type.
      * <p/>
-     * An alternative to explicit converter registration (but without the ordering guarantees) is to creaate a file
+     * An alternative to explicit converter registration (but without the ordering guarantees) is to create a file
      * called <code>org.axonframework.serializer.ContentTypeConverter</code> in <code>/META-INF/services/</code> on the
      * class path which contains the fully qualified class names of the converters, separated by newlines. These
      * implementations must have a public no-arg constructor.

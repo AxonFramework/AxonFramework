@@ -109,7 +109,7 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
     }
 
     @Override
-    public <T extends Annotation> T getAnnotation(Class<T> annotationType) {
+    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         return constructor.getAnnotation(annotationType);
     }
 }

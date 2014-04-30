@@ -270,8 +270,9 @@
         <para>Axon provides a number of implementations of event stores, all capable of storing all
             domain events (those raised from an Aggregate). These event stores use a
                 <code>Serializer</code> to serialize and deserialize the event. By default, Axon
-            provides an implementation of the Event Serializer that serializes events to XML: the
-                <code>XStreamSerializer</code>. </para>
+            provides some implementations of the Event Serializer that serializes events to XML: the
+                <code>XStreamSerializer</code> and one that Serializes to JSON (using Jackson):
+                <code>JacksonSerializer</code>.</para>
         <sect2>
             <title><code>FileSystemEventStore</code>
             </title>
@@ -425,6 +426,66 @@
                                 <code>DefaultEventEntryStore</code> instead.</para>
                     </note></para>
             </simplesect>
+        </sect2>
+        <sect2>
+            <title>JDBC Event Store</title>
+            <para>The JDBC event store uses a JDBC Connection to store Events in a JDBC compatible
+                data storage. Typically, these are relational databases. Theoretically, anything
+                that has a JDBC driver could be used to back the JDBC Event Store.</para>
+            <para>Similar to the JPA Event Store, the JDBC Event Store stores Events in entries. By
+                default, each Event is stored in a single Entry, which corresponds with a row in a
+                table. One table is used for Events and another for the Snapshots.</para>
+            <para>The <code>JdbcEventStore</code> can be configured with an
+                    <code>EventEntryStore</code> and a <code>Serializer</code>. The EventEntryStore
+                defines how Events are appended to the event store. The serializer is used to
+                convert the payload and meta data of an event into an array of bytes, ready for
+                storage. In most cases, the DefaultEventEntryStore will suffice. t can be configured
+                to accomodate all sort of different scenarios.</para>
+            <para>The <code>DefaultEventEntryStore</code> uses a <code>ConnectionProvider</code> to
+                obtain connections. Typically, these connections can be obtained directly from a
+                DataSource. However, Axon will bind these connections the a Unit of Work, so that a
+                single connection in a Unit of Work. This ensures that a single transaction is used
+                to store all events, even when multiple Unit of Work are nested in the same
+                thread.</para>
+            <note>
+                <title>JDBC Event Store and Spring</title>
+                <para>Spring users are recommended to use the namespace support to define a JDBC
+                    Event Store: <code>&lt;axon:jdbc-event-store .../></code> This will ensure that
+                    connections are bound to a transaction using the Platform Transaction Manager,
+                    if available.</para>
+                <para>If you don't use namespace support, or define your own
+                        <code>ConnectionProvider</code>, you can use the
+                        <code>SpringDataSourceConnectionProvider</code> to attach a connection from
+                    a <code>DataSource</code> to an existing transaction. It is also recommended to
+                    wrap the <code>ConnectionProvider</code> in a
+                        <code>UnitOfWorkAwareConnectionProviderWrapper</code>, to ensure a single
+                    connection is used during the course of a single Unit of Work.</para>
+            </note>
+            <para>Most database speak more or less the same language. However, there many so-called
+                SQL Dialects. While the JDBC Event Store speaks a language all database should be
+                able to understand, it is possible that specific database vendors provide better
+                performing alternatives to generic SQL commands. To accomodate those, the
+                    <code>DefaultEventEntryStore</code> works with a <code>EventSqlSchema</code>.
+                The <code>EventSqlSchema</code> is an interface that prescribes a number of
+                operations the <code>EventEntryStore</code> does on the underlying database. The
+                    <code>EventSqlSchema</code> is responsible for creating the correct
+                    <code>PreparedStatement</code>s for those. When you need to change a query that
+                is executed against the database, it will usually suffice to override a single
+                method in the <code>GenericEventSqlSchema</code>.</para>
+            <warning>
+                <title>Timestamps and time zones</title>
+                <para>By default, Axon stores time stamps in the system timezone. However, many
+                    regions use daylight savings time, causing them to effectively change timezone
+                    throughout the year. This could cause events to be returned in a different order
+                    than how they were originally stored. It is recommended to store timestamps in
+                    the UTC timezone, or use the millis-since-epoch format.</para>
+                <para>To force te JDBC Event Store to store dates in the UTC timezone, either
+                    configure Joda to generate all dates in UTC timezone, or tell the JDBC Event
+                    Store to convert all timestamps to UTC. This can be done by setting
+                    &lt;axon:jdbc-event-store ... force-utc-timestamp="true" ... />, or by calling
+                        <code>setForceUtc(true);</code> on the
+                    <code>GenericEventSqlSchema</code>.</para>
+            </warning>
         </sect2>
         <sect2>
             <title>MongoDB Event Store</title>
@@ -646,6 +707,23 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                         </callout>
                     </calloutlist>
                 </programlistingco></para>
+            <note>
+                <title>Conditional upcasting</title>
+                <para>In some occasions, it is necessary to upcast an event to one of multiple
+                    potential types, based on the contents of the event itself. This is the case
+                    where one historical event has been split into several new events, each one for
+                    a specific case. The Upcaster interface doesn't provide the event itself in the
+                        <code>upcast(SerializedType)</code> method.</para>
+                <para>Alternatively, you may implement the <code>ExtendedUpcaster</code> interface.
+                    Unlike the <code>Upcaster</code> interface, this interface declares an
+                        <code>upcast(SerializedType, SerializedObject)</code> method. This method
+                    serves as a replacement for the <code>upcast(SerializedType)</code> method, for
+                    UpcasterChain implementations that support ExtendedUpcaster. The UpcasterChain
+                    implementations provided by Axon will always support this. Upcasters
+                    implementing <code>ExtendedUpcaster</code> may throw an
+                        <code>UnsupportedOperationException</code> in the
+                        <code>upcast(SerializedType)</code> method.</para>
+            </note>
         </sect2>
         <sect2>
             <title>The Upcaster Chain</title>

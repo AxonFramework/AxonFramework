@@ -78,7 +78,7 @@ public class LazyDeserializingObject<T> {
     @SuppressWarnings("unchecked")
     public T getObject() {
         if (!isDeserialized()) {
-            deserializedObject = (T) serializer.deserialize(serializedObject);
+            deserializedObject = serializer.deserialize(serializedObject);
         }
         return deserializedObject;
     }

@@ -42,6 +42,7 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
         apply(new StubDomainEvent());
     }
 
+    @Override
     public Object getIdentifier() {
         return identifier;
     }

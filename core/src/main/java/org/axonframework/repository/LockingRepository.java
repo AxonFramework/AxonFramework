@@ -155,7 +155,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
     protected abstract void doSaveWithLock(T aggregate);
 
     /**
-     * Perform the actual deleting of the aggregate. All necessary locks have been verifierd.
+     * Perform the actual deleting of the aggregate. All necessary locks have been verified.
      *
      * @param aggregate the aggregate to delete
      */

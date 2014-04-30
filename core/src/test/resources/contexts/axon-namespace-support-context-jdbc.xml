@@ -49,8 +49,10 @@
     </axon:jdbc-saga-repository>
 
     <axon:jdbc-event-store id="emptyJdbcEventStore"/>
-    <axon:jdbc-event-store id="jcbcEventStoreWithConnectionProvider" connection-provider="connectionProvider"/>
-    <axon:jdbc-event-store id="jcbcEventStoreWithDataSource" data-source="dataSource" sql-schema="eventSqlSchema"/>
+    <axon:jdbc-event-store id="jcbcEventStoreWithConnectionProvider" connection-provider="connectionProvider"
+                           force-utc-timestamp="true"/>
+    <axon:jdbc-event-store id="jcbcEventStoreWithDataSource" data-source="dataSource"
+                           sql-schema="eventSqlSchema"/>
     <axon:jdbc-event-store id="jdbcEventStoreWithAllConfig" batch-size="100"
                            event-entry-store-ref="eventEntryStore"
                            event-serializer="serializer" max-snapshots-archived="2"

@@ -33,6 +33,7 @@ import java.sql.SQLException;
  */
 @SuppressWarnings("JpaQueryApiInspection")
 public class GenericEventSqlSchema implements EventSqlSchema {
+
     private static final DateTimeFormatter UTC_FORMATTER = ISODateTimeFormat.dateTime().withZoneUTC();
 
     private static final String STD_FIELDS = "eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, "
@@ -43,11 +44,11 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     /**
      * Control if date time in the SQL scheme
      * should use UTC time zone or system local time zone.
-     *
+     * <p/>
      * <p>
      * Default is to use system local time zone.
      * </p>
-     *
+     * <p/>
      * <p>
      * You should not change this after going into production,
      * since it would affect the batching iterator when fetching events.
@@ -102,7 +103,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
      * change to types of columns used.
      *
      * @param tableName           The name of the table to insert the entry into
-     * @param connection The connection to create the statement for
+     * @param connection          The connection to create the statement for
      * @param eventIdentifier     The unique identifier of the event
      * @param aggregateIdentifier The identifier of the aggregate that generated the event
      * @param sequenceNumber      The sequence number of the event
@@ -112,9 +113,9 @@ public class GenericEventSqlSchema implements EventSqlSchema {
      * @param eventPayload        The serialized payload of the Event
      * @param eventMetaData       The serialized meta data of the event
      * @param aggregateType       The type identifier of the aggregate the event belongs to
-     * @return
+     * @return a prepared statement that allows inserting a domain event entry when executed
      *
-     * @throws SQLException
+     * @throws SQLException when an exception occurs creating the PreparedStatement
      */
     protected PreparedStatement doInsertEventEntry(String tableName, Connection connection, String eventIdentifier,
                                                    String aggregateIdentifier,
@@ -198,8 +199,18 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         return preparedStatement;
     }
 
-    protected Object readTimeStamp(ResultSet resultSet, int rowIndex) throws SQLException {
-        return resultSet.getString(rowIndex);
+    /**
+     * Reads a timestamp from the given <code>resultSet</code> at given <code>columnIndex</code>. The resultSet is
+     * positioned in the row that contains the data. This method must not change the row in the result set.
+     *
+     * @param resultSet   The resultSet containing the stored data
+     * @param columnIndex The column containing the timestamp
+     * @return an object describing the timestamp
+     *
+     * @throws SQLException when an exception occurs reading from the resultSet.
+     */
+    protected Object readTimeStamp(ResultSet resultSet, int columnIndex) throws SQLException {
+        return resultSet.getString(columnIndex);
     }
 
     @Override

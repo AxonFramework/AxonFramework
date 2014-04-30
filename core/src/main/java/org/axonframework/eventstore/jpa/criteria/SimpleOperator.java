@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.jpa.criteria;
 
 /**
- * Implementation of all simple operators (i.e. those with a structor of <code>value operator value</code>.
+ * Implementation of all simple operators (i.e. those with a structure of <code>value operator value</code>.
  *
  * @author Allard Buijze
  * @since 2.0

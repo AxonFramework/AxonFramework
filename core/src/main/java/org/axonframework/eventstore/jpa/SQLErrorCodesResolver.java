@@ -104,7 +104,7 @@ public class SQLErrorCodesResolver implements org.axonframework.common.jdbc.Pers
      * database product name is used to resolve the database error codes. As an alternative you could set the property
      * databaseDuplicateKeyCodes
      * <p/>
-     * The form of the properies is expected to be:<br/>
+     * The form of the properties is expected to be:<br/>
      * <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
      * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
      * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
@@ -121,7 +121,7 @@ public class SQLErrorCodesResolver implements org.axonframework.common.jdbc.Pers
      * Initialize the SQLErrorCodesResolver with the given <code>properties</code> and use the <code>dataSource</code>
      * to automatically retrieve the database product name.
      * <p/>
-     * The form of the properies is expected to be:<br/>
+     * The form of the properties is expected to be:<br/>
      * <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
      * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
      * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
@@ -135,13 +135,7 @@ public class SQLErrorCodesResolver implements org.axonframework.common.jdbc.Pers
     }
 
     private void initialize(Properties properties, String databaseProductName) {
-        try {
-            duplicateKeyCodes = loadKeyViolationCodes(databaseProductName, properties);
-        } catch (IOException e) {
-            throw new AxonConfigurationException(
-                    "Unable to configure the SQL Codes for Unique Key Constraint Violations.",
-                    e);
-        }
+        duplicateKeyCodes = loadKeyViolationCodes(databaseProductName, properties);
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
@@ -193,7 +187,7 @@ public class SQLErrorCodesResolver implements org.axonframework.common.jdbc.Pers
         }
     }
 
-    private List<Integer> loadKeyViolationCodes(String databaseProductName, Properties properties) throws IOException {
+    private List<Integer> loadKeyViolationCodes(String databaseProductName, Properties properties) {
         String key = databaseProductName.replaceAll(" ", "_") + PROPERTY_NAME_SUFFIX;
         String property = properties.getProperty(key);
 

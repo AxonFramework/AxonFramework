@@ -704,6 +704,62 @@ for (String supportedCommand : handler.supportedCommands()) {
                         an aggregate instance. It will also be automatically subscribed to the
                             <code>CommandBus</code>. </para>
                 </note>
+                <para>Since version 2.2, <code>@CommandHandler</code> annotatations are not limited
+                    to the aggregate root. Placing all command handlers in the root will sometimes
+                    lead to a large number of methods on the aggregate root, while many of them
+                    simply forward the invocation to one of the underlying entities. If that is the
+                    case, you may place the <code>@CommandHandler</code> annotation on one of the
+                    underlying entities' methods. For Axon to find these annotated methods, the
+                    field declaring the entity in the aggregate root must be marked with
+                        <code>@CommandHandlingMember</code>. Note that only the declared type of the
+                    annotated field is inspected for Command Handlers. If a field value is null at
+                    the time an incoming command arrives for that entity, an exception is thrown.<programlisting>public class MyAggregate extends AbstractAnnotatedAggregateRoot {
+   
+    @AggregateIdentifier
+    private String id;
+
+    @CommandHandlingMember
+    private MyEntity entity;
+
+    @CommandHandler
+    public MyAggregate(CreateMyAggregateCommand command) {
+        apply(new MyAggregateCreatedEvent(IdentifierFactory.getInstance().generateIdentifier()));
+    }
+
+    // no-arg constructor for Axon
+    MyAggregate() {
+    }
+
+    @CommandHandler
+    public void doSomething(DoSomethingCommand command) {
+        // do something...
+    }
+
+    // code omitted for brevity. The event handler for MyAggregateCreatedEvent must set the id field
+    // and somewhere in the lifecycle, a value for "entity" must be assigned to be able to accept
+    // DoSomethingInEntityCommand commands.
+}
+
+public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly required for @CommandHandler
+
+    @CommandHandler
+    public void handleSomeCommand(DoSomethingInEntityCommand command) {
+        // do something
+    }
+}</programlisting><note>
+                        <para>Note that each command must have exactly one handler in the aggregate.
+                            This means that you cannot annotated multiple entities (either root nor
+                            not) with @CommandHandler, when they handle the same command type. This
+                            also means that it is not possible to annotate fields containing
+                            collections with <code>@CommandHandlingMember</code>. In case you need
+                            to conditionally route a command to an entity, the parent of these
+                            entities should handle the command, and forward it based on the
+                            conditions that apply.</para>
+                        <para>The runtime type of the field does not have to be exactly the declared
+                            type. However, only the declared type of the
+                                <code>@CommandHandlingMember</code> annotated field is inspected for
+                                <code>@CommandHandler</code> methods.</para>
+                    </note></para>
             </simplesect>
         </sect2>
     </sect1>

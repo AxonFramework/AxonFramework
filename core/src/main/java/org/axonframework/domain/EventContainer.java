@@ -65,7 +65,7 @@ public class EventContainer implements Serializable {
      * aggregate assigned yet. If an event has a sequence number assigned, it must follow directly upon the sequence
      * number of the event that was previously added.
      *
-     * @param metaData the metaData of the event to add to this containr
+     * @param metaData the metaData of the event to add to this container
      * @param payload  the payload of the event to add to this container
      * @param <T>      the type of payload contained in the event
      * @return the DomainEventMessage added to the container

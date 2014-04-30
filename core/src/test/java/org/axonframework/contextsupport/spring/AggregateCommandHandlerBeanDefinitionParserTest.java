@@ -80,19 +80,19 @@ public class AggregateCommandHandlerBeanDefinitionParserTest {
 
     @Test
     public void testTargetResolverProperlyInjected() throws NoSuchFieldException, IllegalAccessException {
-        Field commandTargerResolverField = AggregateAnnotationCommandHandler.class.getDeclaredField(
+        Field commandTargetResolverField = AggregateAnnotationCommandHandler.class.getDeclaredField(
                 "commandTargetResolver");
-        ensureAccessible(commandTargerResolverField);
-        Object targetResolver = commandTargerResolverField.get(aggregateCommandHandlerWithTargetResolver);
+        ensureAccessible(commandTargetResolverField);
+        Object targetResolver = commandTargetResolverField.get(aggregateCommandHandlerWithTargetResolver);
         assertSame(commandTargetResolver, targetResolver);
     }
 
     @Test
     public void testTargetResolverDefaultToAnnotationBased() throws NoSuchFieldException, IllegalAccessException {
-        Field commandTargerResolverField = AggregateAnnotationCommandHandler.class.getDeclaredField(
+        Field commandTargetResolverField = AggregateAnnotationCommandHandler.class.getDeclaredField(
                 "commandTargetResolver");
-        ensureAccessible(commandTargerResolverField);
-        Object targetResolver = commandTargerResolverField.get(aggregateCommandHandlerWithoutTargetResolver);
+        ensureAccessible(commandTargetResolverField);
+        Object targetResolver = commandTargetResolverField.get(aggregateCommandHandlerWithoutTargetResolver);
         assertTrue(targetResolver instanceof AnnotationCommandTargetResolver);
     }
 }

@@ -63,12 +63,12 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
     }
 
     @Override
-    public <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializePayload(Serializer serializer, Class<R> expectedRepresentation) {
         return message.serializePayload(serializer, expectedRepresentation);
     }
 
     @Override
-    public <T> SerializedObject<T> serializeMetaData(Serializer serializer, Class<T> expectedRepresentation) {
+    public <R> SerializedObject<R> serializeMetaData(Serializer serializer, Class<R> expectedRepresentation) {
         return message.serializeMetaData(serializer, expectedRepresentation);
     }
 

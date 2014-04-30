@@ -18,7 +18,6 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
@@ -35,7 +34,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.Executor;
 
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
