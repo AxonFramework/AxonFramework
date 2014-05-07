@@ -473,6 +473,30 @@
                     transaction is committed. the default is to use explicit flushes.</para>
             </simplesect>
             <simplesect>
+                <title><code>JdbcSagaRepository</code></title>
+                <para>The <code>JdbcSagaRepository</code> uses plain JDBC to store stage instances
+                    and their association values. Similar to the <code>JpaSagaRepository</code>,
+                    Saga instances don't need to be aware of how they are stored. They are
+                    serialized using a Serializer.</para>
+                <para>The <code>JdbcSagaRepository</code> is configured with a
+                        <code>ConnectionProvider</code>, which can simply be a
+                        <code>DataSource</code> wrapped in a
+                        <code>DataSourceConnectionProvider</code>, a <code>ResourceInjector</code>
+                    and a <code>Serializer</code>. While not required, it is recommended to use a
+                        <code>UnitOfWorkAwareConnectionProviderWrapper</code>. It will check the
+                    current Unit of Work for an already open database connection. This will ensure
+                    that all activity within a unit of work is done on a single connection.</para>
+                <para>Unlike JPA, the JdbcSagaRepository uses plain SQL statement to store and
+                    retrieve information. This may mean that some operations depend on the Database
+                    specific SQL dialect. It may also be the case that certain Database vendors
+                    provide non-standard features that you would like to use. To allow for this, you
+                    can provide your own <code>SagaSqlSchema</code>. The <code>SagaSqlSchema</code>
+                    is an interface that defines all the operations the repository needs to perform
+                    on the underlying database. It allows you to customize the SQL statement
+                    executed for each one of them. The default is the
+                        <code>GenericSagaSqlSchema</code>.</para>
+            </simplesect>
+            <simplesect>
                 <title><code>MongoSagaRepository</code></title>
                 <para>Similar to the <code>JpaSagaRepository</code>, the
                         <code>MongoSagaRepository</code> stores the Saga instances and their

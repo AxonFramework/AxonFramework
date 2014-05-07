@@ -61,10 +61,17 @@
                 variable length column of 255 characters, you could use a fixed length column of 36
                 characters for the aggregate identifier.</para>
             <para>The 'timestamp' column in the DomainEventEntry table only stores ISO 8601
-                timestamps. If all times are stored in the UTZ timezone, they need a column length
+                timestamps. If all times are stored in the UTC timezone, they need a column length
                 of 24 characters. If you use another timezone, this may be up to 28. Using variable
-                length columns is generally not necessary, since time stamps always have the same
-                length.</para>
+                length columns is generally not necessary, since time stamps always have the same length.<warning>
+                    <title>Timezones and Event Stores</title>
+                    <para>It is highly recommended to store all timestamps in UTC format. In
+                        countries with Daylight Savings Time, storing timestamps in local time may
+                        result in sorting errors for events generated around and during the timezone
+                        switch. This does not occur when UTC is used. Some servers are configured to
+                        always use UTC. Alternatively, you should configure the Event Store to
+                        convert timestamps to UTC before storing them.</para>
+                </warning></para>
             <para>The 'type' column in the DomainEventEntry stores the Type Identifiers of
                 aggregates. Generally, these are the 'simple name' of the aggregate. Event the
                 infamous 'AbstractDependencyInjectionSpringContextTests' in spring only counts 45
@@ -187,36 +194,38 @@
     </sect1>
     <sect1>
         <title>Event Serializer tuning</title>
-        <para>XStream is very configurable and extensible. If you just use a plain
-                <code>XStreamSerializer</code>, there are some quick wins ready to pick up. XStream
-            allows you to configure aliases for package names and event class names. Aliases are
-            typically much shorter (especially if you have long package names), making the
-            serialized form of an event smaller. And since we're talking XML, each character removed
-            from XML is twice the profit (one for the start tag, and one for the end tag). </para>
-        <para>A more advanced topic in XStream is creating custom converters. The default reflection
-            based converters are simple, but do not generate the most compact XML. Always look
-            carefully at the generated XML and see if all the information there is really needed to
-            reconstruct the original instance.
-        </para>
-        <para>Avoid the use of upcasters when possible. XStream allows aliases to be used for
-            fields, when they have changed name. Imagine revision 0 of an event, that used a field
-            called "clientId". The business prefers the term "customer", so revision 1 was created
-            with a field called "customerId". This can be configured completely in XStream, using
-            field aliases. You need to configure two aliases, in the following order: alias
-            "customerId" to "clientId" and then alias "customerId" to "customerId". This will tell
-            XStream that if it encounters a field called "customerId", it will call the
-            corresponding XML element "customerId" (the second alias overrides the first). But if
-            XStream encounters an XML element called "clientId", it is a known alias and will be
-            resolved to field name "customerId". Check out the XStream documentation for more
-            information.
-        </para>
-        <para>For ultimate performance, you're probably better off without reflection based
-            mechanisms alltogether. In that case, it is probably wisest to create a custom
-            serialization mechanism. The <code>DataInputStream</code> and
-                <code>DataOutputStream</code> allow you to easilly write the contents of the Events
-            to an output stream. The <code>ByteArrayOutputStream</code> and
-                <code>ByteArrayInputStream</code> allow writing to and reading from byte
-            arrays.</para>
+        <sect2>
+            <title>XStream Serializer</title>
+            <para>XStream is very configurable and extensible. If you just use a plain
+                    <code>XStreamSerializer</code>, there are some quick wins ready to pick up.
+                XStream allows you to configure aliases for package names and event class names.
+                Aliases are typically much shorter (especially if you have long package names),
+                making the serialized form of an event smaller. And since we're talking XML, each
+                character removed from XML is twice the profit (one for the start tag, and one for
+                the end tag). </para>
+            <para>A more advanced topic in XStream is creating custom converters. The default
+                reflection based converters are simple, but do not generate the most compact XML.
+                Always look carefully at the generated XML and see if all the information there is
+                really needed to reconstruct the original instance. </para>
+            <para>Avoid the use of upcasters when possible. XStream allows aliases to be used for
+                fields, when they have changed name. Imagine revision 0 of an event, that used a
+                field called "clientId". The business prefers the term "customer", so revision 1 was
+                created with a field called "customerId". This can be configured completely in
+                XStream, using field aliases. You need to configure two aliases, in the following
+                order: alias "customerId" to "clientId" and then alias "customerId" to "customerId".
+                This will tell XStream that if it encounters a field called "customerId", it will
+                call the corresponding XML element "customerId" (the second alias overrides the
+                first). But if XStream encounters an XML element called "clientId", it is a known
+                alias and will be resolved to field name "customerId". Check out the XStream
+                documentation for more information. </para>
+            <para>For ultimate performance, you're probably better off without reflection based
+                mechanisms alltogether. In that case, it is probably wisest to create a custom
+                serialization mechanism. The <code>DataInputStream</code> and
+                    <code>DataOutputStream</code> allow you to easilly write the contents of the
+                Events to an output stream. The <code>ByteArrayOutputStream</code> and
+                    <code>ByteArrayInputStream</code> allow writing to and reading from byte
+                arrays.</para>
+        </sect2>
         <sect2>
             <title>Preventing duplicate serialization</title>
             <para>Especially in distributed systems, Event Messages need to be serialized in

@@ -400,31 +400,30 @@
                         <code>EventEntryStore</code> in the JPA Event Store's constructor. You will
                     need to provide implementations of methods that load and store serialized
                     events. Check the API Documentation of the <code>EventEntryStore</code> class
-                    for implementation requirements. <warning>
-                        <title>Memory consumption warning</title>
-                        <para>Note that persistence providers, such as Hibernate, use a first-level
-                            cache on their EntityManager implementation. Typically, this means that
-                            all entities used or returned in queries are attached to the
-                            EntityManager. They are only cleared when the surrounding transaction is
-                            committed or an explicit "clear" in performed inside the transaction.
-                            This is especially the case when the Queries are executed in the context
-                            of a transaction. </para>
-                        <para>To work around this issue, make sure to exclusively query for
-                            non-entity objects. You can use JPA's "SELECT new SomeClass(parameters)
-                            FROM ..." style queries to work around this issue. Alternatively, call
-                                <code>EntityManager.flush()</code> and
-                                <code>EntityManager.clear()</code> after fetching a batch of events.
-                            Failure to do so might result in <code>OutOfMemoryException</code>s when
-                            loading large streams of events. </para>
-                    </warning><note>
-                        <title>Hibernate support</title>
-                        <para>The <code>EventEntryStore</code> implementation used by Axon
-                            automatically detects whether Hibernate is used as JPA implementation.
-                            If that is the case, it will use some Hiberante-specific features to
-                            optimize performance while reducing memory consumption. To prevent
-                            Hibernate specific logic, configure the JPA Event Store to use the
-                                <code>DefaultEventEntryStore</code> instead.</para>
-                    </note></para>
+                    for implementation requirements. </para>
+                <para>If you only want to change the table name or want to add some extra fields to
+                    the table, you can also create a class that extends from
+                    DefaultEventEntryStrore, and override the <code>createDomainEventEntry</code>
+                    and/or <code>createSnapshotEventEntrymethod</code>. This method must return a
+                        <code>DomainEventEntry</code> and <code>SnapshotEventEntry</code> instance,
+                    respectively. By returning your own subclass of these, you can store different
+                    events in different tables, or add extra information in separate columns.</para>
+                <warning>
+                    <title>Memory consumption warning</title>
+                    <para>Note that persistence providers, such as Hibernate, use a first-level
+                        cache on their EntityManager implementation. Typically, this means that all
+                        entities used or returned in queries are attached to the EntityManager. They
+                        are only cleared when the surrounding transaction is committed or an
+                        explicit "clear" in performed inside the transaction. This is especially the
+                        case when the Queries are executed in the context of a transaction. </para>
+                    <para>To work around this issue, make sure to exclusively query for non-entity
+                        objects. You can use JPA's "SELECT new SomeClass(parameters) FROM ..." style
+                        queries to work around this issue. Alternatively, call
+                            <code>EntityManager.flush()</code> and
+                            <code>EntityManager.clear()</code> after fetching a batch of events.
+                        Failure to do so might result in <code>OutOfMemoryException</code>s when
+                        loading large streams of events. </para>
+                </warning>
             </simplesect>
         </sect2>
         <sect2>
@@ -528,25 +527,30 @@
         <sect2>
             <title>Influencing the serialization process</title>
             <para>Event Stores need a way to serialize the Event to prepare it for storage. By
-                default, Axon provides the <code>XStreamSerializer</code>, which uses <link
+                default, Axon uses the <code>XStreamSerializer</code>, which uses <link
                     xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
-                    >XStream</link> to serialize Events into XML and vice versa. XStream is
-                reasonably fast and is more flexible than Java Serialization. Furthermore, the
-                result of XStream serialization is human readable. Quite useful for logging and
-                debugging purposes. </para>
+                    >XStream</link> to serialize Events into XML. XStream is reasonably fast and is
+                more flexible than Java Serialization. Furthermore, the result of XStream
+                serialization is human readable. Quite useful for logging and debugging purposes. </para>
             <para>The XStreamSerializer can be configured. You can define aliases it should use for
                 certain packages, classes or even fields. Besides being a nice way to shorten
                 potentially long names, aliases can also be used when class definitions of event
                 change. For more information about aliases, visit the <link
                     xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
-                    >XStream website</link>. </para>
+                    >XStream website</link>.</para>
+            <para>Alternatively, Axon also provides the <code>JacksonSerializer</code>, which uses
+                    <link xmlns:xlink="http://www.w3.org/1999/xlink"
+                    xlink:href="https://github.com/FasterXML/jackson">Jackson</link> to serialize
+                Events into JSON. While it produces more a compact serialized form, it does require
+                that classes stick to the conventions (or configuration) required by Jackson.</para>
             <note>
                 <title>Spring XML Configuration and Serializer Customization</title>
                 <para>Configuring the serializer using Java code (or other JVM languages) is easy.
                     However, configuring it in a Spring XML Application Context is not so trivial,
                     due to its limitations to invoke methods. One of the options is to create a
                         <code>FactoryBean</code> that creates an instance of an XStreamSerializer
-                    and configures it in code. Check the Spring Reference </para>
+                    and configures it in code. Check the Spring Reference  for more
+                    information.</para>
             </note>
             <para>You may also implement your own Serializer, simply by creating a class that
                 implements <code>Serializer</code>, and configuring the Event Store to use that
@@ -770,6 +774,9 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             <para>If the content type conversion that you need is not provided by Axon you can
                 always write one yourself using the <code>ContentTypeConverter</code> interface.
             </para>
+            <para>The <code>XStreamSerializer</code> supports Dom4J as well as XOM as XML document
+                representations. The <code>JacksonSerializer</code> supports Jackson's
+                    <code>JsonNode</code>.</para>
         </sect2>
     </sect1>
     <sect1 xml:id="using-snapshot-events">
