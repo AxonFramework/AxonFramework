@@ -49,11 +49,7 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
      * @param annotatedEventListener The annotated event listener
      * @param eventBus               The event bus to subscribe to
      * @return an AnnotationEventListenerAdapter that wraps the listener. Can be used to unsubscribe.
-     *
-     * @deprecated Use {@link #AnnotationEventListenerAdapter(Object)} and subscribe the listener to the event bus
-     * using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
      */
-    @Deprecated
     public static AnnotationEventListenerAdapter subscribe(Object annotatedEventListener, EventBus eventBus) {
         AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventListener);
         eventBus.subscribe(adapter);

@@ -57,12 +57,7 @@ public class AnnotationCommandHandlerAdapter
      * @param annotatedCommandHandler The annotated command handler that is to be subscribed to the command bus
      * @param commandBus              The command bus that gets the handler's subscription
      * @return the Adapter created for the command handler target. Can be used to unsubscribe.
-     *
-     * @deprecated Use {@link #AnnotationCommandHandlerAdapter(Object)} and subscribe the handler to the command bus
-     * using {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}.
      */
-    @Deprecated
     public static AnnotationCommandHandlerAdapter subscribe(Object annotatedCommandHandler, CommandBus commandBus) {
         AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(annotatedCommandHandler);
         for (String cmd : adapter.supportedCommands()) {

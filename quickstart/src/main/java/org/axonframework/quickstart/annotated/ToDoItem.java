@@ -33,7 +33,7 @@ public class ToDoItem extends AbstractAnnotatedAggregateRoot {
     @AggregateIdentifier
     private String id;
 
-    // No-arg constructor Required by default axon
+    // No-arg constructor, required by Axon
     public ToDoItem() {
     }
 

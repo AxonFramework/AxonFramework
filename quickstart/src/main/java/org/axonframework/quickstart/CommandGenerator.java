@@ -32,8 +32,8 @@ public class CommandGenerator {
     public static void sendCommands(CommandGateway commandGateway) {
         final String itemId1 = UUID.randomUUID().toString();
         final String itemId2 = UUID.randomUUID().toString();
-        commandGateway.send(new CreateToDoItemCommand(itemId1, "Check if it really works!"));
-        commandGateway.send(new CreateToDoItemCommand(itemId2, "Think about the next steps!"));
-        commandGateway.send(new MarkCompletedCommand(itemId1));
+        commandGateway.sendAndWait(new CreateToDoItemCommand(itemId1, "Check if it really works!"));
+        commandGateway.sendAndWait(new CreateToDoItemCommand(itemId2, "Think about the next steps!"));
+        commandGateway.sendAndWait(new MarkCompletedCommand(itemId1));
     }
 }
