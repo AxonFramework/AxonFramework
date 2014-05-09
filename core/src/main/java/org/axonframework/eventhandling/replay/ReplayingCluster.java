@@ -28,6 +28,8 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.unitofwork.TransactionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -54,6 +56,8 @@ import java.util.concurrent.RunnableFuture;
  * @since 2.0
  */
 public class ReplayingCluster implements Cluster {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReplayingCluster.class);
 
     private final Cluster delegate;
     private final EventStoreManagement replayingEventStore;
@@ -180,6 +184,7 @@ public class ReplayingCluster implements Cluster {
         if (status == Status.LIVE) {
             delegate.publish(events);
         } else {
+            logger.debug("Cluster is in replaying: sending message to process backlog");
             List<EventMessage> acknowledgedMessages = incomingMessageHandler.onIncomingMessages(delegate, events);
             if (acknowledgedMessages != null && !acknowledgedMessages.isEmpty()) {
                 eventHandlingListeners.onEventProcessingCompleted(acknowledgedMessages);
@@ -259,34 +264,52 @@ public class ReplayingCluster implements Cluster {
         public void run() {
             incomingMessageHandler.prepareForReplay(delegate);
             status = Status.REPLAYING;
+
+            logger.trace("Cluster set to replay mode");
             Object tx = transactionManager.startTransaction();
+
+            logger.trace("Started new transaction for event replay");
             final ReplayingEventVisitor visitor = new ReplayingEventVisitor(tx);
             try {
+                logger.trace("Notifying replay aware listeners 'beforeReplay'");
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.beforeReplay();
                 }
                 if (criteria != null) {
+                    logger.trace("Starting visiting events using criteria");
                     replayingEventStore.visitEvents(criteria, visitor);
                 } else {
+                    logger.trace("Starting visiting events without criteria");
                     replayingEventStore.visitEvents(visitor);
                 }
+
+                logger.trace("Notifying replay aware listeners 'afterReplay'");
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.afterReplay();
                 }
                 status = Status.PROCESSING_BACKLOG;
+
+                logger.trace("Processing backlog of messages");
                 incomingMessageHandler.processBacklog(delegate);
+
+                logger.trace("Committing transaction");
                 transactionManager.commitTransaction(visitor.getTransaction());
             } catch (Throwable t) {
                 try {
+                    logger.error("Replay failed due to an exception.", t);
                     incomingMessageHandler.onReplayFailed(delegate, t);
+
+                    logger.trace("Notifying replay aware listeners 'replayFailed'");
                     for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                         replayAwareEventListener.onReplayFailed(t);
                     }
                 } finally {
+                    logger.trace("Rolling back replay transaction");
                     transactionManager.rollbackTransaction(visitor.getTransaction());
                 }
                 throw new ReplayFailedException("Replay failed due to an exception.", t);
             } finally {
+                logger.info("Replay ended. Switching back to live mode");
                 status = Status.LIVE;
             }
         }
@@ -305,7 +328,9 @@ public class ReplayingCluster implements Cluster {
             public void doWithEvent(DomainEventMessage domainEvent) {
                 if (commitThreshold > 0 && ++eventCounter > commitThreshold) {
                     eventCounter = 0;
+                    logger.trace("Replay batch size reached; committing Replay Transaction");
                     transactionManager.commitTransaction(currentTransaction);
+                    logger.trace("Starting new Replay Transaction for next batch");
                     currentTransaction = transactionManager.startTransaction();
                 }
                 delegate.publish(domainEvent);
