@@ -124,7 +124,7 @@
                         <code>ConcurrencyException</code>
                         and a
                         <code>ConflictingModificationException</code>. The first is used to
-                        indicate a repository cannot save an aggregate, because the changes it
+                        indicate that a repository cannot save an aggregate, because the changes it
                         contains were not applied to the latest available version. The latter
                         indicates that the loaded aggregate contains changes that might not have
                         been seen by the end-user. See
@@ -163,7 +163,7 @@
                 an aggregate has been created, the
                 <code>EventSourcingRepository</code>
                 can
-                initialize is using the Events it loaded from the Event Store. Axon Framework comes
+                initialize it using the Events it loaded from the Event Store. Axon Framework comes
                 with a number of
                 <code>AggregateFactory</code>
                 implementations that you may use. If
@@ -282,7 +282,7 @@
                 well. The only configuration needed is the location where the event store may store
                 its files and the serializer to use to actually serialize and deserialize the
                 events. </para>
-            <para>Note that the FileSystemEventStore is not aware of transactions and cannot
+            <para>Note that the <code>FileSystemEventStore</code> is not aware of transactions and cannot
                 automatically recover from crashes. Furthermore, it stores a single file for each
                 aggregate, potentially creating too many files for the OS to handle. It is therefore
                 not a suitable implementation for production environments.<tip>
@@ -344,14 +344,14 @@
                     Inserting a second event for an existing aggregate with an existing sequence
                     number will result in an error. </para>
                 <para>The JPA EventStore can detect this error and translate it to a
-                    ConcurrencyException. However, each database system reports this violation
-                    differently. If you register your DataSource with the JpaEventStore, it will try
+                    <code>ConcurrencyException</code>. However, each database system reports this violation
+                    differently. If you register your <code>DataSource</code> with the <code>JpaEventStore</code>, it will try
                     to detect the type of database and figure out which error codes represent a Key
                     Constraint Violation. Alternatively, you may provide a
-                    PersistenceExceptionTranslator instance, which can tell if a given exception
+                    <code>PersistenceExceptionTranslator</code> instance, which can tell if a given exception
                     represents a Key Constraint Violation. </para>
-                <para>If no DataSource or PersistenceExceptionTranslator is provided, exceptions
-                    from the Database driver are thrown as-is. </para>
+                <para>If no <code>DataSource</code> or <code>PersistenceExceptionTranslator</code> is provided, exceptions
+                    from the database driver are thrown as-is. </para>
             </note>
             <simplesect>
                 <title>Working with multiple Persistence Contexts</title>
@@ -372,7 +372,7 @@
                         <code>ContainerManagedEntityManagerProvider</code>, which returns the
                     default persistence context, and is used by default by the Jpa Event Store. </para>
                 <para>If you have a persistence unit called "myPersistenceUnit" which you wish to
-                    use in the <code>JpaEventStore</code>, this is what the EntityManagerProvider
+                    use in the <code>JpaEventStore</code>, this is what the <code>EntityManagerProvider</code>
                     implementation could look like:
                     <programlisting language="java">public class MyEntityManagerProvider implements EntityManagerProvider {
 
@@ -411,8 +411,8 @@
                 <warning>
                     <title>Memory consumption warning</title>
                     <para>Note that persistence providers, such as Hibernate, use a first-level
-                        cache on their EntityManager implementation. Typically, this means that all
-                        entities used or returned in queries are attached to the EntityManager. They
+                        cache on their <code>EntityManager</code> implementation. Typically, this means that all
+                        entities used or returned in queries are attached to the <code>EntityManager</code>. They
                         are only cleared when the surrounding transaction is committed or an
                         explicit "clear" in performed inside the transaction. This is especially the
                         case when the Queries are executed in the context of a transaction. </para>
@@ -489,16 +489,16 @@
         <sect2>
             <title>MongoDB Event Store</title>
             <para>MongoDB is a document based NoSQL store. It scalability characteristics make it
-                suitable for use as an Event Store. Axon provides the MongoEventStore, which uses
+                suitable for use as an Event Store. Axon provides the <code>MongoEventStore</code>, which uses
                 MongoDB as backing database. It is contained in the Axon Mongo module (Maven
                 artifactId <code>axon-mongo</code>).</para>
             <para>Events are stored in two separate collections: one for the actual event streams
                 and one for the snapshots.</para>
-            <para>By default, the MongoEventStore stores each event in a separate document. It is,
+            <para>By default, the <code>MongoEventStore</code> stores each event in a separate document. It is,
                 however, possible to change the <code>StorageStrategy</code> used. The alternative
-                provided by Axon is the DocumentPerCommitStorageStrategy, which creates a single
+                provided by Axon is the <code>DocumentPerCommitStorageStrategy</code>, which creates a single
                 document for all Events that have been stored in a single commit (i.e. in the same
-                DomainEventStream).</para>
+                <code>DomainEventStream</code>).</para>
             <para>Storing an entire commit in a single document has the advantage that a commit is
                 stored atomically. Furthermore, it requires only a single roundtrip for any number
                 of events. A disadvantage is that it becomes harder to query events manually or
