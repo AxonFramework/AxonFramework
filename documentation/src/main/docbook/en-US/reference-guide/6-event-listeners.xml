@@ -22,9 +22,9 @@
     <sect1 xml:id="event-bus">
         <title>Event Bus</title>
         <para>The <code>EventBus</code> is the mechanism that dispatches events to the subscribed
-            event listeners. Axon Framework provides two implementation of the event bus:
+            event listeners. Axon Framework provides two implementations of the event bus:
                 <code>SimpleEventBus</code> and <code>ClusteringEventBus</code>. Both
-            implementations manage subscribed <code>EventListeners</code> and forward all incoming
+            implementations manage subscribed <code>EventListener</code>s and forward all incoming
             events to all subscribed listeners. This means that Event Listeners must be explicitly
             registered with the Event Bus in order for them to receive events. The registration
             process is thread safe. Listeners may register and unregister for events at any
@@ -33,12 +33,12 @@
             <title>Simple Event Bus</title>
             <para>The <code>SimpleEventBus</code> is, as the name suggests, a very basic
                 implementation of the <code>EventBus</code> interface. It just dispatches each
-                incoming <code>Event</code> to each of the subscribed <code>EventListeners</code>
-                sequentially. If an EventListener throws an <code>Exception</code>, dispatching
-                stops and the exception is propagated to the component publising the
+                incoming <code>Event</code> to each of the subscribed <code>EventListener</code>s
+                sequentially. If an <code>EventListener</code> throws an <code>Exception</code>, dispatching
+                stops and the exception is propagated to the component publishing the
                     <code>Event</code>.</para>
             <para>The <code>SimpleEventBus</code> is suitable for most cases where dispatching is
-                done synchronously and locally, (i.e. in a single JVM). Once you application
+                done synchronously and locally, (i.e. in a single JVM). Once your application
                 requires <code>Events</code> to be published across multiple JVMs, you could
                 consider using the <code>ClusteringEventBus</code> instead.</para>
         </sect2>
@@ -46,7 +46,7 @@
             <title>Clustering Event Bus</title>
             <para>The <code>ClusteringEventsBus</code> allows application developers to bundle
                     <code>EventListener</code>s into <code>Cluster</code>s based on their properties
-                and non-functional requirements. The ClusteringEventBus is also more capable to deal
+                and non-functional requirements. The <code>ClusteringEventBus</code> is also more capable to deal
                 with Events being dispatched among different machines.</para>
             <figure>
                 <title>Structure of the Clustering Event Bus</title>
@@ -60,7 +60,7 @@
                     </imageobject>
                 </mediaobject>
             </figure>
-            <para>The ClusteringEventsBus contains two mechanisms: the <code>ClusterSelector</code>,
+            <para>The <code>ClusteringEventsBus</code> contains two mechanisms: the <code>ClusterSelector</code>,
                 which selects a <code>Cluster</code> instance for each of the registered
                     <code>EventListener</code>s, and the <code>EventBusTerminal</code>, which is
                 responsible for dispatching Events to each of the relevant clusters.</para>
@@ -95,14 +95,14 @@
                     to the Terminal about the expected behavior.</para>
                 <note>
                     <title>Clusters and Cluster Selectors in Spring</title>
-                    <para>Spring users can define clusters using the &lt;axon:cluster> element. This
+                    <para>Spring users can define clusters using the <code>&lt;axon:cluster></code> element. This
                         element allows you to define the selection criteria for Event Handlers in
                         that cluster. These criteria are transformed into cluster selectors and used
                         to assign each Listener to one of the clusters. By default, this creates a
                         cluster that handles events in the publishing thread. To use a cluster with
-                        other semantics, you can define a bean inside the &lt;axon:cluster> element
-                        that specifies the Cluster implementation to use.</para>
-                    <para>The Clusters are automatically detected and connected to the Event Bus in
+                        other semantics, you can define a bean inside the <code>&lt;axon:cluster></code> element
+                        that specifies the <code>Cluster</code> implementation to use.</para>
+                    <para>The <code>Cluster</code>s are automatically detected and connected to the Event Bus in
                         the application context.</para>
                 </note>
             </simplesect>
@@ -121,7 +121,7 @@
                     connected to that exchange. The <code>EventBusTerminal</code> will create a
                     consumer for each cluster, which reads from its related Queue and forwards each
                     message to that cluster. Event Listeners in a distributed environment where at
-                    most one instance should receive an Events should be placed in a separate
+                    most one instance should receive an Event should be placed in a separate
                     cluster, which competes with the other instances on a single Queue. See <xref
                         xmlns:xlink="http://www.w3.org/1999/xlink" linkend="distributed-event-bus"/>
                     for more information.</para>
@@ -134,14 +134,14 @@
                     instance to assign to each Event Listener.</para>
                 <para>As a rule of thumb, Event Listeners that require information managed by
                     another Listener should be in the same cluster. Putting them in the same cluster
-                    allows them you to influence the way they are invoked. Once they are assigned to
+                    allows you to influence the way they are invoked. Once they are assigned to
                     different clusters, this is much harder to do. Furthermore, listeners that may
                     not be replayed, such as ones sending emails, as well as Saga Manager should be
-                    placed in a separate cluster. Care should be taken never replay events on a
+                    placed in a separate cluster. Care should be taken to never replay events on a
                     cluster containing this type of Listener.</para>
                 <para>In some circumstances, it is desirable to ensure a specific handler is invoked
-                    before another. To achieve this, some clusters allow an OrderResolver to be
-                    configured. The OrderResolver provides an integer value for each given handler,
+                    before another. To achieve this, some clusters allow an <code>OrderResolver</code> to be
+                    configured. The <code>OrderResolver</code> provides an integer value for each given handler,
                     which defines the relative order in which handlers need to be invoked. Listeners
                     for which the resolver provide a lower value are invoked before those with a
                     higher value. The order in which Listeners with the same value are invoked is
@@ -155,12 +155,12 @@
             <simplesect>
                 <title>Commit Handlers</title>
                 <para>In some cases, you want to know when a cluster has handled a specific event.
-                    For example, when a cluster handles an Event asynchronously, but you need send
-                    an acknowledgement to the sender. Generaly, you are unlikely to require this
+                    For example, when a cluster handles an Event asynchronously and you need to send
+                    an acknowledgement to the sender. Generally, you are unlikely to require this
                     feature directly. It is mainly used by infrastructure components.</para>
-                <para>The EventProcessingMonitorSupport interface, which was introduced in Axon 2.1,
+                <para>The <code>EventProcessingMonitorSupport</code> interface, which was introduced in Axon 2.1,
                     defines class capable of notifying subscribed monitors. <code>Cluster</code>
-                    extends this interface, meaning each Cluster implementation must be able to deal
+                    extends this interface, meaning each <code>Cluster</code> implementation must be able to deal
                     with the Event Processing Monitors. Event Listeners that handle Events
                     asynchronously, such as the <code>AsyncAnnotatedSagaManager</code> also
                     implement this interface.</para>
