@@ -53,7 +53,7 @@
                 <code>AbstractAnnotatedSaga</code>.</para>
         <sect2>
             <title>Life Cycle</title>
-            <para>As a single Saga instance is responsible for managing a single transaction. That
+            <para>A single Saga instance is responsible for managing a single transaction. That
                 means you need to be able to indicate the start and end of a Saga's Life
                 Cycle.</para>
             <para>The <code>AbstractAnnotatedSaga</code> allows you to annotate Event Handlers with
@@ -82,7 +82,7 @@
             <para>Event Handling in a Saga is quite comparable to that of a regular Event Listener.
                 The same rules for method and parameter resolution are valid here. There is one
                 major difference, though. While there is a single instance of an Event Listener that
-                deals will all incoming events, multiple instances of a Saga may exist, each
+                deals with all incoming events, multiple instances of a Saga may exist, each
                 interested in different Events. For example, a Saga that manages a transaction
                 around an Order with Id "1" will not be interested in Events regarding Order "2",
                 and vice versa.</para>
@@ -202,7 +202,7 @@
             <simplesect>
                 <title>Order of evaluation of <code>@SagaEventHandler</code> annotated
                     methods</title>
-                <para>The order in which <code>@SagaEventHandler</code> annotated methed are
+                <para>The order in which <code>@SagaEventHandler</code> annotated methods are
                     evaluated is similar to that of <code>@EventHandler</code> methods (see <xref
                         xmlns:xlink="http://www.w3.org/1999/xlink"
                         linkend="annotated-event-handlers"/>). However, unlike
@@ -229,7 +229,7 @@
                 days. The EventScheduler returns a <code>ScheduleToken</code> after scheduling an
                 Event. This token can be used to cancel the schedule, for example when a payment of
                 an Invoice has been received.</para>
-            <para>Axon provides two EventScheduler implementations: a pure Java one and one using
+            <para>Axon provides two <code>EventScheduler</code> implementations: a pure Java one and one using
                 Quartz 2 as a backing scheduling mechanism.</para>
             <simplesect>
                 <title><code>SimpleEventScheduler</code></title>
@@ -361,36 +361,36 @@
             </simplesect>
             <simplesect>
                 <title>AnnotatedSagaManager</title>
-                <para>This SagaManager implementation uses annotations on the Sagas themselves to
+                <para>This <code>SagaManager</code> implementation uses annotations on the Sagas themselves to
                     manage the routing and life cycle of that Saga. As a result, this manager allows
                     all information about the life cycle of a Saga to be available inside the Saga
                     class itself. It can also manage any number of saga types. That means only a
                     single AnnotatedSagaManager is required, even if you have multiple types of
                     Saga.</para>
-                <para>The <code>AnnotatedSagaManager</code> is constructed using a SagaRepository, a
-                    SagaFactory (optional) and a vararg array of Saga classes. If no
+                <para>The <code>AnnotatedSagaManager</code> is constructed using a <code>SagaRepository</code>, a
+                    <code>SagaFactory</code> (optional) and a vararg array of <code>Saga</code> classes. If no
                         <code>SagaFactory</code> is provided, a <code>GenericSagaFactory</code> is
-                    used. It assumes that all Saga classes have a public no-arg constructor.</para>
+                    used. It assumes that all <code>Saga</code> classes have a public no-arg constructor.</para>
                 <para>If you use Spring, you can use the <code>axon</code> namespace to configure an
                         <code>AnnotatedSagaManager</code>. The supported Saga types are provided as
-                    a comma separated list, or using component scanning by providng a package name.
+                    a comma separated list, or using component scanning by providing a package name.
                     This will also automatically configure a <code>SpringResourceInjector</code>,
                     which injects any annotated fields with resources from the Spring Application
                     Context.</para>
-                <programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
+                <programlisting language="xml"><![CDATA[<axon:saga-manager id="sagaManager" saga-factory="optionalSagaFactory"
                    saga-repository="sagaRepository" event-bus="eventBus">
-    &lt;axon:types>
+    <axon:types>
         fully.qualified.ClassName,
         another.fq.ClassName
-    &lt;/axon:types>
-&lt;/axon:saga-manager>
+    </axon:types>
+</axon:saga-manager>
 
-&lt;axon:saga-manager id="scanningSagaManager" base-package="package.to.scan"
-                   saga-repository="sagaRepostory" event-bus="eventBus">
-    &lt;axon:types>
+<axon:saga-manager id="scanningSagaManager" base-package="package.to.scan"
+                   saga-repository="sagaRepository" event-bus="eventBus">
+    <axon:types>
        some.more.SagaClasses
-    &lt;/axon:types>
-&lt;/axon:saga-manager/></programlisting>
+    </axon:types>
+</axon:saga-manager/>]]></programlisting>
             </simplesect>
             <simplesect>
                 <title>Asynchronous Event Handling for Sagas</title>
@@ -433,7 +433,7 @@
                         handling an Event are logged and discarded. When an exception occurs while
                         persisting Saga state, the SagaManager will retry persisting the Saga at a
                         later stage. If there are incoming Events, they are processed using the
-                        in-memory representation, re-attemtping the persistence later on.</para>
+                        in-memory representation, re-attempting the persistence later on.</para>
                     <para>When shutting down the application, the SagaManager will do a final
                         attempt to persist the Sagas to their repository, and give up if it does not
                         succeed, allowing the application to finish the shutdown process.</para>
@@ -445,7 +445,7 @@
             <para>The <code>SagaRepository</code> is responsible for storing and retrieving Sagas,
                 for use by the <code>SagaManager</code>. It is capable of retrieving specific Saga
                 instances by their identifier as well as by their Association Values.</para>
-            <para>There are some special requirements, however. Since concurrency in Sagas is a very
+            <para>There are some special requirements, however. Since concurrency handling in Sagas is a very
                 delicate procedure, the repository must ensure that for each conceptual Saga
                 instance (with equal identifier) only a single instance exists in the JVM.</para>
             <para>Axon provides three <code>SagaRepository</code> implementations: the
@@ -468,7 +468,7 @@
                     <code>XStreamSerializer</code>).</para>
                 <para>The JpaSagaRepository is configured with a JPA <code>EntityManager</code>, a
                         <code>ResourceInjector</code> and a <code>Serializer</code>. Optionally, you
-                    can choose whether to explicitly flush the <code>EntityManager</code>after each
+                    can choose whether to explicitly flush the <code>EntityManager</code> after each
                     operation. This will ensure that data is sent to the database, even before a
                     transaction is committed. the default is to use explicit flushes.</para>
             </simplesect>
@@ -543,9 +543,9 @@
                     caching behavior to a <code>&lt;axon:jpa-saga-repository></code> element. It is
                     configured with two cache references (which may refer to the same cache): one
                     which stores the cached Saga instances, and one that stores the
-                    associations.<programlisting>&lt;axon:jpa-saga-repository id="cachingSagaRepository">
-    &lt;axon:cache-config saga-cache="sagaCacheRef" associations-cache="associationCacheRef"/>
-&lt;/axon:jpa-saga-repository></programlisting></para>
+                    associations.<programlisting language="xml"><![CDATA[<axon:jpa-saga-repository id="cachingSagaRepository">
+    <axon:cache-config saga-cache="sagaCacheRef" associations-cache="associationCacheRef"/>
+</axon:jpa-saga-repository>]]></programlisting></para>
             </simplesect>
         </sect2>
     </sect1>
