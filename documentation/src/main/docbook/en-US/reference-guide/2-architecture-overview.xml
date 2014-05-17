@@ -113,7 +113,7 @@
             <para>The thin data layer in between the user interface and the data sources provides a
                 clearly defined interface to the actual query implementation used. This data layer
                 typically returns read-only DTO objects containing query results. The contents of
-                these DTO's are typically driven by the needs of the User Interface. In most cases,
+                these DTOs are typically driven by the needs of the User Interface. In most cases,
                 they map directly to a specific view in the UI (also referred to as table-per-view). </para>
             <para>Axon does not provide any building blocks for this part of the application. The
                 main reason is that this is very straightforward and doesn't differ from the layered
@@ -132,7 +132,7 @@
                 <code>org.joda.time</code>.</para>
         <sect2>
             <title>Main modules</title>
-            <para>Axon's main modules are the modules that have been thorouhgly tested and are
+            <para>Axon's main modules are the modules that have been thoroughly tested and are
                 robust enough to use in demanding production environments. The maven groupId of all
                 these modules is <code>org.axonframework</code>.</para>
             <simplesect>
@@ -180,7 +180,7 @@
                 <title>Axon Monitoring JMX</title>
                 <para>Several AxonFramework components provide monitoring information. This module
                     publishes that information over JMX. There is no configuration involved. If this
-                    module is on the classpath, statistics and monitoring informatin is
+                    module is on the classpath, statistics and monitoring information is
                     automatically published over JMX.</para>
             </simplesect>
         </sect2>
@@ -199,7 +199,7 @@
             </simplesect>
             <simplesect>
                 <title>Axon Google App Engine</title>
-                <para>The Google App Engine modules provides building blocks that use specific API's
+                <para>The Google App Engine modules provides building blocks that use specific APIs
                     provided by GAE, such as an Event Store that uses the DatastoreService and a
                     special XStream based serializer that works around some of the limitations of
                     the GAE platform.</para>
@@ -213,7 +213,7 @@
         </sect2>
     </sect1>
     <sect1>
-        <title>Working with Axon API's</title>
+        <title>Working with Axon APIs</title>
         <annotation>
             <para>CQRS is an architectural pattern, making it impossible to provide a single
                 solution that fits all projects. Axon Framework does not try to provide that one
@@ -229,7 +229,7 @@
                 ensures that these objects are safe to use in a multi-threaded environment, without
                 side-effects.</para>
         </annotation>
-        <para>To ensure maximum customizability, all Axon components are defined using interfaces.
+        <para>To ensure maximum customization, all Axon components are defined using interfaces.
             Abstract and concrete implementations are provided to help you on your way, but will
             nowhere be required by the framework. It is always possible to build a completely custom
             implementation of any building block using that interface.</para>

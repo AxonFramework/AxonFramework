@@ -156,7 +156,7 @@
                         any effect other than clarification to the API user.</para>
                 </listitem>
             </itemizedlist>
-            <para>Finaly, there is the possiblity to use annotations:</para>
+            <para>Finally, there is the possibility to use annotations:</para>
             <itemizedlist>
                 <listitem>
                     <para>As specified in the parameter section, the <code>@MetaData</code>
@@ -256,7 +256,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                 block the command. See <xref linkend="command-handler-interceptors"/> for more
                 information. </para>
             <para>The SimpleCommandBus maintains a Unit of Work for each command published. This
-                Unit of Work is created by a factory: the UnitOfWorkFactory. To suit any specifc
+                Unit of Work is created by a factory: the UnitOfWorkFactory. To suit any specific
                 needs your application might have, you can supply your own factory to change the
                 Unit of Work implementation used. </para>
             <para>Since all command processing is done in the same thread, this implementation is
@@ -288,7 +288,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                     <code>SimpleCommandBus</code> by a factor 4(!), there are a few limitations: <itemizedlist>
                     <listitem>
                         <para>The DisruptorCommandBus only supports Event Sourced Aggregates. This
-                            Command Bus also acts as a Repository for the aggreates processed by the
+                            Command Bus also acts as a Repository for the aggregates processed by the
                             Disruptor. To get a reference to the Repository, use
                                 <code>createRepository(AggregateFactory)</code>.</para>
                     </listitem>
@@ -336,7 +336,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                     element for easier configuration of the <code>DisruptorCommandBus</code>.<itemizedlist>
                         <listitem>
                             <para>Buffer size: The number of slots on the ring buffer to register
-                                incoming commands. Higer values may increase throughput, but also
+                                incoming commands. Higher values may increase throughput, but also
                                 cause higher latency. Must always be a power of 2. Defaults to
                                 4096.</para>
                         </listitem>
@@ -347,7 +347,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                         <listitem>
                             <para>WaitStrategy: The strategy to use when the processor threads (the
                                 three threads taking care of the actual processing) need to wait for
-                                eachother. The best WaitStrategy depends on the number of cores
+                                each other. The best WaitStrategy depends on the number of cores
                                 available in the machine, and the number of other processes running.
                                 If low latency is crucial, and the DisruptorCommandBus may claim
                                 cores for itself, you can use the <code>BusySpinWaitStrategy</code>.
@@ -535,7 +535,7 @@ commandBus.subscribe("MyCustomCommand", myCommandHandler);</programlisting></par
                         <listitem>
                             <para>When using Spring and <code>&lt;axon:annotation-config/></code> is
                                 declared, any other parameters will resolve to autowired beans, if
-                                exactly one autowirable candidate is available in the application
+                                exactly one injectable candidate is available in the application
                                 context. This allows you to inject resources directly into
                                     <code>@CommandHandler</code> annotated methods.</para>
                         </listitem>
@@ -637,7 +637,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                             <code>@CommandHandler</code>
                             annotation is placed on an
                             Aggregate's constructor, the respective command will create a new
-                            instance of that aggregte and add it to the repository. Those commands
+                            instance of that aggregate and add it to the repository. Those commands
                             do not require to target a specific aggregate instance. That wouldn't
                             make sense, since the instance is yet to be created. Therefore, those
                             commands do not require any
@@ -704,7 +704,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                         an aggregate instance. It will also be automatically subscribed to the
                             <code>CommandBus</code>. </para>
                 </note>
-                <para>Since version 2.2, <code>@CommandHandler</code> annotatations are not limited
+                <para>Since version 2.2, <code>@CommandHandler</code> annotations are not limited
                     to the aggregate root. Placing all command handlers in the root will sometimes
                     lead to a large number of methods on the aggregate root, while many of them
                     simply forward the invocation to one of the underlying entities. If that is the
@@ -768,7 +768,7 @@ public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly 
         <para>The Unit of Work is an important concept in the Axon Framework. The processing of a
             command can be seen as a single unit. Each time a command handler performs an action, it
             is tracked in the current Unit of Work. When command handling is finished, the Unit of
-            Work is committed and all actions are finalized. This means that any repositores are
+            Work is committed and all actions are finalized. This means that any repositories are
             notified of state changes in their aggregates and events scheduled for publication are
             sent to the Event Bus. </para>
         <para>The Unit of Work serves two purposes. First, it makes the interface towards
@@ -808,7 +808,7 @@ public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly 
             <para>Your command handlers may throw an Exception as a result of command processing. By
                 default, unchecked exceptions will cause the UnitOfWork to roll back all changes. As
                 a result, no Events are stored or published. In some cases, however, you might want
-                to commit the Unif of Work and still notify the dispatcher of the command of an
+                to commit the Unit of Work and still notify the dispatcher of the command of an
                 exception through the callback. The <code>SimpleCommandBus</code> allows you to
                 provide a <code>RollbackConfiguration</code>. The <code>RollbackConfiguration</code>
                 instance indicates whether an exception should perform a rollback on the Unit of
@@ -821,10 +821,10 @@ public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly 
                 still performing a rollback on Errors and Runtime Exceptions. </para>
         </simplesect>
         <simplesect>
-            <title>Programatically managing a Unit of Work</title>
-            <para>When using a Command Bus, the lifeycle of the Unit of Work will be automatically
+            <title>Programmatically managing a Unit of Work</title>
+            <para>When using a Command Bus, the lifecycle of the Unit of Work will be automatically
                 managed for you. If you choose not to use explicit command objects and a Command
-                Bus, but a Service Layer instead, you will need to programatically start and commit
+                Bus, but a Service Layer instead, you will need to programmatically start and commit
                 (or roll back) a Unit of Work instead. </para>
             <para>In most cases, the DefaultUnitOfWork will provide you with the functionality you
                 need. It expects Command processing to happen within a single thread. To start a new
@@ -886,7 +886,7 @@ try {
                 Work only ensures that changes made to aggregates are stored upon successful
                 execution of a command handler. If an error occurs while storing an aggregate, any
                 aggregates already stored are not rolled back. </para>
-            <para>It is posssible to bind a transaction to a Unit of Work. Many CommandBus
+            <para>It is possible to bind a transaction to a Unit of Work. Many CommandBus
                 implementations, like the SimpleCommandBus and DisruptorCommandBus, allow you to
                 configure a Transaction Manager. This Transaction Manager will then be used to
                 create the transactions to bind to the Unit of Work that is used to manage the
@@ -978,7 +978,7 @@ try {
                 <para>An Audit Logger may be configured to write to an audit log. To do so, you can
                     implement the <code>AuditLogger</code> interface and configure it in the
                         <code>AuditingInterceptor</code>. The audit logger is notified both on
-                    succesful execution of the command, as well as when execution fails. If you use
+                    successful execution of the command, as well as when execution fails. If you use
                     event sourcing, you should be aware that the event log already contains the
                     exact details of each event. In that case, it could suffice to just log the
                     event identifier or aggregate identifier and sequence number combination. </para>
@@ -1085,7 +1085,7 @@ try {
                     <listitem>
                         <para>The first is a JChannel, which defines the JGroups protocol stack.
                             Generally, a JChannel is constructed with a reference to a JGroups
-                            configuration file. JGroups comes with a number of default confgurations
+                            configuration file. JGroups comes with a number of default configurations
                             which can be used as a basis for your own configuration. Do keep in mind
                             that IP Multicast generally doesn't work in Cloud Services, like Amazon.
                             TCP Gossip is generally a good start in such type of environment.</para>
@@ -1093,7 +1093,7 @@ try {
                     <listitem>
                         <para>The Cluster Name defines the name of the Cluster that each segment
                             should register to. Segments with the same Cluster Name will eventually
-                            detect eachother and dispatch Command among eachother.</para>
+                            detect each other and dispatch Command among each other.</para>
                     </listitem>
                     <listitem>
                         <para>A "local segment" is the Command Bus implementation that dispatches
@@ -1111,7 +1111,7 @@ try {
                 relative to the other segments this segment should receive. A segment with twice the
                 load factor of another segment will be assigned (approximately) twice the amount of
                 routing keys as the other segments. Note that when commands are unevenly distributed
-                over the rouing keys, segments with lower load factors could still receive more
+                over the routing keys, segments with lower load factors could still receive more
                 command than a segment with a higher load factor.</para>
             <programlisting language="java">JChannel channel = new JChannel("path/to/channel/config.xml");
 CommandBus localSegment = new SimpleCommandBus();
@@ -1132,7 +1132,7 @@ commandBus.subscribe(AnotherCommandType.class.getName(), handler2);
 // from now on, just deal with commandBus as if it is local...</programlisting>
             <note>
                 <para>Note that it is not required that all segments have Command Handlers for the
-                    same type of Comands. You may use different segments for different Command Types
+                    same type of Commands. You may use different segments for different Command Types
                     altogether. The Distributed Command Bus will always choose a node to dispatch a
                     Command to that has support for that specific type of Command.</para>
             </note>

@@ -37,7 +37,7 @@
                 constantly added, changed and (unfortunately not enough) removed. It can be
                 frustrating to find out that a seemingly easy-to-implement feature can require
                 development teams to take apart an entire application. Furthermore, today's
-                webapplications target an audience of potentially billions of people, making
+                web applications target the audience of potentially billions of people, making
                 scalability an indisputable requirement.
             </para>
             <para>Although there are many applications and frameworks around that deal with
@@ -49,7 +49,7 @@
                 application, eventually this approach will cause complexity to increase and
                 development to slow down.
             </para>
-            <para>The Command Query Responsiblity Segregation (CQRS) pattern addresses these issues
+            <para>The Command Query Responsibility Segregation (CQRS) pattern addresses these issues
                 by drastically changing the way applications are architected. Instead of separating
                 logic into separate layers, logic is separated based on whether it is changing an
                 application's state or querying it. That means that executing commands (actions that
@@ -71,7 +71,7 @@
                 dominates the software landscape nowadays, it is quite hard to grasp. It is not
                 uncommon for developers to walk into a few traps while trying to find their way
                 around this architecture. That's why Axon Framework was conceived: to help
-                developers implement CQRS applications while focussing on the business logic.
+                developers implement CQRS applications while focusing on the business logic.
             </para>
         </sect2>
         <sect2>
@@ -81,7 +81,7 @@
                 architectural pattern. It does so by providing implementations of the most important
                 building blocks, such as aggregates, repositories and event buses (the dispatching
                 mechanism for events). Furthermore, Axon provides annotation support, which allows
-                you to build aggregates and event listeners withouth tying your code to Axon
+                you to build aggregates and event listeners without tying your code to Axon
                 specific logic. This allows you to focus on your business logic, instead of the
                 plumbing, and helps you to make your code easier to test in isolation.
             </para>
@@ -97,7 +97,7 @@
             </para>
             <para>The Axon Framework consists of a number of modules (jars) that provide the tools
                 and components to build a scalable infrastructure. The Axon Core module provides the
-                basic API's for the different components, and simple implemenatinos that provide
+                basic APIs for the different components, and simple implementations that provide
                 solutions for single-JVM applications. The other modules address scalability or
                 high-performance issues, by providing specialized building blocks.
             </para>
@@ -136,7 +136,7 @@
                         <para>The application presents data in many different formats. Many
                             applications nowadays don't stop when showing information on a web page.
                             Some applications, for example, send monthly emails to notify users of
-                            changes that occured that might be relevant to them. Search engines are
+                            changes that occurred that might be relevant to them. Search engines are
                             another example. They use the same data your application does, but in a
                             way that is optimized for quick searching. Reporting tools aggregate
                             information into reports that show data evolution over time. This,
@@ -153,7 +153,7 @@
                             their order status. With Axon, these components can be deployed on
                             separate machines and scaled using different policies. They are kept
                             up-to-date using the events, which Axon will dispatch to all subscribed
-                            components, regardles of the machine they are deployed on.
+                            components, regardless of the machine they are deployed on.
                         </para>
                     </listitem>
                     <listitem>
@@ -225,7 +225,7 @@
             <title>When you're stuck</title>
             <para>While implementing your application, you might run into problems, wonder about why
                 certain things are the way they are, or have some questions that need an answer. The
-                Axon Users mailinglist is there to help. Just send an email to <link
+                Axon Users mailing list is there to help. Just send an email to <link
                     xmlns:xlink="http://www.w3.org/1999/xlink"
                     xlink:href="mailto:axonframework@googlegroups.com"
                     >axonframework@googlegroups.com</link>. Other users as well as contributors to
@@ -243,12 +243,12 @@
         <title>Contributing to Axon Framework</title>
         <para>Development on the Axon Framework is never finished. There will always be more
             features that we like to include in our framework to continue making development of
-            scalabale and extensible application easier. This means we are constantly looking for
+            scalable and extensible application easier. This means we are constantly looking for
             help in developing our framework.
         </para>
         <para>There are a number of ways in which you can contribute to the Axon Framework: <itemizedlist>
                 <listitem>
-                    <para>You can report any bugs, feature requests or ideas about improvemens on
+                    <para>You can report any bugs, feature requests or ideas for improvements on
                         our issue page: <link xmlns:ns1="http://www.w3.org/1999/xlink"
                             ns1:href="http://www.axonframework.org/issues"
                             >axonframework.org/issues</link>. All ideas are welcome. Please be as
@@ -266,7 +266,7 @@
                     <para>If you know of any other way you think you can help us, do not hesitate to
                         send a message to the <link xmlns:xlink="http://www.w3.org/1999/xlink"
                             xlink:href="mailto:axonframework@googlegroups.com">Axon Framework
-                            mailinglist</link>. </para>
+                            mailing list</link>. </para>
                 </listitem>
             </itemizedlist></para>
     </sect1>
