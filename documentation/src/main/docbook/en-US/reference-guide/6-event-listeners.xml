@@ -614,7 +614,7 @@ public class SubListener extends TopListener {
                                 <para>routingKeyResolver: defines the mechanism that generates an
                                     AMQP routing key for an outgoing Message. Defaults to a routing
                                     key resolver that returns the package name of the Message's
-                                    payload. Routing keys can be used by changes to define which
+                                    payload. Routing keys can be used by Exchanges to define which
                                     queues should receive a (copy of a) Message</para>
                             </listitem>
                             <listitem>
