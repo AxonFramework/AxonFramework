@@ -22,9 +22,9 @@
     <sect1 xml:id="event-bus">
         <title>Event Bus</title>
         <para>The <code>EventBus</code> is the mechanism that dispatches events to the subscribed
-            event listeners. Axon Framework provides two implementation of the event bus:
+            event listeners. Axon Framework provides two implementations of the event bus:
                 <code>SimpleEventBus</code> and <code>ClusteringEventBus</code>. Both
-            implementations manage subscribed <code>EventListeners</code> and forward all incoming
+            implementations manage subscribed <code>EventListener</code>s and forward all incoming
             events to all subscribed listeners. This means that Event Listeners must be explicitly
             registered with the Event Bus in order for them to receive events. The registration
             process is thread safe. Listeners may register and unregister for events at any
@@ -33,12 +33,12 @@
             <title>Simple Event Bus</title>
             <para>The <code>SimpleEventBus</code> is, as the name suggests, a very basic
                 implementation of the <code>EventBus</code> interface. It just dispatches each
-                incoming <code>Event</code> to each of the subscribed <code>EventListeners</code>
-                sequentially. If an EventListener throws an <code>Exception</code>, dispatching
-                stops and the exception is propagated to the component publising the
+                incoming <code>Event</code> to each of the subscribed <code>EventListener</code>s
+                sequentially. If an <code>EventListener</code> throws an <code>Exception</code>, dispatching
+                stops and the exception is propagated to the component publishing the
                     <code>Event</code>.</para>
             <para>The <code>SimpleEventBus</code> is suitable for most cases where dispatching is
-                done synchronously and locally, (i.e. in a single JVM). Once you application
+                done synchronously and locally, (i.e. in a single JVM). Once your application
                 requires <code>Events</code> to be published across multiple JVMs, you could
                 consider using the <code>ClusteringEventBus</code> instead.</para>
         </sect2>
@@ -46,7 +46,7 @@
             <title>Clustering Event Bus</title>
             <para>The <code>ClusteringEventsBus</code> allows application developers to bundle
                     <code>EventListener</code>s into <code>Cluster</code>s based on their properties
-                and non-functional requirements. The ClusteringEventBus is also more capable to deal
+                and non-functional requirements. The <code>ClusteringEventBus</code> is also more capable to deal
                 with Events being dispatched among different machines.</para>
             <figure>
                 <title>Structure of the Clustering Event Bus</title>
@@ -60,7 +60,7 @@
                     </imageobject>
                 </mediaobject>
             </figure>
-            <para>The ClusteringEventsBus contains two mechanisms: the <code>ClusterSelector</code>,
+            <para>The <code>ClusteringEventsBus</code> contains two mechanisms: the <code>ClusterSelector</code>,
                 which selects a <code>Cluster</code> instance for each of the registered
                     <code>EventListener</code>s, and the <code>EventBusTerminal</code>, which is
                 responsible for dispatching Events to each of the relevant clusters.</para>
@@ -95,14 +95,14 @@
                     to the Terminal about the expected behavior.</para>
                 <note>
                     <title>Clusters and Cluster Selectors in Spring</title>
-                    <para>Spring users can define clusters using the &lt;axon:cluster> element. This
+                    <para>Spring users can define clusters using the <code>&lt;axon:cluster></code> element. This
                         element allows you to define the selection criteria for Event Handlers in
                         that cluster. These criteria are transformed into cluster selectors and used
                         to assign each Listener to one of the clusters. By default, this creates a
                         cluster that handles events in the publishing thread. To use a cluster with
-                        other semantics, you can define a bean inside the &lt;axon:cluster> element
-                        that specifies the Cluster implementation to use.</para>
-                    <para>The Clusters are automatically detected and connected to the Event Bus in
+                        other semantics, you can define a bean inside the <code>&lt;axon:cluster></code> element
+                        that specifies the <code>Cluster</code> implementation to use.</para>
+                    <para>The <code>Cluster</code>s are automatically detected and connected to the Event Bus in
                         the application context.</para>
                 </note>
             </simplesect>
@@ -121,7 +121,7 @@
                     connected to that exchange. The <code>EventBusTerminal</code> will create a
                     consumer for each cluster, which reads from its related Queue and forwards each
                     message to that cluster. Event Listeners in a distributed environment where at
-                    most one instance should receive an Events should be placed in a separate
+                    most one instance should receive an Event should be placed in a separate
                     cluster, which competes with the other instances on a single Queue. See <xref
                         xmlns:xlink="http://www.w3.org/1999/xlink" linkend="distributed-event-bus"/>
                     for more information.</para>
@@ -134,14 +134,14 @@
                     instance to assign to each Event Listener.</para>
                 <para>As a rule of thumb, Event Listeners that require information managed by
                     another Listener should be in the same cluster. Putting them in the same cluster
-                    allows them you to influence the way they are invoked. Once they are assigned to
+                    allows you to influence the way they are invoked. Once they are assigned to
                     different clusters, this is much harder to do. Furthermore, listeners that may
                     not be replayed, such as ones sending emails, as well as Saga Manager should be
-                    placed in a separate cluster. Care should be taken never replay events on a
+                    placed in a separate cluster. Care should be taken to never replay events on a
                     cluster containing this type of Listener.</para>
                 <para>In some circumstances, it is desirable to ensure a specific handler is invoked
-                    before another. To achieve this, some clusters allow an OrderResolver to be
-                    configured. The OrderResolver provides an integer value for each given handler,
+                    before another. To achieve this, some clusters allow an <code>OrderResolver</code> to be
+                    configured. The <code>OrderResolver</code> provides an integer value for each given handler,
                     which defines the relative order in which handlers need to be invoked. Listeners
                     for which the resolver provide a lower value are invoked before those with a
                     higher value. The order in which Listeners with the same value are invoked is
@@ -155,12 +155,12 @@
             <simplesect>
                 <title>Commit Handlers</title>
                 <para>In some cases, you want to know when a cluster has handled a specific event.
-                    For example, when a cluster handles an Event asynchronously, but you need send
-                    an acknowledgement to the sender. Generaly, you are unlikely to require this
+                    For example, when a cluster handles an Event asynchronously and you need to send
+                    an acknowledgement to the sender. Generally, you are unlikely to require this
                     feature directly. It is mainly used by infrastructure components.</para>
-                <para>The EventProcessingMonitorSupport interface, which was introduced in Axon 2.1,
+                <para>The <code>EventProcessingMonitorSupport</code> interface, which was introduced in Axon 2.1,
                     defines class capable of notifying subscribed monitors. <code>Cluster</code>
-                    extends this interface, meaning each Cluster implementation must be able to deal
+                    extends this interface, meaning each <code>Cluster</code> implementation must be able to deal
                     with the Event Processing Monitors. Event Listeners that handle Events
                     asynchronously, such as the <code>AsyncAnnotatedSagaManager</code> also
                     implement this interface.</para>
@@ -209,7 +209,7 @@
         <sect2>
             <title>Basic implementation</title>
             <para>Event listeners need to be registered with an event bus (see <xref
-                    linkend="event-bus"/>) to be notified of events. The EventListener interface
+                    linkend="event-bus"/>) to be notified of events. The <code>EventListener</code> interface
                 prescribes a single method to be implemented. This method is invoked for each Event
                 Message passed on the Event Bus that it is subscribed
                 to:<programlisting language="java">public class MyEventListener implements EventListener {
@@ -217,7 +217,7 @@
     public void handle(EventMessage message) {
         if (SomeEvent.class.isAssignableFrom(message.getPayloadType) {
             // handle SomeEvent
-        } else if (OtherEvent.class.isAssignableFrom(message.getPayloadType) {
+        } else if (SomeOtherEvent.class.isAssignableFrom(message.getPayloadType) {
             // handle SomeOtherEvent
         }
     }
@@ -225,7 +225,7 @@
         </sect2>
         <sect2 xml:id="annotated-event-handlers">
             <title>Annotated Event Handler</title>
-            <para>Implementing the EventListener interface can produce a large if-statement and
+            <para>Implementing the <code>EventListener</code> interface can produce a large if-statement and
                 verbose plumbing code. Using annotations to demarcate Event Handler methods is a
                 cleaner alternative. </para>
             <simplesect>
@@ -239,10 +239,10 @@
                         <code>AbstractAnnotatedAggregateRoot</code>, use
                         <code>ParameterResolver</code>s to resolve the value that should be passed
                     in the parameters of methods annotated with <code>@EventHandler</code>.  The
-                        <code>AnnotationEventListenerAdapter</code> uses a ParameterResolverFactory
+                        <code>AnnotationEventListenerAdapter</code> uses a <code>ParameterResolverFactory</code>
                     to resolve the values for the parameters of the annotated methods. By default,
                     Axon uses a <code>ClasspathParameterResolverFactory</code>, that looks for
-                        <code>ParameterResolverFactory</code> instances using the SerivceLoader
+                        <code>ParameterResolverFactory</code> instances using the ServiceLoader
                     mechanism.</para>
                 <para>Axon provides out-of-the-box support for the following parameter types: <itemizedlist>
                         <listitem>
@@ -277,7 +277,7 @@
                         <listitem>
                             <para>Parameters annotated with <code>@SequenceNumber</code> and of type
                                     <code>java.lang.Long</code> or <code>long</code> will resolve to
-                                the sequenceNumber of a <code>DomainEventMessage</code>. This
+                                the <code>sequenceNumber</code> of a <code>DomainEventMessage</code>. This
                                 provides the order in which the Event was generated.</para>
                         </listitem>
                         <listitem>
@@ -293,7 +293,7 @@
                         <listitem>
                             <para>When using Spring and <code>&lt;axon:annotation-config/></code> is
                                 declared, any other parameters will resolve to autowired beans, if
-                                exactly one autowirable candidate is available in the application
+                                exactly one injectable candidate is available in the application
                                 context. This allows you to inject resources directly into
                                     <code>@EventHandler</code> annotated methods. Note that this
                                 only works for Spring-managed beans. Event Sourcing handlers on
@@ -305,7 +305,7 @@
                         <code>/META-INF/service/org.axonframework.common.annotation.ParameterResolverFactory</code>
                     containing the fully qualified name of the implementing class.</para>
                 <caution>
-                    <title>Detecting ParameterResolverFactories in an OSGi container</title>
+                    <title>Detecting <code>ParameterResolverFactories</code> in an OSGi container</title>
                     <para>At this moment, OSGi support is limited to the fact that the required
                         headers are mentioned in the manifest file. The automatic detection of
                         ParameterResolverFactory instances works in OSGi, but due to classloader
@@ -315,8 +315,7 @@
                         (i.e. the event handler).</para>
                 </caution>
                 <para>In all circumstances, at most one event handler method is invoked per listener
-                    instance. Axon will search the most specific method to invoke, in the following
-                    order: <orderedlist>
+                    instance. Axon will search for the most specific method to invoke, using following rules: <orderedlist>
                         <listitem>
                             <para>On the actual instance level of the class hierarchy (as returned
                                 by <code>this.getClass()</code>), all annotated methods are
@@ -382,7 +381,7 @@ public class SubListener extends TopListener {
     <sect1>
         <title>Asynchronous Event Processing</title>
         <para>By default, event listeners process events in the thread that dispatches them. This
-            means that the thread that executes the command will have to wait untill all event
+            means that the thread that executes the command will have to wait until all event
             handling has finished. For some types of event listeners this is not the optimal form of
             processing. Asynchronous event processing improves the scalability of the application,
             with the penalty of added complexity to deal with "eventual consistency". Axon Framework
@@ -412,8 +411,8 @@ public class SubListener extends TopListener {
             to schedule processing in the cases of delayed retries.</para>
         <para>The <code>SequencingPolicy</code> defines whether events must be handled sequentially,
             in parallel or a combination of both. Policies return a sequence identifier of a given
-            event. If the policy returns an equal itentifier for two events, this means that they
-            must be handled sequentially be the event handler. A <code>null</code> sequence
+            event. If the policy returns an equal identifier for two events, this means that they
+            must be handled sequentially by the event handler. A <code>null</code> sequence
             identifier means the event may be processed in parallel with any other event. </para>
         <para>Axon provides a number of common policies you can use: <itemizedlist>
                 <listitem>
@@ -437,14 +436,14 @@ public class SubListener extends TopListener {
                 </listitem>
             </itemizedlist>Besides these provided policies, you can define your own. All policies
             must implement the <code>EventSequencingPolicy</code> interface. This interface defines
-            a single method, <code>getSequenceIdentifierFor</code>, that returns the identifier
-            sequence identifier for a given event. Events for which an equal sequence identifer is
+            a single method, <code>getSequenceIdentifierFor</code>, that returns the
+            sequence identifier for a given event. Events for which an equal sequence identifier is
             returned must be processed sequentially. Events that produce a different sequence
             identifier may be processed concurrently. For performance reasons, policy
             implementations should return <code>null</code> if the event may be processed in
             parallel to any other event. This is faster, because Axon does not have to check for any
             restrictions on event processing.</para>
-        <para>A <code>TransactionManager</code> can be assigned to a
+        <para>A <code>TransactionManager</code> can be assigned to an
                 <code>AsynchronousCluster</code> to add transactional processing of events. To
             optimize processing, events can be processed in small batches inside a transaction. When
             using Spring, you can use the <code>SpringTransactionManager</code> to manage
@@ -458,22 +457,22 @@ public class SubListener extends TopListener {
             <title>Error handling</title>
             <para>The <code>AsynchronousCluster</code> uses an <code>ErrorHandler</code> to decide
                 what needs to be done when an Event Listener or Unit of Work throws an Exception.
-                The default behavior depends on the availability of a TransactionManager. If a
+                The default behavior depends on the availability of a <code>TransactionManager</code>. If a
                     <code>TransactionManager</code> is provided, the default
                     <code>ErrorHandler</code> will request a rollback and retry the Event Handling
-                after 2 seconds. If no <code>TransactionManager</code> is provided, the defautl
+                after 2 seconds. If no <code>TransactionManager</code> is provided, the default
                     <code>ErrorHandler</code> will simply log the Exception and proceed with the
                 next Event Listener, guaranteeing that each Event Listener will receive each Event.
                 In any situation, a rollback will <emphasis>not</emphasis> be requested when the
                 exception is explicitly non-transient (i.e. is caused by an
                     <code>AxonNonTransientException</code>).</para>
             <para>You can change this behavior by configuring another
-                    <emphasis>ErrorHandler</emphasis>, or by creating your own. The ErrorHandler
+                ErrorHandler, or by creating your own. The <code>ErrorHandler</code>
                 interface has a single method, which provides the Exception that occurred, the
-                EventMessage being processed and a reference to the EventListener throwing the
-                exception. The return value is of type RetryPolicy. The RetryPolicy tells the Event
+                <code>EventMessage</code> being processed and a reference to the <code>EventListener</code> throwing the
+                exception. The return value is of type <code>RetryPolicy</code>. The RetryPolicy tells the Event
                 Processor what it needs to do with the failure. There are three static methods on
-                RetryPolicy for the most common scenarios:</para>
+                <code>RetryPolicy</code> for the most common scenarios:</para>
             <para><itemizedlist>
                     <listitem>
                         <para><code>retryAfter(int timeout, TimeUnit unit)</code> tells the
@@ -506,8 +505,8 @@ public class SubListener extends TopListener {
     <sect1>
         <title xml:id="distributed-event-bus">Distributing the Event Bus</title>
         <para>In a distributed environment, it may be necessary to transport Event Messages between
-            JVM's. The <code>ClusteringEventBus</code> has a possiblity to define an
-                <code>EventBusTerminal</code>. This is an interface to a mechansim that publishes
+            JVM's. The <code>ClusteringEventBus</code> has a possibility to define an
+                <code>EventBusTerminal</code>. This is an interface to a mechanism that publishes
             Events to all relevant clusters. Some EventBusTerminal implementations allow
             distribution of Events over multiple JVM's.</para>
         <para>
@@ -535,24 +534,21 @@ public class SubListener extends TopListener {
                 the terminal, as well as a configuration containing defaults to use to connect each
                 cluster to an AMQP Queue.</para>
             <para>The example below shows an example configuration for an AMQP Terminal. The
-                    <code>default-configuration</code> element specified the defaults for the
-                Clusters if they don't provide their own
-                values.<programlisting>&lt;axon-amqp:terminal id="terminal" 
-                    connection-factory="amqpConnection" 
-                    serializer="serializer"
-                    exchange-name="AxonEventBusExchange">
-    &lt;axon-amqp:default-configuration transaction-manager="transactionManager"
-                                     transaction-size="25" prefetch="200"
-                                     error-handler="loggingErrorHandler"/>
-&lt;/axon-amqp:terminal>
+                <code>default-configuration</code> element specified the defaults for the
+                Clusters if they don't provide their own values.
+                <programlisting language="xml"><![CDATA[<axon-amqp:terminal id="terminal"
+    connection-factory="amqpConnection" serializer="serializer" exchange-name="AxonEventBusExchange">
+    <axon-amqp:default-configuration transaction-manager="transactionManager" transaction-size="25" prefetch="200"
+         error-handler="loggingErrorHandler"/>
+</axon-amqp:terminal>
 
-&lt;bean id="amqpConnection" class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory"/></programlisting>
-                The configure the Spring AMQP Terminal "manually", you need to specify a number of
+<bean id="amqpConnection" class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory"/>]]></programlisting>
+                To configure the Spring AMQP Terminal "manually", you need to specify a number of
                 beans in your application context:</para>
             <itemizedlist>
                 <listitem>
                     <para>The <code>ListenerContainerLifecycleManager</code> is responsible for
-                        creating ListenerContainers. These are the Spring classes that listen for
+                        creating <code>ListenerContainer</code>s. These are the Spring classes that listen for
                         messages on the AMQP Queues and forward them to the processing components.
                         The <code>ListenerContainerLifecycleManager</code> allows you to configure
                         the number of messages to process in a single transaction, the number of
@@ -586,7 +582,7 @@ public class SubListener extends TopListener {
                                     omitted or set to <code>false</code>).</para>
                             </listitem>
                             <listitem>
-                                <para>durable: indicates whether messsages should be durable (i.e.
+                                <para>durable: indicates whether messages should be durable (i.e.
                                     survive a Broker shutdown) or not. Obviously, message durability
                                     involves a performance impact.</para>
                             </listitem>
@@ -618,7 +614,7 @@ public class SubListener extends TopListener {
                                 <para>routingKeyResolver: defines the mechanism that generates an
                                     AMQP routing key for an outgoing Message. Defaults to a routing
                                     key resolver that returns the package name of the Message's
-                                    payload. Routing keys can be used by echanges to define which
+                                    payload. Routing keys can be used by Exchanges to define which
                                     queues should receive a (copy of a) Message</para>
                             </listitem>
                             <listitem>
@@ -629,7 +625,7 @@ public class SubListener extends TopListener {
                             <listitem>
                                 <para>exclusive: indicates whether this Cluster accepts to share a
                                     Queue with other Cluster instances. Default to
-                                    <code>true</code>. If a second cluster is attampting to connect
+                                    <code>true</code>. If a second cluster is attempting to connect
                                     exclusively to a queue, an exception is thrown. The Connector
                                     catches this exception and reattempts to connect each 2 seconds.
                                     This allows for automatic failover when a machine drops its
@@ -646,14 +642,14 @@ public class SubListener extends TopListener {
                     <code>SpringAMQPConsumerConfiguration</code>) any settings configured there will
                 override the defaults set on the terminal itself. This allows you to specify
                 different behavior (such as transaction size) for different clusters.</para>
-            <programlisting>// XML Configuration for a Cluster with AMQPConsumerConfiguration
-&lt;axon:cluster id="myDefaultCluster" default="true">
-    &lt;axon:meta-data>
-        &lt;entry key="AMQP.Config">
-            &lt;axon-amqp:configuration transaction-size="20000"/>
-        &lt;/entry>
-    &lt;/axon:meta-data>
-&lt;/axon:cluster></programlisting>
+            <programlisting language="xml"><![CDATA[// XML Configuration for a Cluster with AMQPConsumerConfiguration
+<axon:cluster id="myDefaultCluster" default="true">
+    <axon:meta-data>
+        <entry key="AMQP.Config">
+            <axon-amqp:configuration transaction-size="20000"/>
+        </entry>
+    </axon:meta-data>
+</axon:cluster>]]></programlisting>
         </sect2>
     </sect1>
     <sect1>
@@ -668,8 +664,8 @@ public class SubListener extends TopListener {
             <title>Configuration of Replays</title>
             <para>Axon provides the <code>ReplayingCluster</code>, a wrapper around another
                     <code>Cluster</code> implementation that adds the replay capability. The
-                ReplayingCluster is initialized with a number of resources. First of all, it needs
-                another Cluster implementation. That other cluster is the actual cluster that takes
+                <code>ReplayingCluster</code> is initialized with a number of resources. First of all, it needs
+                another <code>Cluster</code> implementation. That other cluster is the actual cluster that takes
                 care of dispatching Event Messages to subscribed listeners. It also needs a
                 reference to the Event Store (implementing <code>EventStoreManagement</code>) that
                 will supply the Events for the replay. A transaction manager is used to wrap the
@@ -677,7 +673,7 @@ public class SubListener extends TopListener {
                 efficient, you can configure a "commit threshold" to indicate the number of messages
                 that should be processed before performing an intermediate commit. Finally, you need
                 to supply an <code>IncomingMessageHandler</code>. The
-                    <code>IncomingMessageHandler</code> tells the ReplayingCluster what to do when
+                    <code>IncomingMessageHandler</code> tells the <code>ReplayingCluster</code> what to do when
                 an Event Message is published to the cluster while it is replaying.</para>
             <warning>
                 <para>Make sure not to replay onto Clusters that contain Event Listeners that do not
@@ -711,13 +707,13 @@ public class SubListener extends TopListener {
                 using the provided configuration. This also means that
                     <code>applicationContext.getBean(clusterName)</code> will return a bean of type
                     <code>ReplayingCluster</code>.</para>
-            <programlisting>&lt;axon:cluster id="replayingCluster">
-    &lt;!-- the next element makes this Cluster replayable -->
-    &lt;axon:replay-config event-store="eventStore" transaction-manager="transactionManager"/>
-    &lt;axon:selectors>
-        &lt;axon:package prefix="package.with.replayable.listeners"/>
-    &lt;/axon:selectors>
-&lt;/axon:cluster></programlisting>
+            <programlisting language="xml"><![CDATA[<axon:cluster id="replayingCluster">
+    <!-- the next element makes this Cluster replayable -->
+    <axon:replay-config event-store="eventStore" transaction-manager="transactionManager"/>
+    <axon:selectors>
+        <axon:package prefix="package.with.replayable.listeners"/>
+    </axon:selectors>
+</axon:cluster>]]></programlisting>
         </simplesect>
         <simplesect>
             <title>Preparing for a replay</title>
@@ -730,11 +726,11 @@ public class SubListener extends TopListener {
         </simplesect>
         <simplesect>
             <title>Triggering a Replay</title>
-            <para>Axon does not automatically trigger a replay. The ReplayingCluster provides two
+            <para>Axon does not automatically trigger a replay. The <code>ReplayingCluster</code> provides two
                 methods that can start a replay: <code>startReplay()</code> and
                     <code>startReplay(Executor)</code>. The first will execute the replay in the
                 calling thread, meaning that the call will return when the replay is finished. The
-                latter will execute the replay using the given executor and return a Future object
+                latter will execute the replay using the given executor and return a <code>Future</code> object
                 that allows the caller to check if the replay is finished.</para>
             <para>Optionally, an extra <code>Criteria</code> parameter may be provided with the
                     <code>startReplay(...)</code> methods. When provided, only Events that match the

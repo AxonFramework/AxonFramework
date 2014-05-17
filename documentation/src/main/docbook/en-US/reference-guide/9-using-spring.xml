@@ -33,12 +33,12 @@
             automatically evaluate these annotations. To force Spring to do so, add the
                 <code>&lt;context:annotation-config/></code> tag to your application context, as
             shown in the example below:
-            <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans" 
+            <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:context="http://www.springframework.org/schema/context">
 
-    &lt;context:annotation-config/>
+    <context:annotation-config/>
 
-&lt;/beans></programlisting></para>
+</beans>]]></programlisting></para>
 	</sect1>
     <sect1>
             <title>Using the Axon namespace shortcut</title>
@@ -47,15 +47,14 @@
                 Spring. In order to use this namespace you must first add the declaration for this
                 namespace to your Spring XML configuration files.</para>
             <para>Assume you already have an XML configuration file like this:</para>
-            <programlisting language="xml">&lt;?xml version="1.0" encoding="UTF-8"?>
-			
-&lt;beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">			
+            <programlisting language="xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	...
+    ...
                
-&lt;/beans></programlisting>
+</beans>]]></programlisting>
             <para>To modify this configuration file to use elements from the Axon namespace, just
                 add the following declarations:</para>
             <programlistingco>
@@ -63,11 +62,11 @@
                     <area coords="3 70" xml:id="ex.nmsp.decl"/>
                     <area coords="5 118" xml:id="ex.nmsp.loc"/>
                 </areaspec>
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:axon="http://www.axonframework.org/schema/core"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-	http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd"></programlisting>
+                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:axon="http://www.axonframework.org/schema/core"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">]]></programlisting>
                 <calloutlist>
                     <callout arearefs="ex.nmsp.decl">
                         <para>The declaration of the <code>axon</code> namespace reference that you
@@ -80,7 +79,7 @@
                 </calloutlist>
             </programlistingco>
     </sect1>
-	
+
     <sect1>
         <title>Wiring event and command handlers</title>
         <sect2>
@@ -94,15 +93,15 @@
                     <area xml:id="optional-eventbus-reference-co" coords="4 52"/>
                     <area xml:id="eventlistener-co" coords="7 76"/>
                 </areaspec>
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean class="org...AnnotationEventListenerBeanPostProcessor">
-        &lt;property name="eventBus" ref="eventBus"/>
-    &lt;/bean>
+    <bean class="org...AnnotationEventListenerBeanPostProcessor">
+        <property name="eventBus" ref="eventBus"/>
+    </bean>
 
-    &lt;bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
+    <bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
 
-&lt;/beans></programlisting>
+</beans>]]></programlisting>
                 <calloutlist>
                     <callout arearefs="postprocessor-co">
                         <para>This bean post processor will scan the application context for beans
@@ -127,16 +126,16 @@
                     <area xml:id="adapter-co" coords="3 82"/>
                     <area xml:id="eventbus-reference-co" coords="7 52"/>
                 </areaspec>
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean class="org.axonframework...annotation.AnnotationEventListenerAdapter">
-        &lt;constructor-arg>
-            &lt;bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
-        &lt;/constructor-arg>
-        &lt;property name="eventBus" ref="eventBus"/>
-    &lt;/bean>
+    <bean class="org.axonframework...annotation.AnnotationEventListenerAdapter">
+        <constructor-arg>
+            <bean class="org.axonframework.sample.app.query.AddressTableUpdater"/>
+        </constructor-arg>
+        <property name="eventBus" ref="eventBus"/>
+    </bean>
 
-&lt;/beans></programlisting>
+</beans>]]></programlisting>
                 <calloutlist>
                     <callout arearefs="adapter-co">
                         <para>The adapter turns any bean with <code>@EventHandler</code> methods
@@ -154,29 +153,29 @@
                 context. This will cause the event listener to be wired twice.</para>
         </warning>
         </sect2>
-    
-    	<sect2>
-    		<title>Command handlers</title>
-    		<para>Wiring command handlers is very much like wiring event handlers: there is an
-			<code>AnnotationCommandHandlerBeanPostProcessor</code> which will automatically register 
-			classes containing command handler methods (i.e. methods annotated with the
-			<code>@CommandHandler</code> annotation) with a command bus.
-			
-			<programlistingco>
+
+        <sect2>
+            <title>Command handlers</title>
+            <para>Wiring command handlers is very much like wiring event handlers: there is an
+            <code>AnnotationCommandHandlerBeanPostProcessor</code> which will automatically register
+            classes containing command handler methods (i.e. methods annotated with the
+            <code>@CommandHandler</code> annotation) with a command bus.
+
+            <programlistingco>
                 <areaspec>
                     <area xml:id="commandpostprocessor-co" coords="3 68"/>
                     <area xml:id="optional-commandbus-reference-co" coords="4 56"/>
                     <area xml:id="commandhandler-co" coords="7 80"/>
                 </areaspec>
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean class="org...AnnotationCommandHandlerBeanPostProcessor">
-        &lt;property name="commandBus" ref="commandBus"/>
-    &lt;/bean>
+    <bean class="org...AnnotationCommandHandlerBeanPostProcessor">
+        <property name="commandBus" ref="commandBus"/>
+    </bean>
 
-    &lt;bean class="org.axonframework.sample.app.command.ContactCommandHandler"/>
+    <bean class="org.axonframework.sample.app.command.ContactCommandHandler"/>
 
-&lt;/beans></programlisting>
+</beans>]]></programlisting>
                 <calloutlist>
                     <callout arearefs="commandpostprocessor-co">
                         <para>This bean post processor will scan the application context for beans
@@ -195,23 +194,23 @@
                     </callout>
                 </calloutlist>
             </programlistingco></para>
-            
+
             <para>As with event listeners, you can also wire command handlers "manually" by explicitly defining them within a
                 <code>AnnotationCommandHandlerAdapter</code> bean, as shown in the code sample below.<programlistingco>
                 <areaspec>
                     <area xml:id="commandadapter-co" coords="3 83"/>
                     <area xml:id="commandbus-reference-co" coords="7 56"/>
                 </areaspec>
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean class="org.axonframework...annotation.AnnotationCommandHandlerAdapter">
-        &lt;constructor-arg>
-            &lt;bean class="org.axonframework.sample.app.command.ContactCommandHandler"/>
-        &lt;/constructor-arg>
-        &lt;property name="commandBus" ref="commandBus"/>
-    &lt;/bean>
+    <bean class="org.axonframework...annotation.AnnotationCommandHandlerAdapter">
+        <constructor-arg>
+            <bean class="org.axonframework.sample.app.command.ContactCommandHandler"/>
+        </constructor-arg>
+        <property name="commandBus" ref="commandBus"/>
+    </bean>
 
-&lt;/beans></programlisting>
+</beans>]]></programlisting>
                 <calloutlist>
                     <callout arearefs="commandadapter-co">
                         <para>The adapter turns any bean with <code>@EventHandler</code> methods
@@ -233,34 +232,34 @@
                 <para>When the <code>@CommandHandler</code> annotations are placed on the Aggregate,
                     Spring will not be able to automatically configure them. You will need to
                     specify a bean for each of the annotated Aggregate Roots as follows:</para>
-                <programlisting>&lt;bean class="org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler"
+                <programlisting language="xml"><![CDATA[<bean class="org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler"
       init-method="subscribe">
-    &lt;constructor-arg value="fully.qualified.AggregateClass"/>
-    &lt;constructor-arg ref="ref-to-repo"/>
-    &lt;constructor-arg ref="ref-to-command-bus"/>
-&lt;/bean>
+    <constructor-arg value="fully.qualified.AggregateClass"/>
+    <constructor-arg ref="ref-to-repo"/>
+    <constructor-arg ref="ref-to-command-bus"/>
+</bean>
 
-&lt;!-- or, when using Namespace support -->
+<!-- or, when using Namespace support -->
 
-&lt;axon:aggregate-command-handler aggregate-type="fully.qualified.AggregateClass" 
+<axon:aggregate-command-handler aggregate-type="fully.qualified.AggregateClass"
                                 repository="ref-to-repo" 
-                                command-bus="ref-to-command-bus"/></programlisting>
+                                command-bus="ref-to-command-bus"/>]]></programlisting>
             </simplesect>
     	</sect2>
         <sect2>
             <title>Annotation support using the axon namespace</title>
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+
+
+
+
+
+
+
+
+
+
+
+
             <para>The previous two sections explained how you wire bean post processors to activate
                 annotation support for your command handlers and event listeners. Using support from
                 the Axon namespace you can accomplish the same in one go, using the
@@ -271,7 +270,7 @@
             <para>
                 <table frame="all">
                     <title>Attributes for annotation-config</title>
-                    
+
                     <tgroup cols="4" colsep="1" rowsep="1" align="left">
                         <thead>
                             <row>
@@ -310,36 +309,36 @@
             </para>
         </sect2>
     </sect1>
-    
-    
-    
+
+
+
     <sect1>
         <title>Wiring the event bus</title>
             <para>In a typical Axon application there is only one event bus. Wiring it is just a
                 matter of creating a bean of a subtype of <code>EventBus</code>. The
                     <code>SimpleEventBus</code> is the provided implementation.
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
+    <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-&lt;/beans>
+</beans>
 
-&lt;!-- or using the namespace:
+<!-- or using the namespace: -->
 
-&lt;axon:event-bus id="eventBus"/></programlisting></para>
+<axon:event-bus id="eventBus"/>]]></programlisting></para>
         <sect2>
             <title>Configuration of Clusters</title>
             <para>Using a Clustering Event Bus in Spring is very simple. In the Spring context, you
                 just need to define the clusters you wish to use and tell them which Event Listeners
                 you would like to be part of that Cluster. Axon will create the necessary
                 infrastructure to assign listeners to the clusters.</para>
-            <programlisting>&lt;axon:cluster id="myFirstCluster">
-    &lt;axon:selectors>
-        &lt;axon:package prefix="com.mycompany.mypackage"/>
-    &lt;/axon:selectors>
-&lt;/axon:cluster>
+            <programlisting language="xml"><![CDATA[<axon:cluster id="myFirstCluster">
+    <axon:selectors>
+        <axon:package prefix="com.mycompany.mypackage"/>
+    </axon:selectors>
+</axon:cluster>
 
-&lt;axon:cluster id="defaultCluster" default="true"/></programlisting>
+<axon:cluster id="defaultCluster" default="true"/>]]></programlisting>
             <para>The example above will create two clusters. Event Listeners in the package
                     <code>com.mycompany.mypackage</code> will be assigned to
                     <code>myFirstCluster</code>, while all others are assigned to
@@ -364,26 +363,26 @@
             <title>Replayable Clusters</title>
             <para>To make a cluster replayable, simply add the <code>&lt;axon:replay-config></code>
                 element to a <code>&lt;axon:cluster></code>, as in the example below:</para>
-            <programlisting>&lt;axon:cluster id="replayingCluster">
-    &lt;axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
-    &lt;axon:selectors>
-        &lt;axon:package prefix="com.mycompany.mypackage"/>
-    &lt;/axon:selectors>
-&lt;/axon:cluster></programlisting>
+            <programlisting language="xml"><![CDATA[<axon:cluster id="replayingCluster">
+    <axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
+    <axon:selectors>
+        <axon:package prefix="com.mycompany.mypackage"/>
+    </axon:selectors>
+</axon:cluster>]]></programlisting>
             <para>The <code>&lt;axon:replay-config></code> element provides the necessary
                 configuration to execute replays on a Cluster. The resulting Cluster bean will be of
                 type <code>ReplayingCluster</code>. </para>
         </sect2>
         <sect2>
             <title>Custom Cluster implementation</title>
-            <para>It is also possible to use the &lt;cluster> element while using a custom Cluster
+            <para>It is also possible to use the <code>&lt;cluster></code> element while using a custom Cluster
                 implementation:</para>
-            <programlisting>&lt;axon:cluster id="custoCluster">
-    &lt;bean class="com.mycompany.MyPersonalClusterImplementation"/>
-    &lt;axon:selectors>
-        &lt;axon:package prefix="com.mycompany.mypackage"/>
-    &lt;/axon:selectors>
-&lt;/axon:cluster></programlisting>
+            <programlisting language="xml"><![CDATA[<axon:cluster id="custoCluster">
+    <bean class="com.mycompany.MyPersonalClusterImplementation"/>
+    <axon:selectors>
+        <axon:package prefix="com.mycompany.mypackage"/>
+    </axon:selectors>
+</axon:cluster>]]></programlisting>
         </sect2>
 
     </sect1>
@@ -395,35 +394,35 @@
                 configure a number of interceptors that should take action based on each incoming
                 command.</para>
             <para>
-                <programlisting language="xml">&lt;beans xmlns="http://www.springframework.org/schema/beans">
+                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans">
 
-    &lt;bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
-        &lt;property name="handlerInterceptors">
-            &lt;list>
-                &lt;bean class="my-interceptors"/>
-            &lt;/list>
-        &lt;/property>
-    &lt;/bean>
+    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
+        <property name="handlerInterceptors">
+            <list>
+                <bean class="my-interceptors"/>
+            </list>
+        </property>
+    </bean>
 
-&lt;/beans></programlisting>
+</beans>]]></programlisting>
             </para>
         </simplesect>
         <simplesect>
             <title>Using the Axon namespace</title>
-            <para>Setting up a basic command bus using the Axon namspace is a piece of cake: you can
+            <para>Setting up a basic command bus using the Axon namespace is a piece of cake: you can
                 use the <code>commandBus</code> element:
-                <programlisting language="xml">&lt;axon:command-bus id="commandBus"/></programlisting></para>
+                <programlisting language="xml"><![CDATA[<axon:command-bus id="commandBus"/>]]></programlisting></para>
             <para>Configuring command interceptors for your command bus is also possible using the
                     <code>&lt;axon:command-bus></code> element, like so:
-                <programlisting language="xml">&lt;axon:command-bus id="commandBus">
-    &lt;axon:dispatchInterceptors>
-        &lt;bean class="..."/>
-    &lt;/axon:dispatchInterceptors>
-    &lt;axon:handlerInterceptors>
-        &lt;bean class="..."/>
-        &lt;bean class="..."/>
-    &lt;/axon:handlerInterceptors>
-&lt;/axon:command-bus></programlisting>
+                <programlisting language="xml"><![CDATA[<axon:command-bus id="commandBus">
+    <axon:dispatchInterceptors>
+        <bean class="..."/>
+    </axon:dispatchInterceptors>
+    <axon:handlerInterceptors>
+        <bean class="..."/>
+        <bean class="..."/>
+    </axon:handlerInterceptors>
+</axon:command-bus>]]></programlisting>
                 Of course you are not limited to bean references; you can also include local bean
                 definitions if you want. </para>
         </simplesect>
@@ -436,30 +435,30 @@
             the available implementations.</para>
         <para>Repository implementations that do support event sourcing just need the event bus to
             be configured, as well as any dependencies that your own implementation has.
-            <programlisting language="xml">&lt;bean id="simpleRepository" class="my.package.SimpleRepository">
-    &lt;property name="eventBus" ref="eventBus"/>
-&lt;/bean></programlisting></para>
+            <programlisting language="xml"><![CDATA[<bean id="simpleRepository" class="my.package.SimpleRepository">
+    <property name="eventBus" ref="eventBus"/>
+</bean>]]></programlisting></para>
         <para>Repositories that support event sourcing will also need an event store, which takes
             care of the actual storage and retrieval of events. The example below shows a repository
             configuration of a repository that extends the
-            <code>EventSourcingRepository</code>.<programlisting language="xml">&lt;bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
-    &lt;property name="eventBus" ref="eventBus"/>
-    &lt;property name="eventStore" ref="eventStore"/>
-&lt;/bean></programlisting></para>
+            <code>EventSourcingRepository</code>.<programlisting language="xml"><![CDATA[<bean id="contactRepository" class="org.axonframework.sample.app.command.ContactRepository">
+    <property name="eventBus" ref="eventBus"/>
+    <property name="eventStore" ref="eventStore"/>
+</bean>]]></programlisting></para>
         <para>In many cases, you can use the <code>EventSourcingRepository</code>. Below is
             an example of XML application context configuration to wire such a repository.</para>
         <para>
-            <programlisting language="xml">&lt;bean id="myRepository" class="org.axonframework.eventsourcing.EventSourcingRepository">
-    &lt;constructor-arg value="fully.qualified.class.Name"/>
-    &lt;property name="eventBus" ref="eventBus"/>
-    &lt;property name="eventStore" ref="eventStore"/>
-&lt;/bean>
+            <programlisting language="xml"><![CDATA[<bean id="myRepository" class="org.axonframework.eventsourcing.EventSourcingRepository">
+    <constructor-arg value="fully.qualified.class.Name"/>
+    <property name="eventBus" ref="eventBus"/>
+    <property name="eventStore" ref="eventStore"/>
+</bean>
 
-&lt;!-- or, when using the axon namespace -->
+<!-- or, when using the axon namespace -->
 
-&lt;axon:event-sourcing-repository id="myRepository" 
+<axon:event-sourcing-repository id="myRepository"
                                 aggregate-type="fully.qualified.class.Name"
-                                event-bus="eventBus" event-store="eventStore"/></programlisting>
+                                event-bus="eventBus" event-store="eventStore"/>]]></programlisting>
         </para>
         <para>The repository will delegate the storage of events to the configured
                 <code>eventStore</code>, while these events are dispatched using the provided
@@ -467,29 +466,29 @@
     </sect1>
     <sect1>
         <title>Wiring the Event Store</title>
-        <para>All event sourcing repositorties need an Event Store. Wiring the
+        <para>All event sourcing repositories need an Event Store. Wiring the
                 <code>JpaEventStore</code> and the <code>FileSystemEventStore</code> is very
             similar, but the <code>JpaEventStore</code> needs a way to get a hold of an
             EntityManager. In general, applications use a Container Managed EntityManager:</para>
         <para>
-            <programlisting language="xml">&lt;bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
-    &lt;constructor-arg>
-        &lt;bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
-    &lt;/constructor-arg>
-&lt;/bean>
+            <programlisting language="xml"><![CDATA[<bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
+    <constructor-arg>
+        <bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
+    </constructor-arg>
+</bean>
 
-&lt;!-- declare transaction manager, data source, EntityManagerFactoryBean, etc --></programlisting>
+<!-- declare transaction manager, data source, EntityManagerFactoryBean, etc -->]]></programlisting>
         </para>
         	<para>Using the Axon namespace support, you can quickly configure event stores backed
             either by the file system or a JPA layer using the one of the following elements:
-            <programlisting language="xml">&lt;axon:jpa-event-store id="jpaEventStore"/>
+            <programlisting language="xml"><![CDATA[<axon:jpa-event-store id="jpaEventStore"/>
 
-&lt;axon:filesystem-event-store id="fileSystemEventStore" base-dir="/data"/></programlisting></para>
+<axon:filesystem-event-store id="fileSystemEventStore" base-dir="/data"/>]]></programlisting></para>
         <para>The annotation support will automatically configure a Container Managed EntityManager
             on the Jpa Event Store, but you may also configure a custom implementation using the
                 <code>entity-manager-provider</code> attribute. This is useful when an application
             uses more than one EntityManagerFactory.</para>
-        
+
     </sect1>
     <sect1 xml:id="spring-snapshotting">
         <title>Configuring Snapshotting</title>
@@ -497,40 +496,40 @@
             beans to be configured in your application context.</para>
         <para>The <code>EventCountSnapshotterTrigger</code> needs to be configured as a proxy for
             your event store. That means all repositories should load and save aggregate from the
-                <code>EventCountSnapshotterTrigger</code>, instead of the acutal event store.</para>
-        <programlisting language="xml">&lt;bean id="myRepository" class="org.axonframework...GenericEventSourcingRepository">
-    &lt;!-- properties omitted for brevity -->
-    &lt;property name="snapshotterTrigger">
-        &lt;bean class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
-            &lt;property name="trigger" value="20" />
-        &lt;/bean>
-    &lt;/property>
-&lt;/bean>
+                <code>EventCountSnapshotterTrigger</code>, instead of the actual event store.</para>
+        <programlisting language="xml"><![CDATA[<bean id="myRepository" class="org.axonframework...GenericEventSourcingRepository">
+    <!-- properties omitted for brevity -->
+    <property name="snapshotterTrigger">
+        <bean class="org.axonframework.eventsourcing.EventCountSnapshotterTrigger">
+            <property name="trigger" value="20" />
+        </bean>
+    </property>
+</bean>
 
-&lt;!-- or, when using the namespace -->
+<!-- or, when using the namespace -->
 
-&lt;axon:event-sourcing-repository> &lt;!-- attributes omitted for brevity -->
-    &lt;axon:snapshotter-trigger event-count-threshold="20" snapshotter-ref="snapshotter"/>
-&lt;/axon:event-sourcing-repository></programlisting>
+<axon:event-sourcing-repository> <!-- attributes omitted for brevity -->
+    <axon:snapshotter-trigger event-count-threshold="20" snapshotter-ref="snapshotter"/>
+</axon:event-sourcing-repository>]]></programlisting>
         <para>The sample above configures an EventCountSnapshotter trigger that will trigger
             Snapshot creation when 20 or more events are required to reload the aggregate's current
             state. </para>
         <para>The snapshotter is configured as follows:</para>
-<programlisting language="xml">&lt;bean id="snapshotter" class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
-    &lt;property name="eventStore" ref="eventStore"/>
-    &lt;property name="executor" ref="taskExecutor"/>
-&lt;/bean>
+<programlisting language="xml"><![CDATA[<bean id="snapshotter" class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
+    <property name="eventStore" ref="eventStore"/>
+    <property name="executor" ref="taskExecutor"/>
+</bean>
 
-&lt;!-- or, when using the namespace -->
+<!-- or, when using the namespace -->
 
-&lt;axon:snapshotter id="snapshotter" event-store="eventStore" executor="taskExecutor"/>
+<axon:snapshotter id="snapshotter" event-store="eventStore" executor="taskExecutor"/>
 
-&lt;!-- the task executor attribute is optional. When used you can define (for example) a thread pool to perform the snapshotting -->
-&lt;bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
-    &lt;property name="corePoolSize" value="2"/>
-    &lt;property name="maxPoolSize" value="5"/>
-    &lt;property name="waitForTasksToCompleteOnShutdown" value="true"/>
-&lt;/bean></programlisting>
+<!-- the task executor attribute is optional. When used you can define (for example) a thread pool to perform the snapshotting -->
+<bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+    <property name="corePoolSize" value="2"/>
+    <property name="maxPoolSize" value="5"/>
+    <property name="waitForTasksToCompleteOnShutdown" value="true"/>
+</bean>]]></programlisting>
         <para>The <code>SpringAggregateSnapshotter</code> will automatically detect any
                 <code>PlatformTransactionManager</code> in your application context, as well as
                 <code>AggregateFactory</code> instances, which all repositories typically are. That
@@ -543,15 +542,15 @@
         <para>To use Sagas, two infrastructure components are required: the SagaManager and the
             SagaRepository. Each have their own element in the Spring application context.</para>
         <para>The SagaManager is defined as
-            follows:<programlisting language="xml">&lt;axon:saga-manager id="sagaManager" saga-repository="sagaRepository" 
+            follows:<programlisting language="xml"><![CDATA[<axon:saga-manager id="sagaManager" saga-repository="sagaRepository"
                    saga-factory="sagaFactory"
                    resource-injector="resourceInjector">
-    &lt;axon:async executor="taskExecutor" transaction-manager="transactionManager" />
-    &lt;axon:types>
+    <axon:async executor="taskExecutor" transaction-manager="transactionManager" />
+    <axon:types>
         fully.qualified.ClassName
         another.ClassName
-    &lt;/axon:types>
-&lt;/axon:saga-manager></programlisting></para>
+    </axon:types>
+</axon:saga-manager>]]></programlisting></para>
         <para>All properties are optional. The <code>saga-repository</code> will default to an
             in-memory repository, meaning that Sagas will be lost when the VM is shut down. The
                 <code>saga-factory</code> can be provided if the Saga instances do not have a
@@ -565,8 +564,8 @@
             fully qualified class names of the annotated sagas.</para>
         <para>When an in-memory Saga repository does not suffice, you can easily configure one that
             uses JPA as persistence mechanism as
-            follows:<programlisting language="xml">&lt;axon:jpa-saga-repository id="sagaRepository" resource-injector="resourceInjector"
-                          use-explicit-flush="true" saga-serializer="sagaSerializer"/></programlisting></para>
+            follows:<programlisting language="xml"><![CDATA[<axon:jpa-saga-repository id="sagaRepository" resource-injector="resourceInjector"
+                          use-explicit-flush="true" saga-serializer="sagaSerializer"/>]]></programlisting></para>
         <para>The resource-injector, as with the saga manager, is optional and defaults to
             Spring-based autowiring. The saga-serializer defines how Saga instances need to be
             serialized when persisted. This defaults to an XStream based serialization mechanism.

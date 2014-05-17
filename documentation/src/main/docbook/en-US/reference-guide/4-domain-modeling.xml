@@ -35,7 +35,7 @@
         </para>
         <para>When Events are dispatched, Axon wraps them in a Message. The actual type of Message
             used depends on the origin of the Event. When an Event is raised by an Aggregate, it is
-            wrapped in a <code>DomainEventMessage</code> (which extends <code>EventMesssage</code>).
+            wrapped in a <code>DomainEventMessage</code> (which extends <code>EventMessage</code>).
             All other Events are wrapped in an <code>EventMessage.</code> The
                 <code>EventMessage</code> contains a unique Identifier for the event, as well as a
             Timestamp and Meta Data. The <code>DomainEventMessage</code> additionally contains the
@@ -325,7 +325,7 @@
 }                </programlisting>
                 <para><code>@EventSourcingHandler</code> annotated methods are resolved using specific
                     rules. These rules are the same for the <code>@EventHandler</code> annotated methods, 
-                    and are thorougly explained in <xref linkend="annotated-event-handlers"/>. </para>
+                    and are thoroughly explained in <xref linkend="annotated-event-handlers"/>. </para>
                 <note>
                     <title>Using private methods</title>
                     <para>Event handler methods may be private, as long as the security settings of the JVM
@@ -369,7 +369,7 @@
                 Each entity does the same thing to its fields. </para>
             <para>To register an Event, the Entity must know about the Aggregate Root. Axon will
                 automatically register the Aggregate Root with an Entity before applying any Events
-                to it. This means that Entities (in constrast to the Aggregate Root) should never
+                to it. This means that Entities (in contrast to the Aggregate Root) should never
                 apply an Event in their constructor. Non-Aggregate Root Entities should be created
                 in an <code>@EventSourcingHandler</code> annotated method in their parent Entity (as
                 creation of an entity can be considered a state change of the Aggregate). Axon will

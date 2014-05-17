@@ -38,7 +38,7 @@
         <code>delete(identifier)</code>
         method. Deleting aggregates is done by invoking the (protected)
         <code>markDeleted()</code>
-        method in an aggreate. This method is protected and not available from outside the
+        method in an aggregate. This method is protected and not available from outside the
         aggregate. The motivation for this, is that the aggregate is responsible for maintaining its
         own state. Deleting an aggregate is a state migration like any other, with the only
         difference that it is irreversible in many cases. You should create your own meaningful
@@ -91,7 +91,7 @@
                 an optimistic or a pessimistic one. When the optimistic lock detects concurrent
                 access, the second thread saving an aggregate will receive a
                     <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
-                access to the aggregate alltogether. The pessimistic locking strategy is the default
+                access to the aggregate altogether. The pessimistic locking strategy is the default
                 strategy. A custom locking strategy can be provided by implementing the
                     <code>LockManager</code> interface.</para>
             <para>Deadlocks are a common problem when threads use more than one lock to complete
@@ -102,7 +102,7 @@
                     <code>DeadlockException</code> before the deadlock actually occurs. It is safe
                 to retry the operation once all nested Units of Work have been rolled back (to
                 ensure all locks are released). The <code>CommandGateway</code> will not invoke the
-                    <code>RetryScheduler</code> if a <code>DeadlockException</code> occured to
+                    <code>RetryScheduler</code> if a <code>DeadlockException</code> occurred to
                 prevent a retry before all held locks have been released.</para>
             <para>
                 <warning>
@@ -140,7 +140,7 @@
             </title>
             <para>This is a repository implementation that can store JPA compatible Aggregates. It
                 is configured with an <code>EntityManager</code> to manage the actual persistence,
-                and a class specifiying the actual type of Aggregate stored in the Repository. </para>
+                and a class specifying the actual type of Aggregate stored in the Repository. </para>
         </simplesect>
     </sect1>
     <sect1 xml:id="event-sourcing-repositories">
@@ -157,7 +157,7 @@
                 functionality needed by any event sourcing repository in the AxonFramework. It
                 depends on an <code>EventStore</code> (see <xref
                     linkend="implementing-an-eventstore"/>), which abstracts the actual storage
-                mechanism for the events and an <code>AggregateFactory</code>, which is reponsible
+                mechanism for the events and an <code>AggregateFactory</code>, which is responsible
                 for creating uninitialized aggregate instances. </para>
             <para>The AggregateFactory specifies which aggregate needs to be created and how. Once
                 an aggregate has been created, the
@@ -183,7 +183,7 @@
             </para>
             <para>Depending on your architectural choices, it might be useful to inject dependencies
                 into your aggregates using Spring. You could, for example, inject query repositories
-                into your aggregate to ensure the existance (or inexistance) of certain values. </para>
+                into your aggregate to ensure the existence (or nonexistence) of certain values. </para>
             <para>To inject dependencies into your aggregates, you need to configure a prototype
                 bean of your aggregate root in the Spring context that also defines the
                     <code>SpringPrototypeAggregateFactory</code>. Instead of creating regular
@@ -217,7 +217,7 @@
                 The
                 <code>CachingEventSourcingRepository</code>
                 provides a cache from which
-                aggregates can be loaded if available. You can configure any jcache implementation
+                aggregates can be loaded if available. You can configure any JCache implementation
                 with this repository. Note that this implementation can only use caching in
                 combination with a pessimistic locking strategy.
             </para>
@@ -238,7 +238,7 @@
                     two threads have concurrently made any modifications to that object. When using
                     a cache, both threads will receive the same instance of the object. They will
                     both apply their changes to that same instance, potentially interfering with
-                    eachother.
+                    each other.
                 </para>
             </note>
         </simplesect>
@@ -286,7 +286,7 @@
                 automatically recover from crashes. Furthermore, it stores a single file for each
                 aggregate, potentially creating too many files for the OS to handle. It is therefore
                 not a suitable implementation for production environments.<tip>
-                    <title>Out of diskspace</title>
+                    <title>Out of disk space</title>
                     <para>When using the <code>FileSystemEventStore</code> in a test environment (or
                         other environment where many aggregate may be created), you may end up with
                         an "Out of disk space" error, even if there is plenty of
@@ -361,7 +361,7 @@
                         <code>EntityManagerProvider</code> implementation that returns the
                         <code>EntityManager</code> instance for the <code>EventStore</code> to use.
                     This also allows for application managed persistence contexts to be used. It is
-                    the <code>EntityManagerProvider</code>'s responsiblity to provide a correct
+                    the <code>EntityManagerProvider</code>'s responsibility to provide a correct
                     instance of the <code>EntityManager</code>. </para>
                 <para>There are a few implementations of the <code>EntityManagerProvider</code>
                     available, each for different needs. The
@@ -403,8 +403,8 @@
                     for implementation requirements. </para>
                 <para>If you only want to change the table name or want to add some extra fields to
                     the table, you can also create a class that extends from
-                    DefaultEventEntryStrore, and override the <code>createDomainEventEntry</code>
-                    and/or <code>createSnapshotEventEntrymethod</code>. This method must return a
+                    DefaultEventEntryStore, and override the <code>createDomainEventEntry</code>
+                    and/or <code>createSnapshotEventEntryMethod</code>. This method must return a
                         <code>DomainEventEntry</code> and <code>SnapshotEventEntry</code> instance,
                     respectively. By returning your own subclass of these, you can store different
                     events in different tables, or add extra information in separate columns.</para>
@@ -439,7 +439,7 @@
                 defines how Events are appended to the event store. The serializer is used to
                 convert the payload and meta data of an event into an array of bytes, ready for
                 storage. In most cases, the DefaultEventEntryStore will suffice. t can be configured
-                to accomodate all sort of different scenarios.</para>
+                to accommodate all sort of different scenarios.</para>
             <para>The <code>DefaultEventEntryStore</code> uses a <code>ConnectionProvider</code> to
                 obtain connections. Typically, these connections can be obtained directly from a
                 DataSource. However, Axon will bind these connections the a Unit of Work, so that a
@@ -463,7 +463,7 @@
             <para>Most database speak more or less the same language. However, there many so-called
                 SQL Dialects. While the JDBC Event Store speaks a language all database should be
                 able to understand, it is possible that specific database vendors provide better
-                performing alternatives to generic SQL commands. To accomodate those, the
+                performing alternatives to generic SQL commands. To accommodate those, the
                     <code>DefaultEventEntryStore</code> works with a <code>EventSqlSchema</code>.
                 The <code>EventSqlSchema</code> is an interface that prescribes a number of
                 operations the <code>EventEntryStore</code> does on the underlying database. The
@@ -507,7 +507,7 @@
                 if they are included in a "commit document".</para>
             <para>The MongoDB doesn't take a lot of configuration. All it needs is a reference to
                 the collections to store the Events in, and you're set to go. For production
-                environments, you may want to doublecheck the indexes on your collections.</para>
+                environments, you may want to double check the indexes on your collections.</para>
         </sect2>
         <sect2>
             <title>Implementing your own event store</title>
@@ -705,7 +705,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                         <callout arearefs="upcast-type">
                             <para> Upcasting can be expensive, possibly involving type conversion,
                                 deserialization and logic. Axon is smart enough to prevent this from
-                                happening when it is not neccesary through the concept of
+                                happening when it is not necessary through the concept of
                                 <code>SerializedType</code>s. <code>SerializedType</code>s provide Axon with the information
                                 to delay event upcasting until the application requires it.</para>
                         </callout>
@@ -763,7 +763,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                 requested upcaster. For performance reasons, conversion will only be performed if
                 the <code>canUpcast</code> method on the receiving upcaster yields true. </para>
             <para>The <code>ContentTypeConverter</code>s may depend on the type of serializer used. Attempting to
-                convert a <code>byte[]</code> to a dom4j <code>Document</code> will not make any sence unless a <code>Serializer</code> was
+                convert a <code>byte[]</code> to a dom4j <code>Document</code> will not make any sense unless a <code>Serializer</code> was
                 used that writes an event as XML. To make sure the <code>UpcasterChain</code> has access to the
                 serializer-specific <code>ContentTypeConverter</code>s, you can pass a reference to the
                 serializer to the constructor of the <code>UpcasterChain</code>.</para>
@@ -793,7 +793,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             event reduces the stock by one. Every time a shipment of new items comes in, the stock
             is incremented by some larger number. If you sell a hundred items each day, you will
             produce at least 100 events per day. After a few days, your system will spend too much
-            time reading in all these events just to find out wheter it should raise an
+            time reading in all these events just to find out whether it should raise an
             "ItemOutOfStockEvent". A single snapshot event could replace a lot of these events, just
             by storing the current number of items in stock.
         </para>
@@ -926,7 +926,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                 implementations allow for concurrent creation of snapshots. This means they allow
                 snapshots to be stored while another process is adding Events for the same
                 aggregate. This allows the snapshotting process to run as a separate process
-                alltogether. </para>
+                altogether.</para>
             <note>
                 <para>Normally, you can archive all events once they are part of a snapshot event.
                     Snapshotted events will never be read in again by the event store in regular
@@ -949,7 +949,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             <title>Initializing an Aggregate based on a Snapshot Event</title>
             <para>A snapshot event is an event like any other. That means a snapshot event is
                 handled just like any other domain event. When using annotations to demarcate event
-                handers (<code>@EventHandler</code>), you can annotate a method that initializes
+                handlers (<code>@EventHandler</code>), you can annotate a method that initializes
                 full aggregate state based on a snapshot event. The code sample below shows how
                 snapshot events are treated like any other domain event within the aggregate. </para>
             <para>
@@ -1027,7 +1027,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
             By default, all repositories will throw a
             <code>ConflictingModificationException</code>
             when the version of a loaded aggregate is not equal to the expected version. Event
-            Sourcing Repositories offer support for more advanced conflict detection, as decribed in
+            Sourcing Repositories offer support for more advanced conflict detection, as described in
             the paragraph above.
         </para>
         <para>To enable advanced conflict detection, configure a <code>ConflictResolver</code> on
