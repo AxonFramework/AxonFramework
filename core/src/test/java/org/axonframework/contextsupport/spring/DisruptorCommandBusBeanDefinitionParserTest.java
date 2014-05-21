@@ -25,8 +25,10 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.Bean;
@@ -86,6 +88,28 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
         assertEquals("2048", config.getPropertyValues().getPropertyValue("bufferSize").getValue());
         assertEquals("3", config.getPropertyValues().getPropertyValue("serializerThreadCount").getValue());
         assertEquals("org.dom4j.Document", config.getPropertyValues().getPropertyValue("serializedRepresentation").getValue());
+    }
+
+    @Test
+    public void testRepositoryContainsDecorator() {
+        GenericBeanDefinition beanDefinition = (GenericBeanDefinition)
+                beanFactory.getBeanDefinition("myAggregateRepository");
+        PropertyValue triggerValue = beanDefinition.getPropertyValues().getPropertyValue("snapshotterTrigger");
+        assertNotNull(triggerValue);
+        final GenericBeanDefinition snapshotterDefinition = (GenericBeanDefinition) triggerValue.getValue();
+        assertEquals("org.axonframework.eventsourcing.EventCountSnapshotterTrigger",
+                     snapshotterDefinition.getBeanClassName());
+        assertEquals("10", snapshotterDefinition.getPropertyValues().getPropertyValue("trigger").getValue());
+        assertEquals(new RuntimeBeanReference("snapshotter"),
+                     snapshotterDefinition.getPropertyValues().getPropertyValue("snapshotter").getValue());
+
+        PropertyValue decoratorsValue = beanDefinition.getPropertyValues().getPropertyValue("eventStreamDecorators");
+        assertNotNull(decoratorsValue);
+        final List<BeanDefinitionHolder> decorators = (List) decoratorsValue.getValue();
+        assertEquals(1, decorators.size());
+        assertEquals("org.axonframework.testutils.MockitoMockFactoryBean",
+                     decorators.get(0).getBeanDefinition().getBeanClassName());
+
     }
 
     /**

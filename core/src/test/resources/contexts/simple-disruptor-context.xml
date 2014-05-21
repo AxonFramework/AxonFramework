@@ -34,13 +34,17 @@
             event-bus="eventBus"
             command-target-resolver="commandTargetResolver">
         <axon:repositories>
-            <axon:repository id="exampleRepository" aggregate-type="org.axonframework.contextsupport.spring.DisruptorContextConfigurationTest.MyAggregate"/>
+            <axon:repository id="exampleRepository" aggregate-type="org.axonframework.contextsupport.spring.DisruptorContextConfigurationTest.MyAggregate">
+                <axon:snapshotter-trigger event-count-threshold="10" snapshotter-ref="mockSnapshotter"/>
+            </axon:repository>
         </axon:repositories>
     </axon:disruptor-command-bus>
 
-    <axon:filesystem-event-store
-            id="eventStore"
-            base-dir="${java.io.tmpdir}"/>
+    <bean id="mockSnapshotter" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.eventsourcing.Snapshotter"/>
+    </bean>
+
+    <bean id="eventStore" class="org.axonframework.contextsupport.spring.DisruptorContextConfigurationTest$InMemoryEventStore"/>
 
     <bean id="commandTargetResolver" class="org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver"/>
 

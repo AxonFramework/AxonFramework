@@ -7,6 +7,8 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
@@ -15,6 +17,7 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
+import org.mockito.internal.stubbing.answers.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
@@ -35,6 +38,7 @@ public class CommandHandlerInvokerTest {
     private String aggregateIdentifier;
     private CommandMessage<?> mockCommandMessage;
     private CommandHandler mockCommandHandler;
+    private EventStreamDecorator eventStreamDecorator;
 
     @Before
     public void setUp() throws Exception {
@@ -48,12 +52,16 @@ public class CommandHandlerInvokerTest {
         commandHandlingEntry.reset(mockCommandMessage, mockCommandHandler, 0, 0, 0, null,
                                    Collections.<CommandHandlerInterceptor>emptyList(),
                                    Collections.<CommandHandlerInterceptor>emptyList());
+        eventStreamDecorator = mock(EventStreamDecorator.class);
+        when(eventStreamDecorator.decorateForAppend(anyString(), any(EventSourcedAggregateRoot.class), any(DomainEventStream.class))).thenAnswer(new ReturnsArgumentAt(2));
+        when(eventStreamDecorator.decorateForRead(anyString(), any(), any(DomainEventStream.class))).thenAnswer(
+                new ReturnsArgumentAt(2));
     }
 
     @Test
     public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Throwable {
         final Repository<StubAggregate> repository = testSubject.createRepository(
-                new GenericAggregateFactory<StubAggregate>(StubAggregate.class));
+                new GenericAggregateFactory<StubAggregate>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -73,7 +81,7 @@ public class CommandHandlerInvokerTest {
     @Test
     public void testLoadFromRepositoryLoadsFromCache() throws Throwable {
         final Repository<StubAggregate> repository = testSubject.createRepository(
-                new GenericAggregateFactory<StubAggregate>(StubAggregate.class));
+                new GenericAggregateFactory<StubAggregate>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -90,7 +98,7 @@ public class CommandHandlerInvokerTest {
     @Test
     public void testAddToRepositoryAddsInCache() throws Throwable {
         final Repository<StubAggregate> repository = testSubject.createRepository(
-                new GenericAggregateFactory<StubAggregate>(StubAggregate.class));
+                new GenericAggregateFactory<StubAggregate>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -121,9 +129,9 @@ public class CommandHandlerInvokerTest {
     @Test
     public void testCreateRepositoryReturnsSameInstanceOnSecondInvocation() {
         final Repository<StubAggregate> repository1 = testSubject.createRepository(
-                new GenericAggregateFactory<StubAggregate>(StubAggregate.class));
+                new GenericAggregateFactory<StubAggregate>(StubAggregate.class), eventStreamDecorator);
         final Repository<StubAggregate> repository2= testSubject.createRepository(
-                new GenericAggregateFactory<StubAggregate>(StubAggregate.class));
+                new GenericAggregateFactory<StubAggregate>(StubAggregate.class), eventStreamDecorator);
 
         assertSame(repository1, repository2);
     }

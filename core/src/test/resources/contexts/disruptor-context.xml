@@ -55,7 +55,14 @@
             </bean>
         </axon:publisher-interceptors>
         <axon:repositories>
-            <axon:repository id="myAggregateRepository" aggregate-factory="aggregateFactory"/>
+            <axon:repository id="myAggregateRepository" aggregate-factory="aggregateFactory">
+                <axon:snapshotter-trigger event-count-threshold="10" snapshotter-ref="snapshotter"/>
+                <axon:event-processors>
+                    <bean class="org.axonframework.testutils.MockitoMockFactoryBean">
+                        <property name="mockType" value="org.axonframework.eventsourcing.EventStreamDecorator"/>
+                    </bean>
+                </axon:event-processors>
+            </axon:repository>
             <axon:repository id="myOtherAggregateRepository"
                              aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
         </axon:repositories>
@@ -63,6 +70,10 @@
 
     <bean id="rollbackConfig" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.commandhandling.RollbackConfiguration"/>
+    </bean>
+
+    <bean id="snapshotter" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.eventsourcing.Snapshotter"/>
     </bean>
 
     <bean id="ctr" class="org.axonframework.testutils.MockitoMockFactoryBean">

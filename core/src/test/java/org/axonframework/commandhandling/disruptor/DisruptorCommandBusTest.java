@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
@@ -38,7 +37,9 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
+import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -53,6 +54,7 @@ import org.hamcrest.Description;
 import org.junit.*;
 import org.junit.internal.matchers.*;
 import org.mockito.*;
+import org.mockito.internal.stubbing.answers.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
@@ -119,13 +121,14 @@ public class DisruptorCommandBusTest {
                                             .setWaitStrategy(new SleepingWaitStrategy())
                                             .setExecutor(customExecutor)
                                             .setInvokerThreadCount(2)
-                                            .setPublisherThreadCount(3));
+                                            .setPublisherThreadCount(3)
+        );
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
         when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
-                .thenAnswer(new Parameter(1));
+                .thenAnswer(new ReturnsArgumentAt(1));
         when(mockHandlerInterceptor.handle(any(CommandMessage.class),
                                            any(UnitOfWork.class),
                                            any(InterceptorChain.class)))
@@ -161,6 +164,49 @@ public class DisruptorCommandBusTest {
     }
 
     @Test
+    public void testEventStreamsDecoratedOnReadAndWrite() throws InterruptedException {
+        ExecutorService customExecutor = Executors.newCachedThreadPool();
+        testSubject = new DisruptorCommandBus(
+                inMemoryEventStore, eventBus,
+                new DisruptorConfiguration().setBufferSize(8)
+                                            .setProducerType(ProducerType.SINGLE)
+                                            .setWaitStrategy(new SleepingWaitStrategy())
+                                            .setExecutor(customExecutor)
+                                            .setInvokerThreadCount(2)
+                                            .setPublisherThreadCount(3)
+        );
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        final EventStreamDecorator mockDecorator = mock(EventStreamDecorator.class);
+        when(mockDecorator.decorateForAppend(anyString(),
+                                             any(EventSourcedAggregateRoot.class),
+                                             any(DomainEventStream.class)))
+                .thenAnswer(new ReturnsArgumentAt(2));
+        when(mockDecorator.decorateForRead(anyString(), any(), any(DomainEventStream.class)))
+                .thenAnswer(new ReturnsArgumentAt(2));
+
+        stubHandler.setRepository(testSubject
+                                          .createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class),
+                                                            mockDecorator));
+
+        CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
+                new StubCommand(aggregateIdentifier));
+        CommandCallback mockCallback = mock(CommandCallback.class);
+        testSubject.dispatch(command, mockCallback);
+        testSubject.dispatch(command);
+
+        testSubject.stop();
+        assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
+        customExecutor.shutdown();
+        assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
+
+        // invoked only once, because the second time, the aggregate comes from the 1st level cache
+        verify(mockDecorator).decorateForRead(eq("StubAggregate"), eq(aggregateIdentifier),
+                                                      isA(DomainEventStream.class));
+        verify(mockDecorator, times(2)).decorateForAppend(eq("StubAggregate"), isA(EventSourcedAggregateRoot.class),
+                                                        isA(DomainEventStream.class));
+    }
+
+    @Test
     public void testEventPublicationExecutedWithinTransaction() throws Throwable {
         CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
@@ -187,7 +233,8 @@ public class DisruptorCommandBusTest {
         CommandCallback mockCallback = dispatchCommands(mockInterceptor,
                                                         customExecutor,
                                                         new GenericCommandMessage<ErrorCommand>(
-                                                                new ErrorCommand(aggregateIdentifier)));
+                                                                new ErrorCommand(aggregateIdentifier))
+        );
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
@@ -204,7 +251,8 @@ public class DisruptorCommandBusTest {
         CommandCallback mockCallback = dispatchCommands(mockInterceptor,
                                                         customExecutor,
                                                         new GenericCommandMessage<ErrorCommand>(
-                                                                new ErrorCommand(aggregateIdentifier)));
+                                                                new ErrorCommand(aggregateIdentifier))
+        );
 
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
@@ -305,7 +353,8 @@ public class DisruptorCommandBusTest {
                                             .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
                                             .setInvokerThreadCount(2)
                                             .setPublisherThreadCount(3)
-                                            .setTransactionManager(mockTransactionManager));
+                                            .setTransactionManager(mockTransactionManager)
+        );
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
@@ -349,7 +398,8 @@ public class DisruptorCommandBusTest {
                                                       .setProducerType(ProducerType.SINGLE)
                                                       .setWaitStrategy(new SleepingWaitStrategy())
                                                       .setInvokerThreadCount(2)
-                                                      .setPublisherThreadCount(3));
+                                                      .setPublisherThreadCount(3)
+        );
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);

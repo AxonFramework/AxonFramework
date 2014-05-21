@@ -23,6 +23,7 @@ import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
@@ -107,14 +108,17 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * repository must be sage to use by this invoker instance.
      *
      * @param aggregateFactory The factory creating aggregate instances
+     * @param decorator        The decorator to decorate event streams with
      * @param <T>              The type of aggregate created by the factory
      * @return A Repository instance for the given aggregate
      */
     @SuppressWarnings("unchecked")
-    public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
+    public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
+                                                                                EventStreamDecorator decorator) {
         String typeIdentifier = aggregateFactory.getTypeIdentifier();
         if (!repositories.containsKey(typeIdentifier)) {
-            DisruptorRepository<T> repository = new DisruptorRepository<T>(aggregateFactory, cache, eventStore);
+            DisruptorRepository<T> repository = new DisruptorRepository<T>(aggregateFactory, cache, eventStore,
+                                                                           decorator);
             repositories.putIfAbsent(typeIdentifier, repository);
         }
         return repositories.get(typeIdentifier);
@@ -145,16 +149,19 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     static final class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
 
         private final EventStore eventStore;
+        private final EventStreamDecorator decorator;
         private final AggregateFactory<T> aggregateFactory;
         private final Map<T, Object> firstLevelCache = new WeakHashMap<T, Object>();
         private final String typeIdentifier;
         private final Cache cache;
 
-        private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore) {
+        private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
+                                    EventStreamDecorator decorator) {
             this.aggregateFactory = aggregateFactory;
             this.cache = cache;
             this.eventStore = eventStore;
-            typeIdentifier = this.aggregateFactory.getTypeIdentifier();
+            this.decorator = decorator;
+            this.typeIdentifier = this.aggregateFactory.getTypeIdentifier();
         }
 
         @Override
@@ -188,7 +195,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                              aggregateIdentifier);
                 DomainEventStream events = null;
                 try {
-                    events = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
+                    events = decorator.decorateForRead(typeIdentifier, aggregateIdentifier,
+                                                       eventStore.readEvents(typeIdentifier, aggregateIdentifier));
                     if (events.hasNext()) {
                         aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
                         aggregateRoot.initializeState(events);
@@ -200,7 +208,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                     + "or a command that was executed against an aggregate that did not yet "
                                     + "finish the creation process. It will be rescheduled for publication when it "
                                     + "attempts to load an aggregate",
-                            e);
+                            e
+                    );
                 } finally {
                     IOUtils.closeQuietlyIfCloseable(events);
                 }
@@ -210,6 +219,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             if (aggregateRoot != null) {
                 DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
                 unitOfWork.setAggregateType(typeIdentifier);
+                unitOfWork.setEventStreamDecorator(decorator);
                 unitOfWork.registerAggregate(aggregateRoot, null, null);
             }
             return aggregateRoot;
@@ -218,6 +228,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         @Override
         public void add(T aggregate) {
             DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
+            unitOfWork.setEventStreamDecorator(decorator);
             unitOfWork.setAggregateType(typeIdentifier);
             unitOfWork.registerAggregate(aggregate, null, null);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);

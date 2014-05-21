@@ -24,6 +24,7 @@ import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -58,6 +59,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private final boolean transactional;
     private final Map<String, Object> resources = new HashMap<String, Object>();
     private final Map<String, Object> inheritedResources = new HashMap<String, Object>();
+    private EventStreamDecorator eventStreamDecorator;
 
     /**
      * Creates a new Unit of Work for use in the DisruptorCommandBus.
@@ -111,6 +113,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         // clear the lists of events to make them garbage-collectible
         eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
         eventsToPublish.clear();
+        eventStreamDecorator = null;
         this.resources.clear();
         this.inheritedResources.clear();
     }
@@ -170,7 +173,8 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         if (aggregate != null && aggregateRoot != aggregate) { // NOSONAR - Intentional equality check
             throw new IllegalArgumentException(
                     "Cannot register more than one aggregate in this Unit Of Work. Either ensure each command "
-                            + "executes against at most one aggregate, or use another Command Bus implementation.");
+                            + "executes against at most one aggregate, or use another Command Bus implementation."
+            );
         }
         aggregate = (EventSourcedAggregateRoot) aggregateRoot;
 
@@ -220,7 +224,10 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * @return the events that need to be stored as part of this Unit of Work
      */
     public DomainEventStream getEventsToStore() {
-        return eventsToStore;
+        if (eventStreamDecorator == null) {
+            return eventsToStore;
+        }
+        return eventStreamDecorator.decorateForAppend(aggregateType, aggregate, eventsToStore);
     }
 
     /**
@@ -264,5 +271,14 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      */
     public void setAggregateType(String aggregateType) {
         this.aggregateType = aggregateType;
+    }
+
+    /**
+     * Registers the EventStreamDecorator for events as part of this unit of work
+     *
+     * @param eventStreamDecorator The EventStreamDecorator to use for the event streams part of this unit of work
+     */
+    public void setEventStreamDecorator(EventStreamDecorator eventStreamDecorator) {
+        this.eventStreamDecorator = eventStreamDecorator;
     }
 }

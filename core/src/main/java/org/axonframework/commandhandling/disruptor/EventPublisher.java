@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,11 +94,16 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 reschedule(entry);
             } else {
                 DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
-                EventSourcedAggregateRoot aggregate = unitOfWork.getAggregate();
-                if (aggregate != null && blackListedAggregates.contains(aggregate.getIdentifier())) {
-                    rejectExecution(entry, unitOfWork, entry.getAggregateIdentifier());
-                } else {
-                    processPublication(entry, unitOfWork, aggregate);
+                CurrentUnitOfWork.set(unitOfWork);
+                try {
+                    EventSourcedAggregateRoot aggregate = unitOfWork.getAggregate();
+                    if (aggregate != null && blackListedAggregates.contains(aggregate.getIdentifier())) {
+                        rejectExecution(entry, unitOfWork, entry.getAggregateIdentifier());
+                    } else {
+                        processPublication(entry, unitOfWork, aggregate);
+                    }
+                } finally {
+                    CurrentUnitOfWork.clear(unitOfWork);
                 }
             }
         }

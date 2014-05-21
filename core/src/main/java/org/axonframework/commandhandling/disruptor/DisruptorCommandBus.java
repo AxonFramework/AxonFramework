@@ -29,9 +29,11 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.interceptors.SerializationOptimizingInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.serializer.Serializer;
@@ -276,7 +278,8 @@ public class DisruptorCommandBus implements CommandBus {
         event.reset(command, commandHandlers.get(command.getCommandName()), invokerSegment, publisherSegment,
                     serializerSegment, new BlacklistDetectingCallback<R>(callback, command, disruptor.getRingBuffer(),
                                                                          this, rescheduleOnCorruptState),
-                    invokerInterceptors, publisherInterceptors);
+                    invokerInterceptors, publisherInterceptors
+        );
         ringBuffer.publish(sequence);
     }
 
@@ -292,8 +295,28 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      */
     public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
+        return createRepository(aggregateFactory, NoOpEventStreamDecorator.INSTANCE);
+    }
+
+    /**
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given
+     * <code>aggregateFactory</code>. The given <code>decorator</code> is used to decorate event streams.
+     * <p/>
+     * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
+     * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
+     * <p/>
+     * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
+     * return the same instance as the first invocation, even if the given <code>decorator</code> is different.
+     *
+     * @param aggregateFactory The factory creating uninitialized instances of the Aggregate
+     * @param decorator        The decorator to decorate events streams with
+     * @param <T>              The type of aggregate to create the repository for
+     * @return the repository that provides access to stored aggregates
+     */
+    public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
+                                                                                EventStreamDecorator decorator) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
-            invoker.createRepository(aggregateFactory);
+            invoker.createRepository(aggregateFactory, decorator);
         }
         return new DisruptorRepository<T>(aggregateFactory.getTypeIdentifier());
     }
@@ -389,6 +412,23 @@ public class DisruptorCommandBus implements CommandBus {
         @Override
         public void add(T aggregate) {
             CommandHandlerInvoker.getRepository(typeIdentifier).add(aggregate);
+        }
+    }
+
+    private static class NoOpEventStreamDecorator implements EventStreamDecorator {
+
+        public static final EventStreamDecorator INSTANCE = new NoOpEventStreamDecorator();
+
+        @Override
+        public DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
+                                                 DomainEventStream eventStream) {
+            return eventStream;
+        }
+
+        @Override
+        public DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
+                                                   DomainEventStream eventStream) {
+            return eventStream;
         }
     }
 }
