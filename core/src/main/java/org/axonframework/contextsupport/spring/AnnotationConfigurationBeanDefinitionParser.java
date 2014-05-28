@@ -20,9 +20,11 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBean
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
 import static org.axonframework.contextsupport.spring.SpringContextParameterResolverFactoryBuilder.getBeanReference;
@@ -65,8 +67,16 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
      */
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        registerAnnotationCommandHandlerBeanPostProcessor(element, parserContext);
-        registerAnnotationEventListenerBeanPostProcessor(element, parserContext);
+        String phase = element.hasAttribute(PHASE_ATTRIBUTE) ? element.getAttribute(PHASE_ATTRIBUTE) : null;
+        String unsubscribe = element.hasAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE) ? element.getAttribute(
+                UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE) : null;
+        String eventBus = element.hasAttribute(EVENT_BUS_ATTRIBUTE) ? element.getAttribute(EVENT_BUS_ATTRIBUTE) : null;
+        String commandBus = element.hasAttribute(COMMAND_BUS_ATTRIBUTE) ? element
+                .getAttribute(COMMAND_BUS_ATTRIBUTE) : null;
+        registerAnnotationCommandHandlerBeanPostProcessor(commandBus, phase,
+                                                          unsubscribe, parserContext.getRegistry());
+        registerAnnotationEventListenerBeanPostProcessor(eventBus, phase, unsubscribe,
+                                                         parserContext.getRegistry());
         return null;
     }
 
@@ -74,56 +84,61 @@ public class AnnotationConfigurationBeanDefinitionParser extends AbstractBeanDef
      * Create the {@link org.springframework.beans.factory.config.BeanDefinition} for the {@link
      * AnnotationEventListenerBeanPostProcessor} and register it.
      *
-     * @param element       The {@link Element} being parsed.
-     * @param parserContext The running {@link ParserContext}.
+     * @param eventBus              The bean name of the event bus to subscribe to
+     * @param phase                 The lifecycle phase for the post processor
+     * @param unsubscribeOnShutdown Whether to unsubscribe beans on shutdown
+     * @param registry              The registry containing bean definitions
      */
-    private void registerAnnotationEventListenerBeanPostProcessor(Element element, ParserContext parserContext) {
+    public void registerAnnotationEventListenerBeanPostProcessor(String eventBus, String phase,
+                                                                 String unsubscribeOnShutdown,
+                                                                 BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationEventListenerBeanPostProcessor.class);
         beanDefinition.getPropertyValues().add("parameterResolverFactory",
-                                               getBeanReference(parserContext.getRegistry()));
-        if (element.hasAttribute(PHASE_ATTRIBUTE)) {
-            beanDefinition.getPropertyValues().add("phase", element.getAttribute(PHASE_ATTRIBUTE));
+                                               getBeanReference(registry));
+        if (StringUtils.hasText(phase)) {
+            beanDefinition.getPropertyValues().add("phase", phase);
         }
-        if (element.hasAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE)) {
-            beanDefinition.getPropertyValues().add("unsubscribeOnShutdown",
-                                                   element.getAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE));
+        if (StringUtils.hasText(unsubscribeOnShutdown)) {
+            beanDefinition.getPropertyValues().add("unsubscribeOnShutdown", unsubscribeOnShutdown);
         }
-        if (element.hasAttribute(EVENT_BUS_ATTRIBUTE)) {
-            String eventBusReference = element.getAttribute(EVENT_BUS_ATTRIBUTE);
-            RuntimeBeanReference beanReference = new RuntimeBeanReference(eventBusReference);
+        if (StringUtils.hasText(eventBus)) {
+            RuntimeBeanReference beanReference = new RuntimeBeanReference(eventBus);
             beanDefinition.getPropertyValues().addPropertyValue("eventBus", beanReference);
         }
-        parserContext.getRegistry().registerBeanDefinition(EVENT_LISTENER_BEAN_NAME, beanDefinition);
+        registry.registerBeanDefinition(EVENT_LISTENER_BEAN_NAME, beanDefinition);
     }
 
     /**
      * Create the {@link org.springframework.beans.factory.config.BeanDefinition} for the {@link
      * AnnotationCommandHandlerBeanPostProcessor} and register it.
      *
-     * @param element       The {@link Element} being parsed.
-     * @param parserContext The running {@link ParserContext}.
+     * @param commandBus            The bean name of the command bus to subscribe to
+     * @param phase                 The lifecycle phase for the post processor
+     * @param unsubscribeOnShutdown Whether to unsubscribe beans on shutdown
+     * @param registry              The registry containing bean definitions
      */
-    private void registerAnnotationCommandHandlerBeanPostProcessor(Element element, ParserContext parserContext) {
+    public void registerAnnotationCommandHandlerBeanPostProcessor(String commandBus, String phase,
+                                                                  String unsubscribeOnShutdown,
+                                                                  BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
         beanDefinition.setBeanClass(AnnotationCommandHandlerBeanPostProcessor.class);
         beanDefinition.getPropertyValues().add("parameterResolverFactory",
                                                getBeanReference(
-                                                       parserContext.getRegistry()));
-        if (element.hasAttribute(PHASE_ATTRIBUTE)) {
-            beanDefinition.getPropertyValues().add("phase", element.getAttribute(PHASE_ATTRIBUTE));
+                                                       registry));
+        if (StringUtils.hasText(phase)) {
+            beanDefinition.getPropertyValues().add("phase", phase);
         }
-        if (element.hasAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE)) {
+        if (StringUtils.hasText(unsubscribeOnShutdown)) {
             beanDefinition.getPropertyValues().add("unsubscribeOnShutdown",
-                                                   element.getAttribute(UNSUBSCRIBE_ON_SHUTDOWN_ATTRIBUTE));
+                                                   unsubscribeOnShutdown);
         }
 
-        if (element.hasAttribute(COMMAND_BUS_ATTRIBUTE)) {
-            String commandBusReference = element.getAttribute(COMMAND_BUS_ATTRIBUTE);
-            RuntimeBeanReference beanReference = new RuntimeBeanReference(commandBusReference);
+        if (StringUtils.hasText(commandBus)) {
+            RuntimeBeanReference beanReference = new RuntimeBeanReference(commandBus);
             beanDefinition.getPropertyValues().addPropertyValue("commandBus", beanReference);
         }
 
-        parserContext.getRegistry().registerBeanDefinition(COMMAND_HANDLER_BEAN_NAME, beanDefinition);
+        registry.registerBeanDefinition(COMMAND_HANDLER_BEAN_NAME, beanDefinition);
     }
 }
