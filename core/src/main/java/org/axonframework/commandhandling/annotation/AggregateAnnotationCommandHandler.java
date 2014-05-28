@@ -59,47 +59,6 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     private final Map<String, CommandHandler<Object>> handlers;
 
     /**
-     * Subscribe a handler for the given aggregate type to the given command bus.
-     *
-     * @param aggregateType The type of aggregate
-     * @param repository    The repository providing access to aggregate instances
-     * @param commandBus    The command bus to register command handlers to
-     * @param <T>           The type of aggregate this handler handles commands for
-     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
-     */
-    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
-            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus) {
-        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<T>(aggregateType,
-                                                                                                repository);
-        for (String supportedCommand : adapter.supportedCommands()) {
-            commandBus.subscribe(supportedCommand, adapter);
-        }
-
-        return adapter;
-    }
-
-    /**
-     * Subscribe a handler for the given aggregate type to the given command bus.
-     *
-     * @param aggregateType         The type of aggregate
-     * @param repository            The repository providing access to aggregate instances
-     * @param commandBus            The command bus to register command handlers to
-     * @param commandTargetResolver The target resolution strategy
-     * @param <T>                   The type of aggregate this handler handles commands for
-     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
-     */
-    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
-            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus,
-            CommandTargetResolver commandTargetResolver) {
-        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<T>(
-                aggregateType, repository, commandTargetResolver);
-        for (String supportedCommand : adapter.supportedCommands()) {
-            commandBus.subscribe(supportedCommand, adapter);
-        }
-        return adapter;
-    }
-
-    /**
      * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
      * given <code>repository</code> to add and load aggregate instances.
      *
@@ -194,6 +153,47 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
                 aggregateType, ClasspathParameterResolverFactory.forClass(aggregateType)));
     }
 
+    /**
+     * Subscribe a handler for the given aggregate type to the given command bus.
+     *
+     * @param aggregateType The type of aggregate
+     * @param repository    The repository providing access to aggregate instances
+     * @param commandBus    The command bus to register command handlers to
+     * @param <T>           The type of aggregate this handler handles commands for
+     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
+     */
+    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
+            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus) {
+        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<T>(aggregateType,
+                                                                                                repository);
+        for (String supportedCommand : adapter.supportedCommands()) {
+            commandBus.subscribe(supportedCommand, adapter);
+        }
+
+        return adapter;
+    }
+
+    /**
+     * Subscribe a handler for the given aggregate type to the given command bus.
+     *
+     * @param aggregateType         The type of aggregate
+     * @param repository            The repository providing access to aggregate instances
+     * @param commandBus            The command bus to register command handlers to
+     * @param commandTargetResolver The target resolution strategy
+     * @param <T>                   The type of aggregate this handler handles commands for
+     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
+     */
+    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
+            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus,
+            CommandTargetResolver commandTargetResolver) {
+        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<T>(
+                aggregateType, repository, commandTargetResolver);
+        for (String supportedCommand : adapter.supportedCommands()) {
+            commandBus.subscribe(supportedCommand, adapter);
+        }
+        return adapter;
+    }
+
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
         Map<String, CommandHandler<Object>> handlersFound = new HashMap<String, CommandHandler<Object>>();
         for (final AbstractMessageHandler commandHandler : inspector.getHandlers()) {
@@ -263,6 +263,20 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         return repository.load(iv.getIdentifier(), iv.getVersion());
     }
 
+    /**
+     * Resolves the value to return when the given <code>command</code> has created the given <code>aggregate</code>.
+     * This implementation returns the identifier of the created aggregate.
+     * <p/>
+     * This method may be overridden to change the return value of this Command Handler
+     *
+     * @param command          The command being executed
+     * @param createdAggregate The aggregate that has been created as a result of the command
+     * @return The value to report as result of the command
+     */
+    protected Object resolveReturnValue(CommandMessage<?> command, T createdAggregate) {
+        return createdAggregate.getIdentifier();
+    }
+
     private class AggregateConstructorCommandHandler implements CommandHandler<Object> {
 
         private final ConstructorCommandMessageHandler<T> handler;
@@ -274,11 +288,12 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         @Override
         public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
             try {
-                repository.add(handler.invoke(null, command));
+                final T createdAggregate = handler.invoke(null, command);
+                repository.add(createdAggregate);
+                return resolveReturnValue(command, createdAggregate);
             } catch (InvocationTargetException e) {
                 throw e.getCause();
             }
-            return null;
         }
     }
 

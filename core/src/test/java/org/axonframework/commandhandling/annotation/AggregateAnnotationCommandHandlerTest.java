@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Test
     public void testAggregateConstructorThrowsException() {
-        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("parameter")), new VoidCallback() {
+        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")), new VoidCallback() {
             @Override
             protected void onSuccess() {
                 fail("Expected exception");
@@ -121,8 +121,11 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testCommandHandlerCreatesAggregateInstance() {
 
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new CreateCommand("Hi")));
+        final CommandCallback callback = mock(CommandCallback.class);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new CreateCommand("id", "Hi")), callback);
         verify(mockRepository).add(isA(StubCommandAnnotatedAggregate.class));
+        // make sure the identifier was invoked in the callback
+        verify(callback).onSuccess("id");
     }
 
     @Test
@@ -369,7 +372,7 @@ public class AggregateAnnotationCommandHandlerTest {
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
                                              @org.axonframework.common.annotation.MetaData("notExist") String value) {
-            super(IdentifierFactory.getInstance().generateIdentifier());
+            super(createCommand.getId());
             Assert.assertNotNull(unitOfWork);
             Assert.assertNull(value);
             apply(new StubDomainEvent());
@@ -459,21 +462,27 @@ public class AggregateAnnotationCommandHandlerTest {
 
     private static class CreateCommand {
 
+        private final String id;
         private String parameter;
 
-        private CreateCommand(String parameter) {
+        private CreateCommand(String id, String parameter) {
+            this.id = id;
             this.parameter = parameter;
         }
 
         public String getParameter() {
             return parameter;
         }
+
+        public String getId() {
+            return id;
+        }
     }
 
     private static class FailingCreateCommand extends CreateCommand {
 
-        private FailingCreateCommand(String parameter) {
-            super(parameter);
+        private FailingCreateCommand(String id, String parameter) {
+            super(id, parameter);
         }
     }
 
