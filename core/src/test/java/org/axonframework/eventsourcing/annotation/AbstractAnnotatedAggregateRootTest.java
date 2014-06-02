@@ -16,14 +16,16 @@
 
 package org.axonframework.eventsourcing.annotation;
 
-import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.Message;
-import org.axonframework.domain.StubDomainEvent;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 
-import java.lang.annotation.Annotation;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import javax.persistence.Id;
 
@@ -41,14 +43,27 @@ public class AbstractAnnotatedAggregateRootTest {
         testSubject = new SimpleAggregateRoot();
 
         assertNotNull(testSubject.getIdentifier());
-        assertEquals(1, testSubject.getUncommittedEventCount());
+        // the first applied event applies another one
+        assertEquals(2, testSubject.getUncommittedEventCount());
         // this proves that a newly added entity is also notified of an event
-        assertEquals(1, testSubject.getEntity().invocationCount);
+        assertEquals(2, testSubject.getEntity().invocationCount);
 
         testSubject.doSomething();
 
-        assertEquals(2, testSubject.invocationCount);
-        assertEquals(2, testSubject.getEntity().invocationCount);
+        assertEquals(3, testSubject.invocationCount);
+        assertEquals(3, testSubject.getEntity().invocationCount);
+
+        // the nested handler must be invoked second
+        assertFalse(testSubject.entity.appliedEvents.get(0).nested);
+        assertTrue(testSubject.entity.appliedEvents.get(1).nested);
+        assertFalse(testSubject.entity.appliedEvents.get(2).nested);
+
+        DomainEventStream uncommittedEvents = testSubject.getUncommittedEvents();
+        int i=0;
+        while (uncommittedEvents.hasNext()) {
+            assertSame(testSubject.entity.appliedEvents.get(i), uncommittedEvents.next().getPayload());
+            i++;
+        }
     }
 
     @Test
@@ -62,6 +77,10 @@ public class AbstractAnnotatedAggregateRootTest {
         LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate();
         assertEquals("lateIdentifier", aggregate.getIdentifier());
         assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
+
+        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
+        assertFalse(((StubDomainEvent)uncommittedEvents.next().getPayload()).nested);
+        assertTrue(((StubDomainEvent)uncommittedEvents.next().getPayload()).nested);
     }
 
     @Test
@@ -71,18 +90,54 @@ public class AbstractAnnotatedAggregateRootTest {
         assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
     }
 
+    @Test
+    public void testSerializationSetsLiveStateToTrue() throws Exception {
+        LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate();
+        aggregate.commitEvents();
+        final XStreamSerializer serializer = new XStreamSerializer();
+        SerializedObject<String> serialized = serializer.serialize(aggregate, String.class);
+
+        LateIdentifiedAggregate deserializedAggregate = serializer.deserialize(serialized);
+        assertTrue(deserializedAggregate.isLive());
+    }
+
+    @Test
+    public void testEventNotAppliedInReplayMode() {
+        final UUID id = UUID.randomUUID();
+        testSubject = new SimpleAggregateRoot(id);
+        testSubject.initializeState(new SimpleDomainEventStream(
+                new GenericDomainEventMessage<StubDomainEvent>(id.toString(), 0, new StubDomainEvent(false)),
+                new GenericDomainEventMessage<StubDomainEvent>(id.toString(), 1, new StubDomainEvent(true))));
+
+        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals((Long) 1L, testSubject.getVersion());
+        assertEquals(2, testSubject.invocationCount);
+
+        // the nested handler must be invoked second
+        assertFalse(testSubject.entity.appliedEvents.get(0).nested);
+        assertTrue(testSubject.entity.appliedEvents.get(1).nested);
+    }
+
     private static class LateIdentifiedAggregate extends AbstractAnnotatedAggregateRoot {
 
         @AggregateIdentifier
         private String aggregateIdentifier;
 
         private LateIdentifiedAggregate() {
-            apply(new StubDomainEvent());
+            apply(new StubDomainEvent(false));
+        }
+
+        @Override
+        public boolean isLive() {
+            return super.isLive();
         }
 
         @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             aggregateIdentifier = "lateIdentifier";
+            if (!event.nested) {
+                apply(new StubDomainEvent(true));
+            }
         }
     }
 
@@ -92,7 +147,7 @@ public class AbstractAnnotatedAggregateRootTest {
         private String aggregateIdentifier;
 
         private JavaxPersistenceIdIdentifiedAggregate() {
-            apply(new StubDomainEvent());
+            apply(new StubDomainEvent(false));
         }
 
         @EventSourcingHandler
@@ -111,7 +166,7 @@ public class AbstractAnnotatedAggregateRootTest {
 
         private SimpleAggregateRoot() {
             identifier = UUID.randomUUID();
-            apply(new StubDomainEvent());
+            apply(new StubDomainEvent(false));
         }
 
         private SimpleAggregateRoot(UUID identifier) {
@@ -123,6 +178,7 @@ public class AbstractAnnotatedAggregateRootTest {
             this.invocationCount++;
             if (entity == null) {
                 entity = new SimpleEntity();
+                apply(new StubDomainEvent(true));
             }
         }
 
@@ -131,73 +187,35 @@ public class AbstractAnnotatedAggregateRootTest {
         }
 
         public void doSomething() {
-            apply(new StubDomainEvent());
+            apply(new StubDomainEvent(false));
         }
-    }
-
-    private static class CustomParameterHandlerAggregateRoot extends SimpleAggregateRoot {
-
-        private CustomParameterHandlerAggregateRoot() {
-            super();
-        }
-
-        private CustomParameterHandlerAggregateRoot(UUID identifier) {
-            super(identifier);
-        }
-
-        @EventHandler // the legacy annotation must still work
-        public void myEventHandlerMethod(StubDomainEvent event, SomeResource resource) {
-            super.myEventHandlerMethod(event);
-            resource.registerInvocation();
-        }
-
-        @Override
-        public void doSomething() {
-            apply(new StubDomainEvent());
-        }
-    }
-
-    interface SomeResource {
-
-        void registerInvocation();
     }
 
     private static class SimpleEntity extends AbstractAnnotatedEntity {
 
         private int invocationCount;
+        private List<StubDomainEvent> appliedEvents = new ArrayList<StubDomainEvent>();
 
         @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             this.invocationCount++;
+            appliedEvents.add(event);
         }
     }
 
-    private static class SimpleParameterResolverFactory implements ParameterResolverFactory, ParameterResolver<Object> {
+    private static class StubDomainEvent implements Serializable {
 
-        private final Object resource;
+        private static final long serialVersionUID = 834667054977749990L;
 
-        public SimpleParameterResolverFactory(Object resource) {
-            this.resource = resource;
+        private final boolean nested;
+
+        private StubDomainEvent(boolean nested) {
+            this.nested = nested;
         }
 
         @Override
-        public ParameterResolver createInstance(Annotation[] memberAnnotations,
-                                                Class<?> parameterType,
-                                                Annotation[] parameterAnnotations) {
-            if (parameterType.isInstance(resource)) {
-                return this;
-            }
-            return null;
-        }
-
-        @Override
-        public Object resolveParameterValue(Message message) {
-            return resource;
-        }
-
-        @Override
-        public boolean matches(Message message) {
-            return true;
+        public String toString() {
+            return "StubDomainEvent";
         }
     }
 }

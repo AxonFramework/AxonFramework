@@ -23,6 +23,8 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
 import javax.persistence.MappedSuperclass;
 
 /**
@@ -39,6 +41,10 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
         implements EventSourcedAggregateRoot<I> {
 
     private static final long serialVersionUID = 5868786029296883724L;
+    private transient boolean inReplay = false;
+
+    private transient boolean applyingEvents = false;
+    private transient Queue<PayloadAndMetaData> eventsToApply = new ArrayDeque<PayloadAndMetaData>();
 
     /**
      * {@inheritDoc}
@@ -54,6 +60,7 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
     @Override
     public void initializeState(DomainEventStream domainEventStream) {
         Assert.state(getUncommittedEventCount() == 0, "Aggregate is already initialized");
+        inReplay = true;
         long lastSequenceNumber = -1;
         while (domainEventStream.hasNext()) {
             DomainEventMessage event = domainEventStream.next();
@@ -61,6 +68,7 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
             handleRecursively(event);
         }
         initializeEventStream(lastSequenceNumber);
+        inReplay = false;
     }
 
     /**
@@ -85,7 +93,15 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
      * @param metaData     any meta-data that must be registered with the Event
      */
     protected void apply(Object eventPayload, MetaData metaData) {
+        if (inReplay) {
+            return;
+        }
+        // ensure that nested invocations know they are nested
+        boolean wasNested = applyingEvents;
+        applyingEvents = true;
         if (getIdentifier() == null) {
+            Assert.state(!wasNested, "Applying an event in an @EventSourcingHandler is allowed, but only *after* the "
+                    + "aggregate identifier has been set");
             // workaround for aggregates that set the aggregate identifier in an Event Handler
             if (getUncommittedEventCount() > 0 || getVersion() != null) {
                 throw new IncompatibleAggregateException("The Aggregate Identifier has not been initialized. "
@@ -95,9 +111,36 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
             handleRecursively(new GenericDomainEventMessage<Object>(null, 0, eventPayload, metaData));
             registerEvent(metaData, eventPayload);
         } else {
-            DomainEventMessage event = registerEvent(metaData, eventPayload);
-            handleRecursively(event);
+            // eventsToApply may heb been set to null by serialization
+            if (eventsToApply == null) {
+                eventsToApply = new ArrayDeque<PayloadAndMetaData>();
+            }
+            eventsToApply.add(new PayloadAndMetaData(eventPayload, metaData));
         }
+
+        while (!wasNested && eventsToApply != null && !eventsToApply.isEmpty()) {
+            final PayloadAndMetaData payloadAndMetaData = eventsToApply.poll();
+            handleRecursively(registerEvent(payloadAndMetaData.metaData, payloadAndMetaData.payload));
+        }
+        applyingEvents = wasNested;
+    }
+
+    /**
+     * Indicates whether this aggregate is in "live" mode. This is the case when an aggregate is fully initialized and
+     * ready to handle commands.
+     * <p/>
+     * Typically, this method is used to check the state of the aggregate while events are being handled. When the
+     * aggregate is handling an event to reconstruct its current state, <code>isLive()</code> returns
+     * <code>false</code>. If an event is being handled because is was applied as a result of the current command being
+     * executed, it returns <code>true</code>.
+     * <p/>
+     * <code>isLive()</code> can be used to prevent expensive calculations while event sourcing.
+     *
+     * @return <code>true</code> if the aggregate is live, <code>false</code> when the aggregate is relaying historic
+     * events.
+     */
+    protected boolean isLive() {
+        return !inReplay;
     }
 
     private void handleRecursively(DomainEventMessage event) {
@@ -135,5 +178,16 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
     @Override
     public Long getVersion() {
         return getLastCommittedEventSequenceNumber();
+    }
+
+    private static class PayloadAndMetaData {
+
+        private final Object payload;
+        private final MetaData metaData;
+
+        private PayloadAndMetaData(Object payload, MetaData metaData) {
+            this.payload = payload;
+            this.metaData = metaData;
+        }
     }
 }
