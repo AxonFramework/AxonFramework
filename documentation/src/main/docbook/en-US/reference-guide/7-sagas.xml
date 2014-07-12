@@ -47,7 +47,7 @@
             that transaction, continuing it or taking compensating actions to roll back any actions
             already taken. Typically, and contrary to regular Event Listeners, a Saga has a starting
             point and an end, both triggered by Events. While the starting point of a Saga is
-            usually very clear, while there could be many ways for a Saga to end.</para>
+            usually very clear, there could be many ways for a Saga to end.</para>
         <para>In Axon, all Sagas must implement the <code>Saga</code> interface. As with Aggregates,
             there is a Saga implementation that allows you to annotate event handling methods: the
                 <code>AbstractAnnotatedSaga</code>.</para>
@@ -99,12 +99,12 @@
                 key of the association value is the name of the property. The value is the value
                 returned by property's getter method.</para>
             <para>For example, consider an incoming Event with a method "<code>String
-                        getOderId()</code>", which returns "123". If a method accepting this Event
+                        getOrderId()</code>", which returns "123". If a method accepting this Event
                     is annotated with <code>@SagaEventHandler(associationProperty="orderId")</code>,
                     this Event is routed to all Sagas that have been associated with an
                         <code>AssociationValue</code> with key "orderId" and value "123". This may
                     either be exactly one, more than one, or even none at all.</para>
-                <para>Sometimes, the name of the property you want to association is not the name of
+                <para>Sometimes, the name of the property you want to associate with is not the name of
                     the association you want to use. For example, you have a Saga that matches Sell
                     orders against Buy orders, you could have a Transaction object that contains the
                     "buyOrderId" and a "sellOrderId". If you want the saga to associate that value
@@ -401,7 +401,7 @@
                     asynchronously. Often, you'll want to use a thread pool. You may, if you want,
                     share this thread pool with other asynchronous activities.</para>
                 <para>When an executor is provided, the SagaManager will automatically use it to
-                    find associated Saga instances and dispatch the events each of these instances.
+                    find associated Saga instances and dispatch the events to each of these instances.
                     The SagaManager will guarantee that for each Saga instance, all events are
                     processed in the order they arrive. For optimization purposes, this guarantee
                     does not count in between Sagas.</para>
@@ -462,7 +462,7 @@
             <simplesect>
                 <title><code>JpaSagaRepository</code></title>
                 <para>The <code>JpaSagaRepository</code> uses JPA to store the state and Association
-                    Values of Sagas. Saga's do no need any JPA annotations; Axon will serialize the
+                    Values of Sagas. Sagas do not need any JPA annotations; Axon will serialize the
                     sagas using a <code>Serializer</code> (similar to Event serialization, you can
                     use either a <code>JavaSerializer</code> or an
                     <code>XStreamSerializer</code>).</para>
