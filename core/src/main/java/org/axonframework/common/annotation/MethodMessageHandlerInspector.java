@@ -92,7 +92,9 @@ public final class MethodMessageHandlerInspector {
                                                             HandlerDefinition<? super Method> handlerDefinition) {
         String key = handlerDefinition.toString() + "@" + handlerClass.getName();
         MethodMessageHandlerInspector inspector = INSPECTORS.get(key);
-        while (inspector == null || !inspector.parameterResolver.equals(parameterResolverFactory)) {
+        while (inspector == null
+                || !handlerClass.equals(inspector.getTargetType())
+                || !inspector.parameterResolver.equals(parameterResolverFactory)) {
             final MethodMessageHandlerInspector newInspector = new MethodMessageHandlerInspector(
                     parameterResolverFactory,
                     handlerClass,
