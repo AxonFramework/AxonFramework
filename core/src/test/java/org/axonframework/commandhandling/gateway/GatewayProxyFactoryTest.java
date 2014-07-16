@@ -25,8 +25,10 @@ import org.axonframework.common.lock.DeadlockException;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
-import org.junit.*;
-import org.junit.internal.matchers.*;
+import org.hamcrest.TypeSafeMatcher;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
@@ -49,21 +51,33 @@ public class GatewayProxyFactoryTest {
     private static GatewayProxyFactory testSubject;
     private static CompleteGateway gateway;
     private static RetryScheduler mockRetryScheduler;
+    private static CommandCallback callback;
 
     @BeforeClass
     public static void beforeClass() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         testSubject = new GatewayProxyFactory(mockCommandBus, mockRetryScheduler);
+        callback = spy(new StringCommandCallback());
+        testSubject.registerCommandCallback(new CommandCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+            }
+
+            @Override
+            public void onFailure(Throwable cause) {
+            }
+        });
+        testSubject.registerCommandCallback(callback);
         gateway = testSubject.createGateway(CompleteGateway.class);
     }
 
     @Before
     public void setUp() {
-        reset(mockCommandBus, mockRetryScheduler);
+        reset(mockCommandBus, mockRetryScheduler, callback);
     }
 
-    @Test(timeout = 2000)
+    @Test//(timeout = 2000)
     public void testGateway_FireAndForget() {
         final Object metaTest = new Object();
         gateway.fireAndForget("Command", metaTest, "value");
@@ -135,6 +149,7 @@ public class GatewayProxyFactoryTest {
         assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
         t.join();
         assertEquals("ReturnValue", result.get());
+        verify(callback).onSuccess("ReturnValue");
     }
 
     @Test(timeout = 2000)
@@ -160,6 +175,7 @@ public class GatewayProxyFactoryTest {
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof CommandExecutionException);
         assertTrue(error.get().getCause() instanceof ExpectedException);
+        verify(callback).onFailure(isA(ExpectedException.class));
     }
 
     @Test(timeout = 2000)
@@ -312,6 +328,7 @@ public class GatewayProxyFactoryTest {
         t.join();
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof ExpectedException);
+        verify(callback).onFailure(isA(ExpectedException.class));
     }
 
     @Test(timeout = 2000)
@@ -481,6 +498,24 @@ public class GatewayProxyFactoryTest {
     }
 
     @Test(timeout = 2000)
+    public void testCreateGateway_AsyncWithCallbacks_Success_ButReturnTypeDoesntMatchCallback() {
+        CountDownLatch cdl = new CountDownLatch(1);
+
+        final CommandCallback callback1 = mock(CommandCallback.class);
+        final CommandCallback callback2 = mock(CommandCallback.class);
+
+        doAnswer(new Success(cdl, 42))
+                .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
+        assertEquals(0, cdl.getCount());
+
+        verify(callback1).onSuccess(42);
+        verify(callback2).onSuccess(42);
+        verify(callback, never()).onSuccess(anyObject());
+    }
+
+    @Test(timeout = 2000)
     public void testCreateGateway_AsyncWithCallbacks_Failure() {
         final CommandCallback callback1 = mock(CommandCallback.class);
         final CommandCallback callback2 = mock(CommandCallback.class);
@@ -575,9 +610,9 @@ public class GatewayProxyFactoryTest {
     private static class Success implements Answer {
 
         private final CountDownLatch cdl;
-        private final String returnValue;
+        private final Object returnValue;
 
-        public Success(CountDownLatch cdl, String returnValue) {
+        public Success(CountDownLatch cdl, Object returnValue) {
             this.cdl = cdl;
             this.returnValue = returnValue;
         }
@@ -587,6 +622,18 @@ public class GatewayProxyFactoryTest {
             cdl.countDown();
             ((CommandCallback) invocation.getArguments()[1]).onSuccess(returnValue);
             return null;
+        }
+    }
+
+    public static class StringCommandCallback implements CommandCallback<String> {
+
+        @Override
+        public void onSuccess(String result) {
+            System.out.println("YAYYYYYYYYYYYYYY");
+        }
+
+        @Override
+        public void onFailure(Throwable cause) {
         }
     }
 

@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -46,6 +47,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
     private CommandBus commandBus;
     private RetryScheduler retryScheduler;
     private List<CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
+    private List<CommandCallback<?>> commandCallbacks = Collections.emptyList();
     private T gateway;
     private Class<T> gatewayInterface;
 
@@ -70,8 +72,11 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
         if (commandBus == null) {
             throw new AxonConfigurationException("CommandBus may not be null");
         }
-        gateway = (T) new GatewayProxyFactory(commandBus, retryScheduler, dispatchInterceptors)
-                .createGateway(gatewayInterface == null ? CommandGateway.class : gatewayInterface);
+        final GatewayProxyFactory factory = new GatewayProxyFactory(commandBus, retryScheduler, dispatchInterceptors);
+        for (CommandCallback<?> commandCallback : commandCallbacks) {
+            factory.registerCommandCallback(commandCallback);
+        }
+        gateway = (T) factory.createGateway(gatewayInterface == null ? CommandGateway.class : gatewayInterface);
     }
 
     /**
@@ -100,7 +105,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
      *
      * @param gatewayInterface The interface describing the gateway
      * @throws IllegalArgumentException if the given <code>gatewayInterface</code> is <code>null</code> or not an
-     *                                  interface.
+     * interface.
      */
     public void setGatewayInterface(Class<T> gatewayInterface) {
         Assert.notNull(gatewayInterface, "The given gateway interface may not be null");
@@ -134,5 +139,19 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
      */
     public void setCommandDispatchInterceptors(List<CommandDispatchInterceptor> commandDispatchInterceptors) {
         this.dispatchInterceptors = commandDispatchInterceptors;
+    }
+
+    /**
+     * Registers the <code>commandCallbacks</code>, which are invoked for each sent command, unless Axon is able to detect
+     * that the result of the command does not match the type accepted by that callback.
+     * <p/>
+     * Axon will check the signature of the onSuccess() method and only invoke the callback if the actual result of the
+     * command is an instance of that type. If Axon is unable to detect the type, the callback is always invoked,
+     * potentially causing {@link java.lang.ClassCastException}.
+     *
+     * @param commandCallbacks The callbacks to register
+     */
+    public void setCommandCallbacks(List<CommandCallback<?>> commandCallbacks) {
+        this.commandCallbacks = commandCallbacks;
     }
 }
