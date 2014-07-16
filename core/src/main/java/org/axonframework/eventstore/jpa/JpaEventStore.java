@@ -18,6 +18,7 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -86,7 +87,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     private int batchSize = DEFAULT_BATCH_SIZE;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
     private int maxSnapshotsArchived = DEFAULT_MAX_SNAPSHOTS_ARCHIVED;
-    private org.axonframework.common.jdbc.PersistenceExceptionResolver persistenceExceptionResolver;
+    private PersistenceExceptionResolver persistenceExceptionResolver;
 
     /**
      * Initialize a JpaEventStore using an {@link org.axonframework.serializer.xml.XStreamSerializer}, which
@@ -199,12 +200,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
-                            ex.getMessage() );
+                            ex.getMessage());
             } catch (LinkageError error) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             error.getClass().getName(),
-                            error.getMessage() );
+                            error.getMessage());
             }
         }
 
@@ -251,11 +252,25 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
         SerializedObject<byte[]> serializedPayload = serializer.serializePayload(snapshotEvent, byte[].class);
         SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(snapshotEvent, byte[].class);
-        eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData, entityManager);
+        try {
+            eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData, entityManager);
+            if (maxSnapshotsArchived > 0) {
+                eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived,
+                                               entityManagerProvider.getEntityManager());
+            }
 
-        if (maxSnapshotsArchived > 0) {
-            eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived,
-                                           entityManagerProvider.getEntityManager());
+            entityManager.flush();
+        } catch (RuntimeException exception) {
+            if (snapshotEvent != null
+                    && persistenceExceptionResolver != null
+                    && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
+                throw new ConcurrencyException(
+                        String.format("A snapshot for aggregate [%s] at sequence: [%s] was already inserted",
+                                      snapshotEvent.getAggregateIdentifier(),
+                                      snapshotEvent.getSequenceNumber()),
+                        exception);
+            }
+            throw exception;
         }
     }
 
@@ -293,7 +308,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * Registers the data source that allows the EventStore to detect the database type and define the error codes that
      * represent concurrent access failures.
      * <p/>
-     * Should not be used in combination with {@link #setPersistenceExceptionResolver(org.axonframework.common.jdbc.PersistenceExceptionResolver)},
+     * Should not be used in combination with {@link #setPersistenceExceptionResolver(PersistenceExceptionResolver)},
      * but rather as a shorthand alternative for most common database types.
      *
      * @param dataSource A data source providing access to the backing database
@@ -311,8 +326,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * @param persistenceExceptionResolver the persistenceExceptionResolver that will help detect concurrency
      *                                     exceptions
      */
-    public void setPersistenceExceptionResolver(
-            org.axonframework.common.jdbc.PersistenceExceptionResolver persistenceExceptionResolver) {
+    public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
         this.persistenceExceptionResolver = persistenceExceptionResolver;
     }
 
@@ -346,6 +360,14 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      */
     public void setMaxSnapshotsArchived(int maxSnapshotsArchived) {
         this.maxSnapshotsArchived = maxSnapshotsArchived;
+    }
+
+    private static class NoOpPersistenceExceptionResolver implements PersistenceExceptionResolver {
+
+        @Override
+        public boolean isDuplicateKeyViolation(Exception exception) {
+            return false;
+        }
     }
 
     private final class CursorBackedDomainEventStream implements DomainEventStream, Closeable {

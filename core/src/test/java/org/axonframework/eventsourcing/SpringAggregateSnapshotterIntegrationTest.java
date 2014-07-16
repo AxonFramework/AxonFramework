@@ -17,14 +17,26 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventstore.EventStore;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -39,6 +51,13 @@ public class SpringAggregateSnapshotterIntegrationTest {
     @Qualifier("inThreadsnapshotter")
     private SpringAggregateSnapshotter snapshotter;
 
+    @Autowired
+    @Qualifier("eventStore")
+    private EventStore eventStore;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     @SuppressWarnings({"unchecked"})
     @Test
     public void testSnapshotterKnowsAllFactories() throws NoSuchFieldException {
@@ -46,5 +65,26 @@ public class SpringAggregateSnapshotterIntegrationTest {
                 .getFieldValue(AggregateSnapshotter.class.getDeclaredField("aggregateFactories"), snapshotter);
 
         assertFalse("No snapshotters found", snapshotters.isEmpty());
+    }
+
+    @Test
+    public void testDuplicateSnapshotIsIgnored() throws Exception {
+        final ExecutorService executor = Executors.newFixedThreadPool(2);
+        snapshotter.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
+        new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                eventStore.appendEvents("StubAggregate", new SimpleDomainEventStream(new GenericDomainEventMessage("id1", 0, "Payload1"),
+                                                                                     new GenericDomainEventMessage("id1", 1, "Payload2")));
+            }
+        });
+        try {
+            snapshotter.setExecutor(executor);
+            snapshotter.scheduleSnapshot("StubAggregate", "id1");
+            snapshotter.scheduleSnapshot("StubAggregate", "id1");
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination(1, TimeUnit.MINUTES);
+        }
     }
 }

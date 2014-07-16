@@ -191,7 +191,12 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         final DBObject dbObject = storageStrategy.createDocuments(type, eventSerializer,
                                                                   Collections.singletonList(snapshotEvent))[0];
-        mongoTemplate.snapshotEventCollection().insert(dbObject);
+        try {
+            mongoTemplate.snapshotEventCollection().insert(dbObject);
+        } catch (MongoException.DuplicateKey e) {
+            throw new ConcurrencyException("Trying to insert a SnapshotEvent with aggregate identifier and sequence "
+                                                   + "number that is already present in the Event Store", e);
+        }
         if (logger.isDebugEnabled()) {
             logger.debug("snapshot event of type {} appended.");
         }

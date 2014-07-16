@@ -284,6 +284,17 @@ public class MongoEventStoreTest {
         assertEquals(2, domainEvents.size());
     }
 
+    @Test
+    public void testInsertDuplicateSnapshot() throws Exception {
+        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+        try {
+            testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+            fail("Expected concurrency exception");
+        } catch (ConcurrencyException e) {
+            assertTrue(e.getMessage().contains("Snapshot"));
+        }
+    }
+
     @DirtiesContext
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {

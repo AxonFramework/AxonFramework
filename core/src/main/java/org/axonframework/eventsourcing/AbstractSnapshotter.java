@@ -192,13 +192,13 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             try {
                 snapshotterTask.run();
             } catch (ConcurrencyException e) {
-                logger.info("Failed to insert a snapshot. A snapshot entry already exists.");
+                logger.info("An up-to-date snapshot entry already exists, ignoring this attempts.");
             } catch (RuntimeException e) {
                 if (logger.isDebugEnabled()) {
                     logger.warn("An attempt to create and store a snapshot resulted in an exception:", e);
                 } else {
                     logger.warn("An attempt to create and store a snapshot resulted in an exception. "
-                                        + "Exception summary: {}", e);
+                                        + "Exception summary: {}", e.getMessage());
                 }
             }
         }

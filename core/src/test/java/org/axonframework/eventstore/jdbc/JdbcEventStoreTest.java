@@ -277,6 +277,19 @@ public class JdbcEventStoreTest {
         assertEquals(2, domainEvents.size());
     }
 
+    @Transactional
+    @Test
+    public void testInsertDuplicateSnapshot() throws Exception {
+        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+        try {
+            testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+            fail("Expected concurrency exception");
+        } catch (ConcurrencyException e) {
+            assertTrue(e.getMessage().contains("snapshot"));
+        }
+    }
+
+
     @Test(expected = EventStreamNotFoundException.class)
     @Transactional
     public void testLoadNonExistent() {

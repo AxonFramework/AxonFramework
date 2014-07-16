@@ -242,8 +242,21 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
         SerializedObject<byte[]> serializedPayload = serializer.serializePayload(snapshotEvent, byte[].class);
         SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(snapshotEvent, byte[].class);
-        eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData);
-
+        try {
+            eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData);
+        } catch (RuntimeException exception) {
+            if (persistenceExceptionResolver != null
+                    && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
+                //noinspection ConstantConditions
+                throw new ConcurrencyException(
+                        String.format("A snapshot for aggregate [%s] at sequence: [%s] was already inserted",
+                                      snapshotEvent.getAggregateIdentifier(),
+                                      snapshotEvent.getSequenceNumber()),
+                        exception
+                );
+            }
+            throw exception;
+        }
         if (maxSnapshotsArchived > 0) {
             eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived);
         }
