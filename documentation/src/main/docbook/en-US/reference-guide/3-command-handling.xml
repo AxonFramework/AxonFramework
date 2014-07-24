@@ -214,9 +214,9 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
     <sect1 xml:id="command-bus">
         <title>The Command Bus</title>
         <para>The Command Bus is the mechanism that dispatches commands to their respective Command
-            Handler. Commands are always sent to only one (and exactly one) command handler. If no
-            command handler is available for a dispatched command, an exception
-                (<code>NoHandlerForCommandException</code>) is thrown. Subscribing multiple command
+            Handlers. Each Command is always sent to the exactly one command handler. If no
+            command handler is available for the dispatched command, an
+            <code>NoHandlerForCommandException</code> exception is thrown. Subscribing multiple command
             handlers to the same command type will result in subscriptions replacing each other. In
             that case, the last subscription wins. </para>
         <sect2>
@@ -249,26 +249,26 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                 dispatches them. After a command is processed, the modified aggregate(s) are saved
                 and generated events are published in that same thread. In most scenario's, such as
                 web applications, this implementation will suit your needs. </para>
-            <para>The SimpleCommandBus allows interceptors to be configured.
+            <para>The <code>SimpleCommandBus</code> allows interceptors to be configured.
                     <code>CommandDispatchInterceptor</code>s are invoked when a command is
                 dispatched on the Command Bus. The <code>CommandHandlerInterceptor</code>s are
                 invoked before the actual command handler method is, allowing you to do modify or
                 block the command. See <xref linkend="command-handler-interceptors"/> for more
                 information. </para>
-            <para>The SimpleCommandBus maintains a Unit of Work for each command published. This
-                Unit of Work is created by a factory: the UnitOfWorkFactory. To suit any specific
-                needs your application might have, you can supply your own factory to change the
+            <para>The <code>SimpleCommandBus</code> maintains a Unit of Work for each command published. This
+                Unit of Work is created by a factory implementing the <code>UnitOfWorkFactory</code> interface.
+                To suit any specific needs your application might have, you can supply your own factory to change the
                 Unit of Work implementation used. </para>
             <para>Since all command processing is done in the same thread, this implementation is
                 limited to the JVM's boundaries. The performance of this implementation is good, but
                 not extraordinary. To cross JVM boundaries, or to get the most out of your CPU
-                cycles, check out the other CommandBus implementations. </para>
+                cycles, check out the other <code>CommandBus</code> implementations. </para>
         </sect2>
         <sect2>
             <title>DisruptorCommandBus</title>
-            <para>The SimpleCommandBus has reasonable performance characteristics, especially when
+            <para>The <code>SimpleCommandBus</code> has reasonable performance characteristics, especially when
                 you've gone through the performance tips in <xref linkend="performance-tuning"/>.
-                The fact that the SimpleCommandBus needs locking to prevent multiple threads from
+                The fact that the <code>SimpleCommandBus</code> needs locking to prevent multiple threads from
                 concurrently accessing the same aggregate causes processing overhead and lock
                 contention. </para>
             <para>The <code>DisruptorCommandBus</code> takes a different approach to multithreaded
@@ -285,9 +285,9 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                 changing an aggregate's state. The second group will store and publish the events to
                 the Event Store and Event Bus. </para>
             <para>While the <code>DisruptorCommandBus</code> easily outperforms the
-                    <code>SimpleCommandBus</code> by a factor 4(!), there are a few limitations: <itemizedlist>
+                    <code>SimpleCommandBus</code> by a factor of 4(!), there are a few limitations: <itemizedlist>
                     <listitem>
-                        <para>The DisruptorCommandBus only supports Event Sourced Aggregates. This
+                        <para>The <code>DisruptorCommandBus</code> only supports Event Sourced Aggregates. This
                             Command Bus also acts as a Repository for the aggregates processed by the
                             Disruptor. To get a reference to the Repository, use
                                 <code>createRepository(AggregateFactory)</code>.</para>
@@ -303,7 +303,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                     </listitem>
                     <listitem>
                         <para>Commands should generally not cause a failure that requires a rollback
-                            of the Unit of Work. When a rollback occurs, the DisruptorCommandBus
+                            of the Unit of Work. When a rollback occurs, the <code>DisruptorCommandBus</code>
                             cannot guarantee that Commands are processed in the order they were
                             dispatched. Furthermore, it requires a retry of a number of other
                             commands, causing unnecessary computations. </para>
@@ -361,11 +361,11 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                         </listitem>
                         <listitem>
                             <para>Executor: Sets the Executor that provides the Threads for the
-                                DisruptorCommandBus. This executor must be able to provide at least
-                                4 threads. 3 threads are claimed by the processing components of the
-                                DisruptorCommandBus. Extra threads are used to invoke callbacks and
+                                <code>DisruptorCommandBus</code>. This executor must be able to provide at least
+                                4 threads. 3 of the threads are claimed by the processing components of the
+                                <code>DisruptorCommandBus</code>. Extra threads are used to invoke callbacks and
                                 to schedule retries in case an Aggregate's state is detected to be
-                                corrupt. Defaults to a CachedThreadPool that provides threads from a
+                                corrupt. Defaults to a <code>CachedThreadPool</code> that provides threads from a
                                 thread group called "DisruptorCommandBus".</para>
                         </listitem>
                         <listitem>
@@ -429,8 +429,8 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                         </listitem>
                         <listitem>
                             <para>Serializer: The serializer to perform pre-serialization with. When
-                                a serializer is configured, the DisruptorCommandBus will wrap all
-                                generated events in a SerializationAware message. The serialized
+                                a serializer is configured, the <code>DisruptorCommandBus</code> will wrap all
+                                generated events in a <code>SerializationAware</code> message. The serialized
                                 form of the payload and meta data is attached before they are
                                 published to the Event Store or Event Bus. This can drastically
                                 improve performance when the same serializer is used to store and
@@ -584,7 +584,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                 <title>Detecting ParameterResolverFactories in an OSGi container</title>
                 <para>At this moment, OSGi support is limited to the fact that the required headers
                     are mentioned in the manifest file. The automatic detection of
-                    ParameterResolverFactory instances works in OSGi, but due to classloader
+                    <code>ParameterResolverFactory</code> instances works in OSGi, but due to classloader
                     limitations, it might be necessary to copy the contents of the
                         <code>/META-INF/service/org.axonframework.common.annotation.ParameterResolverFactory</code>
                     file to the OSGi bundle containing the classes to resolve parameters for (i.e.
