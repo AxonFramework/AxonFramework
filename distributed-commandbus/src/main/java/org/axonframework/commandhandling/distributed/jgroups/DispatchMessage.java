@@ -108,6 +108,15 @@ public class DispatchMessage implements Streamable, Externalizable {
         return new GenericCommandMessage<Object>(commandIdentifier, commandName, payload, metaData);
     }
 
+    /**
+     * Returns the identifier of the command carried by this instance.
+     *
+     * @return the identifier of the command carried by this instance
+     */
+    public String getCommandIdentifier() {
+        return commandIdentifier;
+    }
+
     @Override
     public void writeTo(DataOutput out) throws IOException {
         out.writeUTF(commandName);

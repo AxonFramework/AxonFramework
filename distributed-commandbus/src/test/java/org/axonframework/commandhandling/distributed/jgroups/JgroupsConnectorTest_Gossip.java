@@ -20,13 +20,23 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
 import org.junit.*;
 
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,6 +57,7 @@ public class JgroupsConnectorTest_Gossip {
     private CommandBus mockCommandBus2;
     private GossipRouter gossipRouter;
     private String clusterName;
+    private XStreamSerializer serializer;
 
     @Before
     public void setUp() throws Exception {
@@ -55,8 +66,9 @@ public class JgroupsConnectorTest_Gossip {
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, new XStreamSerializer());
-        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, new XStreamSerializer());
+        serializer = spy(new XStreamSerializer());
+        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, serializer);
+        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, serializer);
         gossipRouter = new GossipRouter(12001, "127.0.0.1");
     }
 
@@ -86,6 +98,40 @@ public class JgroupsConnectorTest_Gossip {
 
         // now, they should detect eachother and start syncing their state
         waitForConnectorSync(60);
+    }
+
+    @Test(timeout = 30000)
+    public void testDistributedCommandBusInvokesCallbackOnSerializationFailure() throws Exception {
+        gossipRouter.start();
+
+        final AtomicInteger counter2 = new AtomicInteger(0);
+        connector2.subscribe(String.class.getName(), new CountingCommandHandler<Object>(counter2));
+        connector1.connect(20);
+        connector2.connect(20);
+        assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
+        assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
+
+        DistributedCommandBus bus1 = new DistributedCommandBus(connector1, new AnnotationRoutingStrategy(
+                UnresolvedRoutingKeyPolicy.RANDOM_KEY));
+        CommandGateway gateway1 = new DefaultCommandGateway(bus1);
+
+        doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat(new TypeSafeMatcher<SerializedObject<byte[]>>() {
+            @Override
+            protected boolean matchesSafely(SerializedObject<byte[]> item) {
+                return Arrays.equals("<string>Try this!</string>".getBytes(Charset.forName("UTF-8")), item.getData());
+            }
+
+            @Override
+            public void describeTo(Description description) {
+            }
+        }));
+
+        try {
+            gateway1.sendAndWait("Try this!");
+            fail("Expected exception");
+        } catch (RuntimeException e) {
+            assertEquals("Mock", e.getMessage());
+        }
     }
 
     private void waitForConnectorSync(int timeoutInSeconds) throws InterruptedException {

@@ -340,11 +340,27 @@ public class JGroupsConnector implements CommandBusConnector {
         }
 
         private void processDispatchMessage(final Message msg, final DispatchMessage message) {
-            final CommandMessage commandMessage = message.getCommandMessage(serializer);
-            if (message.isExpectReply()) {
-                localSegment.dispatch(commandMessage, new ReplyingCallback(msg, commandMessage));
-            } else {
-                localSegment.dispatch(commandMessage);
+            try {
+                final CommandMessage commandMessage = message.getCommandMessage(serializer);
+                if (message.isExpectReply()) {
+                    localSegment.dispatch(commandMessage, new ReplyingCallback(msg, commandMessage));
+                } else {
+                    localSegment.dispatch(commandMessage);
+                }
+            } catch (RuntimeException e) {
+                if (message.isExpectReply()) {
+                    final String commandIdentifier = message.getCommandIdentifier();
+                    try {
+                        channel.send(msg.getSrc(), new ReplyMessage(commandIdentifier, null, e, serializer));
+                    } catch (Exception errorInReply) {
+                        logger.error("Unable to notify sender of failure to read message with id '{}'."
+                                             + "description of reading failure ", commandIdentifier, e);
+                        logger.error("Failed to notify sender of failed message with id '{}', reason: ",
+                                     commandIdentifier, errorInReply);
+                    }
+                } else {
+                    throw e;
+                }
             }
         }
 
