@@ -30,7 +30,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.0
  */
-public class PayloadsMatcher extends BaseMatcher<List<?>> {
+public class PayloadsMatcher extends BaseMatcher<List<? extends Message<?>>> {
     private final Matcher<? extends Iterable<?>> matcher;
 
     /**
