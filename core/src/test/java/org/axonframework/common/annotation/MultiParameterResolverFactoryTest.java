@@ -16,6 +16,7 @@
 
 package org.axonframework.common.annotation;
 
+import org.axonframework.common.Priority;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.Message;
@@ -23,6 +24,7 @@ import org.junit.*;
 import org.mockito.*;
 
 import java.lang.annotation.Annotation;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -92,4 +94,36 @@ public class MultiParameterResolverFactoryTest {
 
         verify(mockResolver1, never()).resolveParameterValue(any(Message.class));
     }
+
+    @Test
+    public void testNestedParameterResolversAreOrdered() {
+        final LowPrioParameterResolverFactory lowPrio = new LowPrioParameterResolverFactory();
+        final HighPrioParameterResolverFactory highPrio = new HighPrioParameterResolverFactory();
+        testSubject = MultiParameterResolverFactory.ordered(mockFactory1,
+                                                        new MultiParameterResolverFactory(lowPrio, mockFactory2),
+                                                        new MultiParameterResolverFactory(highPrio));
+
+        assertEquals(Arrays.asList(highPrio, mockFactory1, mockFactory2, lowPrio), testSubject.getDelegates());
+    }
+
+    @Priority(Priority.LOW)
+    private static class LowPrioParameterResolverFactory extends AbstractNoopParameterResolverFactory {
+
+    }
+
+    @Priority(Priority.HIGH)
+    private static class HighPrioParameterResolverFactory extends AbstractNoopParameterResolverFactory {
+
+    }
+
+    private static class AbstractNoopParameterResolverFactory implements ParameterResolverFactory {
+
+        @Override
+        public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                                Annotation[] parameterAnnotations) {
+            return null;
+        }
+    }
+
+
 }

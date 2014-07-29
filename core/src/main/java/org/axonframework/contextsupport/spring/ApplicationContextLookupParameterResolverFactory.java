@@ -18,7 +18,6 @@ package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.annotation.PriorityAnnotationComparator;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -26,9 +25,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * FactoryBean implementation that create a ParameterResolverFactory, which auto-detects beans implementing
@@ -76,12 +73,7 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Map<String, ParameterResolverFactory> factoriesFromContext = applicationContext.getBeansOfType(
-                ParameterResolverFactory.class);
-        factories.addAll(factoriesFromContext.values());
-
-        Collections.sort(factories, PriorityAnnotationComparator.getInstance());
-
-        parameterResolverFactory = new MultiParameterResolverFactory(factories);
+        factories.addAll(applicationContext.getBeansOfType(ParameterResolverFactory.class).values());
+        parameterResolverFactory = MultiParameterResolverFactory.ordered(factories);
     }
 }

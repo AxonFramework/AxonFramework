@@ -17,6 +17,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.annotation.SpringBeanParameterResolverFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -67,19 +68,19 @@ public final class SpringContextParameterResolverFactoryBuilder {
     }
 
     private static class ClasspathParameterResolverFactoryBean implements BeanClassLoaderAware, InitializingBean,
-            FactoryBean<ClasspathParameterResolverFactory> {
+            FactoryBean<ParameterResolverFactory> {
 
         private ClassLoader classLoader;
-        private ClasspathParameterResolverFactory factory;
+        private ParameterResolverFactory factory;
 
         @Override
-        public ClasspathParameterResolverFactory getObject() throws Exception {
+        public ParameterResolverFactory getObject() throws Exception {
             return factory;
         }
 
         @Override
         public Class<?> getObjectType() {
-            return ClasspathParameterResolverFactory.class;
+            return ParameterResolverFactory.class;
         }
 
         @Override

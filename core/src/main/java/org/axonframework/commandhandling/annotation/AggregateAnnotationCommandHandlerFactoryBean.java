@@ -70,7 +70,7 @@ public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoo
         if (parameterResolverFactory == null) {
             SpringBeanParameterResolverFactory springBeanParameterResolverFactory = new SpringBeanParameterResolverFactory();
             springBeanParameterResolverFactory.setApplicationContext(applicationContext);
-            parameterResolverFactory = new MultiParameterResolverFactory(
+            parameterResolverFactory = MultiParameterResolverFactory.ordered(
                     ClasspathParameterResolverFactory.forClass(aggregateType),
                     springBeanParameterResolverFactory);
         }

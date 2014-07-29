@@ -24,7 +24,6 @@ import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.unitofwork.UnitOfWork;
 
@@ -81,8 +80,7 @@ public class AnnotationCommandHandlerAdapter
     @Deprecated
     public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
         Assert.notNull(target, "target may not be null");
-        ParameterResolverFactory factory = new MultiParameterResolverFactory(
-                ClasspathParameterResolverFactory.forClass(target.getClass()));
+        ParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(target.getClass());
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
                                                                                             CommandHandler.class,
                                                                                             factory,
@@ -101,9 +99,7 @@ public class AnnotationCommandHandlerAdapter
      * @param annotatedCommandHandler The object containing the @CommandHandler annotated methods
      */
     public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler) {
-        this(annotatedCommandHandler,
-             new MultiParameterResolverFactory(ClasspathParameterResolverFactory.forClass(
-                     annotatedCommandHandler.getClass())));
+        this(annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()));
     }
 
     /**
