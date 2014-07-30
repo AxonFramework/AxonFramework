@@ -56,6 +56,7 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
     private static final String ENTITY_MANAGER_PROVIDER = "entity-manager-provider";
     private static final String UPCASTERS_ELEMENT = "upcasters";
     private static final String EVENT_ENTRY_STORE_ATTRIBUTE = "event-entry-store-ref";
+    private static final String EVENT_ENTRY_FACTORY_ATTRIBUTE = "event-entry-factory-ref";
 
     /**
      * {@inheritDoc}
@@ -88,6 +89,15 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         if (element.hasAttribute(EVENT_ENTRY_STORE_ATTRIBUTE)) {
             Object eventEntryStore = new RuntimeBeanReference(element.getAttribute(EVENT_ENTRY_STORE_ATTRIBUTE));
             builder.addConstructorArgValue(eventEntryStore);
+            assertNoCombinationOf(element, parserContext, EVENT_ENTRY_FACTORY_ATTRIBUTE, EVENT_ENTRY_STORE_ATTRIBUTE);
+            assertNoCombinationOf(element, parserContext, FORCE_UTC_TIMESTAMP_ATTRIBUTE, EVENT_ENTRY_STORE_ATTRIBUTE);
+        } else if (element.hasAttribute(EVENT_ENTRY_FACTORY_ATTRIBUTE)) {
+            String eventEntryFactory = element.getAttribute(EVENT_ENTRY_FACTORY_ATTRIBUTE);
+            builder.addConstructorArgValue(
+                    BeanDefinitionBuilder.genericBeanDefinition(DefaultEventEntryStore.class)
+                                         .addConstructorArgReference(eventEntryFactory)
+                                         .getBeanDefinition());
+            assertNoCombinationOf(element, parserContext, FORCE_UTC_TIMESTAMP_ATTRIBUTE, EVENT_ENTRY_FACTORY_ATTRIBUTE);
         } else if (element.hasAttribute(FORCE_UTC_TIMESTAMP_ATTRIBUTE)) {
             builder.addConstructorArgValue(
                     BeanDefinitionBuilder.genericBeanDefinition(DefaultEventEntryStore.class)
@@ -112,6 +122,18 @@ public class JpaEventStoreBeanDefinitionParser extends AbstractSingleBeanDefinit
         Element upcasters = DomUtils.getChildElementByTagName(element, UPCASTERS_ELEMENT);
         if (upcasters != null) {
             builder.addPropertyValue("upcasterChain", upcasterChainParser.parse(upcasters, parserContext, serializer));
+        }
+    }
+
+    private void assertNoCombinationOf(Element element, ParserContext parserContext, String overriddenAttribute,
+                                       String overridingAttribute) {
+        if (element.hasAttribute(overridingAttribute) && element.hasAttribute(overriddenAttribute)) {
+            parserContext.getReaderContext().warning("On a jpa-event-store, the attributes " + overriddenAttribute
+                                                             + " and " + overridingAttribute
+                                                             + " should not both be defined. The "
+                                                             + overriddenAttribute
+                                                             + " attribute is ignored.",
+                                                     element);
         }
     }
 

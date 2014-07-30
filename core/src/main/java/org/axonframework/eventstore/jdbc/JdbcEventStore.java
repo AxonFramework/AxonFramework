@@ -83,7 +83,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
     private static final int DEFAULT_MAX_SNAPSHOTS_ARCHIVED = 1;
 
     private final MessageSerializer serializer;
-    private final EventEntryStore eventEntryStore;
+    private final EventEntryStore<?> eventEntryStore;
     private final JdbcCriteriaBuilder criteriaBuilder = new JdbcCriteriaBuilder();
 
     private int batchSize = DEFAULT_BATCH_SIZE;
@@ -145,6 +145,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void appendEvents(String type, DomainEventStream events) {
         DomainEventMessage event = null;
@@ -152,8 +153,9 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
             while (events.hasNext()) {
                 event = events.next();
                 validateIdentifier(event.getAggregateIdentifier().getClass());
-                SerializedObject<byte[]> serializedPayload = serializer.serializePayload(event, byte[].class);
-                SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(event, byte[].class);
+                final Class dataType = eventEntryStore.getDataType();
+                SerializedObject serializedPayload = serializer.serializePayload(event, dataType);
+                SerializedObject serializedMetaData = serializer.serializeMetaData(event, dataType);
                 eventEntryStore.persistEvent(type, event, serializedPayload, serializedMetaData);
             }
         } catch (RuntimeException exception) {
@@ -236,12 +238,14 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
      * Upon appending a snapshot, this particular EventStore implementation also prunes snapshots which are considered
      * redundant because they fall outside of the range of maximum snapshots to archive.
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         // Persist snapshot before pruning redundant archived ones, in order to prevent snapshot misses when reloading
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
-        SerializedObject<byte[]> serializedPayload = serializer.serializePayload(snapshotEvent, byte[].class);
-        SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(snapshotEvent, byte[].class);
+        final Class<?> dataType = eventEntryStore.getDataType();
+        SerializedObject serializedPayload = serializer.serializePayload(snapshotEvent, dataType);
+        SerializedObject serializedMetaData = serializer.serializeMetaData(snapshotEvent, dataType);
         try {
             eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData);
         } catch (RuntimeException exception) {

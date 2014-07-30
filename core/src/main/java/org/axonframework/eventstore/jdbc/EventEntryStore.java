@@ -26,11 +26,12 @@ import java.util.List;
 /**
  * Interface describing the mechanism that stores Events into the backing data store.
  *
+ * @param <T> The type used to store serialized objects
  * @author Allard Buijze
  * @author Kristian Rosenvold
  * @since 2.2
  */
-public interface EventEntryStore {
+public interface EventEntryStore<T> {
 
     /**
      * Stores the given <code>event</code> (serialized as <code>serializedPayload</code> and
@@ -41,8 +42,8 @@ public interface EventEntryStore {
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized MetaData of the event
      */
-    void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,
-                      SerializedObject serializedMetaData);
+    void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject<T> serializedPayload,
+                      SerializedObject<T> serializedMetaData);
 
     /**
      * Load the last known snapshot event for aggregate of given <code>type</code> with given <code>identifier</code>.
@@ -51,7 +52,7 @@ public interface EventEntryStore {
      * @param identifier    The identifier of the aggregate to load the snapshot for
      * @return the serialized representation of the last known snapshot event
      */
-    SerializedDomainEventData loadLastSnapshotEvent(String aggregateType, Object identifier);
+    SerializedDomainEventData<T> loadLastSnapshotEvent(String aggregateType, Object identifier);
 
     /**
      * Creates an iterator that iterates through the events for an aggregate of given <code>type</code> and given
@@ -66,8 +67,8 @@ public interface EventEntryStore {
      * @param batchSize           The number of entries to include in the batch (if available)
      * @return a List of serialized representations of Events included in this batch
      */
-    Iterator<? extends SerializedDomainEventData> fetchAggregateStream(String aggregateType, Object identifier,
-                                                                       long firstSequenceNumber, int batchSize);
+    Iterator<? extends SerializedDomainEventData<T>> fetchAggregateStream(String aggregateType, Object identifier,
+                                                                          long firstSequenceNumber, int batchSize);
 
     /**
      * Creates an iterator that iterates through the Events that conform to the given sql <code>whereClause</code>.
@@ -86,8 +87,8 @@ public interface EventEntryStore {
      * @param batchSize   The total number of events to return in this batch
      * @return a List of serialized representations of Events included in this batch
      */
-    Iterator<? extends SerializedDomainEventData> fetchFiltered(String whereClause, List<Object> parameters,
-                                                                int batchSize);
+    Iterator<? extends SerializedDomainEventData<T>> fetchFiltered(String whereClause, List<Object> parameters,
+                                                                   int batchSize);
 
     /**
      * Removes old snapshots from the storage for an aggregate of given <code>type</code> that generated the given
@@ -110,6 +111,13 @@ public interface EventEntryStore {
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized MetaData of the event
      */
-    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent, SerializedObject serializedPayload,
-                         SerializedObject serializedMetaData);
+    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent, SerializedObject<T> serializedPayload,
+                         SerializedObject<T> serializedMetaData);
+
+    /**
+     * Returns the type used to store serialized payloads.
+     *
+     * @return the type used to store serialized payloads
+     */
+    Class<T> getDataType();
 }

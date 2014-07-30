@@ -17,18 +17,13 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.joda.time.DateTime;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
 
@@ -39,23 +34,8 @@ import javax.persistence.MappedSuperclass;
  * @since 0.5
  */
 @MappedSuperclass
-@IdClass(AbstractEventEntry.PK.class)
-public abstract class AbstractEventEntry implements SerializedDomainEventData {
+public abstract class AbstractEventEntry extends AbstractEventEntryData<byte[]> {
 
-    @Id
-    private String type;
-    @Id
-    private String aggregateIdentifier;
-    @Id
-    private long sequenceNumber;
-    @Column(nullable = false, unique = true)
-    private String eventIdentifier;
-    @Basic(optional = false)
-    private String timeStamp;
-    @Basic(optional = false)
-    private String payloadType;
-    @Basic
-    private String payloadRevision;
     @Basic
     @Lob
     private byte[] metaData;
@@ -87,15 +67,14 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
      */
     protected AbstractEventEntry(String type, DomainEventMessage event, DateTime timestamp,
                                  SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
-        this.eventIdentifier = event.getIdentifier();
-        this.type = type;
-        this.payloadType = payload.getType().getName();
-        this.payloadRevision = payload.getType().getRevision();
-        this.payload = payload.getData();
-        this.aggregateIdentifier = event.getAggregateIdentifier().toString();
-        this.sequenceNumber = event.getSequenceNumber();
+        super(event.getIdentifier(),
+              type,
+              event.getAggregateIdentifier().toString(),
+              event.getSequenceNumber(),
+              timestamp, payload.getType()
+        );
         this.metaData = Arrays.copyOf(metaData.getData(), metaData.getData().length);
-        this.timeStamp = timestamp.toString();
+        this.payload = payload.getData();
     }
 
     /**
@@ -104,53 +83,9 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
     protected AbstractEventEntry() {
     }
 
-    /**
-     * Returns the Aggregate Identifier of the associated event.
-     *
-     * @return the Aggregate Identifier of the associated event.
-     */
-    @Override
-    public Object getAggregateIdentifier() {
-        return aggregateIdentifier;
-    }
-
-    /**
-     * Returns the type identifier of the aggregate.
-     *
-     * @return the type identifier of the aggregate.
-     */
-    public String getType() {
-        return type;
-    }
-
-    /**
-     * Returns the sequence number of the associated event.
-     *
-     * @return the sequence number of the associated event.
-     */
-    @Override
-    public long getSequenceNumber() {
-        return sequenceNumber;
-    }
-
-    /**
-     * Returns the time stamp of the associated event.
-     *
-     * @return the time stamp of the associated event.
-     */
-    @Override
-    public DateTime getTimestamp() {
-        return new DateTime(timeStamp);
-    }
-
-    @Override
-    public String getEventIdentifier() {
-        return eventIdentifier;
-    }
-
     @Override
     public SerializedObject<byte[]> getPayload() {
-        return new SimpleSerializedObject<byte[]>(payload, byte[].class, payloadType, payloadRevision);
+        return new SimpleSerializedObject<byte[]>(payload, byte[].class, getPayloadType());
     }
 
     @Override
@@ -158,62 +93,5 @@ public abstract class AbstractEventEntry implements SerializedDomainEventData {
         return new SerializedMetaData<byte[]>(metaData, byte[].class);
     }
 
-    /**
-     * Primary key definition of the AbstractEventEntry class. Is used by JPA to support composite primary keys.
-     */
-    @SuppressWarnings("UnusedDeclaration")
-    public static class PK implements Serializable {
 
-        private static final long serialVersionUID = 9182347799552520594L;
-
-        private String aggregateIdentifier;
-        private String type;
-        private long sequenceNumber;
-
-        /**
-         * Constructor for JPA. Not to be used directly
-         */
-        public PK() {
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            PK pk = (PK) o;
-
-            if (sequenceNumber != pk.sequenceNumber) {
-                return false;
-            }
-            if (!aggregateIdentifier.equals(pk.aggregateIdentifier)) {
-                return false;
-            }
-            if (!type.equals(pk.type)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = aggregateIdentifier.hashCode();
-            result = 31 * result + type.hashCode();
-            result = 31 * result + (int) (sequenceNumber ^ (sequenceNumber >>> 32));
-            return result;
-        }
-
-        @Override
-        public String toString() {
-            return "PK{type='" + type + '\''
-                    + ", aggregateIdentifier='" + aggregateIdentifier + '\''
-                    + ", sequenceNumber=" + sequenceNumber
-                    + '}';
-        }
-    }
 }

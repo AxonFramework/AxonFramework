@@ -31,8 +31,9 @@ import java.sql.SQLException;
  * @author Kristian Rosenvold
  * @author Allard Buijze
  * @since 2.2
+ * @param <T> The data type used to store serialized objects
  */
-public interface EventSqlSchema {
+public interface EventSqlSchema<T> {
 
     /**
      * Creates the PreparedStatement for loading the last snapshot event for an aggregate with given
@@ -68,8 +69,8 @@ public interface EventSqlSchema {
     PreparedStatement sql_insertDomainEventEntry(Connection connection, String eventIdentifier,
                                                  String aggregateIdentifier, long sequenceNumber,
                                                  DateTime timestamp, String eventType, String eventRevision,
-                                                 byte[] eventPayload,
-                                                 byte[] eventMetaData,
+                                                 T eventPayload,
+                                                 T eventMetaData,
                                                  String aggregateType) throws SQLException;
 
     /**
@@ -92,8 +93,8 @@ public interface EventSqlSchema {
     PreparedStatement sql_insertSnapshotEventEntry(Connection connection, String eventIdentifier,
                                                    String aggregateIdentifier, long sequenceNumber,
                                                    DateTime timestamp, String eventType, String eventRevision,
-                                                   byte[] eventPayload,
-                                                   byte[] eventMetaData,
+                                                   T eventPayload,
+                                                   T eventMetaData,
                                                    String aggregateType) throws SQLException;
 
     /**
@@ -190,7 +191,7 @@ public interface EventSqlSchema {
      * @throws SQLException when an exception occurs while creating the prepared statement
      * @see org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData
      */
-    SerializedDomainEventData createSerializedDomainEventData(ResultSet resultSet) throws SQLException;
+    SerializedDomainEventData<T> createSerializedDomainEventData(ResultSet resultSet) throws SQLException;
 
     /**
      * Converts a {@link DateTime} to a data value suitable for the database scheme.
@@ -199,4 +200,11 @@ public interface EventSqlSchema {
      * @return data representing the date time suitable for the current SQL scheme
      */
     Object sql_dateTime(DateTime input);
+
+    /**
+     * Returns the type used to store serialized payloads.
+     *
+     * @return the type used to store serialized payloads
+     */
+    Class<T> getDataType();
 }

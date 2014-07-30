@@ -16,6 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
+import org.axonframework.eventstore.jpa.EventEntryFactory;
 import org.axonframework.eventstore.jpa.EventEntryStore;
 import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.serializer.Serializer;
@@ -26,6 +27,7 @@ import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanReference;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -74,13 +76,15 @@ public class JpaEventStoreBeanDefinitionParserTest {
         ValueHolder upcasterList = upcasterChainDefinition.getConstructorArgumentValues()
                                                           .getIndexedArgumentValue(1, List.class);
         BeanDefinition eventEntryStoreDefinition = (BeanDefinition) definition.getConstructorArgumentValues()
-                                                                              .getArgumentValue(2, EventEntryStore.class)
+                                                                              .getArgumentValue(2,
+                                                                                                EventEntryStore.class)
                                                                               .getValue();
         assertNotNull(upcasterList);
         assertEquals(1, ((List) upcasterList.getValue()).size());
         assertNotNull(converterFactory);
         assertEquals("converterFactory", ((RuntimeBeanReference) converterFactory.getValue()).getBeanName());
-        assertEquals("true", eventEntryStoreDefinition.getConstructorArgumentValues().getArgumentValue(0, Boolean.class).getValue());
+        assertEquals("true", eventEntryStoreDefinition.getConstructorArgumentValues().getArgumentValue(0, Boolean.class)
+                                                      .getValue());
         assertNotNull(beanFactory.getBean("eventStore2"));
     }
 
@@ -107,6 +111,23 @@ public class JpaEventStoreBeanDefinitionParserTest {
         assertNotNull("Event entry store reference is wrong", reference);
         RuntimeBeanReference beanReference = (RuntimeBeanReference) reference.getValue();
         assertEquals("Event entry store reference is wrong", "customEventEntryStore", beanReference.getBeanName());
+
+        assertNotNull(beanFactory.getBean("eventStoreWithCustomEventEntryStore"));
+    }
+
+    @Test
+    public void jpaEventStore_withCustomEventEntryFactory() {
+        BeanDefinition definition = beanFactory.getBeanDefinition("eventStoreWithCustomEventEntryFactory");
+
+        ValueHolder reference = definition.getConstructorArgumentValues().getArgumentValue(2, EventEntryStore.class);
+        assertNotNull("Event entry store reference is wrong", reference);
+        BeanDefinition eventEntryStore = (BeanDefinition) reference.getValue();
+        assertEquals(1, eventEntryStore.getConstructorArgumentValues().getArgumentCount());
+        final BeanReference beanReference = (BeanReference) eventEntryStore.getConstructorArgumentValues()
+                                                                                  .getIndexedArgumentValue(0,
+                                                                                          EventEntryFactory.class)
+                .getValue();
+        assertEquals("Event entry store reference is wrong", "customEventEntryFactory", beanReference.getBeanName());
 
         assertNotNull(beanFactory.getBean("eventStoreWithCustomEventEntryStore"));
     }

@@ -424,7 +424,8 @@ public class JdbcEventStoreTest {
     @Test
     @Transactional
     public void testCustomEventEntryStore() {
-        EventEntryStore eventEntryStore = mock(EventEntryStore.class);
+        EventEntryStore<String> eventEntryStore = mock(EventEntryStore.class);
+        when(eventEntryStore.getDataType()).thenReturn(String.class);
         testSubject = new JdbcEventStore(eventEntryStore);
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,

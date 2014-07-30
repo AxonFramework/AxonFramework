@@ -80,7 +80,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     private static final int DEFAULT_MAX_SNAPSHOTS_ARCHIVED = 1;
 
     private final MessageSerializer serializer;
-    private final EventEntryStore eventEntryStore;
+    private final EventEntryStore<?> eventEntryStore;
     private final JpaCriteriaBuilder criteriaBuilder = new JpaCriteriaBuilder();
     private final EntityManagerProvider entityManagerProvider;
 
@@ -150,6 +150,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void appendEvents(String type, DomainEventStream events) {
         DomainEventMessage event = null;
@@ -158,8 +159,8 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
             while (events.hasNext()) {
                 event = events.next();
                 validateIdentifier(event.getAggregateIdentifier().getClass());
-                SerializedObject<byte[]> serializedPayload = serializer.serializePayload(event, byte[].class);
-                SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(event, byte[].class);
+                SerializedObject serializedPayload = serializer.serializePayload(event, eventEntryStore.getDataType());
+                SerializedObject serializedMetaData = serializer.serializeMetaData(event, eventEntryStore.getDataType());
                 eventEntryStore.persistEvent(type, event, serializedPayload, serializedMetaData, entityManager);
             }
             entityManager.flush();
@@ -245,13 +246,15 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * Upon appending a snapshot, this particular EventStore implementation also prunes snapshots which are considered
      * redundant because they fall outside of the range of maximum snapshots to archive.
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         // Persist snapshot before pruning redundant archived ones, in order to prevent snapshot misses when reloading
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
-        SerializedObject<byte[]> serializedPayload = serializer.serializePayload(snapshotEvent, byte[].class);
-        SerializedObject<byte[]> serializedMetaData = serializer.serializeMetaData(snapshotEvent, byte[].class);
+        final Class<?> dataType = eventEntryStore.getDataType();
+        SerializedObject serializedPayload = serializer.serializePayload(snapshotEvent, dataType);
+        SerializedObject serializedMetaData = serializer.serializeMetaData(snapshotEvent, dataType);
         try {
             eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData, entityManager);
             if (maxSnapshotsArchived > 0) {
@@ -360,14 +363,6 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      */
     public void setMaxSnapshotsArchived(int maxSnapshotsArchived) {
         this.maxSnapshotsArchived = maxSnapshotsArchived;
-    }
-
-    private static class NoOpPersistenceExceptionResolver implements PersistenceExceptionResolver {
-
-        @Override
-        public boolean isDuplicateKeyViolation(Exception exception) {
-            return false;
-        }
     }
 
     private final class CursorBackedDomainEventStream implements DomainEventStream, Closeable {

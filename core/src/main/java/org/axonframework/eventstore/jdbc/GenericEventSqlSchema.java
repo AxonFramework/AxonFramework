@@ -27,19 +27,40 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
+ * @param <T> The type used when storing serialized data
  * @author Allard Buijze
  * @author Kristian Rosenvold
  * @since 2.2
  */
 @SuppressWarnings("JpaQueryApiInspection")
-public class GenericEventSqlSchema implements EventSqlSchema {
+public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     private static final DateTimeFormatter UTC_FORMATTER = ISODateTimeFormat.dateTime().withZoneUTC();
 
     private static final String STD_FIELDS = "eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, "
             + "payloadType, payloadRevision, payload, metaData";
 
+    private final Class<T> dataType;
+
     private boolean forceUtc = false;
+
+    /**
+     * Initialize a GenericEventSqlSchema using default settings. Serialized data is stored as byte arrays.
+     */
+    @SuppressWarnings("unchecked")
+    public GenericEventSqlSchema() {
+        this((Class<T>) byte[].class);
+    }
+
+    /**
+     * Initialize a GenericEventSqlSchema using default settings. Serialized data is stored using the given
+     * <code>dataType</code>.
+     *
+     * @param dataType The type to use when storing serialized data
+     */
+    public GenericEventSqlSchema(Class<T> dataType) {
+        this.dataType = dataType;
+    }
 
     /**
      * Control if date time in the SQL scheme
@@ -75,7 +96,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     public PreparedStatement sql_insertDomainEventEntry(Connection conn, String eventIdentifier,
                                                         String aggregateIdentifier, long sequenceNumber,
                                                         DateTime timestamp, String eventType, String eventRevision,
-                                                        byte[] eventPayload, byte[] eventMetaData, String aggregateType)
+                                                        T eventPayload, T eventMetaData, String aggregateType)
             throws SQLException {
         return doInsertEventEntry("DomainEventEntry",
                                   conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
@@ -87,7 +108,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     public PreparedStatement sql_insertSnapshotEventEntry(Connection conn, String eventIdentifier,
                                                           String aggregateIdentifier, long sequenceNumber,
                                                           DateTime timestamp, String eventType, String eventRevision,
-                                                          byte[] eventPayload, byte[] eventMetaData,
+                                                          T eventPayload, T eventMetaData,
                                                           String aggregateType) throws SQLException {
         return doInsertEventEntry("SnapshotEventEntry",
                                   conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
@@ -98,8 +119,8 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     /**
      * Creates a statement to insert an entry with given attributes in the given <code>tableName</code>. This method
      * is used by {@link #sql_insertDomainEventEntry(java.sql.Connection, String, String, long, org.joda.time.DateTime,
-     * String, String, byte[], byte[], String)} and {@link #sql_insertSnapshotEventEntry(java.sql.Connection, String,
-     * String, long, org.joda.time.DateTime, String, String, byte[], byte[], String)}, and provides an easier way to
+     * String, String, Object, Object, String)} and {@link #sql_insertSnapshotEventEntry(java.sql.Connection, String,
+     * String, long, org.joda.time.DateTime, String, String, Object, Object, String)}, and provides an easier way to
      * change to types of columns used.
      *
      * @param tableName           The name of the table to insert the entry into
@@ -121,7 +142,7 @@ public class GenericEventSqlSchema implements EventSqlSchema {
                                                    String aggregateIdentifier,
                                                    long sequenceNumber, DateTime timestamp, String eventType,
                                                    String eventRevision,
-                                                   byte[] eventPayload, byte[] eventMetaData, String aggregateType)
+                                                   T eventPayload, T eventMetaData, String aggregateType)
             throws SQLException {
         final String sql = "INSERT INTO " + tableName
                 + " (eventIdentifier, type, aggregateIdentifier, sequenceNumber, timeStamp, payloadType, "
@@ -134,8 +155,8 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         preparedStatement.setString(5, sql_dateTime(timestamp));
         preparedStatement.setString(6, eventType);
         preparedStatement.setString(7, eventRevision);
-        preparedStatement.setBytes(8, eventPayload);
-        preparedStatement.setBytes(9, eventMetaData);
+        preparedStatement.setObject(8, eventPayload);
+        preparedStatement.setObject(9, eventMetaData);
         return preparedStatement;
     }
 
@@ -213,6 +234,24 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         return resultSet.getString(columnIndex);
     }
 
+    /**
+     * Reads a serialized object from the given <code>resultSet</code> at given <code>columnIndex</code>. The resultSet
+     * is positioned in the row that contains the data. This method must not change the row in the result set.
+     *
+     * @param resultSet   The resultSet containing the stored data
+     * @param columnIndex The column containing the timestamp
+     * @return an object describing the serialized data
+     *
+     * @throws SQLException when an exception occurs reading from the resultSet.
+     */
+    @SuppressWarnings("unchecked")
+    protected T readPayload(ResultSet resultSet, int columnIndex) throws SQLException {
+        if (byte[].class.equals(dataType)) {
+            return (T) resultSet.getBytes(columnIndex);
+        }
+        return (T) resultSet.getObject(columnIndex);
+    }
+
     @Override
     public PreparedStatement sql_createSnapshotEventEntryTable(Connection connection) throws SQLException {
         final String sql = "    create table SnapshotEventEntry (\n" +
@@ -248,11 +287,12 @@ public class GenericEventSqlSchema implements EventSqlSchema {
     }
 
     @Override
-    public SerializedDomainEventData createSerializedDomainEventData(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedDomainEventData(resultSet.getString(1), resultSet.getString(2),
-                                                   resultSet.getLong(3), readTimeStamp(resultSet, 4),
-                                                   resultSet.getString(5), resultSet.getString(6),
-                                                   resultSet.getBytes(7), resultSet.getBytes(8));
+    public SerializedDomainEventData<T> createSerializedDomainEventData(ResultSet resultSet) throws SQLException {
+        return new SimpleSerializedDomainEventData<T>(resultSet.getString(1), resultSet.getString(2),
+                                                      resultSet.getLong(3), readTimeStamp(resultSet, 4),
+                                                      resultSet.getString(5), resultSet.getString(6),
+                                                      readPayload(resultSet, 7),
+                                                      readPayload(resultSet, 8));
     }
 
     @Override
@@ -262,5 +302,10 @@ public class GenericEventSqlSchema implements EventSqlSchema {
         } else {
             return input.toString();
         }
+    }
+
+    @Override
+    public Class<T> getDataType() {
+        return dataType;
     }
 }

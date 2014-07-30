@@ -27,17 +27,18 @@ import org.joda.time.DateTime;
  * accessing Event Entries. Querying from them directly will cause the EntityManager to keep a reference to them,
  * preventing them from being garbage collected.
  *
+ * @param <T> The data type expected for the serialized objects
  * @author Allard Buijze
  * @since 2.0
  */
-public class SimpleSerializedDomainEventData implements SerializedDomainEventData<byte[]> {
+public class SimpleSerializedDomainEventData<T> implements SerializedDomainEventData<T> {
 
     private final String eventIdentifier;
     private final String aggregateIdentifier;
     private final long sequenceNumber;
     private final DateTime timestamp;
-    private final SerializedObject<byte[]> serializedPayload;
-    private final SerializedObject<byte[]> serializedMetaData;
+    private final SerializedObject<T> serializedPayload;
+    private final SerializedObject<T> serializedMetaData;
 
     /**
      * Initialize an instance using given properties. This constructor assumes the default SerializedType for meta data
@@ -55,13 +56,14 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
      * @param payload             The serialized representation of the event
      * @param metaData            The serialized representation of the meta data
      */
+    @SuppressWarnings("unchecked")
     public SimpleSerializedDomainEventData(String eventIdentifier, String aggregateIdentifier, // NOSONAR - Long ctor
                                            long sequenceNumber, Object timestamp, String payloadType,
-                                           String payloadRevision, byte[] payload, byte[] metaData) { // NOSONAR
+                                           String payloadRevision, T payload, T metaData) { // NOSONAR
         this(eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
-             new SimpleSerializedObject<byte[]>(payload, byte[].class,  // NOSONAR
-                                                payloadType, payloadRevision),
-             new SerializedMetaData<byte[]>(metaData, byte[].class)); // NOSONAR Ignore array copy
+             new SimpleSerializedObject<T>(payload, (Class<T>) payload.getClass(),
+                                           payloadType, payloadRevision),
+             new SerializedMetaData<T>(metaData, (Class<T>) metaData.getClass()));
     }
 
     /**
@@ -80,8 +82,8 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
      */
     public SimpleSerializedDomainEventData(String eventIdentifier, String aggregateIdentifier, // NOSONAR - Long ctor
                                            long sequenceNumber, Object timestamp,
-                                           SerializedObject<byte[]> serializedPayload,
-                                           SerializedObject<byte[]> serializedMetaData) {
+                                           SerializedObject<T> serializedPayload,
+                                           SerializedObject<T> serializedMetaData) {
         this.eventIdentifier = eventIdentifier;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -111,12 +113,12 @@ public class SimpleSerializedDomainEventData implements SerializedDomainEventDat
     }
 
     @Override
-    public SerializedObject<byte[]> getMetaData() {
+    public SerializedObject<T> getMetaData() {
         return serializedMetaData;
     }
 
     @Override
-    public SerializedObject<byte[]> getPayload() {
+    public SerializedObject<T> getPayload() {
         return serializedPayload;
     }
 }

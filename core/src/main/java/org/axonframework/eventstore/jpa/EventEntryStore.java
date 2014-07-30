@@ -27,10 +27,11 @@ import javax.persistence.EntityManager;
 /**
  * Interface describing the mechanism that stores Events into the backing data store.
  *
+ * @param <T> The data type used to store payloads
  * @author Allard Buijze
  * @since 1.2
  */
-public interface EventEntryStore {
+public interface EventEntryStore<T> {
 
     /**
      * Persists the given <code>event</code> which has been serialized into <code>serializedEvent</code> in the
@@ -44,8 +45,8 @@ public interface EventEntryStore {
      * @param serializedMetaData The serialized MetaData of the event
      * @param entityManager      The entity manager providing access to the data store
      */
-    void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,
-                      SerializedObject serializedMetaData, EntityManager entityManager);
+    void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject<T> serializedPayload,
+                      SerializedObject<T> serializedMetaData, EntityManager entityManager);
 
     /**
      * Load the last known snapshot event for aggregate of given <code>type</code> with given <code>identifier</code>
@@ -56,8 +57,8 @@ public interface EventEntryStore {
      * @param entityManager The entity manager providing access to the data store
      * @return the serialized representation of the last known snapshot event
      */
-    SerializedDomainEventData loadLastSnapshotEvent(String aggregateType, Object identifier,
-                                                    EntityManager entityManager);
+    SerializedDomainEventData<T> loadLastSnapshotEvent(String aggregateType, Object identifier,
+                                                       EntityManager entityManager);
 
     /**
      * Creates an iterator that iterates through the events for an aggregate of given <code>type</code> and given
@@ -74,9 +75,9 @@ public interface EventEntryStore {
      * @param entityManager       The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    Iterator<? extends SerializedDomainEventData> fetchAggregateStream(String aggregateType, Object identifier,
-                                                                       long firstSequenceNumber, int batchSize,
-                                                                       EntityManager entityManager);
+    Iterator<? extends SerializedDomainEventData<T>> fetchAggregateStream(String aggregateType, Object identifier,
+                                                                          long firstSequenceNumber, int batchSize,
+                                                                          EntityManager entityManager);
 
     /**
      * Creates an iterator that iterates through the Events that conform to the given JPA <code>whereClause</code>.
@@ -96,8 +97,8 @@ public interface EventEntryStore {
      * @param entityManager The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    Iterator<? extends SerializedDomainEventData> fetchFiltered(String whereClause, Map<String, Object> parameters,
-                                                                int batchSize, EntityManager entityManager);
+    Iterator<? extends SerializedDomainEventData<T>> fetchFiltered(String whereClause, Map<String, Object> parameters,
+                                                                   int batchSize, EntityManager entityManager);
 
     /**
      * Removes old snapshots from the storage for an aggregate of given <code>type</code> that generated the given
@@ -125,6 +126,15 @@ public interface EventEntryStore {
      * @param serializedMetaData The serialized MetaData of the event
      * @param entityManager      The entity manager providing access to the data store
      */
-    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent, SerializedObject serializedPayload,
-                         SerializedObject serializedMetaData, EntityManager entityManager);
+    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent,
+                         SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData,
+                         EntityManager entityManager);
+
+    /**
+     * Returns the type used to store serialized payloads. This data type is an indication to the Event Store
+     * implementation to which type events must be serialized.
+     *
+     * @return the type used to store serialized payloads
+     */
+    Class<T> getDataType();
 }

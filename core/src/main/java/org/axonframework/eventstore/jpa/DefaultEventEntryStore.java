@@ -20,7 +20,6 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,17 +40,19 @@ import javax.persistence.Query;
  * it is set to the default value (name = "org.axonframework.domain.MetaData", revision = null). See {@link
  * org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
+ * @param <T> The type of data used by this EventEntryStore.
  * @author Allard Buijze
  * @since 1.2
  */
-public class DefaultEventEntryStore implements EventEntryStore {
+public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultEventEntryStore.class);
 
-    private final boolean forceUtc;
+    private final EventEntryFactory<T> eventEntryFactory;
 
     /**
-     * Initialize the Event Entry Store, storing timestamps in the system timezone.
+     * Initialize the Event Entry Store, storing timestamps in the system timezone and storing serialized data as byte
+     * arrays.
      *
      * @see #DefaultEventEntryStore(boolean)
      */
@@ -60,23 +61,32 @@ public class DefaultEventEntryStore implements EventEntryStore {
     }
 
     /**
-     * Initializes the EventEntryStore, with the possibility to force timestamps to be stored in UTC timezone. Although
-     * it is strongly recommended to set this value to <code>true</code>, it defaults to <code>false</code>, for
-     * backwards compatibility reasons.
+     * Initializes the EventEntryStore, storing serialized data as byte arrays, with the possibility to force
+     * timestamps to be stored in UTC timezone. Although it is strongly recommended to set this value to
+     * <code>true</code>, it defaults to <code>false</code>, for backwards compatibility reasons.
      * <p/>
      * Providing <code>false</code> will store the timestamps in the system timezone.
      *
      * @param forceUtcTimestamp whether to store dates in UTC format.
      */
+    @SuppressWarnings("unchecked")
     public DefaultEventEntryStore(boolean forceUtcTimestamp) {
-        this.forceUtc = forceUtcTimestamp;
+        this((EventEntryFactory<T>) new DefaultEventEntryFactory(forceUtcTimestamp));
     }
 
+    /**
+     * Initializes the EventEntryStore, using the given <code>eventEntryFactory</code> to provide instances of the
+     * JPA entities to use for persistence.
+     *
+     * @param eventEntryFactory the factory providing the Entity instances to persist
+     */
+    public DefaultEventEntryStore(EventEntryFactory<T> eventEntryFactory) {
+        this.eventEntryFactory = eventEntryFactory;
+    }
 
     @Override
-    @SuppressWarnings({"unchecked"})
-    public void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject serializedPayload,
-                             SerializedObject serializedMetaData, EntityManager entityManager) {
+    public void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject<T> serializedPayload,
+                             SerializedObject<T> serializedMetaData, EntityManager entityManager) {
         entityManager.persist(createDomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData));
     }
 
@@ -84,7 +94,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
     @SuppressWarnings({"unchecked"})
     public SimpleSerializedDomainEventData loadLastSnapshotEvent(String aggregateType, Object identifier,
                                                                  EntityManager entityManager) {
-        List<SimpleSerializedDomainEventData> entries = entityManager
+        List<SimpleSerializedDomainEventData<T>> entries = entityManager
                 .createQuery("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
                                      + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
                                      + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
@@ -104,16 +114,15 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public Iterator<SerializedDomainEventData> fetchFiltered(String whereClause, Map<String, Object> parameters,
-                                                             int batchSize,
-                                                             EntityManager entityManager) {
+    public Iterator<SerializedDomainEventData<T>> fetchFiltered(String whereClause, Map<String, Object> parameters,
+                                                             int batchSize, EntityManager entityManager) {
         return new BatchingIterator(whereClause, parameters, batchSize, domainEventEntryEntityName(), entityManager);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent,
-                                SerializedObject serializedPayload, SerializedObject serializedMetaData,
+                                SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData,
                                 EntityManager entityManager) {
         entityManager.persist(createSnapshotEventEntry(aggregateType,
                                                        snapshotEvent,
@@ -121,12 +130,18 @@ public class DefaultEventEntryStore implements EventEntryStore {
                                                        serializedMetaData));
     }
 
+    @Override
+    public Class<T> getDataType() {
+        return eventEntryFactory.getDataType();
+    }
+
     /**
      * Allows for customization of the DomainEventEntry to store. Subclasses may choose to override this method to
      * use a different entity configuration.
      * <p/>
      * When overriding this method, also make sure the {@link #domainEventEntryEntityName()} method is overridden to
-     * return the correct entity name.
+     * return the correct entity name. Note that it is preferable to provide a custom {@link
+     * org.axonframework.eventstore.jpa.EventEntryFactory}, instead of overriding these methods.
      *
      * @param aggregateType      The type identifier of the aggregate
      * @param event              The event to be stored
@@ -135,15 +150,15 @@ public class DefaultEventEntryStore implements EventEntryStore {
      * @return a JPA entity, ready to be stored using the entity manager
      *
      * @see #domainEventEntryEntityName()
+     * @see org.axonframework.eventstore.jpa.EventEntryFactory#createDomainEventEntry(String,
+     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
+     * org.axonframework.serializer.SerializedObject)
      */
-    protected DomainEventEntry createDomainEventEntry(String aggregateType, DomainEventMessage event,
-                                                      SerializedObject<byte[]> serializedPayload,
-                                                      SerializedObject<byte[]> serializedMetaData) {
-        if (forceUtc) {
-            return new DomainEventEntry(aggregateType, event, event.getTimestamp().toDateTime(DateTimeZone.UTC),
-                                        serializedPayload, serializedMetaData);
-        }
-        return new DomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData);
+    @SuppressWarnings("unchecked")
+    protected Object createDomainEventEntry(String aggregateType, DomainEventMessage event,
+                                            SerializedObject<T> serializedPayload,
+                                            SerializedObject<T> serializedMetaData) {
+        return eventEntryFactory.createDomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData);
     }
 
     /**
@@ -151,7 +166,8 @@ public class DefaultEventEntryStore implements EventEntryStore {
      * use a different entity configuration.
      * <p/>
      * When overriding this method, also make sure the {@link #snapshotEventEntryEntityName()} method is overridden to
-     * return the correct entity name.
+     * return the correct entity name. Note that it is preferable to provide a custom {@link
+     * org.axonframework.eventstore.jpa.EventEntryFactory}, instead of overriding these methods.
      *
      * @param aggregateType      The type identifier of the aggregate
      * @param snapshotEvent      The snapshot event to be stored
@@ -160,12 +176,16 @@ public class DefaultEventEntryStore implements EventEntryStore {
      * @return a JPA entity, ready to be stored using the entity manager
      *
      * @see #snapshotEventEntryEntityName()
+     * @see org.axonframework.eventstore.jpa.EventEntryFactory#createSnapshotEventEntry(String,
+     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
+     * org.axonframework.serializer.SerializedObject)
      */
-    protected SnapshotEventEntry createSnapshotEventEntry(String aggregateType, DomainEventMessage snapshotEvent,
-                                                          SerializedObject<byte[]> serializedPayload,
-                                                          SerializedObject<byte[]> serializedMetaData) {
-        return new SnapshotEventEntry(aggregateType, snapshotEvent, serializedPayload,
-                                      serializedMetaData);
+    @SuppressWarnings("unchecked")
+    protected Object createSnapshotEventEntry(String aggregateType, DomainEventMessage snapshotEvent,
+                                              SerializedObject<T> serializedPayload,
+                                              SerializedObject<T> serializedMetaData) {
+        return eventEntryFactory.createSnapshotEventEntry(aggregateType, snapshotEvent, serializedPayload,
+                                                          serializedMetaData);
     }
 
     /**
@@ -175,9 +195,10 @@ public class DefaultEventEntryStore implements EventEntryStore {
      *
      * @see #createDomainEventEntry(String, org.axonframework.domain.DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)
+     * @see EventEntryFactory#getDomainEventEntryEntityName()
      */
     protected String domainEventEntryEntityName() {
-        return "DomainEventEntry";
+        return eventEntryFactory.getDomainEventEntryEntityName();
     }
 
     /**
@@ -187,9 +208,10 @@ public class DefaultEventEntryStore implements EventEntryStore {
      *
      * @see #createSnapshotEventEntry(String, org.axonframework.domain.DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)
+     * @see EventEntryFactory#getSnapshotEventEntryEntityName()
      */
     protected String snapshotEventEntryEntityName() {
-        return "SnapshotEventEntry";
+        return eventEntryFactory.getSnapshotEventEntryEntityName();
     }
 
     @Override
@@ -238,7 +260,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public Iterator<SerializedDomainEventData> fetchAggregateStream(String aggregateType, Object identifier,
+    public Iterator<SerializedDomainEventData<T>> fetchAggregateStream(String aggregateType, Object identifier,
                                                                     long firstSequenceNumber,
                                                                     int batchSize, EntityManager entityManager) {
 
@@ -246,11 +268,11 @@ public class DefaultEventEntryStore implements EventEntryStore {
                                                    domainEventEntryEntityName(), entityManager);
     }
 
-    private static final class BatchingAggregateStreamIterator implements Iterator<SerializedDomainEventData> {
+    private static final class BatchingAggregateStreamIterator<T> implements Iterator<SerializedDomainEventData<T>> {
 
         private int currentBatchSize;
-        private Iterator<SerializedDomainEventData> currentBatch;
-        private SerializedDomainEventData next;
+        private Iterator<SerializedDomainEventData<T>> currentBatch;
+        private SerializedDomainEventData<T> next;
         private final Object id;
         private final String typeId;
         private final int batchSize;
@@ -264,7 +286,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
             this.batchSize = batchSize;
             this.domainEventEntryEntityName = domainEventEntryEntityName;
             this.entityManager = entityManager;
-            List<SerializedDomainEventData> firstBatch = fetchBatch(firstSequenceNumber);
+            List<SerializedDomainEventData<T>> firstBatch = fetchBatch(firstSequenceNumber);
             this.currentBatchSize = firstBatch.size();
             this.currentBatch = firstBatch.iterator();
             if (currentBatch.hasNext()) {
@@ -278,11 +300,11 @@ public class DefaultEventEntryStore implements EventEntryStore {
         }
 
         @Override
-        public SerializedDomainEventData next() {
-            SerializedDomainEventData current = next;
+        public SerializedDomainEventData<T> next() {
+            SerializedDomainEventData<T> current = next;
             if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
                 logger.debug("Fetching new batch for Aggregate [{}]", id);
-                List<SerializedDomainEventData> entries = fetchBatch(next.getSequenceNumber() + 1);
+                List<SerializedDomainEventData<T>> entries = fetchBatch(next.getSequenceNumber() + 1);
 
                 currentBatchSize = entries.size();
                 currentBatch = entries.iterator();
@@ -292,7 +314,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
         }
 
         @SuppressWarnings("unchecked")
-        private List<SerializedDomainEventData> fetchBatch(long firstSequenceNumber) {
+        private List<SerializedDomainEventData<T>> fetchBatch(long firstSequenceNumber) {
             return entityManager.createQuery(
                     "SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
                             + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
@@ -315,12 +337,12 @@ public class DefaultEventEntryStore implements EventEntryStore {
         }
     }
 
-    private static class BatchingIterator implements Iterator<SerializedDomainEventData> {
+    private static class BatchingIterator<T> implements Iterator<SerializedDomainEventData<T>> {
 
         private int currentBatchSize;
-        private Iterator<SerializedDomainEventData> currentBatch;
-        private SerializedDomainEventData next;
-        private SerializedDomainEventData lastItem;
+        private Iterator<SerializedDomainEventData<T>> currentBatch;
+        private SerializedDomainEventData<T> next;
+        private SerializedDomainEventData<T> lastItem;
         private final String whereClause;
         private final Map<String, Object> parameters;
         private final int batchSize;
@@ -336,7 +358,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
             this.batchSize = batchSize;
             this.domainEventEntryEntityName = domainEventEntryEntityName;
             this.entityManager = entityManager;
-            List<SerializedDomainEventData> firstBatch = fetchBatch();
+            List<SerializedDomainEventData<T>> firstBatch = fetchBatch();
 
             this.currentBatchSize = firstBatch.size();
             this.currentBatch = firstBatch.iterator();
@@ -346,7 +368,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
         }
 
         @SuppressWarnings("unchecked")
-        private List<SerializedDomainEventData> fetchBatch() {
+        private List<SerializedDomainEventData<T>> fetchBatch() {
             Map<String, Object> params = new HashMap<String, Object>(parameters);
             Query query = entityManager.createQuery(
                     String.format("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
@@ -365,7 +387,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
                 }
                 query.setParameter(entry.getKey(), value);
             }
-            final List<SerializedDomainEventData> resultList = query.getResultList();
+            final List<SerializedDomainEventData<T>> resultList = query.getResultList();
             if (!resultList.isEmpty()) {
                 lastItem = resultList.get(resultList.size() - 1);
             }
@@ -409,10 +431,10 @@ public class DefaultEventEntryStore implements EventEntryStore {
         }
 
         @Override
-        public SerializedDomainEventData next() {
-            SerializedDomainEventData current = next;
+        public SerializedDomainEventData<T> next() {
+            SerializedDomainEventData<T> current = next;
             if (next != null && !currentBatch.hasNext() && currentBatchSize >= batchSize) {
-                List<SerializedDomainEventData> entries = fetchBatch();
+                List<SerializedDomainEventData<T>> entries = fetchBatch();
 
                 currentBatchSize = entries.size();
                 currentBatch = entries.iterator();
@@ -423,7 +445,7 @@ public class DefaultEventEntryStore implements EventEntryStore {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Not implemented yet");
+            throw new UnsupportedOperationException("Not supported");
         }
     }
 }

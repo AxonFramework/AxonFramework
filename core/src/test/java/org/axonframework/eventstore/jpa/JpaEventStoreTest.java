@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
@@ -86,6 +87,9 @@ public class JpaEventStoreTest {
     private EntityManager entityManager;
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
+
+    @Autowired
+    private EntityManagerProvider entityManagerProvider;
 
     @Autowired
     private PlatformTransactionManager txManager;
@@ -688,6 +692,7 @@ public class JpaEventStoreTest {
     @Transactional
     public void testCustomEventEntryStore() {
         EventEntryStore eventEntryStore = mock(EventEntryStore.class);
+        when(eventEntryStore.getDataType()).thenReturn(byte[].class);
         testSubject = new JpaEventStore(new SimpleEntityManagerProvider(entityManager), eventEntryStore);
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
@@ -741,7 +746,7 @@ public class JpaEventStoreTest {
         entityManager.clear();
 
         DomainEventStream actual = testSubject.readEvents("test", aggregateIdentifier, 2);
-        for (int i=2;i<=4;i++) {
+        for (int i = 2; i <= 4; i++) {
             assertTrue(actual.hasNext());
             assertEquals(i, actual.next().getSequenceNumber());
         }
@@ -773,7 +778,7 @@ public class JpaEventStoreTest {
         entityManager.clear();
 
         DomainEventStream actual = testSubject.readEvents("test", aggregateIdentifier, 2, 3);
-        for (int i=2;i<=3;i++) {
+        for (int i = 2; i <= 3; i++) {
             assertTrue(actual.hasNext());
             assertEquals(i, actual.next().getSequenceNumber());
         }
@@ -782,6 +787,75 @@ public class JpaEventStoreTest {
 
     private SerializedObject<byte[]> mockSerializedObject(byte[] bytes) {
         return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "java.lang.String", "0");
+    }
+
+    @SuppressWarnings("JpaQlInspection")
+    @Transactional
+    @Test
+    public void testStoreEventsWithCustomEntity() throws Exception {
+        testSubject = new JpaEventStore(entityManagerProvider,
+                                        new DefaultEventEntryStore<String>(new EventEntryFactory<String>() {
+                                            @Override
+                                            public Class<String> getDataType() {
+                                                return String.class;
+                                            }
+
+
+                                            @Override
+                                            public Object createDomainEventEntry(String aggregateType,
+                                                                                 DomainEventMessage event,
+                                                                                 SerializedObject<String> serializedPayload,
+                                                                                 SerializedObject<String> serializedMetaData) {
+                                                return new CustomDomainEventEntry(aggregateType,
+                                                                                  event,
+                                                                                  event.getTimestamp(),
+                                                                                  serializedPayload,
+                                                                                  serializedMetaData);
+                                            }
+
+                                            @Override
+                                            public Object createSnapshotEventEntry(String aggregateType,
+                                                                                   DomainEventMessage snapshotEvent,
+                                                                                   SerializedObject<String> serializedPayload,
+                                                                                   SerializedObject<String> serializedMetaData) {
+                                                return new CustomSnapshotEventEntry(aggregateType,
+                                                                                    snapshotEvent,
+                                                                                    snapshotEvent.getTimestamp(),
+                                                                                    serializedPayload,
+                                                                                    serializedMetaData);
+                                            }
+
+                                            @Override
+                                            public String getDomainEventEntryEntityName() {
+                                                return "CustomDomainEventEntry";
+                                            }
+
+                                            @Override
+                                            public String getSnapshotEventEntryEntityName() {
+                                                return "CustomSnapshotEventEntry";
+                                            }
+                                        }));
+
+        testSubject.appendEvents("temp", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>("id1", 1L, "Payload")));
+        testSubject.appendEvents("temp", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>("id1", 2L, "Payload2")));
+        testSubject.appendSnapshotEvent("temp",
+                                        new GenericDomainEventMessage<String>("id1", 1L, "Snapshot1"));
+
+        entityManager.flush();
+        entityManager.clear();
+
+        List<CustomDomainEventEntry> list = entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e",
+                                                                      CustomDomainEventEntry.class)
+                                                         .getResultList();
+        assertEquals(2, list.size());
+
+        DomainEventStream eventStream = testSubject.readEvents("temp", "id1");
+        assertTrue(eventStream.hasNext());
+        assertEquals("Snapshot1", eventStream.next().getPayload());
+        assertEquals("Payload2", eventStream.next().getPayload());
+        assertFalse(eventStream.hasNext());
     }
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
