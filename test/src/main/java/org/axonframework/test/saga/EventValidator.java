@@ -72,6 +72,13 @@ public class EventValidator implements EventListener {
      * @param expected the events that must have been published.
      */
     public void assertPublishedEvents(Object... expected) {
+        if (publishedEvents.size() != expected.length) {
+            throw new AxonAssertionError(format(
+                    "Got wrong number of events published. Expected <%s>, got <%s>",
+                    expected.length,
+                    publishedEvents.size()));
+        }
+
         assertPublishedEventsMatching(payloadsMatching(exactSequenceOf(createEqualToMatchers(expected))));
     }
 
