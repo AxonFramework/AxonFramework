@@ -19,6 +19,10 @@ package org.axonframework.saga;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscribable;
 import org.axonframework.common.lock.IdentifierBasedLock;
+import org.axonframework.correlation.CorrelationDataHolder;
+import org.axonframework.correlation.CorrelationDataProvider;
+import org.axonframework.correlation.MultiCorrelationDataProvider;
+import org.axonframework.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -30,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -54,10 +59,11 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     private final SagaRepository sagaRepository;
     private final SagaFactory sagaFactory;
     private final Class<? extends Saga>[] sagaTypes;
-    private volatile boolean suppressExceptions = true;
-    private volatile boolean synchronizeSagaAccess = true;
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
     private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
+    private volatile boolean suppressExceptions = true;
+    private volatile boolean synchronizeSagaAccess = true;
+    private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
      * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code>.
@@ -245,18 +251,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         }
         preProcessSaga(saga);
         try {
-            try {
-                saga.handle(event);
-            } catch (RuntimeException e) {
-                if (suppressExceptions) {
-                    logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
-                                        saga.getClass().getSimpleName(),
-                                        event.getPayloadType().getSimpleName()),
-                                 e);
-                } else {
-                    throw e;
-                }
-            }
+            doInvokeSaga(event, saga);
         } finally {
             commit(saga);
         }
@@ -274,6 +269,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private void doInvokeSaga(EventMessage event, Saga saga) {
         try {
+            CorrelationDataHolder.setCorrelationData(correlationDataProvider.correlationDataFor(event));
             saga.handle(event);
         } catch (RuntimeException e) {
             if (suppressExceptions) {
@@ -284,6 +280,8 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
             } else {
                 throw e;
             }
+        } finally {
+            CorrelationDataHolder.clear();
         }
     }
 
@@ -344,6 +342,15 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
+    }
+
+    public void setCorrelationDataProvider(CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
+        this.correlationDataProvider = correlationDataProvider;
+    }
+
+    public void setCorrelationDataProviders(
+            List<? extends CorrelationDataProvider<? super EventMessage>> correlationDataProviders) {
+        this.correlationDataProvider = new MultiCorrelationDataProvider<EventMessage>(correlationDataProviders);
     }
 
     /**

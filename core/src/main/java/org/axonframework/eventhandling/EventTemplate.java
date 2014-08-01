@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.correlation.CorrelationDataHolder;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -31,10 +32,13 @@ import static org.axonframework.domain.GenericEventMessage.asEventMessage;
  * events published during the course of that UnitOfWork. If no unit of work is active, the Event is published
  * immediately to the Event Bus.
  * <p/>
+ * Messages sent with this template will have the current thread's correlation data in its meta data.
+ * <p/>
  * The template also allows addition of Meta Data properties to all Events sent through this template.
  *
  * @author Allard Buijze
  * @since 2.2
+ * @see org.axonframework.correlation.CorrelationDataHolder
  */
 public class EventTemplate {
 
@@ -98,6 +102,9 @@ public class EventTemplate {
     }
 
     private EventMessage<Object> createEventMessage(Object payload) {
-        return asEventMessage(payload).andMetaData(additionalMetaData);
+        final EventMessage<Object> eventMessage = asEventMessage(payload);
+        return eventMessage.andMetaData(CorrelationDataHolder.getCorrelationData())
+                           .andMetaData(eventMessage.getMetaData())
+                           .andMetaData(additionalMetaData);
     }
 }

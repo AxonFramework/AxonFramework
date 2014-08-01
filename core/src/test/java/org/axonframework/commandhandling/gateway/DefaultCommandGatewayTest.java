@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,18 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.correlation.CorrelationDataHolder;
+import org.hamcrest.CustomTypeSafeMatcher;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -44,6 +50,7 @@ public class DefaultCommandGatewayTest {
 
     @Before
     public void setUp() throws Exception {
+        CorrelationDataHolder.clear();
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         mockCommandMessageTransformer = mock(CommandDispatchInterceptor.class);
@@ -56,13 +63,19 @@ public class DefaultCommandGatewayTest {
         testSubject = new DefaultCommandGateway(mockCommandBus, mockRetryScheduler, mockCommandMessageTransformer);
     }
 
+    @After
+    public void tearDown() throws Exception {
+        CorrelationDataHolder.clear();
+    }
+
     @SuppressWarnings({"unchecked", "serial"})
     @Test
     public void testSendWithCallback_CommandIsRetried() {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((CommandCallback) invocation.getArguments()[1]).onFailure(new RuntimeException(new RuntimeException()));
+                ((CommandCallback) invocation.getArguments()[1])
+                        .onFailure(new RuntimeException(new RuntimeException()));
                 return null;
             }
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
@@ -90,7 +103,7 @@ public class DefaultCommandGatewayTest {
         assertTrue(actualResult.get() instanceof RuntimeException);
         assertEquals(1, captor.getAllValues().get(0).size());
         assertEquals(2, captor.getValue().size());
-        assertEquals(2, ((Class<? extends Throwable>[])captor.getValue().get(0)).length);
+        assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
     }
 
     @SuppressWarnings({"unchecked", "serial"})
@@ -99,7 +112,8 @@ public class DefaultCommandGatewayTest {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((CommandCallback) invocation.getArguments()[1]).onFailure(new RuntimeException(new RuntimeException()));
+                ((CommandCallback) invocation.getArguments()[1])
+                        .onFailure(new RuntimeException(new RuntimeException()));
                 return null;
             }
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
@@ -117,7 +131,7 @@ public class DefaultCommandGatewayTest {
         verify(mockCommandBus, times(2)).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         assertEquals(1, captor.getAllValues().get(0).size());
         assertEquals(2, captor.getValue().size());
-        assertEquals(2, ((Class<? extends Throwable>[])captor.getValue().get(0)).length);
+        assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
     }
 
     @SuppressWarnings({"unchecked", "serial"})
@@ -149,7 +163,7 @@ public class DefaultCommandGatewayTest {
         verify(mockCommandBus, times(2)).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         assertEquals(1, captor.getAllValues().get(0).size());
         assertEquals(2, captor.getValue().size());
-        assertEquals(2, ((Class<? extends Throwable>[])captor.getValue().get(0)).length);
+        assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
     }
 
     @SuppressWarnings({"unchecked", "serial"})
@@ -181,7 +195,7 @@ public class DefaultCommandGatewayTest {
         verify(mockCommandBus, times(2)).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         assertEquals(1, captor.getAllValues().get(0).size());
         assertEquals(2, captor.getValue().size());
-        assertEquals(2, ((Class<? extends Throwable>[])captor.getValue().get(0)).length);
+        assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
     }
 
     @SuppressWarnings("unchecked")
@@ -223,11 +237,44 @@ public class DefaultCommandGatewayTest {
         verify(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCorrelationDataIsAttachedToCommandAsObject() throws Exception {
+        CorrelationDataHolder.setCorrelationData(Collections.singletonMap("correlationId", "test"));
+        testSubject.send("Hello");
+
+        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<?>>("header correlationId") {
+            @Override
+            protected boolean matchesSafely(CommandMessage<?> item) {
+                return "test".equals(item.getMetaData().get("correlationId"));
+            }
+        }), isA(CommandCallback.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testCorrelationDataIsAttachedToCommandAsMessage() throws Exception {
+        final Map<String, String> data = new HashMap<String, String>();
+        data.put("correlationId", "test");
+        data.put("header", "someValue");
+        CorrelationDataHolder.setCorrelationData(data);
+        testSubject.send(new GenericCommandMessage<String>("Hello", Collections.singletonMap("header", "value")));
+
+        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<?>>(
+                "header 'correlationId' and 'header'") {
+            @Override
+            protected boolean matchesSafely(CommandMessage<?> item) {
+                return "test".equals(item.getMetaData().get("correlationId"))
+                        && "value".equals(item.getMetaData().get("header"));
+            }
+        }), isA(CommandCallback.class));
+    }
+
     private static class RescheduleCommand implements Answer<Boolean> {
 
         @Override
         public Boolean answer(InvocationOnMock invocation) throws Throwable {
-            ((Runnable)invocation.getArguments()[3]).run();
+            ((Runnable) invocation.getArguments()[3]).run();
             return true;
         }
     }

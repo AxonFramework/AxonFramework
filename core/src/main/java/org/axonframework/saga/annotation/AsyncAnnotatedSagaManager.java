@@ -28,6 +28,9 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.correlation.CorrelationDataProvider;
+import org.axonframework.correlation.MultiCorrelationDataProvider;
+import org.axonframework.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventProcessingMonitor;
@@ -69,26 +72,24 @@ import java.util.concurrent.TimeUnit;
 public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, EventProcessingMonitorSupport {
 
     private static final WaitStrategy DEFAULT_WAIT_STRATEGY = new BlockingWaitStrategy();
+    private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
     private static final int DEFAULT_BUFFER_SIZE = 512;
+    private int bufferSize = DEFAULT_BUFFER_SIZE;
     private static final int DEFAULT_PROCESSOR_COUNT = 1;
-
+    private int processorCount = DEFAULT_PROCESSOR_COUNT;
     private final EventBus eventBus;
     private final Class<? extends AbstractAnnotatedSaga>[] sagaTypes;
+    private final ParameterResolverFactory parameterResolverFactory;
+    private final SagaManagerStatus sagaManagerStatus = new SagaManagerStatus();
+    private final EventProcessingMonitorCollection processingMonitors = new EventProcessingMonitorCollection();
     private volatile Disruptor<AsyncSagaProcessingEvent> disruptor;
-
     private boolean shutdownExecutorOnStop = true;
     private Executor executor = Executors.newCachedThreadPool();
-
     private SagaRepository sagaRepository = new InMemorySagaRepository();
-    private final ParameterResolverFactory parameterResolverFactory;
     private volatile SagaFactory sagaFactory = new GenericSagaFactory();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
-    private int processorCount = DEFAULT_PROCESSOR_COUNT;
-    private int bufferSize = DEFAULT_BUFFER_SIZE;
-    private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
-    private final SagaManagerStatus sagaManagerStatus = new SagaManagerStatus();
     private long startTimeout = 5000;
-    private final EventProcessingMonitorCollection processingMonitors = new EventProcessingMonitorCollection();
+    private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
      * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code> to listen to
@@ -151,7 +152,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
             disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository, parameterResolverFactory,
                                                                                unitOfWorkFactory, processorCount,
                                                                                disruptor.getRingBuffer(),
-                                                                               sagaManagerStatus))
+                                                                               sagaManagerStatus,
+                                                                               correlationDataProvider))
                      .then(new MonitorNotifier(processingMonitors));
             disruptor.start();
         }
@@ -227,29 +229,6 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     @Override
     public void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
         processingMonitors.unsubscribeEventProcessingMonitor(monitor);
-    }
-
-    private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
-
-        private final EventMessage event;
-        private final SagaMethodMessageHandlerInspector annotationInspector;
-        private final List<SagaMethodMessageHandler> handlers;
-        private final AbstractAnnotatedSaga newSagaInstance;
-
-        private SagaProcessingEventTranslator(EventMessage event, SagaMethodMessageHandlerInspector annotationInspector,
-                                              List<SagaMethodMessageHandler> handlers,
-                                              AbstractAnnotatedSaga newSagaInstance) {
-            this.event = event;
-            this.annotationInspector = annotationInspector;
-            this.handlers = handlers;
-            this.newSagaInstance = newSagaInstance;
-        }
-
-        @SuppressWarnings({"unchecked"})
-        @Override
-        public void translateTo(AsyncSagaProcessingEvent entry, long sequence) {
-            entry.reset(event, annotationInspector.getSagaType(), handlers, newSagaInstance);
-        }
     }
 
     /**
@@ -365,6 +344,39 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     public synchronized void setWaitStrategy(WaitStrategy waitStrategy) {
         Assert.state(disruptor == null, "Cannot set waitStrategy when SagaManager has started");
         this.waitStrategy = waitStrategy;
+    }
+
+    public synchronized void setCorrelationDataProvider(
+            CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
+        this.correlationDataProvider = correlationDataProvider;
+    }
+
+    public synchronized void setCorrelationDataProviders(
+            List<? extends CorrelationDataProvider<? super EventMessage>> correlationDataProviders) {
+        this.correlationDataProvider = new MultiCorrelationDataProvider<EventMessage>(correlationDataProviders);
+    }
+
+    private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
+
+        private final EventMessage event;
+        private final SagaMethodMessageHandlerInspector annotationInspector;
+        private final List<SagaMethodMessageHandler> handlers;
+        private final AbstractAnnotatedSaga newSagaInstance;
+
+        private SagaProcessingEventTranslator(EventMessage event, SagaMethodMessageHandlerInspector annotationInspector,
+                                              List<SagaMethodMessageHandler> handlers,
+                                              AbstractAnnotatedSaga newSagaInstance) {
+            this.event = event;
+            this.annotationInspector = annotationInspector;
+            this.handlers = handlers;
+            this.newSagaInstance = newSagaInstance;
+        }
+
+        @SuppressWarnings({"unchecked"})
+        @Override
+        public void translateTo(AsyncSagaProcessingEvent entry, long sequence) {
+            entry.reset(event, annotationInspector.getSagaType(), handlers, newSagaInstance);
+        }
     }
 
     private static final class LoggingExceptionHandler implements ExceptionHandler {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,7 @@ import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
@@ -47,14 +45,14 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
 public class GatewayProxyFactoryTest {
 
-    private static CommandBus mockCommandBus;
-    private static GatewayProxyFactory testSubject;
-    private static CompleteGateway gateway;
-    private static RetryScheduler mockRetryScheduler;
-    private static CommandCallback callback;
+    private CommandBus mockCommandBus;
+    private GatewayProxyFactory testSubject;
+    private CompleteGateway gateway;
+    private RetryScheduler mockRetryScheduler;
+    private CommandCallback callback;
 
-    @BeforeClass
-    public static void beforeClass() {
+    @Before
+    public void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         testSubject = new GatewayProxyFactory(mockCommandBus, mockRetryScheduler);
@@ -70,11 +68,6 @@ public class GatewayProxyFactoryTest {
         });
         testSubject.registerCommandCallback(callback);
         gateway = testSubject.createGateway(CompleteGateway.class);
-    }
-
-    @Before
-    public void setUp() {
-        reset(mockCommandBus, mockRetryScheduler, callback);
     }
 
     @Test//(timeout = 2000)

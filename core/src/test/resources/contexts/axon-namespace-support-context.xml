@@ -33,7 +33,7 @@
 
     <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 
-    <axon:saga-manager id="sagaManager" saga-factory="sagaFactory"
+    <axon:saga-manager id="sagaManager" saga-factory="sagaFactory" correlation-data-provider="correlationDataProvider"
                        base-package="org.axonframework.contextsupport.spring">
         <axon:types>
             org.axonframework.eventhandling.scheduling.SimpleTimingSaga
@@ -50,11 +50,15 @@
     </axon:saga-manager>
 
     <axon:saga-manager id="asyncTransactionalSagaManager" saga-repository="allDefinedSagaRepository"
-                       saga-factory="sagaFactory">
-        <axon:async buffer-size="32" processor-count="1" executor="taskExecutor"
+                       saga-factory="sagaFactory" correlation-data-provider="correlationDataProvider">
+    <axon:async buffer-size="32" processor-count="1" executor="taskExecutor"
                     transaction-manager="transactionManager"/>
         <axon:types>org.axonframework.contextsupport.spring.StubSaga</axon:types>
     </axon:saga-manager>
+
+    <bean id="correlationDataProvider" class="org.axonframework.testutils.MockitoMockFactoryBean">
+        <property name="mockType" value="org.axonframework.correlation.CorrelationDataProvider"/>
+    </bean>
 
     <axon:aggregate-command-handler id="aggregateCommandHandlerWithoutTargetResolver"
                                     aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"

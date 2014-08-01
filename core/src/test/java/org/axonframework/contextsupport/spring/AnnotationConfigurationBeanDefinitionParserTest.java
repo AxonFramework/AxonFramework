@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
+import org.axonframework.correlation.CorrelationDataProvider;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.axonframework.saga.AbstractSagaManager;
@@ -71,13 +73,15 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     private PlatformTransactionManager transactionManager;
     @Autowired
     private ThreadPoolTaskExecutor te;
+    @Autowired
+    private CorrelationDataProvider<Message> correlationDataProvider;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Before
     public void startup() {
-        reset(sagaFactory, tm);
+        reset(sagaFactory, tm, correlationDataProvider);
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus status) {
@@ -130,15 +134,19 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.createSaga(any(Class.class))).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                return ((Class)invocation.getArguments()[0]).newInstance();
+                return ((Class) invocation.getArguments()[0]).newInstance();
             }
         });
 
         String identifier = UUID.randomUUID().toString();
-        sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
-                                                                      new SimpleEvent(
-                                                                              identifier), MetaData.emptyInstance()));
+        final GenericDomainEventMessage<SimpleEvent> event = new GenericDomainEventMessage<SimpleEvent>(identifier,
+                                                                                                        (long) 0,
+                                                                                                        new SimpleEvent(
+                                                                                                                identifier),
+                                                                                                        MetaData.emptyInstance());
+        sagaManager.handle(event);
 
+        verify(correlationDataProvider, times(2)).correlationDataFor(event);
         verify(sagaFactory).createSaga(StubSaga.class);
     }
 
@@ -146,7 +154,8 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     @DirtiesContext
     public void testSagaManagerWiring_suppressExceptionsFalse() throws NoSuchFieldException, IllegalAccessException {
         // this part should prove correct autowiring of the saga manager
-        AbstractSagaManager sagaManager = beanFactory.getBean("sagaManagerNotSuppressingExceptions", AbstractSagaManager.class);
+        AbstractSagaManager sagaManager = beanFactory.getBean("sagaManagerNotSuppressingExceptions",
+                                                              AbstractSagaManager.class);
         assertNotNull(sagaManager);
 
         final Field field = AbstractSagaManager.class.getDeclaredField("suppressExceptions");
@@ -167,12 +176,17 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
         String identifier = UUID.randomUUID().toString();
-        sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
-                                                                      new SimpleEvent(
-                                                                              identifier), MetaData.emptyInstance()));
+        final GenericDomainEventMessage<SimpleEvent> event = new GenericDomainEventMessage<SimpleEvent>(identifier,
+                                                                                                        (long) 0,
+                                                                                                        new SimpleEvent(
+                                                                                                                identifier),
+                                                                                                        MetaData.emptyInstance());
+        sagaManager.handle(event);
         sagaManager.unsubscribe();
         verify(sagaFactory).createSaga(eq(StubSaga.class));
         sagaManager.stop();
+
+        verify(correlationDataProvider).correlationDataFor(event);
 
         assertEquals("Saga was never stored in the saga repository",
                      1L, entityManager.createQuery("SELECT count(se) FROM SagaEntry se").getSingleResult());

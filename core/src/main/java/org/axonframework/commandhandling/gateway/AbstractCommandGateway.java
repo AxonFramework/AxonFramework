@@ -22,6 +22,8 @@ import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Assert;
+import org.axonframework.correlation.CorrelationDataHolder;
+import org.axonframework.domain.MetaData;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,7 +73,7 @@ public abstract class AbstractCommandGateway {
      * @param <R>      The type of response expected from the command
      */
     protected <R> void send(Object command, CommandCallback<R> callback) {
-        CommandMessage commandMessage = processInterceptors(asCommandMessage(command));
+        CommandMessage commandMessage = processInterceptors(createCommandMessage(command));
         CommandCallback<R> commandCallback = callback;
         if (retryScheduler != null) {
             commandCallback = new RetryingCallback<R>(callback, commandMessage, retryScheduler, commandBus);
@@ -87,11 +89,17 @@ public abstract class AbstractCommandGateway {
      */
     protected void sendAndForget(Object command) {
         if (retryScheduler == null) {
-            commandBus.dispatch(processInterceptors(asCommandMessage(command)));
+            commandBus.dispatch(processInterceptors(createCommandMessage(command)));
         } else {
-            CommandMessage<?> commandMessage = asCommandMessage(command);
+            CommandMessage<?> commandMessage = createCommandMessage(command);
             send(commandMessage, new LoggingCallback(commandMessage));
         }
+    }
+
+    private CommandMessage createCommandMessage(Object command) {
+        CommandMessage<?> message = asCommandMessage(command);
+        return message.withMetaData(MetaData.from(CorrelationDataHolder.getCorrelationData())
+                                            .mergedWith(message.getMetaData()));
     }
 
     /**

@@ -23,6 +23,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Interface towards the Command Handling components of an application. This interface provides a friendlier API toward
  * the command bus. The CommandGateway allows for components dispatching commands to wait for the result.
+ * <p/>
+ * Implementations should check the {@link org.axonframework.correlation.CorrelationDataHolder} for correlation data
+ * attached to the current thread. This correlation data should be attached to the messages sent.
  *
  * @author Allard Buijze
  * @see DefaultCommandGateway
@@ -59,8 +62,7 @@ public interface CommandGateway {
      * @param command The command to dispatch
      * @param <R>     The type of result expected from command execution
      * @return the result of command execution, or <code>null</code> if the thread was interrupted while waiting for
-     *         the
-     *         command to execute
+     *         the command to execute
      *
      * @throws org.axonframework.commandhandling.CommandExecutionException
      *          when an exception occurred while processing the command
@@ -85,8 +87,7 @@ public interface CommandGateway {
      * @param unit    The unit in which <code>timeout</code> is expressed
      * @param <R>     The type of result expected from command execution
      * @return the result of command execution, or <code>null</code> if the thread was interrupted while waiting for
-     *         the
-     *         command to execute
+     *         the command to execute
      *
      * @throws org.axonframework.commandhandling.CommandExecutionException
      *          when an exception occurred while processing the command

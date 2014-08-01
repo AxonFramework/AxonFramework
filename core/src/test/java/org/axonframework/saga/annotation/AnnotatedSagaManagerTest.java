@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.MetaData;
+import org.axonframework.correlation.CorrelationDataHolder;
+import org.axonframework.correlation.CorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.domain.Message;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.AssociationValue;
@@ -26,7 +29,6 @@ import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,6 +38,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonMap;
 import static org.axonframework.domain.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -50,8 +54,14 @@ public class AnnotatedSagaManagerTest {
 
     @Before
     public void setUp() throws Exception {
+        CorrelationDataHolder.clear();
         sagaRepository = spy(new InMemorySagaRepository());
         manager = new AnnotatedSagaManager(sagaRepository, new SimpleEventBus(), MyTestSaga.class);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        CorrelationDataHolder.clear();
     }
 
     @Test
@@ -102,7 +112,7 @@ public class AnnotatedSagaManagerTest {
         assertEquals(1, repositoryContents("23", MyTestSaga.class).size());
 
         manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("12")));
-        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23"), Collections.singletonMap("catA", "value")));
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23"), singletonMap("catA", "value")));
         assertEquals(0, repositoryContents("12", MyTestSaga.class).iterator().next().getSpecificHandlerInvocations());
         assertEquals(1, repositoryContents("23", MyTestSaga.class).iterator().next().getSpecificHandlerInvocations());
     }
@@ -112,8 +122,8 @@ public class AnnotatedSagaManagerTest {
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("12")));
         manager.handle(new GenericEventMessage<StartingEvent>(new StartingEvent("23")));
         manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("12")));
-        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23"), Collections.singletonMap("catA",
-                                                                                                            "value")));
+        manager.handle(new GenericEventMessage<MiddleEvent>(new MiddleEvent("23"), singletonMap("catA",
+                                                                                                "value")));
         assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
         assertEquals(1, repositoryContents("23", MyTestSaga.class).size());
         assertEquals(0, repositoryContents("12", MyTestSaga.class).iterator().next().getSpecificHandlerInvocations());
@@ -166,6 +176,28 @@ public class AnnotatedSagaManagerTest {
         }
     }
 
+    @Test
+    public void testCorrelationDataReadFromProvider() throws Exception {
+        CorrelationDataProvider<? super EventMessage> correlationDataProvider = mock(CorrelationDataProvider.class);
+        manager.setCorrelationDataProvider(correlationDataProvider);
+
+        manager.handle(asEventMessage(new StartingEvent("12")).withMetaData(singletonMap("key", "val")));
+
+        verify(correlationDataProvider).correlationDataFor(isA(EventMessage.class));
+    }
+
+    @Test
+    public void testCorrelationDataReadFromProviders() throws Exception {
+        CorrelationDataProvider<Message> correlationDataProvider1 = mock(CorrelationDataProvider.class);
+        CorrelationDataProvider<Message> correlationDataProvider2 = mock(CorrelationDataProvider.class);
+        manager.setCorrelationDataProviders(asList(correlationDataProvider1, correlationDataProvider2));
+
+        manager.handle(asEventMessage(new StartingEvent("12")).withMetaData(singletonMap("key", "val")));
+
+        verify(correlationDataProvider1).correlationDataFor(isA(EventMessage.class));
+        verify(correlationDataProvider2).correlationDataFor(isA(EventMessage.class));
+    }
+
     @Test(timeout = 5000)
     public void testEventForSagaIsHandledWhenSagaIsBeingCreated() throws InterruptedException {
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -205,8 +237,8 @@ public class AnnotatedSagaManagerTest {
 
     public static class MyTestSaga extends AbstractAnnotatedSaga {
 
-        private List<Object> capturedEvents = new LinkedList<Object>();
         private static final long serialVersionUID = -1562911263884220240L;
+        private List<Object> capturedEvents = new LinkedList<Object>();
         private int specificHandlerInvocations = 0;
 
         @StartSaga

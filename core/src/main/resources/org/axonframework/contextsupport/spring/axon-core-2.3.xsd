@@ -15,10 +15,11 @@
   ~ limitations under the License.
   -->
 
-<xsd:schema xmlns="http://www.axonframework.org/schema/core"
-            xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tool="http://www.springframework.org/schema/tool"
-            targetNamespace="http://www.axonframework.org/schema/core"
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:tool="http://www.springframework.org/schema/tool"
             xmlns:beans="http://www.springframework.org/schema/beans"
+            xmlns="http://www.axonframework.org/schema/core"
+            targetNamespace="http://www.axonframework.org/schema/core"
             elementFormDefault="qualified">
 
     <xsd:import namespace="http://www.springframework.org/schema/beans"
@@ -1475,6 +1476,18 @@
                                 to false, and suppressed and logged if set to true. Defaults to true. This setting is
                                 ignored if an asynchronous saga manager is used.
                             </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
+                    <xsd:attribute name="correlation-data-provider" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Reference to the correlation data provider that provides the meta data
+                                to attach to messages sent from Sagas managed by this manager.
+                            </xsd:documentation>
+                            <xsd:appinfo>
+                                <tool:annotation kind="ref">
+                                    <tool:expected-type type="org.axonframework.correlation.CorrelationDataProvider"/>
+                                </tool:annotation>
+                            </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
                 </xsd:extension>
