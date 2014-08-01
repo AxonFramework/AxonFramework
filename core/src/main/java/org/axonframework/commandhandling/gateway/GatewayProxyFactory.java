@@ -172,7 +172,8 @@ public class GatewayProxyFactory {
     public <T> T createGateway(Class<T> gatewayInterface) {
         Map<Method, InvocationHandler> dispatchers = new HashMap<Method, InvocationHandler>();
         for (Method gatewayMethod : gatewayInterface.getMethods()) {
-            MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterAnnotations());
+            MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterTypes(),
+                                                             gatewayMethod.getParameterAnnotations());
 
             final Class<?>[] arguments = gatewayMethod.getParameterTypes();
 
@@ -363,13 +364,17 @@ public class GatewayProxyFactory {
         return this;
     }
 
-    private MetaDataExtractor[] extractMetaData(Annotation[][] parameterAnnotations) {
+    private MetaDataExtractor[] extractMetaData(Class<?>[] parameterTypes, Annotation[][] parameterAnnotations) {
         List<MetaDataExtractor> extractors = new ArrayList<MetaDataExtractor>();
         for (int i = 0; i < parameterAnnotations.length; i++) {
-            Annotation[] annotations = parameterAnnotations[i];
-            final MetaData metaDataAnnotation = CollectionUtils.getAnnotation(annotations, MetaData.class);
-            if (metaDataAnnotation != null) {
-                extractors.add(new MetaDataExtractor(i, metaDataAnnotation.value()));
+            if (org.axonframework.domain.MetaData.class.isAssignableFrom(parameterTypes[i])) {
+                extractors.add(new MetaDataExtractor(i, null));
+            } else {
+                Annotation[] annotations = parameterAnnotations[i];
+                final MetaData metaDataAnnotation = CollectionUtils.getAnnotation(annotations, MetaData.class);
+                if (metaDataAnnotation != null) {
+                    extractors.add(new MetaDataExtractor(i, metaDataAnnotation.value()));
+                }
             }
         }
         return extractors.toArray(new MetaDataExtractor[extractors.size()]);
@@ -643,8 +648,16 @@ public class GatewayProxyFactory {
             this.metaDataKey = metaDataKey;
         }
 
+        @SuppressWarnings("unchecked")
         public void addMetaData(Object[] args, Map<String, Object> metaData) {
-            metaData.put(metaDataKey, args[argumentIndex]);
+            final Object parameterValue = args[argumentIndex];
+            if (metaDataKey == null) {
+                if (parameterValue != null) {
+                    metaData.putAll((Map<? extends String, ?>) parameterValue);
+                }
+            } else {
+                metaData.put(metaDataKey, parameterValue);
+            }
         }
     }
 

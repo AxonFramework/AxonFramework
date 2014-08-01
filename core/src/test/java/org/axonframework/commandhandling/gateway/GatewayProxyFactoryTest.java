@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -73,7 +74,7 @@ public class GatewayProxyFactoryTest {
     @Test//(timeout = 2000)
     public void testGateway_FireAndForget() {
         final Object metaTest = new Object();
-        gateway.fireAndForget("Command", metaTest, "value");
+        gateway.fireAndForget("Command", null, metaTest, "value");
         verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<?>>() {
             @Override
             public boolean matchesSafely(CommandMessage<?> item) {
@@ -93,12 +94,14 @@ public class GatewayProxyFactoryTest {
         final Object metaTest = new Object();
         GatewayProxyFactory testSubject = new GatewayProxyFactory(mockCommandBus);
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
-        gateway.fireAndForget("Command", metaTest, "value");
+        gateway.fireAndForget("Command", org.axonframework.domain.MetaData.from(singletonMap("otherKey", "otherVal")),
+                              metaTest, "value");
         // in this case, no callback is used
         verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<?>>() {
             @Override
             public boolean matchesSafely(CommandMessage<?> item) {
                 return item.getMetaData().get("test") == metaTest
+                        && "otherVal".equals(item.getMetaData().get("otherKey"))
                         && "value".equals(item.getMetaData().get("key"));
             }
 
@@ -556,7 +559,7 @@ public class GatewayProxyFactoryTest {
 
     private static interface CompleteGateway {
 
-        void fireAndForget(Object command, @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
+        void fireAndForget(Object command, org.axonframework.domain.MetaData meta, @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
 
         String waitForReturnValue(Object command);
 
@@ -622,7 +625,6 @@ public class GatewayProxyFactoryTest {
 
         @Override
         public void onSuccess(String result) {
-            System.out.println("YAYYYYYYYYYYYYYY");
         }
 
         @Override

@@ -98,6 +98,12 @@
                         parameter</para>
                 </listitem>
                 <listitem>
+                    <para>Parameters of type <code>MetaData</code> will be merged with the
+                            <code>MetaData</code> on the CommandMessage. Meta data defined by latter
+                        parameters will overwrite the meta data of earlier parameters, if their key
+                        is equal.</para>
+                </listitem>
+                <listitem>
                     <para>Parameters of type <code>CommandCallback</code> will have their
                             <code>onSuccess</code> or <code>onFailure</code> invoked after the
                         Command is handled. You may pass in more than one callback, and it may be
