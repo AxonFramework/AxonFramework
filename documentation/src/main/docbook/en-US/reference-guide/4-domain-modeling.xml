@@ -345,6 +345,23 @@
                     on the aggregate, Axon can also use the <code>@Id</code> annotation provided by
                     JPA.</para>
             </simplesect>
+            <simplesect>
+                <title>Distinguishing between 'live' and 'historic' events</title>
+                <para>In some cases, especially when aggregate structures grow beyond just a couple
+                    of entities, it is cleaner to react on events being published in other entities
+                    of the same aggregate. However, since Event Handler methods are also invoked
+                    when reconstructing aggregate state, special precautions must be taken.</para>
+                <para>Since Axon 2.3, it is possible to <code>apply()</code> new events inside an
+                    Event Handler method. This makes it possible for an Entity B to apply an event
+                    in reaction to Entity A doing something. Axon will ignore the apply() invocation
+                    when replaying historic events.</para>
+                <para>You can also use the <code>isLive()</code> (if you extend the
+                        <code>AbstractEventSourcedAggregateRoot</code>), to check whether the
+                    aggregate is 'live'. Basically, an aggregate is considered live if it has
+                    finished replaying historic events. While replaying these events, isLive() will
+                    return false. Using this <code>isLive()</code> method, you can perform activity
+                    that should only be done when handling newly generated events.</para>
+            </simplesect>
         </sect2>
         <sect2>
             <title>Complex Aggregate structures</title>

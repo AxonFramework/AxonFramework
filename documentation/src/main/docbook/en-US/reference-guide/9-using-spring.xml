@@ -42,12 +42,12 @@
 	</sect1>
     <sect1>
             <title>Using the Axon namespace shortcut</title>
-            <para>As mentioned earlier, the Axon Framework provides a separate namespace full of
-                elements that allow you to configure your Axon applications quickly when using
-                Spring. In order to use this namespace you must first add the declaration for this
-                namespace to your Spring XML configuration files.</para>
-            <para>Assume you already have an XML configuration file like this:</para>
-            <programlisting language="xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+        <para>As mentioned earlier, the Axon Framework provides a separate namespace full of
+            elements that allow you to configure your Axon applications quickly when using Spring.
+            In order to use this namespace you must first add the declaration for this namespace to
+            your Spring XML configuration files.</para>
+        <para>Assume you already have an XML configuration file like this:</para>
+        <programlisting language="xml"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
@@ -55,29 +55,28 @@
     ...
                
 </beans>]]></programlisting>
-            <para>To modify this configuration file to use elements from the Axon namespace, just
-                add the following declarations:</para>
-            <programlistingco>
-                <areaspec>
-                    <area coords="3 70" xml:id="ex.nmsp.decl"/>
-                    <area coords="5 118" xml:id="ex.nmsp.loc"/>
-                </areaspec>
-                <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
+        <para>To modify this configuration file to use elements from the Axon namespace, just add
+            the following declarations:</para>
+        <programlistingco>
+            <areaspec>
+                <area coords="3 70"/>
+                <area coords="5 118"/>
+            </areaspec>
+            <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:axon="http://www.axonframework.org/schema/core"
     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
     http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">]]></programlisting>
-                <calloutlist>
-                    <callout arearefs="ex.nmsp.decl">
-                        <para>The declaration of the <code>axon</code> namespace reference that you
-                            will use through the configuration file.</para>
-                    </callout>
-                    <callout arearefs="ex.nmsp.loc">
-                        <para>Maps the Axon namespace to the XSD where the namespace is
-                            defined.</para>
-                    </callout>
-                </calloutlist>
-            </programlistingco>
+            <calloutlist>
+                <callout arearefs="ex.nmsp.decl">
+                    <para>The declaration of the <code>axon</code> namespace reference that you will
+                        use through the configuration file.</para>
+                </callout>
+                <callout arearefs="ex.nmsp.loc">
+                    <para>Maps the Axon namespace to the XSD where the namespace is defined.</para>
+                </callout>
+            </calloutlist>
+        </programlistingco>
     </sect1>
 
     <sect1>
@@ -295,18 +294,19 @@
                                 <entry>Needed only if the application context contains more than one
                                     event bus.</entry>
                             </row>
-                            <row>
-                                <entry>executor</entry>
-                                <entry>Optional</entry>
-                                <entry>Reference to a java.util.concurrent.Executor instance
-                                    bean</entry>
-                                <entry>An executor to be used with asynchronous event
-                                    listeners</entry>
-                            </row>
                         </tbody>
                     </tgroup>
                 </table>
             </para>
+            <simplesect>
+                <title>Using JavaConfig</title>
+                <para>If you use Spring JavaConfig to configure Axon, you can place the
+                        <code>@AnnotationDriven</code> annotation on your config files. Similar to
+                    the namespace configuration described above, you can specify the bean names of
+                    the <code>EventBus</code> and <code>CommandBus</code> to register the components
+                    to. This is only required when there is more than one <code>EventBus</code> or
+                        <code>CommandBus</code> in the application context.</para>
+            </simplesect>
         </sect2>
     </sect1>
 

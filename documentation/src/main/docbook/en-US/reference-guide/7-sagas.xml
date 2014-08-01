@@ -214,6 +214,25 @@
                     association with the property defined on the handler method. When two methods
                     have the same number of arguments, the order is undefined.</para>
             </simplesect>
+            <simplesect>
+                <title>Attaching correlation data to outgoing messages</title>
+                <para>In systems requiring auditing, or simply to be able to track the cause and
+                    effect of certain events, it is necessary to attach meta data headers to
+                    messages sent by Sagas. The <code>SagaManager</code> implementations allow you
+                    to configure an <code>AuditDataProvider</code>, which provides this information,
+                    based on an incoming EventMessage. Typically, the <code>AuditDataProvider</code>
+                    will copy certain headers from the incoming message. If this behavior is all you
+                    need, you can use the <code>SimpleCorrelationDataProvider</code>, which is
+                    configured with the names of the meta data entries to copy from the incoming
+                    Message.</para>
+                <para>When using the <code>EventTemplate</code> to send <code>Event</code>s, or the
+                        <code>CommandGateway</code> to send <code>Command</code>s, this correlation
+                    information is automatically attached to these messages. If you 'manually' place
+                        <code>EventMessage</code>s on the <code>EventBus</code>, or
+                        <code>CommandMessage</code>s on the <code>CommandBus</code>, you must attach
+                    the correlation data yourself. You can fetch the correlation data using
+                        <code>CorrelationDataHolder.getCorrelationData()</code>.</para>
+            </simplesect>
         </sect2>
         <sect2>
             <title>Keeping track of Deadlines</title>

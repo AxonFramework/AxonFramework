@@ -59,8 +59,9 @@
             <title>Configuring the Command Gateway</title>
             <para>Both your custom gateway and the one provided by Axon need to be configured with
                 at least access to the Command Bus. In addition, the Command Gateway can be
-                configured with a <code>RetryScheduler</code> and any number of
-                    <code>CommandDispatchInterceptor</code>s.</para>
+                configured with a <code>RetryScheduler</code>,
+                    <code>CommandDispatchInterceptor</code>s, <code>CommandCallback</code>s and
+                    <code>CorrelationDataResolver</code>s.</para>
             <para>The <code>RetryScheduler</code> is capable of scheduling retries when command
                 execution has failed. The <code>IntervalRetryScheduler</code> is an implementation
                 that will retry a given command at set intervals until it succeeds, or a maximum
@@ -74,6 +75,9 @@
                 these interceptors are only invoked when messages are sent through this gateway. The
                 interceptors can be used to attach meta data to a command or do validation, for
                 example.</para>
+            <para>The <code>CommandCallback</code>s are invoked for each command sent. This allows
+                for some generic behavior for all Commands sent through this gateway, regardless of
+                their type. </para>
         </sect2>
         <sect2>
             <title>Creating a Custom Command Gateway</title>
@@ -649,6 +653,9 @@ for (String supportedCommand : handler.supportedCommands()) {
                             be invoked for these
                             commands.
                         </para>
+                        <para>When a command creates an aggregate instance, the callback for that
+                            command will receive the aggregate identifier when the command executed
+                            successfully.</para>
                     </note>
                 </para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
