@@ -144,7 +144,7 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
 
         public FieldForwardingMethodMessageHandler(Field[] fields, AbstractMessageHandler handler) {
             super(handler);
-            this.fields = fields;
+            this.fields = Arrays.copyOf(fields, fields.length);
             this.handler = handler;
         }
 

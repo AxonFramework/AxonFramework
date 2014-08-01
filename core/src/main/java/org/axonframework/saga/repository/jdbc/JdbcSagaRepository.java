@@ -63,8 +63,8 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
     private final SagaSqlSchema sqldef;
 
     /**
-     * Initializes a Saga Repository, using given code>connectionProvider</code> to obtain connections to the database,
-     * using a Generic SQL Schema.
+     * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
+     * database, using a Generic SQL Schema.
      *
      * @param connectionProvider The data source to obtain connections from
      */

@@ -232,7 +232,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                                                                   snapshotEvent.getAggregateIdentifier());
             resultSet = statement.executeQuery();
             //noinspection StatementWithEmptyBody
-            while (maxSnapshotsArchived-- > 0 && resultSet.next()) {
+            while (maxSnapshotsArchived-- > 0 && resultSet.next()) { // NOSONAR
                 // ignore
             }
             List<Long> result = new ArrayList<Long>();
@@ -350,7 +350,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             }
         }
 
-        private String buildWhereClause(LinkedList<Object> params) {
+        private String buildWhereClause(List<Object> params) {
             if (lastItem == null && whereClause == null) {
                 return "";
             }
@@ -461,8 +461,8 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
         private final ResultSet rs;
         private final EventSqlSchema<T> sqlSchema;
-        boolean hasCalledNext = false;
-        boolean hasNext;
+        private boolean hasCalledNext = false;
+        private boolean hasNext;
         private int counter = 0;
 
         public ResultSetIterator(ResultSet resultSet, EventSqlSchema<T> sqlSchema) {

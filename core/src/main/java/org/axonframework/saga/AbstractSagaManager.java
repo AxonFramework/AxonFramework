@@ -344,10 +344,23 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
     }
 
+    /**
+     * Sets the correlation data provider for this SagaManager. It will provide the data to attach to messages sent by
+     * Sagas managed by this manager.
+     *
+     * @param correlationDataProvider    the correlation data provider for this SagaManager
+     */
     public void setCorrelationDataProvider(CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
         this.correlationDataProvider = correlationDataProvider;
     }
 
+    /**
+     * Sets the given <code>correlationDataProviders</code>. Each will provide data to attach to messages sent by Sagas
+     * managed by this manager. When multiple providers provide different values for the same key, the latter provider
+     * will overwrite any values set earlier.
+     *
+     * @param correlationDataProviders the correlation data providers for this SagaManager
+     */
     public void setCorrelationDataProviders(
             List<? extends CorrelationDataProvider<? super EventMessage>> correlationDataProviders) {
         this.correlationDataProvider = new MultiCorrelationDataProvider<EventMessage>(correlationDataProviders);

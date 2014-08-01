@@ -21,9 +21,6 @@ import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListener;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * Cache implementation that delegates all calls to an EhCache instance.
  *
@@ -33,8 +30,6 @@ import java.util.concurrent.ConcurrentMap;
 public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
 
     private final Ehcache ehCache;
-    private final ConcurrentMap<EntryListener, CacheEventListenerAdapter> registeredAdapters =
-            new ConcurrentHashMap<EntryListener, CacheEventListenerAdapter>();
 
     /**
      * Initialize the adapter to forward all call to the given <code>ehCache</code> instance

@@ -429,7 +429,7 @@ public class GatewayProxyFactory {
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
                                               List<CommandDispatchInterceptor> commandDispatchInterceptors,
-                                              MetaDataExtractor[] metaDataExtractors,
+                                              MetaDataExtractor[] metaDataExtractors, // NOSONAR
                                               List<CommandCallback<? super R>> commandCallbacks,
                                               boolean forceCallbacks) {
             super(commandBus, retryScheduler, commandDispatchInterceptors);

@@ -147,7 +147,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
         final String sql = "INSERT INTO " + tableName
                 + " (eventIdentifier, type, aggregateIdentifier, sequenceNumber, timeStamp, payloadType, "
                 + "payloadRevision, payload, metaData) VALUES (?,?,?,?,?,?,?,?,?)";
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        PreparedStatement preparedStatement = connection.prepareStatement(sql); // NOSONAR
         preparedStatement.setString(1, eventIdentifier);
         preparedStatement.setString(2, aggregateType);
         preparedStatement.setString(3, aggregateIdentifier);
