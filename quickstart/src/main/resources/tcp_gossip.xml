@@ -21,8 +21,8 @@
     -Djgroups.bind_addr=192.168.5.2 and -Djgroups.tcpping.initial_hosts=192.168.5.2[7800]
     author: Bela Ban
 -->
-<config xmlns="urn:org:jgroups"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="urn:org:jgroups"
         xsi:schemaLocation="urn:org:jgroups http://www.jgroups.org/schema/JGroups-3.0.xsd">
     <TCP bind_addr="${jgroups.bind_addr:127.0.0.1}"
          bind_port="${jgroups.bind_port:7800}"
@@ -37,7 +37,6 @@
     <UNICAST2/>
     <pbcast.STABLE/>
     <pbcast.GMS/>
-    <UFC/>
     <MFC/>
     <FRAG2/>
     <pbcast.STATE_TRANSFER/>
