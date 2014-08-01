@@ -46,7 +46,7 @@ public class SpringTransactionManager implements TransactionManager<TransactionS
     }
 
     /**
-     * Initializes the SpringTransactionManager with the given <code>transactionManger</code> and the default
+     * Initializes the SpringTransactionManager with the given <code>transactionManager</code> and the default
      * transaction definition.
      *
      * @param transactionManager the transaction manager to use
