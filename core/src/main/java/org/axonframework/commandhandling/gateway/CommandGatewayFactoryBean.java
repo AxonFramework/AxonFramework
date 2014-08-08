@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.FactoryBeanNotInitializedException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -53,12 +54,15 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
 
     @Override
     public T getObject() throws Exception {
+        if (gateway == null) {
+            throw new FactoryBeanNotInitializedException();
+        }
         return gateway;
     }
 
     @Override
     public Class<?> getObjectType() {
-        return gatewayInterface == null ? CommandGateway.class : gatewayInterface;
+        return gatewayInterface;
     }
 
     @Override
@@ -72,11 +76,14 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
         if (commandBus == null) {
             throw new AxonConfigurationException("CommandBus may not be null");
         }
+        if (gatewayInterface == null) {
+            gatewayInterface = (Class<T>) CommandGateway.class;
+        }
         final GatewayProxyFactory factory = new GatewayProxyFactory(commandBus, retryScheduler, dispatchInterceptors);
         for (CommandCallback<?> commandCallback : commandCallbacks) {
             factory.registerCommandCallback(commandCallback);
         }
-        gateway = (T) factory.createGateway(gatewayInterface == null ? CommandGateway.class : gatewayInterface);
+        gateway = factory.createGateway(gatewayInterface);
     }
 
     /**
