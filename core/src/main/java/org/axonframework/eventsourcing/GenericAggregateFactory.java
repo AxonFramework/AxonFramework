@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
 
 import java.lang.reflect.Constructor;
@@ -48,10 +49,29 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
      *
      * @param aggregateType The type of aggregate this factory creates instances of.
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     *                                        settings prevent the GenericAggregateFactory from calling the
-     *                                        constructor.
+     * settings prevent the GenericAggregateFactory from calling the
+     * constructor.
      */
     public GenericAggregateFactory(Class<T> aggregateType) {
+        this(aggregateType, null);
+    }
+
+    /**
+     * Initialize the AggregateFactory for creating instances of the given <code>aggregateType</code> and using the
+     * given <code>parameterResolverFactory</code> to resolve parameters of annotated event handler methods.
+     * <p/>
+     * Note that the <code>parameterResolverFactory</code> is only used if the aggregate is an instance of {@code
+     * org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot}. In other cases, this parameter is
+     * ignored
+     *
+     * @param aggregateType            The type of aggregate this factory creates instances of.
+     * @param parameterResolverFactory THe factory that resolves parameters of annotated event handlers
+     * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
+     * settings prevent the GenericAggregateFactory from calling the
+     * constructor.
+     */
+    public GenericAggregateFactory(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
+        super(parameterResolverFactory);
         Assert.isTrue(EventSourcedAggregateRoot.class.isAssignableFrom(aggregateType),
                       "The given aggregateType must be a subtype of EventSourcedAggregateRoot");
         Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
@@ -68,9 +88,10 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
     /**
      * {@inheritDoc}
      * <p/>
+     *
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     *                                        settings prevent the GenericAggregateFactory from calling the
-     *                                        constructor.
+     * settings prevent the GenericAggregateFactory from calling the
+     * constructor.
      */
     @SuppressWarnings({"unchecked"})
     @Override

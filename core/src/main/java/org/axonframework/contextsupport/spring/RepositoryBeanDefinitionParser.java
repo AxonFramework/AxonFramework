@@ -26,7 +26,7 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionValidationException;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
@@ -37,6 +37,7 @@ import org.w3c.dom.Element;
 import java.util.List;
 
 import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBean;
+import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 import static org.springframework.util.StringUtils.hasText;
 
 /**
@@ -99,7 +100,7 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
             repositoryDefinition.setBeanClass(EventSourcingRepository.class);
         }
 
-        parseAggregateFactory(element, repositoryDefinition);
+        parseAggregateFactory(element, repositoryDefinition, parserContext.getRegistry());
         parseEventStore(element, repositoryDefinition);
         parseLockingStrategy(element, repositoryDefinition);
         parseReferenceAttribute(element, EVENT_BUS_ATTRIBUTE, "eventBus", repositoryDefinition.getPropertyValues(),
@@ -186,20 +187,24 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     /**
      * Parse the {@link org.axonframework.domain.AggregateRoot} type information and make it a constructor argument.
      *
-     * @param element The {@link Element} being parsed.
-     * @param builder The {@link org.springframework.beans.factory.support.BeanDefinitionBuilder} being used to
-     *                construct the {@link BeanDefinition}.
+     * @param element  The {@link org.w3c.dom.Element} being parsed.
+     * @param builder  The {@link org.springframework.beans.factory.support.BeanDefinitionBuilder} being used to
+     *                 construct the {@link org.springframework.beans.factory.config.BeanDefinition}.
+     * @param registry The registry in which beans are registered
      */
     @SuppressWarnings({"unchecked"})
-    private void parseAggregateFactory(Element element, GenericBeanDefinition builder) {
+    private void parseAggregateFactory(Element element, GenericBeanDefinition builder,
+                                       BeanDefinitionRegistry registry) {
         Object aggregateFactory;
         String aggregateFactoryRef = element.getAttribute(AGGREGATE_FACTORY_ATTRIBUTE);
         String aggregateType = element.getAttribute(AGGREGATE_ROOT_TYPE_ATTRIBUTE);
         if (hasText(aggregateFactoryRef)) {
             aggregateFactory = new RuntimeBeanReference(aggregateFactoryRef);
         } else if (hasText(aggregateType)) {
-            aggregateFactory = BeanDefinitionBuilder.genericBeanDefinition(GenericAggregateFactory.class)
-                                                    .addConstructorArgValue(aggregateType).getBeanDefinition();
+            aggregateFactory = genericBeanDefinition(GenericAggregateFactory.class)
+                    .addConstructorArgValue(aggregateType)
+                    .addConstructorArgValue(SpringContextParameterResolverFactoryBuilder.getBeanReference(registry))
+                    .getBeanDefinition();
         } else {
             throw new BeanDefinitionValidationException(
                     "You must provide either an aggregate-type or an aggregate-factory in each "

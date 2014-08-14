@@ -16,7 +16,9 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
 /**
  * Abstract AggregateFactory implementation that is aware of snapshot events. If an incoming event is not a snapshot
@@ -28,6 +30,16 @@ import org.axonframework.domain.DomainEventMessage;
  */
 public abstract class AbstractAggregateFactory<T extends EventSourcedAggregateRoot> implements AggregateFactory<T> {
 
+    private final ParameterResolverFactory parameterResolverFactory;
+
+    protected AbstractAggregateFactory() {
+        this(null);
+    }
+
+    protected AbstractAggregateFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public final T createAggregate(Object aggregateIdentifier, DomainEventMessage<?> firstEvent) {
@@ -36,6 +48,9 @@ public abstract class AbstractAggregateFactory<T extends EventSourcedAggregateRo
             aggregate = (T) firstEvent.getPayload();
         } else {
             aggregate = doCreateAggregate(aggregateIdentifier, firstEvent);
+        }
+        if (parameterResolverFactory != null && aggregate instanceof AbstractAnnotatedAggregateRoot) {
+            ((AbstractAnnotatedAggregateRoot) aggregate).registerParameterResolverFactory(parameterResolverFactory);
         }
         return postProcessInstance(aggregate);
     }

@@ -217,6 +217,8 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
             definitionBuilder = definitionBuilder
                     .addPropertyValue("aggregateFactory", genericBeanDefinition(GenericAggregateFactory.class)
                             .addConstructorArgValue(aggregateType)
+                            .addConstructorArgValue(SpringContextParameterResolverFactoryBuilder
+                                                            .getBeanReference(parserContext.getRegistry()))
                             .getBeanDefinition());
         }
 

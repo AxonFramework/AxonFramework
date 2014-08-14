@@ -21,7 +21,9 @@
 
     <bean class="org.axonframework.eventsourcing.SpringPrototypeAggregateFactory">
         <property name="prototypeBeanName" value="stubAggregate"/>
+        <property name="parameterResolverFactory" ref="parameterResolverFactory"/>
     </bean>
+    <bean id="parameterResolverFactory" class="org.axonframework.contextsupport.spring.SpringParameterResolverFactoryBean"/>
 
     <bean id="stubAggregate" class="org.axonframework.eventsourcing.SpringWiredAggregate" init-method="initialize"
             scope="prototype">

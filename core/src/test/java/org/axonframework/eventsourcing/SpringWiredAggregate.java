@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -56,5 +57,9 @@ public class SpringWiredAggregate extends AbstractAnnotatedAggregateRoot impleme
 
     public void initialize() {
         this.initialized = true;
+    }
+
+    public ParameterResolverFactory getParameterResolverFactory() {
+        return createParameterResolverFactory();
     }
 }

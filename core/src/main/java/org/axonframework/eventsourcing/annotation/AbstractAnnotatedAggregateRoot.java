@@ -30,7 +30,7 @@ import javax.persistence.MappedSuperclass;
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
  * org.axonframework.eventsourcing.annotation.EventSourcingHandler} annotation (and {@link
  * org.axonframework.eventhandling.annotation.EventHandler} for backwards compatibility).
- * <p/>
+ * <p>
  * Implementations can call the {@link #apply(Object)} method to have an event applied.
  *
  * @param <I> The type of the identifier of this aggregate
@@ -45,6 +45,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
     private static final long serialVersionUID = -1206026570158467937L;
     private transient MessageHandlerInvoker eventHandlerInvoker; // NOSONAR
     private transient AggregateAnnotationInspector inspector; // NOSONAR
+    private transient ParameterResolverFactory parameterResolverFactory; // NOSONAR
 
     /**
      * Calls the appropriate handler method with the provided event.
@@ -90,8 +91,9 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
     /**
      * Creates (or returns) a ParameterResolverFactory which is used by this aggregate root to resolve the parameters
      * for @EventSourcingHandler annotated methods.
-     * <p/>
-     * This implementation uses the aggregate root's class loader to find parameter resolver factory implementations
+     * <p>
+     * Unless a specific ParameterResolverFactory has ben registered using {@link #registerParameterResolverFactory(org.axonframework.common.annotation.ParameterResolverFactory)},
+     * this implementation uses the aggregate root's class loader to find parameter resolver factory implementations
      * on the classpath.
      *
      * @return the parameter resolver with which to resolve parameters for event handler methods.
@@ -99,6 +101,22 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
      * @see org.axonframework.common.annotation.ClasspathParameterResolverFactory
      */
     protected ParameterResolverFactory createParameterResolverFactory() {
-        return ClasspathParameterResolverFactory.forClass(getClass());
+        if (parameterResolverFactory == null) {
+            parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
+        }
+        return parameterResolverFactory;
+    }
+
+    /**
+     * Registers the given <code>parameterResolverFactory</code> with this aggregate instance. This factory will
+     * provide the resolvers necessary for the
+     * {@link org.axonframework.eventhandling.annotation.EventHandler @EventHandler} and {@link
+     * org.axonframework.eventsourcing.annotation.EventSourcingHandler @EventSourcingHandler}
+     * annoated metods in all members of this aggregate.
+     *
+     * @param parameterResolverFactory The factory to provide resolvers for parameters of annotated event handlers
+     */
+    public void registerParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
     }
 }
