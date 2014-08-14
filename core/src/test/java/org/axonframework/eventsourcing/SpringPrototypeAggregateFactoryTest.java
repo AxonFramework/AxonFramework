@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.junit.*;
 import org.junit.runner.*;
@@ -35,6 +36,9 @@ public class SpringPrototypeAggregateFactoryTest {
     @Autowired
     private SpringPrototypeAggregateFactory<SpringWiredAggregate> testSubject;
 
+    @Autowired
+    private ParameterResolverFactory parameterResolverFactory;
+
     @Test
     public void testContextStarts() throws Exception {
         assertNotNull(testSubject);
@@ -47,6 +51,8 @@ public class SpringPrototypeAggregateFactoryTest {
         assertTrue("Aggregate's init method not invoked", aggregate.isInitialized());
         assertNotNull("ContextAware method not invoked", aggregate.getContext());
         assertEquals("it's here", aggregate.getSpringConfiguredName());
+
+        assertSame(parameterResolverFactory, aggregate.getParameterResolverFactory());
     }
 
     @Test

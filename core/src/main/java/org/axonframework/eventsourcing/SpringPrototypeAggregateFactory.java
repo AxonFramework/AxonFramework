@@ -16,7 +16,12 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
@@ -41,6 +46,7 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
     private ApplicationContext applicationContext;
     private String beanName;
     private Class<?> aggregateType;
+    private ParameterResolverFactory parameterResolverFactory;
 
     @SuppressWarnings({"unchecked"})
     @Override
@@ -51,6 +57,9 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
     @Override
     protected T postProcessInstance(T aggregate) {
         applicationContext.getAutowireCapableBeanFactory().configureBean(aggregate, prototypeBeanName);
+        if (aggregate instanceof AbstractAnnotatedAggregateRoot) {
+            ((AbstractAnnotatedAggregateRoot) aggregate).registerParameterResolverFactory(parameterResolverFactory);
+        }
         return aggregate;
     }
 
@@ -91,6 +100,15 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
         this.typeIdentifier = typeIdentifier;
     }
 
+    /**
+     * Sets the parameter resolver with which parameters of annotated event handlers in the aggregae are resolved.
+     *
+     * @param parameterResolverFactory the factory that provides resolver for parameters.
+     */
+    public void setParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
+    }
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
@@ -118,6 +136,13 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
                     format("Cannot initialize repository '%s'. "
                                    + "The bean with name '%s' does not extend from EventSourcingAggregateRoot.",
                            beanName, prototypeBeanName));
+        }
+        if (parameterResolverFactory == null) {
+            final SpringBeanParameterResolverFactory springBeanParameterResolverFactory = new SpringBeanParameterResolverFactory();
+            springBeanParameterResolverFactory.setApplicationContext(applicationContext);
+            this.parameterResolverFactory = MultiParameterResolverFactory.ordered(
+                    ClasspathParameterResolverFactory.forClass(aggregateType),
+                    springBeanParameterResolverFactory);
         }
     }
 }

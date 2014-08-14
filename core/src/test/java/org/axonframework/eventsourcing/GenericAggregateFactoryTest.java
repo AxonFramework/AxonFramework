@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubAggregate;
@@ -27,6 +28,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -54,6 +56,18 @@ public class GenericAggregateFactoryTest {
     public void testAggregateTypeIsSimpleName() {
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<StubAggregate>(StubAggregate.class);
         assertEquals("StubAggregate", factory.getTypeIdentifier());
+    }
+
+    @Test
+    public void testParameterResolverIsRegisteredWithCreatedAggregate() {
+        final ParameterResolverFactory parameterResolverFactory = mock(ParameterResolverFactory.class);
+        GenericAggregateFactory<SpringWiredAggregate> factory =
+                new GenericAggregateFactory<SpringWiredAggregate>(SpringWiredAggregate.class,
+                                                                  parameterResolverFactory);
+        final SpringWiredAggregate aggregate = factory.createAggregate("test",
+                                                                       new GenericDomainEventMessage<Object>("test", 0,
+                                                                                                             "test"));
+        assertSame(parameterResolverFactory, aggregate.getParameterResolverFactory());
     }
 
     @Test
@@ -88,8 +102,7 @@ public class GenericAggregateFactoryTest {
         }
     }
 
-    private static class ExceptionThrowingAggregate
-            extends AbstractEventSourcedAggregateRoot {
+    private static class ExceptionThrowingAggregate extends AbstractEventSourcedAggregateRoot {
 
         @AggregateIdentifier
         private String identifier;
@@ -111,6 +124,5 @@ public class GenericAggregateFactoryTest {
         protected Collection<EventSourcedEntity> getChildEntities() {
             return null;
         }
-
     }
 }
