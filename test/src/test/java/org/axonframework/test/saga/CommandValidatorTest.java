@@ -2,16 +2,15 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.utils.RecordingCommandBus;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class CommandValidatorTest {
 
@@ -20,7 +19,7 @@ public class CommandValidatorTest {
     private RecordingCommandBus commandBus;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         commandBus = mock(RecordingCommandBus.class);
         testSubject = new CommandValidator(commandBus);
     }
@@ -39,13 +38,32 @@ public class CommandValidatorTest {
         testSubject.assertDispatchedEqualTo("command");
     }
 
-    private List<CommandMessage<?>> emptyCommandMessageList() {
-        return Collections.<CommandMessage<?>>emptyList();
+    @Test(expected = AxonAssertionError.class)
+    public void testMatchWithUnexpectedNullValue() {
+        when(commandBus.getDispatchedCommands()).thenReturn(listOfOneCommandMessage(new SomeCommand(null)));
+
+        testSubject.assertDispatchedEqualTo(new SomeCommand("test"));
     }
 
-    private List<CommandMessage<?>> listOfOneCommandMessage(String msg) {
+    private List<CommandMessage<?>> emptyCommandMessageList() {
+        return Collections.emptyList();
+    }
+
+    private List<CommandMessage<?>> listOfOneCommandMessage(Object msg) {
         return Arrays.<CommandMessage<?>>asList(GenericCommandMessage.asCommandMessage(msg));
     }
 
 
+    private class SomeCommand {
+
+        private final Object value;
+
+        public SomeCommand(Object value) {
+            this.value = value;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+    }
 }

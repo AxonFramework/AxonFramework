@@ -133,8 +133,8 @@ public class CommandValidator {
                                                     commandIndex,
                                                     expected.getClass().getSimpleName(),
                                                     matcher.getFailedField().getName(),
-                                                    matcher.getFailedFieldExpectedValue().toString(),
-                                                    matcher.getFailedFieldActualValue().toString()));
+                                                    matcher.getFailedFieldExpectedValue(),
+                                                    matcher.getFailedFieldActualValue()));
             }
         }
     }
