@@ -62,5 +62,12 @@ public class SpringDataSourceConnectionProvider implements ConnectionProvider {
         public void close(Connection delegate) {
             DataSourceUtils.releaseConnection(delegate, dataSource);
         }
+
+        @Override
+        public void commit(Connection connection) throws SQLException {
+            if (!DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
+                connection.commit();
+            }
+        }
     }
 }
