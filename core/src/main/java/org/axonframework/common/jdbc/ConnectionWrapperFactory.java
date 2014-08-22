@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Factory for creating wrappers around a Connection, allowing one to override the behavior of the {@link
@@ -70,6 +71,10 @@ public abstract class ConnectionWrapperFactory {
                                                                    && isEmpty(args)) {
                                                                closeHandler.close(connection);
                                                                return null;
+                                                           } else if ("commit".equals(method.getName())
+                                                                   && isEmpty(args)) {
+                                                               closeHandler.commit(connection);
+                                                               return null;
                                                            } else {
                                                                return method.invoke(connection, args);
                                                            }
@@ -104,6 +109,10 @@ public abstract class ConnectionWrapperFactory {
                                                                    && isEmpty(args)) {
                                                                closeHandler.close(connection);
                                                                return null;
+                                                           } else if ("commit".equals(method.getName())
+                                                                   && isEmpty(args)) {
+                                                               closeHandler.commit(connection);
+                                                               return null;
                                                            } else {
                                                                return method.invoke(connection, args);
                                                            }
@@ -127,15 +136,28 @@ public abstract class ConnectionWrapperFactory {
          * @param connection the wrapped connection to close
          */
         void close(Connection connection);
+
+        /**
+         * Commits the underlying transaction
+         *
+         * @param connection the wrapped connection to commit
+         * @throws java.sql.SQLException when an error occurs while committing the connection
+         */
+        void commit(Connection connection) throws SQLException;
     }
 
     /**
-     * Implementation of ConnectionCloseHandler that does nothing.
+     * Implementation of ConnectionCloseHandler that does nothing on close.
      */
     public static class NoOpCloseHandler implements ConnectionCloseHandler {
 
         @Override
         public void close(Connection connection) {
+        }
+
+        @Override
+        public void commit(Connection connection) throws SQLException {
+            connection.commit();
         }
     }
 }

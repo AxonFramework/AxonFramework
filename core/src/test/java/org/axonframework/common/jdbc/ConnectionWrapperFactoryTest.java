@@ -28,7 +28,7 @@ public class ConnectionWrapperFactoryTest {
     public void testWrapperDelegatesAllButClose() throws Exception {
         Connection wrapped = wrap(connection, closeHandler);
         wrapped.commit();
-        verify(connection).commit();
+        verify(closeHandler).commit(connection);
 
         wrapped.getAutoCommit();
         verify(connection).getAutoCommit();
