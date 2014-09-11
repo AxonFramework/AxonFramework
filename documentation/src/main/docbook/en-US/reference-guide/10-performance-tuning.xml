@@ -83,7 +83,7 @@
             <para>By default, the MongoEventStore will only generate the index it requires for
                 correct operation. That means the required unique index on "Aggregate Identifier",
                 "Aggregate Type" and "Event Sequence Number" is created when the Event Store is
-                created. However, when using the MongoEventStore for certain opertaions, it might be
+                created. However, when using the MongoEventStore for certain operations, it might be
                 worthwile to add some extra indices.</para>
             <para>Note that there is always a balance between query optimization and update speed.
                 Load testing is ultimately the best way to discover which indices provide the best
