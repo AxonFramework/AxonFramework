@@ -87,7 +87,9 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      */
     public AnnotatedSagaManager(SagaRepository sagaRepository,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        this(sagaRepository, ClasspathParameterResolverFactory.forClass(sagaClasses[0]), sagaClasses);
+        this(sagaRepository,
+             ClasspathParameterResolverFactory.forClass(sagaClasses.length > 0 ? sagaClasses[0] : sagaRepository.getClass()),
+             sagaClasses);
     }
 
     /**
@@ -113,7 +115,9 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
      */
     public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
                                 Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        this(sagaRepository, sagaFactory, ClasspathParameterResolverFactory.forClass(sagaClasses[0]), sagaClasses);
+        this(sagaRepository, sagaFactory,
+             ClasspathParameterResolverFactory.forClass(sagaClasses.length > 0 ? sagaClasses[0] : sagaRepository.getClass()),
+             sagaClasses);
     }
 
     /**
@@ -171,6 +175,9 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
 
     @Override
     public Class<?> getTargetType() {
+        if (getManagedSagaTypes().isEmpty()) {
+            return Void.TYPE;
+        }
         return getManagedSagaTypes().iterator().next();
     }
 }
