@@ -16,14 +16,23 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.FixedValueParameterResolver;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -66,6 +75,13 @@ public class AbstractAnnotatedAggregateRootTest {
         }
     }
 
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
+
     @Test
     public void testInitializeWithIdentifier() {
         testSubject = new SimpleAggregateRoot(UUID.randomUUID());
@@ -99,6 +115,29 @@ public class AbstractAnnotatedAggregateRootTest {
 
         LateIdentifiedAggregate deserializedAggregate = serializer.deserialize(serialized);
         assertTrue(deserializedAggregate.isLive());
+    }
+
+    @Test
+    public void testAggregateRetrievesParameterResolverFactoryFromUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        uow.attachResource(ParameterResolverFactory.class.getName(), MultiParameterResolverFactory.ordered(
+                ClasspathParameterResolverFactory.forClass(CustomParameterAggregateRoot.class),
+                new ParameterResolverFactory() {
+                    @Override
+                    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                                            Annotation[] parameterAnnotations) {
+                        if (String.class.equals(parameterType)) {
+                            return new FixedValueParameterResolver<String>("It works");
+                        }
+                        return null;
+                    }
+                }));
+        CustomParameterAggregateRoot aggregateRoot = new CustomParameterAggregateRoot();
+        aggregateRoot.doSomething();
+
+        assertEquals("It works", aggregateRoot.secondParameter);
+
+        uow.rollback();
     }
 
     @Test
@@ -153,6 +192,17 @@ public class AbstractAnnotatedAggregateRootTest {
         @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {
             aggregateIdentifier = "lateIdentifier";
+        }
+    }
+
+    private static class CustomParameterAggregateRoot extends SimpleAggregateRoot {
+
+        private String secondParameter;
+
+        @EventSourcingHandler
+        public void myEventHandlerMethod(StubDomainEvent event, String secondParameter) {
+            this.secondParameter = secondParameter;
+            super.myEventHandlerMethod(event);
         }
     }
 

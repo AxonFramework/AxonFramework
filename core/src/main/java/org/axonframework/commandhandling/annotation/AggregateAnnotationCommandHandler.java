@@ -57,6 +57,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
 
     private final CommandTargetResolver commandTargetResolver;
     private final Map<String, CommandHandler<Object>> handlers;
+    private final ParameterResolverFactory parameterResolverFactory;
 
     /**
      * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
@@ -96,6 +97,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver,
                                              ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
         Assert.notNull(aggregateType, "aggregateType may not be null");
         Assert.notNull(repository, "repository may not be null");
         Assert.notNull(commandTargetResolver, "commandTargetResolver may not be null");
@@ -149,8 +151,9 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         this.repository = repository;
         this.commandBus = commandBus;
         this.commandTargetResolver = commandTargetResolver;
+        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(aggregateType);
         this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(
-                aggregateType, ClasspathParameterResolverFactory.forClass(aggregateType)));
+                aggregateType, parameterResolverFactory));
     }
 
     /**
@@ -192,6 +195,21 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
             commandBus.subscribe(supportedCommand, adapter);
         }
         return adapter;
+    }
+
+    /**
+     * Subscribe the given <code>aggregateAnnotationCommandHandler</code> to the given <code>commandBus</code>. The
+     * command handler will be subscribed for each of the supported commands.
+     *
+     * @param aggregateAnnotationCommandHandler The fully configured AggregateAnnotationCommandHandler instance to
+     *                                          subscribe
+     * @param commandBus                        The command bus instance to subscribe to
+     */
+    public static void subscribe(AggregateAnnotationCommandHandler<?> aggregateAnnotationCommandHandler,
+                                 CommandBus commandBus) {
+        for (String supportedCommand : aggregateAnnotationCommandHandler.supportedCommands()) {
+            commandBus.subscribe(supportedCommand, aggregateAnnotationCommandHandler);
+        }
     }
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
@@ -255,6 +273,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
 
     @Override
     public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+        unitOfWork.attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
         return handlers.get(commandMessage.getCommandName()).handle(commandMessage, unitOfWork);
     }
 

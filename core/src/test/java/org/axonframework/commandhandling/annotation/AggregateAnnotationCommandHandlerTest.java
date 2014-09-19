@@ -20,15 +20,22 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.FixedValueParameterResolver;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,9 +58,24 @@ public class AggregateAnnotationCommandHandlerTest {
     public void setUp() throws Exception {
         commandBus = spy(new SimpleCommandBus());
         mockRepository = mock(Repository.class);
-        testSubject = AggregateAnnotationCommandHandler.subscribe(StubCommandAnnotatedAggregate.class,
-                                                                  mockRepository,
-                                                                  commandBus);
+
+        ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
+                ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
+                new ParameterResolverFactory() {
+                    @Override
+                    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                                            Annotation[] parameterAnnotations) {
+                        if (String.class.equals(parameterType)) {
+                            return new FixedValueParameterResolver<String>("It works");
+                        }
+                        return null;
+                    }
+                });
+        testSubject = new AggregateAnnotationCommandHandler<StubCommandAnnotatedAggregate>(StubCommandAnnotatedAggregate.class,
+                                                                                           mockRepository,
+                                                                                           new AnnotationCommandTargetResolver(),
+                                                                                           parameterResolverFactory);
+        AggregateAnnotationCommandHandler.subscribe(testSubject, commandBus);
     }
 
     @Test
@@ -416,6 +438,10 @@ public class AggregateAnnotationCommandHandlerTest {
         @CommandHandler
         public void handleFailingUpdate(FailingUpdateCommand updateCommand) {
             throw new RuntimeException(updateCommand.getMessage());
+        }
+
+        @EventSourcingHandler
+        public void on(StubDomainEvent event, String value) {
         }
 
         public void initializeEntity() {
