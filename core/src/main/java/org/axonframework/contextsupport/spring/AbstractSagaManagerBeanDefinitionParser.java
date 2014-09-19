@@ -182,9 +182,8 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
                     new ClassPathScanningCandidateComponentProvider(false);
             scanner.addIncludeFilter(new AssignableTypeFilter(AbstractAnnotatedSaga.class));
             for (String basePackage : element.getAttribute("base-package").split(",")) {
-                basePackage = basePackage.trim();
                 if (StringUtils.hasText(basePackage)) {
-                    Set<BeanDefinition> candidates = scanner.findCandidateComponents(basePackage);
+                    Set<BeanDefinition> candidates = scanner.findCandidateComponents(basePackage.trim());
                     for (BeanDefinition bd : candidates) {
                         filteredTypes.add(bd.getBeanClassName());
                     }

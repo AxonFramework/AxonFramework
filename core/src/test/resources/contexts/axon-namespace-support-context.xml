@@ -34,7 +34,7 @@
     <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 
     <axon:saga-manager id="sagaManager" saga-factory="sagaFactory" correlation-data-provider="correlationDataProvider"
-                       base-package="org.axonframework.contextsupport.spring">
+                       base-package="org.axonframework.contextsupport.spring, org.does.not.exist">
         <axon:types>
             org.axonframework.eventhandling.scheduling.SimpleTimingSaga
         </axon:types>

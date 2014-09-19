@@ -12,6 +12,7 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -36,6 +37,8 @@ public class SagaManagerBeanDefinitionParserTest {
     public void testSagaManagerSubscribedToEventBus() throws Exception {
         verify(mockEventBus).subscribe(autowiredManager);
         verify(mockEventBus).subscribe(explicitManager);
+
+        assertNotNull(explicitManager.getTargetType());
     }
 
     @ImportResource("classpath:/contexts/saga-manager-context.xml")
