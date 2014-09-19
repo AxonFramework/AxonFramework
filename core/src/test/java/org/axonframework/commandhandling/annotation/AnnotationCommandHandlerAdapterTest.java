@@ -19,6 +19,8 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -39,12 +41,14 @@ public class AnnotationCommandHandlerAdapterTest {
     private CommandBus mockBus;
     private MyCommandHandler mockTarget;
     private UnitOfWork mockUnitOfWork;
+    private ParameterResolverFactory parameterResolverFactory;
 
     @Before
     public void setUp() {
         mockBus = mock(CommandBus.class);
         mockTarget = new MyCommandHandler();
-        testSubject = new AnnotationCommandHandlerAdapter(mockTarget, mockBus);
+        parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
+        testSubject = new AnnotationCommandHandlerAdapter(mockTarget, parameterResolverFactory);
         mockUnitOfWork = mock(UnitOfWork.class);
         CurrentUnitOfWork.set(mockUnitOfWork);
     }
@@ -60,6 +64,8 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(null, actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
+
+        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -68,6 +74,8 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(1, mockTarget.returningHandlerInvoked);
+
+        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -77,6 +85,8 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
         assertEquals(1, mockTarget.almostDuplicateReturningHandlerInvoked);
+
+        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -87,11 +97,25 @@ public class AnnotationCommandHandlerAdapterTest {
         } catch (Exception ex) {
             assertEquals(Exception.class, ex.getClass());
         }
+        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+    }
+
+    @Test
+    public void testSubscribe() {
+        AnnotationCommandHandlerAdapter.subscribe(testSubject, mockBus);
+
+        verify(mockBus).subscribe(Long.class.getName(), testSubject);
+        verify(mockBus).subscribe(String.class.getName(), testSubject);
+        verify(mockBus).subscribe(HashSet.class.getName(), testSubject);
+        verify(mockBus).subscribe(ArrayList.class.getName(), testSubject);
+        verify(mockBus).subscribe("almostLong", testSubject);
+        verifyNoMoreInteractions(mockBus);
     }
 
     @Deprecated
     @Test
-    public void testSubscribe() {
+    public void testSelfSubscribe() {
+        testSubject = new AnnotationCommandHandlerAdapter(mockTarget, mockBus);
         testSubject.subscribe();
 
         verify(mockBus).subscribe(Long.class.getName(), testSubject);
@@ -105,6 +129,8 @@ public class AnnotationCommandHandlerAdapterTest {
     @Test(expected = NoHandlerForCommandException.class)
     public void testHandle_NoHandlerForCommand() throws Throwable {
         testSubject.handle(GenericCommandMessage.asCommandMessage(new LinkedList()), null);
+        verify(mockUnitOfWork, never()).attachResource(ParameterResolverFactory.class.getName(),
+                                                       parameterResolverFactory);
     }
 
     private static class MyCommandHandler {

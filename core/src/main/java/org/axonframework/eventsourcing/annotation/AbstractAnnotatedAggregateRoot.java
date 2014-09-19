@@ -22,6 +22,7 @@ import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 
 import java.util.Collection;
 import javax.persistence.MappedSuperclass;
@@ -30,7 +31,7 @@ import javax.persistence.MappedSuperclass;
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
  * org.axonframework.eventsourcing.annotation.EventSourcingHandler} annotation (and {@link
  * org.axonframework.eventhandling.annotation.EventHandler} for backwards compatibility).
- * <p>
+ * <p/>
  * Implementations can call the {@link #apply(Object)} method to have an event applied.
  *
  * @param <I> The type of the identifier of this aggregate
@@ -91,7 +92,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
     /**
      * Creates (or returns) a ParameterResolverFactory which is used by this aggregate root to resolve the parameters
      * for @EventSourcingHandler annotated methods.
-     * <p>
+     * <p/>
      * Unless a specific ParameterResolverFactory has ben registered using {@link #registerParameterResolverFactory(org.axonframework.common.annotation.ParameterResolverFactory)},
      * this implementation uses the aggregate root's class loader to find parameter resolver factory implementations
      * on the classpath.
@@ -101,6 +102,9 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
      * @see org.axonframework.common.annotation.ClasspathParameterResolverFactory
      */
     protected ParameterResolverFactory createParameterResolverFactory() {
+        if (parameterResolverFactory == null && CurrentUnitOfWork.isStarted()) {
+            parameterResolverFactory = CurrentUnitOfWork.get().getResource(ParameterResolverFactory.class.getName());
+        }
         if (parameterResolverFactory == null) {
             parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
         }
