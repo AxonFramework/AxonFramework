@@ -99,30 +99,43 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
         // ensure that nested invocations know they are nested
         boolean wasNested = applyingEvents;
         applyingEvents = true;
-        if (getIdentifier() == null) {
-            Assert.state(!wasNested, "Applying an event in an @EventSourcingHandler is allowed, but only *after* the "
-                    + "aggregate identifier has been set");
-            // workaround for aggregates that set the aggregate identifier in an Event Handler
-            if (getUncommittedEventCount() > 0 || getVersion() != null) {
-                throw new IncompatibleAggregateException("The Aggregate Identifier has not been initialized. "
-                                                                 + "It must be initialized at the latest when the "
-                                                                 + "first event is applied.");
+        try {
+            if (getIdentifier() == null) {
+                Assert.state(!wasNested,
+                             "Applying an event in an @EventSourcingHandler is allowed, but only *after* the "
+                                     + "aggregate identifier has been set");
+                // workaround for aggregates that set the aggregate identifier in an Event Handler
+                if (getUncommittedEventCount() > 0 || getVersion() != null) {
+                    throw new IncompatibleAggregateException("The Aggregate Identifier has not been initialized. "
+                                                                     + "It must be initialized at the latest when the "
+                                                                     + "first event is applied.");
+                }
+                handleRecursively(new GenericDomainEventMessage<Object>(null, 0, eventPayload, metaData));
+                registerEvent(metaData, eventPayload);
+            } else {
+                // eventsToApply may heb been set to null by serialization
+                if (eventsToApply == null) {
+                    eventsToApply = new ArrayDeque<PayloadAndMetaData>();
+                }
+                eventsToApply.add(new PayloadAndMetaData(eventPayload, metaData));
             }
-            handleRecursively(new GenericDomainEventMessage<Object>(null, 0, eventPayload, metaData));
-            registerEvent(metaData, eventPayload);
-        } else {
-            // eventsToApply may heb been set to null by serialization
-            if (eventsToApply == null) {
-                eventsToApply = new ArrayDeque<PayloadAndMetaData>();
-            }
-            eventsToApply.add(new PayloadAndMetaData(eventPayload, metaData));
-        }
 
-        while (!wasNested && eventsToApply != null && !eventsToApply.isEmpty()) {
-            final PayloadAndMetaData payloadAndMetaData = eventsToApply.poll();
-            handleRecursively(registerEvent(payloadAndMetaData.metaData, payloadAndMetaData.payload));
+            while (!wasNested && eventsToApply != null && !eventsToApply.isEmpty()) {
+                final PayloadAndMetaData payloadAndMetaData = eventsToApply.poll();
+                handleRecursively(registerEvent(payloadAndMetaData.metaData, payloadAndMetaData.payload));
+            }
+        } finally {
+            applyingEvents = wasNested;
         }
-        applyingEvents = wasNested;
+    }
+
+    @Override
+    public void commitEvents() {
+        applyingEvents = false;
+        if (eventsToApply != null) {
+            eventsToApply.clear();
+        }
+        super.commitEvents();
     }
 
     /**
