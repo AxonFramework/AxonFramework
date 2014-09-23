@@ -194,6 +194,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 unitOfWork.onAfterCommit();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             if (transaction != null) {
                 transactionManager.rollbackTransaction(transaction);
             }
@@ -204,10 +205,12 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     private void storeAndPublish(DisruptorUnitOfWork unitOfWork) {
         DomainEventStream eventsToStore = unitOfWork.getEventsToStore();
-        eventStore.appendEvents(unitOfWork.getAggregateType(), eventsToStore);
+        if (eventsToStore.hasNext()) {
+            eventStore.appendEvents(unitOfWork.getAggregateType(), eventsToStore);
+        }
         List<EventMessage> eventMessages = unitOfWork.getEventsToPublish();
         EventMessage[] eventsToPublish = eventMessages.toArray(new EventMessage[eventMessages.size()]);
-        if (eventBus != null) {
+        if (eventBus != null && eventsToPublish.length > 0) {
             eventBus.publish(eventsToPublish);
         }
     }
