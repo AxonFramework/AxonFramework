@@ -16,13 +16,18 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.property.Property;
+import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.Message;
+import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +35,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -67,7 +74,7 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
                                                                                             parameterResolverFactory,
                                                                                             true);
         handlers = new ArrayList<AbstractMessageHandler>(inspector.getHandlers());
-        processNestedEntityCommandHandlers(targetType, targetType, parameterResolverFactory);
+        processNestedEntityCommandHandlers(targetType, parameterResolverFactory, new RootEntityAccessor(targetType));
         for (Constructor constructor : targetType.getConstructors()) {
             if (constructor.isAnnotationPresent(CommandHandler.class)) {
                 constructorCommandHandlers.add(
@@ -76,10 +83,11 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
         }
     }
 
-    private void processNestedEntityCommandHandlers(Class<?> aggregateRoot, Class<?> targetType,
+    private void processNestedEntityCommandHandlers(Class<?> targetType,
                                                     ParameterResolverFactory parameterResolverFactory,
-                                                    Field... fieldStack) {
-        for (Field field : fieldsOf(targetType)) {
+                                                    final EntityAccessor entityAccessor) {
+        for (final Field field : fieldsOf(targetType)) {
+            EntityAccessor newEntityAccessor = null;
             if (field.isAnnotationPresent(CommandHandlingMember.class)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Field {}.{} is annotated with @CommandHandlingMember. "
@@ -87,36 +95,57 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
                                  targetType.getSimpleName(), field.getName(), field.getType().getSimpleName()
                     );
                 }
-                MethodMessageHandlerInspector fieldInspector = MethodMessageHandlerInspector
-                        .getInstance(field.getType(), CommandHandler.class, parameterResolverFactory, true);
-                Field[] stack;
-                if (fieldStack == null) {
-                    stack = new Field[]{field};
-                } else {
-                    stack = Arrays.copyOf(fieldStack, fieldStack.length + 1);
+                newEntityAccessor = new EntityFieldAccessor(entityAccessor, field);
+            } else if (field.isAnnotationPresent(CommandHandlingMemberCollection.class)) {
+                CommandHandlingMemberCollection annotation = field.getAnnotation(CommandHandlingMemberCollection.class);
+                if (!Collection.class.isAssignableFrom(field.getType())) {
+                    throw new AxonConfigurationException(String.format(
+                            "Field %s.%s is annotated with @CommandHandlingMemberCollection, but the declared type of "
+                                    + "the field is not assignable to java.util.Collection.",
+                            targetType.getSimpleName(), field.getName()));
                 }
-                stack[stack.length - 1] = field;
-                ReflectionUtils.ensureAccessible(field);
+                Class<?> entityType = annotation.entityType();
+                if (AbstractAnnotatedEntity.class.equals(entityType)) {
+                    final Type genericType = field.getGenericType();
+                    if (genericType == null
+                            || !(genericType instanceof ParameterizedType)
+                            || ((ParameterizedType) genericType).getActualTypeArguments().length == 0) {
+                        throw new AxonConfigurationException(String.format(
+                                "Field %s.%s is annotated with @CommandHandlingMemberCollection, but the entity"
+                                        + " type is not indicated on the annotation, "
+                                        + "nor can it be deducted from the generic parameters",
+                                targetType.getSimpleName(), field.getName()));
+                    }
+                    entityType = (Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[0];
+                }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Field {}.{} is annotated with @CommandHandlingMemberCollection. "
+                                         + "Checking {} for Command Handlers",
+                                 targetType.getSimpleName(), field.getName(), entityType.getSimpleName()
+                    );
+                }
+                newEntityAccessor = new EntityCollectionFieldAccessor(entityType, annotation, entityAccessor, field);
+            }
+
+            if (newEntityAccessor != null) {
+                MethodMessageHandlerInspector fieldInspector = MethodMessageHandlerInspector
+                        .getInstance(newEntityAccessor.entityType(),
+                                     CommandHandler.class,
+                                     parameterResolverFactory,
+                                     true);
                 for (MethodMessageHandler fieldHandler : fieldInspector.getHandlers()) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Found a Command Handler in {} on path {}.{}",
-                                     field.getType().getSimpleName(), aggregateRoot.getSimpleName(), createPath(stack));
+                        logger.debug("Found a Command Handler in {} on field {}.{}",
+                                     field.getType().getSimpleName(),
+                                     entityAccessor.entityType().getName(),
+                                     field.getName());
                     }
-                    handlers.add(new FieldForwardingMethodMessageHandler(stack, fieldHandler));
+                    handlers.add(new EntityForwardingMethodMessageHandler(newEntityAccessor, fieldHandler));
                 }
-                processNestedEntityCommandHandlers(aggregateRoot, field.getType(), parameterResolverFactory, stack);
+                processNestedEntityCommandHandlers(field.getType(), parameterResolverFactory,
+                                                   newEntityAccessor);
             }
         }
-    }
-
-    private String createPath(Field[] fields) {
-        StringBuilder sb = new StringBuilder();
-        for (Field field : fields) {
-            sb.append(field.getName())
-              .append(".");
-        }
-        sb.setLength(sb.length() - 1);
-        return sb.toString();
     }
 
     /**
@@ -137,28 +166,30 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
         return handlers;
     }
 
-    private static class FieldForwardingMethodMessageHandler extends AbstractMessageHandler {
+    private interface EntityAccessor {
 
-        private final Field[] fields;
+        Object getInstance(Object aggregateRoot, CommandMessage<?> commandMessage) throws IllegalAccessException;
+
+        Class<?> entityType();
+    }
+
+    private static class EntityForwardingMethodMessageHandler extends AbstractMessageHandler {
+
         private final AbstractMessageHandler handler;
+        private final EntityAccessor entityAccessor;
 
-        public FieldForwardingMethodMessageHandler(Field[] fields, AbstractMessageHandler handler) {
+        public EntityForwardingMethodMessageHandler(EntityAccessor entityAccessor, AbstractMessageHandler handler) {
             super(handler);
-            this.fields = Arrays.copyOf(fields, fields.length);
+            this.entityAccessor = entityAccessor;
             this.handler = handler;
         }
 
         @Override
         public Object invoke(Object target, Message message) throws InvocationTargetException, IllegalAccessException {
-            Object entity = target;
-            for (Field field : fields) {
-                entity = field.get(entity);
-                if (entity == null) {
-                    throw new IllegalStateException(
-                            "There is no instance available in the '" + field.getName() + "' field, declared in '" +
-                                    field.getDeclaringClass().getName() + "'. The command cannot be handled."
-                    );
-                }
+            Object entity = entityAccessor.getInstance(target, (CommandMessage) message);
+            if (entity == null) {
+                throw new IllegalStateException("No appropriate entity available in the aggregate. "
+                                                        + "The command cannot be handled.");
             }
             return handler.invoke(entity, message);
         }
@@ -166,6 +197,100 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
         @Override
         public <T extends Annotation> T getAnnotation(Class<T> annotationType) {
             return handler.getAnnotation(annotationType);
+        }
+    }
+
+    private static class EntityFieldAccessor implements EntityAccessor {
+
+        private final EntityAccessor entityAccessor;
+        private final Field field;
+
+        public EntityFieldAccessor(EntityAccessor parent, Field field) {
+            this.entityAccessor = parent;
+            this.field = field;
+        }
+
+        @Override
+        public Class<?> entityType() {
+            return field.getType();
+        }
+
+        @Override
+        public Object getInstance(Object aggregateRoot, CommandMessage<?> commandMessage)
+                throws IllegalAccessException {
+            Object entity = entityAccessor.getInstance(aggregateRoot, commandMessage);
+            return entity != null ? ReflectionUtils.getFieldValue(field, entity) : null;
+        }
+    }
+
+    private static class RootEntityAccessor implements EntityAccessor {
+
+        private final Class<?> entityType;
+
+        private RootEntityAccessor(Class<?> entityType) {
+            this.entityType = entityType;
+        }
+
+        @Override
+        public Object getInstance(Object aggregateRoot, CommandMessage<?> commandMessage) {
+            return aggregateRoot;
+        }
+
+        @Override
+        public Class<?> entityType() {
+            return entityType;
+        }
+    }
+
+    private class EntityCollectionFieldAccessor implements EntityAccessor {
+
+        private final Class<?> entityType;
+        private final CommandHandlingMemberCollection annotation;
+        private final EntityAccessor entityAccessor;
+        private final Field field;
+        private final Property<Object> entityProperty;
+
+        @SuppressWarnings("unchecked")
+        public EntityCollectionFieldAccessor(Class entityType, CommandHandlingMemberCollection annotation,
+                                             EntityAccessor entityAccessor, Field field) {
+            this.entityProperty = PropertyAccessStrategy.getProperty(entityType, annotation.entityId());
+            this.entityType = entityType;
+            this.annotation = annotation;
+            this.entityAccessor = entityAccessor;
+            this.field = field;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object getInstance(Object aggregateRoot, CommandMessage<?> command) throws IllegalAccessException {
+            final Object parentEntity = entityAccessor.getInstance(aggregateRoot, command);
+            if (parentEntity == null) {
+                return null;
+            }
+            Collection<?> entityCollection = (Collection<?>) ReflectionUtils.getFieldValue(field, parentEntity);
+            Property<Object> commandProperty = PropertyAccessStrategy.getProperty(command.getPayloadType(),
+                                                                                  annotation.commandTargetProperty());
+
+            if (commandProperty == null) {
+                // TODO: Log failure. It seems weird that the property is not present
+                return null;
+            }
+            Object commandId = commandProperty.getValue(command.getPayload());
+            if (commandId == null) {
+                return null;
+            }
+            for (Object entity : entityCollection) {
+                Object entityId = entityProperty.getValue(entity);
+                if (entityId != null && entityId.equals(commandId)) {
+                    return entity;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Class<?> entityType() {
+            return entityType;
         }
     }
 }
