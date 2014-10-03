@@ -39,6 +39,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Cluster implementation that wraps another Cluster, adding the capability to replay events from an Event Store. All
@@ -58,6 +61,12 @@ import java.util.concurrent.RunnableFuture;
 public class ReplayingCluster implements Cluster {
 
     private static final Logger logger = LoggerFactory.getLogger(ReplayingCluster.class);
+
+    /**
+     * The key to use in Cluster MetaData that indicates how long the replaying cluster should wait for all events to
+     * be processed, before invoking the afterReplay on all methods. Defaults to 5 seconds.
+     */
+    public static final String AFTER_REPLAY_TIMEOUT = "afterReplayTimeout";
 
     private final Cluster delegate;
     private final EventStoreManagement replayingEventStore;
@@ -251,6 +260,18 @@ public class ReplayingCluster implements Cluster {
         eventHandlingListeners.delegates.remove(monitor);
     }
 
+    public long getAfterReplayTimeout() {
+        if (getMetaData().isPropertySet(AFTER_REPLAY_TIMEOUT)) {
+            final String timeout = getMetaData().getProperty(AFTER_REPLAY_TIMEOUT).toString();
+            try {
+                return Long.parseLong(timeout);
+            } catch (NumberFormatException e) {
+                logger.error("Not a number: '{}'. Reverting to default timeout of 5 seconds.", timeout);
+            }
+        }
+        return 5000L;
+    }
+
     private class ReplayEventsTask implements Runnable {
 
         private final Criteria criteria;
@@ -269,18 +290,24 @@ public class ReplayingCluster implements Cluster {
             Object tx = transactionManager.startTransaction();
 
             logger.trace("Started new transaction for event replay");
+            final LastEventMonitor monitor = new LastEventMonitor();
             final ReplayingEventVisitor visitor = new ReplayingEventVisitor(tx);
             try {
                 logger.trace("Notifying replay aware listeners 'beforeReplay'");
                 for (ReplayAware replayAwareEventListener : replayAwareListeners) {
                     replayAwareEventListener.beforeReplay();
                 }
+                delegate.subscribeEventProcessingMonitor(monitor);
                 if (criteria != null) {
                     logger.trace("Starting visiting events using criteria");
                     replayingEventStore.visitEvents(criteria, visitor);
                 } else {
                     logger.trace("Starting visiting events without criteria");
                     replayingEventStore.visitEvents(visitor);
+                }
+                EventMessage lastMessage = visitor.getLastMessage();
+                if (lastMessage != null) {
+                    monitor.waitForLastMessageProcessed(lastMessage, getAfterReplayTimeout());
                 }
 
                 logger.trace("Notifying replay aware listeners 'afterReplay'");
@@ -318,6 +345,7 @@ public class ReplayingCluster implements Cluster {
 
             private int eventCounter = 0;
             private Object currentTransaction;
+            private EventMessage lastMessage;
 
             public ReplayingEventVisitor(Object tx) {
                 this.currentTransaction = tx;
@@ -338,6 +366,11 @@ public class ReplayingCluster implements Cluster {
                 if (releasedMessages != null && !releasedMessages.isEmpty()) {
                     eventHandlingListeners.onEventProcessingCompleted(releasedMessages);
                 }
+                lastMessage = domainEvent;
+            }
+
+            public EventMessage getLastMessage() {
+                return lastMessage;
             }
 
             public Object getTransaction() {
@@ -345,6 +378,55 @@ public class ReplayingCluster implements Cluster {
             }
         }
     }
+
+    private static class LastEventMonitor implements EventProcessingMonitor {
+
+        private final ReentrantLock lock = new ReentrantLock();
+        private final Condition condition = lock.newCondition();
+
+        // guarded by lock
+        private EventMessage lastProvidedMessage;
+        // guarded by lock
+        private EventMessage lastProcessedMessage;
+
+        @Override
+        public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {
+            lock.lock();
+            try {
+                lastProcessedMessage = eventMessages.get(eventMessages.size() - 1);
+            } finally {
+                if (lastProvidedMessage != null
+                        && lastProcessedMessage.getIdentifier().equals(lastProvidedMessage.getIdentifier())) {
+                    condition.signalAll();
+                }
+                lock.unlock();
+            }
+        }
+
+        @Override
+        public void onEventProcessingFailed(List<? extends EventMessage> eventMessages, Throwable cause) {
+            onEventProcessingCompleted(eventMessages);
+        }
+
+        public void waitForLastMessageProcessed(EventMessage lastProvidedMessage, long timeout) {
+            lock.lock();
+            try {
+                this.lastProvidedMessage = lastProvidedMessage;
+                if (lastProcessedMessage == null
+                        || !lastProcessedMessage.getIdentifier().equals(this.lastProvidedMessage.getIdentifier())) {
+                    try {
+                        condition.await(timeout, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        // thread is interrupted. Reset interrupted state and move on
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
 
     private final class EventProcessingListeners implements EventProcessingMonitor {
 
