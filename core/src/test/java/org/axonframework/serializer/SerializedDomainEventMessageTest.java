@@ -17,7 +17,9 @@
 package org.axonframework.serializer;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
+import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.joda.time.DateTime;
 import org.junit.*;
 
@@ -105,5 +107,27 @@ public class SerializedDomainEventMessageTest {
         assertEquals("value", message1.getMetaData().get("key"));
         assertEquals(1, message2.getMetaData().size());
         assertEquals("otherValue", message2.getMetaData().get("key"));
+    }
+
+    @Test
+    public void testIdentifierStaysIdenticalWhenAddingMetaData() {
+        Serializer serializer = new JavaSerializer();
+        DomainEventMessage<String> message = new GenericDomainEventMessage<String>("ID", 0, "Payload",
+                                                                                     MetaData.emptyInstance());
+
+        SerializedObject<byte[]> payload = serializer.serialize(message.getPayload(), byte[].class);
+        SerializedObject<byte[]> metaData = serializer.serialize(message.getMetaData(), byte[].class);
+
+        SerializedDomainEventData data = new DomainEventEntry("Object", message, payload, metaData);
+
+        SerializedDomainEventMessage<String> sdem = new SerializedDomainEventMessage<String>(data, serializer);
+
+        assertEquals(sdem.getIdentifier(),
+                     sdem.withMetaData(Collections.singletonMap("Key1", "Value1")).getIdentifier());
+
+        sdem.getPayload(); // trigger deserialization
+
+        assertEquals(sdem.getIdentifier(),
+                     sdem.withMetaData(Collections.singletonMap("Key2", "Value2")).getIdentifier());
     }
 }

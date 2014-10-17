@@ -105,7 +105,8 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     @Override
     public DomainEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (eventMessage.isPayloadDeserialized()) {
-            return new GenericDomainEventMessage<T>(aggregateIdentifier, sequenceNumber,
+            return new GenericDomainEventMessage<T>(getIdentifier(), getTimestamp(),
+                                                    aggregateIdentifier, sequenceNumber,
                                                     getPayload(), newMetaData);
         } else {
             return new SerializedDomainEventMessage<T>(this, newMetaData);
