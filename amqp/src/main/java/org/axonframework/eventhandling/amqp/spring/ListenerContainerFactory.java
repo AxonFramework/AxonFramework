@@ -41,6 +41,23 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
     private ApplicationContext applicationContext;
     private ConnectionFactory connectionFactory;
 
+    private static final RabbitMqStrategy rabbitMqStrategy;
+
+    static {
+        boolean methodExists;
+        try {
+            SimpleMessageListenerContainer.class.getMethod("setExclusive", boolean.class);
+            methodExists = true;
+        } catch (NoSuchMethodException e) {
+            methodExists = false;
+        }
+        if (methodExists) {
+            rabbitMqStrategy = new DefaultRabbitMqStrategy();
+        } else {
+            rabbitMqStrategy = new LegacyRabbitMqStrategy();
+        }
+    }
+
     /**
      * Creates a new SimpleMessageListenerContainer, initialized with the properties set on this factory.
      *
@@ -48,7 +65,7 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
      * @return a fully initialized (but not started!) SimpleMessageListenerContainer instance.
      */
     public SimpleMessageListenerContainer createContainer(SpringAMQPConsumerConfiguration config) {
-        ExtendedMessageListenerContainer newContainer = new ExtendedMessageListenerContainer();
+        SimpleMessageListenerContainer newContainer = rabbitMqStrategy.createContainer();
         newContainer.setConnectionFactory(connectionFactory);
         if (config.getTransactionManager() != null) {
             newContainer.setChannelTransacted(true);
@@ -91,7 +108,7 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
             newContainer.setAcknowledgeMode(config.getAcknowledgeMode());
         }
         if (config.getExclusive() != null) {
-            newContainer.setExclusive(config.getExclusive());
+            rabbitMqStrategy.setExclusive(newContainer, config.getExclusive());
         }
         newContainer.afterPropertiesSet();
         return newContainer;
