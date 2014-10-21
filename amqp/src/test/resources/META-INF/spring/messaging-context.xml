@@ -15,10 +15,11 @@
   ~ limitations under the License.
   -->
 
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit" xmlns:axon="http://www.axonframework.org/schema/core"
+       xmlns:axon-amqp="http://www.axonframework.org/schema/amqp" xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-       http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd">
+       http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd http://www.axonframework.org/schema/amqp http://www.axonframework.org/schema/axon-amqp.xsd">
 
     <rabbit:fanout-exchange id="eventBusExchange" name="Axon.EventBus" durable="false" auto-delete="true">
         <rabbit:bindings>
@@ -31,39 +32,21 @@
 
     <rabbit:connection-factory id="connectionFactory"/>
 
-    <bean class="org.axonframework.eventhandling.ClusteringEventBus">
-        <constructor-arg>
-            <bean class="org.axonframework.eventhandling.DefaultClusterSelector">
-                <constructor-arg ref="cluster1"/>
-            </bean>
-        </constructor-arg>
-        <constructor-arg ref="terminal"/>
-    </bean>
+    <axon:event-bus terminal="terminal"/>
 
-    <bean id="cluster1" class="org.axonframework.eventhandling.SimpleClusterFactoryBean">
-        <property name="metaDataValues">
-            <map>
-                <entry key="AMQP.Config">
-                    <bean class="org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration">
-                        <property name="queueName" value="Axon.EventBus.Default"/>
-                    </bean>
-                </entry>
-            </map>
-        </property>
-    </bean>
+    <axon:cluster id="cluster1" default="true">
+        <axon:meta-data>
+            <entry key="AMQP.Config">
+                <bean class="org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration">
+                    <property name="queueName" value="Axon.EventBus.Default"/>
+                </bean>
+            </entry>
+        </axon:meta-data>
+    </axon:cluster>
 
-    <bean class="org.axonframework.eventhandling.amqp.spring.ListenerContainerLifecycleManager">
-        <property name="defaultConfiguration">
-            <bean class="org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration">
-                <property name="prefetchCount" value="100"/>
-            </bean>
-        </property>
-    </bean>
-
-    <bean id="terminal" class="org.axonframework.eventhandling.amqp.spring.SpringAMQPTerminal">
-        <property name="exchange" ref="eventBusExchange"/>
-        <property name="transactional" value="true"/>
-    </bean>
+    <axon-amqp:terminal id="terminal" exchange-name="Axon.EventBus" transactional="true">
+        <axon-amqp:default-configuration prefetch="100"/>
+    </axon-amqp:terminal>
 
     <bean id="serializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 </beans>
