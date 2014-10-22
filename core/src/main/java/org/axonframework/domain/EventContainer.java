@@ -73,14 +73,44 @@ public class EventContainer implements Serializable {
     public <T> DomainEventMessage<T> addEvent(MetaData metaData, T payload) {
         DomainEventMessage<T> event = new GenericDomainEventMessage<T>(aggregateIdentifier, newSequenceNumber(),
                                                                        payload, metaData);
+        return actuallyAddEvent(event);
+    }
+
+    /**
+     * Add an event to this container.
+     * <p/>
+     * Events should either be already assigned to the aggregate with the same identifier as this container, or have no
+     * aggregate assigned yet. If an event has a sequence number assigned, it must follow directly upon the sequence
+     * number of the event that was previously added.
+     *
+     * @param event  the event to add to this container
+     * @param <T>    the type of payload contained in the event
+     * @return the DomainEventMessage added to the container
+     */
+    public <T> DomainEventMessage<T> addEvent(final DomainEventMessage<T> event) {
+        DomainEventMessage<T> newEvent = new GenericDomainEventMessage<T>(event.getIdentifier(), event.getTimestamp(),
+                aggregateIdentifier, newSequenceNumber(), event.getPayload(), event.getMetaData());
+        return actuallyAddEvent(newEvent);
+    }
+
+
+    /**
+     * Helper method for addEvent. Handles the actual adding of the event and calling of all registered
+     * EventRegistrationCallback callbacks.
+     *
+     * @param newEvent the event to add to this container
+     * @param <T>      the type of payload contained in the event
+     * @return the DomainEventMessage added to the container (possibly altered by callbacks)
+     */
+    private <T> DomainEventMessage<T> actuallyAddEvent(DomainEventMessage<T> newEvent) {
         if (registrationCallbacks != null) {
             for (EventRegistrationCallback callback : registrationCallbacks) {
-                event = callback.onRegisteredEvent(event);
+                newEvent = callback.onRegisteredEvent(newEvent);
             }
         }
-        lastSequenceNumber = event.getSequenceNumber();
-        events.add(event);
-        return event;
+        lastSequenceNumber = newEvent.getSequenceNumber();
+        events.add(newEvent);
+        return newEvent;
     }
 
     /**

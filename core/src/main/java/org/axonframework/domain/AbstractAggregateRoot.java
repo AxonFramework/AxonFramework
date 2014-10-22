@@ -63,6 +63,17 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
     /**
      * Registers an event to be published when the aggregate is saved.
      *
+     * @param event the event to register
+     * @param <T>     The type of payload
+     * @return The Event
+     */
+    protected <T> DomainEventMessage<T> registerEvent(DomainEventMessage<T> event) {
+        return getEventContainer().addEvent(event);
+    }
+
+    /**
+     * Registers an event to be published when the aggregate is saved.
+     *
      * @param metaData The meta data of the event to register
      * @param payload  the payload of the event to register
      * @param <T>      The type of payload
