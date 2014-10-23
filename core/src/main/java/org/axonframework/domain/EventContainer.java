@@ -88,9 +88,13 @@ public class EventContainer implements Serializable {
      * @return the DomainEventMessage added to the container
      */
     public <T> DomainEventMessage<T> addEvent(final DomainEventMessage<T> event) {
-        DomainEventMessage<T> newEvent = new GenericDomainEventMessage<T>(event.getIdentifier(), event.getTimestamp(),
-                aggregateIdentifier, newSequenceNumber(), event.getPayload(), event.getMetaData());
-        return actuallyAddEvent(newEvent);
+        if(event.getAggregateIdentifier() != null){
+            return actuallyAddEvent(event);
+        }else {
+            DomainEventMessage<T> newEvent = new GenericDomainEventMessage<T>(event.getIdentifier(), event.getTimestamp(),
+                    aggregateIdentifier, newSequenceNumber(), event.getPayload(), event.getMetaData());
+            return actuallyAddEvent(newEvent);
+        }
     }
 
 
@@ -98,19 +102,19 @@ public class EventContainer implements Serializable {
      * Helper method for addEvent. Handles the actual adding of the event and calling of all registered
      * EventRegistrationCallback callbacks.
      *
-     * @param newEvent the event to add to this container
+     * @param event the event to add to this container
      * @param <T>      the type of payload contained in the event
      * @return the DomainEventMessage added to the container (possibly altered by callbacks)
      */
-    private <T> DomainEventMessage<T> actuallyAddEvent(DomainEventMessage<T> newEvent) {
+    private <T> DomainEventMessage<T> actuallyAddEvent(DomainEventMessage<T> event) {
         if (registrationCallbacks != null) {
             for (EventRegistrationCallback callback : registrationCallbacks) {
-                newEvent = callback.onRegisteredEvent(newEvent);
+                event = callback.onRegisteredEvent(event);
             }
         }
-        lastSequenceNumber = newEvent.getSequenceNumber();
-        events.add(newEvent);
-        return newEvent;
+        lastSequenceNumber = event.getSequenceNumber();
+        events.add(event);
+        return event;
     }
 
     /**
