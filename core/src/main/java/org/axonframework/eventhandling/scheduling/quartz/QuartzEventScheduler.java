@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 
 import static org.quartz.JobKey.jobKey;
 
@@ -54,9 +53,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private static final Logger logger = LoggerFactory.getLogger(QuartzEventScheduler.class);
     private static final String JOB_NAME_PREFIX = "event-";
     private static final String DEFAULT_GROUP_NAME = "AxonFramework-Events";
+    private String groupIdentifier = DEFAULT_GROUP_NAME;
     private Scheduler scheduler;
     private EventBus eventBus;
-    private String groupIdentifier = DEFAULT_GROUP_NAME;
     private volatile boolean initialized;
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
 
@@ -154,7 +153,6 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      *
      * @param scheduler the backing Quartz Scheduler for this timer
      */
-    @Resource
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
@@ -164,7 +162,6 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      *
      * @param eventBus the event bus to which scheduled events need to be published.
      */
-    @Resource
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
     }

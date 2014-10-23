@@ -15,8 +15,8 @@
   ~ limitations under the License.
   -->
 
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="entityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
@@ -30,6 +30,7 @@
         <constructor-arg ref="entityManagerProvider"/>
         <constructor-arg value="org.axonframework.eventsourcing.JpaEventSourcedAggregate"/>
         <property name="eventStore" ref="mockEventStore"/>
+        <property name="eventBus" ref="eventBus"/>
     </bean>
 
     <bean id="mockEventStore" class="org.axonframework.testutils.MockitoMockFactoryBean">

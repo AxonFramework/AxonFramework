@@ -23,13 +23,11 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Resource;
 
 /**
  * Implementation of a snapshotter that uses the actual aggregate and its state to create a snapshot event. The
  * motivation is that an aggregate always contains all relevant state. Therefore, storing the aggregate itself inside
- * an
- * event should capture all necessary information.
+ * an event should capture all necessary information.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -60,7 +58,6 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @throws NullPointerException if <code>aggregateFactories</code> is <code>null</code> or if contains any
      *                              <code>null</code> values.
      */
-    @Resource
     public void setAggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
         for (AggregateFactory<?> factory : aggregateFactories) {
             this.aggregateFactories.put(factory.getTypeIdentifier(), factory);
