@@ -29,7 +29,7 @@ To sign the CLA, visit: http://www.axonframework.org/cla. You can sign using a G
 
 ### Code style
 
-We're trying very hard to maintain a consistent style of coding throughout the code base. Thingk of things like
+We're trying very hard to maintain a consistent style of coding throughout the code base. Think of things like
 indenting using 4 spaces, putting opening brackets (the '{') on the same line and putting proper Javadoc on all
 non-private members.
 
