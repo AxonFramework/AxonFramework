@@ -28,11 +28,11 @@ import org.junit.Test;
 /**
  * @author Knut-Olav Hoven
  */
-public class OverlayingEventStoreTest {
+public class ContinuousEventStoreTest {
 
     @Test
     public void readEvents_givenNoEvents() {
-        OverlayingEventStore es = givenNoEvents();
+        ContinuousEventStore es = givenNoEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -41,7 +41,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void readEvents_givenEventsFromBackend() {
-        OverlayingEventStore es = givenEventsFromBackend();
+        ContinuousEventStore es = givenEventsFromBackend();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -53,7 +53,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void readEvents_givenVolatileEvents() {
-        OverlayingEventStore es = givenVolatileEvents();
+        ContinuousEventStore es = givenVolatileEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -65,7 +65,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void readEvents_givenBackendEventsAndVolatileEvents() {
-        OverlayingEventStore es = givenBackendEventsAndVolatileEvents();
+        ContinuousEventStore es = givenBackendEventsAndVolatileEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -77,7 +77,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void readEvents_givenVolatileEventsAndCutOffBackendEvents() {
-        OverlayingEventStore es = givenVolatileEventsAndCutOffBackendEvents();
+        ContinuousEventStore es = givenVolatileEventsAndCutOffBackendEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -88,7 +88,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void visitEvents_givenNoEvents() {
-        OverlayingEventStore es = givenNoEvents();
+        ContinuousEventStore es = givenNoEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -99,7 +99,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void visitEvents_givenEventsFromBackend() {
-        OverlayingEventStore es = givenEventsFromBackend();
+        ContinuousEventStore es = givenEventsFromBackend();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -111,7 +111,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void visitEvents_givenVolatileEvents() {
-        OverlayingEventStore es = givenVolatileEvents();
+        ContinuousEventStore es = givenVolatileEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -123,7 +123,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void visitEvents_givenBackendEventsAndVolatileEvents() {
-        OverlayingEventStore es = givenBackendEventsAndVolatileEvents();
+        ContinuousEventStore es = givenBackendEventsAndVolatileEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -135,7 +135,7 @@ public class OverlayingEventStoreTest {
 
     @Test
     public void visitEvents_givenVolatileEventsAndCutOffBackendEvents() {
-        OverlayingEventStore es = givenVolatileEventsAndCutOffBackendEvents();
+        ContinuousEventStore es = givenVolatileEventsAndCutOffBackendEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -145,14 +145,14 @@ public class OverlayingEventStoreTest {
         assertThat(visitor.visited().get(0).getSequenceNumber()).isEqualTo(0L);
     }
 
-    private OverlayingEventStore givenNoEvents() {
+    private ContinuousEventStore givenNoEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         TimestampCutoffReadonlyEventStore backend = new VolatileEventStore().cutoff(future());
 
-        return new OverlayingEventStore(volatileEventStore, volatileEventStore, backend, backend);
+        return new ContinuousEventStore(volatileEventStore, volatileEventStore, backend, backend);
     }
 
-    private OverlayingEventStore givenEventsFromBackend() {
+    private ContinuousEventStore givenEventsFromBackend() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
 
         VolatileEventStore backend = new VolatileEventStore();
@@ -162,10 +162,10 @@ public class OverlayingEventStoreTest {
         backend.appendEvents("MyAggregate", ec.getEventStream());
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
-        return new OverlayingEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
+        return new ContinuousEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
     }
 
-    private OverlayingEventStore givenVolatileEvents() {
+    private ContinuousEventStore givenVolatileEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         EventContainer ec = new EventContainer("My-1");
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
@@ -174,10 +174,10 @@ public class OverlayingEventStoreTest {
 
         TimestampCutoffReadonlyEventStore backend = new VolatileEventStore().cutoff(future());
 
-        return new OverlayingEventStore(volatileEventStore, volatileEventStore, backend, backend);
+        return new ContinuousEventStore(volatileEventStore, volatileEventStore, backend, backend);
     }
 
-    private OverlayingEventStore givenBackendEventsAndVolatileEvents() {
+    private ContinuousEventStore givenBackendEventsAndVolatileEvents() {
         VolatileEventStore backend = new VolatileEventStore();
         EventContainer ecBack = new EventContainer("My-1");
         ecBack.addEvent(MetaData.emptyInstance(), new MyEvent(1));
@@ -191,10 +191,10 @@ public class OverlayingEventStoreTest {
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
-        return new OverlayingEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
+        return new ContinuousEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
     }
 
-    private OverlayingEventStore givenVolatileEventsAndCutOffBackendEvents() {
+    private ContinuousEventStore givenVolatileEventsAndCutOffBackendEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         EventContainer ecVolatile = new EventContainer("My-1");
         ecVolatile.addEvent(MetaData.emptyInstance(), new MyEvent(1));
@@ -208,7 +208,7 @@ public class OverlayingEventStoreTest {
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(past());
 
-        return new OverlayingEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
+        return new ContinuousEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
     }
 
     private static DateTime future() {

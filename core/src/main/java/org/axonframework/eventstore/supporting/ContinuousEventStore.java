@@ -32,37 +32,38 @@ import org.axonframework.eventstore.management.EventStoreManagement;
  * Joins two {@link EventStore}s together.
  * 
  * <p>
- * Backend is read-only. Overlay is both read and write. Appends are only directed to the overlay {@link EventStore}.
+ * First {@link EventStore} is read-only, supposed to hold the oldest events. The second {@link EventStore} is both read
+ * and write. Appends are only directed to the second {@link EventStore}, supposed to hold newer events.
  * </p>
  * 
  * <p>
- * Reads are first done from the backend {@link EventStore}, then from the overlay {@link EventStore}.
+ * Reads are first made from the first {@link EventStore}, then from the second {@link EventStore}.
  * </p>
  * 
  * @author Knut-Olav Hoven
  */
 @SuppressWarnings("rawtypes")
-public class OverlayingEventStore implements EventStore, EventStoreManagement {
-    private final EventStore backend;
-    private final EventStoreManagement backendManagement;
-    private final EventStore overlay;
-    private final EventStoreManagement overlayManagement;
+public class ContinuousEventStore implements EventStore, EventStoreManagement {
+    private final EventStore first;
+    private final EventStoreManagement firstManagement;
+    private final EventStore second;
+    private final EventStoreManagement secondManagement;
 
-    public OverlayingEventStore(
-            EventStore overlay,
-            EventStoreManagement overlayManagement,
-            EventStore backend,
-            EventStoreManagement backendManagement) {
-        this.overlay = overlay;
-        this.overlayManagement = overlayManagement;
-        this.backend = backend;
-        this.backendManagement = backendManagement;
+    public ContinuousEventStore(
+            EventStore second,
+            EventStoreManagement secondManagement,
+            EventStore first,
+            EventStoreManagement firstManagement) {
+        this.second = second;
+        this.secondManagement = secondManagement;
+        this.first = first;
+        this.firstManagement = firstManagement;
     }
 
     @Override
     public synchronized void visitEvents(EventVisitor visitor) {
-        backendManagement.visitEvents(visitor);
-        overlayManagement.visitEvents(visitor);
+        firstManagement.visitEvents(visitor);
+        secondManagement.visitEvents(visitor);
     }
 
     @Override
@@ -77,14 +78,14 @@ public class OverlayingEventStore implements EventStore, EventStoreManagement {
 
     @Override
     public synchronized void appendEvents(String type, DomainEventStream events) {
-        overlay.appendEvents(type, events);
+        second.appendEvents(type, events);
     }
 
     @Override
     public synchronized DomainEventStream readEvents(String type, Object identifier) {
         return new JoinedDomainEventStream(
-                backend.readEvents(type, identifier),
-                overlay.readEvents(type, identifier));
+                first.readEvents(type, identifier),
+                second.readEvents(type, identifier));
     }
 
     private static final class JoinedDomainEventStream implements DomainEventStream, Closeable {
