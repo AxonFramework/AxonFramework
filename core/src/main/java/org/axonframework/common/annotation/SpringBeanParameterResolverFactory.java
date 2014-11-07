@@ -57,7 +57,7 @@ public class SpringBeanParameterResolverFactory extends ParameterResolverFactory
                     final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
                     if (clBeanFactory.containsBeanDefinition(bean.getKey())
                             && clBeanFactory.getBeanDefinition(bean.getKey()).isPrimary()) {
-                        return new FixedValueParameterResolver<Object>(beansFound.get(bean.getValue()));
+                        return new FixedValueParameterResolver<Object>(beansFound.get(bean.getKey()));
                     }
                 }
             }
