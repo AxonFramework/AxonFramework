@@ -29,11 +29,11 @@ import org.junit.Test;
 /**
  * @author Knut-Olav Hoven
  */
-public class ContinuousEventStoreTest {
+public class SequenceEventStoreTest {
 
     @Test
     public void readEvents_givenNoEvents() {
-        ContinuousEventStore es = givenNoEvents();
+        SequenceEventStore es = givenNoEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -42,7 +42,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void readEvents_givenFirstThrowingEventStreamNotFoundException() {
-        ContinuousEventStore es = givenFirstThrowingEventStreamNotFoundException();
+        SequenceEventStore es = givenFirstThrowingEventStreamNotFoundException();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -51,7 +51,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void readEvents_givenEventsFromBackend() {
-        ContinuousEventStore es = givenEventsFromBackend();
+        SequenceEventStore es = givenEventsFromBackend();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -63,7 +63,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void readEvents_givenVolatileEvents() {
-        ContinuousEventStore es = givenVolatileEvents();
+        SequenceEventStore es = givenVolatileEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -75,7 +75,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void readEvents_givenBackendEventsAndVolatileEvents() {
-        ContinuousEventStore es = givenBackendEventsAndVolatileEvents();
+        SequenceEventStore es = givenBackendEventsAndVolatileEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -87,7 +87,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void readEvents_givenVolatileEventsAndCutOffBackendEvents() {
-        ContinuousEventStore es = givenVolatileEventsAndCutOffBackendEvents();
+        SequenceEventStore es = givenVolatileEventsAndCutOffBackendEvents();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -98,7 +98,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void visitEvents_givenNoEvents() {
-        ContinuousEventStore es = givenNoEvents();
+        SequenceEventStore es = givenNoEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -109,7 +109,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void visitEvents_givenEventsFromBackend() {
-        ContinuousEventStore es = givenEventsFromBackend();
+        SequenceEventStore es = givenEventsFromBackend();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -121,7 +121,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void visitEvents_givenVolatileEvents() {
-        ContinuousEventStore es = givenVolatileEvents();
+        SequenceEventStore es = givenVolatileEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -133,7 +133,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void visitEvents_givenBackendEventsAndVolatileEvents() {
-        ContinuousEventStore es = givenBackendEventsAndVolatileEvents();
+        SequenceEventStore es = givenBackendEventsAndVolatileEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -145,7 +145,7 @@ public class ContinuousEventStoreTest {
 
     @Test
     public void visitEvents_givenVolatileEventsAndCutOffBackendEvents() {
-        ContinuousEventStore es = givenVolatileEventsAndCutOffBackendEvents();
+        SequenceEventStore es = givenVolatileEventsAndCutOffBackendEvents();
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -155,14 +155,14 @@ public class ContinuousEventStoreTest {
         assertThat(visitor.visited().get(0).getSequenceNumber()).isEqualTo(0L);
     }
 
-    private ContinuousEventStore givenNoEvents() {
+    private SequenceEventStore givenNoEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         TimestampCutoffReadonlyEventStore backend = new VolatileEventStore().cutoff(future());
 
-        return new ContinuousEventStore(volatileEventStore, volatileEventStore, backend, backend);
+        return new SequenceEventStore(volatileEventStore, volatileEventStore, backend, backend);
     }
 
-    private ContinuousEventStore givenFirstThrowingEventStreamNotFoundException() {
+    private SequenceEventStore givenFirstThrowingEventStreamNotFoundException() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         VolatileEventStore backend = new VolatileEventStore() {
             @Override
@@ -170,10 +170,10 @@ public class ContinuousEventStoreTest {
                 throw new EventStreamNotFoundException(type, identifier);
             }
         };
-        return new ContinuousEventStore(volatileEventStore, volatileEventStore, backend, backend);
+        return new SequenceEventStore(volatileEventStore, volatileEventStore, backend, backend);
     }
 
-    private ContinuousEventStore givenEventsFromBackend() {
+    private SequenceEventStore givenEventsFromBackend() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
 
         VolatileEventStore backend = new VolatileEventStore();
@@ -183,10 +183,10 @@ public class ContinuousEventStoreTest {
         backend.appendEvents("MyAggregate", ec.getEventStream());
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
-        return new ContinuousEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
+        return new SequenceEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
     }
 
-    private ContinuousEventStore givenVolatileEvents() {
+    private SequenceEventStore givenVolatileEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         EventContainer ec = new EventContainer("My-1");
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
@@ -195,10 +195,10 @@ public class ContinuousEventStoreTest {
 
         TimestampCutoffReadonlyEventStore backend = new VolatileEventStore().cutoff(future());
 
-        return new ContinuousEventStore(volatileEventStore, volatileEventStore, backend, backend);
+        return new SequenceEventStore(volatileEventStore, volatileEventStore, backend, backend);
     }
 
-    private ContinuousEventStore givenBackendEventsAndVolatileEvents() {
+    private SequenceEventStore givenBackendEventsAndVolatileEvents() {
         VolatileEventStore backend = new VolatileEventStore();
         EventContainer ecBack = new EventContainer("My-1");
         ecBack.addEvent(MetaData.emptyInstance(), new MyEvent(1));
@@ -212,10 +212,10 @@ public class ContinuousEventStoreTest {
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
-        return new ContinuousEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
+        return new SequenceEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
     }
 
-    private ContinuousEventStore givenVolatileEventsAndCutOffBackendEvents() {
+    private SequenceEventStore givenVolatileEventsAndCutOffBackendEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         EventContainer ecVolatile = new EventContainer("My-1");
         ecVolatile.addEvent(MetaData.emptyInstance(), new MyEvent(1));
@@ -229,7 +229,7 @@ public class ContinuousEventStoreTest {
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(past());
 
-        return new ContinuousEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
+        return new SequenceEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
     }
 
     private static DateTime future() {

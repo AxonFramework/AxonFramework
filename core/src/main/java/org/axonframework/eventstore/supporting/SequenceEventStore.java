@@ -45,13 +45,13 @@ import org.axonframework.eventstore.management.EventStoreManagement;
  * @author Knut-Olav Hoven
  */
 @SuppressWarnings("rawtypes")
-public class ContinuousEventStore implements EventStore, EventStoreManagement {
+public class SequenceEventStore implements EventStore, EventStoreManagement {
     private final EventStore first;
     private final EventStoreManagement firstManagement;
     private final EventStore second;
     private final EventStoreManagement secondManagement;
 
-    public ContinuousEventStore(
+    public SequenceEventStore(
             EventStore second,
             EventStoreManagement secondManagement,
             EventStore first,
