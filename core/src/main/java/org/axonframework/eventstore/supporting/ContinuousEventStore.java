@@ -22,7 +22,9 @@ import java.io.IOException;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
@@ -84,8 +86,17 @@ public class ContinuousEventStore implements EventStore, EventStoreManagement {
     @Override
     public synchronized DomainEventStream readEvents(String type, Object identifier) {
         return new JoinedDomainEventStream(
-                first.readEvents(type, identifier),
+                firstReadEventsIgnoreMissing(type, identifier),
                 second.readEvents(type, identifier));
+    }
+
+    private DomainEventStream firstReadEventsIgnoreMissing(String type, Object identifier) {
+        try {
+            return first.readEvents(type, identifier);
+        } catch (EventStreamNotFoundException e) {
+            // ignore when first eventstore have no events for requested aggregate
+            return new SimpleDomainEventStream();
+        }
     }
 
     private static final class JoinedDomainEventStream implements DomainEventStream, Closeable {

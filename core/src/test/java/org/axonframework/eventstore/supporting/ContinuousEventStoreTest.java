@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventContainer;
 import org.axonframework.domain.MetaData;
+import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.junit.Test;
@@ -33,6 +34,15 @@ public class ContinuousEventStoreTest {
     @Test
     public void readEvents_givenNoEvents() {
         ContinuousEventStore es = givenNoEvents();
+
+        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+
+        assertThat(readEvents.hasNext()).isFalse();
+    }
+
+    @Test
+    public void readEvents_givenFirstThrowingEventStreamNotFoundException() {
+        ContinuousEventStore es = givenFirstThrowingEventStreamNotFoundException();
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 
@@ -149,6 +159,17 @@ public class ContinuousEventStoreTest {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         TimestampCutoffReadonlyEventStore backend = new VolatileEventStore().cutoff(future());
 
+        return new ContinuousEventStore(volatileEventStore, volatileEventStore, backend, backend);
+    }
+
+    private ContinuousEventStore givenFirstThrowingEventStreamNotFoundException() {
+        VolatileEventStore volatileEventStore = new VolatileEventStore();
+        VolatileEventStore backend = new VolatileEventStore() {
+            @Override
+            public DomainEventStream readEvents(String type, Object identifier) {
+                throw new EventStreamNotFoundException(type, identifier);
+            }
+        };
         return new ContinuousEventStore(volatileEventStore, volatileEventStore, backend, backend);
     }
 
