@@ -38,14 +38,18 @@ public class VolatileEventStoreTest {
     }
 
     @Test
-    public void readEvents_givenEvents() {
+    public void readEvents_givenEvents_ofTwoAggregates() {
         VolatileEventStore es = new VolatileEventStore();
-        EventContainer ec = new EventContainer("My-1");
 
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
+        EventContainer ec1 = new EventContainer("My-1");
+        ec1.addEvent(MetaData.emptyInstance(), new MyEvent(1));
+        ec1.addEvent(MetaData.emptyInstance(), new MyEvent(2));
+        es.appendEvents("MyAggregate", ec1.getEventStream());
 
-        es.appendEvents("MyAggregate", ec.getEventStream());
+        EventContainer ec2 = new EventContainer("My-2");
+        ec2.addEvent(MetaData.emptyInstance(), new MyEvent(21));
+        ec2.addEvent(MetaData.emptyInstance(), new MyEvent(22));
+        es.appendEvents("MyAggregate", ec2.getEventStream());
 
         DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
 

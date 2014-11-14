@@ -72,7 +72,10 @@ public class VolatileEventStore implements EventStore, EventStoreManagement {
         ArrayList<DomainEventMessage<?>> selection = new ArrayList<DomainEventMessage<?>>();
         for (AggregateTypedEventMessage typedMessage : volatileEvents) {
             if (typedMessage.type.equals(type)) {
-                selection.add(typedMessage.eventMessage);
+                DomainEventMessage<?> evMsg = typedMessage.eventMessage;
+                if (identifier.equals(evMsg.getAggregateIdentifier())) {
+                    selection.add(typedMessage.eventMessage);
+                }
             }
         }
 
