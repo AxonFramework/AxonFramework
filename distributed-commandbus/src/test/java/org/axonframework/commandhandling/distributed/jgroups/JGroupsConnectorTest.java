@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
+import static java.util.Collections.*;
+
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
@@ -234,6 +236,47 @@ public class JGroupsConnectorTest {
         System.out.println("Node 2 got " + counter2.get());
         verify(mockCommandBus1, times(100)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         verify(mockCommandBus2, never()).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testConnectAndDispatchMessages_CustomCommandName() throws Exception {
+        final AtomicInteger counter1 = new AtomicInteger(0);
+        final AtomicInteger counter2 = new AtomicInteger(0);
+
+        connector1.subscribe("myCommand1", new CountingCommandHandler(counter1));
+        connector1.connect(80);
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        connector2.subscribe("myCommand2", new CountingCommandHandler(counter2));
+        connector2.connect(20);
+        assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
+
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        List<FutureCallback> callbacks = new ArrayList<FutureCallback>();
+
+        for (int t = 0; t < 100; t++) {
+            FutureCallback<Object> callback = new FutureCallback<Object>();
+            String message = "message" + t;
+            if ((t % 3) == 0) {
+                connector1.send(message, new GenericCommandMessage<Object>("myCommand1", message,
+                            Collections.<String,Object>emptyMap()), callback);
+            } else {
+                connector2.send(message, new GenericCommandMessage<Object>("myCommand2", message,
+                            Collections.<String,Object>emptyMap()), callback);
+            }
+            callbacks.add(callback);
+        }
+        for (FutureCallback callback : callbacks) {
+            assertEquals("The Reply!", callback.get());
+        }
+        assertEquals(100, counter1.get() + counter2.get());
+        System.out.println("Node 1 got " + counter1.get());
+        System.out.println("Node 2 got " + counter2.get());
+        verify(mockCommandBus1, times(34)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+        verify(mockCommandBus2, times(66)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
 

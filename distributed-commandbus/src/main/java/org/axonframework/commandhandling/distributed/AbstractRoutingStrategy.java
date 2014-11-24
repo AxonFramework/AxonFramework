@@ -55,7 +55,7 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
             switch (unresolvedRoutingKeyPolicy) {
                 case ERROR:
                     throw new CommandDispatchException(format("The command [%s] does not contain a routing key.",
-                                                              command.getPayloadType().getName()));
+                                                              command.getCommandName()));
                 case RANDOM_KEY:
                     return Long.toHexString(counter.getAndIncrement());
                 case STATIC_KEY:
