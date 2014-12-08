@@ -181,7 +181,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     public FixtureExecutionResult whenPublishingA(Object event) {
         try {
             fixtureExecutionResult.startRecording();
-            sagaManager.handle(new GenericEventMessage<Object>(event));
+            sagaManager.handle(GenericEventMessage.asEventMessage(event));
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
