@@ -90,13 +90,13 @@
                 performance.</para>
             <itemizedlist>
                 <listitem>
-                    <para>Normal operational use</para>
+                    <para>Normal operational use:</para>
                     <para>An index is automatically created on "aggregateIdentifier", "type" and
                         "sequenceNumber" in the domain events (default name: "domainevents")
                         collection</para>
                 </listitem>
                 <listitem>
-                    <para>Snapshotting</para>
+                    <para>Snapshotting:</para>
                     <para>Put a (unique) index on "aggregateIdentifier", "type" and "sequenceNumber"
                         in the snapshot events (default name: "snapshotevents") collection</para>
                 </listitem>
@@ -106,7 +106,7 @@
                         events (default name: "domainevents") collection</para>
                 </listitem>
                 <listitem>
-                    <para>Sagas</para>
+                    <para>Sagas:</para>
                     <para>Put a (unique) index on the "sagaIdentifier" in the saga (default name:
                         "sagas") collection</para>
                     <para>Put an index on the "sagaType", "associations.key" and
@@ -158,7 +158,7 @@
         <title>Snapshotting</title>
         <para>Snapshotting removes the need to reload and replay large numbers of events. A single
             snapshot represents the entire aggregate state at a certain moment in time. The process
-            of snapshotting itself, however, also takes processing time. Therefor, there should be a
+            of snapshotting itself, however, also takes processing time. Therefore, there should be a
             balance in the time spent building snapshots and the time it saves by preventing a
             number of events being read back in.
         </para>
