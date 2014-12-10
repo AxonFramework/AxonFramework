@@ -280,7 +280,7 @@
                     them. Scheduled Events are published by Threads managed by the
                         <code>EventScheduler</code>. To manage transactions on these threads, you
                     can configure a <code>TransactionManager</code> or
-                        a<code>UnitOfWorkFactory</code> that creates Transaction Bound Unit of
+                        a <code>UnitOfWorkFactory</code> that creates a Transaction Bound Unit of
                     Work.</para>
                 <note>
                     <para>Spring users can use the <code>QuartzEventSchedulerFactoryBean</code> or

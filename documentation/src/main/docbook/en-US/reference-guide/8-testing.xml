@@ -19,7 +19,7 @@
     <para>One of the biggest benefits of CQRS, and especially that of event sourcing is that it is
         possible to express tests purely in terms of Events and Commands. Both being functional
         components, Events and Commands have clear meaning to the domain expert or business owner.
-        This means that tests expressed in terms of Events and Commands don't only have a functional
+        Not only does this mean that tests expressed in terms of Events and Commands have a clear functional
         meaning, it also means that they hardly depend on any implementation choices.</para>
     <para>The features described in this chapter require the <code>axon-test</code> module, which
         can be obtained by configuring a maven dependency (use
@@ -34,7 +34,7 @@
             also means that there are extra test related requirements for this component. Simply
             put: the more complex a component, the better it must be tested.</para>
         <para>Although being more complex, the API of a command handling component is fairly easy.
-            It has command coming in, and events going out. In some cases, there might be a query as
+            It has a command coming in, and events going out. In some cases, there might be a query as
             part of command execution. Other than that, commands and events are the only part of the
             API. This means that it is possible to completely define a test scenario in terms of
             events and commands. Typically, in the shape of:<itemizedlist>
@@ -50,7 +50,7 @@
             </itemizedlist></para>
         <para>Axon Framework provides a test fixture that allows you to do exactly that. This
             GivenWhenThenTestFixture allows you to configure a certain infrastructure, composed of
-            the necessary command handler and repository, and express you scenario in terms of
+            the necessary command handler and repository, and express your scenario in terms of
             given-when-then events and commands.</para>
         <para>The following example shows the usage of the given-when-then test fixture with JUnit
             4:</para>
@@ -87,7 +87,7 @@
                         <para>This line creates a fixture instance that can deal with
                             given-when-then style tests. It is created in configuration stage, which
                             allows us to configure the components that we need to process the
-                            command, such as command handler and repository. An event bus and
+                            command, such as the command handler and repository. An event bus and
                             command bus are automatically created as part of the fixture.</para>
                     </callout>
                     <callout arearefs="create-generic-repository-co">
@@ -179,10 +179,10 @@
                 of the command handling component. This is done purely in terms of return values and
                 events (both stored and dispatched).</para>
             <para>The test fixture allows you to validate return values of your command handlers.
-                You can explicitly define an expected void return value or any arbitrary value. You
-                may also express the expectancy of an exception.</para>
+                You can explicitly define the expected return value, which might be void or any arbitrary value. You
+                may also express any exceptions you expect the CommandHandler to throw.</para>
             <para>The other component is validation of stored and dispatched events. In most cases,
-                the stored and dispatched are equal. In some cases however, you may dispatch events
+                the stored and dispatched events are equal. In some cases however, you may dispatch events
                 (e.g. <code>ApplicationEvent</code>) that are not stored in the event store. In the
                 first case, you can use the <code>expectEvents</code> method to validate events. In
                 the latter case, you may use the <code>expectPublishedEvents</code> and
@@ -292,7 +292,7 @@
            messageWithPayload(equalTo(new ThirdEvent())),
            // this will match against a Message
            aFourthEventWithSomeSpecialThings(),
-           // this will ensure that there is no more events
+           // this will ensure that there are no more events
            andNoMore()
        ));
 
@@ -378,7 +378,7 @@ fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
             <title>Injecting Resources</title>
             <para>Often, Sagas will interact with external resources. These resources aren't part of
                 the Saga's state, but are injected after a Saga is loaded or created. The test
-                fixtures allows you to register resources that need to be injected in the Saga. To
+                fixtures allow you to register resources that need to be injected in the Saga. To
                 register a resource, simply invoke the <code>fixture.registerResource(Object)</code>
                 method with the resource as parameter. The fixture will detect appropriate setter
                 methods on the Saga and invoke it with an available resource.</para>
@@ -428,11 +428,11 @@ fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
                 </note></para>
             <para>You can also use the <code>StubEventScheduler</code> independently of the test
                 fixtures if you need to test scheduling of events. This <code>EventScheduler</code>
-                implementation allows you to verify which events are scheduled for whch time and
+                implementation allows you to verify which events are scheduled for which time and
                 gives you options to manipulate the progress of time. You can either advance time
                 with a specific <code>Duration</code>, move the clock to a specific
                     <code>DateTime</code> or advance time to the next scheduled event. All these
-                opertaions will return the events scheduled within the progressed interval.</para>
+                operations will return the events scheduled within the progressed interval.</para>
         </simplesect>
     </sect1>
 </chapter>
