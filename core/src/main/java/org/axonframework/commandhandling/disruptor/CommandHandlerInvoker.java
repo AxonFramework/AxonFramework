@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
 import org.axonframework.cache.Cache;
+import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -57,21 +58,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     private final EventStore eventStore;
 
     /**
-     * Returns the Repository instance for Aggregate with given <code>typeIdentifier</code> used by the
-     * CommandHandlerInvoker that is running on the current thread.
-     * <p/>
-     * Calling this method from any other thread will return <code>null</code>.
-     *
-     * @param typeIdentifier The type identifier of the aggregate
-     * @param <T>            The type of aggregate
-     * @return the repository instance for aggregate of given type
-     */
-    @SuppressWarnings("unchecked")
-    public static <T extends EventSourcedAggregateRoot> DisruptorRepository<T> getRepository(String typeIdentifier) {
-        return CURRENT_INVOKER.get().repositories.get(typeIdentifier);
-    }
-
-    /**
      * Create an aggregate invoker instance that uses the given <code>eventStore</code> and <code>cache</code> to
      * retrieve aggregate instances.
      *
@@ -83,6 +69,24 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         this.eventStore = eventStore;
         this.cache = cache;
         this.segmentId = segmentId;
+    }
+
+    /**
+     * Returns the Repository instance for Aggregate with given <code>typeIdentifier</code> used by the
+     * CommandHandlerInvoker that is running on the current thread.
+     * <p/>
+     * Calling this method from any other thread will return <code>null</code>.
+     *
+     * @param typeIdentifier The type identifier of the aggregate
+     * @param <T>            The type of aggregate
+     * @return the repository instance for aggregate of given type
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends EventSourcedAggregateRoot> DisruptorRepository<T> getRepository(String typeIdentifier) {
+        final CommandHandlerInvoker invoker = CURRENT_INVOKER.get();
+        Assert.state(invoker != null, "The repositories of a DisruptorCommandBus are only available "
+                + "in the invoker thread");
+        return invoker.repositories.get(typeIdentifier);
     }
 
     @Override
