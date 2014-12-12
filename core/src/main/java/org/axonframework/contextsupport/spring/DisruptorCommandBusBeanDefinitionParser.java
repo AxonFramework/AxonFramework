@@ -22,21 +22,12 @@ import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.cache.WeakReferenceCache;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.disruptor.DisruptorConfiguration;
 import org.axonframework.common.Assert;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.CompositeEventStreamDecorator;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.SnapshotterTrigger;
-import org.axonframework.repository.Repository;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Required;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -45,7 +36,6 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,8 +54,6 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     private static final String ATTRIBUTE_EVENT_BUS = "event-bus";
     private static final String ELEMENT_REPOSITORY = "repository";
     private static final String ATTRIBUTE_ID = "id";
-    private static final String ATTRIBUTE_AGGREGATE_FACTORY = "aggregate-factory";
-    private static final String ATTRIBUTE_AGGREGATE_TYPE = "aggregate-type";
 
     private static final String PROPERTY_WAIT_STRATEGY = "waitStrategy";
     private static final String ATTRIBUTE_WAIT_STRATEGY = "wait-strategy";
@@ -74,21 +62,12 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     private static final String ATTRIBUTE_PRODUCER_TYPE = "producer-type";
     private static final String ELEMENT_REPOSITORIES = "repositories";
 
-    private static final String EVENT_PROCESSORS_ELEMENT = "event-processors";
-    private static final String SNAPSHOT_TRIGGER_ELEMENT = "snapshotter-trigger";
-
-    private static final String EVENT_STREAM_DECORATORS_PROPERTY = "eventStreamDecorators";
-    private static final String SNAPSHOTTER_TRIGGER_PROPERTY = "snapshotterTrigger";
-
     private static final String ATTRIBUTE_TRANSACTION_MANAGER = "transaction-manager";
     private static final String PROPERTY_TRANSACTION_MANAGER = "transactionManager";
 
     private static final Map<String, String> VALUE_PROPERTY_MAPPING = new HashMap<String, String>();
     private static final Map<String, String> REF_PROPERTY_MAPPING = new HashMap<String, String>();
     private static final Map<String, String> LIST_PROPERTY_MAPPING = new HashMap<String, String>();
-
-    private final SnapshotterTriggerBeanDefinitionParser snapshotterTriggerParser =
-            new SnapshotterTriggerBeanDefinitionParser();
 
     static {
         REF_PROPERTY_MAPPING.put("cache", "cache");
@@ -204,50 +183,9 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     private void parseRepository(Element repository, String commandBusId, ParserContext parserContext,
                                  PropertyValue aggregateCache) {
         String id = repository.getAttribute(ATTRIBUTE_ID);
-        BeanDefinitionBuilder definitionBuilder =
-                genericBeanDefinition(RepositoryFactoryBean.class)
-                        .addPropertyReference("commandBus", commandBusId);
-        if (repository.hasAttribute(ATTRIBUTE_AGGREGATE_FACTORY)) {
-            definitionBuilder = definitionBuilder
-                    .addPropertyReference("aggregateFactory", repository.getAttribute(ATTRIBUTE_AGGREGATE_FACTORY));
-        } else {
-            final String aggregateType = repository.getAttribute(ATTRIBUTE_AGGREGATE_TYPE);
-            Assert.notEmpty(aggregateType, "Either one of 'aggregate-type' or 'aggregate-factory' attributes must be "
-                    + "set on repository elements in <disruptor-command-bus>");
-            definitionBuilder = definitionBuilder
-                    .addPropertyValue("aggregateFactory", genericBeanDefinition(GenericAggregateFactory.class)
-                            .addConstructorArgValue(aggregateType)
-                            .addConstructorArgValue(SpringContextParameterResolverFactoryBuilder
-                                                            .getBeanReference(parserContext.getRegistry()))
-                            .getBeanDefinition());
-        }
-
-        Element processorsElement = DomUtils.getChildElementByTagName(repository, EVENT_PROCESSORS_ELEMENT);
-
-        Element snapshotTriggerElement = DomUtils.getChildElementByTagName(repository, SNAPSHOT_TRIGGER_ELEMENT);
-        if (snapshotTriggerElement != null) {
-            BeanDefinition triggerDefinition = snapshotterTriggerParser.parse(snapshotTriggerElement, parserContext);
-            if (aggregateCache != null) {
-                triggerDefinition.getPropertyValues().add("aggregateCache", aggregateCache.getValue());
-            } else {
-                // the DisruptorCommandBus uses an internal cache. Not defining any cache on the snapshotter trigger
-                // would lead to undesired side-effects (mainly missing triggers).
-                triggerDefinition.getPropertyValues().add("aggregateCache", BeanDefinitionBuilder
-                        .genericBeanDefinition(WeakReferenceCache.class).getBeanDefinition());
-            }
-            definitionBuilder = definitionBuilder.addPropertyValue(SNAPSHOTTER_TRIGGER_PROPERTY, triggerDefinition);
-        }
-
-        final AbstractBeanDefinition definition = definitionBuilder.getBeanDefinition();
-        if (processorsElement != null) {
-            //noinspection unchecked
-            List<Object> processorsList = parserContext.getDelegate().parseListElement(processorsElement,
-                                                                                       definition);
-            if (!processorsList.isEmpty()) {
-                definition.getPropertyValues().add(EVENT_STREAM_DECORATORS_PROPERTY, processorsList);
-            }
-        }
-        parserContext.getRegistry().registerBeanDefinition(id, definition);
+        parserContext.getRegistry().registerBeanDefinition(
+                id, new DisruptorRepositoryBeanDefinitionParser()
+                        .createRepositoryDefinition(repository, commandBusId, parserContext, aggregateCache));
     }
 
     @Override
@@ -335,76 +273,6 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
         @Override
         public boolean isSingleton() {
             return true;
-        }
-    }
-
-    /**
-     * FactoryBean to create repository instances for use with the DisruptorCommandBus
-     */
-    public static class RepositoryFactoryBean implements FactoryBean<Repository> {
-
-        private DisruptorCommandBus commandBus;
-        private List<EventStreamDecorator> eventStreamDecorators = new ArrayList<EventStreamDecorator>();
-        private AggregateFactory<? extends EventSourcedAggregateRoot> factory;
-
-        @Override
-        public Repository getObject() throws Exception {
-            if (eventStreamDecorators.isEmpty()) {
-                return commandBus.createRepository(factory);
-            }
-            return commandBus.createRepository(factory, new CompositeEventStreamDecorator(eventStreamDecorators));
-        }
-
-        @Override
-        public Class<?> getObjectType() {
-            return Repository.class;
-        }
-
-        @Override
-        public boolean isSingleton() {
-            return true;
-        }
-
-        /**
-         * The DisruptorCommandBus instance to create the repository from. This is a required property, but cannot be
-         * set using constructor injection, as Spring will see it as a circular dependency.
-         *
-         * @param commandBus DisruptorCommandBus instance to create the repository from
-         */
-        @Required
-        public void setCommandBus(DisruptorCommandBus commandBus) {
-            this.commandBus = commandBus;
-        }
-
-        /**
-         * Sets the aggregate factory used to create instances for the repository to create. This is a required
-         * property, but cannot be set using constructor injection, as Spring will see it as a circular dependency.
-         *
-         * @param factory the aggregate factory used to create instances for the repository to create
-         */
-        @Required
-        public void setAggregateFactory(AggregateFactory<? extends EventSourcedAggregateRoot> factory) {
-            this.factory = factory;
-        }
-
-        /**
-         * Sets the (additional) decorators to use when loading and storing events from/to the Event Store.
-         *
-         * @param decorators the decorators to decorate event streams with
-         */
-        @SuppressWarnings("UnusedDeclaration")
-        public void setEventStreamDecorators(List<EventStreamDecorator> decorators) {
-            eventStreamDecorators.addAll(decorators);
-        }
-
-        /**
-         * The snapshotter trigger instance that will decide when to trigger a snapshot
-         *
-         * @param snapshotterTrigger The trigger to configure on the DisruptorCommandBus
-         */
-        @SuppressWarnings("UnusedDeclaration")
-        public void setSnapshotterTrigger(SnapshotterTrigger snapshotterTrigger) {
-            eventStreamDecorators.add(snapshotterTrigger);
         }
     }
 }
