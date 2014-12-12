@@ -24,6 +24,10 @@ package org.axonframework.testutils;
  */
 public class MockException extends RuntimeException {
 
+    public MockException(String message) {
+        super(message);
+    }
+
     public MockException() {
         super("Mock");
     }

@@ -46,6 +46,7 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.Repository;
 import org.axonframework.serializer.SerializationAware;
 import org.axonframework.serializer.Serializer;
+import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
@@ -527,7 +528,7 @@ public class DisruptorCommandBusTest {
                 countDownLatch.countDown();
                 lastEvent = events.next();
                 if (FailingEvent.class.isAssignableFrom(lastEvent.getPayloadType())) {
-                    throw new RuntimeException("This is a failing event. EventStore refuses to store that");
+                    throw new MockException("This is a failing event. EventStore refuses to store that");
                 }
             }
             storedEvents.put(key, lastEvent);
