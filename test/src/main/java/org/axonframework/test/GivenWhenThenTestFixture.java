@@ -55,7 +55,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -81,21 +80,18 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         implements FixtureConfiguration<T>, TestExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(GivenWhenThenTestFixture.class);
-
+    private final Class<T> aggregateType;
     private Repository<T> repository;
     private SimpleCommandBus commandBus;
     private EventBus eventBus;
     private Object aggregateIdentifier;
-
     private EventStore eventStore;
-
-    private Collection<DomainEventMessage> givenEvents;
+    private Deque<DomainEventMessage> givenEvents;
     private Deque<DomainEventMessage> storedEvents;
     private List<EventMessage> publishedEvents;
     private long sequenceNumber = 0;
     private AggregateRoot workingAggregate;
     private boolean reportIllegalStateChange = true;
-    private final Class<T> aggregateType;
     private boolean explicitCommandHandlersSet;
 
     /**
@@ -342,7 +338,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private void clearGivenWhenState() {
         storedEvents = new LinkedList<DomainEventMessage>();
         publishedEvents = new ArrayList<EventMessage>();
-        givenEvents = new ArrayList<DomainEventMessage>();
+        givenEvents = new LinkedList<DomainEventMessage>();
         sequenceNumber = 0;
     }
 
@@ -372,6 +368,84 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         return repository;
     }
 
+    private static class ComparationEntry {
+
+        private final Object workingObject;
+        private final Object eventSourceObject;
+
+        public ComparationEntry(Object workingObject, Object eventSourceObject) {
+            this.workingObject = workingObject;
+            this.eventSourceObject = eventSourceObject;
+        }
+
+        @SuppressWarnings("RedundantIfStatement")
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ComparationEntry that = (ComparationEntry) o;
+
+            if (!eventSourceObject.equals(that.eventSourceObject)) {
+                return false;
+            }
+            if (!workingObject.equals(that.workingObject)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = workingObject.hashCode();
+            result = 31 * result + eventSourceObject.hashCode();
+            return result;
+        }
+    }
+
+    private static class IdentifierValidatingRepository<T extends AggregateRoot> implements Repository<T> {
+
+        private final Repository<T> delegate;
+
+        public IdentifierValidatingRepository(Repository<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public T load(Object aggregateIdentifier, Long expectedVersion) {
+            T aggregate = delegate.load(aggregateIdentifier, expectedVersion);
+            validateIdentifier(aggregateIdentifier, aggregate);
+            return aggregate;
+        }
+
+        @Override
+        public T load(Object aggregateIdentifier) {
+            T aggregate = delegate.load(aggregateIdentifier, null);
+            validateIdentifier(aggregateIdentifier, aggregate);
+            return aggregate;
+        }
+
+        private void validateIdentifier(Object aggregateIdentifier, T aggregate) {
+            if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.getIdentifier())) {
+                throw new AssertionError(String.format(
+                        "The aggregate used in this fixture was initialized with an identifier different than "
+                                + "the one used to load it. Loaded [%s], but actual identifier is [%s].\n"
+                                + "Make sure the identifier passed in the Command matches that of the given Events.",
+                        aggregateIdentifier, aggregate.getIdentifier()));
+            }
+        }
+
+        @Override
+        public void add(T aggregate) {
+            delegate.add(aggregate);
+        }
+    }
+
     private class RecordingEventStore implements EventStore {
 
         @Override
@@ -379,8 +453,15 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
             while (events.hasNext()) {
                 DomainEventMessage next = events.next();
                 validateIdentifier(next.getAggregateIdentifier().getClass());
-                if (!storedEvents.isEmpty()) {
-                    DomainEventMessage lastEvent = storedEvents.peekLast();
+
+                if (aggregateIdentifier == null) {
+                    aggregateIdentifier = next.getAggregateIdentifier();
+                    injectAggregateIdentifier();
+                }
+
+                DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
+
+                if (lastEvent != null) {
                     if (!lastEvent.getAggregateIdentifier().equals(next.getAggregateIdentifier())) {
                         throw new EventStoreException("Writing events for an unexpected aggregate. This could "
                                                               + "indicate that a wrong aggregate is being triggered.");
@@ -390,10 +471,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                                                              lastEvent.getSequenceNumber() + 1,
                                                              next.getSequenceNumber()));
                     }
-                }
-                if (aggregateIdentifier == null) {
-                    aggregateIdentifier = next.getAggregateIdentifier();
-                    injectAggregateIdentifier();
                 }
                 storedEvents.add(next);
             }
@@ -472,84 +549,6 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                 }
             });
             return interceptorChain.proceed();
-        }
-    }
-
-    private static class ComparationEntry {
-
-        private final Object workingObject;
-        private final Object eventSourceObject;
-
-        public ComparationEntry(Object workingObject, Object eventSourceObject) {
-            this.workingObject = workingObject;
-            this.eventSourceObject = eventSourceObject;
-        }
-
-        @SuppressWarnings("RedundantIfStatement")
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            ComparationEntry that = (ComparationEntry) o;
-
-            if (!eventSourceObject.equals(that.eventSourceObject)) {
-                return false;
-            }
-            if (!workingObject.equals(that.workingObject)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = workingObject.hashCode();
-            result = 31 * result + eventSourceObject.hashCode();
-            return result;
-        }
-    }
-
-    private static class IdentifierValidatingRepository<T extends AggregateRoot> implements Repository<T> {
-
-        private final Repository<T> delegate;
-
-        public IdentifierValidatingRepository(Repository<T> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public T load(Object aggregateIdentifier, Long expectedVersion) {
-            T aggregate = delegate.load(aggregateIdentifier, expectedVersion);
-            validateIdentifier(aggregateIdentifier, aggregate);
-            return aggregate;
-        }
-
-        @Override
-        public T load(Object aggregateIdentifier) {
-            T aggregate = delegate.load(aggregateIdentifier, null);
-            validateIdentifier(aggregateIdentifier, aggregate);
-            return aggregate;
-        }
-
-        private void validateIdentifier(Object aggregateIdentifier, T aggregate) {
-            if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.getIdentifier())) {
-                throw new AssertionError(String.format(
-                        "The aggregate used in this fixture was initialized with an identifier different than "
-                                + "the one used to load it. Loaded [%s], but actual identifier is [%s].\n"
-                                + "Make sure the identifier passed in the Command matches that of the given Events.",
-                        aggregateIdentifier, aggregate.getIdentifier()));
-            }
-        }
-
-        @Override
-        public void add(T aggregate) {
-            delegate.add(aggregate);
         }
     }
 

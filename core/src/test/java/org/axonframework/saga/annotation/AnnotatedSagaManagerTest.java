@@ -217,6 +217,14 @@ public class AnnotatedSagaManagerTest {
         assertEquals(2, repositoryContents("12", MyTestSaga.class).iterator().next().getCapturedEvents().size());
     }
 
+    @Test
+    public void testReturnsVoidTypeWhenManagingNoSagas() throws Exception {
+        manager = new AnnotatedSagaManager(sagaRepository);
+
+        assertEquals(void.class, manager.getTargetType());
+
+    }
+
     private <T extends Saga> Set<T> repositoryContents(String lookupValue, Class<T> sagaType) {
         final Set<String> identifiers = sagaRepository.find(sagaType, new AssociationValue("myIdentifier",
                                                                                            lookupValue));

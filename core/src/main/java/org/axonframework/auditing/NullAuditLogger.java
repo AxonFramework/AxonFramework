@@ -16,6 +16,7 @@
 
 package org.axonframework.auditing;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.EventMessage;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class NullAuditLogger implements AuditLogger {
      * This implementation does nothing.
      */
     @Override
-    public void logSuccessful(Object command, Object returnValue, List<EventMessage> events) {
+    public void logSuccessful(CommandMessage<?> command, Object returnValue, List<EventMessage> events) {
     }
 
     /**
@@ -48,6 +49,6 @@ public class NullAuditLogger implements AuditLogger {
      * This implementation does nothing.
      */
     @Override
-    public void logFailed(Object command, Throwable failureCause, List<EventMessage> events) {
+    public void logFailed(CommandMessage<?> command, Throwable failureCause, List<EventMessage> events) {
     }
 }

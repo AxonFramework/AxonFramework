@@ -49,6 +49,7 @@ public class AnnotationCommandHandlerAdapter
     private final CommandBus commandBus;
     private final Map<String, MethodMessageHandler> handlers = new HashMap<String, MethodMessageHandler>();
     private final Object target;
+    private final ParameterResolverFactory parameterResolverFactory;
 
     /**
      * Subscribe the annotated command handler to the given command bus.
@@ -66,6 +67,20 @@ public class AnnotationCommandHandlerAdapter
     }
 
     /**
+     * Subscribe the given <code>annotationCommandHandler</code> to the given <code>commandBus</code>. The
+     * command handler will be subscribed for each of the supported commands.
+     *
+     * @param annotationCommandHandler The fully configured AnnotationCommandHandlerAdapter instance to subscribe
+     * @param commandBus               The command bus instance to subscribe to
+     */
+    public static void subscribe(AnnotationCommandHandlerAdapter annotationCommandHandler,
+                                 CommandBus commandBus) {
+        for (String supportedCommand : annotationCommandHandler.supportedCommands()) {
+            commandBus.subscribe(supportedCommand, annotationCommandHandler);
+        }
+    }
+
+    /**
      * Initialize the command handler adapter for the given <code>target</code> which is to be subscribed with the
      * given <code>commandBus</code>.
      * <p/>
@@ -80,10 +95,10 @@ public class AnnotationCommandHandlerAdapter
     @Deprecated
     public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
         Assert.notNull(target, "target may not be null");
-        ParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(target.getClass());
+        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(target.getClass());
         MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
                                                                                             CommandHandler.class,
-                                                                                            factory,
+                                                                                            parameterResolverFactory,
                                                                                             true);
         for (MethodMessageHandler handler : inspector.getHandlers()) {
             String commandName = CommandMessageHandlerUtils.resolveAcceptedCommandName(handler);
@@ -120,6 +135,7 @@ public class AnnotationCommandHandlerAdapter
             String commandName = CommandMessageHandlerUtils.resolveAcceptedCommandName(handler);
             handlers.put(commandName, handler);
         }
+        this.parameterResolverFactory = parameterResolverFactory;
         this.target = annotatedCommandHandler;
         this.commandBus = null;
     }
@@ -141,6 +157,9 @@ public class AnnotationCommandHandlerAdapter
             final MethodMessageHandler handler = handlers.get(command.getCommandName());
             if (handler == null) {
                 throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());
+            }
+            if (unitOfWork != null) {
+                unitOfWork.attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
             }
             return handler.invoke(target, command);
         } catch (InvocationTargetException e) {

@@ -44,23 +44,42 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     private boolean forceUtc = false;
 
+    protected SchemaConfiguration schemaConfiguration;
+
     /**
-     * Initialize a GenericEventSqlSchema using default settings. Serialized data is stored as byte arrays.
+     * Initialize a GenericEventSqlSchema using default settings.
+     * <p/>
+     * Serialized data is stored as byte arrays. Data is stored in a default SchemaConfiguration.
      */
     @SuppressWarnings("unchecked")
     public GenericEventSqlSchema() {
-        this((Class<T>) byte[].class);
+        this((Class<T>) byte[].class, new SchemaConfiguration());
     }
 
     /**
-     * Initialize a GenericEventSqlSchema using default settings. Serialized data is stored using the given
-     * <code>dataType</code>.
+     * Initialize a GenericEventSqlSchema.
+     * <p/>
+     * Serialized data is stored using the given <code>dataType</code>. Data is stored in a default SchemaConfiguration.
      *
      * @param dataType The type to use when storing serialized data
      */
     public GenericEventSqlSchema(Class<T> dataType) {
-        this.dataType = dataType;
+        this(dataType, new SchemaConfiguration());
     }
+
+    /**
+     * Initialize a GenericEventSqlSchema.
+     * <p/>
+     * Serialized data is stored using the given <code>dataType</code>. Data is stored according to the given SchemaConfiguration.
+     *
+     * @param dataType
+     * @param schemaConfiguration
+     */
+    public GenericEventSqlSchema(Class<T> dataType, SchemaConfiguration schemaConfiguration) {
+        this.dataType = dataType;
+        this.schemaConfiguration = schemaConfiguration;
+    }
+
 
     /**
      * Control if date time in the SQL scheme
@@ -84,8 +103,8 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_loadLastSnapshot(Connection connection, Object identifier, String aggregateType)
             throws SQLException {
-        final String s = "SELECT " + STD_FIELDS + " FROM SnapshotEventEntry " +
-                "WHERE aggregateIdentifier = ? AND type = ? ORDER BY sequenceNumber DESC";
+        final String s = "SELECT " + STD_FIELDS + " FROM " + schemaConfiguration.snapshotEntryTable()
+                + " WHERE aggregateIdentifier = ? AND type = ? ORDER BY sequenceNumber DESC";
         PreparedStatement statement = connection.prepareStatement(s);
         statement.setString(1, identifier.toString());
         statement.setString(2, aggregateType);
@@ -98,10 +117,10 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
                                                         DateTime timestamp, String eventType, String eventRevision,
                                                         T eventPayload, T eventMetaData, String aggregateType)
             throws SQLException {
-        return doInsertEventEntry("DomainEventEntry",
-                                  conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
-                                  eventType, eventRevision, eventPayload,
-                                  eventMetaData, aggregateType);
+        return doInsertEventEntry(schemaConfiguration.domainEventEntryTable(),
+                conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
+                eventType, eventRevision, eventPayload,
+                eventMetaData, aggregateType);
     }
 
     @Override
@@ -110,10 +129,10 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
                                                           DateTime timestamp, String eventType, String eventRevision,
                                                           T eventPayload, T eventMetaData,
                                                           String aggregateType) throws SQLException {
-        return doInsertEventEntry("SnapshotEventEntry",
-                                  conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
-                                  eventType, eventRevision, eventPayload,
-                                  eventMetaData, aggregateType);
+        return doInsertEventEntry(schemaConfiguration.snapshotEntryTable(),
+                conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
+                eventType, eventRevision, eventPayload,
+                eventMetaData, aggregateType);
     }
 
     /**
@@ -135,7 +154,6 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
      * @param eventMetaData       The serialized meta data of the event
      * @param aggregateType       The type identifier of the aggregate the event belongs to
      * @return a prepared statement that allows inserting a domain event entry when executed
-     *
      * @throws SQLException when an exception occurs creating the PreparedStatement
      */
     protected PreparedStatement doInsertEventEntry(String tableName, Connection connection, String eventIdentifier,
@@ -163,10 +181,10 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_pruneSnapshots(Connection connection, String type, Object aggregateIdentifier,
                                                 long sequenceOfFirstSnapshotToPrune) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM SnapshotEventEntry "
-                                                                                  + "WHERE type = ? "
-                                                                                  + "AND aggregateIdentifier = ? "
-                                                                                  + "AND sequenceNumber <= ?");
+        PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM " + schemaConfiguration.snapshotEntryTable()
+                + " WHERE type = ?"
+                + " AND aggregateIdentifier = ?"
+                + " AND sequenceNumber <= ?");
         preparedStatement.setString(1, type);
         preparedStatement.setString(2, aggregateIdentifier.toString());
         preparedStatement.setLong(3, sequenceOfFirstSnapshotToPrune);
@@ -176,9 +194,9 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_findSnapshotSequenceNumbers(Connection connection, String type,
                                                              Object aggregateIdentifier) throws SQLException {
-        final String sql = "SELECT sequenceNumber FROM SnapshotEventEntry "
-                + "WHERE type = ? AND aggregateIdentifier = ? "
-                + "ORDER BY sequenceNumber DESC";
+        final String sql = "SELECT sequenceNumber FROM " + schemaConfiguration.snapshotEntryTable()
+                + " WHERE type = ? AND aggregateIdentifier = ?"
+                + " ORDER BY sequenceNumber DESC";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, type);
         preparedStatement.setString(2, aggregateIdentifier.toString());
@@ -188,10 +206,10 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_fetchFromSequenceNumber(Connection connection, String type, Object aggregateIdentifier,
                                                          long firstSequenceNumber) throws SQLException {
-        final String sql = "SELECT " + STD_FIELDS + " FROM DomainEventEntry "
-                + "WHERE aggregateIdentifier = ? AND type = ? "
-                + "AND sequenceNumber >= ? "
-                + "ORDER BY sequenceNumber ASC";
+        final String sql = "SELECT " + STD_FIELDS + " FROM " + schemaConfiguration.domainEventEntryTable()
+                + " WHERE aggregateIdentifier = ? AND type = ?"
+                + " AND sequenceNumber >= ?"
+                + " ORDER BY sequenceNumber ASC";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, aggregateIdentifier.toString());
         preparedStatement.setString(2, type);
@@ -202,8 +220,9 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_getFetchAll(Connection connection, String whereClause,
                                              Object[] params) throws SQLException {
-        final String sql = "select " + STD_FIELDS + " from DomainEventEntry e " + whereClause +
-                " ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC ";
+        final String sql = "select " + STD_FIELDS + " from " + schemaConfiguration.domainEventEntryTable()
+                + " e " + whereClause
+                + " ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC ";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < params.length; i++) {
             Object param = params[i];
@@ -227,7 +246,6 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
      * @param resultSet   The resultSet containing the stored data
      * @param columnIndex The column containing the timestamp
      * @return an object describing the timestamp
-     *
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
     protected Object readTimeStamp(ResultSet resultSet, int columnIndex) throws SQLException {
@@ -241,7 +259,6 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
      * @param resultSet   The resultSet containing the stored data
      * @param columnIndex The column containing the timestamp
      * @return an object describing the serialized data
-     *
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
     @SuppressWarnings("unchecked")
@@ -254,7 +271,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     @Override
     public PreparedStatement sql_createSnapshotEventEntryTable(Connection connection) throws SQLException {
-        final String sql = "    create table SnapshotEventEntry (\n" +
+        final String sql = "    create table " + schemaConfiguration.snapshotEntryTable() + " (\n" +
                 "        aggregateIdentifier varchar(255) not null,\n" +
                 "        sequenceNumber bigint not null,\n" +
                 "        type varchar(255) not null,\n" +
@@ -271,7 +288,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     @Override
     public PreparedStatement sql_createDomainEventEntryTable(Connection connection) throws SQLException {
-        final String sql = "create table DomainEventEntry (\n" +
+        final String sql = "create table " + schemaConfiguration.domainEventEntryTable() + " (\n" +
                 "        aggregateIdentifier varchar(255) not null,\n" +
                 "        sequenceNumber bigint not null,\n" +
                 "        type varchar(255) not null,\n" +
@@ -289,10 +306,10 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public SerializedDomainEventData<T> createSerializedDomainEventData(ResultSet resultSet) throws SQLException {
         return new SimpleSerializedDomainEventData<T>(resultSet.getString(1), resultSet.getString(2),
-                                                      resultSet.getLong(3), readTimeStamp(resultSet, 4),
-                                                      resultSet.getString(5), resultSet.getString(6),
-                                                      readPayload(resultSet, 7),
-                                                      readPayload(resultSet, 8));
+                resultSet.getLong(3), readTimeStamp(resultSet, 4),
+                resultSet.getString(5), resultSet.getString(6),
+                readPayload(resultSet, 7),
+                readPayload(resultSet, 8));
     }
 
     @Override

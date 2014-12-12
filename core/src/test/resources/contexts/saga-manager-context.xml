@@ -21,6 +21,6 @@
         http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
 <axon:saga-manager id="autowiredManager" />
-<axon:saga-manager id="explicitManager" event-bus="eventBus" />
+<axon:saga-manager id="explicitManager" base-package="org.axonframework.contextsupport.spring, org.does.not.exist" event-bus="eventBus" />
 
 </beans>

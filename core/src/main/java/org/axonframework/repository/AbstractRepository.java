@@ -22,8 +22,6 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 
-import javax.annotation.Resource;
-
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
  * persisted. All uncommitted events on an aggregate are dispatched when the aggregate is saved.
@@ -40,9 +38,9 @@ import javax.annotation.Resource;
  */
 public abstract class AbstractRepository<T extends AggregateRoot> implements Repository<T> {
 
-    private EventBus eventBus;
     private final Class<T> aggregateType;
     private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
+    private EventBus eventBus;
 
     /**
      * Initializes a repository that stores aggregate of the given <code>aggregateType</code>. All aggregates in this
@@ -154,27 +152,8 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      *
      * @param eventBus the event bus to publish events to
      */
-    @Resource
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
-    }
-
-    private class SimpleSaveAggregateCallback implements SaveAggregateCallback<T> {
-
-        @Override
-        public void save(final T aggregate) {
-            if (aggregate.isDeleted()) {
-                doDelete(aggregate);
-            } else {
-                doSave(aggregate);
-            }
-            aggregate.commitEvents();
-            if (aggregate.isDeleted()) {
-                postDelete(aggregate);
-            } else {
-                postSave(aggregate);
-            }
-        }
     }
 
     /**
@@ -193,5 +172,23 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param aggregate The aggregate instance being saved
      */
     protected void postDelete(T aggregate) {
+    }
+
+    private class SimpleSaveAggregateCallback implements SaveAggregateCallback<T> {
+
+        @Override
+        public void save(final T aggregate) {
+            if (aggregate.isDeleted()) {
+                doDelete(aggregate);
+            } else {
+                doSave(aggregate);
+            }
+            aggregate.commitEvents();
+            if (aggregate.isDeleted()) {
+                postDelete(aggregate);
+            } else {
+                postSave(aggregate);
+            }
+        }
     }
 }

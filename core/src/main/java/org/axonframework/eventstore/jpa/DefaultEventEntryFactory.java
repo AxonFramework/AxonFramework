@@ -83,4 +83,14 @@ public final class DefaultEventEntryFactory implements EventEntryFactory<byte[]>
     public String getSnapshotEventEntryEntityName() {
         return "SnapshotEventEntry";
     }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation returns the a String containing a ISO-8601 representation of the given date.
+     */
+    @Override
+    public String resolveDateTimeValue(DateTime dateTime) {
+        return dateTime.toString();
+    }
 }

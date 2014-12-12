@@ -190,9 +190,9 @@ public class JGroupsConnector implements CommandBusConnector {
     public <R> void send(String routingKey, CommandMessage<?> commandMessage, CommandCallback<R> callback)
             throws Exception {
         Assert.isTrue(awaitJoined(5, TimeUnit.SECONDS), "This Connector did not properly join the Cluster yet.");
-        String destination = consistentHash.getMember(routingKey, commandMessage.getPayloadType().getName());
+        String destination = consistentHash.getMember(routingKey, commandMessage.getCommandName());
         if (destination == null) {
-            throw new CommandDispatchException("No node known to accept " + commandMessage.getPayloadType().getName());
+            throw new CommandDispatchException("No node known to accept " + commandMessage.getCommandName());
         }
         Address dest = getAddress(destination);
         callbacks.put(commandMessage.getIdentifier(), new MemberAwareCommandCallback<R>(dest, callback));
@@ -202,9 +202,9 @@ public class JGroupsConnector implements CommandBusConnector {
     @Override
     public void send(String routingKey, CommandMessage<?> commandMessage) throws Exception {
         Assert.isTrue(awaitJoined(5, TimeUnit.SECONDS), "This Connector did not properly join the Cluster yet.");
-        String destination = consistentHash.getMember(routingKey, commandMessage.getPayloadType().getName());
+        String destination = consistentHash.getMember(routingKey, commandMessage.getCommandName());
         if (destination == null) {
-            throw new CommandDispatchException("No node known to accept " + commandMessage.getPayloadType().getName());
+            throw new CommandDispatchException("No node known to accept " + commandMessage.getCommandName());
         }
         Address dest = getAddress(destination);
         channel.send(dest, new DispatchMessage(commandMessage, serializer, false));

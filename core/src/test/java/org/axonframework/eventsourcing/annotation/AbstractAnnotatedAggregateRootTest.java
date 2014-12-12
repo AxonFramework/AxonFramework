@@ -16,15 +16,28 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.FixedValueParameterResolver;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import javax.persistence.Id;
@@ -59,10 +72,17 @@ public class AbstractAnnotatedAggregateRootTest {
         assertFalse(testSubject.entity.appliedEvents.get(2).nested);
 
         DomainEventStream uncommittedEvents = testSubject.getUncommittedEvents();
-        int i=0;
+        int i = 0;
         while (uncommittedEvents.hasNext()) {
             assertSame(testSubject.entity.appliedEvents.get(i), uncommittedEvents.next().getPayload());
             i++;
+        }
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
         }
     }
 
@@ -79,8 +99,8 @@ public class AbstractAnnotatedAggregateRootTest {
         assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
 
         DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
-        assertFalse(((StubDomainEvent)uncommittedEvents.next().getPayload()).nested);
-        assertTrue(((StubDomainEvent)uncommittedEvents.next().getPayload()).nested);
+        assertFalse(((StubDomainEvent) uncommittedEvents.next().getPayload()).nested);
+        assertTrue(((StubDomainEvent) uncommittedEvents.next().getPayload()).nested);
     }
 
     @Test
@@ -102,6 +122,29 @@ public class AbstractAnnotatedAggregateRootTest {
     }
 
     @Test
+    public void testAggregateRetrievesParameterResolverFactoryFromUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        uow.attachResource(ParameterResolverFactory.class.getName(), MultiParameterResolverFactory.ordered(
+                ClasspathParameterResolverFactory.forClass(CustomParameterAggregateRoot.class),
+                new ParameterResolverFactory() {
+                    @Override
+                    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
+                                                            Annotation[] parameterAnnotations) {
+                        if (String.class.equals(parameterType)) {
+                            return new FixedValueParameterResolver<String>("It works");
+                        }
+                        return null;
+                    }
+                }));
+        CustomParameterAggregateRoot aggregateRoot = new CustomParameterAggregateRoot();
+        aggregateRoot.doSomething();
+
+        assertEquals("It works", aggregateRoot.secondParameter);
+
+        uow.rollback();
+    }
+
+    @Test
     public void testEventNotAppliedInReplayMode() {
         final UUID id = UUID.randomUUID();
         testSubject = new SimpleAggregateRoot(id);
@@ -116,6 +159,28 @@ public class AbstractAnnotatedAggregateRootTest {
         // the nested handler must be invoked second
         assertFalse(testSubject.entity.appliedEvents.get(0).nested);
         assertTrue(testSubject.entity.appliedEvents.get(1).nested);
+    }
+
+    @Test
+    public void testStateResetWhenAppliedEventCausesException() throws Exception {
+        final UUID id = UUID.randomUUID();
+        testSubject = new SimpleAggregateRoot(id) {
+            @EventSourcingHandler
+            public void myEventHandlerMethod(StubDomainEvent event) {
+                super.myEventHandlerMethod(event);
+                throw new RuntimeException("Mock");
+            }
+        };
+        try {
+            testSubject.doSomething();
+            fail("Expected exception to have been propagated");
+        } catch (RuntimeException e) {
+            assertEquals(1, testSubject.getUncommittedEventCount());
+        }
+        Field field = AbstractEventSourcedAggregateRoot.class.getDeclaredField("eventsToApply");
+        assertEquals(1, ((Collection) ReflectionUtils.getFieldValue(field, testSubject)).size());
+        testSubject.commitEvents();
+        assertEquals(0, ((Collection) ReflectionUtils.getFieldValue(field, testSubject)).size());
     }
 
     private static class LateIdentifiedAggregate extends AbstractAnnotatedAggregateRoot {
@@ -156,13 +221,24 @@ public class AbstractAnnotatedAggregateRootTest {
         }
     }
 
+    private static class CustomParameterAggregateRoot extends SimpleAggregateRoot {
+
+        private String secondParameter;
+
+        @EventSourcingHandler
+        public void myEventHandlerMethod(StubDomainEvent event, String secondParameter) {
+            this.secondParameter = secondParameter;
+            super.myEventHandlerMethod(event);
+        }
+    }
+
     private static class SimpleAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
+        @AggregateIdentifier
+        private final UUID identifier;
         private int invocationCount;
         @EventSourcedMember
         private SimpleEntity entity;
-        @AggregateIdentifier
-        private final UUID identifier;
 
         private SimpleAggregateRoot() {
             identifier = UUID.randomUUID();

@@ -16,7 +16,7 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
@@ -44,7 +44,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
 
     @StartSaga
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleSagaStart(TriggerSagaStartEvent event, DomainEventMessage<TriggerSagaStartEvent> message) {
+    public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message) {
         handledEvents.add(event);
         timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
                                    new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));

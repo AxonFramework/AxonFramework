@@ -60,9 +60,12 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
         assertNotNull(disruptorCommandBus);
         Object repo1 = beanFactory.getBean("myAggregateRepository");
         Object repo2 = beanFactory.getBean("myOtherAggregateRepository");
+        Object repo3 = beanFactory.getBean("theThirdAggregateRepository");
         assertTrue(repo1 instanceof Repository);
         assertTrue(repo2 instanceof Repository);
+        assertTrue(repo3 instanceof Repository);
         assertNotSame(repo1, repo2);
+        assertNotSame(repo1, repo3);
     }
 
     @Test
@@ -87,11 +90,12 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
         assertTrue(config.getPropertyValues().getPropertyValue("serializer").getValue() instanceof BeanReference);
         assertEquals("2048", config.getPropertyValues().getPropertyValue("bufferSize").getValue());
         assertEquals("3", config.getPropertyValues().getPropertyValue("serializerThreadCount").getValue());
-        assertEquals("org.dom4j.Document", config.getPropertyValues().getPropertyValue("serializedRepresentation").getValue());
+        assertEquals("org.dom4j.Document",
+                     config.getPropertyValues().getPropertyValue("serializedRepresentation").getValue());
     }
 
     @Test
-    public void testRepositoryContainsDecorator() {
+    public void testInternalRepositoryContainsDecorator() {
         GenericBeanDefinition beanDefinition = (GenericBeanDefinition)
                 beanFactory.getBeanDefinition("myAggregateRepository");
         PropertyValue triggerValue = beanDefinition.getPropertyValues().getPropertyValue("snapshotterTrigger");
@@ -110,6 +114,22 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
         assertEquals("org.axonframework.testutils.MockitoMockFactoryBean",
                      decorators.get(0).getBeanDefinition().getBeanClassName());
 
+    }
+
+    @Test
+    public void testExternalRepositoryContainsDecorator() {
+        GenericBeanDefinition beanDefinition = (GenericBeanDefinition)
+                beanFactory.getBeanDefinition("theThirdAggregateRepository");
+        PropertyValue triggerValue = beanDefinition.getPropertyValues().getPropertyValue("snapshotterTrigger");
+        assertNotNull(triggerValue);
+        final GenericBeanDefinition snapshotterDefinition = (GenericBeanDefinition) triggerValue.getValue();
+        assertEquals("org.axonframework.eventsourcing.EventCountSnapshotterTrigger",
+                     snapshotterDefinition.getBeanClassName());
+        assertEquals("10", snapshotterDefinition.getPropertyValues().getPropertyValue("trigger").getValue());
+        assertEquals(new RuntimeBeanReference("snapshotter"),
+                     snapshotterDefinition.getPropertyValues().getPropertyValue("snapshotter").getValue());
+        assertEquals(new RuntimeBeanReference("mockCache"),
+                     snapshotterDefinition.getPropertyValues().getPropertyValue("aggregateCache").getValue());
     }
 
     /**

@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.ClusteringEventBus;
 import org.axonframework.eventhandling.DefaultClusterSelector;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventstore.EventVisitor;
@@ -39,6 +40,9 @@ import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -60,7 +64,8 @@ public class ReplayingClusterTest {
         mockMessageHandler = mock(IncomingMessageHandler.class);
         mockTransactionManager = mock(TransactionManager.class);
         mockEventStore = mock(EventStoreManagement.class);
-        delegateCluster = mock(Cluster.class);
+        delegateCluster = spy(new SimpleCluster("simpleCluster"));
+
         testSubject = new ReplayingCluster(delegateCluster, mockEventStore, mockTransactionManager, -1,
                                            mockMessageHandler);
 
@@ -257,6 +262,83 @@ public class ReplayingClusterTest {
 
         verify(delegateCluster, never()).publish(concurrentMessage);
         verify(delegateCluster).subscribe(listener);
+    }
+
+    @Test(timeout = 4000)
+    public void testAfterReplayInvokedAfterHandlingOfLastEvent() throws Exception {
+        final ReplayAwareListener listener = mock(ReplayAwareListener.class);
+        final DomainEventMessage event1 = new GenericDomainEventMessage<String>("id1", 0, "event1");
+        final DomainEventMessage event2 = new GenericDomainEventMessage<String>("id1", 0, "event2");
+        final ExecutorService executor = Executors.newSingleThreadExecutor();
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            // slow down second event, to make sure replay thread waits for it...
+                            Thread.sleep(200);
+                            invocation.callRealMethod();
+                        } catch (Throwable throwable) {
+                            throwable.printStackTrace();
+                        }
+                    }
+                });
+                return null;
+            }
+        }).when(delegateCluster).publish(event2);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event1);
+                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event2);
+                return null;
+            }
+        }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
+
+        testSubject.subscribe(listener);
+        testSubject.startReplay();
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.SECONDS);
+
+        InOrder inOrder = inOrder(listener);
+        inOrder.verify(listener).beforeReplay();
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(listener).handle(event2);
+        inOrder.verify(listener).afterReplay();
+    }
+
+    @Test
+    public void testIllegalTimeoutValuesAreIgnored() throws Exception {
+        testSubject.getMetaData().setProperty(ReplayingCluster.AFTER_REPLAY_TIMEOUT, "not a val");
+        testAfterReplayInvokedAfterHandlingOfLastEvent();
+    }
+
+    @Test(timeout = 1000)
+    public void testAfterReplayInvokedWhenTimeoutExpires() throws Exception {
+        testSubject.getMetaData().setProperty(ReplayingCluster.AFTER_REPLAY_TIMEOUT, "0");
+        final ReplayAwareListener listener = mock(ReplayAwareListener.class);
+        final DomainEventMessage event1 = new GenericDomainEventMessage<String>("id1", 0, "event1");
+        final DomainEventMessage event2 = new GenericDomainEventMessage<String>("id1", 0, "event2");
+        doNothing().when(delegateCluster).publish(event2);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event1);
+                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event2);
+                return null;
+            }
+        }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
+
+        testSubject.subscribe(listener);
+        testSubject.startReplay();
+
+        InOrder inOrder = inOrder(listener);
+        inOrder.verify(listener).beforeReplay();
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(listener, never()).handle(event2);
+        inOrder.verify(listener).afterReplay();
     }
 
     @Test

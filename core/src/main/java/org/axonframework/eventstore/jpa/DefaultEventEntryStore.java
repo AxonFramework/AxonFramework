@@ -116,7 +116,8 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     @SuppressWarnings({"unchecked"})
     public Iterator<SerializedDomainEventData<T>> fetchFiltered(String whereClause, Map<String, Object> parameters,
                                                              int batchSize, EntityManager entityManager) {
-        return new BatchingIterator(whereClause, parameters, batchSize, domainEventEntryEntityName(), entityManager);
+        return new BatchingIterator(whereClause, parameters, batchSize, domainEventEntryEntityName(),
+                                    eventEntryFactory, entityManager);
     }
 
     @SuppressWarnings("unchecked")
@@ -270,14 +271,14 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
     private static final class BatchingAggregateStreamIterator<T> implements Iterator<SerializedDomainEventData<T>> {
 
-        private int currentBatchSize;
-        private Iterator<SerializedDomainEventData<T>> currentBatch;
-        private SerializedDomainEventData<T> next;
         private final Object id;
         private final String typeId;
         private final int batchSize;
         private final String domainEventEntryEntityName;
         private final EntityManager entityManager;
+        private int currentBatchSize;
+        private Iterator<SerializedDomainEventData<T>> currentBatch;
+        private SerializedDomainEventData<T> next;
 
         private BatchingAggregateStreamIterator(long firstSequenceNumber, Object id, String typeId, int batchSize,
                                                 String domainEventEntryEntityName, EntityManager entityManager) {
@@ -339,24 +340,25 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
     private static class BatchingIterator<T> implements Iterator<SerializedDomainEventData<T>> {
 
+        private final String whereClause;
+        private final Map<String, Object> parameters;
+        private final int batchSize;
+        private final String domainEventEntryEntityName;
+        private final EntityManager entityManager;
+        private final EventEntryFactory<T> eventEntryFactory;
         private int currentBatchSize;
         private Iterator<SerializedDomainEventData<T>> currentBatch;
         private SerializedDomainEventData<T> next;
         private SerializedDomainEventData<T> lastItem;
-        private final String whereClause;
-        private final Map<String, Object> parameters;
-        private final int batchSize;
-
-        private final String domainEventEntryEntityName;
-        private final EntityManager entityManager;
 
         public BatchingIterator(
                 String whereClause, Map<String, Object> parameters, int batchSize, String domainEventEntryEntityName,
-                EntityManager entityManager) {
+                EventEntryFactory<T> eventEntryFactory, EntityManager entityManager) {
             this.whereClause = whereClause;
             this.parameters = parameters;
             this.batchSize = batchSize;
             this.domainEventEntryEntityName = domainEventEntryEntityName;
+            this.eventEntryFactory = eventEntryFactory;
             this.entityManager = entityManager;
             List<SerializedDomainEventData<T>> firstBatch = fetchBatch();
 
@@ -383,7 +385,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             for (Map.Entry<String, Object> entry : params.entrySet()) {
                 Object value = entry.getValue();
                 if (value instanceof DateTime) {
-                    value = entry.getValue().toString();
+                    value = eventEntryFactory.resolveDateTimeValue((DateTime) entry.getValue());
                 }
                 query.setParameter(entry.getKey(), value);
             }

@@ -106,8 +106,8 @@ public class FixtureTest_Annotated {
     public void testAggregate_InjectCustomResourceAfterCreatingAnnotatedHandler() {
         // a 'when' will cause command handlers to be registered.
         fixture.registerInjectableResource(new HardToCreateResource());
-        fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2)).
-                when(new CreateAggregateCommand());
+        fixture.given()
+               .when(new CreateAggregateCommand("AggregateId"));
         fixture.registerInjectableResource("I am injectable");
     }
 

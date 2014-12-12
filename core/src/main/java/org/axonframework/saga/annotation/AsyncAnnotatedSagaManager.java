@@ -107,7 +107,8 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
         Assert.notNull(eventBus, "eventBus may not be null");
         this.eventBus = eventBus;
         this.sagaTypes = Arrays.copyOf(sagaTypes, sagaTypes.length);
-        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(sagaTypes[0]);
+        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(
+                sagaTypes.length == 0 ? AsyncAnnotatedSagaManager.class : sagaTypes[0]);
     }
 
     /**
@@ -118,7 +119,9 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
      * @param sagaTypes The types of Saga this saga manager will process incoming events for
      */
     public AsyncAnnotatedSagaManager(Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
-        this(ClasspathParameterResolverFactory.forClass(sagaTypes[0]), sagaTypes);
+        this(ClasspathParameterResolverFactory.forClass(
+                sagaTypes.length == 0 ? AsyncAnnotatedSagaManager.class : sagaTypes[0]),
+             sagaTypes);
     }
 
     /**
@@ -218,7 +221,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
 
     @Override
     public Class<?> getTargetType() {
-        return sagaTypes[0];
+        return sagaTypes.length > 0 ? sagaTypes[0] : Void.TYPE;
     }
 
     @Override

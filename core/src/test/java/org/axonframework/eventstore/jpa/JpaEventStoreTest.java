@@ -834,6 +834,11 @@ public class JpaEventStoreTest {
                                             public String getSnapshotEventEntryEntityName() {
                                                 return "CustomSnapshotEventEntry";
                                             }
+
+                                            @Override
+                                            public String resolveDateTimeValue(DateTime dateTime) {
+                                                return dateTime.toString();
+                                            }
                                         }));
 
         testSubject.appendEvents("temp", new SimpleDomainEventStream(

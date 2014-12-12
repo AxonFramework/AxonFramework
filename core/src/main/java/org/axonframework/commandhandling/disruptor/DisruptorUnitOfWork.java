@@ -47,18 +47,16 @@ import java.util.Map;
 public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallback {
 
     private static final DomainEventStream EMPTY_DOMAIN_EVENT_STREAM = new SimpleDomainEventStream();
-
-    private boolean committed;
-    private Throwable rollbackReason;
     private DomainEventStream eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
-
     private final List<EventMessage> eventsToPublish = new ArrayList<EventMessage>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
-    private EventSourcedAggregateRoot aggregate;
-    private String aggregateType;
     private final boolean transactional;
     private final Map<String, Object> resources = new HashMap<String, Object>();
     private final Map<String, Object> inheritedResources = new HashMap<String, Object>();
+    private boolean committed;
+    private Throwable rollbackReason;
+    private EventSourcedAggregateRoot aggregate;
+    private String aggregateType;
     private EventStreamDecorator eventStreamDecorator;
 
     /**
@@ -73,8 +71,10 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public void commit() {
         committed = true;
-        eventsToStore = aggregate.getUncommittedEvents();
-        aggregate.commitEvents();
+        if (aggregate != null) {
+            eventsToStore = aggregate.getUncommittedEvents();
+            aggregate.commitEvents();
+        }
         CurrentUnitOfWork.clear(this);
     }
 
@@ -83,7 +83,11 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      * committed, but before any of the changes are made public.
      */
     public void onPrepareCommit() {
-        listeners.onPrepareCommit(this, Collections.<AggregateRoot>singleton(aggregate), eventsToPublish);
+        listeners.onPrepareCommit(this,
+                                  aggregate != null
+                                          ? Collections.<AggregateRoot>singleton(aggregate)
+                                          : Collections.<AggregateRoot>emptySet(),
+                                  eventsToPublish);
     }
 
     /**

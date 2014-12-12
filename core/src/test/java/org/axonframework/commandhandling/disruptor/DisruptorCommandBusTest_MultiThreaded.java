@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
@@ -38,6 +37,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.Repository;
+import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.junit.*;
@@ -208,7 +208,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
                 storedEventCounter.incrementAndGet();
                 lastEvent = events.next();
                 if (FailingEvent.class.isAssignableFrom(lastEvent.getPayloadType())) {
-                    throw new RuntimeException("This is a failing event. EventStore refuses to store that");
+                    throw new MockException("This is a failing event. EventStore refuses to store that");
                 }
             }
             storedEvents.put(key, lastEvent);
