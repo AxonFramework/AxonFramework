@@ -23,13 +23,11 @@
     <version>3.0-SNAPSHOT</version>
     <modules>
         <module>core</module>
-        <module>integration</module>
         <module>springmessaging</module>
         <module>test</module>
         <module>distributed-commandbus</module>
         <module>integrationtests</module>
         <module>mongo</module>
-        <module>incubator/google-app-engine</module>
         <module>amqp</module>
         <module>monitoring-jmx</module>
         <module>quickstart</module>
@@ -95,18 +93,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>with-incubator</id>
-            <activation>
-                <property>
-                    <name>allmodules</name>
-                </property>
-            </activation>
-            <modules>
-                <module>incubator/redis</module>
-                <module>incubator/cassandra</module>
-            </modules>
         </profile>
     </profiles>
 
