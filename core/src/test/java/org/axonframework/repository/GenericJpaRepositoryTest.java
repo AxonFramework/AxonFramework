@@ -41,7 +41,7 @@ public class GenericJpaRepositoryTest {
     @Before
     public void setUp() {
         mockEntityManager = mock(EntityManager.class);
-        testSubject = new GenericJpaRepository<StubJpaAggregate>(new SimpleEntityManagerProvider(mockEntityManager),
+        testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
                                                                  StubJpaAggregate.class);
         DefaultUnitOfWork.startAndGet();
         aggregateId = "123";

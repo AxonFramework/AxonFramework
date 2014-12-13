@@ -126,7 +126,7 @@ public class CommandValidator {
                                                     expected.getClass().getSimpleName(),
                                                     actual.getClass().getSimpleName()));
             }
-            EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<Object>(expected);
+            EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expected);
             if (!matcher.matches(actual)) {
                 throw new AxonAssertionError(format("Unexpected command at index %s (0-based). "
                                                             + "Field value of '%s.%s', expected <%s>, but got <%s>",

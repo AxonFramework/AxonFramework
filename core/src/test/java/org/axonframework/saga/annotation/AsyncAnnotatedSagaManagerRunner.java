@@ -17,7 +17,6 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
@@ -29,7 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.domain.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -56,7 +54,7 @@ public class AsyncAnnotatedSagaManagerRunner {
     }
 
     public void setUp() {
-        sagaManager = new AsyncAnnotatedSagaManager(mock(EventBus.class), StubAsyncSaga.class);
+        sagaManager = new AsyncAnnotatedSagaManager(StubAsyncSaga.class);
         sagaRepository = new StubInMemorySagaRepository();
         sagaManager.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();

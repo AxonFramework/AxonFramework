@@ -19,8 +19,6 @@ package org.axonframework.commandhandling;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.Arrays;
 import java.util.concurrent.Executor;
@@ -46,29 +44,16 @@ public class AsynchronousCommandBusTest {
         executorService = mock(ExecutorService.class);
         dispatchInterceptor = mock(CommandDispatchInterceptor.class);
         handlerInterceptor = mock(CommandHandlerInterceptor.class);
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((Runnable) invocation.getArguments()[0]).run();
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArguments()[0]).run();
+            return null;
         }).when(executorService).execute(isA(Runnable.class));
         testSubject = new AsynchronousCommandBus(executorService);
         testSubject.setDispatchInterceptors(Arrays.asList(dispatchInterceptor));
         testSubject.setHandlerInterceptors(Arrays.asList(handlerInterceptor));
-        when(dispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        when(dispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         when(handlerInterceptor.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return ((InterceptorChain) invocation.getArguments()[2]).proceed();
-                    }
-                });
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[2]).proceed());
     }
 
     @SuppressWarnings("unchecked")

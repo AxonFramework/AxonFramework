@@ -40,7 +40,7 @@ public class NoCacheTest {
         assertFalse(cache.containsKey(new Object()));
         assertNull(cache.get(new Object()));
         cache.put(new Object(), new Object());
-        Map<Object, Object> map = new HashMap<Object, Object>();
+        Map<Object, Object> map = new HashMap<>();
         map.put(new Object(), new Object());
         assertFalse(cache.remove(new Object()));
         cache.unregisterCacheEntryListener(mock(Cache.EntryListener.class));

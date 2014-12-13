@@ -37,9 +37,9 @@ import static org.mockito.Mockito.*;
 public class DomainEventEntryTest {
 
     private DomainEventMessage mockDomainEvent;
-    private SerializedObject<byte[]> mockPayload = new SimpleSerializedObject<byte[]>("PayloadBytes".getBytes(),
+    private SerializedObject<byte[]> mockPayload = new SimpleSerializedObject<>("PayloadBytes".getBytes(),
                                                                                       byte[].class, "Mock", "0");
-    private SerializedObject<byte[]> mockMetaData = new SerializedMetaData<byte[]>("MetaDataBytes".getBytes(),
+    private SerializedObject<byte[]> mockMetaData = new SerializedMetaData<>("MetaDataBytes".getBytes(),
                                                                                    byte[].class);
 
     @Before

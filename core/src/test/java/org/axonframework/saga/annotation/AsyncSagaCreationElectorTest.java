@@ -85,12 +85,7 @@ public class AsyncSagaCreationElectorTest {
     private ElectionResult elect(final boolean didInvocation, final int electorCount,
                                  final boolean isSagaOwner) {
         final AtomicBoolean elected = new AtomicBoolean();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                elected.set(testSubject.waitForSagaCreationVote(didInvocation, electorCount, isSagaOwner));
-            }
-        });
+        Thread t = new Thread(() -> elected.set(testSubject.waitForSagaCreationVote(didInvocation, electorCount, isSagaOwner)));
         t.start();
         return new ElectionResult(elected, t);
     }

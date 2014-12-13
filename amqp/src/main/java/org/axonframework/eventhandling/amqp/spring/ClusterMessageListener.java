@@ -39,7 +39,7 @@ public class ClusterMessageListener implements MessageListener {
 
     private static final Logger logger = LoggerFactory.getLogger(ClusterMessageListener.class);
 
-    private final List<Cluster> clusters = new CopyOnWriteArrayList<Cluster>();
+    private final List<Cluster> clusters = new CopyOnWriteArrayList<>();
     private final AMQPMessageConverter messageConverter;
 
     /**

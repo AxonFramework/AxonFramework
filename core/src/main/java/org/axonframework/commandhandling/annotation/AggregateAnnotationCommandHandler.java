@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
-import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
@@ -34,8 +33,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 import static org.axonframework.commandhandling.annotation.CommandMessageHandlerUtils.resolveAcceptedCommandName;
 
@@ -50,7 +47,7 @@ import static org.axonframework.commandhandling.annotation.CommandMessageHandler
  * @since 1.2
  */
 public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
-        implements Subscribable, CommandHandler<Object> {
+        implements CommandHandler<Object> {
 
     private final CommandBus commandBus;
     private final Repository<T> repository;
@@ -104,56 +101,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         this.repository = repository;
         this.commandBus = null;
         this.commandTargetResolver = commandTargetResolver;
-        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(aggregateType,
+        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<>(aggregateType,
                                                                                    parameterResolverFactory));
-    }
-
-    /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, to be
-     * registered on the given <code>commandBus</code>.
-     *
-     * @param aggregateType The type of aggregate
-     * @param repository    The repository providing access to aggregate instances
-     * @param commandBus    The command bus to register command handlers to
-     * @deprecated Use {@link #AggregateAnnotationCommandHandler(Class, org.axonframework.repository.Repository)}
-     * and subscribe the adapter to the command bus using
-     * {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}. Alternatively, use
-     * {@link #subscribe(Class, org.axonframework.repository.Repository, org.axonframework.commandhandling.CommandBus)}.
-     */
-    @Deprecated
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
-                                             CommandBus commandBus) {
-        this(aggregateType, repository, commandBus, new AnnotationCommandTargetResolver());
-    }
-
-    /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, to be
-     * registered on the given <code>commandBus</code>.
-     *
-     * @param aggregateType         The type of aggregate
-     * @param repository            The repository providing access to aggregate instances
-     * @param commandBus            The command bus to register command handlers to
-     * @param commandTargetResolver The target resolution strategy
-     * @deprecated Use {@link #AggregateAnnotationCommandHandler(Class, org.axonframework.repository.Repository,
-     * org.axonframework.commandhandling.CommandTargetResolver)} and subscribe the handler to the command
-     * bus using {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}. Alternatively, use
-     * {@link #subscribe(Class, org.axonframework.repository.Repository, org.axonframework.commandhandling.CommandBus,
-     * org.axonframework.commandhandling.CommandTargetResolver)}.
-     */
-    @Deprecated
-    public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
-                                             CommandBus commandBus, CommandTargetResolver commandTargetResolver) {
-        Assert.notNull(aggregateType, "aggregateType may not be null");
-        Assert.notNull(repository, "repository may not be null");
-        Assert.notNull(commandTargetResolver, "commandTargetResolver may not be null");
-        this.repository = repository;
-        this.commandBus = commandBus;
-        this.commandTargetResolver = commandTargetResolver;
-        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(aggregateType);
-        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<T>(
-                aggregateType, parameterResolverFactory));
     }
 
     /**
@@ -167,7 +116,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      */
     public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
             Class<T> aggregateType, Repository<T> repository, CommandBus commandBus) {
-        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<T>(aggregateType,
+        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<>(aggregateType,
                                                                                                 repository);
         for (String supportedCommand : adapter.supportedCommands()) {
             commandBus.subscribe(supportedCommand, adapter);
@@ -189,7 +138,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
             Class<T> aggregateType, Repository<T> repository, CommandBus commandBus,
             CommandTargetResolver commandTargetResolver) {
-        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<T>(
+        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<>(
                 aggregateType, repository, commandTargetResolver);
         for (String supportedCommand : adapter.supportedCommands()) {
             commandBus.subscribe(supportedCommand, adapter);
@@ -213,7 +162,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     }
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
-        Map<String, CommandHandler<Object>> handlersFound = new HashMap<String, CommandHandler<Object>>();
+        Map<String, CommandHandler<Object>> handlersFound = new HashMap<>();
         for (final AbstractMessageHandler commandHandler : inspector.getHandlers()) {
             handlersFound.put(resolveAcceptedCommandName(commandHandler),
                               new AggregateCommandHandler(commandHandler));
@@ -223,42 +172,6 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
             handlersFound.put(resolveAcceptedCommandName(handler), new AggregateConstructorCommandHandler(handler));
         }
         return handlersFound;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated unsubscribing this handler should be done using {@link CommandBus#unsubscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}. Retrieve the supported commands with {@link
-     * #supportedCommands()}.
-     */
-    @Override
-    @PreDestroy
-    @Deprecated
-    public synchronized void unsubscribe() {
-        if (commandBus != null) {
-            for (String commandType : handlers.keySet()) {
-                commandBus.unsubscribe(commandType, this);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @deprecated subscribing this handler should be done using {@link CommandBus#subscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}. Retrieve the supported commands with {@link
-     * #supportedCommands()}.
-     */
-    @PostConstruct
-    @Override
-    @Deprecated
-    public synchronized void subscribe() {
-        if (commandBus != null) {
-            for (String commandType : handlers.keySet()) {
-                commandBus.subscribe(commandType, this);
-            }
-        }
     }
 
     /**

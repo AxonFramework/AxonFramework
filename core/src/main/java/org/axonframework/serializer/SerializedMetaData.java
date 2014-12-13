@@ -39,7 +39,7 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
      * @param dataType The type of data
      */
     public SerializedMetaData(T data, Class<T> dataType) {
-        delegate = new SimpleSerializedObject<T>(data, dataType, METADATA_CLASS_NAME, null);
+        delegate = new SimpleSerializedObject<>(data, dataType, METADATA_CLASS_NAME, null);
     }
 
     /**

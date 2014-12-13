@@ -44,13 +44,13 @@ import java.util.concurrent.ConcurrentMap;
 public class SpringMessagingEventBus implements EventBus {
 
     private final ConcurrentMap<EventListener, MessageHandler> handlers =
-            new ConcurrentHashMap<EventListener, MessageHandler>();
+            new ConcurrentHashMap<>();
     private SubscribableChannel channel;
 
     @Override
     public void publish(EventMessage... events) {
         for (EventMessage event : events) {
-            channel.send(new GenericMessage<Object>(event.getPayload(), event.getMetaData()));
+            channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData()));
         }
     }
 

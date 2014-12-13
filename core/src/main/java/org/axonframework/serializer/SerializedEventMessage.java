@@ -53,7 +53,7 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
      */
     public SerializedEventMessage(String eventIdentifier, DateTime timestamp, SerializedObject<?> serializedPayload,
                                   SerializedObject<?> serializedMetaData, Serializer serializer) {
-        message = new SerializedMessage<T>(eventIdentifier, serializedPayload, serializedMetaData, serializer);
+        message = new SerializedMessage<>(eventIdentifier, serializedPayload, serializedMetaData, serializer);
         this.timestamp = timestamp;
     }
 
@@ -103,7 +103,7 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
         if (getMetaData().equals(newMetaData)) {
             return this;
         } else {
-            return new SerializedEventMessage<T>(this, newMetaData);
+            return new SerializedEventMessage<>(this, newMetaData);
         }
     }
 
@@ -129,6 +129,6 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
      * @return the GenericEventMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericEventMessage<T>(getIdentifier(), getTimestamp(), getPayload(), getMetaData());
+        return new GenericEventMessage<>(getIdentifier(), getTimestamp(), getPayload(), getMetaData());
     }
 }

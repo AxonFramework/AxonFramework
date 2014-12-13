@@ -67,7 +67,7 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
         }
         ensureAccessible(constructor);
         validate(constructor, resolvers);
-        return new ConstructorCommandMessageHandler<T>(constructor, resolvers, payloadType);
+        return new ConstructorCommandMessageHandler<>(constructor, resolvers, payloadType);
     }
 
     private static void validate(Constructor constructor, ParameterResolver[] parameterResolvers) {

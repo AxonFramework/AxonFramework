@@ -88,7 +88,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     @Before
     public void setUp() throws Exception {
         eventBus.subscribe(this);
-        handledMessages = new ArrayList<EventMessage<?>>();
+        handledMessages = new ArrayList<>();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -98,10 +98,10 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     public void testLoopbackScenario() throws InterruptedException {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
         eventStore.appendEvents("AggregateA", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<CreateEvent>(aggregateAIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateAIdentifier, (long) 0,
                                                            new CreateEvent(aggregateAIdentifier), MetaData.emptyInstance())));
         eventStore.appendEvents("AggregateB", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<CreateEvent>(aggregateBIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateBIdentifier, (long) 0,
                                                            new CreateEvent(aggregateBIdentifier), MetaData.emptyInstance())));
         transactionManager.commit(tx);
         assertEquals(1, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
@@ -122,7 +122,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     }
 
     private List<DomainEventMessage> toList(DomainEventStream eventStream) {
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> events = new ArrayList<>();
         while (eventStream.hasNext()) {
             events.add(eventStream.next());
         }
@@ -149,13 +149,13 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
         @CommandHandler
         public void handle(String stringCommand) {
-            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<String>("Mock"), eventBus);
+            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>("Mock"), eventBus);
             aggregateARepository.load(aggregateAIdentifier).doSomething(stringCommand);
         }
 
         @CommandHandler
         public void handle(Object objectCommand) {
-            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<String>("Mock"), eventBus);
+            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>("Mock"), eventBus);
             aggregateBRepository.load(aggregateBIdentifier).doSomething();
         }
     }

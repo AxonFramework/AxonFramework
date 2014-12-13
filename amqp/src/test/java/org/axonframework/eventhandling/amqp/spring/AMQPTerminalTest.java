@@ -20,7 +20,6 @@ import com.rabbitmq.client.Channel;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -75,31 +74,25 @@ public class AMQPTerminalTest {
         final EventMessage<String> sentEvent = GenericEventMessage.asEventMessage("Hello world");
         final CountDownLatch cdl = new CountDownLatch(EVENT_COUNT * THREAD_COUNT);
 
-        eventBus.subscribe(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                assertEquals(sentEvent.getPayload(), event.getPayload());
-                assertEquals(sentEvent.getIdentifier(), event.getIdentifier());
-                cdl.countDown();
-            }
+        eventBus.subscribe(event -> {
+            assertEquals(sentEvent.getPayload(), event.getPayload());
+            assertEquals(sentEvent.getIdentifier(), event.getIdentifier());
+            cdl.countDown();
         });
 
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         final AtomicBoolean failed = new AtomicBoolean(false);
         for (int t = 0; t < THREAD_COUNT; t++) {
-            threads.add(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 0; i < EVENT_COUNT; i++) {
-                        boolean sent = false;
-                        while (!sent && !failed.get()) {
-                            try {
-                                eventBus.publish(sentEvent);
-                                sent = true;
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                failed.set(true);
-                            }
+            threads.add(new Thread(() -> {
+                for (int i = 0; i < EVENT_COUNT; i++) {
+                    boolean sent = false;
+                    while (!sent && !failed.get()) {
+                        try {
+                            eventBus.publish(sentEvent);
+                            sent = true;
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            failed.set(true);
                         }
                     }
                 }

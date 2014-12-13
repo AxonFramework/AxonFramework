@@ -49,10 +49,10 @@ import java.util.concurrent.ConcurrentMap;
 public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>, LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandHandlerInvoker.class);
-    private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<CommandHandlerInvoker>();
+    private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<>();
     private static final Object PLACEHOLDER_VALUE = new Object();
 
-    private final ConcurrentMap<String, DisruptorRepository> repositories = new ConcurrentHashMap<String, DisruptorRepository>();
+    private final ConcurrentMap<String, DisruptorRepository> repositories = new ConcurrentHashMap<>();
     private final Cache cache;
     private final int segmentId;
     private final EventStore eventStore;
@@ -121,7 +121,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                                                                                 EventStreamDecorator decorator) {
         String typeIdentifier = aggregateFactory.getTypeIdentifier();
         if (!repositories.containsKey(typeIdentifier)) {
-            DisruptorRepository<T> repository = new DisruptorRepository<T>(aggregateFactory, cache, eventStore,
+            DisruptorRepository<T> repository = new DisruptorRepository<>(aggregateFactory, cache, eventStore,
                                                                            decorator);
             repositories.putIfAbsent(typeIdentifier, repository);
         }
@@ -155,7 +155,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private final EventStore eventStore;
         private final EventStreamDecorator decorator;
         private final AggregateFactory<T> aggregateFactory;
-        private final Map<T, Object> firstLevelCache = new WeakHashMap<T, Object>();
+        private final Map<T, Object> firstLevelCache = new WeakHashMap<>();
         private final String typeIdentifier;
         private final Cache cache;
 

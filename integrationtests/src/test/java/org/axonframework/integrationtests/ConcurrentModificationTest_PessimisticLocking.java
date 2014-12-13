@@ -81,20 +81,17 @@ public class ConcurrentModificationTest_PessimisticLocking {
         commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)));
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         final AtomicLong counter = new AtomicLong(0);
-        List<Future<?>> results = new LinkedList<Future<?>>();
+        List<Future<?>> results = new LinkedList<>();
         for (int t = 0; t < 30; t++) {
-            results.add(service.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)));
-                        commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
-                                            SilentCallback.INSTANCE);
-                        commandBus.dispatch(asCommandMessage(new LoopingCommand(aggregateId)));
-                        counter.incrementAndGet();
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
-                    }
+            results.add(service.submit(() -> {
+                try {
+                    commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)));
+                    commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
+                                        SilentCallback.INSTANCE);
+                    commandBus.dispatch(asCommandMessage(new LoopingCommand(aggregateId)));
+                    counter.incrementAndGet();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
             }));
         }

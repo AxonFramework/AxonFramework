@@ -47,7 +47,7 @@ public class DistributedCommandBus implements CommandBus {
 
     private final RoutingStrategy routingStrategy;
     private final CommandBusConnector connector;
-    private final List<CommandDispatchInterceptor> dispatchInterceptors = new CopyOnWriteArrayList<CommandDispatchInterceptor>();
+    private final List<CommandDispatchInterceptor> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingStrategy}.

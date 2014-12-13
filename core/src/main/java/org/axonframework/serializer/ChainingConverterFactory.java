@@ -37,7 +37,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ChainingConverterFactory implements ConverterFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(ChainingConverterFactory.class);
-    private final List<ContentTypeConverter<?, ?>> converters = new CopyOnWriteArrayList<ContentTypeConverter<?, ?>>();
+    private final List<ContentTypeConverter<?, ?>> converters = new CopyOnWriteArrayList<>();
 
     /**
      * Initialize a new ChainingConverterFactory. Will autodetect all converters mentioned in

@@ -27,7 +27,6 @@ import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.config.RuntimeConfigBuilder;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.config.IRuntimeConfig;
-import de.flapdoodle.embed.process.extract.ITempNaming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,12 +72,7 @@ public class MongoLauncher {
                                        .defaults(command)
                                        .download(new DownloadConfigBuilder()
                                                          .defaultsForCommand(command))
-                                       .executableNaming(new ITempNaming() {
-                                           @Override
-                                           public String nameFor(String prefix, String postfix) {
-                                               return prefix + "_axontest_" + counter.getAndIncrement() + "_" + postfix;
-                                           }
-                                       }))
+                                       .executableNaming((prefix, postfix) -> prefix + "_axontest_" + counter.getAndIncrement() + "_" + postfix))
                 .build();
 
         MongodStarter runtime = MongodStarter.getInstance(runtimeConfig);

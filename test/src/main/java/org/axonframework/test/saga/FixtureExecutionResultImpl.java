@@ -26,8 +26,6 @@ import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 
-import java.util.List;
-
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
 import static org.hamcrest.CoreMatchers.any;

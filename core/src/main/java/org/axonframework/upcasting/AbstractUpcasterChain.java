@@ -119,7 +119,7 @@ public abstract class AbstractUpcasterChain implements UpcasterChain {
         if (!upcasterIterator.hasNext()) {
             return serializedObjects;
         }
-        List<SerializedObject> upcastObjects = new ArrayList<SerializedObject>();
+        List<SerializedObject> upcastObjects = new ArrayList<>();
         Upcaster<?> currentUpcaster = upcasterIterator.next();
         for (SerializedObject serializedObject : serializedObjects) {
             if (currentUpcaster.canUpcast(serializedObject.getType())) {

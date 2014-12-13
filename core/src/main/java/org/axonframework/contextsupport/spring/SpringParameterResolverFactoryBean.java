@@ -42,7 +42,7 @@ import java.util.List;
 public class SpringParameterResolverFactoryBean implements FactoryBean<ParameterResolverFactory>,
         BeanClassLoaderAware, InitializingBean, ApplicationContextAware {
 
-    private final List<ParameterResolverFactory> factories = new ArrayList<ParameterResolverFactory>();
+    private final List<ParameterResolverFactory> factories = new ArrayList<>();
     private ClassLoader classLoader;
     private ApplicationContext applicationContext;
 

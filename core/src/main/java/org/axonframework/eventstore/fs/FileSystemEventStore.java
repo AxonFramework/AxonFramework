@@ -126,6 +126,20 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
     }
 
     @Override
+    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                        long lastSequenceNumber) {
+        try {
+            InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(type, identifier);
+            return new FileSystemBufferedReaderDomainEventStream(eventFileInputStream, eventSerializer, upcasterChain);
+        } catch (IOException e) {
+            throw new EventStoreException(
+                    String.format("An error occurred while trying to open the event file "
+                                          + "for aggregate type [%s] with identifier [%s]",
+                                  type, identifier), e);
+        }
+    }
+
+    @Override
     public DomainEventStream readEvents(String type, Object aggregateIdentifier) {
         try {
             if (!eventFileResolver.eventFileExists(type, aggregateIdentifier)) {

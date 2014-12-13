@@ -57,7 +57,6 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
 
     private static final String PROPERTY_WAIT_STRATEGY = "waitStrategy";
     private static final String ATTRIBUTE_WAIT_STRATEGY = "wait-strategy";
-    private static final String ATTRIBUTE_CLAIM_STRATEGY = "claim-strategy";
     private static final String PROPERTY_PRODUCER_TYPE = "producerType";
     private static final String ATTRIBUTE_PRODUCER_TYPE = "producer-type";
     private static final String ELEMENT_REPOSITORIES = "repositories";
@@ -65,9 +64,9 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
     private static final String ATTRIBUTE_TRANSACTION_MANAGER = "transaction-manager";
     private static final String PROPERTY_TRANSACTION_MANAGER = "transactionManager";
 
-    private static final Map<String, String> VALUE_PROPERTY_MAPPING = new HashMap<String, String>();
-    private static final Map<String, String> REF_PROPERTY_MAPPING = new HashMap<String, String>();
-    private static final Map<String, String> LIST_PROPERTY_MAPPING = new HashMap<String, String>();
+    private static final Map<String, String> VALUE_PROPERTY_MAPPING = new HashMap<>();
+    private static final Map<String, String> REF_PROPERTY_MAPPING = new HashMap<>();
+    private static final Map<String, String> LIST_PROPERTY_MAPPING = new HashMap<>();
 
     static {
         REF_PROPERTY_MAPPING.put("cache", "cache");
@@ -121,7 +120,6 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                 builder.addPropertyValue(entry.getValue(), element.getAttribute(entry.getKey()));
             }
         }
-        parseClaimStrategy(element, builder);
         parseProducerType(element, builder);
         parseWaitStrategy(element, builder);
         parseTransactionManager(element, builder);
@@ -148,16 +146,6 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                                                           .getBeanDefinition()
             );
         }
-    }
-
-    @Deprecated
-    private void parseClaimStrategy(Element element, BeanDefinitionBuilder builder) {
-        final BeanDefinitionBuilder producerType = BeanDefinitionBuilder
-                .genericBeanDefinition(ProducerTypeFactoryBean.class);
-        if (element.hasAttribute(ATTRIBUTE_CLAIM_STRATEGY)) {
-            producerType.addPropertyValue("type", element.getAttribute(ATTRIBUTE_CLAIM_STRATEGY));
-        }
-        builder.addPropertyValue(PROPERTY_PRODUCER_TYPE, producerType.getBeanDefinition());
     }
 
     private void parseProducerType(Element element, BeanDefinitionBuilder builder) {

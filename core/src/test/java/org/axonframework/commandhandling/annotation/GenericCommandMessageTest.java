@@ -33,11 +33,11 @@ public class GenericCommandMessageTest {
     @Test
     public void testConstructor() {
         Object payload = new Object();
-        GenericCommandMessage<Object> message1 = new GenericCommandMessage<Object>(payload);
+        GenericCommandMessage<Object> message1 = new GenericCommandMessage<>(payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericCommandMessage<Object> message2 = new GenericCommandMessage<Object>(payload, metaData);
-        GenericCommandMessage<Object> message3 = new GenericCommandMessage<Object>(payload, metaDataMap);
+        GenericCommandMessage<Object> message2 = new GenericCommandMessage<>(payload, metaData);
+        GenericCommandMessage<Object> message3 = new GenericCommandMessage<>(payload, metaDataMap);
 
         assertSame(MetaData.emptyInstance(), message1.getMetaData());
         assertEquals(Object.class, message1.getPayload().getClass());
@@ -62,7 +62,7 @@ public class GenericCommandMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericCommandMessage<Object> message = new GenericCommandMessage<Object>(payload, metaData);
+        GenericCommandMessage<Object> message = new GenericCommandMessage<>(payload, metaData);
         GenericCommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericCommandMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
@@ -76,7 +76,7 @@ public class GenericCommandMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericCommandMessage<Object> message = new GenericCommandMessage<Object>(payload, metaData);
+        GenericCommandMessage<Object> message = new GenericCommandMessage<>(payload, metaData);
         GenericCommandMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         GenericCommandMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));

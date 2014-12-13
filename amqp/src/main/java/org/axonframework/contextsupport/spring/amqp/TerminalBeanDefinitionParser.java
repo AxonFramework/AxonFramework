@@ -48,8 +48,8 @@ public class TerminalBeanDefinitionParser extends AbstractBeanDefinitionParser {
     private static final String PROPERTY_DEFAULT_CONFIGURATION = "defaultConfiguration";
     private final BeanDefinitionParser configurationParser = new AMQPConfigurationBeanDefinitionParser();
 
-    private static final Map<String, String> BEAN_REFERENCE_PROPERTIES = new HashMap<String, String>();
-    private static final Map<String, String> BEAN_VALUE_PROPERTIES = new HashMap<String, String>();
+    private static final Map<String, String> BEAN_REFERENCE_PROPERTIES = new HashMap<>();
+    private static final Map<String, String> BEAN_VALUE_PROPERTIES = new HashMap<>();
 
     static {
         BEAN_REFERENCE_PROPERTIES.put("connection-factory", "connectionFactory");

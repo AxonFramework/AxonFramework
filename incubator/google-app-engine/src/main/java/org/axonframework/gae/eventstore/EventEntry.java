@@ -144,12 +144,12 @@ public class EventEntry implements SerializedDomainEventData<String> {
 
     @Override
     public SerializedObject<String> getMetaData() {
-        return new SerializedMetaData<String>(serializedMetaData, String.class);
+        return new SerializedMetaData<>(serializedMetaData, String.class);
     }
 
     @Override
     public SerializedObject<String> getPayload() {
-        return new SimpleSerializedObject<String>(serializedEvent, String.class, eventType, eventRevision);
+        return new SimpleSerializedObject<>(serializedEvent, String.class, eventType, eventRevision);
     }
 
     /**
@@ -179,11 +179,13 @@ public class EventEntry implements SerializedDomainEventData<String> {
      * @param firstSequenceNumber number representing the first event to obtain
      * @return Created DBObject based on the provided parameters to be used for a query
      */
-    static Query forAggregate(String type, String aggregateIdentifier, long firstSequenceNumber) {
+    static Query forAggregate(String type, String aggregateIdentifier,
+                              long firstSequenceNumber, long lastSequenceNumber) {
         return new Query(type)
                 .addFilter(AGGREGATE_TYPE, Query.FilterOperator.EQUAL, type)
                 .addFilter(AGGREGATE_IDENTIFIER, Query.FilterOperator.EQUAL, aggregateIdentifier)
                 .addFilter(SEQUENCE_NUMBER, Query.FilterOperator.GREATER_THAN_OR_EQUAL, firstSequenceNumber)
+                .addFilter(SEQUENCE_NUMBER, Query.FilterOperator.LESS_THAN_OR_EQUAL, lastSequenceNumber)
                 .addSort(SEQUENCE_NUMBER, Query.SortDirection.ASCENDING);
     }
 

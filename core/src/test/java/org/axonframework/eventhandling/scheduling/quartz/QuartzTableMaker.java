@@ -84,7 +84,7 @@ public class QuartzTableMaker implements ApplicationContextAware {
     private void executeSqlScript(String sqlResourcePath) throws DataAccessException {
         EncodedResource resource =
                 new EncodedResource(applicationContext.getResource(sqlResourcePath), "UTF-8");
-        List<String> statements = new LinkedList<String>();
+        List<String> statements = new LinkedList<>();
         try {
             LineNumberReader lnr = new LineNumberReader(resource.getReader());
             String script = JdbcTestUtils.readScript(lnr);

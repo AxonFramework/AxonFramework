@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -122,7 +121,7 @@ public class MongoEventStoreTest_DBObjectSerialization {
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents("test", aggregate2.getUncommittedEvents());
         DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> actualEvents = new ArrayList<>();
         long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -147,7 +146,7 @@ public class MongoEventStoreTest_DBObjectSerialization {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -232,10 +231,10 @@ public class MongoEventStoreTest_DBObjectSerialization {
 
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
-        List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<DomainEventMessage<StubStateChangedEvent>>();
+        List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
         final UUID aggregateIdentifier = UUID.randomUUID();
         for (int t = 0; t < numberOfEvents; t++) {
-            events.add(new GenericDomainEventMessage<StubStateChangedEvent>(
+            events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier, t, new StubStateChangedEvent(), null));
         }
         return events;
@@ -263,7 +262,7 @@ public class MongoEventStoreTest_DBObjectSerialization {
         }
 
         public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<StubStateChangedEvent>(
+            return new GenericDomainEventMessage<>(
                     getIdentifier(), getVersion(), new StubStateChangedEvent(), null);
         }
     }

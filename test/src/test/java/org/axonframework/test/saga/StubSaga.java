@@ -39,7 +39,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
     private transient StubGateway stubGateway;
     private transient EventBus eventBus;
     private transient EventScheduler scheduler;
-    private List<Object> handledEvents = new ArrayList<Object>();
+    private List<Object> handledEvents = new ArrayList<>();
     private ScheduleToken timer;
 
     @StartSaga
@@ -47,7 +47,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
     public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message) {
         handledEvents.add(event);
         timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
+                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @StartSaga(forceNew = true)
@@ -55,13 +55,13 @@ public class StubSaga extends AbstractAnnotatedSaga {
     public void handleForcedSagaStart(ForceTriggerSagaStartEvent event) {
         handledEvents.add(event);
         timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
+                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event) {
         handledEvents.add(event);
-        eventBus.publish(new GenericEventMessage<SagaWasTriggeredEvent>(new SagaWasTriggeredEvent(this)));
+        eventBus.publish(new GenericEventMessage<>(new SagaWasTriggeredEvent(this)));
     }
 
     @EndSaga
@@ -90,7 +90,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
         handledEvents.add(event);
         scheduler.cancelSchedule(timer);
         timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
+                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     public EventBus getEventBus() {

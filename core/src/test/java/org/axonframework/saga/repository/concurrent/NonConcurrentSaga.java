@@ -29,7 +29,7 @@ import java.util.List;
 public class NonConcurrentSaga extends AbstractTestSaga {
 
     private static final long serialVersionUID = 5329800443421589068L;
-    private List<Object> events = new ArrayList<Object>();
+    private List<Object> events = new ArrayList<>();
 
     @StartSaga
     @SagaEventHandler(associationProperty = "id")

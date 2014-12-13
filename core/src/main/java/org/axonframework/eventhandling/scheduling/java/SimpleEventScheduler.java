@@ -57,7 +57,7 @@ public class SimpleEventScheduler implements EventScheduler {
     private final ScheduledExecutorService executorService;
     private final EventBus eventBus;
     private final UnitOfWorkFactory unitOfWorkFactory;
-    private final Map<String, Future<?>> tokens = new ConcurrentHashMap<String, Future<?>>();
+    private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
 
     /**
      * Initialize the SimpleEventScheduler using the given <code>executorService</code> as trigger and execution
@@ -151,10 +151,10 @@ public class SimpleEventScheduler implements EventScheduler {
         private EventMessage<?> createMessage() {
             EventMessage<?> eventMessage;
             if (event instanceof EventMessage) {
-                eventMessage = new GenericEventMessage<Object>(((EventMessage) event).getPayload(),
+                eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
                                                                ((EventMessage) event).getMetaData());
             } else {
-                eventMessage = new GenericEventMessage<Object>(event);
+                eventMessage = new GenericEventMessage<>(event);
             }
             return eventMessage;
         }

@@ -74,7 +74,7 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
                 new DataInputStream(new BufferedInputStream(inputStream)));
         this.upcasterChain = upcasterChain;
         this.serializer = serializer;
-        this.next = new LinkedList<DomainEventMessage>();
+        this.next = new LinkedList<>();
         next.addAll(doReadNext());
     }
 

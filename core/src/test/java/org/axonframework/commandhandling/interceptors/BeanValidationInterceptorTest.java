@@ -48,7 +48,7 @@ public class BeanValidationInterceptorTest {
 
     @Test
     public void testValidateSimpleObject() throws Throwable {
-        final GenericCommandMessage<Object> command = new GenericCommandMessage<Object>("Simple instance");
+        final GenericCommandMessage<Object> command = new GenericCommandMessage<>("Simple instance");
         testSubject.handle(command, uow, mockInterceptorChain);
         verify(mockInterceptorChain).proceed(same(command));
     }
@@ -69,7 +69,7 @@ public class BeanValidationInterceptorTest {
     @Test
     public void testValidateAnnotatedObject_LegalValue() throws Throwable {
         final GenericCommandMessage<Object> commandMessage =
-                new GenericCommandMessage<Object>(new JSR303AnnotatedInstance("abc"));
+                new GenericCommandMessage<>(new JSR303AnnotatedInstance("abc"));
         testSubject.handle(commandMessage, uow, mockInterceptorChain);
 
         verify(mockInterceptorChain).proceed(same(commandMessage));

@@ -96,8 +96,13 @@ public class LockManagerTest {
                 success = true;
             } catch (Exception e) {
                 StringWriter sw = new StringWriter();
-                sw.append("Failed " + instanceIndex + " aquired=" + locksAcquired + " release=" + locksReleased
-                                  + " Exception:");
+                sw.append("Failed ")
+                  .append(Integer.toString(instanceIndex))
+                  .append(" aquired=")
+                  .append(Integer.toString(locksAcquired))
+                  .append(" release=")
+                  .append(Integer.toString(locksReleased))
+                  .append(" Exception:");
                 PrintWriter writer = new PrintWriter(sw);
                 e.printStackTrace(writer);
                 System.out.println(sw.toString());

@@ -89,10 +89,10 @@ public class FireEventJob implements Job {
     private EventMessage<?> createMessage(Object event) {
         EventMessage<?> eventMessage;
         if (event instanceof EventMessage) {
-            eventMessage = new GenericEventMessage<Object>(((EventMessage) event).getPayload(),
+            eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
                                                            ((EventMessage) event).getMetaData());
         } else {
-            eventMessage = new GenericEventMessage<Object>(event);
+            eventMessage = new GenericEventMessage<>(event);
         }
         return eventMessage;
     }

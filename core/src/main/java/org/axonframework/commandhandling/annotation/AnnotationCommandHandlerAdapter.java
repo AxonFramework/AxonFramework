@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
-import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
@@ -31,8 +30,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 /**
  * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link
@@ -44,10 +41,10 @@ import javax.annotation.PreDestroy;
  * @since 0.5
  */
 public class AnnotationCommandHandlerAdapter
-        implements org.axonframework.commandhandling.CommandHandler<Object>, Subscribable {
+        implements org.axonframework.commandhandling.CommandHandler<Object> {
 
     private final CommandBus commandBus;
-    private final Map<String, MethodMessageHandler> handlers = new HashMap<String, MethodMessageHandler>();
+    private final Map<String, MethodMessageHandler> handlers = new HashMap<>();
     private final Object target;
     private final ParameterResolverFactory parameterResolverFactory;
 
@@ -78,34 +75,6 @@ public class AnnotationCommandHandlerAdapter
         for (String supportedCommand : annotationCommandHandler.supportedCommands()) {
             commandBus.subscribe(supportedCommand, annotationCommandHandler);
         }
-    }
-
-    /**
-     * Initialize the command handler adapter for the given <code>target</code> which is to be subscribed with the
-     * given <code>commandBus</code>.
-     * <p/>
-     * Note that you need to call {@link #subscribe()} to actually subscribe the command handlers to the command bus.
-     *
-     * @param target     The object containing the @CommandHandler annotated methods
-     * @param commandBus The command bus to which the handlers must be subscribed
-     * @deprecated Use {@link #AnnotationCommandHandlerAdapter(Object)} and subscribe the handler to the command bus
-     * using {@link org.axonframework.commandhandling.CommandBus#subscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}.
-     */
-    @Deprecated
-    public AnnotationCommandHandlerAdapter(Object target, CommandBus commandBus) {
-        Assert.notNull(target, "target may not be null");
-        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(target.getClass());
-        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(target.getClass(),
-                                                                                            CommandHandler.class,
-                                                                                            parameterResolverFactory,
-                                                                                            true);
-        for (MethodMessageHandler handler : inspector.getHandlers()) {
-            String commandName = CommandMessageHandlerUtils.resolveAcceptedCommandName(handler);
-            handlers.put(commandName, handler);
-        }
-        this.target = target;
-        this.commandBus = commandBus;
     }
 
     /**
@@ -164,43 +133,6 @@ public class AnnotationCommandHandlerAdapter
             return handler.invoke(target, command);
         } catch (InvocationTargetException e) {
             throw e.getCause();
-        }
-    }
-
-    /**
-     * Subscribe the command handlers to the command bus assigned during the initialization. A subscription is made
-     * with the command bus for each accepted type of command.
-     *
-     * @deprecated Instead, subscribe this instance using {@link CommandBus#subscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}, using {@link #supportedCommands()} to retrieve
-     * the commands the annotated handler supports.
-     */
-    @Override
-    @PostConstruct
-    @Deprecated
-    public void subscribe() {
-        if (commandBus != null) {
-            for (String acceptedCommand : handlers.keySet()) {
-                commandBus.subscribe(acceptedCommand, this);
-            }
-        }
-    }
-
-    /**
-     * Unsubscribe the command handlers from the command bus assigned during the initialization.
-     *
-     * @deprecated Instead, subscribe this instance using {@link CommandBus#subscribe(String,
-     * org.axonframework.commandhandling.CommandHandler)}, using {@link #supportedCommands()} to retrieve
-     * the commands the annotated handler supports.
-     */
-    @Override
-    @PreDestroy
-    @Deprecated
-    public void unsubscribe() {
-        if (commandBus != null) {
-            for (String acceptedCommand : handlers.keySet()) {
-                commandBus.unsubscribe(acceptedCommand, this);
-            }
         }
     }
 

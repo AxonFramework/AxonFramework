@@ -100,7 +100,7 @@ public class GenericMessage<T> implements Message<T> {
         if (this.metaData.equals(newMetaData)) {
             return this;
         }
-        return new GenericMessage<T>(this, newMetaData);
+        return new GenericMessage<>(this, newMetaData);
     }
 
     @Override
@@ -108,6 +108,6 @@ public class GenericMessage<T> implements Message<T> {
         if (additionalMetaData.isEmpty()) {
             return this;
         }
-        return new GenericMessage<T>(this, this.metaData.mergedWith(additionalMetaData));
+        return new GenericMessage<>(this, this.metaData.mergedWith(additionalMetaData));
     }
 }

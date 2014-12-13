@@ -16,6 +16,8 @@
 
 package org.axonframework.domain;
 
+import java.util.Iterator;
+
 /**
  * The DomainEventStream represents a stream of historical domain events. The order of events in this stream must
  * represent the actual chronological order in which the events happened. A DomainEventStream may provide access to all
@@ -24,7 +26,7 @@ package org.axonframework.domain;
  * @author Allard Buijze
  * @since 0.1
  */
-public interface DomainEventStream {
+public interface DomainEventStream extends Iterator<DomainEventMessage> {
 
     /**
      * Returns <code>true</code> if the stream has more events, meaning that a call to <code>next()</code> will not
@@ -33,6 +35,7 @@ public interface DomainEventStream {
      *
      * @return <code>true</code> if the stream contains more events.
      */
+    @Override
     boolean hasNext();
 
     /**
@@ -46,6 +49,7 @@ public interface DomainEventStream {
      *
      * @return the next event in the stream.
      */
+    @Override
     DomainEventMessage next();
 
     /**

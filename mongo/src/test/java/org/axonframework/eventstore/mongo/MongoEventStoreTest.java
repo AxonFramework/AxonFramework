@@ -44,8 +44,6 @@ import org.joda.time.DateTimeUtils;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +60,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -140,7 +137,7 @@ public class MongoEventStoreTest {
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents("test", aggregate2.getUncommittedEvents());
         DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> actualEvents = new ArrayList<>();
         long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -160,12 +157,9 @@ public class MongoEventStoreTest {
         assertNotNull(testSubject);
         UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
         when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
-                        return Arrays.asList(serializedObject, serializedObject);
-                    }
+                .thenAnswer(invocation -> {
+                    SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
+                    return Arrays.asList(serializedObject, serializedObject);
                 });
 
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
@@ -177,13 +171,13 @@ public class MongoEventStoreTest {
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<Object>(aggregate2.getIdentifier(),
+                new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
                                                       0,
                                                       new Object(),
                                                       Collections.singletonMap("key", (Object) "Value"))));
 
         DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
             event.getPayload();
@@ -213,7 +207,7 @@ public class MongoEventStoreTest {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -232,7 +226,7 @@ public class MongoEventStoreTest {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier(), 3);
-        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -252,7 +246,7 @@ public class MongoEventStoreTest {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier(), 3, 6);
-        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -276,7 +270,7 @@ public class MongoEventStoreTest {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -286,9 +280,9 @@ public class MongoEventStoreTest {
 
     @Test
     public void testInsertDuplicateSnapshot() throws Exception {
-        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<>("id1", 1, "test"));
         try {
-            testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+            testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<>("id1", 1, "test"));
             fail("Expected concurrency exception");
         } catch (ConcurrencyException e) {
             assertTrue(e.getMessage().contains("Snapshot"));
@@ -304,15 +298,10 @@ public class MongoEventStoreTest {
     @DirtiesContext
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadStream_UpcasterClearsAllFound() {
-        testSubject.setUpcasterChain(new UpcasterChain() {
-            @Override
-            public List<SerializedObject> upcast(SerializedObject serializedObject, UpcastingContext upcastingContext) {
-                return Collections.emptyList();
-            }
-        });
+        testSubject.setUpcasterChain((serializedObject, upcastingContext) -> Collections.emptyList());
         final UUID streamId = UUID.randomUUID();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(streamId, 0, "test")));
+                new GenericDomainEventMessage<>(streamId, 0, "test")));
         testSubject.readEvents("test", streamId);
     }
 
@@ -320,10 +309,10 @@ public class MongoEventStoreTest {
     @Test
     public void testStoreDuplicateAggregate() {
         testSubject.appendEvents("type1", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>("aggregate1", 0, "payload")));
+                new GenericDomainEventMessage<>("aggregate1", 0, "payload")));
         try {
             testSubject.appendEvents("type1", new SimpleDomainEventStream(
-                    new GenericDomainEventMessage<String>("aggregate1", 0, "payload")));
+                    new GenericDomainEventMessage<>("aggregate1", 0, "payload")));
             fail("Expected exception to be thrown");
         } catch (ConcurrencyException e) {
             assertNotNull(e);
@@ -346,7 +335,7 @@ public class MongoEventStoreTest {
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
-        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<String>("test", 0, "test");
+        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test");
         testSubject.appendEvents("test", new SimpleDomainEventStream(eventMessage));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
         // we upcast the event to two instances, one of which is an unknown class
@@ -424,10 +413,10 @@ public class MongoEventStoreTest {
 
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
-        List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<DomainEventMessage<StubStateChangedEvent>>();
+        List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
         final UUID aggregateIdentifier = UUID.randomUUID();
         for (int t = 0; t < numberOfEvents; t++) {
-            events.add(new GenericDomainEventMessage<StubStateChangedEvent>(
+            events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier, t, new StubStateChangedEvent(), null));
         }
         return events;
@@ -455,7 +444,7 @@ public class MongoEventStoreTest {
         }
 
         public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<StubStateChangedEvent>(
+            return new GenericDomainEventMessage<>(
                     getIdentifier(), getVersion(), new StubStateChangedEvent(), null);
         }
     }
@@ -484,8 +473,8 @@ public class MongoEventStoreTest {
         public List<SerializedObject<?>> upcast(SerializedObject<byte[]> intermediateRepresentation,
                                                 List<SerializedType> expectedTypes, UpcastingContext context) {
             return Arrays.<SerializedObject<?>>asList(
-                    new SimpleSerializedObject<String>("data1", String.class, expectedTypes.get(0)),
-                    new SimpleSerializedObject<byte[]>(intermediateRepresentation.getData(), byte[].class,
+                    new SimpleSerializedObject<>("data1", String.class, expectedTypes.get(0)),
+                    new SimpleSerializedObject<>(intermediateRepresentation.getData(), byte[].class,
                                                        expectedTypes.get(1)));
         }
 

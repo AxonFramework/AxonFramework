@@ -53,8 +53,8 @@ class MyCommandHandler {
     public void handleStrangeCommand(StrangeCommand testCommand) {
         StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
         aggregate.doSomething();
-        eventBus.publish(new GenericEventMessage<MyApplicationEvent>(new MyApplicationEvent()));
-        CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<MyApplicationEvent>(new MyApplicationEvent()),
+        eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
+        CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>(new MyApplicationEvent()),
                                              eventBus);
         throw new StrangeCommandReceivedException("Strange command received");
     }

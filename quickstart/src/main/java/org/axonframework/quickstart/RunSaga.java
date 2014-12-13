@@ -17,7 +17,6 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -63,15 +62,11 @@ public class RunSaga {
 
         // let's register a Command Handler that writes to System Out so we can see what happens
         commandBus.subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                new CommandHandler<MarkToDoItemOverdueCommand>() {
-                    @Override
-                    public Object handle(CommandMessage<MarkToDoItemOverdueCommand> commandMessage,
-                                         UnitOfWork unitOfWork) throws Throwable {
-                        System.out.println(String.format("Got command to mark [%s] overdue!",
-                                commandMessage.getPayload().getTodoId()));
-                        return null;
-                    }
-                });
+                             (CommandMessage<MarkToDoItemOverdueCommand> commandMessage, UnitOfWork unitOfWork) -> {
+                                 System.out.println(String.format("Got command to mark [%s] overdue!",
+                                         commandMessage.getPayload().getTodoId()));
+                                 return null;
+                             });
 
         // The Saga will schedule some deadlines in our sample
         final ScheduledExecutorService executorService = newSingleThreadScheduledExecutor();
@@ -86,11 +81,10 @@ public class RunSaga {
         sagaFactory.setResourceInjector(new SimpleResourceInjector(eventScheduler, commandGateway));
 
         // Sagas instances are managed and tracked by a SagaManager.
-        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(sagaRepository, sagaFactory,
-                eventBus, ToDoSaga.class);
+        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(sagaRepository, sagaFactory, ToDoSaga.class);
 
         // and we need to subscribe the Saga Manager to the Event Bus
-        sagaManager.subscribe();
+        eventBus.subscribe(sagaManager);
 
         // That's the infrastructure we need...
         // Let's pretend a few things are happening

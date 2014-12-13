@@ -53,7 +53,7 @@ public abstract class AbstractCluster implements Cluster {
     protected AbstractCluster(String name) {
         Assert.notNull(name, "name may not be null");
         this.name = name;
-        eventListeners = new CopyOnWriteArraySet<EventListener>();
+        eventListeners = new CopyOnWriteArraySet<>();
         immutableEventListeners = Collections.unmodifiableSet(eventListeners);
     }
 
@@ -68,7 +68,7 @@ public abstract class AbstractCluster implements Cluster {
     protected AbstractCluster(String name, Comparator<EventListener> comparator) {
         Assert.notNull(name, "name may not be null");
         this.name = name;
-        eventListeners = new ConcurrentSkipListSet<EventListener>(comparator);
+        eventListeners = new ConcurrentSkipListSet<>(comparator);
         immutableEventListeners = Collections.unmodifiableSet(eventListeners);
     }
 

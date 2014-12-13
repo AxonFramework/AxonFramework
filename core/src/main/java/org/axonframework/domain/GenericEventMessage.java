@@ -49,9 +49,9 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
             return (EventMessage<T>) event;
         } else if (event instanceof Message) {
             Message message = (Message) event;
-            return new GenericEventMessage<T>((T) message.getPayload(), message.getMetaData());
+            return new GenericEventMessage<>((T) message.getPayload(), message.getMetaData());
         }
-        return new GenericEventMessage<T>((T) event);
+        return new GenericEventMessage<>((T) event);
     }
 
     /**
@@ -111,7 +111,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
         if (getMetaData().equals(newMetaData)) {
             return this;
         }
-        return new GenericEventMessage<T>(this, newMetaData);
+        return new GenericEventMessage<>(this, newMetaData);
     }
 
     @Override
@@ -119,7 +119,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
         if (additionalMetaData.isEmpty()) {
             return this;
         }
-        return new GenericEventMessage<T>(this, getMetaData().mergedWith(additionalMetaData));
+        return new GenericEventMessage<>(this, getMetaData().mergedWith(additionalMetaData));
     }
 
     @Override

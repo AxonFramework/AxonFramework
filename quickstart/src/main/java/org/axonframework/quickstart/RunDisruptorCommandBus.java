@@ -55,7 +55,7 @@ public class RunDisruptorCommandBus {
         DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
 
         // now, we obtain a repository from the command bus
-        Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<ToDoItem>(ToDoItem.class));
+        Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<>(ToDoItem.class));
 
         // we use the repository to register the command handler
         AggregateAnnotationCommandHandler.subscribe(ToDoItem.class, repository, commandBus);

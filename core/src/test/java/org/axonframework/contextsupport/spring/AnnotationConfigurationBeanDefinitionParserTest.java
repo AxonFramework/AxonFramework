@@ -28,8 +28,6 @@ import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
 import org.junit.*;
 import org.junit.runner.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -131,15 +129,10 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
 
         // This type is found using component scanning
         when(sagaFactory.supports(StubSaga.class)).thenReturn(true);
-        when(sagaFactory.createSaga(any(Class.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return ((Class) invocation.getArguments()[0]).newInstance();
-            }
-        });
+        when(sagaFactory.createSaga(any(Class.class))).thenAnswer(invocation -> ((Class) invocation.getArguments()[0]).newInstance());
 
         String identifier = UUID.randomUUID().toString();
-        final GenericDomainEventMessage<SimpleEvent> event = new GenericDomainEventMessage<SimpleEvent>(identifier,
+        final GenericDomainEventMessage<SimpleEvent> event = new GenericDomainEventMessage<>(identifier,
                                                                                                         (long) 0,
                                                                                                         new SimpleEvent(
                                                                                                                 identifier),
@@ -176,13 +169,12 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
         String identifier = UUID.randomUUID().toString();
-        final GenericDomainEventMessage<SimpleEvent> event = new GenericDomainEventMessage<SimpleEvent>(identifier,
+        final GenericDomainEventMessage<SimpleEvent> event = new GenericDomainEventMessage<>(identifier,
                                                                                                         (long) 0,
                                                                                                         new SimpleEvent(
                                                                                                                 identifier),
                                                                                                         MetaData.emptyInstance());
         sagaManager.handle(event);
-        sagaManager.unsubscribe();
         verify(sagaFactory).createSaga(eq(StubSaga.class));
         sagaManager.stop();
 
@@ -205,7 +197,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
         when(sagaFactory.createSaga(StubSaga.class)).thenReturn(new StubSaga());
 
         String identifier = UUID.randomUUID().toString();
-        sagaManager.handle(new GenericDomainEventMessage<SimpleEvent>(identifier, (long) 0,
+        sagaManager.handle(new GenericDomainEventMessage<>(identifier, (long) 0,
                                                                       new SimpleEvent(
                                                                               identifier), MetaData.emptyInstance()));
         Thread.sleep(250);

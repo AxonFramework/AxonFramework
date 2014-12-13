@@ -70,7 +70,7 @@ public class SpringAggregateSnapshotterIntegrationTest {
     @Test
     public void testDuplicateSnapshotIsIgnored() throws Exception {
         final ExecutorService executor = Executors.newFixedThreadPool(2);
-        snapshotter.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
+        snapshotter.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(new GenericAggregateFactory<>(StubAggregate.class)));
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {

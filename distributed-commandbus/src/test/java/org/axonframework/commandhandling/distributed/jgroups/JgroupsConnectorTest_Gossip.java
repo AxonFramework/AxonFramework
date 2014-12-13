@@ -84,11 +84,11 @@ public class JgroupsConnectorTest_Gossip {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        connector1.subscribe(String.class.getName(), new CountingCommandHandler<String>(counter1));
+        connector1.subscribe(String.class.getName(), new CountingCommandHandler<>(counter1));
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(Long.class.getName(), new CountingCommandHandler<Long>(counter2));
+        connector2.subscribe(Long.class.getName(), new CountingCommandHandler<>(counter2));
         connector2.connect(80);
 
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
@@ -105,7 +105,7 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         final AtomicInteger counter2 = new AtomicInteger(0);
-        connector2.subscribe(String.class.getName(), new CountingCommandHandler<Object>(counter2));
+        connector2.subscribe(String.class.getName(), new CountingCommandHandler<>(counter2));
         connector1.connect(20);
         connector2.connect(20);
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));

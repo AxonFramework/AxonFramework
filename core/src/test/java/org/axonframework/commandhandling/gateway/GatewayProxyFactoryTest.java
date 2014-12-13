@@ -117,12 +117,7 @@ public class GatewayProxyFactoryTest {
         final CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new CountDown(cdl)).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                    isA(CommandCallback.class));
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                gateway.fireAndWait("Command");
-            }
-        });
+        Thread t = new Thread(() -> gateway.fireAndWait("Command"));
         t.start();
         assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
         assertTrue(t.isAlive());
@@ -132,15 +127,10 @@ public class GatewayProxyFactoryTest {
     @Test(timeout = 2000)
     public void testGatewayWithReturnValue_Returns() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
-        final AtomicReference<String> result = new AtomicReference<String>();
+        final AtomicReference<String> result = new AtomicReference<>();
         doAnswer(new Success(cdl, "ReturnValue")).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(
                 CommandCallback.class));
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                result.set(gateway.waitForReturnValue("Command"));
-            }
-        });
+        Thread t = new Thread(() -> result.set(gateway.waitForReturnValue("Command")));
         t.start();
         assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
         t.join();
@@ -151,18 +141,15 @@ public class GatewayProxyFactoryTest {
     @Test(timeout = 2000)
     public void testGatewayWithReturnValue_UndeclaredException() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(cdl, new ExpectedException())).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                                           isA(CommandCallback.class));
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    result.set(gateway.waitForReturnValue("Command"));
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.waitForReturnValue("Command"));
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -176,16 +163,13 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testGatewayWithReturnValue_Interrupted() throws InterruptedException {
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    result.set(gateway.waitForReturnValue("Command"));
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.waitForReturnValue("Command"));
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -197,16 +181,13 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testGatewayWaitForException_Interrupted() throws InterruptedException {
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    gateway.waitForException("Command");
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                gateway.waitForException("Command");
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -221,16 +202,13 @@ public class GatewayProxyFactoryTest {
         CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new Success(cdl, "OK!")).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                         isA(CommandCallback.class));
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    gateway.fireAndWaitWithTimeoutParameter("Command", 1, TimeUnit.MILLISECONDS);
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                gateway.fireAndWaitWithTimeoutParameter("Command", 1, TimeUnit.MILLISECONDS);
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -243,16 +221,13 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testFireAndWaitWithTimeoutParameter_Timeout() throws InterruptedException {
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    gateway.fireAndWaitWithTimeoutParameter("Command", 1, TimeUnit.MILLISECONDS);
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                gateway.fireAndWaitWithTimeoutParameter("Command", 1, TimeUnit.MILLISECONDS);
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -263,16 +238,13 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testFireAndWaitWithTimeoutParameter_TimeoutException() throws InterruptedException {
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    gateway.fireAndWaitWithTimeoutParameterAndException("Command", 1, TimeUnit.MILLISECONDS);
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                gateway.fireAndWaitWithTimeoutParameterAndException("Command", 1, TimeUnit.MILLISECONDS);
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -283,16 +255,13 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testFireAndWaitWithTimeoutParameter_Interrupted() throws InterruptedException {
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    gateway.fireAndWaitWithTimeoutParameter("Command", 1, TimeUnit.SECONDS);
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                gateway.fireAndWaitWithTimeoutParameter("Command", 1, TimeUnit.SECONDS);
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -307,16 +276,13 @@ public class GatewayProxyFactoryTest {
         CountDownLatch cdl = new CountDownLatch(1);
         doAnswer(new Failure(cdl, new ExpectedException())).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                                           isA(CommandCallback.class));
-        final AtomicReference<String> result = new AtomicReference<String>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    gateway.fireAndWaitForCheckedException("Command");
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<String> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                gateway.fireAndWaitForCheckedException("Command");
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -329,16 +295,13 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testFireAndGetFuture() throws InterruptedException {
-        final AtomicReference<Future<Object>> result = new AtomicReference<Future<Object>>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    result.set(gateway.fireAndGetFuture("Command"));
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<Future<Object>> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.fireAndGetFuture("Command"));
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -349,16 +312,13 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testFireAndGetFutureWithTimeout() throws Throwable {
-        final AtomicReference<Future<Object>> result = new AtomicReference<Future<Object>>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    result.set(gateway.futureWithTimeout("Command", 100, TimeUnit.SECONDS));
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        final AtomicReference<Future<Object>> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.futureWithTimeout("Command", 100, TimeUnit.SECONDS));
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -371,18 +331,15 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testRetrySchedulerInvokedOnFailure() throws Throwable {
-        final AtomicReference<Object> result = new AtomicReference<Object>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+        final AtomicReference<Object> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new SomeRuntimeException())).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                                         isA(CommandCallback.class));
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    result.set(gateway.waitForReturnValue("Command"));
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.waitForReturnValue("Command"));
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -397,18 +354,15 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testRetrySchedulerNotInvokedOnCheckedException() throws Throwable {
-        final AtomicReference<Object> result = new AtomicReference<Object>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+        final AtomicReference<Object> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new ExpectedException())).when(mockCommandBus).dispatch(isA(CommandMessage.class),
                                                                                      isA(CommandCallback.class));
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    result.set(gateway.waitForReturnValue("Command"));
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.waitForReturnValue("Command"));
+            } catch (Throwable e) {
+                error.set(e);
             }
         });
         t.start();
@@ -423,8 +377,8 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testRetrySchedulerInvokedOnExceptionCausedByDeadlock() throws Throwable {
-        final AtomicReference<Object> result = new AtomicReference<Object>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+        final AtomicReference<Object> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new RuntimeException(new DeadlockException("Mock"))))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         try {
@@ -527,8 +481,8 @@ public class GatewayProxyFactoryTest {
 
     @Test(timeout = 2000)
     public void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() throws Throwable {
-        final AtomicReference<Object> result = new AtomicReference<Object>();
-        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+        final AtomicReference<Object> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new RuntimeException(new DeadlockException("Mock"))))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();

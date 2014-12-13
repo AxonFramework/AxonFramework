@@ -45,7 +45,7 @@ public class BackloggingIncomingMessageHandlerTest {
     private static final DateTime SECOND_AFTER_START = START_TIME.plus(Duration.standardSeconds(1));
     private static final DateTime MINUTE_AFTER_START = START_TIME.plus(Duration.standardMinutes(1));
     private Cluster mockCluster;
-    private Map<DateTime, DomainEventMessage> messages = new HashMap<DateTime, DomainEventMessage>();
+    private Map<DateTime, DomainEventMessage> messages = new HashMap<>();
 
     @Before
     public void setUp() throws Exception {
@@ -157,12 +157,12 @@ public class BackloggingIncomingMessageHandlerTest {
     }
 
     private DomainEventMessage<String> newDomainEventMessage(String identifier, DateTime timestamp) {
-        return new GenericDomainEventMessage<String>(identifier, timestamp, "aggregate", 0, "payload@" + timestamp.toString(),
+        return new GenericDomainEventMessage<>(identifier, timestamp, "aggregate", 0, "payload@" + timestamp.toString(),
                                                      MetaData.emptyInstance());
     }
 
     private EventMessage<String> newEventMessage(String identifier, DateTime timestamp) {
-        return new GenericEventMessage<String>(identifier, timestamp, "payload@" + timestamp.toString(),
+        return new GenericEventMessage<>(identifier, timestamp, "payload@" + timestamp.toString(),
                                                      MetaData.emptyInstance());
     }
 }

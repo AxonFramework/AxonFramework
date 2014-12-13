@@ -35,9 +35,9 @@ public class AbstractAnnotatedSagaTest {
     public void testInvokeSaga() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
         testSubject.associateWith("propertyName", "id");
-        testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
-        testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("wrongId")));
-        testSubject.handle(new GenericEventMessage<Object>(new Object()));
+        testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new RegularEvent("wrongId")));
+        testSubject.handle(new GenericEventMessage<>(new Object()));
         assertEquals(1, testSubject.invocationCount);
     }
 
@@ -49,8 +49,8 @@ public class AbstractAnnotatedSagaTest {
         new ObjectOutputStream(baos).writeObject(original);
         StubAnnotatedSaga testSubject = (StubAnnotatedSaga) new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))
                 .readObject();
-        testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
-        testSubject.handle(new GenericEventMessage<Object>(new Object()));
+        testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new Object()));
         assertEquals(1, testSubject.invocationCount);
     }
 
@@ -58,9 +58,9 @@ public class AbstractAnnotatedSagaTest {
     public void testEndedAfterInvocation_BeanProperty() {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
         testSubject.associateWith("propertyName", "id");
-        testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
-        testSubject.handle(new GenericEventMessage<Object>(new Object()));
-        testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new Object()));
+        testSubject.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
         assertEquals(2, testSubject.invocationCount);
         assertFalse(testSubject.isActive());
     }
@@ -69,9 +69,9 @@ public class AbstractAnnotatedSagaTest {
     public void testEndedAfterInvocation_WhenAssociationIsRemoved() {
         StubAnnotatedSaga testSubject = new StubAnnotatedSagaWithExplicitAssociationRemoval();
         testSubject.associateWith("propertyName", "id");
-        testSubject.handle(new GenericEventMessage<RegularEvent>(new RegularEvent("id")));
-        testSubject.handle(new GenericEventMessage<Object>(new Object()));
-        testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new Object()));
+        testSubject.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
         assertEquals(2, testSubject.invocationCount);
         assertFalse(testSubject.isActive());
     }
@@ -80,9 +80,9 @@ public class AbstractAnnotatedSagaTest {
     public void testEndedAfterInvocation_UniformAccessPrinciple() {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
         testSubject.associateWith("propertyName", "id");
-        testSubject.handle(new GenericEventMessage<UniformAccessEvent>(new UniformAccessEvent("id")));
-        testSubject.handle(new GenericEventMessage<Object>(new Object()));
-        testSubject.handle(new GenericEventMessage<SagaEndEvent>(new SagaEndEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));
+        testSubject.handle(new GenericEventMessage<>(new Object()));
+        testSubject.handle(new GenericEventMessage<>(new SagaEndEvent("id")));
         assertEquals(2, testSubject.invocationCount);
         assertFalse(testSubject.isActive());
     }

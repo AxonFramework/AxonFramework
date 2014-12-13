@@ -39,7 +39,7 @@ public class CompositeClusterSelector implements ClusterSelector {
      * @param delegates the delegates to evaluate
      */
     public CompositeClusterSelector(List<ClusterSelector> delegates) {
-        this.delegates = new ArrayList<ClusterSelector>(delegates);
+        this.delegates = new ArrayList<>(delegates);
     }
 
     @Override

@@ -73,7 +73,7 @@ public class ReplayingCluster implements Cluster {
     private final TransactionManager transactionManager;
     private final int commitThreshold;
     private final IncomingMessageHandler incomingMessageHandler;
-    private final Set<ReplayAware> replayAwareListeners = new CopyOnWriteArraySet<ReplayAware>();
+    private final Set<ReplayAware> replayAwareListeners = new CopyOnWriteArraySet<>();
 
     private volatile Status status = Status.LIVE;
     private final EventProcessingListeners eventHandlingListeners = new EventProcessingListeners();
@@ -168,7 +168,7 @@ public class ReplayingCluster implements Cluster {
      * @throws ReplayFailedException when an exception occurred during the replay process
      */
     public Future<Void> startReplay(Executor executor, Criteria criteria) {
-        RunnableFuture<Void> task = new FutureTask<Void>(new ReplayEventsTask(criteria), null);
+        RunnableFuture<Void> task = new FutureTask<>(new ReplayEventsTask(criteria), null);
         executor.execute(task);
         return task;
     }
@@ -430,7 +430,7 @@ public class ReplayingCluster implements Cluster {
 
     private final class EventProcessingListeners implements EventProcessingMonitor {
 
-        private final Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<EventProcessingMonitor>();
+        private final Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<>();
 
         @Override
         public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {

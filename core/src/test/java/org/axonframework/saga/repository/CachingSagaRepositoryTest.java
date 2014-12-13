@@ -82,7 +82,7 @@ public class CachingSagaRepositoryTest {
 
         // to make sure this saga is found
         when(repository.find(any(Class.class), any(AssociationValue.class)))
-                .thenReturn(new HashSet<String>(Arrays.asList(saga.getSagaIdentifier())));
+                .thenReturn(new HashSet<>(Arrays.asList(saga.getSagaIdentifier())));
 
         Set<String> found = testSubject.find(StubSaga.class, new AssociationValue("key", "value"));
         Iterator<String> iterator = found.iterator();

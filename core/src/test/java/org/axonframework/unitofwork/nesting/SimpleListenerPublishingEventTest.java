@@ -25,8 +25,6 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.Collections;
 
@@ -60,19 +58,16 @@ public class SimpleListenerPublishingEventTest {
     @Test
     public void testEventPublishedByListenerIsHandled() {
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-        GenericEventMessage<Object> event = new GenericEventMessage<Object>("First",
+        GenericEventMessage<Object> event = new GenericEventMessage<>("First",
                                                                             Collections.<String, Object>singletonMap(
                                                                                     "continue",
                                                                                     true));
         uow.publishEvent(event,
                          eventBus);
         verify(eventListener, never()).handle(isA(EventMessage.class));
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<String>("Second"), eventBus);
-                return null;
-            }
+        doAnswer(invocation -> {
+            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>("Second"), eventBus);
+            return null;
         }).when(eventListener).handle(event);
         uow.commit();
         verify(eventListener, times(2)).handle(isA(EventMessage.class));

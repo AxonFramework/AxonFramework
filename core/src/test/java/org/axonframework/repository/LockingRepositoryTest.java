@@ -23,7 +23,6 @@ import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
@@ -194,12 +193,7 @@ public class LockingRepositoryTest {
         DefaultUnitOfWork.startAndGet();
         CurrentUnitOfWork.get().registerAggregate(loadedAggregate,
                                                   eventBus,
-                                                  new SaveAggregateCallback<StubAggregate>() {
-                                                      @Override
-                                                      public void save(StubAggregate aggregate) {
-                                                          testSubject.doSave(aggregate);
-                                                      }
-                                                  });
+                                                  testSubject::doSave);
         loadedAggregate.doSomething();
         try {
             CurrentUnitOfWork.commit();
@@ -211,7 +205,7 @@ public class LockingRepositoryTest {
 
     static class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
 
-        private Map<Object, StubAggregate> store = new HashMap<Object, StubAggregate>();
+        private Map<Object, StubAggregate> store = new HashMap<>();
         private int saveCount;
 
         public InMemoryLockingRepository(LockManager lockManager) {

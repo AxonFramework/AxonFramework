@@ -44,9 +44,9 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
 
     private static final Logger logger = LoggerFactory.getLogger(SagaMethodMessageHandlerInspector.class);
 
-    private static final ConcurrentMap<Class<?>, SagaMethodMessageHandlerInspector> INSPECTORS = new ConcurrentHashMap<Class<?>, SagaMethodMessageHandlerInspector>();
+    private static final ConcurrentMap<Class<?>, SagaMethodMessageHandlerInspector> INSPECTORS = new ConcurrentHashMap<>();
 
-    private final Set<SagaMethodMessageHandler> handlers = new TreeSet<SagaMethodMessageHandler>();
+    private final Set<SagaMethodMessageHandler> handlers = new TreeSet<>();
     private final Class<T> sagaType;
     private final ParameterResolverFactory parameterResolverFactory;
 
@@ -65,7 +65,7 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
             Class<T> sagaType, ParameterResolverFactory parameterResolverFactory) {
         SagaMethodMessageHandlerInspector<T> sagaInspector = INSPECTORS.get(sagaType);
         if (sagaInspector == null || sagaInspector.getParameterResolverFactory() != parameterResolverFactory) {
-            sagaInspector = new SagaMethodMessageHandlerInspector<T>(sagaType, parameterResolverFactory);
+            sagaInspector = new SagaMethodMessageHandlerInspector<>(sagaType, parameterResolverFactory);
 
             INSPECTORS.put(sagaType, sagaInspector);
         }
@@ -100,7 +100,7 @@ public class SagaMethodMessageHandlerInspector<T extends AbstractAnnotatedSaga> 
      * @return the configuration of the handlers, as defined by the annotations.
      */
     public List<SagaMethodMessageHandler> getMessageHandlers(EventMessage event) {
-        List<SagaMethodMessageHandler> found = new ArrayList<SagaMethodMessageHandler>(1);
+        List<SagaMethodMessageHandler> found = new ArrayList<>(1);
         for (SagaMethodMessageHandler handler : handlers) {
             if (handler.matches(event)) {
                 found.add(handler);

@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class CachingEventFileResolver implements EventFileResolver, DisposableBean {
 
     private final EventFileResolver delegate;
-    private final ConcurrentMap<String, OutputStreamWrapper> openFiles = new ConcurrentSkipListMap<String, OutputStreamWrapper>();
+    private final ConcurrentMap<String, OutputStreamWrapper> openFiles = new ConcurrentSkipListMap<>();
 
     public CachingEventFileResolver(File baseDir) {
         this.delegate = new SimpleEventFileResolver(baseDir);

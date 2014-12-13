@@ -107,7 +107,7 @@ public class FileSystemSnapshotEventReader {
             long bytesToSkip = snapshotEventFileDataInputStream.readLong();
             SerializedDomainEventData snapshotEventData = snapshotEventReader.readEventMessage();
             SerializedDomainEventMessage<Object> snapshotEvent =
-                    new SerializedDomainEventMessage<Object>(snapshotEventData, eventSerializer);
+                    new SerializedDomainEventMessage<>(snapshotEventData, eventSerializer);
             return new FileSystemSnapshotEventEntry(snapshotEvent, bytesToSkip);
         } catch (EOFException e) {
             // No more events available

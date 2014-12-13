@@ -60,7 +60,7 @@ public class AbstractAggregateRootTest {
 
     private AggregateRoot deserialized(ByteArrayOutputStream baos) {
         XStreamSerializer serializer = new XStreamSerializer();
-        return (AggregateRoot) serializer.deserialize(new SimpleSerializedObject<byte[]>(baos.toByteArray(),
+        return (AggregateRoot) serializer.deserialize(new SimpleSerializedObject<>(baos.toByteArray(),
                                                                                          byte[].class,
                                                                                          "ignored",
                                                                                          "0"));

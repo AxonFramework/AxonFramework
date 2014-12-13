@@ -74,9 +74,9 @@ public abstract class MetaDataMutatingUnitOfWorkListenerAdapter extends UnitOfWo
 
     private <T> EventMessage<T> wrapped(EventMessage<T> event) {
         if (event instanceof DomainEventMessage) {
-            return new MutableDomainEventMessage<T>((DomainEventMessage<T>) event);
+            return new MutableDomainEventMessage<>((DomainEventMessage<T>) event);
         } else {
-            return new MutableEventMessage<T>(event);
+            return new MutableEventMessage<>(event);
         }
     }
 
@@ -132,7 +132,7 @@ public abstract class MetaDataMutatingUnitOfWorkListenerAdapter extends UnitOfWo
             if (fixed) {
                 return event.withMetaData(this.metaData).andMetaData(additionalMetaData);
             } else {
-                Map<String, Object> newMetaData = new HashMap<String, Object>(additionalMetaData);
+                Map<String, Object> newMetaData = new HashMap<>(additionalMetaData);
                 newMetaData.putAll(this.metaData);
                 this.metaData = new MetaData(newMetaData);
                 return this;

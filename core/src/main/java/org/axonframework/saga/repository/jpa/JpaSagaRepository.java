@@ -139,7 +139,7 @@ public class JpaSagaRepository extends AbstractSagaRepository {
                              .setParameter("associationValue", associationValue.getValue())
                              .setParameter("sagaType", typeOf(type))
                              .getResultList();
-        return new TreeSet<String>(entries);
+        return new TreeSet<>(entries);
     }
 
     @Override

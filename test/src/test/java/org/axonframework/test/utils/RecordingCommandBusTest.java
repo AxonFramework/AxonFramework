@@ -20,8 +20,6 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.util.List;
@@ -63,12 +61,7 @@ public class RecordingCommandBusTest {
 
     @Test
     public void testPublishCommandWithCallbackBehavior() {
-        testSubject.setCallbackBehavior(new CallbackBehavior() {
-            @Override
-            public Object handle(Object commandPayload, MetaData commandMetaData) throws Throwable {
-                return "callbackResult";
-            }
-        });
+        testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object>() {
             @Override
@@ -90,12 +83,9 @@ public class RecordingCommandBusTest {
 
     @Test
     public void testRegisterHandler() {
-        CommandHandler<String> handler = new CommandHandler<String>() {
-            @Override
-            public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
-                fail("Did not expect handler to be invoked");
-                return null;
-            }
+        CommandHandler<String> handler = (command, unitOfWork) -> {
+            fail("Did not expect handler to be invoked");
+            return null;
         };
         testSubject.subscribe(String.class.getName(), handler);
         assertTrue(testSubject.isSubscribed(handler));

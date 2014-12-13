@@ -41,7 +41,7 @@ public class MessageStreamTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         XStreamSerializer serializer = new XStreamSerializer();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("This is the payload",
+        GenericEventMessage<String> message = new GenericEventMessage<>("This is the payload",
                                                                               Collections.<String, Object>singletonMap(
                                                                                       "metaKey",
                                                                                       "MetaValue"));
@@ -62,7 +62,7 @@ public class MessageStreamTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         XStreamSerializer serializer = new XStreamSerializer();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        GenericDomainEventMessage<String> message = new GenericDomainEventMessage<String>(
+        GenericDomainEventMessage<String> message = new GenericDomainEventMessage<>(
                 "AggregateID", 1L, "This is the payload", Collections.<String, Object>singletonMap("metaKey",
                                                                                                    "MetaValue"));
         out.writeEventMessage(message);

@@ -41,7 +41,7 @@ public class WeakReferenceCacheTest {
     public void testItemPurgedWhenNoLongerReferenced() throws Exception {
         // Mockito holds a reference to all parameters, preventing GC
         testSubject.unregisterCacheEntryListener(mockListener);
-        final Set<String> expiredEntries = new CopyOnWriteArraySet<String>();
+        final Set<String> expiredEntries = new CopyOnWriteArraySet<>();
         testSubject.registerCacheEntryListener(new Cache.EntryListenerAdapter() {
             @Override
             public void onEntryExpired(Object key) {

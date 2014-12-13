@@ -87,17 +87,17 @@ public class EventMessageReader {
         int metaDataSize = in.readInt();
         byte[] metaData = new byte[metaDataSize];
         in.readFully(metaData);
-        SimpleSerializedObject<byte[]> serializedPayload = new SimpleSerializedObject<byte[]>(payload,
+        SimpleSerializedObject<byte[]> serializedPayload = new SimpleSerializedObject<>(payload,
                                                                                               byte[].class,
                                                                                               payloadType,
                                                                                               payloadRevision);
-        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<byte[]>(metaData, byte[].class);
+        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(metaData, byte[].class);
 
-        SerializedEventMessage<T> message = new SerializedEventMessage<T>(identifier, new DateTime(timestamp),
+        SerializedEventMessage<T> message = new SerializedEventMessage<>(identifier, new DateTime(timestamp),
                                                                           serializedPayload, serializedMetaData,
                                                                           serializer);
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
-            return new SerializedDomainEventMessage<T>(message, aggregateIdentifier, sequenceNumber);
+            return new SerializedDomainEventMessage<>(message, aggregateIdentifier, sequenceNumber);
         }
         return message;
     }

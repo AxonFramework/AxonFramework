@@ -39,7 +39,7 @@ public final class IdentifierValidator {
     private static final IdentifierValidator INSTANCE = new IdentifierValidator();
     private static final Object NULL = new Object();
 
-    private final Map<Class<?>, Object> whiteList = new WeakHashMap<Class<?>, Object>();
+    private final Map<Class<?>, Object> whiteList = new WeakHashMap<>();
 
     /**
      * Returns the singleton instance of the IdentifierValidator.

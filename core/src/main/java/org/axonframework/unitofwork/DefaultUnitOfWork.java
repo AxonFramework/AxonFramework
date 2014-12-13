@@ -46,8 +46,8 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     private static final Logger logger = LoggerFactory.getLogger(DefaultUnitOfWork.class);
 
     private final Map<AggregateRoot, AggregateEntry> registeredAggregates =
-            new LinkedHashMap<AggregateRoot, AggregateEntry>();
-    private final Map<EventBus, List<EventMessage<?>>> eventsToPublish = new HashMap<EventBus, List<EventMessage<?>>>();
+            new LinkedHashMap<>();
+    private final Map<EventBus, List<EventMessage<?>>> eventsToPublish = new HashMap<>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private Status dispatcherStatus = Status.READY;
     private final TransactionManager transactionManager;
@@ -173,7 +173,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
         }
         EventRegistrationCallback eventRegistrationCallback = new UoWEventRegistrationCallback(eventBus);
 
-        registeredAggregates.put(aggregate, new AggregateEntry<T>(aggregate, saveAggregateCallback));
+        registeredAggregates.put(aggregate, new AggregateEntry<>(aggregate, saveAggregateCallback));
 
         // listen for new events registered in the aggregate
         aggregate.addEventRegistrationCallback(eventRegistrationCallback);
@@ -201,7 +201,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
 
     private List<EventMessage<?>> eventsToPublishOn(EventBus eventBus) {
         if (!eventsToPublish.containsKey(eventBus)) {
-            eventsToPublish.put(eventBus, new ArrayList<EventMessage<?>>());
+            eventsToPublish.put(eventBus, new ArrayList<>());
         }
         return eventsToPublish.get(eventBus);
     }
@@ -301,7 +301,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     }
 
     private List<EventMessage> eventsToPublish() {
-        List<EventMessage> events = new ArrayList<EventMessage>();
+        List<EventMessage> events = new ArrayList<>();
         for (Map.Entry<EventBus, List<EventMessage<?>>> entry : eventsToPublish.entrySet()) {
             events.addAll(entry.getValue());
         }

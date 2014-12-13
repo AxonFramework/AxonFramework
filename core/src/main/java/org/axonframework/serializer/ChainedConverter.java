@@ -65,7 +65,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
             throw new CannotConvertBetweenTypesException(format("Cannot build a converter to convert from %s to %s",
                                                                 sourceType.getName(), targetType.getName()));
         }
-        return new ChainedConverter<S, T>(route.asList());
+        return new ChainedConverter<>(route.asList());
     }
 
     /**
@@ -105,7 +105,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     public ChainedConverter(List<ContentTypeConverter> delegates) {
         Assert.isTrue(delegates != null && !delegates.isEmpty(), "The given delegates may not be null or empty");
         Assert.isTrue(isContinuous(delegates), "The given delegates must form a continuous chain");
-        this.delegates = new ArrayList<ContentTypeConverter>(delegates);
+        this.delegates = new ArrayList<>(delegates);
         target = this.delegates.get(this.delegates.size() - 1).targetType();
         source = delegates.get(0).expectedSourceType();
     }
@@ -158,10 +158,10 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     private static final class RouteCalculator {
 
         private final Set<ContentTypeConverter<?, ?>> candidates;
-        private final List<Route> routes = new LinkedList<Route>();
+        private final List<Route> routes = new LinkedList<>();
 
         private RouteCalculator(Collection<ContentTypeConverter<?, ?>> candidates) {
-            this.candidates = new HashSet<ContentTypeConverter<?, ?>>(candidates);
+            this.candidates = new HashSet<>(candidates);
         }
 
         private Route calculateRoute(Class<?> sourceType, Class<?> targetType) {
@@ -186,7 +186,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
         }
 
         private Route buildInitialRoutes(Class<?> sourceType, Class<?> targetType) {
-            List<ContentTypeConverter> candidatesToRemove = new ArrayList<ContentTypeConverter>();
+            List<ContentTypeConverter> candidatesToRemove = new ArrayList<>();
             for (ContentTypeConverter converter : candidates) {
                 if (sourceType.equals(converter.expectedSourceType())) {
                     Route route = new Route(converter);

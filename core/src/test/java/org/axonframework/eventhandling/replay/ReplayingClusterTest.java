@@ -35,8 +35,6 @@ import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.TransactionManager;
 import org.junit.*;
 import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,9 +67,9 @@ public class ReplayingClusterTest {
         testSubject = new ReplayingCluster(delegateCluster, mockEventStore, mockTransactionManager, -1,
                                            mockMessageHandler);
 
-        messages = new ArrayList<DomainEventMessage>();
+        messages = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            messages.add(new GenericDomainEventMessage<String>("id", i, "Message Payload"));
+            messages.add(new GenericDomainEventMessage<>("id", i, "Message Payload"));
         }
     }
 
@@ -117,15 +115,12 @@ public class ReplayingClusterTest {
 
     @Test
     public void testReplay() {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
-                for (DomainEventMessage message : messages) {
-                    visitor.doWithEvent(message);
-                }
-                return null;
+        doAnswer(invocation -> {
+            EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
+            for (DomainEventMessage message : messages) {
+                visitor.doWithEvent(message);
             }
+            return null;
         }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
 
         testSubject.startReplay();
@@ -157,15 +152,12 @@ public class ReplayingClusterTest {
 
     @Test
     public void testPartialReplay_withCriteria() {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                EventVisitor visitor = (EventVisitor) invocation.getArguments()[1];
-                for (DomainEventMessage message : messages) {
-                    visitor.doWithEvent(message);
-                }
-                return null;
+        doAnswer(invocation -> {
+            EventVisitor visitor = (EventVisitor) invocation.getArguments()[1];
+            for (DomainEventMessage message : messages) {
+                visitor.doWithEvent(message);
             }
+            return null;
         }).when(mockEventStore).visitEvents(isA(Criteria.class), isA(EventVisitor.class));
 
         when(mockEventStore.newCriteriaBuilder()).thenReturn(new JpaCriteriaBuilder());
@@ -187,15 +179,12 @@ public class ReplayingClusterTest {
 
     @Test
     public void testTransactionRolledBackOnException() {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
-                for (DomainEventMessage message : messages) {
-                    visitor.doWithEvent(message);
-                }
-                return null;
+        doAnswer(invocation -> {
+            EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
+            for (DomainEventMessage message : messages) {
+                visitor.doWithEvent(message);
             }
+            return null;
         }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
 
         final MockException toBeThrown = new MockException();
@@ -226,18 +215,15 @@ public class ReplayingClusterTest {
 
     @Test
     public void testEventReceivedDuringReplay() {
-        final GenericEventMessage<String> concurrentMessage = new GenericEventMessage<String>("Concurrent MSG");
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
-                assertTrue(testSubject.isInReplayMode());
-                testSubject.publish(concurrentMessage);
-                for (DomainEventMessage message : messages) {
-                    visitor.doWithEvent(message);
-                }
-                return null;
+        final GenericEventMessage<String> concurrentMessage = new GenericEventMessage<>("Concurrent MSG");
+        doAnswer(invocation -> {
+            EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
+            assertTrue(testSubject.isInReplayMode());
+            testSubject.publish(concurrentMessage);
+            for (DomainEventMessage message : messages) {
+                visitor.doWithEvent(message);
             }
+            return null;
         }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
 
         final ReplayAwareListener listener = mock(ReplayAwareListener.class);
@@ -267,34 +253,25 @@ public class ReplayingClusterTest {
     @Test(timeout = 4000)
     public void testAfterReplayInvokedAfterHandlingOfLastEvent() throws Exception {
         final ReplayAwareListener listener = mock(ReplayAwareListener.class);
-        final DomainEventMessage event1 = new GenericDomainEventMessage<String>("id1", 0, "event1");
-        final DomainEventMessage event2 = new GenericDomainEventMessage<String>("id1", 0, "event2");
+        final DomainEventMessage event1 = new GenericDomainEventMessage<>("id1", 0, "event1");
+        final DomainEventMessage event2 = new GenericDomainEventMessage<>("id1", 0, "event2");
         final ExecutorService executor = Executors.newSingleThreadExecutor();
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable {
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            // slow down second event, to make sure replay thread waits for it...
-                            Thread.sleep(200);
-                            invocation.callRealMethod();
-                        } catch (Throwable throwable) {
-                            throwable.printStackTrace();
-                        }
-                    }
-                });
-                return null;
-            }
+        doAnswer(invocation -> {
+            executor.submit(() -> {
+                try {
+                    // slow down second event, to make sure replay thread waits for it...
+                    Thread.sleep(200);
+                    invocation.callRealMethod();
+                } catch (Throwable throwable) {
+                    throwable.printStackTrace();
+                }
+            });
+            return null;
         }).when(delegateCluster).publish(event2);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event1);
-                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event2);
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event1);
+            ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event2);
+            return null;
         }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
 
         testSubject.subscribe(listener);
@@ -319,16 +296,13 @@ public class ReplayingClusterTest {
     public void testAfterReplayInvokedWhenTimeoutExpires() throws Exception {
         testSubject.getMetaData().setProperty(ReplayingCluster.AFTER_REPLAY_TIMEOUT, "0");
         final ReplayAwareListener listener = mock(ReplayAwareListener.class);
-        final DomainEventMessage event1 = new GenericDomainEventMessage<String>("id1", 0, "event1");
-        final DomainEventMessage event2 = new GenericDomainEventMessage<String>("id1", 0, "event2");
+        final DomainEventMessage event1 = new GenericDomainEventMessage<>("id1", 0, "event1");
+        final DomainEventMessage event2 = new GenericDomainEventMessage<>("id1", 0, "event2");
         doNothing().when(delegateCluster).publish(event2);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event1);
-                ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event2);
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event1);
+            ((EventVisitor) invocation.getArguments()[0]).doWithEvent(event2);
+            return null;
         }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
 
         testSubject.subscribe(listener);
@@ -345,15 +319,12 @@ public class ReplayingClusterTest {
     public void testIntermediateTransactionsCommitted() {
         testSubject = new ReplayingCluster(delegateCluster, mockEventStore, mockTransactionManager, 5,
                                            mockMessageHandler);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
-                for (DomainEventMessage message : messages) {
-                    visitor.doWithEvent(message);
-                }
-                return null;
+        doAnswer(invocation -> {
+            EventVisitor visitor = (EventVisitor) invocation.getArguments()[0];
+            for (DomainEventMessage message : messages) {
+                visitor.doWithEvent(message);
             }
+            return null;
         }).when(mockEventStore).visitEvents(isA(EventVisitor.class));
 
         testSubject.startReplay();

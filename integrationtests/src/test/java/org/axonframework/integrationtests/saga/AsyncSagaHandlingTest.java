@@ -51,7 +51,7 @@ import static org.junit.Assert.*;
 public class AsyncSagaHandlingTest {
 
     private static final int EVENTS_PER_SAGA = 300;
-    private List<UUID> aggregateIdentifiers = new LinkedList<UUID>();
+    private List<UUID> aggregateIdentifiers = new LinkedList<>();
 
     @Autowired
     private EventBus eventBus;
@@ -95,7 +95,7 @@ public class AsyncSagaHandlingTest {
     @DirtiesContext
     public void testInvokeRandomEvents() throws InterruptedException {
         for (int t = 0; t < EVENTS_PER_SAGA * aggregateIdentifiers.size(); t++) {
-            eventBus.publish(new GenericEventMessage<SagaStartEvent>(new SagaStartEvent(
+            eventBus.publish(new GenericEventMessage<>(new SagaStartEvent(
                     aggregateIdentifiers.get(t % aggregateIdentifiers.size()),
                     "message" + (t / aggregateIdentifiers.size()))));
         }

@@ -46,7 +46,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     private static final int DEFAULT_TRIGGER_VALUE = 50;
 
     private Snapshotter snapshotter;
-    private final ConcurrentMap<Object, AtomicInteger> counters = new ConcurrentHashMap<Object, AtomicInteger>();
+    private final ConcurrentMap<Object, AtomicInteger> counters = new ConcurrentHashMap<>();
     private volatile boolean clearCountersAfterAppend = true;
     private int trigger = DEFAULT_TRIGGER_VALUE;
 

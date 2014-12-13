@@ -61,7 +61,7 @@ public class RetryingCallback<R> implements CommandCallback<R> {
         this.commandMessage = commandMessage;
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
-        this.history = new ArrayList<Class<? extends Throwable>[]>();
+        this.history = new ArrayList<>();
         this.dispatchCommand = new RetryDispatch();
     }
 
@@ -79,7 +79,7 @@ public class RetryingCallback<R> implements CommandCallback<R> {
             if (!(cause instanceof RuntimeException)
                     || (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted())
                     || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
-                                                     new ArrayList<Class<? extends Throwable>[]>(history),
+                                                     new ArrayList<>(history),
                                                      dispatchCommand)) {
                 delegate.onFailure(cause);
             }
@@ -95,7 +95,7 @@ public class RetryingCallback<R> implements CommandCallback<R> {
 
     @SuppressWarnings("unchecked")
     private Class<? extends Throwable>[] simplify(Throwable cause) {
-        List<Class<? extends Throwable>> types = new ArrayList<Class<? extends Throwable>>();
+        List<Class<? extends Throwable>> types = new ArrayList<>();
         types.add(cause.getClass());
         Throwable rootCause = cause;
         while (rootCause.getCause() != null) {

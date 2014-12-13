@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.annotation;
 
-import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
@@ -24,9 +23,6 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListenerProxy;
 import org.axonframework.eventhandling.replay.ReplayAware;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
@@ -36,10 +32,9 @@ import javax.annotation.PreDestroy;
  * @see org.axonframework.eventhandling.EventListener
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter implements Subscribable, EventListenerProxy, ReplayAware {
+public class AnnotationEventListenerAdapter implements EventListenerProxy, ReplayAware {
 
     private final MessageHandlerInvoker invoker;
-    private final EventBus eventBus;
     private final ReplayAware replayAware;
     private final Class<?> listenerType;
 
@@ -83,33 +78,6 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
             // as soon as annotations are supported, their handlers should come here...
             this.replayAware = new NoOpReplayAware();
         }
-        this.eventBus = null;
-    }
-
-    /**
-     * Initialize the AnnotationEventListenerAdapter for the given <code>annotatedEventListener</code>. When the
-     * adapter
-     * subscribes, it will subscribe to the given event bus.
-     *
-     * @param annotatedEventListener the event listener
-     * @param eventBus               the event bus to register the event listener to
-     * @deprecated Use {@link #AnnotationEventListenerAdapter(Object)} and subscribe the listener to the event bus
-     * using {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
-     */
-    @Deprecated
-    public AnnotationEventListenerAdapter(Object annotatedEventListener, EventBus eventBus) {
-        ParameterResolverFactory factory = ClasspathParameterResolverFactory.forClass(annotatedEventListener
-                                                                                              .getClass());
-        this.invoker = new MessageHandlerInvoker(annotatedEventListener, factory, false,
-                                                 AnnotatedEventHandlerDefinition.INSTANCE);
-        this.listenerType = annotatedEventListener.getClass();
-        this.eventBus = eventBus;
-        if (annotatedEventListener instanceof ReplayAware) {
-            this.replayAware = (ReplayAware) annotatedEventListener;
-        } else {
-            // as soon as annotations are supported, their handlers should come here...
-            this.replayAware = new NoOpReplayAware();
-        }
     }
 
     /**
@@ -119,38 +87,6 @@ public class AnnotationEventListenerAdapter implements Subscribable, EventListen
     public void handle(EventMessage event) {
         invoker.invokeHandlerMethod(event);
     }
-
-    /**
-     * Unsubscribe the EventListener with the configured EventBus.
-     *
-     * @deprecated Use {@link EventBus#unsubscribe(org.axonframework.eventhandling.EventListener)} and
-     * pass this adapter instance to unsubscribe it.
-     */
-    @Override
-    @PreDestroy
-    @Deprecated
-    public void unsubscribe() {
-        if (eventBus != null) {
-            eventBus.unsubscribe(this);
-        }
-    }
-
-    /**
-     * Subscribe the EventListener with the configured EventBus.
-     * <p/>
-     *
-     * @deprecated Use {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)} and
-     * pass this adapter instance to subscribe it.
-     */
-    @Override
-    @PostConstruct
-    @Deprecated
-    public void subscribe() {
-        if (eventBus != null) {
-            eventBus.subscribe(this);
-        }
-    }
-
 
     @Override
     public Class<?> getTargetType() {

@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class ParameterRegistry {
 
-    private final List<Object> parameters = new ArrayList<Object>();
+    private final List<Object> parameters = new ArrayList<>();
 
     /**
      * Registers the given <code>expression</code> as parameter and returns the value to use to refer to this

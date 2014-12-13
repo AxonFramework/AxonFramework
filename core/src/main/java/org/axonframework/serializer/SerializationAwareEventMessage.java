@@ -53,7 +53,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
         if (message instanceof SerializationAware) {
             return message;
         }
-        return new SerializationAwareEventMessage<T>(message);
+        return new SerializationAwareEventMessage<>(message);
     }
 
     /**
@@ -97,7 +97,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
         if (eventMessage == newMessage) { // NOSONAR - Equal instance check on purpose
             return this;
         }
-        return new SerializationAwareEventMessage<T>(newMessage);
+        return new SerializationAwareEventMessage<>(newMessage);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
         if (eventMessage == newMessage) { // NOSONAR - Equal instance check on purpose
             return this;
         }
-        return new SerializationAwareEventMessage<T>(newMessage);
+        return new SerializationAwareEventMessage<>(newMessage);
     }
 
     @Override

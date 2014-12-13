@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public final class CorrelationDataHolder {
 
-    private static ThreadLocal<Map<String, ?>> correlationData = new ThreadLocal<Map<String, ?>>();
+    private static ThreadLocal<Map<String, ?>> correlationData = new ThreadLocal<>();
 
     private CorrelationDataHolder() {
     }
@@ -67,7 +67,7 @@ public final class CorrelationDataHolder {
         if (data == null) {
             clear();
         } else {
-            correlationData.set(new HashMap<String, Object>(data));
+            correlationData.set(new HashMap<>(data));
         }
     }
 

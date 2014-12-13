@@ -43,7 +43,7 @@ public class ListenerContainerLifecycleManagerTest {
     private ListenerContainerLifecycleManager testSubject;
     private ConnectionFactory mockConnectionFactory;
     private Serializer serializer;
-    private List<SimpleMessageListenerContainer> containersCreated = new ArrayList<SimpleMessageListenerContainer>();
+    private List<SimpleMessageListenerContainer> containersCreated = new ArrayList<>();
 
     @Before
     public void setUp() throws Exception {

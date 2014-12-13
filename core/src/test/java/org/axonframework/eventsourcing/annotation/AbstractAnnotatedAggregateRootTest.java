@@ -20,7 +20,6 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.FixedValueParameterResolver;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -34,7 +33,6 @@ import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.io.Serializable;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,15 +124,11 @@ public class AbstractAnnotatedAggregateRootTest {
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         uow.attachResource(ParameterResolverFactory.class.getName(), MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(CustomParameterAggregateRoot.class),
-                new ParameterResolverFactory() {
-                    @Override
-                    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                                            Annotation[] parameterAnnotations) {
-                        if (String.class.equals(parameterType)) {
-                            return new FixedValueParameterResolver<String>("It works");
-                        }
-                        return null;
+                (memberAnnotations, parameterType, parameterAnnotations) -> {
+                    if (String.class.equals(parameterType)) {
+                        return new FixedValueParameterResolver<>("It works");
                     }
+                    return null;
                 }));
         CustomParameterAggregateRoot aggregateRoot = new CustomParameterAggregateRoot();
         aggregateRoot.doSomething();
@@ -149,8 +143,8 @@ public class AbstractAnnotatedAggregateRootTest {
         final UUID id = UUID.randomUUID();
         testSubject = new SimpleAggregateRoot(id);
         testSubject.initializeState(new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(id.toString(), 0, new StubDomainEvent(false)),
-                new GenericDomainEventMessage<StubDomainEvent>(id.toString(), 1, new StubDomainEvent(true))));
+                new GenericDomainEventMessage<>(id.toString(), 0, new StubDomainEvent(false)),
+                new GenericDomainEventMessage<>(id.toString(), 1, new StubDomainEvent(true))));
 
         assertEquals(0, testSubject.getUncommittedEventCount());
         assertEquals((Long) 1L, testSubject.getVersion());
@@ -270,7 +264,7 @@ public class AbstractAnnotatedAggregateRootTest {
     private static class SimpleEntity extends AbstractAnnotatedEntity {
 
         private int invocationCount;
-        private List<StubDomainEvent> appliedEvents = new ArrayList<StubDomainEvent>();
+        private List<StubDomainEvent> appliedEvents = new ArrayList<>();
 
         @EventSourcingHandler
         public void myEventHandlerMethod(StubDomainEvent event) {

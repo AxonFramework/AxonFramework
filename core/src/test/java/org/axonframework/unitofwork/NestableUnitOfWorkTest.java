@@ -53,6 +53,7 @@ public class NestableUnitOfWorkTest {
         final EventMessage secondEvent = GenericEventMessage.asEventMessage(new Object());
         final EventMessage finalEvent = GenericEventMessage.asEventMessage(new Object());
 
+        @SuppressWarnings("Convert2Lambda")
         final EventListener eventListener = spy(new EventListener() {
             @Override
             public void handle(EventMessage event) {
@@ -62,10 +63,7 @@ public class NestableUnitOfWorkTest {
                     // The initial event registers an aggregate in a nested Unit of Work
                     inner.publishEvent(secondEvent, eventBus);
                     Aggregate aggregate = new Aggregate("123");
-                    inner.registerAggregate(aggregate, eventBus, new SaveAggregateCallback<Aggregate>() {
-                        @Override
-                        public void save(Aggregate aggregate) {
-                        }
+                    inner.registerAggregate(aggregate, eventBus, aggregate1 -> {
                     });
                 } else if (event.getPayloadType() == AggregateCreatedEvent.class) {
                     // The AggregateCreatedEvent publishes another event.
@@ -94,6 +92,7 @@ public class NestableUnitOfWorkTest {
         final EventMessage secondEvent = GenericEventMessage.asEventMessage(new Object());
         final EventMessage finalEvent = GenericEventMessage.asEventMessage(new Object());
 
+        @SuppressWarnings("Convert2Lambda")
         final EventListener eventListener = spy(new EventListener() {
             @Override
             public void handle(EventMessage event) {
@@ -103,10 +102,7 @@ public class NestableUnitOfWorkTest {
                     // The initial event registers an aggregate in a nested Unit of Work
                     inner.publishEvent(secondEvent, eventBus);
                     Aggregate aggregate = new Aggregate("123");
-                    inner.registerAggregate(aggregate, eventBus, new SaveAggregateCallback<Aggregate>() {
-                        @Override
-                        public void save(Aggregate aggregate) {
-                        }
+                    inner.registerAggregate(aggregate, eventBus, aggregate1 -> {
                     });
                 } else if (event.getPayloadType() == AggregateCreatedEvent.class) {
                     // The AggregateCreatedEvent publishes another event.
@@ -140,6 +136,7 @@ public class NestableUnitOfWorkTest {
         final UnitOfWorkListener mockUoWListener = spy(new UnitOfWorkListenerAdapter() {
         });
 
+        @SuppressWarnings("Convert2Lambda")
         final EventListener eventListener = spy(new EventListener() {
             @Override
             public void handle(EventMessage event) {
@@ -150,10 +147,7 @@ public class NestableUnitOfWorkTest {
                     // The initial event registers an aggregate in a nested Unit of Work
                     inner.publishEvent(secondEvent, eventBus);
                     Aggregate aggregate = new Aggregate("123");
-                    inner.registerAggregate(aggregate, eventBus, new SaveAggregateCallback<Aggregate>() {
-                        @Override
-                        public void save(Aggregate aggregate) {
-                        }
+                    inner.registerAggregate(aggregate, eventBus, aggregate1 -> {
                     });
                 } else if (event.getPayloadType() == AggregateCreatedEvent.class) {
                     // The AggregateCreatedEvent publishes another event.

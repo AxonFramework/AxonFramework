@@ -32,8 +32,8 @@ import java.util.Stack;
  */
 public class DBObjectHierarchicalStreamReader implements HierarchicalStreamReader {
 
-    private final Stack<BSONNode> itemStack = new Stack<BSONNode>();
-    private final Stack<Iterator<BSONNode>> childrenStack = new Stack<Iterator<BSONNode>>();
+    private final Stack<BSONNode> itemStack = new Stack<>();
+    private final Stack<Iterator<BSONNode>> childrenStack = new Stack<>();
 
     /**
      * Initialize the reader to read the structure of the given <code>root</code> DBObject.

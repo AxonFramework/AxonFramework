@@ -17,15 +17,12 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.ClassNamePatternClusterSelector;
 import org.junit.*;
 
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -35,14 +32,17 @@ public class ClassNamePatternClusterSelectorTest {
     @Test
     public void testMatchesPattern() throws Exception {
         Cluster cluster = mock(Cluster.class);
-        Pattern pattern = Pattern.compile("org\\.axonframework.*\\$1");
+        Pattern pattern = Pattern.compile("org\\.axonframework.*\\$MyEventListener");
         ClassNamePatternClusterSelector testSubject = new ClassNamePatternClusterSelector(pattern, cluster);
 
-        Cluster actual = testSubject.selectCluster(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-            }
-        });
+        Cluster actual = testSubject.selectCluster(new MyEventListener());
         assertSame(cluster, actual);
+    }
+
+    private static class MyEventListener implements EventListener {
+
+        @Override
+        public void handle(EventMessage event) {
+        }
     }
 }

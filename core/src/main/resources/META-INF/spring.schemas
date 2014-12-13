@@ -14,9 +14,5 @@
 # limitations under the License.
 #
 
-http\://www.axonframework.org/schema/axon-core-2.0.xsd=org/axonframework/contextsupport/spring/axon-core-2.0.xsd
-http\://www.axonframework.org/schema/axon-core-2.1.xsd=org/axonframework/contextsupport/spring/axon-core-2.1.xsd
-http\://www.axonframework.org/schema/axon-core-2.2.xsd=org/axonframework/contextsupport/spring/axon-core-2.2.xsd
-http\://www.axonframework.org/schema/axon-core-2.3.xsd=org/axonframework/contextsupport/spring/axon-core-2.3.xsd
-http\://www.axonframework.org/schema/axon-core-2.4.xsd=org/axonframework/contextsupport/spring/axon-core-2.4.xsd
-http\://www.axonframework.org/schema/axon-core.xsd=org/axonframework/contextsupport/spring/axon-core-2.4.xsd
+http\://www.axonframework.org/schema/axon-core-3.0.xsd=org/axonframework/contextsupport/spring/axon-core-3.0.xsd
+http\://www.axonframework.org/schema/axon-core.xsd=org/axonframework/contextsupport/spring/axon-core-3.0.xsd

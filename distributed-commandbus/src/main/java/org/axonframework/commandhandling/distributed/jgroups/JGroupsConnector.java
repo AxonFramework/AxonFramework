@@ -80,8 +80,8 @@ public class JGroupsConnector implements CommandBusConnector {
     private final MessageSerializer serializer;
     private final JoinCondition joinedCondition = new JoinCondition();
     private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks =
-            new ConcurrentHashMap<String, MemberAwareCommandCallback>();
-    private final Set<String> supportedCommandNames = new CopyOnWriteArraySet<String>();
+            new ConcurrentHashMap<>();
+    private final Set<String> supportedCommandNames = new CopyOnWriteArraySet<>();
     private volatile int currentLoadFactor;
     private final JGroupsConnector.MessageReceiver messageReceiver;
 
@@ -149,7 +149,7 @@ public class JGroupsConnector implements CommandBusConnector {
         try {
             if (channel.isConnected()) {
                 channel.send(new Message(dest, new JoinMessage(currentLoadFactor,
-                                                               new HashSet<String>(supportedCommandNames)))
+                                                               new HashSet<>(supportedCommandNames)))
                                      .setFlag(Message.Flag.RSVP));
             }
         } catch (Exception e) {
@@ -195,7 +195,7 @@ public class JGroupsConnector implements CommandBusConnector {
             throw new CommandDispatchException("No node known to accept " + commandMessage.getCommandName());
         }
         Address dest = getAddress(destination);
-        callbacks.put(commandMessage.getIdentifier(), new MemberAwareCommandCallback<R>(dest, callback));
+        callbacks.put(commandMessage.getIdentifier(), new MemberAwareCommandCallback<>(dest, callback));
         channel.send(dest, new DispatchMessage(commandMessage, serializer, true));
     }
 
@@ -413,9 +413,9 @@ public class JGroupsConnector implements CommandBusConnector {
                                                                 null, serializer));
                 } catch (Exception e) {
                     logger.error("Unable to send reply to command [name: {}, id: {}]. ",
-                                 new Object[]{commandMessage.getCommandName(),
-                                         commandMessage.getIdentifier(),
-                                         e});
+                                 commandMessage.getCommandName(),
+                                 commandMessage.getIdentifier(),
+                                 e);
                 }
             }
 
@@ -433,7 +433,7 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     private List<String> getMemberNames(View view) {
-        List<String> memberNames = new ArrayList<String>(view.size());
+        List<String> memberNames = new ArrayList<>(view.size());
         for (Address member : view.getMembers()) {
             memberNames.add(channel.getName(member));
         }

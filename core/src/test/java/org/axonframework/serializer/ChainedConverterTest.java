@@ -48,7 +48,7 @@ public class ChainedConverterTest {
     @Before
     public void setUp() throws Exception {
         mockType = new SimpleSerializedType("mock", "0");
-        candidates = new HashSet<ContentTypeConverter<?, ?>>();
+        candidates = new HashSet<>();
         numberToStringConverter = mockConverter(Number.class, String.class, "hello");
         stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
         stringToReaderConverter = mockConverter(String.class, Reader.class, new StringReader("hello"));
@@ -75,7 +75,7 @@ public class ChainedConverterTest {
     @Test
     public void testComplexRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleSerializedObject<Number>(1L, Number.class, mockType);
+        source = new SimpleSerializedObject<>(1L, Number.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
         assertNotNull(testSubject);
         verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
@@ -98,7 +98,7 @@ public class ChainedConverterTest {
     @Test
     public void testSimpleRoute() {
         target = String.class;
-        source = new SimpleSerializedObject<Number>(1L, Number.class, mockType);
+        source = new SimpleSerializedObject<>(1L, Number.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
         assertNotNull(testSubject);
         verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
@@ -118,7 +118,7 @@ public class ChainedConverterTest {
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testInexistentRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleSerializedObject<Reader>(new StringReader("hello"), Reader.class, mockType);
+        source = new SimpleSerializedObject<>(new StringReader("hello"), Reader.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
     }
 

@@ -38,7 +38,7 @@ public class UnitOfWorkNestingTest {
         UnitOfWork outerUnit = new UnitOfWork() {
 
             private boolean started = false;
-            private List<UnitOfWorkListener> listeners = new ArrayList<UnitOfWorkListener>();
+            private List<UnitOfWorkListener> listeners = new ArrayList<>();
 
             @Override
             public void commit() {
@@ -123,7 +123,7 @@ public class UnitOfWorkNestingTest {
         UnitOfWork middleUnit = DefaultUnitOfWork.startAndGet();
         UnitOfWork innerUnit = DefaultUnitOfWork.startAndGet();
 
-        final Set<UnitOfWork> rolledBack = new HashSet<UnitOfWork>();
+        final Set<UnitOfWork> rolledBack = new HashSet<>();
         final UnitOfWorkListenerAdapter listener = new UnitOfWorkListenerAdapter() {
             @Override
             public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {

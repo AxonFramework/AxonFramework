@@ -40,7 +40,7 @@ public class AbstractEventSourcedAggregateRootTest {
     @Test
     public void testInitializeWithEvents() {
         testSubject = new CompositeAggregateRoot();
-        testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
+        testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<>(
                 identifier,
                 (long) 243,
                 "Mock contents", MetaData
@@ -89,7 +89,7 @@ public class AbstractEventSourcedAggregateRootTest {
 
         private int invocationCount;
         private SimpleEntity childEntity;
-        private List<SimpleEntity> childEntitiesList = new ArrayList<SimpleEntity>();
+        private List<SimpleEntity> childEntitiesList = new ArrayList<>();
         private String identifier;
 
         CompositeAggregateRoot(String identifier) {
@@ -128,7 +128,7 @@ public class AbstractEventSourcedAggregateRootTest {
 
         @Override
         protected Collection<EventSourcedEntity> getChildEntities() {
-            List<EventSourcedEntity> children = new ArrayList<EventSourcedEntity>();
+            List<EventSourcedEntity> children = new ArrayList<>();
             children.add(childEntity);
             children.addAll(childEntitiesList);
             return children;

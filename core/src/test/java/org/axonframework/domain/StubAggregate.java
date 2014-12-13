@@ -58,7 +58,7 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<StubDomainEvent>(getIdentifier(), (long) 5,
+        return new GenericDomainEventMessage<>(getIdentifier(), (long) 5,
                                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 

@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
@@ -49,8 +48,6 @@ import java.util.UUID;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -74,7 +71,7 @@ public class SynchronousLoopbackTest {
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
         eventStore.appendEvents("CountingAggregate", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<AggregateCreatedEvent>(aggregateIdentifier, 0,
+                new GenericDomainEventMessage<>(aggregateIdentifier, 0,
                                                                      new AggregateCreatedEvent(aggregateIdentifier),
                                                                      null
                 )));
@@ -105,7 +102,7 @@ public class SynchronousLoopbackTest {
     }
 
     protected void initializeRepository(LockManager lockingStrategy) {
-        EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<CountingAggregate>(
+        EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<>(
                 CountingAggregate.class, eventStore,
                 lockingStrategy);
         repository.setEventBus(eventBus);
@@ -115,20 +112,17 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
         initializeRepository(new PessimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)), reportErrorCallback);
-                    }
+        EventListener el = event -> {
+            DomainEventMessage domainEvent = (DomainEventMessage) event;
+            if (event.getPayload() instanceof CounterChangedEvent) {
+                CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
+                if (counterChangedEvent.getCounter() == 1) {
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 1)), reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 2)), reportErrorCallback);
                 }
             }
         };
@@ -152,20 +146,17 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_OptimisticLocking() throws Throwable {
         initializeRepository(new OptimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)), reportErrorCallback);
-                    }
+        EventListener el = event -> {
+            DomainEventMessage domainEvent = (DomainEventMessage) event;
+            if (event.getPayload() instanceof CounterChangedEvent) {
+                CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
+                if (counterChangedEvent.getCounter() == 1) {
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 1)), reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 2)), reportErrorCallback);
                 }
             }
         };
@@ -189,23 +180,20 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_OptimisticLocking_ProcessingFails() throws Throwable {
         initializeRepository(new OptimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)),
-                                            reportErrorCallback);
-                    } else if (counterChangedEvent.getCounter() == 2) {
-                        throw new RuntimeException("Mock exception");
-                    }
+        EventListener el = event -> {
+            DomainEventMessage domainEvent = (DomainEventMessage) event;
+            if (event.getPayload() instanceof CounterChangedEvent) {
+                CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
+                if (counterChangedEvent.getCounter() == 1) {
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 1)), reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 2)),
+                                        reportErrorCallback);
+                } else if (counterChangedEvent.getCounter() == 2) {
+                    throw new RuntimeException("Mock exception");
                 }
             }
         };
@@ -229,24 +217,21 @@ public class SynchronousLoopbackTest {
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() throws Throwable {
         initializeRepository(new PessimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)),
-                                            reportErrorCallback);
-                        commandBus.dispatch(
-                                asCommandMessage(new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                                          counterChangedEvent.getCounter() + 2)),
-                                reportErrorCallback);
-                    } else if (counterChangedEvent.getCounter() == 2) {
-                        throw new RuntimeException("Mock exception");
-                    }
+        EventListener el = event -> {
+            DomainEventMessage domainEvent = (DomainEventMessage) event;
+            if (event.getPayload() instanceof CounterChangedEvent) {
+                CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
+                if (counterChangedEvent.getCounter() == 1) {
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 1)),
+                                        reportErrorCallback);
+                    commandBus.dispatch(
+                            asCommandMessage(new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                                                                      counterChangedEvent.getCounter() + 2)),
+                            reportErrorCallback);
+                } else if (counterChangedEvent.getCounter() == 2) {
+                    throw new RuntimeException("Mock exception");
                 }
             }
         };
@@ -360,14 +345,14 @@ public class SynchronousLoopbackTest {
 
     private static class InMemoryEventStore implements EventStore {
 
-        private Map<Object, List<DomainEventMessage>> store = new HashMap<Object, List<DomainEventMessage>>();
+        private Map<Object, List<DomainEventMessage>> store = new HashMap<>();
 
         @Override
         public void appendEvents(String identifier, DomainEventStream events) {
             while (events.hasNext()) {
                 DomainEventMessage next = events.next();
                 if (!store.containsKey(next.getAggregateIdentifier())) {
-                    store.put(next.getAggregateIdentifier(), new ArrayList<DomainEventMessage>());
+                    store.put(next.getAggregateIdentifier(), new ArrayList<>());
                 }
                 List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
                 eventList.add(next);
@@ -377,8 +362,14 @@ public class SynchronousLoopbackTest {
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
             List<DomainEventMessage> events = store.get(identifier);
-            events = events == null ? new ArrayList<DomainEventMessage>() : events;
+            events = events == null ? new ArrayList<>() : events;
             return new SimpleDomainEventStream(events);
+        }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented yet");
         }
     }
 }

@@ -49,7 +49,7 @@ public class SerializedDomainEventUpcastingContext implements UpcastingContext {
         this.aggregateIdentifier = domainEventData.getAggregateIdentifier();
         this.sequenceNumber = domainEventData.getSequenceNumber();
         this.timestamp = domainEventData.getTimestamp();
-        this.serializedMetaData = new LazyDeserializingObject<MetaData>(domainEventData.getMetaData(), serializer);
+        this.serializedMetaData = new LazyDeserializingObject<>(domainEventData.getMetaData(), serializer);
     }
 
     @Override

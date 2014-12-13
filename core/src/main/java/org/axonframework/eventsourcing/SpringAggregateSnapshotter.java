@@ -77,7 +77,7 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
     @Override
     public void afterPropertiesSet() throws Exception {
         if (autoDetectAggregateFactories) {
-            Set<AggregateFactory> factoriesFound = new HashSet<AggregateFactory>();
+            Set<AggregateFactory> factoriesFound = new HashSet<>();
             factoriesFound.addAll(applicationContext.getBeansOfType(AggregateFactory.class).values());
             Collection<EventSourcingRepository> eventSourcingRepositories =
                     applicationContext.getBeansOfType(EventSourcingRepository.class).values();

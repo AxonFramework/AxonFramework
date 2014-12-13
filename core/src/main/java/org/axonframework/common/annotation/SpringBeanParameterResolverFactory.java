@@ -61,7 +61,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
                     final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
                     if (clBeanFactory.containsBeanDefinition(bean.getKey())
                             && clBeanFactory.getBeanDefinition(bean.getKey()).isPrimary()) {
-                        return new FixedValueParameterResolver<Object>(bean.getValue());
+                        return new FixedValueParameterResolver<>(bean.getValue());
                     }
                 }
             }
@@ -71,7 +71,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             }
             return null;
         } else {
-            return new FixedValueParameterResolver<Object>(beansFound.values().iterator().next());
+            return new FixedValueParameterResolver<>(beansFound.values().iterator().next());
         }
     }
 

@@ -73,7 +73,7 @@ public class SimpleClusterTest {
     @Test
     public void testPublishEvent() {
         testSubject.subscribe(eventListener);
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         testSubject.publish(event);
 
         verify(eventListener).handle(event);

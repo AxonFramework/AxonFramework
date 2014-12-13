@@ -53,7 +53,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @param serializer      The Serializer to deserialize the meta data and payload with
      */
     public SerializedDomainEventMessage(SerializedDomainEventData domainEventData, Serializer serializer) {
-        eventMessage = new SerializedEventMessage<T>(
+        eventMessage = new SerializedEventMessage<>(
                 domainEventData.getEventIdentifier(), domainEventData.getTimestamp(),
                 domainEventData.getPayload(), domainEventData.getMetaData(), serializer);
         aggregateIdentifier = domainEventData.getAggregateIdentifier();
@@ -105,11 +105,11 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     @Override
     public DomainEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (eventMessage.isPayloadDeserialized()) {
-            return new GenericDomainEventMessage<T>(getIdentifier(), getTimestamp(),
+            return new GenericDomainEventMessage<>(getIdentifier(), getTimestamp(),
                                                     aggregateIdentifier, sequenceNumber,
                                                     getPayload(), newMetaData);
         } else {
-            return new SerializedDomainEventMessage<T>(this, newMetaData);
+            return new SerializedDomainEventMessage<>(this, newMetaData);
         }
     }
 
@@ -166,7 +166,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @return the GenericDomainEventMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericDomainEventMessage<T>(getIdentifier(), getTimestamp(),
+        return new GenericDomainEventMessage<>(getIdentifier(), getTimestamp(),
                                                 getAggregateIdentifier(), getSequenceNumber(),
                                                 getPayload(), getMetaData());
     }

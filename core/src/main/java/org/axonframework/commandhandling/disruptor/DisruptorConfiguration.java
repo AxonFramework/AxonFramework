@@ -58,9 +58,9 @@ public class DisruptorConfiguration {
     private boolean rescheduleCommandsOnCorruptState;
     private long coolingDownPeriod;
     private Cache cache;
-    private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
-    private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
-    private final List<CommandDispatchInterceptor> dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>();
+    private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<>();
+    private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<>();
+    private final List<CommandDispatchInterceptor> dispatchInterceptors = new ArrayList<>();
     private TransactionManager transactionManager;
     private CommandTargetResolver commandTargetResolver;
     private int invokerThreadCount = 1;

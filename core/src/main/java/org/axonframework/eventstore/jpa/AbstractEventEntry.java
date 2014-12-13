@@ -85,12 +85,12 @@ public abstract class AbstractEventEntry extends AbstractEventEntryData<byte[]> 
 
     @Override
     public SerializedObject<byte[]> getPayload() {
-        return new SimpleSerializedObject<byte[]>(payload, byte[].class, getPayloadType());
+        return new SimpleSerializedObject<>(payload, byte[].class, getPayloadType());
     }
 
     @Override
     public SerializedObject<byte[]> getMetaData() {
-        return new SerializedMetaData<byte[]>(metaData, byte[].class);
+        return new SerializedMetaData<>(metaData, byte[].class);
     }
 
 

@@ -99,13 +99,13 @@ public class DispatchMessage implements Streamable, Externalizable {
      * @return the CommandMessage wrapped in this Message
      */
     public CommandMessage<?> getCommandMessage(Serializer serializer) {
-        final Object payload = serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedPayload,
+        final Object payload = serializer.deserialize(new SimpleSerializedObject<>(serializedPayload,
                                                                                          byte[].class,
                                                                                          payloadType,
                                                                                          payloadRevision));
-        final MetaData metaData = (MetaData) serializer.deserialize(new SerializedMetaData<byte[]>(serializedMetaData,
+        final MetaData metaData = serializer.deserialize(new SerializedMetaData<>(serializedMetaData,
                                                                                                    byte[].class));
-        return new GenericCommandMessage<Object>(commandIdentifier, commandName, payload, metaData);
+        return new GenericCommandMessage<>(commandIdentifier, commandName, payload, metaData);
     }
 
     /**

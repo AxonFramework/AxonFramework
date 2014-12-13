@@ -153,11 +153,11 @@ public class GatewayProxyFactory {
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
         if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new CopyOnWriteArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+            this.dispatchInterceptors = new CopyOnWriteArrayList<>(commandDispatchInterceptors);
         } else {
-            this.dispatchInterceptors = new CopyOnWriteArrayList<CommandDispatchInterceptor>();
+            this.dispatchInterceptors = new CopyOnWriteArrayList<>();
         }
-        this.commandCallbacks = new CopyOnWriteArrayList<CommandCallback<?>>();
+        this.commandCallbacks = new CopyOnWriteArrayList<>();
     }
 
     /**
@@ -170,7 +170,7 @@ public class GatewayProxyFactory {
      */
     @SuppressWarnings("unchecked")
     public <T> T createGateway(Class<T> gatewayInterface) {
-        Map<Method, InvocationHandler> dispatchers = new HashMap<Method, InvocationHandler>();
+        Map<Method, InvocationHandler> dispatchers = new HashMap<>();
         for (Method gatewayMethod : gatewayInterface.getMethods()) {
             MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterTypes(),
                                                              gatewayMethod.getParameterAnnotations());
@@ -244,7 +244,7 @@ public class GatewayProxyFactory {
      */
     protected <R> InvocationHandler<R> wrapUndeclaredExceptions(final InvocationHandler<R> delegate,
                                                                 final Class<?>[] declaredExceptions) {
-        return new WrapNonDeclaredCheckedExceptions<R>(delegate, declaredExceptions);
+        return new WrapNonDeclaredCheckedExceptions<>(delegate, declaredExceptions);
     }
 
     /**
@@ -257,7 +257,7 @@ public class GatewayProxyFactory {
      * @return an InvocationHandler that wraps returns null when an InterruptedException is thrown
      */
     protected <R> InvocationHandler<R> wrapToReturnNullOnInterrupted(final InvocationHandler<R> delegate) {
-        return new NullOnInterrupted<R>(delegate);
+        return new NullOnInterrupted<>(delegate);
     }
 
     /**
@@ -269,7 +269,7 @@ public class GatewayProxyFactory {
      * @return an InvocationHandler that wraps returns null when a TimeoutException is thrown
      */
     protected <R> InvocationHandler<R> wrapToReturnNullOnTimeout(final InvocationHandler<R> delegate) {
-        return new NullOnTimeout<R>(delegate);
+        return new NullOnTimeout<>(delegate);
     }
 
     /**
@@ -281,7 +281,7 @@ public class GatewayProxyFactory {
      * @return an InvocationHandler that wraps returns immediately after invoking the delegate
      */
     protected <R> InvocationHandler<R> wrapToFireAndForget(final InvocationHandler<Future<R>> delegate) {
-        return new FireAndForget<R>(delegate);
+        return new FireAndForget<>(delegate);
     }
 
     /**
@@ -293,7 +293,7 @@ public class GatewayProxyFactory {
      * @return the result of the Future, either a return value or an exception
      */
     protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<Future<R>> delegate) {
-        return new WaitForResult<R>(delegate);
+        return new WaitForResult<>(delegate);
     }
 
     /**
@@ -308,7 +308,7 @@ public class GatewayProxyFactory {
      */
     protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<Future<R>> delegate,
                                                                     long timeout, TimeUnit timeUnit) {
-        return new WaitForResultWithFixedTimeout<R>(delegate, timeout, timeUnit);
+        return new WaitForResultWithFixedTimeout<>(delegate, timeout, timeUnit);
     }
 
     /**
@@ -323,7 +323,7 @@ public class GatewayProxyFactory {
      */
     protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
             final InvocationHandler<Future<R>> delegate, int timeoutIndex, int timeUnitIndex) {
-        return new WaitForResultWithTimeoutInArguments<R>(delegate, timeoutIndex, timeUnitIndex);
+        return new WaitForResultWithTimeoutInArguments<>(delegate, timeoutIndex, timeUnitIndex);
     }
 
     private boolean contains(Class<?>[] declaredExceptions, Class<?> exceptionClass) {
@@ -348,7 +348,7 @@ public class GatewayProxyFactory {
      * @return this instance for further configuration
      */
     public <R> GatewayProxyFactory registerCommandCallback(CommandCallback<R> callback) {
-        this.commandCallbacks.add(new TypeSafeCallbackWrapper<R>(callback));
+        this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback));
         return this;
     }
 
@@ -365,7 +365,7 @@ public class GatewayProxyFactory {
     }
 
     private MetaDataExtractor[] extractMetaData(Class<?>[] parameterTypes, Annotation[][] parameterAnnotations) {
-        List<MetaDataExtractor> extractors = new ArrayList<MetaDataExtractor>();
+        List<MetaDataExtractor> extractors = new ArrayList<>();
         for (int i = 0; i < parameterAnnotations.length; i++) {
             if (org.axonframework.domain.MetaData.class.isAssignableFrom(parameterTypes[i])) {
                 extractors.add(new MetaDataExtractor(i, null));
@@ -411,7 +411,7 @@ public class GatewayProxyFactory {
                                         RetryScheduler retryScheduler,
                                         List<CommandDispatchInterceptor> dispatchInterceptors) {
             super(commandBus, retryScheduler, dispatchInterceptors);
-            this.dispatchers = new HashMap<Method, InvocationHandler>(dispatchers);
+            this.dispatchers = new HashMap<>(dispatchers);
         }
 
         @Override
@@ -448,7 +448,7 @@ public class GatewayProxyFactory {
         public Future<R> invoke(Object proxy, Method invokedMethod, Object[] args) {
             Object command = args[0];
             if (metaDataExtractors.length != 0) {
-                Map<String, Object> metaDataValues = new HashMap<String, Object>();
+                Map<String, Object> metaDataValues = new HashMap<>();
                 for (MetaDataExtractor extractor : metaDataExtractors) {
                     extractor.addMetaData(args, metaDataValues);
                 }
@@ -457,8 +457,8 @@ public class GatewayProxyFactory {
                 }
             }
             if (forceCallbacks || !commandCallbacks.isEmpty()) {
-                List<CommandCallback<? super R>> callbacks = new LinkedList<CommandCallback<? super R>>();
-                FutureCallback<R> future = new FutureCallback<R>();
+                List<CommandCallback<? super R>> callbacks = new LinkedList<>();
+                FutureCallback<R> future = new FutureCallback<>();
                 callbacks.add(future);
                 for (Object arg : args) {
                     if (arg instanceof CommandCallback) {
@@ -482,7 +482,7 @@ public class GatewayProxyFactory {
 
         @SuppressWarnings("unchecked")
         public CompositeCallback(List<CommandCallback<? super R>> callbacks) {
-            this.callbacks = new ArrayList<CommandCallback<? super R>>(callbacks);
+            this.callbacks = new ArrayList<>(callbacks);
         }
 
         @Override

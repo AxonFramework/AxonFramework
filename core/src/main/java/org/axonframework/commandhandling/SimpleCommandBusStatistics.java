@@ -35,7 +35,7 @@ public class SimpleCommandBusStatistics implements SimpleCommandBusStatisticsMXB
 
     private final AtomicLong handlerCounter = new AtomicLong(0);
     private final AtomicLong receivedCommandCounter = new AtomicLong(0);
-    private final List<String> handlerTypes = new CopyOnWriteArrayList<String>();
+    private final List<String> handlerTypes = new CopyOnWriteArrayList<>();
 
     /**
      * Creates an instance of this statistics MBean.

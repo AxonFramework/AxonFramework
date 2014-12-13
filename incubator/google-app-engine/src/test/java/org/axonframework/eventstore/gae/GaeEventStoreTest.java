@@ -98,7 +98,7 @@ public class GaeEventStoreTest {
         eventStore.appendEvents("test", aggregate2.getUncommittedEvents());
 
         DomainEventStream events = eventStore.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage<?>> actualEvents = new ArrayList<DomainEventMessage<? extends Object>>();
+        List<DomainEventMessage<?>> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage<?> event = events.next();
             actualEvents.add(event);
@@ -116,7 +116,7 @@ public class GaeEventStoreTest {
         aggregate1.commitEvents();
 
         DomainEventStream actualEventStream = eventStore.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage<? extends Object>> domainEvents = new ArrayList<DomainEventMessage<? extends Object>>();
+        List<DomainEventMessage<? extends Object>> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
         }
@@ -155,7 +155,7 @@ public class GaeEventStoreTest {
         }
 
         public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<StubStateChangedEvent>(
+            return new GenericDomainEventMessage<>(
                     getIdentifier(),
                     getVersion(),
                     new StubStateChangedEvent());

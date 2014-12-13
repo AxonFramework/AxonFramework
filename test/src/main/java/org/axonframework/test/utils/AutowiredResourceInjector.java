@@ -64,9 +64,7 @@ public class AutowiredResourceInjector implements ResourceInjector {
         try {
             ReflectionUtils.ensureAccessible(setterMethod);
             setterMethod.invoke(saga, resource);
-        } catch (IllegalAccessException e) {
-            throw new FixtureExecutionException("An exception occurred while trying to inject a resource", e);
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new FixtureExecutionException("An exception occurred while trying to inject a resource", e);
         }
     }

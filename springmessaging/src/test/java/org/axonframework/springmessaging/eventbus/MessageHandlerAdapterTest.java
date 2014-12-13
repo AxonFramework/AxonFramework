@@ -38,8 +38,8 @@ public class MessageHandlerAdapterTest {
         MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockEventListener);
 
         final StubDomainEvent payload = new StubDomainEvent();
-        adapter.handleMessage(new GenericMessage<StubDomainEvent>(payload));
-        adapter.handleMessage(new GenericMessage<StubDomainEvent>(new StubDomainEvent()));
+        adapter.handleMessage(new GenericMessage<>(payload));
+        adapter.handleMessage(new GenericMessage<>(new StubDomainEvent()));
 
         verify(mockEventListener, times(1)).handle(argThat(new BaseMatcher<EventMessage>() {
             @Override

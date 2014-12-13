@@ -45,12 +45,12 @@ public class SpringIntegrationEventBus implements EventBus {
 
     private SubscribableChannel channel;
     private final ConcurrentMap<EventListener, MessageHandler> handlers =
-            new ConcurrentHashMap<EventListener, MessageHandler>();
+            new ConcurrentHashMap<>();
 
     @Override
     public void publish(EventMessage... events) {
         for(EventMessage event : events) {
-            channel.send(new GenericMessage<Object>(event.getPayload(), event.getMetaData()));
+            channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData()));
         }
     }
 

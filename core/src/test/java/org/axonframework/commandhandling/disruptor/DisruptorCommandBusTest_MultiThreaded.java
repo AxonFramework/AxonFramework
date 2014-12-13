@@ -41,8 +41,6 @@ import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -98,45 +96,34 @@ public class DisruptorCommandBusTest_MultiThreaded {
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         Repository<StubAggregate> spiedRepository = spy(testSubject
-                                                                .createRepository(new GenericAggregateFactory<StubAggregate>(
+                                                                .createRepository(new GenericAggregateFactory<>(
                                                                         StubAggregate.class)));
         stubHandler.setRepository(spiedRepository);
-        final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<Object, Object>();
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                garbageCollectionPrevention.put(invocation.getArguments()[0], new Object());
-                return invocation.callRealMethod();
-            }
+        final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
+        doAnswer(invocation -> {
+            garbageCollectionPrevention.put(invocation.getArguments()[0], new Object());
+            return invocation.callRealMethod();
         }).when(spiedRepository).add(isA(StubAggregate.class));
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object aggregate = invocation.callRealMethod();
-                garbageCollectionPrevention.put(aggregate, new Object());
-                return aggregate;
-            }
+        doAnswer(invocation -> {
+            Object aggregate = invocation.callRealMethod();
+            garbageCollectionPrevention.put(aggregate, new Object());
+            return aggregate;
         }).when(spiedRepository).load(isA(Object.class));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
         when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return invocation.getArguments()[0];
-                    }
-                });
+                .thenAnswer(invocation -> invocation.getArguments()[0]);
 
         for (int a = 0; a < AGGREGATE_COUNT; a++) {
-            testSubject.dispatch(new GenericCommandMessage<CreateCommand>(new CreateCommand(aggregateIdentifier[a])));
+            testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier[a])));
         }
         CommandCallback mockCallback = mock(CommandCallback.class);
         for (int t = 0; t < COMMAND_COUNT; t++) {
             for (int a = 0; a < AGGREGATE_COUNT; a++) {
                 CommandMessage command;
                 if (t == 10) {
-                    command = new GenericCommandMessage<ErrorCommand>(new ErrorCommand(aggregateIdentifier[a]));
+                    command = new GenericCommandMessage<>(new ErrorCommand(aggregateIdentifier[a]));
                 } else {
-                    command = new GenericCommandMessage<StubCommand>(new StubCommand(aggregateIdentifier[a]));
+                    command = new GenericCommandMessage<>(new StubCommand(aggregateIdentifier[a]));
                 }
                 testSubject.dispatch(command, mockCallback);
             }
@@ -193,7 +180,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     private static class InMemoryEventStore implements EventStore {
 
-        private final Map<String, DomainEventMessage> storedEvents = new ConcurrentHashMap<String, DomainEventMessage>();
+        private final Map<String, DomainEventMessage> storedEvents = new ConcurrentHashMap<>();
         private final AtomicInteger storedEventCounter = new AtomicInteger();
         private final AtomicInteger loadCounter = new AtomicInteger();
 
@@ -223,6 +210,13 @@ public class DisruptorCommandBusTest_MultiThreaded {
             }
             return new SimpleDomainEventStream(Collections.singletonList(message));
         }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
     }
 
     private static class StubCommand {

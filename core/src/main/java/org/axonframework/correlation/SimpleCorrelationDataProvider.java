@@ -50,7 +50,7 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider<Me
         if (headerNames.length == 0) {
             return Collections.emptyMap();
         }
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         final MetaData metaData = message.getMetaData();
         for (String headerName : headerNames) {
             if (metaData.containsKey(headerName)) {

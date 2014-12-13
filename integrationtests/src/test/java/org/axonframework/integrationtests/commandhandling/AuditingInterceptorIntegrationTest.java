@@ -16,10 +16,7 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.auditing.AuditDataProvider;
 import org.axonframework.auditing.AuditingInterceptor;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.domain.DomainEventMessage;
@@ -29,14 +26,12 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.junit.*;
 import org.junit.internal.matchers.*;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.mockito.Mockito.*;
@@ -56,7 +51,7 @@ public class AuditingInterceptorIntegrationTest {
         this.commandBus = new SimpleCommandBus();
         this.eventBus = mock(EventBus.class);
         eventStore = mock(EventStore.class);
-        this.repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class, eventStore);
+        this.repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
         repository.setEventBus(eventBus);
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
@@ -76,23 +71,15 @@ public class AuditingInterceptorIntegrationTest {
      */
     @Test
     public void testAuditingInterceptorAlsoAddsInformationToEventsOfNewlyCreatedAggregate() {
-        commandBus.subscribe(String.class.getName(), new CommandHandler<String>() {
-            @Override
-            public Object handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-                StubAggregate aggregate = new StubAggregate("aggregateId");
-                aggregate.makeAChange();
-                repository.add(aggregate);
-                return null;
-            }
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+            StubAggregate aggregate = new StubAggregate("aggregateId");
+            aggregate.makeAChange();
+            repository.add(aggregate);
+            return null;
         });
 
         final AuditingInterceptor auditingInterceptor = new AuditingInterceptor();
-        auditingInterceptor.setAuditDataProvider(new AuditDataProvider() {
-            @Override
-            public Map<String, Object> provideAuditDataFor(CommandMessage<?> command) {
-                return Collections.singletonMap("audit", (Object)"data");
-            }
-        });
+        auditingInterceptor.setAuditDataProvider(command -> Collections.singletonMap("audit", (Object)"data"));
         commandBus.setHandlerInterceptors(Arrays.asList(auditingInterceptor));
 
         commandBus.dispatch(asCommandMessage("command"));

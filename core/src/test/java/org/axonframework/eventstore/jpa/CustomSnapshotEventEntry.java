@@ -56,11 +56,11 @@ public class CustomSnapshotEventEntry extends AbstractEventEntryData<String> {
 
     @Override
     public SerializedObject<String> getMetaData() {
-        return new SerializedMetaData<String>(metaData, String.class);
+        return new SerializedMetaData<>(metaData, String.class);
     }
 
     @Override
     public SerializedObject<String> getPayload() {
-        return new SimpleSerializedObject<String>(payload, String.class, getPayloadType());
+        return new SimpleSerializedObject<>(payload, String.class, getPayloadType());
     }
 }

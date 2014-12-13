@@ -65,7 +65,7 @@ public class PropertyAccessStrategyTest {
 
         @Override
         protected <T> Property<T> propertyFor(Class<T> targetClass, String property) {
-            return new StubProperty<T>("testGetterInvoked");
+            return new StubProperty<>("testGetterInvoked");
         }
 
         private static class StubProperty<T> implements Property<T> {
@@ -115,7 +115,7 @@ public class PropertyAccessStrategyTest {
 
         @Override
         protected <T> Property<T> propertyFor(Class<T> targetClass, String property) {
-            return new TestPropertyAccessStrategy.StubProperty<T>(value);
+            return new TestPropertyAccessStrategy.StubProperty<>(value);
         }
     }
 }

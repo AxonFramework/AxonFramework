@@ -108,7 +108,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
         if (getMetaData().equals(newMetaData)) {
             return this;
         }
-        return new GenericDomainEventMessage<T>(this, newMetaData);
+        return new GenericDomainEventMessage<>(this, newMetaData);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
         if (additionalMetaData.isEmpty()) {
             return this;
         }
-        return new GenericDomainEventMessage<T>(this, getMetaData().mergedWith(additionalMetaData));
+        return new GenericDomainEventMessage<>(this, getMetaData().mergedWith(additionalMetaData));
     }
 
     @Override

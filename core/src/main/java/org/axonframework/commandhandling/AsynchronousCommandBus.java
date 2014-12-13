@@ -60,7 +60,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
 
     @Override
     protected <R> void doDispatch(CommandMessage<?> command, CommandCallback<R> callback) {
-        executor.execute(new DispatchCommand<R>(command, callback));
+        executor.execute(new DispatchCommand<>(command, callback));
     }
 
     /**

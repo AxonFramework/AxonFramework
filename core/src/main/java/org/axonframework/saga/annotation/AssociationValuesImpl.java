@@ -36,9 +36,9 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
 
     private static final long serialVersionUID = 8273718165811296962L;
 
-    private final Set<AssociationValue> values = new CopyOnWriteArraySet<AssociationValue>();
-    private transient Set<AssociationValue> addedValues = new HashSet<AssociationValue>();
-    private transient Set<AssociationValue> removedValues = new HashSet<AssociationValue>();
+    private final Set<AssociationValue> values = new CopyOnWriteArraySet<>();
+    private transient Set<AssociationValue> addedValues = new HashSet<>();
+    private transient Set<AssociationValue> removedValues = new HashSet<>();
 
     @Override
     public int size() {
@@ -81,10 +81,10 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
 
     private void initializeChangeTrackers() {
         if (removedValues == null) {
-            removedValues = new HashSet<AssociationValue>();
+            removedValues = new HashSet<>();
         }
         if (addedValues == null) {
-            addedValues = new HashSet<AssociationValue>();
+            addedValues = new HashSet<>();
         }
     }
 

@@ -41,10 +41,10 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
 
     private boolean isStarted;
     private UnitOfWork outerUnitOfWork;
-    private final List<NestableUnitOfWork> innerUnitsOfWork = new ArrayList<NestableUnitOfWork>();
+    private final List<NestableUnitOfWork> innerUnitsOfWork = new ArrayList<>();
     private boolean isCommitted = false;
-    private final Map<String, Object> resources = new HashMap<String, Object>();
-    private final Map<String, Object> inheritedResources = new HashMap<String, Object>();
+    private final Map<String, Object> resources = new HashMap<>();
+    private final Map<String, Object> inheritedResources = new HashMap<>();
 
     @Override
     public void commit() {

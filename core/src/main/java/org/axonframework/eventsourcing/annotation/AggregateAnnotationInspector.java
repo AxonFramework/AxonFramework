@@ -51,7 +51,7 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
  */
 public final class AggregateAnnotationInspector {
 
-    private static final Map<Class<?>, AggregateAnnotationInspector> INSTANCES = new ConcurrentHashMap<Class<?>, AggregateAnnotationInspector>();
+    private static final Map<Class<?>, AggregateAnnotationInspector> INSTANCES = new ConcurrentHashMap<>();
     private final Field[] childEntityFields;
     private final Field identifierField;
     private final ParameterResolverFactory parameterResolverFactory;
@@ -76,7 +76,7 @@ public final class AggregateAnnotationInspector {
 
     @SuppressWarnings("unchecked")
     private AggregateAnnotationInspector(Class<?> entityType, ParameterResolverFactory parameterResolverFactory) {
-        List<Field> annotatedFields = new ArrayList<Field>();
+        List<Field> annotatedFields = new ArrayList<>();
         for (Field field : ReflectionUtils.fieldsOf(entityType)) {
             if (field.isAnnotationPresent(EventSourcedMember.class)) {
                 annotatedFields.add(field);
@@ -116,7 +116,7 @@ public final class AggregateAnnotationInspector {
         if (childEntityFields.length == 0 || instance == null) {
             return null;
         }
-        List<EventSourcedEntity> children = new ArrayList<EventSourcedEntity>();
+        List<EventSourcedEntity> children = new ArrayList<>();
         for (Field childEntityField : childEntityFields) {
             Object fieldValue = ReflectionUtils.getFieldValue(childEntityField, instance);
             if (EventSourcedEntity.class.isInstance(fieldValue)) {

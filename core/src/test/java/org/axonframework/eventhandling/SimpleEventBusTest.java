@@ -64,6 +64,6 @@ public class SimpleEventBusTest {
     }
 
     private EventMessage newEvent() {
-        return new GenericEventMessage<Object>(new Object());
+        return new GenericEventMessage<>(new Object());
     }
 }

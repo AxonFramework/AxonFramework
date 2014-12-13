@@ -36,7 +36,7 @@ public class MetaDataTest {
 
     @Test
     public void createMetaData() {
-        Map<String, Object> metaDataValues = new HashMap<String, Object>();
+        Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData = new MetaData(metaDataValues);
         metaDataValues.put("second", "value");
@@ -47,7 +47,7 @@ public class MetaDataTest {
 
     @Test
     public void testMergedMetaData() {
-        Map<String, Object> metaDataValues = new HashMap<String, Object>();
+        Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData = new MetaData(metaDataValues);
         metaDataValues.put("second", "value");
@@ -60,7 +60,7 @@ public class MetaDataTest {
 
     @Test
     public void testRemovedMetaData() {
-        Map<String, Object> metaDataValues = new HashMap<String, Object>();
+        Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         metaDataValues.put("second", "value");
         MetaData metaData = new MetaData(metaDataValues);
@@ -71,7 +71,7 @@ public class MetaDataTest {
 
     @Test
     public void testEquals() {
-        Map<String, Object> metaDataValues = new HashMap<String, Object>();
+        Map<String, Object> metaDataValues = new HashMap<>();
         metaDataValues.put("first", "value");
         MetaData metaData1 = new MetaData(metaDataValues);
         metaDataValues.put("second", "value");

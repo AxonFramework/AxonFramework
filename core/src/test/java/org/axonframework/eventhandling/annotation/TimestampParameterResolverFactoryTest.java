@@ -21,8 +21,6 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.joda.time.DateTime;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.lang.annotation.Annotation;
 
@@ -41,12 +39,7 @@ public class TimestampParameterResolverFactoryTest {
     public void setUp() throws Exception {
         testSubject = new TimestampParameterResolverFactory();
         annotation = mock(Timestamp.class);
-        when (annotation.annotationType()).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return Timestamp.class;
-            }
-        });
+        when (annotation.annotationType()).thenAnswer(invocationOnMock -> Timestamp.class);
     }
 
     @Test

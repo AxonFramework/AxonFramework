@@ -84,7 +84,7 @@ public class SimpleEventSchedulerIntegrationTest {
                 .execute(new TransactionCallbackWithoutResult() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
-                        eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(someAssociationValue)));
+                        eventBus.publish(new GenericEventMessage<>(new StartingEvent(someAssociationValue)));
                     }
                 });
         // the event is scheduled in 50ms, which is generally enough to get the saga committed

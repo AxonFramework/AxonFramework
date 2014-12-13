@@ -25,8 +25,6 @@ import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,28 +80,9 @@ public class SagaManagerTest {
         testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockSagaFactory, Saga.class);
     }
 
-    @Deprecated
-    @Test
-    public void testSubscriptionIsIgnoredWithoutEventBus() {
-        testSubject.subscribe();
-        verify(mockEventBus, never()).subscribe(testSubject);
-        testSubject.unsubscribe();
-        verify(mockEventBus, never()).unsubscribe(testSubject);
-    }
-
-    @Deprecated
-    @Test
-    public void testSubscription() {
-        testSubject = new TestableAbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory, Saga.class);
-        testSubject.subscribe();
-        verify(mockEventBus).subscribe(testSubject);
-        testSubject.unsubscribe();
-        verify(mockEventBus).unsubscribe(testSubject);
-    }
-
     @Test
     public void testSagasLoadedAndCommitted() {
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         testSubject.handle(event);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
@@ -116,7 +95,7 @@ public class SagaManagerTest {
     @Test
     public void testExceptionPropagated() {
         testSubject.setSuppressExceptions(false);
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
         try {
             testSubject.handle(event);
@@ -132,7 +111,7 @@ public class SagaManagerTest {
 
     @Test
     public void testExceptionSuppressed() {
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
 
         testSubject.handle(event);
@@ -155,19 +134,16 @@ public class SagaManagerTest {
         final AtomicInteger nestingCounter = new AtomicInteger(20);
         final EventMessage event = GenericEventMessage.asEventMessage(new Object());
 
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                if (nestingCounter.decrementAndGet() > 0) {
-                    UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-                    try {
-                        testSubject.handle(event);
-                    } finally {
-                        uow.commit();
-                    }
+        doAnswer(invocationOnMock -> {
+            if (nestingCounter.decrementAndGet() > 0) {
+                UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+                try {
+                    testSubject.handle(event);
+                } finally {
+                    uow.commit();
                 }
-                return null;
             }
+            return null;
         }).when(mockSaga1).handle(isA(EventMessage.class));
 
         testSubject.handle(event);
@@ -186,15 +162,10 @@ public class SagaManagerTest {
 
     private class TestableAbstractSagaManager extends AbstractSagaManager {
 
+        @SafeVarargs
         private TestableAbstractSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
                                             Class<? extends Saga>... sagaTypes) {
             super(sagaRepository, sagaFactory, sagaTypes);
-        }
-
-        private TestableAbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository,
-                                            SagaFactory sagaFactory,
-                                            Class<? extends Saga>... sagaTypes) {
-            super(eventBus, sagaRepository, sagaFactory, sagaTypes);
         }
 
         @Override

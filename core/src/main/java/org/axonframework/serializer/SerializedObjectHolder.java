@@ -35,11 +35,11 @@ public class SerializedObjectHolder implements SerializationAware {
     private final Message message;
     private final Object payloadGuard = new Object();
     // guarded by "payloadGuard"
-    private final Map<Serializer, SerializedObject> serializedPayload = new HashMap<Serializer, SerializedObject>();
+    private final Map<Serializer, SerializedObject> serializedPayload = new HashMap<>();
 
     private final Object metaDataGuard = new Object();
     // guarded by "metaDataGuard"
-    private final Map<Serializer, SerializedObject> serializedMetaData = new HashMap<Serializer, SerializedObject>();
+    private final Map<Serializer, SerializedObject> serializedMetaData = new HashMap<>();
 
     /**
      * Initialize the holder for the serialized representations of the payload and meta data of given

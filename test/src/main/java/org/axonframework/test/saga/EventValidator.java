@@ -38,7 +38,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  */
 public class EventValidator implements EventListener {
 
-    private final List<EventMessage> publishedEvents = new ArrayList<EventMessage>();
+    private final List<EventMessage> publishedEvents = new ArrayList<>();
     private final EventBus eventBus;
 
     /**
@@ -96,7 +96,7 @@ public class EventValidator implements EventListener {
 
     @SuppressWarnings({"unchecked"})
     private Matcher<Object>[] createEqualToMatchers(Object[] expected) {
-        List<Matcher<?>> matchers = new ArrayList<Matcher<?>>(expected.length);
+        List<Matcher<?>> matchers = new ArrayList<>(expected.length);
         for (Object event : expected) {
             matchers.add(equalTo(event));
         }

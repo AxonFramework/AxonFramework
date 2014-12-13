@@ -50,7 +50,7 @@ public class SimpleCommandBus implements CommandBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
     private final ConcurrentMap<String, CommandHandler<?>> subscriptions =
-            new ConcurrentHashMap<String, CommandHandler<?>>();
+            new ConcurrentHashMap<>();
     private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
     private volatile Iterable<? extends CommandHandlerInterceptor> handlerInterceptors = Collections.emptyList();
     private volatile Iterable<? extends CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
@@ -171,7 +171,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param handlerInterceptors The interceptors to invoke when commands are handled
      */
     public void setHandlerInterceptors(List<? extends CommandHandlerInterceptor> handlerInterceptors) {
-        this.handlerInterceptors = new ArrayList<CommandHandlerInterceptor>(handlerInterceptors);
+        this.handlerInterceptors = new ArrayList<>(handlerInterceptors);
     }
 
     /**
@@ -181,7 +181,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param dispatchInterceptors The interceptors to invoke when commands are dispatched
      */
     public void setDispatchInterceptors(List<? extends CommandDispatchInterceptor> dispatchInterceptors) {
-        this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(dispatchInterceptors);
+        this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
     }
 
     /**

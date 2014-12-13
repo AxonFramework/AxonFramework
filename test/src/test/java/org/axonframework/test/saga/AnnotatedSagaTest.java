@@ -29,8 +29,6 @@ import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
 import static org.hamcrest.CoreMatchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -80,7 +78,7 @@ public class AnnotatedSagaTest {
     public void testFixtureApi_PublishedEvent_NoHistoricActivity() {
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         fixture.givenNoPriorActivity()
-               .whenPublishingA(new GenericEventMessage<TriggerSagaStartEvent>(new TriggerSagaStartEvent("id")))
+               .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id");
     }

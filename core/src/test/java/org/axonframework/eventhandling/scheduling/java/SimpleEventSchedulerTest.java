@@ -25,8 +25,6 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.joda.time.Duration;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 import org.quartz.SchedulerException;
 
 import java.io.ByteArrayInputStream;
@@ -69,12 +67,9 @@ public class SimpleEventSchedulerTest {
     @Test
     public void testScheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
@@ -98,12 +93,9 @@ public class SimpleEventSchedulerTest {
     @Test
     public void testCancelJob() throws SchedulerException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
@@ -121,7 +113,7 @@ public class SimpleEventSchedulerTest {
     }
 
     private EventMessage<Object> createEvent() {
-        return new GenericEventMessage<Object>(new Object());
+        return new GenericEventMessage<>(new Object());
     }
 
     private static class EqualPayloadMatcher extends BaseMatcher<EventMessage> {

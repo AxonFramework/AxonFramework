@@ -55,10 +55,10 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     private final StubEventScheduler eventScheduler;
     private final AnnotatedSagaManager sagaManager;
-    private final List<Object> registeredResources = new LinkedList<Object>();
+    private final List<Object> registeredResources = new LinkedList<>();
 
     private Map<Object, AggregateEventPublisherImpl> aggregatePublishers =
-            new HashMap<Object, AggregateEventPublisherImpl>();
+            new HashMap<>();
     private FixtureExecutionResultImpl fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
 
@@ -247,14 +247,14 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                 for (Object event : events) {
                     if (event instanceof EventMessage) {
                         EventMessage eventMessage = (EventMessage) event;
-                        sagaManager.handle(new GenericDomainEventMessage<Object>(eventMessage.getIdentifier(),
+                        sagaManager.handle(new GenericDomainEventMessage<>(eventMessage.getIdentifier(),
                                                                                  eventMessage.getTimestamp(),
                                                                                  aggregateIdentifier,
                                                                                  sequenceNumber++,
                                                                                  eventMessage.getPayload(),
                                                                                  eventMessage.getMetaData()));
                     } else {
-                        sagaManager.handle(new GenericDomainEventMessage<Object>(aggregateIdentifier,
+                        sagaManager.handle(new GenericDomainEventMessage<>(aggregateIdentifier,
                                                                                  sequenceNumber++,
                                                                                  event));
                     }
@@ -279,19 +279,19 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
         @Override
         protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<Future<R>> delegate) {
-            return new ReturnResultFromStub<R>(delegate, stubImplementation);
+            return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
         protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(
                 InvocationHandler<Future<R>> delegate, long timeout, TimeUnit timeUnit) {
-            return new ReturnResultFromStub<R>(delegate, stubImplementation);
+            return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
         protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
                 InvocationHandler<Future<R>> delegate, int timeoutIndex, int timeUnitIndex) {
-            return new ReturnResultFromStub<R>(delegate, stubImplementation);
+            return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
     }
 

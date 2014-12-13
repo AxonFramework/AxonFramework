@@ -32,7 +32,7 @@ import java.util.Stack;
  */
 public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStreamWriter {
 
-    private final Stack<BSONNode> itemStack = new Stack<BSONNode>();
+    private final Stack<BSONNode> itemStack = new Stack<>();
     private final DBObject root;
 
     /**

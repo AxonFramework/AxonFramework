@@ -32,11 +32,11 @@ import static org.mockito.Mockito.*;
  */
 public class SerializedEventMessageTest {
 
-    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<String>("serialized",
+    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<>("serialized",
                                                                                             String.class,
                                                                                             "java.lang.Object",
                                                                                             "1");
-    private SerializedObject<String> serializedMetaData = new SerializedMetaData<String>("serialized",
+    private SerializedObject<String> serializedMetaData = new SerializedMetaData<>("serialized",
                                                                                          String.class);
 
     private Object deserializedPayload = new Object();
@@ -54,7 +54,7 @@ public class SerializedEventMessageTest {
 
     @Test
     public void testConstructor() {
-        SerializedEventMessage<Object> message1 = new SerializedEventMessage<Object>(eventId, timestamp,
+        SerializedEventMessage<Object> message1 = new SerializedEventMessage<>(eventId, timestamp,
                                                                                      serializedPayload,
                                                                                      serializedMetaData, serializer);
 
@@ -70,7 +70,7 @@ public class SerializedEventMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
-        SerializedEventMessage<Object> message = new SerializedEventMessage<Object>(eventId, timestamp,
+        SerializedEventMessage<Object> message = new SerializedEventMessage<>(eventId, timestamp,
                                                                                     serializedPayload,
                                                                                     serializedMetaData, serializer);
         EventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
@@ -86,7 +86,7 @@ public class SerializedEventMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
-        EventMessage<Object> message = new SerializedEventMessage<Object>(eventId, timestamp, serializedPayload,
+        EventMessage<Object> message = new SerializedEventMessage<>(eventId, timestamp, serializedPayload,
                                                                           serializedMetaData, serializer);
         EventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         EventMessage<Object> message2 = message.andMetaData(

@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class StubEventScheduler implements EventScheduler {
 
-    private final NavigableSet<StubScheduleToken> scheduledEvents = new TreeSet<StubScheduleToken>();
+    private final NavigableSet<StubScheduleToken> scheduledEvents = new TreeSet<>();
     private final AtomicInteger counter = new AtomicInteger(0);
     private DateTime currentDateTime;
 
@@ -100,7 +100,7 @@ public class StubEventScheduler implements EventScheduler {
      * @return a view of all the scheduled Events at the time this method is called
      */
     public List<ScheduledItem> getScheduledItems() {
-        return new ArrayList<ScheduledItem>(scheduledEvents);
+        return new ArrayList<>(scheduledEvents);
     }
 
     /**
@@ -138,7 +138,7 @@ public class StubEventScheduler implements EventScheduler {
      * @return A list of Events scheduled for publication on or before the new time
      */
     public List<EventMessage> advanceTime(DateTime newDateTime) {
-        List<EventMessage> triggeredEvents = new ArrayList<EventMessage>();
+        List<EventMessage> triggeredEvents = new ArrayList<>();
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
             triggeredEvents.add(advanceToNextTrigger());
         }

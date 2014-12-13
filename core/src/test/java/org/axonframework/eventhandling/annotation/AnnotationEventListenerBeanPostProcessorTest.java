@@ -62,7 +62,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     @Test
     public void testBeanSubscribedToAutowiredEventBus() throws Exception {
         testSubject.setEventBus(null);
-        Map<String, EventBus> map = new HashMap<String, EventBus>();
+        Map<String, EventBus> map = new HashMap<>();
         map.put("ignored", mockEventBus);
         when(mockApplicationContext.getBeansOfType(EventBus.class)).thenReturn(map);
 
@@ -86,7 +86,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         EventListener eventListener = (EventListener) postProcessedBean;
         SyncEventListener annotatedEventListener = (SyncEventListener) postProcessedBean;
         StubDomainEvent domainEvent = new StubDomainEvent();
-        eventListener.handle(new GenericEventMessage<StubDomainEvent>(domainEvent));
+        eventListener.handle(new GenericEventMessage<>(domainEvent));
 
         assertEquals(1, annotatedEventListener.getInvocationCount());
     }
@@ -124,7 +124,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
         SyncEventListener annotatedEventListener = (SyncEventListener) postProcessedBean;
         FailingEvent domainEvent = new FailingEvent();
         try {
-            eventListener.handle(new GenericEventMessage<FailingEvent>(domainEvent));
+            eventListener.handle(new GenericEventMessage<>(domainEvent));
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             assertEquals("Don't like this event", e.getMessage());

@@ -47,7 +47,7 @@ public class CommandHandlingBenchmark {
         CommandBus cb = new SimpleCommandBus();
 
         InMemoryEventStore eventStore = new InMemoryEventStore();
-        eventStore.appendInitialEvent("test", new SimpleDomainEventStream(new GenericDomainEventMessage<SomeEvent>(
+        eventStore.appendInitialEvent("test", new SimpleDomainEventStream(new GenericDomainEventMessage<>(
                 aggregateIdentifier, 0, new SomeEvent())));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
@@ -147,5 +147,12 @@ public class CommandHandlingBenchmark {
             System.out.println(".");
             return storedEvents;
         }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
     }
 }

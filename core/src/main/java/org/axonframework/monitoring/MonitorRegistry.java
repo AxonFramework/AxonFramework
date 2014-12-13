@@ -39,7 +39,7 @@ public abstract class MonitorRegistry {
     private static final List<MonitorRegistry> registries;
 
     static {
-        registries = new ArrayList<MonitorRegistry>();
+        registries = new ArrayList<>();
         ServiceLoader<MonitorRegistry> registryLoader = ServiceLoader.load(MonitorRegistry.class);
         for (MonitorRegistry monitorRegistry : registryLoader) {
             registries.add(monitorRegistry);

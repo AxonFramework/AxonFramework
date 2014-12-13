@@ -44,7 +44,7 @@ import static org.axonframework.common.Priority.LAST;
 @Priority(LAST)
 public final class FixtureResourceParameterResolverFactory implements ParameterResolverFactory {
 
-    private static final ThreadLocal<List<Object>> RESOURCES = new ThreadLocal<List<Object>>();
+    private static final ThreadLocal<List<Object>> RESOURCES = new ThreadLocal<>();
 
     @Override
     public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
@@ -59,7 +59,7 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
      */
     public static void registerResource(Object injectableResource) {
         if (RESOURCES.get() == null) {
-            RESOURCES.set(new ArrayList<Object>());
+            RESOURCES.set(new ArrayList<>());
         }
         if (!RESOURCES.get().contains(injectableResource)) {
             RESOURCES.get().add(injectableResource);

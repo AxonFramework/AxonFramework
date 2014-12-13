@@ -30,7 +30,7 @@ public class CollectionUtilsTest {
 
     @Test
     public void testFilterCollection_FilterOnString() {
-        List<Object> items = new ArrayList<Object>();
+        List<Object> items = new ArrayList<>();
         items.add("String");
         items.add(new Object());
         items.add(1L);
@@ -41,14 +41,14 @@ public class CollectionUtilsTest {
 
     @Test
     public void testFilterCollection_FilterOnObject() {
-        List<Object> items = new ArrayList<Object>();
+        List<Object> items = new ArrayList<>();
         items.add("String");
         items.add(new Object());
         items.add(1L);
         List<Object> actualResult = CollectionUtils.filterByType(items, Object.class);
         assertEquals(3, actualResult.size());
         assertEquals("String", actualResult.get(0));
-        assertEquals(new Long(1), actualResult.get(2));
+        assertEquals(1L, actualResult.get(2));
     }
 
     @Test

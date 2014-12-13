@@ -24,7 +24,6 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.axonframework.eventstore.PartialStreamSupport;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.EventStoreManagement;
@@ -56,7 +55,7 @@ import javax.annotation.PostConstruct;
  * @author Jettro Coenradie
  * @since 2.0 (in incubator since 0.7)
  */
-public class MongoEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware, PartialStreamSupport {
+public class MongoEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoEventStore.class);
 
@@ -128,7 +127,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
             return;
         }
 
-        List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> messages = new ArrayList<>();
         while (events.hasNext()) {
             messages.add(events.next());
         }
@@ -212,13 +211,10 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         DBCursor cursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
                                                      (MongoCriteria) criteria);
         cursor.addOption(Bytes.QUERYOPTION_NOTIMEOUT);
-        CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null, true);
-        try {
+        try (CursorBackedDomainEventStream events = new CursorBackedDomainEventStream(cursor, null, null, true)) {
             while (events.hasNext()) {
                 visitor.doWithEvent(events.next());
             }
-        } finally {
-            events.close();
         }
     }
 

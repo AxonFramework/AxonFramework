@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.common.Subscribable;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,8 +63,6 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotatedJavaP
 
         assertTrue("Bean doesn't implement EventListener",
                    org.axonframework.commandhandling.CommandHandler.class.isInstance(transactionalHandler));
-        assertTrue("Bean doesn't implement Subscribable",
-                   Subscribable.class.isInstance(transactionalHandler));
         // this command is rejected, because security annotations are defined on the interface(d) method)
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("StringCommand"), new SecurityVerifyingCallback());
         // Security annotation on these commands are not inspected by Spring, because proxy-target-class is false.

@@ -51,7 +51,7 @@ public abstract class Matchers {
      * @return a Matcher that evaluates a Message's payload.
      */
     public static Matcher<Message> messageWithPayload(Matcher<?> payloadMatcher) {
-        return new PayloadMatcher<Message>(payloadMatcher);
+        return new PayloadMatcher<>(payloadMatcher);
     }
 
     /**
@@ -144,7 +144,7 @@ public abstract class Matchers {
      */
     @Factory
     public static <T> EqualFieldsMatcher<T> equalTo(T expected) {
-        return new EqualFieldsMatcher<T>(expected);
+        return new EqualFieldsMatcher<>(expected);
     }
 
     /**

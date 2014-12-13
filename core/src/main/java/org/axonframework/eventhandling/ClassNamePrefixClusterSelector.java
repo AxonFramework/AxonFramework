@@ -79,7 +79,7 @@ public class ClassNamePrefixClusterSelector extends AbstractClusterSelector {
      */
     public ClassNamePrefixClusterSelector(Map<String, Cluster> mappings, Cluster defaultCluster) {
         this.defaultCluster = defaultCluster;
-        this.mappings = new TreeMap<String, Cluster>(new ReverseStringComparator());
+        this.mappings = new TreeMap<>(new ReverseStringComparator());
         this.mappings.putAll(mappings);
     }
 

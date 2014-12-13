@@ -67,10 +67,7 @@ public class AutowiringClusterSelectorTest {
     public void testAutowiringClusterSelector_LastCandidateSelected() {
         //This will also test for a recursive dependency of the autowired cluster selector on itself
         assertNotNull(testSubject);
-        Cluster cluster = testSubject.selectCluster(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-            }
+        Cluster cluster = testSubject.selectCluster(event -> {
         });
         verify(firstSelector).selectCluster(isA(EventListener.class));
         verify(secondSelector).selectCluster(isA(EventListener.class));

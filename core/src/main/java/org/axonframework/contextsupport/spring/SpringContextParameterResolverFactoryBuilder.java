@@ -53,7 +53,7 @@ public final class SpringContextParameterResolverFactoryBuilder {
      */
     public static RuntimeBeanReference getBeanReference(BeanDefinitionRegistry registry) {
         if (!registry.containsBeanDefinition(PARAMETER_RESOLVER_FACTORY_BEAN_NAME)) {
-            final ManagedList<BeanDefinition> factories = new ManagedList<BeanDefinition>();
+            final ManagedList<BeanDefinition> factories = new ManagedList<>();
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(ClasspathParameterResolverFactoryBean.class)
                                                .getBeanDefinition());
             factories.add(BeanDefinitionBuilder.genericBeanDefinition(SpringBeanParameterResolverFactory.class)

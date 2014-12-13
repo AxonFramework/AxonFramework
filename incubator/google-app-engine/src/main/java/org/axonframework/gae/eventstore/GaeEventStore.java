@@ -94,11 +94,24 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
             snapshotSequenceNumber = lastSnapshotEvent.getSequenceNumber();
         }
 
-        List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1);
+        List<DomainEventMessage> events = readEventSegmentInternal(type, identifier, snapshotSequenceNumber + 1,
+                                                                   Long.MAX_VALUE);
         if (lastSnapshotEvent != null) {
             events.addAll(0, lastSnapshotEvent.getDomainEvent(identifier, eventSerializer, upcasterChain, false));
         }
 
+        if (events.isEmpty()) {
+            throw new EventStreamNotFoundException(type, identifier);
+        }
+
+        return new SimpleDomainEventStream(events);
+    }
+
+    @Override
+    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                        long lastSequenceNumber) {
+        List<DomainEventMessage> events = readEventSegmentInternal(type, identifier,
+                                                                   firstSequenceNumber, lastSequenceNumber);
         if (events.isEmpty()) {
             throw new EventStreamNotFoundException(type, identifier);
         }
@@ -131,12 +144,12 @@ public class GaeEventStore implements SnapshotEventStore, UpcasterAware {
     }
 
     private List<DomainEventMessage> readEventSegmentInternal(String type, Object identifier,
-                                                              long firstSequenceNumber) {
-        Query query = EventEntry.forAggregate(type, identifier.toString(), firstSequenceNumber);
+                                                              long firstSequenceNumber, long lastSequenceNumber) {
+        Query query = EventEntry.forAggregate(type, identifier.toString(), firstSequenceNumber, lastSequenceNumber);
         PreparedQuery preparedQuery = datastoreService.prepare(query);
         List<Entity> entities = preparedQuery.asList(FetchOptions.Builder.withDefaults());
 
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(entities.size());
+        List<DomainEventMessage> events = new ArrayList<>(entities.size());
         for (Entity entity : entities) {
             events.addAll(new EventEntry(entity).getDomainEvent(identifier, eventSerializer, upcasterChain, false));
         }

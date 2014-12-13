@@ -50,8 +50,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private Object aggregateIdentifier;
     private EventBus mockEventBus;
     private EventStore eventStore;
-    private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<Throwable>();
-    private List<Thread> startedThreads = new ArrayList<Thread>();
+    private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
+    private List<Thread> startedThreads = new ArrayList<>();
     private static final int CONCURRENT_MODIFIERS = 10;
 
     @Test(timeout = 60000)
@@ -84,7 +84,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository(LockManager strategy) {
         eventStore = new InMemoryEventStore();
-        repository = new EventSourcingRepository<SimpleAggregateRoot>(new SimpleAggregateFactory(), eventStore,
+        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore,
                                                                       strategy);
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
@@ -141,21 +141,18 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private Thread prepareAggregateModifier(final CountDownLatch awaitFor, final CountDownLatch reportDone,
                                             final EventSourcingRepository<SimpleAggregateRoot> repository,
                                             final Object aggregateIdentifier) {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    awaitFor.await();
-                    UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-                    SimpleAggregateRoot aggregate = repository.load(aggregateIdentifier, null);
-                    aggregate.doOperation();
-                    aggregate.doOperation();
-                    uow.commit();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } finally {
-                    reportDone.countDown();
-                }
+        Thread t = new Thread(() -> {
+            try {
+                awaitFor.await();
+                UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+                SimpleAggregateRoot aggregate = repository.load(aggregateIdentifier, null);
+                aggregate.doOperation();
+                aggregate.doOperation();
+                uow.commit();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                reportDone.countDown();
             }
         });
         t.setUncaughtExceptionHandler(this);
@@ -223,7 +220,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private class InMemoryEventStore implements EventStore {
 
-        private List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        private List<DomainEventMessage> domainEvents = new ArrayList<>();
 
         @Override
         public synchronized void appendEvents(String type, DomainEventStream events) {
@@ -234,7 +231,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @Override
         public synchronized DomainEventStream readEvents(String type, Object identifier) {
-            List<DomainEventMessage> relevant = new ArrayList<DomainEventMessage>();
+            List<DomainEventMessage> relevant = new ArrayList<>();
             for (DomainEventMessage event : domainEvents) {
                 if (event.getAggregateIdentifier().equals(identifier)) {
                     relevant.add(event);
@@ -243,5 +240,12 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
             return new SimpleDomainEventStream(relevant);
         }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
     }
 }

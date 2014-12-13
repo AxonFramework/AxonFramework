@@ -48,7 +48,7 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
      * @param defaultFactories The ParameterResolverFactory instances to add by default
      */
     public ApplicationContextLookupParameterResolverFactory(List<ParameterResolverFactory> defaultFactories) {
-        this.factories = new ArrayList<ParameterResolverFactory>(defaultFactories);
+        this.factories = new ArrayList<>(defaultFactories);
     }
 
     @Override

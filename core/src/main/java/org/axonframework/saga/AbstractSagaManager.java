@@ -17,14 +17,12 @@
 package org.axonframework.saga;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.Subscribable;
 import org.axonframework.common.lock.IdentifierBasedLock;
 import org.axonframework.correlation.CorrelationDataHolder;
 import org.axonframework.correlation.CorrelationDataProvider;
 import org.axonframework.correlation.MultiCorrelationDataProvider;
 import org.axonframework.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -39,8 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 import static java.lang.String.format;
 
@@ -51,41 +47,18 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractSagaManager implements SagaManager, Subscribable {
+public abstract class AbstractSagaManager implements SagaManager {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
 
-    private final EventBus eventBus;
     private final SagaRepository sagaRepository;
     private final SagaFactory sagaFactory;
     private final Class<? extends Saga>[] sagaTypes;
     private final IdentifierBasedLock lock = new IdentifierBasedLock();
-    private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
+    private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
     private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
-
-    /**
-     * Initializes the SagaManager with the given <code>eventBus</code> and <code>sagaRepository</code>.
-     *
-     * @param eventBus       The event bus providing the events to route to sagas.
-     * @param sagaRepository The repository providing the saga instances.
-     * @param sagaFactory    The factory providing new saga instances
-     * @param sagaTypes      The types of Saga supported by this Saga Manager
-     * @deprecated use {@link #AbstractSagaManager(SagaRepository, SagaFactory, Class[])} and register using {@link
-     * EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
-     */
-    @Deprecated
-    public AbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository, SagaFactory sagaFactory,
-                               Class<? extends Saga>... sagaTypes) {
-        Assert.notNull(eventBus, "eventBus may not be null");
-        Assert.notNull(sagaRepository, "sagaRepository may not be null");
-        Assert.notNull(sagaFactory, "sagaFactory may not be null");
-        this.eventBus = eventBus;
-        this.sagaRepository = sagaRepository;
-        this.sagaFactory = sagaFactory;
-        this.sagaTypes = sagaTypes;
-    }
 
     /**
      * Initializes the SagaManager with the given <code>sagaRepository</code>.
@@ -94,11 +67,11 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      * @param sagaFactory    The factory providing new saga instances
      * @param sagaTypes      The types of Saga supported by this Saga Manager
      */
+    @SafeVarargs
     public AbstractSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
                                Class<? extends Saga>... sagaTypes) {
         Assert.notNull(sagaRepository, "sagaRepository may not be null");
         Assert.notNull(sagaFactory, "sagaFactory may not be null");
-        this.eventBus = null;
         this.sagaRepository = sagaRepository;
         this.sagaFactory = sagaFactory;
         this.sagaTypes = sagaTypes;
@@ -122,7 +95,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
 
     private boolean invokeExistingSagas(EventMessage event, Class<? extends Saga> sagaType,
                                         Collection<AssociationValue> associationValues) {
-        Set<String> sagas = new TreeSet<String>();
+        Set<String> sagas = new TreeSet<>();
         for (AssociationValue associationValue : associationValues) {
             sagas.addAll(sagaRepository.find(sagaType, associationValue));
         }
@@ -295,36 +268,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     }
 
     /**
-     * Unsubscribe the EventListener with the configured EventBus.
-     *
-     * @deprecated Use {@link EventBus#unsubscribe(org.axonframework.eventhandling.EventListener)} to unsubscribe this
-     * instance
-     */
-    @Override
-    @PreDestroy
-    @Deprecated
-    public void unsubscribe() {
-        if (eventBus != null) {
-            eventBus.unsubscribe(this);
-        }
-    }
-
-    /**
-     * Subscribe the EventListener with the configured EventBus.
-     *
-     * @deprecated Use {@link EventBus#subscribe(org.axonframework.eventhandling.EventListener)} to subscribe this
-     * instance
-     */
-    @Override
-    @PostConstruct
-    @Deprecated
-    public void subscribe() {
-        if (eventBus != null) {
-            eventBus.subscribe(this);
-        }
-    }
-
-    /**
      * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
      * logged. Defaults to <code>true</code>.
      *
@@ -363,7 +306,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     public void setCorrelationDataProviders(
             List<? extends CorrelationDataProvider<? super EventMessage>> correlationDataProviders) {
-        this.correlationDataProvider = new MultiCorrelationDataProvider<EventMessage>(correlationDataProviders);
+        this.correlationDataProvider = new MultiCorrelationDataProvider<>(correlationDataProviders);
     }
 
     /**
@@ -373,6 +316,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     @SuppressWarnings("unchecked")
     public Set<Class<? extends Saga>> getManagedSagaTypes() {
-        return new HashSet<Class<? extends Saga>>(Arrays.asList(sagaTypes));
+        return new HashSet<>(Arrays.asList(sagaTypes));
     }
 }

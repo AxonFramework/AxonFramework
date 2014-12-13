@@ -35,7 +35,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class SimpleEventBusWithoutStatistics implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBusWithoutStatistics.class);
-    private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
+    private final Set<EventListener> listeners = new CopyOnWriteArraySet<>();
 
     @Override
     public void publish(EventMessage... events) {

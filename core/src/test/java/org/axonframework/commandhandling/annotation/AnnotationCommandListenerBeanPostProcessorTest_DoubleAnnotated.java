@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.common.Subscribable;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,8 +86,6 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
 
         assertTrue("Bean doesn't implement EventListener",
                    org.axonframework.commandhandling.CommandHandler.class.isInstance(transactionalHandler));
-        assertTrue("Bean doesn't implement Subscribable",
-                   Subscribable.class.isInstance(transactionalHandler));
         ((CommandHandler<Integer>) transactionalHandler).handle(GenericCommandMessage.asCommandMessage(12), null);
         assertEquals(2, transactionalHandler.getInvocations());
 

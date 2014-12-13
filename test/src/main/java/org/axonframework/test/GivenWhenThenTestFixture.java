@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 import static org.axonframework.common.ReflectionUtils.*;
 
@@ -113,14 +114,14 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
-        this.repository = new IdentifierValidatingRepository<T>(eventSourcingRepository);
+        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository);
         eventSourcingRepository.setEventBus(eventBus);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(new EventSourcingRepository<T>(aggregateFactory, eventStore));
+        return registerRepository(new EventSourcingRepository<>(aggregateFactory, eventStore));
     }
 
     @Override
@@ -184,7 +185,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                     payload = ((Message) event).getPayload();
                     metaData = ((Message) event).getMetaData();
                 }
-                this.givenEvents.add(new GenericDomainEventMessage<Object>(aggregateIdentifier, sequenceNumber++,
+                this.givenEvents.add(new GenericDomainEventMessage<>(aggregateIdentifier, sequenceNumber++,
                                                                            payload, metaData));
             }
         } catch (RuntimeException e) {
@@ -243,7 +244,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<T>(aggregateType, eventStore));
+            registerRepository(new EventSourcingRepository<>(aggregateType, eventStore));
         }
     }
 
@@ -256,7 +257,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
             AggregateAnnotationCommandHandler<T> handler =
-                    new AggregateAnnotationCommandHandler<T>(aggregateType, repository,
+                    new AggregateAnnotationCommandHandler<>(aggregateType, repository,
                                                              new AnnotationCommandTargetResolver());
             for (String supportedCommand : handler.supportedCommands()) {
                 commandBus.subscribe(supportedCommand, handler);
@@ -294,7 +295,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate) {
-        HashSet<ComparationEntry> comparedEntries = new HashSet<ComparationEntry>();
+        HashSet<ComparationEntry> comparedEntries = new HashSet<>();
         if (!workingAggregate.getClass().equals(eventSourcedAggregate.getClass())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
                                                                + "be of another type than the original.\n"
@@ -336,9 +337,9 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     private void clearGivenWhenState() {
-        storedEvents = new LinkedList<DomainEventMessage>();
-        publishedEvents = new ArrayList<EventMessage>();
-        givenEvents = new LinkedList<DomainEventMessage>();
+        storedEvents = new LinkedList<>();
+        publishedEvents = new ArrayList<>();
+        givenEvents = new LinkedList<>();
         sequenceNumber = 0;
     }
 
@@ -477,7 +478,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
             if (identifier != null) {
                 validateIdentifier(identifier.getClass());
             }
@@ -488,22 +490,26 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                 aggregateIdentifier = identifier;
                 injectAggregateIdentifier();
             }
-            List<DomainEventMessage> allEvents = new ArrayList<DomainEventMessage>(givenEvents);
+            List<DomainEventMessage> allEvents = new ArrayList<>(givenEvents);
             allEvents.addAll(storedEvents);
             if (allEvents.isEmpty()) {
                 throw new AggregateNotFoundException(identifier,
                                                      "No 'given' events were configured for this aggregate, "
                                                              + "nor have any events been stored.");
             }
-            return new SimpleDomainEventStream(allEvents);
+            return new SimpleDomainEventStream(
+                    allEvents.stream()
+                             .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
+                                             && m.getSequenceNumber() <= lastSequenceNumber)
+                             .collect(toList()));
         }
 
         private void injectAggregateIdentifier() {
-            List<DomainEventMessage> oldEvents = new ArrayList<DomainEventMessage>(givenEvents);
+            List<DomainEventMessage> oldEvents = new ArrayList<>(givenEvents);
             givenEvents.clear();
             for (DomainEventMessage oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
-                    givenEvents.add(new GenericDomainEventMessage<Object>(oldEvent.getIdentifier(),
+                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getIdentifier(),
                                                                           oldEvent.getTimestamp(),
                                                                           aggregateIdentifier,
                                                                           oldEvent.getSequenceNumber(),

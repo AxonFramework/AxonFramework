@@ -60,7 +60,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
     @Test
     public void testCommandBusIsAutowired() throws Exception {
         testSubject.setCommandBus(null);
-        Map<String, CommandBus> map = new HashMap<String, CommandBus>();
+        Map<String, CommandBus> map = new HashMap<>();
         map.put("ignored", mockCommandBus);
         when(mockApplicationContext.getBeansOfType(CommandBus.class)).thenReturn(map);
 

@@ -25,7 +25,6 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Subscribable;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.correlation.CorrelationDataProvider;
@@ -69,7 +68,7 @@ import java.util.concurrent.TimeUnit;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, EventProcessingMonitorSupport {
+public class AsyncAnnotatedSagaManager implements SagaManager, EventProcessingMonitorSupport {
 
     private static final WaitStrategy DEFAULT_WAIT_STRATEGY = new BlockingWaitStrategy();
     private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
@@ -92,35 +91,16 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
-     * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code> to listen to
-     * events on the given <code>eventBus</code>.
-     * <p/>
-     * After initialization, the SagaManager must be explicitly started using the {@link #start()} method.
-     *
-     * @param eventBus  The Event Bus from which the Saga Manager will process events
-     * @param sagaTypes The types of Saga this saga manager will process incoming events for
-     * @deprecated use {@link #AsyncAnnotatedSagaManager(Class[])} and register with the event bus using {@link
-     * EventBus#subscribe(org.axonframework.eventhandling.EventListener)}
-     */
-    @Deprecated
-    public AsyncAnnotatedSagaManager(EventBus eventBus, Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
-        Assert.notNull(eventBus, "eventBus may not be null");
-        this.eventBus = eventBus;
-        this.sagaTypes = Arrays.copyOf(sagaTypes, sagaTypes.length);
-        this.parameterResolverFactory = ClasspathParameterResolverFactory.forClass(
-                sagaTypes.length == 0 ? AsyncAnnotatedSagaManager.class : sagaTypes[0]);
-    }
-
-    /**
      * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code>.
      * <p/>
      * After initialization, the SagaManager must be explicitly started using the {@link #start()} method.
      *
      * @param sagaTypes The types of Saga this saga manager will process incoming events for
      */
+    @SafeVarargs
     public AsyncAnnotatedSagaManager(Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         this(ClasspathParameterResolverFactory.forClass(
-                sagaTypes.length == 0 ? AsyncAnnotatedSagaManager.class : sagaTypes[0]),
+                     sagaTypes.length == 0 ? AsyncAnnotatedSagaManager.class : sagaTypes[0]),
              sagaTypes);
     }
 
@@ -132,6 +112,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
      * @param parameterResolverFactory The parameter resolver factory to resolve parameters of annotated handlers
      * @param sagaTypes                The types of Saga this saga manager will process incoming events for
      */
+    @SafeVarargs
     public AsyncAnnotatedSagaManager(ParameterResolverFactory parameterResolverFactory,
                                      Class<? extends AbstractAnnotatedSaga>... sagaTypes) {
         this.parameterResolverFactory = parameterResolverFactory;
@@ -146,11 +127,11 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     public synchronized void start() {
         if (disruptor == null) {
             sagaManagerStatus.setStatus(true);
-            disruptor = new Disruptor<AsyncSagaProcessingEvent>(new AsyncSagaProcessingEvent.Factory(),
-                                                                bufferSize,
-                                                                new ValidatingExecutor(executor, startTimeout),
-                                                                ProducerType.MULTI,
-                                                                waitStrategy);
+            disruptor = new Disruptor<>(new AsyncSagaProcessingEvent.Factory(),
+                                        bufferSize,
+                                        new ValidatingExecutor(executor, startTimeout),
+                                        ProducerType.MULTI,
+                                        waitStrategy);
             disruptor.handleExceptionsWith(new LoggingExceptionHandler());
             disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository, parameterResolverFactory,
                                                                                unitOfWorkFactory, processorCount,
@@ -160,7 +141,6 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
                      .then(new MonitorNotifier(processingMonitors));
             disruptor.start();
         }
-        subscribe();
     }
 
     /**
@@ -172,7 +152,6 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
      */
     public synchronized void stop() {
         sagaManagerStatus.setStatus(false);
-        unsubscribe();
         if (disruptor != null) {
             disruptor.shutdown();
             if (shutdownExecutorOnStop && executor instanceof ExecutorService) {
@@ -180,20 +159,6 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
             }
         }
         disruptor = null;
-    }
-
-    @Override
-    public void unsubscribe() {
-        if (eventBus != null) {
-            eventBus.unsubscribe(this);
-        }
-    }
-
-    @Override
-    public void subscribe() {
-        if (eventBus != null) {
-            eventBus.subscribe(this);
-        }
     }
 
     @SuppressWarnings({"unchecked"})
@@ -356,7 +321,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
 
     public synchronized void setCorrelationDataProviders(
             List<? extends CorrelationDataProvider<? super EventMessage>> correlationDataProviders) {
-        this.correlationDataProvider = new MultiCorrelationDataProvider<EventMessage>(correlationDataProviders);
+        this.correlationDataProvider = new MultiCorrelationDataProvider<>(correlationDataProviders);
     }
 
     private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {
@@ -498,7 +463,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, Eve
     private static class MonitorNotifier implements EventHandler<AsyncSagaProcessingEvent> {
 
         private final EventProcessingMonitor monitor;
-        private final List<EventMessage> processedMessages = new ArrayList<EventMessage>();
+        private final List<EventMessage> processedMessages = new ArrayList<>();
 
         public MonitorNotifier(EventProcessingMonitor monitor) {
             this.monitor = monitor;

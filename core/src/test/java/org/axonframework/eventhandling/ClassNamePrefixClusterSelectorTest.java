@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
 import org.junit.*;
 
 import java.util.HashMap;
@@ -35,16 +34,13 @@ public class ClassNamePrefixClusterSelectorTest {
         Cluster cluster1 = new SimpleCluster("cluster1");
         Cluster cluster2 = new SimpleCluster("cluster2");
 
-        Map<String, Cluster> mappings = new HashMap<String, Cluster>();
+        Map<String, Cluster> mappings = new HashMap<>();
         mappings.put("org.axonframework", cluster1);
         mappings.put("org", cluster2);
         mappings.put("$Proxy", cluster2);
         ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector(mappings, defaultCluster);
 
-        Cluster actual = selector.selectCluster(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-            }
+        Cluster actual = selector.selectCluster(event -> {
         });
         assertSame(cluster1, actual);
     }
@@ -55,10 +51,7 @@ public class ClassNamePrefixClusterSelectorTest {
 
         ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector("org.axonframework", cluster1);
 
-        Cluster actual = selector.selectCluster(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-            }
+        Cluster actual = selector.selectCluster(event -> {
         });
         assertSame(cluster1, actual);
     }
@@ -68,14 +61,11 @@ public class ClassNamePrefixClusterSelectorTest {
         Cluster defaultCluster = new SimpleCluster("default");
         Cluster cluster1 = new SimpleCluster("cluster");
 
-        Map<String, Cluster> mappings = new HashMap<String, Cluster>();
+        Map<String, Cluster> mappings = new HashMap<>();
         mappings.put("javax.", cluster1);
         ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector(mappings, defaultCluster);
 
-        Cluster actual = selector.selectCluster(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-            }
+        Cluster actual = selector.selectCluster(event -> {
         });
         assertSame(defaultCluster, actual);
     }
@@ -84,14 +74,11 @@ public class ClassNamePrefixClusterSelectorTest {
     public void testReturnsNullWhenNoMappingFound() {
         Cluster cluster1 = new SimpleCluster("cluster1");
 
-        Map<String, Cluster> mappings = new HashMap<String, Cluster>();
+        Map<String, Cluster> mappings = new HashMap<>();
         mappings.put("javax.", cluster1);
         ClassNamePrefixClusterSelector selector = new ClassNamePrefixClusterSelector(mappings);
 
-        Cluster actual = selector.selectCluster(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-            }
+        Cluster actual = selector.selectCluster(event -> {
         });
         assertSame(null, actual);
     }

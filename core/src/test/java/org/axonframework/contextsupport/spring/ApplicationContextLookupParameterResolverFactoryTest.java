@@ -64,7 +64,7 @@ public class ApplicationContextLookupParameterResolverFactoryTest {
         public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
                                                 Annotation[] parameterAnnotations) {
             if (TimeUnit.class.isAssignableFrom(parameterType)) {
-                return new FixedValueParameterResolver<TimeUnit>(TimeUnit.DAYS);
+                return new FixedValueParameterResolver<>(TimeUnit.DAYS);
             }
             return null;
         }

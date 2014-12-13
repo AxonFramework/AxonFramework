@@ -50,7 +50,7 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
     private final SyncSagaManagerBeanDefinitionParser sync;
 
     private final Map<BeanDefinition, String> eventBusPerSagaManager = Collections
-            .synchronizedMap(new WeakHashMap<BeanDefinition, String>());
+            .synchronizedMap(new WeakHashMap<>());
 
     /**
      * Initializes a SagaManagerBeanDefinitionParser.

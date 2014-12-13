@@ -46,7 +46,7 @@ public class SpringPrototypeAggregateFactoryTest {
 
     @Test
     public void testCreateNewAggregateInstance() {
-        SpringWiredAggregate aggregate = testSubject.createAggregate("id2", new GenericDomainEventMessage<String>(
+        SpringWiredAggregate aggregate = testSubject.createAggregate("id2", new GenericDomainEventMessage<>(
                 "id2", 0, "FirstEvent"));
         assertTrue("Aggregate's init method not invoked", aggregate.isInitialized());
         assertNotNull("ContextAware method not invoked", aggregate.getContext());
@@ -58,7 +58,7 @@ public class SpringPrototypeAggregateFactoryTest {
     @Test
     public void testProcessSnapshotAggregateInstance() {
         SpringWiredAggregate aggregate = testSubject.createAggregate("id2",
-                                                                     new GenericDomainEventMessage<SpringWiredAggregate>(
+                                                                     new GenericDomainEventMessage<>(
                                                                              "id2", 5, new SpringWiredAggregate()));
         assertTrue("Aggregate's init method not invoked", aggregate.isInitialized());
         assertNotNull("ContextAware method not invoked", aggregate.getContext());

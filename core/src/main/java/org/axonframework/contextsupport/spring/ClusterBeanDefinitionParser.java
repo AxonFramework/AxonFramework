@@ -199,7 +199,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         selector.getConstructorArgumentValues().addIndexedArgumentValue(0, element.getAttribute(ORDER_ATTRIBUTE));
 
         Element selectorsElement = DomUtils.getChildElementByTagName(element, SELECTORS_ELEMENT);
-        List<BeanDefinition> selectors = new ManagedList<BeanDefinition>();
+        List<BeanDefinition> selectors = new ManagedList<>();
         if (selectorsElement != null) {
             selectors.addAll(parseSelectors(selectorsElement, clusterId));
             parserContext.getRegistry().registerBeanDefinition(clusterId + SELECTOR_SUFFIX, selector);
@@ -214,7 +214,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             AbstractBeanDefinition defaultSelector = new GenericBeanDefinition();
             defaultSelector.setBeanClass(OrderedClusterSelector.class);
             defaultSelector.getConstructorArgumentValues().addIndexedArgumentValue(0, Ordered.LOWEST_PRECEDENCE);
-            ManagedList<BeanDefinition> definitions = new ManagedList<BeanDefinition>();
+            ManagedList<BeanDefinition> definitions = new ManagedList<>();
             definitions.add(BeanDefinitionBuilder.genericBeanDefinition(DefaultClusterSelector.class)
                                                  .addConstructorArgReference(clusterId)
                                                  .getBeanDefinition());
@@ -234,7 +234,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     private List<BeanDefinition> parseSelectors(Element selectorsElement, String clusterId) {
         List<Element> selectors = DomUtils.getChildElements(selectorsElement);
-        ManagedList<BeanDefinition> selectorsList = new ManagedList<BeanDefinition>(selectors.size());
+        ManagedList<BeanDefinition> selectorsList = new ManagedList<>(selectors.size());
         for (Element child : selectors) {
             BeanDefinition definition = parseSelector(child, clusterId);
             if (definition != null) {
@@ -307,7 +307,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         @SuppressWarnings("UnusedDeclaration")
         private OrderedClusterSelector(int order, List<ClusterSelector> selectors) {
             this.order = order;
-            this.selectors = new ArrayList<ClusterSelector>(selectors);
+            this.selectors = new ArrayList<>(selectors);
         }
 
         @Override

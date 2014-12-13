@@ -39,7 +39,7 @@ public abstract class AbstractMethodPropertyAccessStrategy extends PropertyAcces
         try {
             final Method method = targetClass.getMethod(methodName);
             if (!Void.TYPE.equals(method.getReturnType())) {
-                return new MethodAccessedProperty<T>(method, property);
+                return new MethodAccessedProperty<>(method, property);
             }
             logger.debug(
                     "Method with name '{}' in '{}' cannot be accepted as a property accessor, as it returns void",

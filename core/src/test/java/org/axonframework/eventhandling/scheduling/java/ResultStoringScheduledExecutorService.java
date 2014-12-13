@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException;
 public class ResultStoringScheduledExecutorService implements ScheduledExecutorService {
 
     private final ScheduledExecutorService delegate;
-    private final List<Future<?>> results = new CopyOnWriteArrayList<Future<?>>();
+    private final List<Future<?>> results = new CopyOnWriteArrayList<>();
 
     public ResultStoringScheduledExecutorService(ScheduledExecutorService delegate) {
         this.delegate = delegate;

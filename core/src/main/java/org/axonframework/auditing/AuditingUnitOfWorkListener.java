@@ -38,7 +38,7 @@ public class AuditingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
     private final AuditDataProvider auditDataProvider;
     private final AuditLogger auditLogger;
     private final CommandMessage<?> command;
-    private final List<EventMessage> recordedEvents = new ArrayList<EventMessage>();
+    private final List<EventMessage> recordedEvents = new ArrayList<>();
     private volatile Object returnValue;
 
     /**

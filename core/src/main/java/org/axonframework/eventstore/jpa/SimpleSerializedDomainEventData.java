@@ -61,9 +61,9 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
                                            long sequenceNumber, Object timestamp, String payloadType,
                                            String payloadRevision, T payload, T metaData) { // NOSONAR
         this(eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
-             new SimpleSerializedObject<T>(payload, (Class<T>) payload.getClass(),
+             new SimpleSerializedObject<>(payload, (Class<T>) payload.getClass(),
                                            payloadType, payloadRevision),
-             new SerializedMetaData<T>(metaData, (Class<T>) metaData.getClass()));
+             new SerializedMetaData<>(metaData, (Class<T>) metaData.getClass()));
     }
 
     /**

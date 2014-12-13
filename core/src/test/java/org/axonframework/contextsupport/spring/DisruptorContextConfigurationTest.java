@@ -79,7 +79,7 @@ public class DisruptorContextConfigurationTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new StubCommand("snapshottest")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new StubCommand("snapshottest")));
 
-        FutureCallback<Object> callback = new FutureCallback<Object>();
+        FutureCallback<Object> callback = new FutureCallback<>();
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new StubCommand("snapshottest")), callback);
         callback.awaitCompletion(1, TimeUnit.SECONDS);
 
@@ -132,7 +132,7 @@ public class DisruptorContextConfigurationTest {
 
     public static class InMemoryEventStore implements EventStore {
 
-        private final Map<String, DomainEventMessage> storedEvents = new ConcurrentHashMap<String, DomainEventMessage>();
+        private final Map<String, DomainEventMessage> storedEvents = new ConcurrentHashMap<>();
 
         @Override
         public void appendEvents(String type, DomainEventStream events) {
@@ -154,6 +154,12 @@ public class DisruptorContextConfigurationTest {
                 throw new EventStreamNotFoundException(type, identifier);
             }
             return new SimpleDomainEventStream(Collections.singletonList(message));
+        }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented");
         }
     }
 }

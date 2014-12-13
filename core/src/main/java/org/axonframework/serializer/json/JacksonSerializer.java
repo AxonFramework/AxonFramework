@@ -138,15 +138,15 @@ public class JacksonSerializer implements Serializer {
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module")
                         .addSerializer(ReadableInstant.class, new ToStringSerializer())
-                        .addDeserializer(DateTime.class, new JodaDeserializer<DateTime>(DateTime.class))
-                        .addDeserializer(Instant.class, new JodaDeserializer<Instant>(Instant.class))
+                        .addDeserializer(DateTime.class, new JodaDeserializer<>(DateTime.class))
+                        .addDeserializer(Instant.class, new JodaDeserializer<>(Instant.class))
                         .addDeserializer(MutableDateTime.class,
-                                         new JodaDeserializer<MutableDateTime>(MutableDateTime.class))
-                        .addDeserializer(YearMonth.class, new JodaDeserializer<YearMonth>(YearMonth.class))
-                        .addDeserializer(MonthDay.class, new JodaDeserializer<MonthDay>(MonthDay.class))
-                        .addDeserializer(LocalDate.class, new JodaDeserializer<LocalDate>(LocalDate.class))
-                        .addDeserializer(LocalTime.class, new JodaDeserializer<LocalTime>(LocalTime.class))
-                        .addDeserializer(LocalDateTime.class, new JodaDeserializer<LocalDateTime>(LocalDateTime.class))
+                                         new JodaDeserializer<>(MutableDateTime.class))
+                        .addDeserializer(YearMonth.class, new JodaDeserializer<>(YearMonth.class))
+                        .addDeserializer(MonthDay.class, new JodaDeserializer<>(MonthDay.class))
+                        .addDeserializer(LocalDate.class, new JodaDeserializer<>(LocalDate.class))
+                        .addDeserializer(LocalTime.class, new JodaDeserializer<>(LocalTime.class))
+                        .addDeserializer(LocalDateTime.class, new JodaDeserializer<>(LocalDateTime.class))
         );
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
@@ -170,14 +170,14 @@ public class JacksonSerializer implements Serializer {
         try {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
-                return new SimpleSerializedObject<T>((T) getWriter().writeValueAsString(object),
+                return new SimpleSerializedObject<>((T) getWriter().writeValueAsString(object),
                                                      expectedRepresentation, typeForClass(object.getClass()));
             }
 
             byte[] serializedBytes = getWriter().writeValueAsBytes(object);
             T serializedContent = converterFactory.getConverter(byte[].class, expectedRepresentation)
                                                   .convert(serializedBytes);
-            return new SimpleSerializedObject<T>(serializedContent, expectedRepresentation,
+            return new SimpleSerializedObject<>(serializedContent, expectedRepresentation,
                                                  typeForClass(object.getClass()));
         } catch (JsonProcessingException e) {
             throw new SerializationException("Unable to serialize object", e);

@@ -100,7 +100,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) {
-        FutureCallback<Object> futureCallback = new FutureCallback<Object>();
+        FutureCallback<Object> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
         return (R) futureCallback.getResult();
     }
@@ -123,7 +123,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
-        FutureCallback<Object> futureCallback = new FutureCallback<Object>();
+        FutureCallback<Object> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
         return (R) futureCallback.getResult(timeout, unit);
     }

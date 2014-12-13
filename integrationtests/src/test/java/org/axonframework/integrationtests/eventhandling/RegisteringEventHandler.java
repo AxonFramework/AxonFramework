@@ -27,7 +27,7 @@ import java.util.Vector;
  */
 public class RegisteringEventHandler {
 
-    private List<EventMessage> capturedEvents = new Vector<EventMessage>();
+    private List<EventMessage> capturedEvents = new Vector<>();
 
     @EventHandler
     public void handleEvent(EventMessage event) {

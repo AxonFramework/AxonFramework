@@ -60,7 +60,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
     @Before
     public void setUp() {
-        capturedEvents = new ArrayList<DomainEventMessage>();
+        capturedEvents = new ArrayList<>();
         eventBus.subscribe(this);
     }
 

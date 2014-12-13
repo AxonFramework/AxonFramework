@@ -55,8 +55,8 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private final Executor executor;
     private final RollbackConfiguration rollbackConfiguration;
     private final int segmentId;
-    private final Set<Object> blackListedAggregates = new HashSet<Object>();
-    private final Map<CommandMessage, Object> failedCreateCommands = new WeakHashMap<CommandMessage, Object>();
+    private final Set<Object> blackListedAggregates = new HashSet<>();
+    private final Map<CommandMessage, Object> failedCreateCommands = new WeakHashMap<>();
     private final TransactionManager transactionManager;
 
     /**

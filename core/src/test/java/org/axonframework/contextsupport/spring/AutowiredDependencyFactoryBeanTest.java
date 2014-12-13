@@ -18,8 +18,6 @@ package org.axonframework.contextsupport.spring;
 
 import org.junit.*;
 import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -38,40 +36,33 @@ import static org.mockito.Mockito.*;
 public class AutowiredDependencyFactoryBeanTest {
 
     private ApplicationContext mockApplicationContext;
-    private ConfigurableListableBeanFactory mockBeanFactory;
 
-    private Map<Class, List<String>> beansOfType = new HashMap<Class, List<String>>();
-    private Map<String, Boolean> primaryStatusPerBean = new HashMap<String, Boolean>();
+    private Map<Class, List<String>> beansOfType = new HashMap<>();
+    private Map<String, Boolean> primaryStatusPerBean = new HashMap<>();
 
     private AutowiredDependencyFactoryBean testSubject;
 
     @Before
     public void setUp() throws Exception {
         mockApplicationContext = mock(ApplicationContext.class);
-        mockBeanFactory = mock(ConfigurableListableBeanFactory.class);
+        ConfigurableListableBeanFactory mockBeanFactory = mock(ConfigurableListableBeanFactory.class);
 
         when(mockApplicationContext.getAutowireCapableBeanFactory()).thenReturn(mockBeanFactory);
         when(mockApplicationContext.getBean(anyString())).thenReturn("mockBean");
         when(mockBeanFactory.containsBeanDefinition(anyString())).thenReturn(true);
-        when(mockApplicationContext.getBeanNamesForType(Matchers.<Class<?>>any())).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                List<String> beanNames = beansOfType.get(invocation.getArguments()[0]);
-                if (beanNames == null) {
-                    beanNames = new ArrayList<String>();
-                }
-                return beanNames.toArray(new String[beanNames.size()]);
+        when(mockApplicationContext.getBeanNamesForType(Matchers.<Class<?>>any())).thenAnswer(invocation -> {
+            List<String> beanNames = beansOfType.get(invocation.getArgumentAt(0, Class.class));
+            if (beanNames == null) {
+                beanNames = new ArrayList<>();
             }
+            return beanNames.toArray(new String[beanNames.size()]);
         });
-        when(mockBeanFactory.getBeanDefinition(anyString())).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                assertTrue(primaryStatusPerBean.containsKey(invocation.getArguments()[0]));
-                boolean isPrimary = primaryStatusPerBean.get(invocation.getArguments()[0]);
-                BeanDefinition beanDefinition = mock(BeanDefinition.class);
-                when(beanDefinition.isPrimary()).thenReturn(isPrimary);
-                return beanDefinition;
-            }
+        when(mockBeanFactory.getBeanDefinition(anyString())).thenAnswer(invocation -> {
+            assertTrue(primaryStatusPerBean.containsKey(invocation.getArgumentAt(0, String.class)));
+            boolean isPrimary = primaryStatusPerBean.get(invocation.getArgumentAt(0, String.class));
+            BeanDefinition beanDefinition = mock(BeanDefinition.class);
+            when(beanDefinition.isPrimary()).thenReturn(isPrimary);
+            return beanDefinition;
         });
     }
 
@@ -169,7 +160,7 @@ public class AutowiredDependencyFactoryBeanTest {
 
     private void registerBean(String beanName, Class<?> objectClass, boolean primary) {
         if (!beansOfType.containsKey(objectClass)) {
-            beansOfType.put(objectClass, new ArrayList<String>());
+            beansOfType.put(objectClass, new ArrayList<>());
         }
         beansOfType.get(objectClass).add(beanName);
         primaryStatusPerBean.put(beanName, primary);

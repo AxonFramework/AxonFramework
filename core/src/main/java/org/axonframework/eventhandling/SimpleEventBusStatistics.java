@@ -35,7 +35,7 @@ public class SimpleEventBusStatistics implements SimpleEventBusStatisticsMXBean 
 
     private final AtomicLong listenerCount = new AtomicLong(0);
     private final AtomicLong publishedEventCounter = new AtomicLong(0);
-    private final List<String> listeners = new CopyOnWriteArrayList<String>();
+    private final List<String> listeners = new CopyOnWriteArrayList<>();
 
     /**
      * Creates an instance of this statistics MBean.

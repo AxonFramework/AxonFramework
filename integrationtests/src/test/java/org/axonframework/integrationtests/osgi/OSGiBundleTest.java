@@ -76,7 +76,7 @@ public class OSGiBundleTest {
 
     @Test
     public void checkBundles() throws ClassNotFoundException {
-        Map<String, Bundle> axonBundles = new HashMap<String, Bundle>();
+        Map<String, Bundle> axonBundles = new HashMap<>();
 
         for (Bundle bundle : context.getBundles()) {
             if (bundle != null) {

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -47,7 +48,7 @@ public class CommandHandlingTest {
     @Before
     public void setUp() {
         mockEventStore = new StubEventStore();
-        repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class, mockEventStore);
+        repository = new EventSourcingRepository<>(StubAggregate.class, mockEventStore);
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
         aggregateIdentifier = "testAggregateIdentifier";
@@ -81,7 +82,7 @@ public class CommandHandlingTest {
      */
     public static class StubEventStore implements EventStore {
 
-        private List<DomainEventMessage> storedEvents = new LinkedList<DomainEventMessage>();
+        private List<DomainEventMessage> storedEvents = new LinkedList<>();
 
         @Override
         public void appendEvents(String type, DomainEventStream events) {
@@ -92,7 +93,17 @@ public class CommandHandlingTest {
 
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
-            return new SimpleDomainEventStream(new ArrayList<DomainEventMessage>(storedEvents));
+            return new SimpleDomainEventStream(new ArrayList<>(storedEvents));
+        }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            return new SimpleDomainEventStream(
+                    storedEvents.stream()
+                                .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
+                                        && m.getSequenceNumber() <= lastSequenceNumber)
+                                .collect(toList()));
         }
     }
 }

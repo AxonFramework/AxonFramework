@@ -51,7 +51,7 @@ public class AbstractEventSourcedEntityTest {
     }
 
     private DomainEventMessage domainEvent(StubDomainEvent stubDomainEvent) {
-        return new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), (long) 0,
+        return new GenericDomainEventMessage<>(UUID.randomUUID(), (long) 0,
                                                               stubDomainEvent, MetaData.emptyInstance());
     }
 

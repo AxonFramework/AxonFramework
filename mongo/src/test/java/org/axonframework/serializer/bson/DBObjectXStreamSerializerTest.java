@@ -47,7 +47,7 @@ public class DBObjectXStreamSerializerTest {
 
     @Test
     public void testSerializeAndDeserializeDomainEventWithListOfObjects() {
-        List<Object> objectList = new ArrayList<Object>();
+        List<Object> objectList = new ArrayList<>();
         objectList.add("a");
         objectList.add(1L);
         objectList.add("b");
@@ -89,7 +89,7 @@ public class DBObjectXStreamSerializerTest {
         SerializedObject<String> serialized = testSubject.serialize(new StubDomainEvent(), String.class);
         String asString = serialized.getData();
         assertFalse("Package name found in:" + asString, asString.contains("org"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
         assertTrue(asString.contains("test"));
     }
@@ -102,7 +102,7 @@ public class DBObjectXStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("\"stub"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
     }
 
@@ -114,7 +114,7 @@ public class DBObjectXStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("\"relevantPeriod"));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertNotNull(deserialized);
     }
 
@@ -142,7 +142,7 @@ public class DBObjectXStreamSerializerTest {
     @Test
     public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 
@@ -157,7 +157,7 @@ public class DBObjectXStreamSerializerTest {
 
         public SecondTestEvent(String name, List<Object> objects) {
             super(name);
-            this.objects = new ArrayList<Object>(objects);
+            this.objects = new ArrayList<>(objects);
         }
 
         public List<Object> getStrings() {
@@ -179,7 +179,7 @@ public class DBObjectXStreamSerializerTest {
             this.date = new DateMidnight();
             this.dateTime = new DateTime();
             this.period = new Period(100);
-            this.someListOfString = new ArrayList<String>();
+            this.someListOfString = new ArrayList<>();
             someListOfString.add("First");
             someListOfString.add("Second");
         }

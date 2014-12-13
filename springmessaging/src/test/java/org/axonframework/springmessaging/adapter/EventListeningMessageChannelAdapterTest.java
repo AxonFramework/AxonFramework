@@ -48,7 +48,7 @@ public class EventListeningMessageChannelAdapterTest {
     @Test
     public void testMessageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
-        testSubject.handle(new GenericEventMessage<StubDomainEvent>(event));
+        testSubject.handle(new GenericEventMessage<>(event));
 
         verify(mockChannel).send(messageWithPayload(event));
     }
@@ -70,7 +70,7 @@ public class EventListeningMessageChannelAdapterTest {
     }
 
     private EventMessage<String> newDomainEvent() {
-        return new GenericEventMessage<String>("Mock");
+        return new GenericEventMessage<>("Mock");
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {

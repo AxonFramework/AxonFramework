@@ -32,11 +32,11 @@ import static org.mockito.Mockito.*;
  */
 public class SerializedMessageTest {
 
-    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<String>("serializedPayload",
+    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<>("serializedPayload",
                                                                                             String.class,
                                                                                             "java.lang.Object",
                                                                                             "1");
-    private SerializedObject<String> serializedMetaData = new SerializedMetaData<String>("serializedMetaData",
+    private SerializedObject<String> serializedMetaData = new SerializedMetaData<>("serializedMetaData",
                                                                                          String.class);
 
     private Object deserializedPayload = new Object();
@@ -53,7 +53,7 @@ public class SerializedMessageTest {
 
     @Test
     public void testConstructor() {
-        SerializedMessage<Object> message1 = new SerializedMessage<Object>(eventId,
+        SerializedMessage<Object> message1 = new SerializedMessage<>(eventId,
                                                                            serializedPayload,
                                                                            serializedMetaData, serializer);
 
@@ -69,7 +69,7 @@ public class SerializedMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
-        SerializedMessage<Object> message = new SerializedMessage<Object>(eventId, serializedPayload,
+        SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                           serializedMetaData, serializer);
         Message<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         Message<Object> message2 = message.withMetaData(
@@ -84,7 +84,7 @@ public class SerializedMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
-        Message<Object> message = new SerializedMessage<Object>(eventId, serializedPayload,
+        Message<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                 serializedMetaData, serializer);
         Message<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         Message<Object> message2 = message.andMetaData(
@@ -98,7 +98,7 @@ public class SerializedMessageTest {
 
     @Test
     public void testSerializePayloadImmediately() {
-        SerializedMessage<Object> message = new SerializedMessage<Object>(eventId, serializedPayload,
+        SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                           serializedMetaData, serializer);
 
         SerializedObject<byte[]> actual = message.serializePayload(serializer, byte[].class);
@@ -110,7 +110,7 @@ public class SerializedMessageTest {
 
     @Test
     public void testSerializeMetaDataImmediately() {
-        SerializedMessage<Object> message = new SerializedMessage<Object>(eventId, serializedPayload,
+        SerializedMessage<Object> message = new SerializedMessage<>(eventId, serializedPayload,
                                                                           serializedMetaData, serializer);
 
         SerializedObject<byte[]> actual = message.serializeMetaData(serializer, byte[].class);

@@ -38,7 +38,7 @@ public class PackageRoutingKeyResolverTest {
     @Test
     public void testPackageIsReturned() {
         String actual = testSubject
-                .resolveRoutingKey(new GenericEventMessage<Object>(new Object()));
+                .resolveRoutingKey(new GenericEventMessage<>(new Object()));
         assertEquals("java.lang", actual);
     }
 

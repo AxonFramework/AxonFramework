@@ -84,7 +84,7 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
     @Override
     public void handle(EventMessage event) {
         if (filter.accept(event.getPayload().getClass())) {
-            channel.send(new GenericMessage<Object>(event.getPayload()));
+            channel.send(new GenericMessage<>(event.getPayload()));
         }
     }
 }

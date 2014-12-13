@@ -41,11 +41,11 @@ import static org.axonframework.common.ReflectionUtils.methodsOf;
 public final class MethodMessageHandlerInspector {
 
     private final Class<?> targetType;
-    private final List<MethodMessageHandler> handlers = new ArrayList<MethodMessageHandler>();
+    private final List<MethodMessageHandler> handlers = new ArrayList<>();
     private final ParameterResolverFactory parameterResolver;
 
     private static final ConcurrentMap<String, MethodMessageHandlerInspector> INSPECTORS =
-            new ConcurrentHashMap<String, MethodMessageHandlerInspector>();
+            new ConcurrentHashMap<>();
 
     /**
      * Returns a MethodMessageHandlerInspector for the given <code>handlerClass</code> that contains handler methods
@@ -66,7 +66,7 @@ public final class MethodMessageHandlerInspector {
             Class<?> handlerClass, Class<T> annotationType, ParameterResolverFactory parameterResolverFactory,
             boolean allowDuplicates) {
         return getInstance(handlerClass, parameterResolverFactory, allowDuplicates,
-                           new AnnotatedHandlerDefinition<T>(annotationType));
+                           new AnnotatedHandlerDefinition<>(annotationType));
     }
 
     /**
@@ -124,7 +124,7 @@ public final class MethodMessageHandlerInspector {
         this.parameterResolver = parameterResolverFactory;
         this.targetType = targetType;
         Iterable<Method> methods = methodsOf(targetType);
-        NavigableSet<MethodMessageHandler> uniqueHandlers = new TreeSet<MethodMessageHandler>();
+        NavigableSet<MethodMessageHandler> uniqueHandlers = new TreeSet<>();
         for (Method method : methods) {
             if (handlerDefinition.isMessageHandler(method)) {
                 final Class<?> explicitPayloadType = handlerDefinition.resolvePayloadFor(method);
@@ -170,7 +170,7 @@ public final class MethodMessageHandlerInspector {
      * @return the list of handlers found on target type
      */
     public List<MethodMessageHandler> getHandlers() {
-        return new ArrayList<MethodMessageHandler>(handlers);
+        return new ArrayList<>(handlers);
     }
 
     /**

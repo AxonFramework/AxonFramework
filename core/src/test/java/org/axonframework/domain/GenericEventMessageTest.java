@@ -31,11 +31,11 @@ public class GenericEventMessageTest {
     @Test
     public void testConstructor() {
         Object payload = new Object();
-        GenericEventMessage<Object> message1 = new GenericEventMessage<Object>(payload);
+        GenericEventMessage<Object> message1 = new GenericEventMessage<>(payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message2 = new GenericEventMessage<Object>(payload, metaData);
-        GenericEventMessage<Object> message3 = new GenericEventMessage<Object>(payload, metaDataMap);
+        GenericEventMessage<Object> message2 = new GenericEventMessage<>(payload, metaData);
+        GenericEventMessage<Object> message3 = new GenericEventMessage<>(payload, metaDataMap);
 
         assertSame(MetaData.emptyInstance(), message1.getMetaData());
         assertEquals(Object.class, message1.getPayload().getClass());
@@ -60,7 +60,7 @@ public class GenericEventMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message = new GenericEventMessage<Object>(payload, metaData);
+        GenericEventMessage<Object> message = new GenericEventMessage<>(payload, metaData);
         GenericEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericEventMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
@@ -74,7 +74,7 @@ public class GenericEventMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericEventMessage<Object> message = new GenericEventMessage<Object>(payload, metaData);
+        GenericEventMessage<Object> message = new GenericEventMessage<>(payload, metaData);
         GenericEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         GenericEventMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));

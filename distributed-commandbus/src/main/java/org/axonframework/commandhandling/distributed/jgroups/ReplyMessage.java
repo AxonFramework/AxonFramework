@@ -124,7 +124,7 @@ public class ReplyMessage implements Streamable, Externalizable {
     }
 
     private Object deserializeResult(Serializer serializer) {
-        return serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedResult, byte[].class,
+        return serializer.deserialize(new SimpleSerializedObject<>(serializedResult, byte[].class,
                                                                          resultType, resultRevision));
     }
 

@@ -27,9 +27,9 @@ public class DisruptorRepositoryTest {
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
         DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
         Repository<Aggregate> repository = commandBus
-                .createRepository(new GenericAggregateFactory<Aggregate>(Aggregate.class));
+                .createRepository(new GenericAggregateFactory<>(Aggregate.class));
 
-        AggregateAnnotationCommandHandler<Aggregate> handler = new AggregateAnnotationCommandHandler<Aggregate>(
+        AggregateAnnotationCommandHandler<Aggregate> handler = new AggregateAnnotationCommandHandler<>(
                 Aggregate.class,
                 repository);
         AggregateAnnotationCommandHandler.subscribe(handler, commandBus);

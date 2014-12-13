@@ -72,7 +72,7 @@ public class CachingSagaRepository implements SagaRepository {
             associations = feedCache(type, associationValue, key);
         }
 
-        return new HashSet<String>(associations);
+        return new HashSet<>(associations);
     }
 
     @SuppressWarnings("unchecked")

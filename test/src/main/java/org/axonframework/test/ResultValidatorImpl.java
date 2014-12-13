@@ -199,7 +199,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
             return false;
         }
-        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<Object>(expectedEvent);
+        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedEvent);
         if (!matcher.matches(actualEvent)) {
             reporter.reportDifferentEventContents(expectedEvent.getClass(),
                                                   matcher.getFailedField(),

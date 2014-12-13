@@ -38,7 +38,7 @@ public class SQLErrorCodesResolverTest {
 
     @Test
     public void testIsDuplicateKey() throws Exception {
-        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(new ArrayList<Integer>());
+        SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(new ArrayList<>());
 
         boolean isDuplicateKey = sqlErrorCodesResolver.isDuplicateKeyViolation(new PersistenceException("error",
                                                                                                         new RuntimeException()));
@@ -48,7 +48,7 @@ public class SQLErrorCodesResolverTest {
 
     @Test
     public void testIsDuplicateKey_isDuplicateKey_usingSetDuplicateKeyCodes() throws Exception {
-        List<Integer> errorCodes = new ArrayList<Integer>();
+        List<Integer> errorCodes = new ArrayList<>();
         errorCodes.add(-104);
         SQLErrorCodesResolver sqlErrorCodesResolver = new SQLErrorCodesResolver(errorCodes);
 

@@ -48,11 +48,11 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
 
     private static final DomainEventStream EMPTY_DOMAIN_EVENT_STREAM = new SimpleDomainEventStream();
     private DomainEventStream eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
-    private final List<EventMessage> eventsToPublish = new ArrayList<EventMessage>();
+    private final List<EventMessage> eventsToPublish = new ArrayList<>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private final boolean transactional;
-    private final Map<String, Object> resources = new HashMap<String, Object>();
-    private final Map<String, Object> inheritedResources = new HashMap<String, Object>();
+    private final Map<String, Object> resources = new HashMap<>();
+    private final Map<String, Object> inheritedResources = new HashMap<>();
     private boolean committed;
     private Throwable rollbackReason;
     private EventSourcedAggregateRoot aggregate;

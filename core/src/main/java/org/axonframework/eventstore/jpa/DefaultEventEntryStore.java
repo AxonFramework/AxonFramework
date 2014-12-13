@@ -371,7 +371,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
         @SuppressWarnings("unchecked")
         private List<SerializedDomainEventData<T>> fetchBatch() {
-            Map<String, Object> params = new HashMap<String, Object>(parameters);
+            Map<String, Object> params = new HashMap<>(parameters);
             Query query = entityManager.createQuery(
                     String.format("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
                                           + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "

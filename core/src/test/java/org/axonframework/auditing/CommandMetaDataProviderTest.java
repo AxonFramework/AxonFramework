@@ -32,7 +32,7 @@ public class CommandMetaDataProviderTest {
     @Test
     public void testProvideAuditData() {
         MetaData metaData = MetaData.emptyInstance();
-        GenericCommandMessage<String> message = new GenericCommandMessage<String>("command", metaData);
+        GenericCommandMessage<String> message = new GenericCommandMessage<>("command", metaData);
 
         Map<String, Object> actual = new CommandMetaDataProvider().provideAuditDataFor(message);
         assertSame(metaData, actual);

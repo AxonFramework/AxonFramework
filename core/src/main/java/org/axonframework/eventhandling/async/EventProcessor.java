@@ -58,7 +58,7 @@ public class EventProcessor implements Runnable {
     private volatile boolean cleanedUp;
     private final Set<EventListener> listeners;
     private volatile long retryAfter = 0;
-    private final List<EventMessage> processedEvents = new ArrayList<EventMessage>();
+    private final List<EventMessage> processedEvents = new ArrayList<>();
 
     private final Object runnerMonitor = new Object();
 
@@ -78,7 +78,7 @@ public class EventProcessor implements Runnable {
                           MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.eventProcessingMonitor = eventProcessingMonitor;
-        this.eventQueue = new LinkedList<EventMessage<?>>();
+        this.eventQueue = new LinkedList<>();
         this.shutDownCallback = shutDownCallback;
         this.executor = executor;
         this.errorHandler = errorHandler;

@@ -51,8 +51,8 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private static final Logger logger = LoggerFactory.getLogger(AsyncSagaEventProcessor.class);
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final SagaRepository sagaRepository;
-    private final Map<String, Saga> processedSagas = new TreeMap<String, Saga>();
-    private final Map<String, Saga> newlyCreatedSagas = new TreeMap<String, Saga>();
+    private final Map<String, Saga> processedSagas = new TreeMap<>();
+    private final Map<String, Saga> newlyCreatedSagas = new TreeMap<>();
     private final ParameterResolverFactory parameterResolverFactory;
     private final int processorCount;
     private final int processorId;
@@ -170,7 +170,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private boolean invokeExistingSagas(AsyncSagaProcessingEvent entry) {
         boolean sagaInvoked = false;
         final Class<? extends Saga> sagaType = entry.getSagaType();
-        Set<String> sagaIds = new HashSet<String>();
+        Set<String> sagaIds = new HashSet<>();
         for (AssociationValue associationValue : entry.getAssociationValues()) {
             sagaIds.addAll(sagaRepository.find(sagaType, associationValue));
         }
@@ -211,7 +211,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     @SuppressWarnings("unchecked")
     private boolean persistProcessedSagas(boolean logExceptions) throws Exception {
         try {
-            Set<String> committedSagas = new HashSet<String>();
+            Set<String> committedSagas = new HashSet<>();
             if (!processedSagas.isEmpty()) {
                 ensureActiveUnitOfWork();
                 for (Saga saga : processedSagas.values()) {

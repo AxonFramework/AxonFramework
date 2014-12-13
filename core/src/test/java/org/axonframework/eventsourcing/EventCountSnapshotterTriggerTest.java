@@ -59,7 +59,7 @@ public class EventCountSnapshotterTriggerTest {
         aggregate = new StubAggregate(aggregateIdentifier);
         //noinspection unchecked
         mockCache = mock(Cache.class);
-        listenerConfiguration = new CapturingMatcher<Cache.EntryListener>();
+        listenerConfiguration = new CapturingMatcher<>();
         doNothing().when(mockCache).registerCacheEntryListener(argThat(listenerConfiguration));
 
         unitOfWork = DefaultUnitOfWork.startAndGet();
@@ -83,15 +83,15 @@ public class EventCountSnapshotterTriggerTest {
     @Test
     public void testSnapshotterTriggered() {
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
@@ -103,13 +103,13 @@ public class EventCountSnapshotterTriggerTest {
     @Test
     public void testSnapshotterNotTriggeredOnRead() {
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
@@ -121,13 +121,13 @@ public class EventCountSnapshotterTriggerTest {
     @Test
     public void testSnapshotterNotTriggeredOnSave() {
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
@@ -140,17 +140,17 @@ public class EventCountSnapshotterTriggerTest {
     public void testCounterDoesNotResetWhenUsingCache() {
         testSubject.setAggregateCache(mockCache);
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
@@ -163,13 +163,13 @@ public class EventCountSnapshotterTriggerTest {
     public void testCounterResetWhenCacheEvictsEntry() {
         testSubject.setAggregateCaches(Arrays.<Cache>asList(mockCache));
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
@@ -177,7 +177,7 @@ public class EventCountSnapshotterTriggerTest {
         listener.onEntryExpired(aggregateIdentifier);
 
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
@@ -190,13 +190,13 @@ public class EventCountSnapshotterTriggerTest {
     public void testCounterResetWhenCacheRemovesEntry() {
         testSubject.setAggregateCaches(Arrays.<Cache>asList(mockCache));
         readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 
@@ -204,7 +204,7 @@ public class EventCountSnapshotterTriggerTest {
         listener.onEntryRemoved(aggregateIdentifier);
 
         readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
                                                       "Mock contents", MetaData.emptyInstance())
         )));
 

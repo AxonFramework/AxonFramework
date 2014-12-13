@@ -44,7 +44,7 @@ public class SimpleUpcasterChainTest extends UpcasterChainTest {
     @Test
     public void testEmptyUpcasterChain() {
         UpcasterChain chain = new SimpleUpcasterChain(Collections.<Upcaster>emptyList());
-        final SimpleSerializedObject serializedObject = new SimpleSerializedObject<String>("Data", String.class,
+        final SimpleSerializedObject serializedObject = new SimpleSerializedObject<>("Data", String.class,
                                                                                            "test", "0");
         List<SerializedObject> result = chain.upcast(serializedObject,
                                                      new SerializedDomainEventUpcastingContext(

@@ -53,7 +53,7 @@ public class AsynchronousCluster extends AbstractCluster {
     private final Executor executor;
     private final ErrorHandler errorHandler;
     private final ConcurrentMap<Object, EventProcessor> currentSchedulers =
-            new ConcurrentHashMap<Object, EventProcessor>();
+            new ConcurrentHashMap<>();
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private final UnitOfWorkFactory unitOfWorkFactory;
 

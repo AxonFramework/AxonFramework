@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.junit.*;
 
@@ -54,12 +53,7 @@ public class AsynchronousClusterConcurrencyTest {
         final AtomicInteger counter = new AtomicInteger();
         final AtomicInteger completed = new AtomicInteger();
         final AtomicInteger failed = new AtomicInteger();
-        testSubject.subscribe(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                counter.incrementAndGet();
-            }
-        });
+        testSubject.subscribe(event -> counter.incrementAndGet());
         testSubject.subscribeEventProcessingMonitor(new EventProcessingMonitor() {
             @Override
             public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {

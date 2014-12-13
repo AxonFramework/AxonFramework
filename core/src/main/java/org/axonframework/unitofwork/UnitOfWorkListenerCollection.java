@@ -46,7 +46,7 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
 
     private static final Logger logger = LoggerFactory.getLogger(UnitOfWorkListenerCollection.class);
 
-    private final Deque<UnitOfWorkListener> listeners = new ArrayDeque<UnitOfWorkListener>();
+    private final Deque<UnitOfWorkListener> listeners = new ArrayDeque<>();
 
     /**
      * {@inheritDoc}

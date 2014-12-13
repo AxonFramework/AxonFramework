@@ -42,9 +42,9 @@ import static java.util.Collections.synchronizedMap;
 public class IdentifierBasedLock {
 
     private static final Set<IdentifierBasedLock> INSTANCES =
-            newSetFromMap(synchronizedMap(new WeakHashMap<IdentifierBasedLock, Boolean>()));
+            newSetFromMap(synchronizedMap(new WeakHashMap<>()));
 
-    private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<String, DisposableLock>();
+    private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
 
     /**
      * Creates a new IdentifierBasedLock instance.
@@ -60,7 +60,7 @@ public class IdentifierBasedLock {
     }
 
     private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<IdentifierBasedLock> locksInUse) {
-        Set<Thread> waitingThreads = new HashSet<Thread>();
+        Set<Thread> waitingThreads = new HashSet<>();
         for (IdentifierBasedLock lock : locksInUse) {
             for (DisposableLock disposableLock : lock.locks.values()) {
                 if (disposableLock.isHeldBy(owner)) {

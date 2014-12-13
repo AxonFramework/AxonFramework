@@ -32,7 +32,6 @@ import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

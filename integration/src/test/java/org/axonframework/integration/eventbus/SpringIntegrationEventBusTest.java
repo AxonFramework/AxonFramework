@@ -92,7 +92,7 @@ public class SpringIntegrationEventBusTest {
     public void testPublishEvent() {
         StubDomainEvent event = new StubDomainEvent();
 
-        testSubject.publish(new GenericEventMessage<StubDomainEvent>(event));
+        testSubject.publish(new GenericEventMessage<>(event));
 
         verify(mockChannel).send(messageContainingEvent(event));
     }

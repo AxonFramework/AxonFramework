@@ -76,7 +76,7 @@ public class SagaEntry {
         if (saga != null) {
             return saga;
         }
-        return (Saga) serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedSaga, byte[].class,
+        return (Saga) serializer.deserialize(new SimpleSerializedObject<>(serializedSaga, byte[].class,
                                                                                 sagaType, revision));
     }
 

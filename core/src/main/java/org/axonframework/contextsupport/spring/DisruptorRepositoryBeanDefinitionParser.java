@@ -125,7 +125,7 @@ public class DisruptorRepositoryBeanDefinitionParser extends AbstractBeanDefinit
     public static class RepositoryFactoryBean implements FactoryBean<Repository> {
 
         private DisruptorCommandBus commandBus;
-        private List<EventStreamDecorator> eventStreamDecorators = new ArrayList<EventStreamDecorator>();
+        private List<EventStreamDecorator> eventStreamDecorators = new ArrayList<>();
         private AggregateFactory<? extends EventSourcedAggregateRoot> factory;
 
         @Override

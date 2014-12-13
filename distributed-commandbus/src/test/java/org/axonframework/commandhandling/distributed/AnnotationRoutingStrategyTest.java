@@ -54,7 +54,7 @@ public class AnnotationRoutingStrategyTest {
     @Test
     public void testGetRoutingKey_NullValueWithStaticPolicy() throws Exception {
         testSubject = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.STATIC_KEY);
-        CommandMessage<Object> command = new GenericCommandMessage<Object>(new Object());
+        CommandMessage<Object> command = new GenericCommandMessage<>(new Object());
         // two calls should provide the same result
         assertEquals(testSubject.getRoutingKey(command), testSubject.getRoutingKey(command));
     }
@@ -62,7 +62,7 @@ public class AnnotationRoutingStrategyTest {
     @Test
     public void testGetRoutingKey_NullValueWithRandomPolicy() throws Exception {
         testSubject = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
-        CommandMessage<Object> command = new GenericCommandMessage<Object>(new Object());
+        CommandMessage<Object> command = new GenericCommandMessage<>(new Object());
         // two calls should provide the same result
         assertFalse(testSubject.getRoutingKey(command).equals(testSubject.getRoutingKey(command)));
     }

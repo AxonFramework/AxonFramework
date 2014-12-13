@@ -43,7 +43,7 @@ public class ClusteringEventBus implements EventBus {
     private final ClusterSelector clusterSelector;
 
     // guarded by "this"
-    private final Set<Cluster> clusters = new HashSet<Cluster>();
+    private final Set<Cluster> clusters = new HashSet<>();
 
     /**
      * Initializes a <code>ClusteringEventBus</code> with a {@link SimpleEventBusTerminal} and a {@link
@@ -124,7 +124,7 @@ public class ClusteringEventBus implements EventBus {
 
     private static class SimpleEventBusTerminal implements EventBusTerminal {
 
-        private final List<Cluster> clusters = new CopyOnWriteArrayList<Cluster>();
+        private final List<Cluster> clusters = new CopyOnWriteArrayList<>();
 
         @Override
         public void publish(EventMessage... events) {

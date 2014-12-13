@@ -48,7 +48,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
 
     private boolean inReplay = false;
     private final Queue<EventMessage> backlog;
-    private final Set<String> replayedMessages = new HashSet<String>();
+    private final Set<String> replayedMessages = new HashSet<>();
     private DateTime backlogThreshold;
     private final Duration timeMargin;
 
@@ -77,7 +77,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
      * @param backlogThresholdMargin The margin of time to take into account when backlogging events.
      */
     public BackloggingIncomingMessageHandler(Duration backlogThresholdMargin) {
-        this(backlogThresholdMargin, new LinkedList<EventMessage>());
+        this(backlogThresholdMargin, new LinkedList<>());
     }
 
     /**
@@ -119,7 +119,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
             if (message.getTimestamp().isAfter(backlogThreshold)) {
                 if (replayedMessages.contains(message.getIdentifier())) {
                     if (discarded == null) {
-                        discarded = new ArrayList<EventMessage>();
+                        discarded = new ArrayList<>();
                     }
                     discarded.add(message);
                 } else {
@@ -132,7 +132,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
 
     @Override
     public List<EventMessage> releaseMessage(Cluster destination, DomainEventMessage message) {
-        List<EventMessage> processedMessages = new LinkedList<EventMessage>();
+        List<EventMessage> processedMessages = new LinkedList<>();
         if (message.getTimestamp().isAfter(backlogThreshold)) { // NOSONAR - Synchronization not needed here
             replayedMessages.add(message.getIdentifier());
             for (EventMessage backloggedMessage : backlog) {

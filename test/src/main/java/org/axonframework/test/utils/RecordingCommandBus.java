@@ -37,8 +37,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class RecordingCommandBus implements CommandBus {
 
-    private ConcurrentMap<String, CommandHandler<?>> subscriptions = new ConcurrentHashMap<String, CommandHandler<?>>();
-    private List<CommandMessage<?>> dispatchedCommands = new ArrayList<CommandMessage<?>>();
+    private ConcurrentMap<String, CommandHandler<?>> subscriptions = new ConcurrentHashMap<>();
+    private List<CommandMessage<?>> dispatchedCommands = new ArrayList<>();
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override

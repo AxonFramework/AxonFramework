@@ -81,8 +81,8 @@ public class EventProcessorTest {
 
     @Test
     public void testEventProcessingDelayed_ScheduledExecutorService() {
-        EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
-        EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
+        EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<>(new StubDomainEvent());
+        EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
         ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
         testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
@@ -112,8 +112,8 @@ public class EventProcessorTest {
 
     @Test
     public void testEventProcessingDelayed_ExecutorDoesNotSupportScheduling() {
-        EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
-        EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
+        EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<>(new StubDomainEvent());
+        EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
         ExecutorService mockExecutorService = mock(ExecutorService.class);
         testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
@@ -149,8 +149,8 @@ public class EventProcessorTest {
      */
     @Test
     public void testEventProcessingRetried_TransactionStartupFails() {
-        EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
-        EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
+        EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<>(new StubDomainEvent());
+        EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
         ExecutorService mockExecutorService = mock(ExecutorService.class);
         testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
@@ -185,10 +185,10 @@ public class EventProcessorTest {
                                          Collections.<EventListener>singleton(listener),
                                          multiplexingEventProcessingMonitor);
         doNothing().doThrow(new RejectedExecutionException()).when(mockExecutorService).execute(isA(Runnable.class));
-        testSubject.scheduleEvent(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
+        testSubject.scheduleEvent(new GenericEventMessage<>(new StubDomainEvent()));
         listener.failOnEvent = 2;
-        testSubject.scheduleEvent(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
-        testSubject.scheduleEvent(new GenericEventMessage<StubDomainEvent>(new StubDomainEvent()));
+        testSubject.scheduleEvent(new GenericEventMessage<>(new StubDomainEvent()));
+        testSubject.scheduleEvent(new GenericEventMessage<>(new StubDomainEvent()));
 
         testSubject.run();
         return listener;
@@ -197,7 +197,7 @@ public class EventProcessorTest {
     private class MockEventListener implements EventListener {
 
         private int failOnEvent;
-        private List<EventMessage<?>> handledEvents = new LinkedList<EventMessage<?>>();
+        private List<EventMessage<?>> handledEvents = new LinkedList<>();
 
         @Override
         public void handle(EventMessage event) {

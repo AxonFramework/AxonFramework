@@ -59,7 +59,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      * @param items the items to populate the MetaData with
      */
     public MetaData(Map<String, ?> items) {
-        values = Collections.unmodifiableMap(new HashMap<String, Object>(items));
+        values = Collections.unmodifiableMap(new HashMap<>(items));
     }
 
     /**
@@ -191,7 +191,7 @@ public class MetaData implements Map<String, Object>, Serializable {
         if (additionalEntries.isEmpty()) {
             return this;
         }
-        Map<String, Object> merged = new HashMap<String, Object>(values);
+        Map<String, Object> merged = new HashMap<>(values);
         merged.putAll(additionalEntries);
         return new MetaData(merged);
     }
@@ -208,7 +208,7 @@ public class MetaData implements Map<String, Object>, Serializable {
         if (keys.isEmpty()) {
             return this;
         }
-        Map<String, ?> modified = new HashMap<String, Object>(values);
+        Map<String, ?> modified = new HashMap<>(values);
         for (String key : keys) {
             modified.remove(key);
         }

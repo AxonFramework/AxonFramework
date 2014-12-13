@@ -17,11 +17,8 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,14 +50,9 @@ public class DisruptorCommandBusTest {
 
     @Test
     public void handleCommandWithoutUsingAggregate() throws ExecutionException, InterruptedException {
-        commandBus.subscribe(String.class.getName(), new CommandHandler<Object>() {
-            @Override
-            public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-                return "ok";
-            }
-        });
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> "ok");
 
-        final FutureCallback<String> callback = new FutureCallback<String>();
+        final FutureCallback<String> callback = new FutureCallback<>();
         commandBus.dispatch(new GenericCommandMessage<Object>("test"), callback);
 
         assertEquals("ok", callback.get());

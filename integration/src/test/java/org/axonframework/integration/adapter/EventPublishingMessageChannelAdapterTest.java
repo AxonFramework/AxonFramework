@@ -23,7 +23,6 @@ import org.junit.*;
 import org.springframework.integration.MessageRejectedException;
 import org.springframework.integration.message.GenericMessage;
 
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

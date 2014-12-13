@@ -93,10 +93,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest_CustomParameterReso
         @StartSaga
         @SagaEventHandler(associationProperty = "aggregateIdentifier")
         public void on(SimpleEvent event, Executor someResourceFromSpringContext) {
-            someResourceFromSpringContext.execute(new Runnable() {
-                @Override
-                public void run() {
-                }
+            someResourceFromSpringContext.execute(() -> {
             });
         }
     }
@@ -113,10 +110,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest_CustomParameterReso
         @EventSourcingHandler
         public void on(SimpleEvent event, Executor someResourceFromSpringContext) {
             this.id = event.getAggregateIdentifier();
-            someResourceFromSpringContext.execute(new Runnable() {
-                @Override
-                public void run() {
-                }
+            someResourceFromSpringContext.execute(() -> {
             });
         }
     }

@@ -78,7 +78,7 @@ public class XStreamSerializerTest {
         SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse("Package name found in:" +  asString, asString.contains("org.axonframework.domain"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
         assertTrue(asString.contains("axondomain"));
     }
@@ -91,7 +91,7 @@ public class XStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("<stub"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
     }
 
@@ -103,7 +103,7 @@ public class XStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("<relevantPeriod"));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertNotNull(deserialized);
     }
 
@@ -131,7 +131,7 @@ public class XStreamSerializerTest {
     @Test
     public void testSerializeWithSpecialCharacters_WithDom4JUpcasters() {
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertArrayEquals(SPECIAL__CHAR__STRING.getBytes(), deserialized.getName().getBytes());
     }
 
@@ -142,7 +142,7 @@ public class XStreamSerializerTest {
     @Test
     public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 

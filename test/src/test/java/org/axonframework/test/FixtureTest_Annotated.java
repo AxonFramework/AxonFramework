@@ -16,14 +16,11 @@
 
 package org.axonframework.test;
 
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.util.UUID;
@@ -46,12 +43,9 @@ public class FixtureTest_Annotated {
     @Test
     public void testAggregateCommandHandlersOverwrittenByCustomHandlers() {
         final AtomicBoolean invoked = new AtomicBoolean(false);
-        fixture.registerCommandHandler(CreateAggregateCommand.class, new CommandHandler() {
-            @Override
-            public Object handle(CommandMessage commandMessage, UnitOfWork unitOfWork) throws Throwable {
-                invoked.set(true);
-                return null;
-            }
+        fixture.registerCommandHandler(CreateAggregateCommand.class, (commandMessage, unitOfWork) -> {
+            invoked.set(true);
+            return null;
         });
 
         fixture.given().when(new CreateAggregateCommand()).expectEvents();
@@ -114,16 +108,16 @@ public class FixtureTest_Annotated {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(UUID.randomUUID(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>(UUID.randomUUID(), 0, new StubDomainEvent())));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         UUID identifier = UUID.randomUUID();
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<StubDomainEvent>(identifier, 2, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
     }
 
     @Test

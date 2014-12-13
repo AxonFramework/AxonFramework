@@ -18,7 +18,6 @@ package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.AbstractCommandGateway;
@@ -30,7 +29,6 @@ import org.axonframework.commandhandling.gateway.RetryingCallback;
 import org.axonframework.domain.MetaData;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.slf4j.LoggerFactory;
 
@@ -85,11 +83,8 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
 		commandGateway = new DefaultCommandGateway(commandBus, retryScheduler);
 
 		// trigger retry
-        commandBus.subscribe(String.class.getName(), new CommandHandler<String>() {
-            @Override
-            public Object handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-                throw new ConcurrencyException("some retryable exception");
-            }
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+            throw new ConcurrencyException("some retryable exception");
         });
 
         // say we have a dispatch interceptor that expects to get the user's session from a ThreadLocal...
@@ -126,27 +121,21 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     @Test(timeout=10000)
     public void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
     	final Thread testThread = Thread.currentThread();
-		commandGateway = new DefaultCommandGateway(commandBus, retryScheduler, new CommandDispatchInterceptor() {
-			@Override
-			public CommandMessage<?> handle(CommandMessage<?> commandMessage) {
-				if (Thread.currentThread() == testThread) {
-					return commandMessage.andMetaData(Collections.singletonMap("gatewayMetaData", "myUserSession"));
-				} else {
-					// gateway interceptor should only be called from the caller's thread
-					throw new SecurityException("test dispatch interceptor exception");
-				}
-			}
-		});
+		commandGateway = new DefaultCommandGateway(commandBus, retryScheduler, (CommandMessage<?> commandMessage) -> {
+            if (Thread.currentThread() == testThread) {
+                return commandMessage.andMetaData(Collections.singletonMap("gatewayMetaData", "myUserSession"));
+            } else {
+                // gateway interceptor should only be called from the caller's thread
+                throw new SecurityException("test dispatch interceptor exception");
+            }
+        });
 
     	// trigger retry, then return metadata for verification
-        commandBus.subscribe(String.class.getName(), new CommandHandler<String>() {
-            @Override
-            public MetaData handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-            	if (Thread.currentThread() == testThread) {
-            		throw new ConcurrencyException("some retryable exception");
-            	} else {
-            		return commandMessage.getMetaData();
-            	}
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+            if (Thread.currentThread() == testThread) {
+                throw new ConcurrencyException("some retryable exception");
+            } else {
+                return commandMessage.getMetaData();
             }
         });
 
@@ -168,30 +157,24 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
 		commandGateway = new DefaultCommandGateway(commandBus, retryScheduler);
 
     	// trigger retry, then return metadata for verification
-        commandBus.subscribe(String.class.getName(), new CommandHandler<String>() {
-            @Override
-            public MetaData handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-            	if (Thread.currentThread() == testThread) {
-            		throw new ConcurrencyException("some retryable exception");
-            	} else {
-            		return commandMessage.getMetaData();
-            	}
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+            if (Thread.currentThread() == testThread) {
+                throw new ConcurrencyException("some retryable exception");
+            } else {
+                return commandMessage.getMetaData();
             }
         });
 
-        commandBus.setDispatchInterceptors(Collections.singletonList(new CommandDispatchInterceptor() {
-			@Override
-			public CommandMessage<?> handle(CommandMessage<?> commandMessage) {
-				if (Thread.currentThread() == testThread) {
-					return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData", "myUserSession"));
-				} else {
-					// say the security interceptor example
-					// from #testCommandDipatchInterceptorExceptionOnRetryThreadIsThrownToCaller
-					// has been "fixed" -- on the retry thread, there's no security context
-					return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData", "noUserSession"));
-				}
-			}
-		}));
+        commandBus.setDispatchInterceptors(Collections.singletonList(commandMessage -> {
+            if (Thread.currentThread() == testThread) {
+                return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData", "myUserSession"));
+            } else {
+                // say the security interceptor example
+                // from #testCommandDipatchInterceptorExceptionOnRetryThreadIsThrownToCaller
+                // has been "fixed" -- on the retry thread, there's no security context
+                return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData", "noUserSession"));
+            }
+        }));
 
         assertEquals("noUserSession", ((MetaData) commandGateway.sendAndWait("command")).get("commandBusMetaData"));
     }

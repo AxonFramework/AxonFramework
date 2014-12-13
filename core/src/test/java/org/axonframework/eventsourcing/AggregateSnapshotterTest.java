@@ -24,8 +24,6 @@ import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.Arrays;
 import java.util.UUID;
@@ -56,7 +54,7 @@ public class AggregateSnapshotterTest {
     @Test
     public void testCreateSnapshot() {
         UUID aggregateIdentifier = UUID.randomUUID();
-        DomainEventMessage firstEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+        DomainEventMessage firstEvent = new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                                               "Mock contents", MetaData.emptyInstance()
         );
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
@@ -78,20 +76,15 @@ public class AggregateSnapshotterTest {
         aggregate.commitEvents();
 
         DomainEventMessage<StubAggregate> first =
-                new GenericDomainEventMessage<StubAggregate>(
+                new GenericDomainEventMessage<>(
                         aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
-        DomainEventMessage secondEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
+        DomainEventMessage secondEvent = new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                                                "Mock contents", MetaData.emptyInstance()
         );
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(first, secondEvent);
 
         when(mockAggregateFactory.createAggregate(any(), any(DomainEventMessage.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return ((DomainEventMessage)invocation.getArguments()[1]).getPayload();
-                    }
-                });
+                .thenAnswer(invocation -> ((DomainEventMessage)invocation.getArguments()[1]).getPayload());
 
         DomainEventMessage snapshot = testSubject.createSnapshot("test", aggregateIdentifier, eventStream);
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getPayload());

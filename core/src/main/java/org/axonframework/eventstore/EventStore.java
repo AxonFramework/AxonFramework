@@ -47,5 +47,40 @@ public interface EventStore {
      *
      * @throws EventStoreException if an error occurs while reading the events in the event stream
      */
-    DomainEventStream readEvents(String type, Object identifier);
+    default DomainEventStream readEvents(String type, Object identifier) {
+        return readEvents(type, identifier, 0, Long.MAX_VALUE);
+    }
+
+    /**
+     * Returns a Stream containing events for the aggregate identified by the given {@code type} and {@code
+     * identifier}, starting at the event with the given {@code firstSequenceNumber} (included).
+     * <p/>
+     * The returned stream will not contain any snapshot events.
+     *
+     * @param type                The type identifier of the aggregate
+     * @param identifier          The identifier of the aggregate
+     * @param firstSequenceNumber The sequence number of the first event to find
+     * @return a Stream containing events for the given aggregate, starting at the given first sequence number
+     */
+    default DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber) {
+        return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
+    }
+
+    /**
+     * Returns a Stream containing events for the aggregate identified by the given {@code type} and {@code
+     * identifier}, starting at the event with the given {@code firstSequenceNumber} (included) up to and including the
+     * event with given {@code lastSequenceNumber}.
+     * If no event with given {@code lastSequenceNumber} exists, the returned stream will simply read until the end of
+     * the aggregate's events.
+     * <p/>
+     * The returned stream will not contain any snapshot events.
+     *
+     * @param type                The type identifier of the aggregate
+     * @param identifier          The identifier of the aggregate
+     * @param firstSequenceNumber The sequence number of the first event to find
+     * @param lastSequenceNumber  The sequence number of the last event in the stream
+     * @return a Stream containing events for the given aggregate, starting at the given first sequence number
+     */
+    DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber, long lastSequenceNumber);
+
 }

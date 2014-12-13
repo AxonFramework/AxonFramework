@@ -65,10 +65,10 @@ public abstract class UpcastUtils {
                                                                 boolean skipUnknownTypes) {
         SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry, serializer);
         List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload(), context);
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>(objects.size());
+        List<DomainEventMessage> events = new ArrayList<>(objects.size());
         for (SerializedObject object : objects) {
             try {
-                DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(
+                DomainEventMessage<Object> message = new SerializedDomainEventMessage<>(
                         new UpcastSerializedDomainEventData(entry,
                                                             firstNonNull(aggregateIdentifier,
                                                                          entry.getAggregateIdentifier()), object),

@@ -42,7 +42,7 @@ public class EventContainer implements Serializable {
 
     private static final long serialVersionUID = -39816393359395878L;
 
-    private final List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
+    private final List<DomainEventMessage> events = new ArrayList<>();
     private final Object aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
     private transient Long lastSequenceNumber; // NOSONAR (intentionally not set by deserialization)
@@ -71,7 +71,7 @@ public class EventContainer implements Serializable {
      * @return the DomainEventMessage added to the container
      */
     public <T> DomainEventMessage<T> addEvent(MetaData metaData, T payload) {
-        DomainEventMessage<T> event = new GenericDomainEventMessage<T>(aggregateIdentifier, newSequenceNumber(),
+        DomainEventMessage<T> event = new GenericDomainEventMessage<>(aggregateIdentifier, newSequenceNumber(),
                                                                        payload, metaData);
         if (registrationCallbacks != null) {
             for (EventRegistrationCallback callback : registrationCallbacks) {
@@ -181,7 +181,7 @@ public class EventContainer implements Serializable {
      */
     public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
         if (registrationCallbacks == null) {
-            this.registrationCallbacks = new ArrayList<EventRegistrationCallback>();
+            this.registrationCallbacks = new ArrayList<>();
         }
         this.registrationCallbacks.add(eventRegistrationCallback);
         for (int i = 0; i < events.size(); i++) {

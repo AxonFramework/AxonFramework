@@ -21,8 +21,6 @@ import org.axonframework.unitofwork.SpringTransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,12 +53,9 @@ public class SpringDataSourceConnectionProviderTest {
     @Transactional
     @Test
     public void testConnectionNotCommittedWhenTransactionScopeOutsideUnitOfWork() throws Exception {
-        when(dataSource.getConnection()).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                fail("Should be using an already existing connection.");
-                return null;
-            }
+        when(dataSource.getConnection()).thenAnswer(invocation -> {
+            fail("Should be using an already existing connection.");
+            return null;
         });
 
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(new SpringTransactionManager(transactionManager));
@@ -73,13 +68,10 @@ public class SpringDataSourceConnectionProviderTest {
 
     @Test
     public void testConnectionCommittedWhenTransactionScopeInsideUnitOfWork() throws Exception {
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                final Object spy = spy(invocation.callRealMethod());
-                mockConnection = (Connection) spy;
-                return spy;
-            }
+        doAnswer(invocation -> {
+            final Object spy = spy(invocation.callRealMethod());
+            mockConnection = (Connection) spy;
+            return spy;
         }).when(dataSource).getConnection();
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(new SpringTransactionManager(transactionManager));
         Connection connection = connectionProvider.getConnection();

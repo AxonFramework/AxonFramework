@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
 public class MetaDataMutatingUnitOfWorkListenerAdapterTest {
 
     private UnitOfWorkListener testSubject;
-    private Map<String, Object> additionalMetaData = new HashMap<String, Object>();
+    private Map<String, Object> additionalMetaData = new HashMap<>();
     private EventBus mockEventBus;
     private List<EventMessage> publishedMessages;
 
@@ -67,11 +67,11 @@ public class MetaDataMutatingUnitOfWorkListenerAdapterTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
-        publishedMessages = new ArrayList<EventMessage>();
+        publishedMessages = new ArrayList<>();
         mockEventBus = new EventBus() {
             @Override
             public void publish(EventMessage... events) {
-                publishedMessages.addAll(Arrays.<EventMessage>asList(events));
+                publishedMessages.addAll(Arrays.asList(events));
             }
 
             @Override

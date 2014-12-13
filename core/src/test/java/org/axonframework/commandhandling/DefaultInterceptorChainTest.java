@@ -24,8 +24,6 @@ import org.junit.*;
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -45,22 +43,10 @@ public class DefaultInterceptorChainTest {
 
     @Test
     public void testChainWithDifferentProceedCalls() throws Throwable {
-        CommandHandlerInterceptor interceptor1 = new CommandHandlerInterceptor() {
-            @Override
-            public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
-                                 InterceptorChain interceptorChain)
-                    throws Throwable {
-                return interceptorChain.proceed(GenericCommandMessage.asCommandMessage("testing"));
-            }
-        };
-        CommandHandlerInterceptor interceptor2 = new CommandHandlerInterceptor() {
-            @Override
-            public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
-                                 InterceptorChain interceptorChain)
-                    throws Throwable {
-                return interceptorChain.proceed();
-            }
-        };
+        CommandHandlerInterceptor interceptor1 = (commandMessage, unitOfWork,
+                                                  interceptorChain) -> interceptorChain.proceed(GenericCommandMessage.asCommandMessage("testing"));
+        CommandHandlerInterceptor interceptor2 = (commandMessage, unitOfWork,
+                                                  interceptorChain) -> interceptorChain.proceed();
 
         DefaultInterceptorChain testSubject = new DefaultInterceptorChain(asCommandMessage("original"),
                                                                           mockUnitOfWork,

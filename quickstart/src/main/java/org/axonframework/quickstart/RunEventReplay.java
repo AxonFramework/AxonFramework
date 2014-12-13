@@ -80,11 +80,11 @@ public class RunEventReplay {
 
         // we append some events to simulate a full event store
         final DomainEventMessage[] domainEventMessages = {
-                new GenericDomainEventMessage<ToDoItemCreatedEvent>(
+                new GenericDomainEventMessage<>(
                         "todo1", 0, new ToDoItemCreatedEvent("todo1", "Need to do something")),
-                new GenericDomainEventMessage<ToDoItemCreatedEvent>(
+                new GenericDomainEventMessage<>(
                         "todo2", 0, new ToDoItemCreatedEvent("todo2", "Another thing to do")),
-                new GenericDomainEventMessage<ToDoItemCompletedEvent>("todo2", 0, new ToDoItemCompletedEvent("todo2"))
+                new GenericDomainEventMessage<>("todo2", 0, new ToDoItemCompletedEvent("todo2"))
         };
         eventStore.appendEvents("mock", new SimpleDomainEventStream(domainEventMessages));
 
@@ -151,7 +151,7 @@ public class RunEventReplay {
 
     public static class StubEventStore implements EventStoreManagement, EventStore {
 
-        private final List<DomainEventMessage> eventMessages = new CopyOnWriteArrayList<DomainEventMessage>();
+        private final List<DomainEventMessage> eventMessages = new CopyOnWriteArrayList<>();
 
         @Override
         public void appendEvents(String type, DomainEventStream events) {
@@ -179,6 +179,12 @@ public class RunEventReplay {
 
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
     }

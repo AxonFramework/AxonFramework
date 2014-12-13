@@ -51,7 +51,7 @@ public abstract class AbstractEventStoreBenchmark {
         prepareEventStore();
 
         long start = System.currentTimeMillis();
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int t = 0; t < getThreadCount(); t++) {
             Thread thread = new Thread(getRunnableInstance());
             thread.start();
@@ -77,9 +77,9 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected int saveAndLoadLargeNumberOfEvents(Object aggregateId, EventStore eventStore,
                                                  int eventSequence) {
-        List<DomainEventMessage<StubDomainEvent>> events = new ArrayList<DomainEventMessage<StubDomainEvent>>();
+        List<DomainEventMessage<StubDomainEvent>> events = new ArrayList<>();
         for (int t = 0; t < getTransactionSize(); t++) {
-            events.add(new GenericDomainEventMessage<StubDomainEvent>(
+            events.add(new GenericDomainEventMessage<>(
                     aggregateId,
                     eventSequence++,
                     new StubDomainEvent(), null

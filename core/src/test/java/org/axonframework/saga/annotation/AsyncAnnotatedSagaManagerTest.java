@@ -20,14 +20,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.junit.*;
 import org.mockito.internal.stubbing.answers.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,7 +50,6 @@ public class AsyncAnnotatedSagaManagerTest {
     private static Level oldLevel;
 
     private AsyncAnnotatedSagaManager testSubject;
-    private EventBus eventBus;
     private AsyncAnnotatedSagaManagerTest.StubInMemorySagaRepository sagaRepository;
     private ExecutorService executorService;
     private EventProcessingMonitor mockMonitor;
@@ -74,7 +70,6 @@ public class AsyncAnnotatedSagaManagerTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
-        eventBus = mock(EventBus.class);
         testSubject = new AsyncAnnotatedSagaManager(StubAsyncSaga.class);
         sagaRepository = new StubInMemorySagaRepository();
         testSubject.setSagaRepository(sagaRepository);
@@ -85,12 +80,9 @@ public class AsyncAnnotatedSagaManagerTest {
 
         mockMonitor = mock(EventProcessingMonitor.class);
         ackedMessages = Collections.synchronizedList(new ArrayList());
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                ackedMessages.addAll(((List) invocationOnMock.getArguments()[0]));
-                return null;
-            }
+        doAnswer(invocationOnMock -> {
+            ackedMessages.addAll(((List) invocationOnMock.getArguments()[0]));
+            return null;
         }).when(mockMonitor).onEventProcessingCompleted(isA(List.class));
     }
 
@@ -116,7 +108,7 @@ public class AsyncAnnotatedSagaManagerTest {
     @Test(timeout = 10000, expected = AxonConfigurationException.class)
     public void testThreadPoolExecutorHasTooSmallCorePoolSize() throws InterruptedException {
         testSubject.setStartTimeout(100);
-        executorService = new ThreadPoolExecutor(1, 3, 5, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(25));
+        executorService = new ThreadPoolExecutor(1, 3, 5, TimeUnit.SECONDS, new ArrayBlockingQueue<>(25));
         testSubject.setExecutor(executorService);
 
         testSubject.start();
@@ -218,7 +210,7 @@ public class AsyncAnnotatedSagaManagerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testNullAssociationIgnoresEvent() throws InterruptedException {
-        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
+        testSubject = new AsyncAnnotatedSagaManager(StubAsyncSaga.class, AnotherStubAsyncSaga.class,
                                                     ThirdStubAsyncSaga.class);
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
@@ -241,7 +233,7 @@ public class AsyncAnnotatedSagaManagerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testExceptionsFromHandlerAreIgnored() throws InterruptedException {
-        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class);
+        testSubject = new AsyncAnnotatedSagaManager(StubAsyncSaga.class);
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
         testSubject.setExecutor(executorService);
@@ -263,7 +255,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
     @Test
     public void testMultipleDisconnectedSagaLifeCycle_WithOptionalStart() throws InterruptedException {
-        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
+        testSubject = new AsyncAnnotatedSagaManager(StubAsyncSaga.class, AnotherStubAsyncSaga.class,
                                                     ThirdStubAsyncSaga.class);
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
@@ -287,7 +279,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
     private List<EventMessage> createSimpleLifeCycle(String firstAssociation, String newAssociation,
                                                      boolean includeForceStart) {
-        List<EventMessage> publicationList = new ArrayList<EventMessage>();
+        List<EventMessage> publicationList = new ArrayList<>();
         if (includeForceStart) {
             publicationList.add(asEventMessage(new ForceCreateNewEvent(firstAssociation)));
         }
@@ -405,8 +397,8 @@ public class AsyncAnnotatedSagaManagerTest {
 
     public static class StubInMemorySagaRepository extends InMemorySagaRepository {
 
-        private Set<String> knownSagas = new ConcurrentSkipListSet<String>();
-        private Set<String> liveSagas = new ConcurrentSkipListSet<String>();
+        private Set<String> knownSagas = new ConcurrentSkipListSet<>();
+        private Set<String> liveSagas = new ConcurrentSkipListSet<>();
 
         @Override
         public void commit(Saga saga) {

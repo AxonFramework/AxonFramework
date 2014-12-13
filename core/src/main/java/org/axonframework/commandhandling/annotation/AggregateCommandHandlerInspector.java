@@ -57,7 +57,7 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
     private static final Logger logger = LoggerFactory.getLogger(AggregateCommandHandlerInspector.class);
 
     private final List<ConstructorCommandMessageHandler<T>> constructorCommandHandlers =
-            new LinkedList<ConstructorCommandMessageHandler<T>>();
+            new LinkedList<>();
     private final List<AbstractMessageHandler> handlers;
 
     /**
@@ -73,7 +73,7 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
                                                                                             CommandHandler.class,
                                                                                             parameterResolverFactory,
                                                                                             true);
-        handlers = new ArrayList<AbstractMessageHandler>(inspector.getHandlers());
+        handlers = new ArrayList<>(inspector.getHandlers());
         processNestedEntityCommandHandlers(targetType, parameterResolverFactory, new RootEntityAccessor(targetType));
         for (Constructor constructor : targetType.getConstructors()) {
             if (constructor.isAnnotationPresent(CommandHandler.class)) {

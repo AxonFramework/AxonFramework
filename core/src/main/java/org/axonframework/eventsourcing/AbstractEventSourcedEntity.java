@@ -48,12 +48,10 @@ public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
         handle(event);
         Collection<? extends EventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
-            for (EventSourcedEntity entity : childEntities) {
-                if (entity != null) {
-                    entity.registerAggregateRoot(aggregateRoot);
-                    entity.handleRecursively(event);
-                }
-            }
+            childEntities.stream().filter(entity -> entity != null).forEach(entity -> {
+                entity.registerAggregateRoot(aggregateRoot);
+                entity.handleRecursively(event);
+            });
         }
     }
 

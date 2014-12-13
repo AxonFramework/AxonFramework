@@ -119,8 +119,8 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                                                                 int batchSize) {
         try {
             Connection connection = connectionProvider.getConnection();
-            return new ConnectionResourceManagingIterator<T>(
-                    new FilteredBatchingIterator<T>(whereClause, parameters, batchSize, sqlSchema, connection),
+            return new ConnectionResourceManagingIterator<>(
+                    new FilteredBatchingIterator<>(whereClause, parameters, batchSize, sqlSchema, connection),
                     connection);
         } catch (SQLException e) {
             throw new EventStoreException("Exception while attempting to read from the Event Store database", e);
@@ -235,7 +235,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             while (maxSnapshotsArchived-- > 0 && resultSet.next()) { // NOSONAR
                 // ignore
             }
-            List<Long> result = new ArrayList<Long>();
+            List<Long> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(resultSet.getLong(1));
             }
@@ -260,8 +260,8 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             statement = sqlSchema.sql_fetchFromSequenceNumber(connection, aggregateType, identifier,
                                                               firstSequenceNumber);
             statement.setFetchSize(fetchSize);
-            return new ConnectionResourceManagingIterator<T>(
-                    new PreparedStatementIterator<T>(statement, sqlSchema),
+            return new ConnectionResourceManagingIterator<>(
+                    new PreparedStatementIterator<>(statement, sqlSchema),
                     connection);
         } catch (SQLException e) {
             closeQuietly(connection);
@@ -336,7 +336,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
         }
 
         private PreparedStatementIterator<T> fetchBatch() {
-            LinkedList<Object> params = new LinkedList<Object>(parameters);
+            LinkedList<Object> params = new LinkedList<>(parameters);
             String batchWhereClause = buildWhereClause(params);
             try {
                 final PreparedStatement sql = sqlSchema.sql_getFetchAll(
@@ -344,7 +344,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                         batchWhereClause,
                         params.toArray());
                 sql.setMaxRows(batchSize);
-                return new PreparedStatementIterator<T>(sql, sqlSchema);
+                return new PreparedStatementIterator<>(sql, sqlSchema);
             } catch (SQLException e) {
                 throw new EventStoreException("Exception occurred while attempting to execute prepared statement", e);
             }
@@ -425,7 +425,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             this.statement = statement;
             try {
                 ResultSet resultSet = statement.executeQuery();
-                rsIterator = new ResultSetIterator<T>(resultSet, sqlSchema);
+                rsIterator = new ResultSetIterator<>(resultSet, sqlSchema);
             } catch (SQLException e) {
                 throw new EventStoreException("Exception occurred while attempting to execute query on statement", e);
             }

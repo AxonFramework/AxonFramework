@@ -22,7 +22,6 @@ import org.axonframework.springmessaging.StubDomainEvent;
 import org.junit.*;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**

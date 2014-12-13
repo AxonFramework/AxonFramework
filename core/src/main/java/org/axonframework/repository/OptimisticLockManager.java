@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class OptimisticLockManager implements LockManager {
 
-    private final ConcurrentHashMap<Object, OptimisticLock> locks = new ConcurrentHashMap<Object, OptimisticLock>();
+    private final ConcurrentHashMap<Object, OptimisticLock> locks = new ConcurrentHashMap<>();
 
     /**
      * {@inheritDoc}
@@ -77,7 +77,7 @@ public class OptimisticLockManager implements LockManager {
     private final class OptimisticLock {
 
         private Long versionNumber;
-        private final Map<Thread, Integer> threadsHoldingLock = new WeakHashMap<Thread, Integer>();
+        private final Map<Thread, Integer> threadsHoldingLock = new WeakHashMap<>();
         private boolean closed = false;
 
         private OptimisticLock() {

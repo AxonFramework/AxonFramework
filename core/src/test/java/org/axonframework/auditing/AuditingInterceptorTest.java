@@ -76,7 +76,7 @@ public class AuditingInterceptorTest {
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         StubAggregate aggregate = new StubAggregate();
         uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
-        GenericCommandMessage<String> command = new GenericCommandMessage<String>("Command!");
+        GenericCommandMessage<String> command = new GenericCommandMessage<>("Command!");
         Object result = testSubject.handle(command, uow, mockInterceptorChain);
         verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
 

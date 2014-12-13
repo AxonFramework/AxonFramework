@@ -18,7 +18,6 @@ package org.axonframework.common.annotation;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Subscribable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.IntroductionInfo;
@@ -53,8 +52,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractAnnotationHandlerBeanPostProcessor.class);
 
-    private final Map<String, T> managedAdapters = new HashMap<String, T>();
-    private final Map<String, I> managedProxies = new HashMap<String, I>();
+    private final Map<String, T> managedAdapters = new HashMap<>();
+    private final Map<String, I> managedProxies = new HashMap<>();
     private ParameterResolverFactory parameterResolverFactory;
     private ApplicationContext applicationContext;
     private volatile boolean running = false;
@@ -250,7 +249,6 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         ProxyFactory pf = new ProxyFactory(annotatedHandler);
         pf.addAdvice(new AdapterIntroductionInterceptor(adapter, adapterInterface));
         pf.addInterface(adapterInterface);
-        pf.addInterface(Subscribable.class);
         pf.setProxyTargetClass(proxyTargetClass);
         pf.setExposeProxy(true);
         return (I) pf.getProxy(classLoader);
@@ -352,13 +350,13 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
 
         @Override
         public boolean implementsInterface(Class<?> intf) {
-            return intf.equals(adapterInterface) || Subscribable.class.equals(intf);
+            return intf.equals(adapterInterface);
         }
 
         @Override
         public Object invoke(MethodInvocation invocation) throws Throwable {
             Class<?> declaringClass = invocation.getMethod().getDeclaringClass();
-            if (declaringClass.equals(adapterInterface) || Subscribable.class.equals(declaringClass)) {
+            if (declaringClass.equals(adapterInterface)) {
                 try {
                     return invocation.getMethod().invoke(adapter, invocation.getArguments());
                 } catch (InvocationTargetException e) {

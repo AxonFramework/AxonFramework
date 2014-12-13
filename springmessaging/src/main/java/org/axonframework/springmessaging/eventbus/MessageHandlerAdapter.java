@@ -45,6 +45,6 @@ public class MessageHandlerAdapter implements MessageHandler {
      */
     @Override
     public void handleMessage(Message<?> message) {
-        eventListener.handle(new GenericEventMessage<Object>(message.getPayload(), message.getHeaders()));
+        eventListener.handle(new GenericEventMessage<>(message.getPayload(), message.getHeaders()));
     }
 }

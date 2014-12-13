@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 public abstract class AbstractCacheAdapter<L> implements Cache {
 
     private final ConcurrentMap<EntryListener, L> registeredAdapters =
-            new ConcurrentHashMap<EntryListener, L>();
+            new ConcurrentHashMap<>();
 
     /**
      * Creates an adapter for the given <code>cacheEntryListener</code>. The adapter must forward all incoming

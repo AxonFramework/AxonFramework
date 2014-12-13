@@ -24,7 +24,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.FixedValueParameterResolver;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;
@@ -36,7 +35,6 @@ import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -65,17 +63,13 @@ public class AggregateAnnotationCommandHandlerTest {
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
-                new ParameterResolverFactory() {
-                    @Override
-                    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                                            Annotation[] parameterAnnotations) {
-                        if (String.class.equals(parameterType)) {
-                            return new FixedValueParameterResolver<String>("It works");
-                        }
-                        return null;
+                (memberAnnotations, parameterType, parameterAnnotations) -> {
+                    if (String.class.equals(parameterType)) {
+                        return new FixedValueParameterResolver<>("It works");
                     }
+                    return null;
                 });
-        testSubject = new AggregateAnnotationCommandHandler<StubCommandAnnotatedAggregate>(StubCommandAnnotatedAggregate.class,
+        testSubject = new AggregateAnnotationCommandHandler<>(StubCommandAnnotatedAggregate.class,
                                                                                            mockRepository,
                                                                                            new AnnotationCommandTargetResolver(),
                                                                                            parameterResolverFactory);
@@ -120,7 +114,7 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testSupportedCommands() {
         Set<String> actual = testSubject.supportedCommands();
-        Set<String> expected = new HashSet<String>(Arrays.asList(
+        Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),
                 FailingCreateCommand.class.getName(),
@@ -545,7 +539,7 @@ public class AggregateAnnotationCommandHandlerTest {
                 this.entity.initializeEntity();
             }
             if (this.entities == null) {
-                this.entities = new ArrayList<StubCommandAnnotatedCollectionEntity>();
+                this.entities = new ArrayList<>();
             }
             this.entities.add(new StubCommandAnnotatedCollectionEntity(id));
         }

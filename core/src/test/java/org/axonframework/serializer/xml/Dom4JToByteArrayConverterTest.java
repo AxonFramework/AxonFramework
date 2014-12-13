@@ -51,7 +51,7 @@ public class Dom4JToByteArrayConverterTest {
         Document doc = df.createDocument("UTF-8");
         doc.setRootElement(df.createElement("rootElement"));
 
-        SimpleSerializedObject<Document> original = new SimpleSerializedObject<Document>(doc,
+        SimpleSerializedObject<Document> original = new SimpleSerializedObject<>(doc,
                                                                                          Document.class,
                                                                                          serializedType);
         SerializedObject<byte[]> actual = testSubject.convert(original);

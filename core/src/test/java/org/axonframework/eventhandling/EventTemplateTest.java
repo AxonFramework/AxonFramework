@@ -148,7 +148,7 @@ public class EventTemplateTest {
     public void testUnitOfWorkUsedToSendEvent_OverlappingMetaData() throws Exception {
         CurrentUnitOfWork.set(mockUnitOfWork);
 
-        Map<String, Object> moreMetaData = new HashMap<String, Object>();
+        Map<String, Object> moreMetaData = new HashMap<>();
         moreMetaData.put("key1", "value2");
         moreMetaData.put("key2", "value1");
         testSubject.publishEvent(payload, moreMetaData);
@@ -172,7 +172,7 @@ public class EventTemplateTest {
     @Test
     public void testEventSentImmediatelyWhenNoActiveUnitOfWorkExists_OverlappingMetaData() throws Exception {
 
-        Map<String, Object> moreMetaData = new HashMap<String, Object>();
+        Map<String, Object> moreMetaData = new HashMap<>();
         moreMetaData.put("key1", "value2");
         moreMetaData.put("key2", "value1");
         testSubject.publishEvent(payload, moreMetaData);

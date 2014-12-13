@@ -30,8 +30,6 @@ import org.axonframework.eventstore.EventStore;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.UUID;
 
@@ -53,7 +51,7 @@ public class EventPublicationOrderTest {
         this.commandBus = new SimpleCommandBus();
         this.eventBus = spy(new SimpleEventBus());
         eventStore = mock(EventStore.class);
-        this.repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class, eventStore);
+        this.repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
         repository.setEventBus(eventBus);
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
@@ -68,12 +66,9 @@ public class EventPublicationOrderTest {
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<Object>(aggregateId, 0,
                                                               new StubAggregateCreatedEvent(aggregateId))));
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                System.out.println("Published event: " + invocation.getArguments()[0].toString());
-                return Void.class;
-            }
+        doAnswer(invocation -> {
+            System.out.println("Published event: " + invocation.getArguments()[0].toString());
+            return Void.class;
         }).when(eventBus).publish(isA(EventMessage.class));
         commandBus.dispatch(asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)));
         verify(eventBus).publish(isA(DomainEventMessage.class),

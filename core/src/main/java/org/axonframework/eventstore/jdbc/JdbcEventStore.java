@@ -27,7 +27,6 @@ import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
-import org.axonframework.eventstore.PartialStreamSupport;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.eventstore.jdbc.criteria.JdbcCriteria;
 import org.axonframework.eventstore.jdbc.criteria.JdbcCriteriaBuilder;
@@ -75,7 +74,7 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  * @author Kristian Rosenvold
  * @since 2.1
  */
-public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware, PartialStreamSupport {
+public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement, UpcasterAware {
 
     private static final Logger logger = LoggerFactory.getLogger(JdbcEventStore.class);
 
@@ -184,23 +183,17 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         DomainEventMessage snapshotEvent = null;
         if (lastSnapshotEvent != null) {
             try {
-                snapshotEvent = new GenericDomainEventMessage<Object>(
+                snapshotEvent = new GenericDomainEventMessage<>(
                         identifier,
                         lastSnapshotEvent.getSequenceNumber(),
                         serializer.deserialize(lastSnapshotEvent.getPayload()),
                         (Map<String, Object>) serializer.deserialize(lastSnapshotEvent.getMetaData()));
                 snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | LinkageError ex) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
                             ex.getMessage()
-                );
-            } catch (LinkageError error) {
-                logger.warn("Error while reading snapshot event entry. "
-                                    + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
-                            error.getClass().getName(),
-                            error.getMessage()
                 );
             }
         }

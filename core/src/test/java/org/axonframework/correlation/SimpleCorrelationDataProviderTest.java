@@ -30,11 +30,11 @@ public class SimpleCorrelationDataProviderTest {
 
     @Test
     public void testResolveCorrelationData() throws Exception {
-        Map<String, Object> metaData = new HashMap<String, Object>();
+        Map<String, Object> metaData = new HashMap<>();
         metaData.put("key1", "value1");
         metaData.put("key2", "value2");
         metaData.put("key3", "value3");
-        Message message = new GenericMessage<String>("payload", metaData);
+        Message message = new GenericMessage<>("payload", metaData);
 
         assertEquals(singletonMap("key1", "value1"),
                      new SimpleCorrelationDataProvider("key1").correlationDataFor(message));

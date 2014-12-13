@@ -88,7 +88,7 @@ public class ConsistentHashTest {
         assertEquals(2, actual.size());
         assertEquals(singleton("String"), actual.iterator().next().supportedCommands());
         final Iterator<ConsistentHash.Member> members = actual.iterator();
-        Set<Integer> values = new HashSet<Integer>(Arrays.asList(2, 4));
+        Set<Integer> values = new HashSet<>(Arrays.asList(2, 4));
         while (!values.isEmpty()) {
             assertTrue(values.remove(members.next().segmentCount()));
         }

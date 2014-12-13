@@ -163,7 +163,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
 
     private void parseTypesElement(Element element, GenericBeanDefinition sagaManagerDefinition,
                                    BeanDefinitionRegistry registry) {
-        Set<String> filteredTypes = new HashSet<String>();
+        Set<String> filteredTypes = new HashSet<>();
 
         // find explicitly names types
         Element typeNode = DomUtils.getChildElementByTagName(element, "types");

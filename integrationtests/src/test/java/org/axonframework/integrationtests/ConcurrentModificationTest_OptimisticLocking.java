@@ -61,7 +61,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
     @Autowired
     private RegisteringEventHandler registeringEventHandler;
 
-    private List<Throwable> uncaughtExceptions = new ArrayList<Throwable>();
+    private List<Throwable> uncaughtExceptions = new ArrayList<>();
     private static final int THREAD_COUNT = 50;
     private static final int COMMAND_PER_THREAD_COUNT = 20;
 
@@ -92,32 +92,29 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
         final AtomicInteger successCounter = new AtomicInteger();
         final AtomicInteger failCounter = new AtomicInteger();
         for (int t = 0; t < THREAD_COUNT; t++) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        starter.await();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    for (int t = 0; t < COMMAND_PER_THREAD_COUNT; t++) {
-                        commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
-                                SilentCallback.INSTANCE);
-                        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)),
-                                new VoidCallback() {
-                                    @Override
-                                    protected void onSuccess() {
-                                        successCounter.incrementAndGet();
-                                    }
-
-                                    @Override
-                                    public void onFailure(Throwable cause) {
-                                        failCounter.incrementAndGet();
-                                    }
-                                });
-                    }
-                    cdl.countDown();
+            Thread thread = new Thread(() -> {
+                try {
+                    starter.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
+                for (int t1 = 0; t1 < COMMAND_PER_THREAD_COUNT; t1++) {
+                    commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
+                            SilentCallback.INSTANCE);
+                    commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)),
+                            new VoidCallback() {
+                                @Override
+                                protected void onSuccess() {
+                                    successCounter.incrementAndGet();
+                                }
+
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    failCounter.incrementAndGet();
+                                }
+                            });
+                }
+                cdl.countDown();
             });
             thread.setUncaughtExceptionHandler(ConcurrentModificationTest_OptimisticLocking.this);
             thread.start();
@@ -158,7 +155,7 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
             return;
         }
         Long expectedSequenceNumber = 0L;
-        Map<Long, Long> outOfSyncs = new HashMap<Long, Long>();
+        Map<Long, Long> outOfSyncs = new HashMap<>();
         for (EventMessage event : registeringEventHandler.getCapturedEvents()) {
             assertTrue(event instanceof DomainEventMessage);
             Long actual = ((DomainEventMessage) event).getSequenceNumber();

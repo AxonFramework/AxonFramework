@@ -28,8 +28,6 @@ import org.junit.*;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -133,16 +131,16 @@ public class FixtureTest_Generic {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(UUID.randomUUID(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>(UUID.randomUUID(), 0, new StubDomainEvent())));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         UUID identifier = UUID.randomUUID();
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<StubDomainEvent>(identifier, 2, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
     }
 
     private class StubDomainEvent {

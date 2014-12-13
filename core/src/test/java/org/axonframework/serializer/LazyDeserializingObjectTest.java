@@ -47,7 +47,7 @@ public class LazyDeserializingObjectTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testLazilyDeserialized() {
-        LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockObject, mockSerializer);
+        LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<>(mockObject, mockSerializer);
         verify(mockSerializer, never()).deserialize(any(SerializedObject.class));
         assertEquals(String.class, testSubject.getType());
         assertFalse(testSubject.isDeserialized());
@@ -58,17 +58,17 @@ public class LazyDeserializingObjectTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testLazilyDeserialized_NullObject() {
-        new LazyDeserializingObject<Object>(null, mockSerializer);
+        new LazyDeserializingObject<>(null, mockSerializer);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testLazilyDeserialized_NullSerializer() {
-        new LazyDeserializingObject<Object>(mockObject, null);
+        new LazyDeserializingObject<>(mockObject, null);
     }
 
     @Test
     public void testWithProvidedDeserializedInstance() {
-        LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<Object>(mockDeserializedObject);
+        LazyDeserializingObject<Object> testSubject = new LazyDeserializingObject<>(mockDeserializedObject);
         assertEquals(mockDeserializedObject.getClass(), testSubject.getType());
         assertSame(mockDeserializedObject, testSubject.getObject());
         assertTrue(testSubject.isDeserialized());
@@ -76,6 +76,6 @@ public class LazyDeserializingObjectTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testWithProvidedDeserializedNullInstance() {
-        new LazyDeserializingObject<Object>(null);
+        new LazyDeserializingObject<>(null);
     }
 }

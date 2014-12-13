@@ -223,7 +223,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         @SuppressWarnings("unchecked")
         public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
                                                         UpcasterChain upcasterChain, boolean skipUnknownTypes) {
-            List<DomainEventMessage> messages = new ArrayList<DomainEventMessage>();
+            List<DomainEventMessage> messages = new ArrayList<>();
             for (final EventEntry eventEntry : eventEntries) {
                 messages.addAll(upcastAndDeserialize(new DomainEventData(this, eventEntry), actualAggregateIdentifier,
                                                      eventSerializer, upcasterChain, skipUnknownTypes));

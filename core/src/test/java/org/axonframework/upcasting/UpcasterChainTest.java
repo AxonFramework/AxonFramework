@@ -50,9 +50,9 @@ public abstract class UpcasterChainTest {
 
     @Before
     public void setUp() throws Exception {
-        object1 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type1", "0");
-        object2 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type2", "1");
-        object3 = new SimpleSerializedObject<byte[]>("object1".getBytes(), byte[].class, "type3", "2");
+        object1 = new SimpleSerializedObject<>("object1".getBytes(), byte[].class, "type1", "0");
+        object2 = new SimpleSerializedObject<>("object1".getBytes(), byte[].class, "type2", "1");
+        object3 = new SimpleSerializedObject<>("object1".getBytes(), byte[].class, "type3", "2");
         intermediate1 = new MockIntermediateRepresentation(object1, byte[].class);
         intermediate2 = new MockIntermediateRepresentation(object2, byte[].class);
         intermediate3 = new MockIntermediateRepresentation(object3, byte[].class);
@@ -61,9 +61,9 @@ public abstract class UpcasterChainTest {
 
     @Test
     public void testUpcastObject_NoTypeConversionRequired() {
-        Upcaster mockUpcaster12 = new StubUpcaster<byte[]>(intermediate1.getType(), intermediate2, byte[].class);
+        Upcaster mockUpcaster12 = new StubUpcaster<>(intermediate1.getType(), intermediate2, byte[].class);
         Upcaster mockUpcasterFake = mock(Upcaster.class, "Fake upcaster");
-        Upcaster mockUpcaster23 = new StubUpcaster<byte[]>(intermediate2.getType(), intermediate3, byte[].class);
+        Upcaster mockUpcaster23 = new StubUpcaster<>(intermediate2.getType(), intermediate3, byte[].class);
 
         final ConverterFactory converterFactory = mock(ConverterFactory.class);
         UpcasterChain chain = createUpcasterChain(converterFactory, mockUpcaster12, mockUpcasterFake, mockUpcaster23);
@@ -85,7 +85,7 @@ public abstract class UpcasterChainTest {
         SerializedObject intermediate2_bytes = new MockIntermediateRepresentation(object2, byte[].class);
         SerializedObject intermediate2_stream = new MockIntermediateRepresentation(object2,
                                                                                    InputStream.class);
-        Upcaster mockUpcaster12 = new StubUpcaster<InputStream>(intermediate1.getType(), intermediate2_stream,
+        Upcaster mockUpcaster12 = new StubUpcaster<>(intermediate1.getType(), intermediate2_stream,
                                                                 InputStream.class);
 
         ConverterFactory mockConverterFactory = mock(ConverterFactory.class);
@@ -215,7 +215,7 @@ public abstract class UpcasterChainTest {
 
         @Override
         public List<SerializedType> upcast(SerializedType serializedType) {
-            List<SerializedType> upcastTypes = new ArrayList<SerializedType>(upcastResult.size());
+            List<SerializedType> upcastTypes = new ArrayList<>(upcastResult.size());
             for (SerializedObject object : upcastResult) {
                 upcastTypes.add(object.getType());
             }

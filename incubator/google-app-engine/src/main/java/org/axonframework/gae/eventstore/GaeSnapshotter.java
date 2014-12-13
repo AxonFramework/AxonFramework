@@ -46,7 +46,7 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
     private static final Logger logger = LoggerFactory.getLogger(GaeSnapshotter.class);
 
     private SnapshotEventStore eventStore;
-    private Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();
+    private Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
     private ApplicationContext applicationContext;
 
     @Autowired
@@ -99,7 +99,7 @@ public class GaeSnapshotter implements Snapshotter, InitializingBean, Applicatio
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(eventStream);
 
-        return new GenericDomainEventMessage<EventSourcedAggregateRoot>(
+        return new GenericDomainEventMessage<>(
                 aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
     }
 

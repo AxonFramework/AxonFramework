@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing;
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.PartialStreamSupport;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -42,8 +41,7 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot> extends EventSourcingRepository<T> {
 
     private Cache cache = NoCache.INSTANCE;
-    private final boolean hasEventStorePartialReadSupport;
-    private final PartialStreamSupport eventStore;
+    private final EventStore eventStore;
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
@@ -70,8 +68,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                           LockManager lockManager) {
         super(aggregateFactory, eventStore, lockManager);
-        this.hasEventStorePartialReadSupport = (eventStore instanceof PartialStreamSupport);
-        this.eventStore = eventStore instanceof PartialStreamSupport ? (PartialStreamSupport) eventStore : null;
+        this.eventStore = eventStore;
     }
 
     @Override
@@ -106,8 +103,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
     @Override
     public T doLoad(Object aggregateIdentifier, Long expectedVersion) {
         T aggregate = cache.get(aggregateIdentifier);
-        if (aggregate == null
-                || (!hasEventStorePartialReadSupport && !hasExpectedVersion(expectedVersion, aggregate.getVersion()))) {
+        if (aggregate == null) {
             // if the event store doesn't support partial stream loading, we need to load the aggregate from the event store entirely
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
         } else if (!hasExpectedVersion(expectedVersion, aggregate.getVersion())) {

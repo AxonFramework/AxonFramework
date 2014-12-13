@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AggregateSnapshotter extends AbstractSnapshotter {
 
-    private final Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();
+    private final Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
 
     @Override
     protected DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
@@ -45,7 +45,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(eventStream);
 
-        return new GenericDomainEventMessage<EventSourcedAggregateRoot>(
+        return new GenericDomainEventMessage<>(
                 aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
     }
 

@@ -35,11 +35,11 @@ import static org.mockito.Mockito.*;
  */
 public class SerializedDomainEventMessageTest {
 
-    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<String>("serialized",
+    private SerializedObject<String> serializedPayload = new SimpleSerializedObject<>("serialized",
                                                                                             String.class,
                                                                                             "java.lang.Object",
                                                                                             "1");
-    private SerializedObject<String> serializedMetaData = new SerializedMetaData<String>("serialized",
+    private SerializedObject<String> serializedMetaData = new SerializedMetaData<>("serialized",
                                                                                          String.class);
 
     private Object deserializedPayload = new Object();
@@ -64,7 +64,7 @@ public class SerializedDomainEventMessageTest {
 
     @Test
     public void testConstructor() {
-        SerializedDomainEventMessage<Object> message1 = new SerializedDomainEventMessage<Object>(domainEventData,
+        SerializedDomainEventMessage<Object> message1 = new SerializedDomainEventMessage<>(domainEventData,
                                                                                                  serializer);
 
         assertSame(id, message1.getAggregateIdentifier());
@@ -83,7 +83,7 @@ public class SerializedDomainEventMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
-        SerializedDomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(domainEventData,
+        SerializedDomainEventMessage<Object> message = new SerializedDomainEventMessage<>(domainEventData,
                                                                                                 serializer);
         DomainEventMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         DomainEventMessage<Object> message2 = message.withMetaData(
@@ -98,7 +98,7 @@ public class SerializedDomainEventMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         when(serializer.deserialize(serializedMetaData)).thenReturn(metaData);
-        DomainEventMessage<Object> message = new SerializedDomainEventMessage<Object>(domainEventData, serializer);
+        DomainEventMessage<Object> message = new SerializedDomainEventMessage<>(domainEventData, serializer);
         DomainEventMessage<Object> message1 = message.andMetaData(MetaData.emptyInstance());
         DomainEventMessage<Object> message2 = message.andMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
@@ -112,7 +112,7 @@ public class SerializedDomainEventMessageTest {
     @Test
     public void testIdentifierStaysIdenticalWhenAddingMetaData() {
         Serializer serializer = new JavaSerializer();
-        DomainEventMessage<String> message = new GenericDomainEventMessage<String>("ID", 0, "Payload",
+        DomainEventMessage<String> message = new GenericDomainEventMessage<>("ID", 0, "Payload",
                                                                                      MetaData.emptyInstance());
 
         SerializedObject<byte[]> payload = serializer.serialize(message.getPayload(), byte[].class);
@@ -120,7 +120,7 @@ public class SerializedDomainEventMessageTest {
 
         SerializedDomainEventData data = new DomainEventEntry("Object", message, payload, metaData);
 
-        SerializedDomainEventMessage<String> sdem = new SerializedDomainEventMessage<String>(data, serializer);
+        SerializedDomainEventMessage<String> sdem = new SerializedDomainEventMessage<>(data, serializer);
 
         assertEquals(sdem.getIdentifier(),
                      sdem.withMetaData(Collections.singletonMap("Key1", "Value1")).getIdentifier());

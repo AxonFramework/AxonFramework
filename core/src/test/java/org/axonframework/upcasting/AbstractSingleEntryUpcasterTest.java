@@ -56,7 +56,7 @@ public class AbstractSingleEntryUpcasterTest {
         AbstractSingleEntryUpcaster<String> testSubject = new StubUpcaster("did it", upcastType);
 
         List<SerializedObject<?>> actual = testSubject.upcast(
-                new SimpleSerializedObject<String>("string", String.class, "string", "1"),
+                new SimpleSerializedObject<>("string", String.class, "string", "1"),
                 Collections.singletonList(upcastType), null);
         assertEquals(1, actual.size());
         assertEquals(upcastType, actual.get(0).getType());
@@ -68,7 +68,7 @@ public class AbstractSingleEntryUpcasterTest {
         AbstractSingleEntryUpcaster<String> testSubject = new StubUpcaster(null, null);
 
         List<SerializedObject<?>> actual = testSubject.upcast(
-                new SimpleSerializedObject<String>("string", String.class, "string", "1"), null, null);
+                new SimpleSerializedObject<>("string", String.class, "string", "1"), null, null);
         assertEquals(0, actual.size());
     }
 

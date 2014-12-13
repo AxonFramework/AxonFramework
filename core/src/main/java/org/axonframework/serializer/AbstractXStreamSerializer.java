@@ -173,7 +173,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
         T result = doSerialize(object, expectedType, xStream);
-        return new SimpleSerializedObject<T>(result, expectedType, typeForClass(object.getClass()));
+        return new SimpleSerializedObject<>(result, expectedType, typeForClass(object.getClass()));
     }
 
     /**
@@ -373,7 +373,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
             MetaData metaData = (MetaData) source;
             if (!metaData.isEmpty()) {
-                super.marshal(new HashMap<String, Object>(metaData), writer, context);
+                super.marshal(new HashMap<>(metaData), writer, context);
             }
         }
 
@@ -382,7 +382,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             if (!reader.hasMoreChildren()) {
                 return MetaData.emptyInstance();
             }
-            Map<String, Object> contents = new HashMap<String, Object>();
+            Map<String, Object> contents = new HashMap<>();
             populateMap(reader, context, contents);
             if (contents.isEmpty()) {
                 return MetaData.emptyInstance();

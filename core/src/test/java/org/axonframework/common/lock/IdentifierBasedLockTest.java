@@ -129,22 +129,19 @@ public class IdentifierBasedLockTest {
                                 final AtomicBoolean deadlockInThread, final IdentifierBasedLock lock1,
                                 final String firstLock,
                                 final IdentifierBasedLock lock2, final String secondLock) {
-        return new Thread(new Runnable() {
-            @Override
-            public void run() {
-                lock1.obtainLock(firstLock);
-                starter.countDown();
-                try {
-                    cdl.await();
-                    lock2.obtainLock(secondLock);
-                    lock2.releaseLock(secondLock);
-                } catch (InterruptedException e) {
-                    System.out.println("Thread 1 interrupted");
-                } catch (DeadlockException e) {
-                    deadlockInThread.set(true);
-                } finally {
-                    lock1.releaseLock(firstLock);
-                }
+        return new Thread(() -> {
+            lock1.obtainLock(firstLock);
+            starter.countDown();
+            try {
+                cdl.await();
+                lock2.obtainLock(secondLock);
+                lock2.releaseLock(secondLock);
+            } catch (InterruptedException e) {
+                System.out.println("Thread 1 interrupted");
+            } catch (DeadlockException e) {
+                deadlockInThread.set(true);
+            } finally {
+                lock1.releaseLock(firstLock);
             }
         });
     }

@@ -45,7 +45,7 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     private static final Logger logger = LoggerFactory.getLogger(ListenerContainerLifecycleManager.class);
 
     // guarded by "this"
-    private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<String, SimpleMessageListenerContainer>();
+    private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<>();
     // guarded by "this"
     private boolean started = false;
     private SpringAMQPConsumerConfiguration defaultConfiguration;

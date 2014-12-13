@@ -28,7 +28,7 @@ public class SerializedMetaDataTest {
     @Test
     public void testSerializeMetaData() {
         byte[] stubData = new byte[]{};
-        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<byte[]>(stubData, byte[].class);
+        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(stubData, byte[].class);
         assertEquals(stubData, serializedMetaData.getData());
         assertEquals(byte[].class, serializedMetaData.getContentType());
         assertNull(serializedMetaData.getType().getRevision());
@@ -37,10 +37,10 @@ public class SerializedMetaDataTest {
 
     @Test
     public void testIsSerializedMetaData() {
-        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<byte[]>(new byte[]{}, byte[].class);
+        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(new byte[]{}, byte[].class);
         assertTrue(SerializedMetaData.isSerializedMetaData(serializedMetaData));
         assertFalse(SerializedMetaData.isSerializedMetaData(
-                new SimpleSerializedObject<String>("test", String.class, "type", "rev")));
+                new SimpleSerializedObject<>("test", String.class, "type", "rev")));
     }
 
 }

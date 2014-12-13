@@ -89,7 +89,7 @@ public class QuartzSagaTimerIntegrationTest {
 
     @Test
     public void testJobExecutesInTime() throws InterruptedException, SchedulerException {
-        final AtomicReference<JobExecutionException> jobExecutionResult = new AtomicReference<JobExecutionException>();
+        final AtomicReference<JobExecutionException> jobExecutionResult = new AtomicReference<>();
         final CountDownLatch jobExecutionLatch = new CountDownLatch(1);
         scheduler.getListenerManager().addJobListener(new JobListener() {
             @Override
@@ -120,7 +120,7 @@ public class QuartzSagaTimerIntegrationTest {
                 .execute(new TransactionCallbackWithoutResult() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
-                        eventBus.publish(new GenericEventMessage<StartingEvent>(new StartingEvent(randomAssociationValue)));
+                        eventBus.publish(new GenericEventMessage<>(new StartingEvent(randomAssociationValue)));
                         Set<String> actualResult =
                                 repository.find(SimpleTimingSaga.class,
                                                 new AssociationValue("association", randomAssociationValue));

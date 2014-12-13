@@ -110,7 +110,7 @@ public class DisruptorCommandBus implements CommandBus {
     private static final ThreadGroup DISRUPTOR_THREAD_GROUP = new ThreadGroup("DisruptorCommandBus");
 
     private final ConcurrentMap<String, CommandHandler<?>> commandHandlers =
-            new ConcurrentHashMap<String, CommandHandler<?>>();
+            new ConcurrentHashMap<>();
     private final Disruptor<CommandHandlingEntry> disruptor;
     private final CommandHandlerInvoker[] commandHandlerInvokers;
     private final List<CommandDispatchInterceptor> dispatchInterceptors;
@@ -162,11 +162,11 @@ public class DisruptorCommandBus implements CommandBus {
             executorService = null;
         }
         rescheduleOnCorruptState = configuration.getRescheduleCommandsOnCorruptState();
-        invokerInterceptors = new ArrayList<CommandHandlerInterceptor>(configuration.getInvokerInterceptors());
-        publisherInterceptors = new ArrayList<CommandHandlerInterceptor>(configuration.getPublisherInterceptors());
-        dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(configuration.getDispatchInterceptors());
+        invokerInterceptors = new ArrayList<>(configuration.getInvokerInterceptors());
+        publisherInterceptors = new ArrayList<>(configuration.getPublisherInterceptors());
+        dispatchInterceptors = new ArrayList<>(configuration.getDispatchInterceptors());
         TransactionManager transactionManager = configuration.getTransactionManager();
-        disruptor = new Disruptor<CommandHandlingEntry>(
+        disruptor = new Disruptor<>(
                 new CommandHandlingEntry.Factory(configuration.getTransactionManager() != null),
                 configuration.getBufferSize(),
                 executor,
@@ -276,7 +276,7 @@ public class DisruptorCommandBus implements CommandBus {
         long sequence = ringBuffer.next();
         CommandHandlingEntry event = ringBuffer.get(sequence);
         event.reset(command, commandHandlers.get(command.getCommandName()), invokerSegment, publisherSegment,
-                    serializerSegment, new BlacklistDetectingCallback<R>(callback, command, disruptor.getRingBuffer(),
+                    serializerSegment, new BlacklistDetectingCallback<>(callback, command, disruptor.getRingBuffer(),
                                                                          this, rescheduleOnCorruptState),
                     invokerInterceptors, publisherInterceptors
         );
@@ -318,7 +318,7 @@ public class DisruptorCommandBus implements CommandBus {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
             invoker.createRepository(aggregateFactory, decorator);
         }
-        return new DisruptorRepository<T>(aggregateFactory.getTypeIdentifier());
+        return new DisruptorRepository<>(aggregateFactory.getTypeIdentifier());
     }
 
     @Override

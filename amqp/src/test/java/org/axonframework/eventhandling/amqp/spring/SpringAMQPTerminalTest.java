@@ -74,11 +74,11 @@ public class SpringAMQPTerminalTest {
         when(connectionFactory.createConnection()).thenReturn(connection);
         Channel transactionalChannel = mock(Channel.class);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
-                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
-                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
         testSubject.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
@@ -98,11 +98,11 @@ public class SpringAMQPTerminalTest {
         Channel transactionalChannel = mock(Channel.class);
         when(transactionalChannel.isOpen()).thenReturn(true);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
-                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
-                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
         testSubject.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
@@ -126,11 +126,11 @@ public class SpringAMQPTerminalTest {
         Channel transactionalChannel = mock(Channel.class);
         when(transactionalChannel.isOpen()).thenReturn(false);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
-                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
-                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
         testSubject.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
@@ -156,11 +156,11 @@ public class SpringAMQPTerminalTest {
         when(connectionFactory.createConnection()).thenReturn(connection);
         Channel transactionalChannel = mock(Channel.class);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
-                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
-                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
         testSubject.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
@@ -189,11 +189,11 @@ public class SpringAMQPTerminalTest {
 
         when(channel.waitForConfirms()).thenReturn(true);
         when(connection.createChannel(false)).thenReturn(channel);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
-                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
-                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
 
         UnitOfWork uow = DefaultUnitOfWork.startAndGet();
 
@@ -234,11 +234,11 @@ public class SpringAMQPTerminalTest {
 
         when(channel.waitForConfirms()).thenReturn(true);
         when(connection.createChannel(false)).thenReturn(channel);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("Message");
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
-                .thenReturn(new SimpleSerializedObject<byte[]>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
+                .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
-                .thenReturn(new SerializedMetaData<byte[]>(new byte[0], byte[].class));
+                .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
 
         testSubject.publish(message);
         verify(channel).confirmSelect();

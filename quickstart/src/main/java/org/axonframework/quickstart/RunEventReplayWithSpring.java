@@ -53,11 +53,11 @@ public class RunEventReplayWithSpring {
 
         // we append some events to simulate a full event store
         final DomainEventMessage[] domainEventMessages = {
-                new GenericDomainEventMessage<ToDoItemCreatedEvent>(
+                new GenericDomainEventMessage<>(
                         "todo1", 0, new ToDoItemCreatedEvent("todo1", "Need to do something")),
-                new GenericDomainEventMessage<ToDoItemCreatedEvent>(
+                new GenericDomainEventMessage<>(
                         "todo2", 0, new ToDoItemCreatedEvent("todo2", "Another thing to do")),
-                new GenericDomainEventMessage<ToDoItemCompletedEvent>("todo2", 0, new ToDoItemCompletedEvent("todo2"))
+                new GenericDomainEventMessage<>("todo2", 0, new ToDoItemCompletedEvent("todo2"))
         };
         eventStore.appendEvents("mock", new SimpleDomainEventStream(domainEventMessages));
 

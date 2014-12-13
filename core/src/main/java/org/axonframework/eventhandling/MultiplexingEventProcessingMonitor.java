@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MultiplexingEventProcessingMonitor implements EventProcessingMonitor {
 
-    private final ConcurrentMap<String, Counter> eventCounters = new ConcurrentHashMap<String, Counter>();
+    private final ConcurrentMap<String, Counter> eventCounters = new ConcurrentHashMap<>();
 
     private final EventProcessingMonitor targetMonitor;
 
@@ -88,7 +88,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
 
     @Override
     public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {
-        List<EventMessage> messagesToAck = new ArrayList<EventMessage>(eventMessages.size());
+        List<EventMessage> messagesToAck = new ArrayList<>(eventMessages.size());
         for (EventMessage eventMessage : eventMessages) {
             final String eventIdentifier = eventMessage.getIdentifier();
             Counter counter = eventCounters.get(eventIdentifier);
@@ -108,7 +108,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
 
     @Override
     public void onEventProcessingFailed(List<? extends EventMessage> eventMessages, Throwable cause) {
-        List<EventMessage> messagesToReport = new ArrayList<EventMessage>(eventMessages.size());
+        List<EventMessage> messagesToReport = new ArrayList<>(eventMessages.size());
         for (EventMessage eventMessage : eventMessages) {
             final String eventIdentifier = eventMessage.getIdentifier();
             Counter counter = eventCounters.get(eventIdentifier);

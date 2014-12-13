@@ -46,7 +46,7 @@ public class ClusteringEventBusTest {
         eventBus.subscribe(listener1);
         eventBus.subscribe(listener2);
 
-        eventBus.publish(new GenericEventMessage<Object>(new Object()));
+        eventBus.publish(new GenericEventMessage<>(new Object()));
 
         assertEquals(1, listener1.getReceivedEvents().size());
         assertEquals(1, listener2.getReceivedEvents().size());
@@ -60,7 +60,7 @@ public class ClusteringEventBusTest {
 
         eventBus.subscribe(mockEventListener);
 
-        eventBus.publish(new GenericEventMessage<Object>(new Object()));
+        eventBus.publish(new GenericEventMessage<>(new Object()));
 
         verify(mockTerminal).publish(isA(EventMessage.class));
         verify(mockEventListener, never()).handle(Matchers.<EventMessage>any());
@@ -68,7 +68,7 @@ public class ClusteringEventBusTest {
 
     private class RecordingClusteredEventListener implements EventListener {
 
-        private final List<EventMessage> receivedEvents = new ArrayList<EventMessage>();
+        private final List<EventMessage> receivedEvents = new ArrayList<>();
         private final String clusterName;
 
         public RecordingClusteredEventListener(String clusterName) {

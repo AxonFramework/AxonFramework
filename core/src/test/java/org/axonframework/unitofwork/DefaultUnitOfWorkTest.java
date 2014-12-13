@@ -40,8 +40,8 @@ public class DefaultUnitOfWorkTest {
     private DefaultUnitOfWork testSubject;
     private EventBus mockEventBus;
     private AggregateRoot mockAggregateRoot;
-    private EventMessage event1 = new GenericEventMessage<Integer>(1);
-    private EventMessage event2 = new GenericEventMessage<Integer>(2);
+    private EventMessage event1 = new GenericEventMessage<>(1);
+    private EventMessage event2 = new GenericEventMessage<>(2);
     private EventListener listener1;
     private EventListener listener2;
     private SaveAggregateCallback callback;
@@ -60,13 +60,10 @@ public class DefaultUnitOfWorkTest {
         callback = mock(SaveAggregateCallback.class);
         doAnswer(new PublishEvent(event1)).doAnswer(new PublishEvent(event2))
                 .when(callback).save(mockAggregateRoot);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                listener1.handle((EventMessage) invocation.getArguments()[0]);
-                listener2.handle((EventMessage) invocation.getArguments()[0]);
-                return null;
-            }
+        doAnswer(invocation -> {
+            listener1.handle((EventMessage) invocation.getArguments()[0]);
+            listener2.handle((EventMessage) invocation.getArguments()[0]);
+            return null;
         }).when(mockEventBus).publish(isA(EventMessage.class));
     }
 
@@ -167,15 +164,12 @@ public class DefaultUnitOfWorkTest {
     @Test
     public void testSagaEventsDoNotOvertakeRegularEvents() {
         testSubject.start();
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                DefaultUnitOfWork uow = new DefaultUnitOfWork();
-                uow.start();
-                uow.registerAggregate(mockAggregateRoot, mockEventBus, callback);
-                uow.commit();
-                return null;
-            }
+        doAnswer(invocation -> {
+            DefaultUnitOfWork uow = new DefaultUnitOfWork();
+            uow.start();
+            uow.registerAggregate(mockAggregateRoot, mockEventBus, callback);
+            uow.commit();
+            return null;
         }).when(listener1).handle(event1);
         testSubject.registerAggregate(mockAggregateRoot, mockEventBus, callback);
         testSubject.commit();
@@ -239,7 +233,7 @@ public class DefaultUnitOfWorkTest {
         doThrow(new MockException()).when(mockEventBus).publish(isA(EventMessage.class));
         testSubject.start();
         testSubject.registerListener(mockListener);
-        testSubject.publishEvent(new GenericEventMessage<Object>(new Object()), mockEventBus);
+        testSubject.publishEvent(new GenericEventMessage<>(new Object()), mockEventBus);
         try {
             testSubject.commit();
             fail("Expected exception");

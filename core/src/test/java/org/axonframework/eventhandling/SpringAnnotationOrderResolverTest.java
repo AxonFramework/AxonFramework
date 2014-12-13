@@ -40,11 +40,8 @@ public class SpringAnnotationOrderResolverTest {
 
     @Test
     public void testDefaultOrderWhenNotAnnotated() throws Exception {
-        assertEquals(0, testSubject.orderOf(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                throw new UnsupportedOperationException("Not implemented yet");
-            }
+        assertEquals(0, testSubject.orderOf(event -> {
+            throw new UnsupportedOperationException("Not implemented yet");
         }));
 
     }

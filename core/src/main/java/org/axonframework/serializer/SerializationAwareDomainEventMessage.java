@@ -51,7 +51,7 @@ public class SerializationAwareDomainEventMessage<T> extends SerializationAwareE
         if (message instanceof SerializationAware) {
             return message;
         }
-        return new SerializationAwareDomainEventMessage<T>(message);
+        return new SerializationAwareDomainEventMessage<>(message);
     }
 
     /**
@@ -80,7 +80,7 @@ public class SerializationAwareDomainEventMessage<T> extends SerializationAwareE
         if (domainEventMessage == newMessage) { // NOSONAR - Equal instance check on purpose
             return this;
         }
-        return new SerializationAwareDomainEventMessage<T>(newMessage);
+        return new SerializationAwareDomainEventMessage<>(newMessage);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class SerializationAwareDomainEventMessage<T> extends SerializationAwareE
         if (domainEventMessage == newMessage) { // NOSONAR - Equal instance check on purpose
             return this;
         }
-        return new SerializationAwareDomainEventMessage<T>(newMessage);
+        return new SerializationAwareDomainEventMessage<>(newMessage);
     }
 
     /**

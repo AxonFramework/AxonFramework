@@ -56,14 +56,14 @@ public class DisruptorCommandBusBenchmark {
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
         DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore, eventBus);
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
-        stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
+        stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
         inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(aggregateIdentifier, 0, new StubDomainEvent())));
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
-            CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
+            CommandMessage<StubCommand> command = new GenericCommandMessage<>(
                     new StubCommand(aggregateIdentifier));
             commandBus.dispatch(command);
         }
@@ -106,7 +106,7 @@ public class DisruptorCommandBusBenchmark {
 
     private static class InMemoryEventStore implements EventStore {
 
-        private final Map<String, DomainEventMessage> storedEvents = new HashMap<String, DomainEventMessage>();
+        private final Map<String, DomainEventMessage> storedEvents = new HashMap<>();
         private final CountDownLatch countDownLatch = new CountDownLatch((int) (COMMAND_COUNT + 1L));
 
         @Override
@@ -126,6 +126,12 @@ public class DisruptorCommandBusBenchmark {
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
             return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier.toString())));
+        }
+
+        @Override
+        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented");
         }
     }
 

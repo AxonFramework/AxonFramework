@@ -154,7 +154,7 @@ public class DefaultEventEntryStoreTest {
         testSubject.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
 
         final Iterator<? extends SerializedDomainEventData> iterator = testSubject.fetchFiltered(
-                null, Collections.<Object>emptyList(), 1);
+                null, Collections.emptyList(), 1);
 
         assertTrue(iterator.hasNext());
         final SerializedDomainEventData ret1 = iterator.next();
@@ -176,7 +176,7 @@ public class DefaultEventEntryStoreTest {
         testSubject.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
 
         final Iterator<? extends SerializedDomainEventData> iterator = testSubject.fetchFiltered(
-                null, Collections.<Object>emptyList(), 100);
+                null, Collections.emptyList(), 100);
 
         assertTrue(iterator.hasNext());
         final SerializedDomainEventData ret1 = iterator.next();
@@ -199,15 +199,15 @@ public class DefaultEventEntryStoreTest {
     }
 
     private static SerializedMetaData<byte[]> getMetaData() {
-        return new SerializedMetaData<byte[]>("Meta is meta".getBytes(), byte[].class);
+        return new SerializedMetaData<>("Meta is meta".getBytes(), byte[].class);
     }
 
     private static SimpleSerializedObject<byte[]> getPayload() {
-        return new SimpleSerializedObject<byte[]>(payloadBytes, byte[].class,
+        return new SimpleSerializedObject<>(payloadBytes, byte[].class,
                 new SimpleSerializedType("java.lang.String", "3"));
     }
     private static SimpleSerializedObject<byte[]> getPayloadv4() {
-        return new SimpleSerializedObject<byte[]>(payloadBytes, byte[].class,
+        return new SimpleSerializedObject<>(payloadBytes, byte[].class,
                 new SimpleSerializedType("java.lang.String", "4"));
     }
 }

@@ -40,7 +40,7 @@ import java.util.TreeSet;
 public class AutowiringClusterSelector implements ClusterSelector, ApplicationContextAware {
 
     private ApplicationContext applicationContext;
-    private final List<ClusterSelector> selectors = new ArrayList<ClusterSelector>();
+    private final List<ClusterSelector> selectors = new ArrayList<>();
     private volatile boolean initialized;
 
     @Override
@@ -68,7 +68,7 @@ public class AutowiringClusterSelector implements ClusterSelector, ApplicationCo
 
         this.initialized = true;
         Map<String, ClusterSelector> candidates = applicationContext.getBeansOfType(ClusterSelector.class);
-        SortedSet<OrderedClusterSelector> orderedCandidates = new TreeSet<OrderedClusterSelector>();
+        SortedSet<OrderedClusterSelector> orderedCandidates = new TreeSet<>();
         for (Map.Entry<String, ClusterSelector> entry : candidates.entrySet()) {
             if (entry.getValue() != this) {
                 orderedCandidates.add(new OrderedClusterSelector(entry.getKey(), entry.getValue()));

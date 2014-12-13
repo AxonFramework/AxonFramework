@@ -24,8 +24,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
 import java.util.Collections;
 
@@ -56,15 +54,10 @@ public class DistributedCommandBusTest {
 
         testSubject = new DistributedCommandBus(mockConnector, mockRoutingStrategy);
         mockHandler = mock(CommandHandler.class);
-        message = new GenericCommandMessage<Object>(new Object());
-        callback = new FutureCallback<Object>();
+        message = new GenericCommandMessage<>(new Object());
+        callback = new FutureCallback<>();
         mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
-        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         testSubject.setCommandDispatchInterceptors(Collections.singleton(mockDispatchInterceptor));
     }
 

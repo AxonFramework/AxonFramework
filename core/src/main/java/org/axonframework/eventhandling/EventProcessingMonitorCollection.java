@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class EventProcessingMonitorCollection implements EventProcessingMonitor, EventProcessingMonitorSupport {
 
-    private final Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<EventProcessingMonitor>();
+    private final Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<>();
 
     @Override
     public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {

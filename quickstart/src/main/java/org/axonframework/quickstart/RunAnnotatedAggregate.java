@@ -55,7 +55,7 @@ public class RunAnnotatedAggregate {
         EventBus eventBus = new SimpleEventBus();
 
         // we need to configure the repository
-        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<ToDoItem>(ToDoItem.class,
+        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class,
                                                                                              eventStore);
         repository.setEventBus(eventBus);
 

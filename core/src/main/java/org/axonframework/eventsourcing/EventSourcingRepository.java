@@ -57,7 +57,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
 
     private final EventStore eventStore;
     private ConflictResolver conflictResolver;
-    private final Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<EventStreamDecorator>();
+    private final Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<>();
     private final AggregateFactory<T> aggregateFactory;
 
     /**
@@ -69,7 +69,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore) {
-        this(new GenericAggregateFactory<T>(aggregateType), eventStore);
+        this(new GenericAggregateFactory<>(aggregateType), eventStore);
     }
 
     /**
@@ -112,7 +112,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
                                    final LockManager lockManager) {
-        this(new GenericAggregateFactory<T>(aggregateType), eventStore, lockManager);
+        this(new GenericAggregateFactory<>(aggregateType), eventStore, lockManager);
     }
 
     /**
@@ -173,7 +173,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             }
 
             final T aggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
-            List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
+            List<DomainEventMessage> unseenEvents = new ArrayList<>();
             aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
             if (aggregate.isDeleted()) {
                 throw new AggregateDeletedException(aggregateIdentifier);
@@ -209,7 +209,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     }
 
     private List<DomainEventMessage> asList(DomainEventStream domainEventStream) {
-        List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
+        List<DomainEventMessage> unseenEvents = new ArrayList<>();
         while (domainEventStream.hasNext()) {
             unseenEvents.add(domainEventStream.next());
         }

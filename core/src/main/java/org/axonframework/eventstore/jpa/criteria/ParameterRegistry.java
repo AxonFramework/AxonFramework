@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class ParameterRegistry {
 
-    private final Map<String, Object> parameters = new HashMap<String, Object>();
+    private final Map<String, Object> parameters = new HashMap<>();
 
     /**
      * Registers the given <code>expression</code> as parameter and returns the value to use to refer to this

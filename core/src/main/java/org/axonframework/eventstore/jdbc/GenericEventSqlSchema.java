@@ -305,7 +305,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     @Override
     public SerializedDomainEventData<T> createSerializedDomainEventData(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedDomainEventData<T>(resultSet.getString(1), resultSet.getString(2),
+        return new SimpleSerializedDomainEventData<>(resultSet.getString(1), resultSet.getString(2),
                 resultSet.getLong(3), readTimeStamp(resultSet, 4),
                 resultSet.getString(5), resultSet.getString(6),
                 readPayload(resultSet, 7),

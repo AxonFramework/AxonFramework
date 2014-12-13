@@ -42,12 +42,12 @@ public class MultiCorrelationDataProvider<T extends Message> implements Correlat
      */
     public MultiCorrelationDataProvider(
             List<? extends CorrelationDataProvider<? super T>> correlationDataProviders) {
-        delegates = new ArrayList<CorrelationDataProvider<? super T>>(correlationDataProviders);
+        delegates = new ArrayList<>(correlationDataProviders);
     }
 
     @Override
     public Map<String, ?> correlationDataFor(T message) {
-        Map<String, Object> correlationData = new HashMap<String, Object>();
+        Map<String, Object> correlationData = new HashMap<>();
         for (CorrelationDataProvider<? super T> delegate : delegates) {
             final Map<String, ?> extraData = delegate.correlationDataFor(message);
             if (extraData != null) {

@@ -43,7 +43,7 @@ public class StubEventSchedulerTest {
     }
 
     private EventMessage<MockEvent> event(MockEvent mockEvent) {
-        return new GenericEventMessage<MockEvent>(mockEvent);
+        return new GenericEventMessage<>(mockEvent);
     }
 
     private static class MockEvent {

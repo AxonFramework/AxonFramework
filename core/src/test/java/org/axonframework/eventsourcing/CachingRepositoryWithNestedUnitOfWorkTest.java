@@ -110,7 +110,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     EventBus eventBus;
     Cache cache;
 
-    final List<String> events = new ArrayList<String>();
+    final List<String> events = new ArrayList<>();
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -125,8 +125,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         events.clear();
 
         EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(tempFolder.newFolder()));
-        AggregateFactory<Aggregate> aggregateFactory = new GenericAggregateFactory<Aggregate>(Aggregate.class);
-        repository = new CachingEventSourcingRepository<Aggregate>(aggregateFactory, eventStore);
+        AggregateFactory<Aggregate> aggregateFactory = new GenericAggregateFactory<>(Aggregate.class);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore);
         repository.setEventBus(eventBus);
 
         uowFactory = new DefaultUnitOfWorkFactory();
@@ -335,7 +335,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         @AggregateIdentifier
         public String id;
 
-        public Set<String> tokens = new HashSet<String>();
+        public Set<String> tokens = new HashSet<>();
 
         @SuppressWarnings("unused")
         private Aggregate() {

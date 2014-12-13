@@ -27,8 +27,6 @@ import org.axonframework.unitofwork.UnitOfWorkFactory;
 import org.joda.time.Duration;
 import org.junit.*;
 import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -76,12 +74,9 @@ public class QuartzEventSchedulerTest {
     @Test
     public void testScheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
@@ -99,12 +94,9 @@ public class QuartzEventSchedulerTest {
         testSubject.setTransactionManager(transactionManager);
         testSubject.initialize();
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
@@ -127,12 +119,9 @@ public class QuartzEventSchedulerTest {
         testSubject.setUnitOfWorkFactory(unitOfWorkFactory);
         testSubject.initialize();
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
@@ -161,7 +150,7 @@ public class QuartzEventSchedulerTest {
     }
 
     private EventMessage newStubEvent() {
-        return new GenericEventMessage<StubEvent>(new StubEvent());
+        return new GenericEventMessage<>(new StubEvent());
     }
 
     private class StubEvent {

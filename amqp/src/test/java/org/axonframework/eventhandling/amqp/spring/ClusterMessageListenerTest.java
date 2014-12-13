@@ -49,7 +49,7 @@ public class ClusterMessageListenerTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        outputStream.writeEventMessage(new GenericEventMessage<String>("Event"));
+        outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
         testSubject.onMessage(new Message(baos.toByteArray(), new MessageProperties()));
 
         verify(cluster).publish(argThat(new TypeSafeMatcher<EventMessage>() {
@@ -74,7 +74,7 @@ public class ClusterMessageListenerTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        outputStream.writeEventMessage(new GenericEventMessage<String>("Event"));
+        outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
         byte[] body = baos.toByteArray();
         body = new String(body, Charset.forName("UTF-8")).replace("string", "strong")
                                                          .getBytes(Charset.forName("UTF-8"));

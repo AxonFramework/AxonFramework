@@ -83,7 +83,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
     }
 
     private static ParameterResolverFactory[] flatten(List<ParameterResolverFactory> factories) {
-        List<ParameterResolverFactory> flattened = new ArrayList<ParameterResolverFactory>(factories.size());
+        List<ParameterResolverFactory> flattened = new ArrayList<>(factories.size());
         for (ParameterResolverFactory parameterResolverFactory : factories) {
             if (parameterResolverFactory instanceof MultiParameterResolverFactory) {
                 flattened.addAll(((MultiParameterResolverFactory) parameterResolverFactory).getDelegates());

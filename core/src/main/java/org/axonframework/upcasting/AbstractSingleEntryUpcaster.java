@@ -44,7 +44,7 @@ public abstract class AbstractSingleEntryUpcaster<T> implements Upcaster<T> {
             return Collections.emptyList();
         }
         return Collections.<SerializedObject<?>>singletonList(
-                new SimpleSerializedObject<T>(upcastObject, expectedRepresentationType(), expectedTypes.get(0)));
+                new SimpleSerializedObject<>(upcastObject, expectedRepresentationType(), expectedTypes.get(0)));
     }
 
     @Override

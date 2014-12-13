@@ -112,23 +112,9 @@ public class AnnotationCommandHandlerAdapterTest {
         verifyNoMoreInteractions(mockBus);
     }
 
-    @Deprecated
-    @Test
-    public void testSelfSubscribe() {
-        testSubject = new AnnotationCommandHandlerAdapter(mockTarget, mockBus);
-        testSubject.subscribe();
-
-        verify(mockBus).subscribe(Long.class.getName(), testSubject);
-        verify(mockBus).subscribe(String.class.getName(), testSubject);
-        verify(mockBus).subscribe(HashSet.class.getName(), testSubject);
-        verify(mockBus).subscribe(ArrayList.class.getName(), testSubject);
-        verify(mockBus).subscribe("almostLong", testSubject);
-        verifyNoMoreInteractions(mockBus);
-    }
-
     @Test(expected = NoHandlerForCommandException.class)
     public void testHandle_NoHandlerForCommand() throws Throwable {
-        testSubject.handle(GenericCommandMessage.asCommandMessage(new LinkedList()), null);
+        testSubject.handle(GenericCommandMessage.asCommandMessage(new LinkedList<>()), null);
         verify(mockUnitOfWork, never()).attachResource(ParameterResolverFactory.class.getName(),
                                                        parameterResolverFactory);
     }

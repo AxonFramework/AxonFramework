@@ -58,7 +58,7 @@ public abstract class AbstractCommandGateway {
         Assert.notNull(commandBus, "commandBus may not be null");
         this.commandBus = commandBus;
         if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+            this.dispatchInterceptors = new ArrayList<>(commandDispatchInterceptors);
         } else {
             this.dispatchInterceptors = Collections.emptyList();
         }
@@ -76,7 +76,7 @@ public abstract class AbstractCommandGateway {
         CommandMessage commandMessage = processInterceptors(createCommandMessage(command));
         CommandCallback<R> commandCallback = callback;
         if (retryScheduler != null) {
-            commandCallback = new RetryingCallback<R>(callback, commandMessage, retryScheduler, commandBus);
+            commandCallback = new RetryingCallback<>(callback, commandMessage, retryScheduler, commandBus);
         }
         commandBus.dispatch(commandMessage, commandCallback);
     }

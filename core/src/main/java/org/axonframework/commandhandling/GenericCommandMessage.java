@@ -50,7 +50,7 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
         if (CommandMessage.class.isInstance(command)) {
             return (CommandMessage) command;
         }
-        return new GenericCommandMessage<Object>(command);
+        return new GenericCommandMessage<>(command);
     }
 
     /**
@@ -148,7 +148,7 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
         if (getMetaData().equals(newMetaData)) {
             return this;
         }
-        return new GenericCommandMessage<T>(this, newMetaData);
+        return new GenericCommandMessage<>(this, newMetaData);
     }
 
     @Override
@@ -156,6 +156,6 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
         if (additionalMetaData.isEmpty()) {
             return this;
         }
-        return new GenericCommandMessage<T>(this, metaData.mergedWith(additionalMetaData));
+        return new GenericCommandMessage<>(this, metaData.mergedWith(additionalMetaData));
     }
 }
