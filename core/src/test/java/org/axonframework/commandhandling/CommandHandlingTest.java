@@ -41,15 +41,14 @@ import static org.mockito.Mockito.*;
 public class CommandHandlingTest {
 
     private EventSourcingRepository<StubAggregate> repository;
-    private Object aggregateIdentifier;
-    private EventBus mockEventBus;
+    private String aggregateIdentifier;
     private EventStore mockEventStore;
 
     @Before
     public void setUp() {
         mockEventStore = new StubEventStore();
         repository = new EventSourcingRepository<>(StubAggregate.class, mockEventStore);
-        mockEventBus = mock(EventBus.class);
+        EventBus mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
         aggregateIdentifier = "testAggregateIdentifier";
     }
@@ -92,12 +91,12 @@ public class CommandHandlingTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, String identifier) {
             return new SimpleDomainEventStream(new ArrayList<>(storedEvents));
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             return new SimpleDomainEventStream(
                     storedEvents.stream()

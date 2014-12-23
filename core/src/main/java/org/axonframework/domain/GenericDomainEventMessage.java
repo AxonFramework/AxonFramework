@@ -32,7 +32,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
 
     private static final long serialVersionUID = 5751346338145616886L;
 
-    private final Object aggregateIdentifier;
+    private final String aggregateIdentifier;
     private final long sequenceNumber;
 
     /**
@@ -43,7 +43,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param sequenceNumber      The message's sequence number
      * @param payload             The application-specific payload of the message
      */
-    public GenericDomainEventMessage(Object aggregateIdentifier, long sequenceNumber, T payload) {
+    public GenericDomainEventMessage(String aggregateIdentifier, long sequenceNumber, T payload) {
         this(aggregateIdentifier, sequenceNumber, payload, MetaData.emptyInstance());
     }
 
@@ -56,7 +56,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param payload             The application-specific payload of the message
      * @param metaData            The MetaData to attach to the message
      */
-    public GenericDomainEventMessage(Object aggregateIdentifier, long sequenceNumber,
+    public GenericDomainEventMessage(String aggregateIdentifier, long sequenceNumber,
                                      T payload, Map<String, ?> metaData) {
         super(payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;
@@ -73,7 +73,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param payload             The payload of the message
      * @param metaData            The meta data of the message
      */
-    public GenericDomainEventMessage(String identifier, DateTime timestamp, Object aggregateIdentifier,
+    public GenericDomainEventMessage(String identifier, DateTime timestamp, String aggregateIdentifier,
                                      long sequenceNumber, T payload, Map<String, ?> metaData) {
         super(identifier, timestamp, payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;
@@ -99,7 +99,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

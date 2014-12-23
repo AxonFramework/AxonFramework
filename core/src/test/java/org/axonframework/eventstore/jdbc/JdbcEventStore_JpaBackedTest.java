@@ -128,7 +128,7 @@ public class JdbcEventStore_JpaBackedTest {
                     TransactionStatus status) {
                 DomainEventMessage firstEvent = aggregate2.getUncommittedEvents().next();
                 entityManager.persist(new DomainEventEntry("type",
-                                                           new GenericDomainEventMessage(
+                                                           new GenericDomainEventMessage<>(
                                                                    "a",
                                                                    new DateTime(),
                                                                    "someValue",
@@ -144,7 +144,7 @@ public class JdbcEventStore_JpaBackedTest {
             protected void doInTransactionWithoutResult(
                     TransactionStatus status) {
                 entityManager.persist(new DomainEventEntry("type",
-                                                           new GenericDomainEventMessage(
+                                                           new GenericDomainEventMessage<>(
                                                                    "a",
                                                                    new DateTime(),
                                                                    "anotherValue",
@@ -155,13 +155,6 @@ public class JdbcEventStore_JpaBackedTest {
                                                            emptySerializedObject));
             }
         });
-    }
-
-    @Transactional
-    @Test(expected = IllegalArgumentException.class)
-    public void testStoreAndLoadEvents_BadIdentifierType() {
-        testSubject.appendEvents("type", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(new BadIdentifierType(), 1, new Object())));
     }
 
     @Transactional
@@ -208,10 +201,10 @@ public class JdbcEventStore_JpaBackedTest {
         /// we make sure persisted events have the same MetaData alteration logic
         DomainEventStream other = testSubject.readEvents("test", aggregate2.getIdentifier());
         assertTrue(other.hasNext());
-        DomainEventMessage messageWithMetaData = other.next();
-        DomainEventMessage altered = messageWithMetaData.withMetaData(Collections.singletonMap("key2",
+        DomainEventMessage<?> messageWithMetaData = other.next();
+        DomainEventMessage<?> altered = messageWithMetaData.withMetaData(Collections.singletonMap("key2",
                                                                                                (Object) "value"));
-        DomainEventMessage combined = messageWithMetaData.andMetaData(Collections.singletonMap("key2",
+        DomainEventMessage<?> combined = messageWithMetaData.andMetaData(Collections.singletonMap("key2",
                                                                                                (Object) "value"));
         assertTrue(altered.getMetaData().containsKey("key2"));
         altered.getPayload();
@@ -496,7 +489,7 @@ public class JdbcEventStore_JpaBackedTest {
     @Test(expected = EventStreamNotFoundException.class)
     @Transactional
     public void testLoadNonExistent() {
-        testSubject.readEvents("Stub", UUID.randomUUID());
+        testSubject.readEvents("Stub", UUID.randomUUID().toString());
     }
 
     @Test
@@ -659,7 +652,7 @@ public class JdbcEventStore_JpaBackedTest {
                 entityManager.createQuery("SELECT e FROM SnapshotEventEntry e "
                                                   + "WHERE e.type = 'type' "
                                                   + "AND e.aggregateIdentifier = :aggregateIdentifier")
-                             .setParameter("aggregateIdentifier", aggregate.getIdentifier().toString())
+                             .setParameter("aggregateIdentifier", aggregate.getIdentifier())
                              .getResultList();
         assertEquals("archived snapshot count", 1L, snapshots.size());
         assertEquals("archived snapshot sequence", 1L, snapshots.iterator().next().getSequenceNumber());
@@ -668,7 +661,7 @@ public class JdbcEventStore_JpaBackedTest {
     @Test
     @Transactional
     public void testReadPartialStream_WithoutEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
@@ -699,7 +692,7 @@ public class JdbcEventStore_JpaBackedTest {
     @Test
     @Transactional
     public void testReadPartialStream_WithEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
@@ -728,13 +721,9 @@ public class JdbcEventStore_JpaBackedTest {
         assertFalse(actual.hasNext());
     }
 
-    private SerializedObject<byte[]> mockSerializedObject(byte[] bytes) {
-        return new SimpleSerializedObject<>(bytes, byte[].class, "java.lang.String", "0");
-    }
-
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
-        final Object aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier,
@@ -763,8 +752,8 @@ public class JdbcEventStore_JpaBackedTest {
         }
 
         @Override
-        public Object getIdentifier() {
-            return identifier;
+        public String getIdentifier() {
+            return identifier.toString();
         }
 
         @EventSourcingHandler
@@ -783,10 +772,6 @@ public class JdbcEventStore_JpaBackedTest {
 
         private StubStateChangedEvent() {
         }
-    }
-
-    private static class BadIdentifierType {
-
     }
 
     private static class StubUpcaster implements Upcaster<byte[]> {

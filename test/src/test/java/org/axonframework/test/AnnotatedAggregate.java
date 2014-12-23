@@ -97,7 +97,7 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot implements Annot
     }
 
     @Override
-    public Object getIdentifier() {
-        return identifier;
+    public String getIdentifier() {
+        return identifier == null ? null :  identifier.toString();
     }
 }

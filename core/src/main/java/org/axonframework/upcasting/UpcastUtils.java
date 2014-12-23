@@ -51,8 +51,6 @@ public abstract class UpcastUtils {
      * unknown classes are ignored, and not returned.
      *
      * @param entry               the entry containing the data of the serialized event
-     * @param aggregateIdentifier the original aggregate identifier to use in the deserialized events or
-     *                            <code>null</code> to use the deserialized version
      * @param serializer          the serializer to deserialize the event with
      * @param upcasterChain       the chain containing the upcasters to upcast the events with
      * @param skipUnknownTypes    whether unknown serialized types should be ignored
@@ -60,7 +58,6 @@ public abstract class UpcastUtils {
      */
     @SuppressWarnings("unchecked")
     public static List<DomainEventMessage> upcastAndDeserialize(SerializedDomainEventData entry,
-                                                                Object aggregateIdentifier,
                                                                 Serializer serializer, UpcasterChain upcasterChain,
                                                                 boolean skipUnknownTypes) {
         SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry, serializer);
@@ -70,8 +67,8 @@ public abstract class UpcastUtils {
             try {
                 DomainEventMessage<Object> message = new SerializedDomainEventMessage<>(
                         new UpcastSerializedDomainEventData(entry,
-                                                            firstNonNull(aggregateIdentifier,
-                                                                         entry.getAggregateIdentifier()), object),
+                                                            entry.getAggregateIdentifier(),
+                                                            object),
                         serializer);
 
                 // prevents duplicate deserialization of meta data when it has already been access during upcasting
@@ -88,14 +85,5 @@ public abstract class UpcastUtils {
             }
         }
         return events;
-    }
-
-    private static Object firstNonNull(Object... instances) {
-        for (Object instance : instances) {
-            if (instance != null) {
-                return instance;
-            }
-        }
-        return null;
     }
 }

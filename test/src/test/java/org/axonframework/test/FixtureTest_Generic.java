@@ -131,13 +131,13 @@ public class FixtureTest_Generic {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(UUID.randomUUID(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(UUID.randomUUID(), 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
-        UUID identifier = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
         fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
                 new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));

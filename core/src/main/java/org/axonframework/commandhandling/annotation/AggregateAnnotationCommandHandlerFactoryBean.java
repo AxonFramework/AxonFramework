@@ -38,7 +38,7 @@ import org.springframework.context.ApplicationContextAware;
  * @author Allard Buijze
  * @since 2.1
  */
-public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoot<?>>
+public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoot>
         implements FactoryBean<AggregateAnnotationCommandHandler<T>>, InitializingBean, ApplicationContextAware {
 
     private CommandBus commandBus;

@@ -19,19 +19,18 @@ package org.axonframework.domain;
 /**
  * Interface defining a contract for entities that represent the aggregate root.
  *
- * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @see org.axonframework.domain.AbstractAggregateRoot
  * @since 0.1
  */
-public interface AggregateRoot<I> {
+public interface AggregateRoot {
 
     /**
      * Returns the identifier of this aggregate.
      *
      * @return the identifier of this aggregate
      */
-    I getIdentifier();
+    String getIdentifier();
 
     /**
      * Clears the events currently marked as "uncommitted" and clears any known EventRegistrationCallbacks (see {@link

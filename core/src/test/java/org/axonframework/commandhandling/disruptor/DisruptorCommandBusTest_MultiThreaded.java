@@ -108,7 +108,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
             Object aggregate = invocation.callRealMethod();
             garbageCollectionPrevention.put(aggregate, new Object());
             return aggregate;
-        }).when(spiedRepository).load(isA(Object.class));
+        }).when(spiedRepository).load(isA(String.class));
         final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
         when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
@@ -155,7 +155,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 
@@ -202,7 +202,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, String identifier) {
             loadCounter.incrementAndGet();
             DomainEventMessage message = storedEvents.get(identifier.toString());
             if (message == null) {
@@ -212,7 +212,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }
@@ -277,7 +277,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
                 repository.add(aggregate);
                 aggregate.doSomething();
             } else {
-                StubAggregate aggregate = repository.load(command.getPayload().getAggregateIdentifier());
+                StubAggregate aggregate = repository.load(command.getPayload().getAggregateIdentifier().toString());
                 if (ErrorCommand.class.isAssignableFrom(command.getPayloadType())) {
                     aggregate.createFailingEvent();
                 } else {

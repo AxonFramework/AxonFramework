@@ -94,7 +94,7 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
      * @return the Aggregate Identifier of the associated event.
      */
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

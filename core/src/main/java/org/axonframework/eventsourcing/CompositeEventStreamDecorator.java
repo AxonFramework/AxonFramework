@@ -32,7 +32,8 @@ public class CompositeEventStreamDecorator implements EventStreamDecorator {
 
     /**
      * Initialize the decorator, delegating to the given <code>eventStreamDecorators</code>. The decorators are
-     * invoked in the iterator's order on {@link #decorateForRead(String, Object, org.axonframework.domain.DomainEventStream)},
+     * invoked in the iterator's order on
+     * {@link #decorateForRead(String, String, org.axonframework.domain.DomainEventStream)},
      * and in revese order on {@link #decorateForAppend(String, EventSourcedAggregateRoot,
      * org.axonframework.domain.DomainEventStream)}.
      *
@@ -44,7 +45,7 @@ public class CompositeEventStreamDecorator implements EventStreamDecorator {
     }
 
     @Override
-    public DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
+    public DomainEventStream decorateForRead(String aggregateType, String aggregateIdentifier,
                                              DomainEventStream eventStream) {
         DomainEventStream events = eventStream;
         for (EventStreamDecorator decorator : eventStreamDecorators) {

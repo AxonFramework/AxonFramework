@@ -225,7 +225,7 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
-        Object identifier = aggregate1.getIdentifier();
+        String identifier = aggregate1.getIdentifier();
 
         DefaultUnitOfWork.startAndGet();
         aggregate1.delete();
@@ -236,7 +236,7 @@ public class CachingEventSourcingRepositoryTest {
             testSubject.load(identifier);
             fail("Expected AggregateDeletedException");
         } catch (AggregateDeletedException e) {
-            assertTrue(e.getMessage().contains(identifier.toString()));
+            assertTrue(e.getMessage().contains(identifier));
         } finally {
             CurrentUnitOfWork.commit();
         }
@@ -261,7 +261,7 @@ public class CachingEventSourcingRepositoryTest {
     private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {
 
         @Override
-        public StubAggregate doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
+        public StubAggregate doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
             return new StubAggregate(aggregateIdentifier);
         }
 
@@ -293,7 +293,7 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             if (!store.containsKey(identifier)) {
                 throw new AggregateNotFoundException(identifier, "Aggregate not found");

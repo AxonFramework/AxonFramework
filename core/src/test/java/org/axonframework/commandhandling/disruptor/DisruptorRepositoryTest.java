@@ -66,7 +66,7 @@ public class DisruptorRepositoryTest {
     }
 
     @SuppressWarnings("serial")
-    public static class Aggregate extends AbstractAnnotatedAggregateRoot<String> {
+    public static class Aggregate extends AbstractAnnotatedAggregateRoot {
 
         @AggregateIdentifier
         private String id;

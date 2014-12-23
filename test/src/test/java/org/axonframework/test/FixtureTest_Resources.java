@@ -59,7 +59,7 @@ public class FixtureTest_Resources {
         testResourcesAreScopedToSingleTest_MethodPartOne();
     }
 
-    public static class AggregateWithResources extends AbstractAnnotatedAggregateRoot<String> {
+    public static class AggregateWithResources extends AbstractAnnotatedAggregateRoot {
 
         @AggregateIdentifier
         private String id;

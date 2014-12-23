@@ -148,11 +148,10 @@ public final class AggregateAnnotationInspector {
      * The field carrying the aggregate identifier must be annotated with {@link AggregateIdentifier}.
      *
      * @param aggregateRoot The aggregate root to find the aggregate on
-     * @param <I>           The type of identifier declared on the aggregate root
      * @return the value contained in the field annotated with {@link AggregateIdentifier}
      */
     @SuppressWarnings("unchecked")
-    public <I> I getIdentifier(AbstractAnnotatedAggregateRoot<I> aggregateRoot) {
+    public String getIdentifier(AbstractAnnotatedAggregateRoot aggregateRoot) {
         if (identifierField == null) {
             throw new IncompatibleAggregateException(
                     format("The aggregate class [%s] does not specify an Identifier. "
@@ -160,7 +159,8 @@ public final class AggregateAnnotationInspector {
                                    + "identifier is annotated with @AggregateIdentifier.",
                            aggregateRoot.getClass().getSimpleName()));
         }
-        return (I) ReflectionUtils.getFieldValue(identifierField, aggregateRoot);
+        final Object fieldValue = ReflectionUtils.getFieldValue(identifierField, aggregateRoot);
+        return fieldValue == null ? null : fieldValue.toString();
     }
 
     private Field locateIdentifierField(Class<? extends AbstractAnnotatedAggregateRoot> aggregateRootType) {

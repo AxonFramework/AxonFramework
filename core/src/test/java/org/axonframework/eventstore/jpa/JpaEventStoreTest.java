@@ -162,13 +162,6 @@ public class JpaEventStoreTest {
     }
 
     @Transactional
-    @Test(expected = IllegalArgumentException.class)
-    public void testStoreAndLoadEvents_BadIdentifierType() {
-        testSubject.appendEvents("type", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(new BadIdentifierType(), 1, new Object())));
-    }
-
-    @Transactional
     @Test(expected = UnknownSerializedTypeException.class)
     public void testUnknownSerializedTypeCausesException() {
         testSubject.appendEvents("type", aggregate1.getUncommittedEvents());
@@ -500,7 +493,7 @@ public class JpaEventStoreTest {
     @Test(expected = EventStreamNotFoundException.class)
     @Transactional
     public void testLoadNonExistent() {
-        testSubject.readEvents("Stub", UUID.randomUUID());
+        testSubject.readEvents("Stub", UUID.randomUUID().toString());
     }
 
     @Transactional
@@ -690,9 +683,9 @@ public class JpaEventStoreTest {
         when(eventEntryStore.getDataType()).thenReturn(byte[].class);
         testSubject = new JpaEventStore(new SimpleEntityManagerProvider(entityManager), eventEntryStore);
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(UUID.randomUUID(), (long) 0,
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<>(UUID.randomUUID(), (long) 0,
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), (long) 0,
                                                       "Mock contents", MetaData.emptyInstance())));
         verify(eventEntryStore, times(2)).persistEvent(eq("test"), isA(DomainEventMessage.class),
                                                        Matchers.<SerializedObject>any(),
@@ -700,7 +693,7 @@ public class JpaEventStoreTest {
 
         reset(eventEntryStore);
         GenericDomainEventMessage<String> eventMessage = new GenericDomainEventMessage<>(
-                UUID.randomUUID(), 0L, "Mock contents", MetaData.emptyInstance());
+                UUID.randomUUID().toString(), 0L, "Mock contents", MetaData.emptyInstance());
         when(eventEntryStore.fetchAggregateStream(anyString(), any(), anyInt(), anyInt(),
                                                   any(EntityManager.class)))
                 .thenReturn(new ArrayList(Arrays.asList(new DomainEventEntry(
@@ -720,7 +713,7 @@ public class JpaEventStoreTest {
     @Test
     @Transactional
     public void testReadPartialStream_WithoutEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
@@ -751,7 +744,7 @@ public class JpaEventStoreTest {
     @Test
     @Transactional
     public void testReadPartialStream_WithEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                       "Mock contents", MetaData.emptyInstance()),
@@ -860,7 +853,7 @@ public class JpaEventStoreTest {
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
-        final Object aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier,
@@ -889,8 +882,8 @@ public class JpaEventStoreTest {
         }
 
         @Override
-        public Object getIdentifier() {
-            return identifier;
+        public String getIdentifier() {
+            return identifier.toString();
         }
 
         @EventSourcingHandler

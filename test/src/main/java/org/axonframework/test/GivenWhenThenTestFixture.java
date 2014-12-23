@@ -185,13 +185,20 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                     payload = ((Message) event).getPayload();
                     metaData = ((Message) event).getMetaData();
                 }
-                this.givenEvents.add(new GenericDomainEventMessage<>(aggregateIdentifier, sequenceNumber++,
-                                                                           payload, metaData));
+                this.givenEvents.add(new GenericDomainEventMessage<>(nullSafeToString(aggregateIdentifier),
+                                                                     sequenceNumber++, payload, metaData));
             }
         } catch (RuntimeException e) {
             FixtureResourceParameterResolverFactory.clear();
         }
         return this;
+    }
+
+    private String nullSafeToString(Object value) {
+        if (value != null) {
+            return value.toString();
+        }
+        return null;
     }
 
     @Override
@@ -269,7 +276,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork uow = DefaultUnitOfWork.startAndGet();
             try {
-                EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
+                EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier.toString());
                 if (workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was considered deleted, "
                                                          + "but the Repository still contains a non-deleted copy of "
@@ -418,20 +425,20 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
 
         @Override
-        public T load(Object aggregateIdentifier, Long expectedVersion) {
+        public T load(String aggregateIdentifier, Long expectedVersion) {
             T aggregate = delegate.load(aggregateIdentifier, expectedVersion);
             validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
 
         @Override
-        public T load(Object aggregateIdentifier) {
+        public T load(String aggregateIdentifier) {
             T aggregate = delegate.load(aggregateIdentifier, null);
             validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
 
-        private void validateIdentifier(Object aggregateIdentifier, T aggregate) {
+        private void validateIdentifier(String aggregateIdentifier, T aggregate) {
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.getIdentifier())) {
                 throw new AssertionError(String.format(
                         "The aggregate used in this fixture was initialized with an identifier different than "
@@ -478,7 +485,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             if (identifier != null) {
                 validateIdentifier(identifier.getClass());
@@ -511,7 +518,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                 if (oldEvent.getAggregateIdentifier() == null) {
                     givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getIdentifier(),
                                                                           oldEvent.getTimestamp(),
-                                                                          aggregateIdentifier,
+                                                                          aggregateIdentifier.toString(),
                                                                           oldEvent.getSequenceNumber(),
                                                                           oldEvent.getPayload(),
                                                                           oldEvent.getMetaData()));

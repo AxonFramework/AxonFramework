@@ -130,7 +130,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public GivenAggregateEventPublisher givenAggregate(Object aggregateIdentifier) {
-        return getPublisherFor(aggregateIdentifier);
+        return getPublisherFor(aggregateIdentifier.toString());
     }
 
     @Override
@@ -174,7 +174,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     @Override
     public WhenAggregateEventPublisher whenAggregate(Object aggregateIdentifier) {
         fixtureExecutionResult.startRecording();
-        return getPublisherFor(aggregateIdentifier);
+        return getPublisherFor(aggregateIdentifier.toString());
     }
 
     @Override
@@ -208,7 +208,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         return gateway;
     }
 
-    private AggregateEventPublisherImpl getPublisherFor(Object aggregateIdentifier) {
+    private AggregateEventPublisherImpl getPublisherFor(String aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
         }
@@ -217,10 +217,10 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
-        private final Object aggregateIdentifier;
+        private final String aggregateIdentifier;
         private int sequenceNumber = 0;
 
-        public AggregateEventPublisherImpl(Object aggregateIdentifier) {
+        public AggregateEventPublisherImpl(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 

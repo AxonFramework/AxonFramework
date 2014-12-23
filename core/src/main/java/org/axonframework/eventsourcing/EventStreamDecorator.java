@@ -38,7 +38,7 @@ public interface EventStreamDecorator {
      * @param eventStream         The eventStream containing the events to append to the event store
      * @return the decorated event stream
      */
-    DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
+    DomainEventStream decorateForRead(String aggregateType, String aggregateIdentifier,
                                       DomainEventStream eventStream);
 
     /**

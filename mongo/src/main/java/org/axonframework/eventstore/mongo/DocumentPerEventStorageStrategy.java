@@ -86,7 +86,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
     public List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier,
                                                          Serializer serializer, UpcasterChain upcasterChain,
                                                          boolean skipUnknownTypes) {
-        return new EventEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain, skipUnknownTypes);
+        return new EventEntry(entry).getDomainEvents(serializer, upcasterChain, skipUnknownTypes);
     }
 
     @Override
@@ -186,7 +186,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
          */
         private EventEntry(String aggregateType, DomainEventMessage event, Serializer serializer) {
             this.aggregateType = aggregateType;
-            this.aggregateIdentifier = event.getAggregateIdentifier().toString();
+            this.aggregateIdentifier = event.getAggregateIdentifier();
             this.sequenceNumber = event.getSequenceNumber();
             this.eventIdentifier = event.getIdentifier();
             Class<?> serializationTarget = String.class;
@@ -223,8 +223,6 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         /**
          * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
          *
-         * @param actualAggregateIdentifier The actual aggregate identifier instance used to perform the lookup, or
-         *                                  <code>null</code> if unknown
          * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
          * @param upcasterChain             Set of upcasters to use when an event needs upcasting before
          *                                  de-serialization
@@ -232,10 +230,9 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
          * @return The actual DomainEventMessage instances stored in this entry
          */
         @SuppressWarnings("unchecked")
-        public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
+        public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer,
                                                         UpcasterChain upcasterChain, boolean skipUnknownTypes) {
-            return upcastAndDeserialize(this, actualAggregateIdentifier, eventSerializer,
-                                        upcasterChain, skipUnknownTypes);
+            return upcastAndDeserialize(this, eventSerializer, upcasterChain, skipUnknownTypes);
         }
 
         private Class<?> getRepresentationType() {
@@ -252,7 +249,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         }
 
         @Override
-        public Object getAggregateIdentifier() {
+        public String getAggregateIdentifier() {
             return aggregateIdentifier;
         }
 

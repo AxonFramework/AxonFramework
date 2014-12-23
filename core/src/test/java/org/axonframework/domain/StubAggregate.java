@@ -43,8 +43,8 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     @Override
-    public Object getIdentifier() {
-        return identifier;
+    public String getIdentifier() {
+        return identifier.toString();
     }
 
     @Override

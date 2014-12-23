@@ -93,19 +93,13 @@ public class JdbcEventStoreTest {
         DateTimeUtils.setCurrentMillisSystem();
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testStoreAndLoadEvents_BadIdentifierType() {
-        testSubject.appendEvents("type", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(new BadIdentifierType(), 1, new Object())));
-    }
-
     @Test(expected = UnknownSerializedTypeException.class)
     public void testUnknownSerializedTypeCausesException() throws SQLException {
         testSubject.appendEvents("type", aggregate1.getUncommittedEvents());
         final PreparedStatement preparedStatement = conn.prepareStatement("UPDATE DomainEventEntry e SET e.payloadType = ?");
         preparedStatement.setString(1, "unknown");
         preparedStatement.executeUpdate();
-        testSubject.readEvents("type", aggregate1.getIdentifier());
+        testSubject.readEvents("type", aggregate1.getIdentifier().toString());
     }
 
     private long queryLong() throws SQLException {
@@ -124,12 +118,12 @@ public class JdbcEventStoreTest {
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
+                new GenericDomainEventMessage<>(aggregate2.getIdentifier().toString(),
                         0,
                         new Object(),
                         Collections.singletonMap("key", (Object) "Value"))));
 
-        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier().toString());
         List<DomainEventMessage> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -140,7 +134,7 @@ public class JdbcEventStoreTest {
         assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
 
         /// we make sure persisted events have the same MetaData alteration logic
-        DomainEventStream other = testSubject.readEvents("test", aggregate2.getIdentifier());
+        DomainEventStream other = testSubject.readEvents("test", aggregate2.getIdentifier().toString());
         assertTrue(other.hasNext());
         DomainEventMessage messageWithMetaData = other.next();
         DomainEventMessage altered = messageWithMetaData.withMetaData(Collections.singletonMap("key2",
@@ -175,12 +169,12 @@ public class JdbcEventStoreTest {
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
+                new GenericDomainEventMessage<>(aggregate2.getIdentifier().toString(),
                         0,
                         new Object(),
                         Collections.singletonMap("key", (Object) "Value"))));
 
-        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier().toString());
         List<DomainEventMessage> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -261,7 +255,7 @@ public class JdbcEventStoreTest {
         testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
 
-        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier().toString());
         List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             DomainEventMessage next = actualEventStream.next();
@@ -288,7 +282,7 @@ public class JdbcEventStoreTest {
     @Test(expected = EventStreamNotFoundException.class)
     @Transactional
     public void testLoadNonExistent() {
-        testSubject.readEvents("Stub", UUID.randomUUID());
+        testSubject.readEvents("Stub", UUID.randomUUID().toString());
     }
 
     @Test
@@ -423,9 +417,9 @@ public class JdbcEventStoreTest {
         when(eventEntryStore.getDataType()).thenReturn(String.class);
         testSubject = new JdbcEventStore(eventEntryStore);
         testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(UUID.randomUUID(), (long) 0,
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), (long) 0,
                         "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<>(UUID.randomUUID(), (long) 0,
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), (long) 0,
                         "Mock contents", MetaData.emptyInstance())));
         verify(eventEntryStore, times(2)).persistEvent(eq("test"), isA(DomainEventMessage.class),
                 Matchers.<SerializedObject>any(),
@@ -433,7 +427,7 @@ public class JdbcEventStoreTest {
 
         reset(eventEntryStore);
         GenericDomainEventMessage<String> eventMessage = new GenericDomainEventMessage<>(
-                UUID.randomUUID(), 0L, "Mock contents", MetaData.emptyInstance());
+                UUID.randomUUID().toString(), 0L, "Mock contents", MetaData.emptyInstance());
         when(eventEntryStore.fetchAggregateStream(anyString(), any(), anyInt(), anyInt()))
                 .thenReturn(new ArrayList(Arrays.asList(new DomainEventEntry(
                         "Mock", eventMessage,
@@ -451,7 +445,7 @@ public class JdbcEventStoreTest {
     @Test
     @Transactional
     public void testReadPartialStream_WithoutEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                         "Mock contents", MetaData.emptyInstance()),
@@ -479,7 +473,7 @@ public class JdbcEventStoreTest {
     @Test
     @Transactional
     public void testReadPartialStream_WithEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                         "Mock contents", MetaData.emptyInstance()),
@@ -511,7 +505,7 @@ public class JdbcEventStoreTest {
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
-        final Object aggregateIdentifier = UUID.randomUUID();
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier,
@@ -540,8 +534,8 @@ public class JdbcEventStoreTest {
         }
 
         @Override
-        public Object getIdentifier() {
-            return identifier;
+        public String getIdentifier() {
+            return identifier.toString();
         }
 
         @SuppressWarnings("UnusedDeclaration")

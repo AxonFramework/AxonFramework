@@ -52,8 +52,8 @@ import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.dom4j.Document;
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;
-import org.junit.internal.matchers.*;
 import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
 import org.mockito.invocation.*;
@@ -483,7 +483,7 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 
@@ -529,7 +529,7 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, String identifier) {
             DomainEventMessage message = storedEvents.get(identifier.toString());
             if (message == null) {
                 throw new EventStreamNotFoundException(type, identifier);
@@ -538,7 +538,7 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }
@@ -553,8 +553,8 @@ public class DisruptorCommandBusTest {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
-        public Object getAggregateIdentifier() {
-            return aggregateIdentifier;
+        public String getAggregateIdentifier() {
+            return aggregateIdentifier.toString();
         }
     }
 
@@ -598,7 +598,7 @@ public class DisruptorCommandBusTest {
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
-                StubAggregate aggregate = new StubAggregate(command.getPayload().getAggregateIdentifier().toString());
+                StubAggregate aggregate = new StubAggregate(command.getPayload().getAggregateIdentifier());
                 repository.add(aggregate);
                 aggregate.doSomething();
             } else {

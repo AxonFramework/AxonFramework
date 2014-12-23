@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
 public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtExceptionHandler {
 
     private EventSourcingRepository<SimpleAggregateRoot> repository;
-    private Object aggregateIdentifier;
+    private String aggregateIdentifier;
     private EventBus mockEventBus;
     private EventStore eventStore;
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
@@ -140,7 +140,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private Thread prepareAggregateModifier(final CountDownLatch awaitFor, final CountDownLatch reportDone,
                                             final EventSourcingRepository<SimpleAggregateRoot> repository,
-                                            final Object aggregateIdentifier) {
+                                            final String aggregateIdentifier) {
         Thread t = new Thread(() -> {
             try {
                 awaitFor.await();
@@ -168,14 +168,14 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private static class SimpleAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
-        private UUID identifier;
+        private String identifier;
 
         private SimpleAggregateRoot() {
-            identifier = UUID.randomUUID();
+            identifier = UUID.randomUUID().toString();
             apply(new StubDomainEvent());
         }
 
-        private SimpleAggregateRoot(UUID identifier) {
+        private SimpleAggregateRoot(String identifier) {
             this.identifier = identifier;
         }
 
@@ -185,11 +185,11 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @Override
         protected void handle(DomainEventMessage event) {
-            identifier = (UUID) event.getAggregateIdentifier();
+            identifier = event.getAggregateIdentifier();
         }
 
         @Override
-        public UUID getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 
@@ -202,9 +202,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private static class SimpleAggregateFactory extends AbstractAggregateFactory<SimpleAggregateRoot> {
 
         @Override
-        public SimpleAggregateRoot doCreateAggregate(Object aggregateIdentifier,
+        public SimpleAggregateRoot doCreateAggregate(String aggregateIdentifier,
                                                    DomainEventMessage firstEvent) {
-            return new SimpleAggregateRoot((UUID) aggregateIdentifier);
+            return new SimpleAggregateRoot(aggregateIdentifier);
         }
 
         @Override
@@ -230,7 +230,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        public synchronized DomainEventStream readEvents(String type, Object identifier) {
+        public synchronized DomainEventStream readEvents(String type, String identifier) {
             List<DomainEventMessage> relevant = new ArrayList<>();
             for (DomainEventMessage event : domainEvents) {
                 if (event.getAggregateIdentifier().equals(identifier)) {
@@ -242,7 +242,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }

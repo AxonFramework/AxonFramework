@@ -35,10 +35,10 @@ public class SequentialPerAggregatePolicyTest {
     public void testSequentialIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
-        Object aggregateIdentifier = UUID.randomUUID();
+        String aggregateIdentifier = UUID.randomUUID().toString();
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
+        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()));
         Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>("bla"));
 
         assertEquals(id1, id2);
@@ -47,7 +47,7 @@ public class SequentialPerAggregatePolicyTest {
         assertNull(id4);
     }
 
-    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
+    private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
         return new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                      new Object(), MetaData.emptyInstance());
     }

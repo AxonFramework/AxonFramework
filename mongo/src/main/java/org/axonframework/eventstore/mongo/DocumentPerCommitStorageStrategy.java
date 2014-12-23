@@ -104,7 +104,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
     public List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier,
                                                          Serializer serializer, UpcasterChain upcasterChain,
                                                          boolean skipUnknownTypes) {
-        return new CommitEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain, skipUnknownTypes);
+        return new CommitEntry(entry).getDomainEvents(serializer, upcasterChain, skipUnknownTypes);
     }
 
     @Override
@@ -213,25 +213,23 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         /**
          * Returns the actual DomainEvent from the CommitEntry using the provided Serializer.
          *
-         * @param actualAggregateIdentifier The actual aggregate identifier instance used to perform the lookup, or
-         *                                  <code>null</code> if unknown
          * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
          * @param upcasterChain             Set of upcasters to use when an event needs upcasting before
          *                                  de-serialization
          * @return The actual DomainEventMessage instances stored in this entry
          */
         @SuppressWarnings("unchecked")
-        public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
+        public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer,
                                                         UpcasterChain upcasterChain, boolean skipUnknownTypes) {
             List<DomainEventMessage> messages = new ArrayList<>();
             for (final EventEntry eventEntry : eventEntries) {
-                messages.addAll(upcastAndDeserialize(new DomainEventData(this, eventEntry), actualAggregateIdentifier,
+                messages.addAll(upcastAndDeserialize(new DomainEventData(this, eventEntry),
                                                      eventSerializer, upcasterChain, skipUnknownTypes));
             }
             return messages;
         }
 
-        public Object getAggregateIdentifier() {
+        public String getAggregateIdentifier() {
             return aggregateIdentifier;
         }
 
@@ -295,7 +293,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             }
 
             @Override
-            public Object getAggregateIdentifier() {
+            public String getAggregateIdentifier() {
                 return commitEntry.getAggregateIdentifier();
             }
 

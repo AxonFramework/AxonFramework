@@ -47,7 +47,7 @@ public class DomainEventEntry extends AbstractEventEntry {
      * @param payload  The serialized version of the Event
      * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage event,
+    public DomainEventEntry(String type, DomainEventMessage<?> event,
                             SerializedObject<byte[]> payload,
                             SerializedObject<byte[]> metaData) {
         super(type, event, payload, metaData);
@@ -62,7 +62,7 @@ public class DomainEventEntry extends AbstractEventEntry {
      * @param payload  The serialized version of the Event
      * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage event, DateTime dateTime,
+    public DomainEventEntry(String type, DomainEventMessage<?> event, DateTime dateTime,
                             SerializedObject<byte[]> payload,
                             SerializedObject<byte[]> metaData) {
         super(type, event, dateTime, payload, metaData);

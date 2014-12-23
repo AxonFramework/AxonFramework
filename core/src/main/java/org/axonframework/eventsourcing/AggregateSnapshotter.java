@@ -37,7 +37,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private final Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
 
     @Override
-    protected DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
+    protected DomainEventMessage createSnapshot(String typeIdentifier, String aggregateIdentifier,
                                                 DomainEventStream eventStream) {
 
         DomainEventMessage firstEvent = eventStream.peek();

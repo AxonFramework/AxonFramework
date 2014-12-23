@@ -292,14 +292,14 @@ public class MongoEventStoreTest {
     @DirtiesContext
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        testSubject.readEvents("test", UUID.randomUUID());
+        testSubject.readEvents("test", UUID.randomUUID().toString());
     }
 
     @DirtiesContext
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadStream_UpcasterClearsAllFound() {
         testSubject.setUpcasterChain((serializedObject, upcastingContext) -> Collections.emptyList());
-        final UUID streamId = UUID.randomUUID();
+        final String streamId = UUID.randomUUID().toString();
         testSubject.appendEvents("test", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(streamId, 0, "test")));
         testSubject.readEvents("test", streamId);
@@ -414,7 +414,7 @@ public class MongoEventStoreTest {
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier, t, new StubStateChangedEvent(), null));
@@ -435,8 +435,8 @@ public class MongoEventStoreTest {
         }
 
         @Override
-        public UUID getIdentifier() {
-            return identifier;
+        public String getIdentifier() {
+            return identifier.toString();
         }
 
         @EventSourcingHandler

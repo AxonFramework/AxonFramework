@@ -32,7 +32,7 @@ public class PessimisticLockManagerTest {
     @Test
     public void testObtainAndReleaseLocks() {
         PessimisticLockManager manager = new PessimisticLockManager();
-        UUID identifier = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
         AggregateRoot aggregateRoot = mock(AggregateRoot.class);
         when(aggregateRoot.getIdentifier()).thenReturn(identifier);
 

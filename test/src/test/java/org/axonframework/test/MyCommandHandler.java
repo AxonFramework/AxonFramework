@@ -45,13 +45,13 @@ class MyCommandHandler {
 
     @CommandHandler
     public void handleTestCommand(TestCommand testCommand) {
-        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
+        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier().toString(), null);
         aggregate.doSomething();
     }
 
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
-        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
+        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier().toString(), null);
         aggregate.doSomething();
         eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
         CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>(new MyApplicationEvent()),
@@ -61,13 +61,13 @@ class MyCommandHandler {
 
     @CommandHandler
     public void handleIllegalStateChange(IllegalStateChangeCommand command) {
-        StandardAggregate aggregate = repository.load(command.getAggregateIdentifier());
+        StandardAggregate aggregate = repository.load(command.getAggregateIdentifier().toString());
         aggregate.doSomethingIllegal(command.getNewIllegalValue());
     }
 
     @CommandHandler
     public void handleDeleteAggregate(DeleteCommand command) {
-        repository.load(command.getAggregateIdentifier()).delete(command.isAsIllegalChange());
+        repository.load(command.getAggregateIdentifier().toString()).delete(command.isAsIllegalChange());
     }
 
     public void setRepository(Repository<StandardAggregate> repository) {

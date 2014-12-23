@@ -47,7 +47,7 @@ public interface EventStore {
      *
      * @throws EventStoreException if an error occurs while reading the events in the event stream
      */
-    default DomainEventStream readEvents(String type, Object identifier) {
+    default DomainEventStream readEvents(String type, String identifier) {
         return readEvents(type, identifier, 0, Long.MAX_VALUE);
     }
 
@@ -62,7 +62,7 @@ public interface EventStore {
      * @param firstSequenceNumber The sequence number of the first event to find
      * @return a Stream containing events for the given aggregate, starting at the given first sequence number
      */
-    default DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber) {
+    default DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber) {
         return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
     }
 
@@ -81,6 +81,6 @@ public interface EventStore {
      * @param lastSequenceNumber  The sequence number of the last event in the stream
      * @return a Stream containing events for the given aggregate, starting at the given first sequence number
      */
-    DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber, long lastSequenceNumber);
+    DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber, long lastSequenceNumber);
 
 }

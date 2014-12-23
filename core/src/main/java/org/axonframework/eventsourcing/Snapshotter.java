@@ -33,5 +33,5 @@ public interface Snapshotter {
      * @param typeIdentifier      the type of the aggregate to take the snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
-    void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier);
+    void scheduleSnapshot(String typeIdentifier, String aggregateIdentifier);
 }

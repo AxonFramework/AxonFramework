@@ -49,7 +49,6 @@ import static org.axonframework.commandhandling.annotation.CommandMessageHandler
 public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         implements CommandHandler<Object> {
 
-    private final CommandBus commandBus;
     private final Repository<T> repository;
 
     private final CommandTargetResolver commandTargetResolver;
@@ -99,7 +98,6 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
         Assert.notNull(repository, "repository may not be null");
         Assert.notNull(commandTargetResolver, "commandTargetResolver may not be null");
         this.repository = repository;
-        this.commandBus = null;
         this.commandTargetResolver = commandTargetResolver;
         this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<>(aggregateType,
                                                                                    parameterResolverFactory));

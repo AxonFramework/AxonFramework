@@ -42,7 +42,7 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
      *                            creation of the aggregate, or a snapshot event
      * @return an aggregate ready for initialization using a DomainEventStream.
      */
-    T createAggregate(Object aggregateIdentifier, DomainEventMessage<?> firstEvent);
+    T createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent);
 
     /**
      * Returns the type identifier for this aggregate factory. The type identifier is used by the EventStore to

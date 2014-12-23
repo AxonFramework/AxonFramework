@@ -61,7 +61,7 @@ public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot 
     }
 
     @Override
-    public Object getIdentifier() {
+    public String getIdentifier() {
         return identifier;
     }
 

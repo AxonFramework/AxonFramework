@@ -172,7 +172,7 @@ public abstract class MetaDataMutatingUnitOfWorkListenerAdapter extends UnitOfWo
         }
 
         @Override
-        public Object getAggregateIdentifier() {
+        public String getAggregateIdentifier() {
             return getWrappedEvent().getAggregateIdentifier();
         }
 

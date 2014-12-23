@@ -203,7 +203,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 

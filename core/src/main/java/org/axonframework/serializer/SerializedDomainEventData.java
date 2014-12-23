@@ -41,7 +41,7 @@ public interface SerializedDomainEventData<T> {
      *
      * @return the Identifier of the Aggregate to which the Event was applied
      */
-    Object getAggregateIdentifier();
+    String getAggregateIdentifier();
 
     /**
      * Returns the sequence number of the event in the aggregate.

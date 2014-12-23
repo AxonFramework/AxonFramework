@@ -42,7 +42,7 @@ public class AggregateBlacklistedException extends AggregateStateCorruptedExcept
      * @param message             The message explaining why the blacklisting occurred
      * @param cause               The cause of the blacklist
      */
-    public AggregateBlacklistedException(Object aggregateIdentifier, String message, Throwable cause) {
+    public AggregateBlacklistedException(String aggregateIdentifier, String message, Throwable cause) {
         super(aggregateIdentifier, message, cause);
     }
 }

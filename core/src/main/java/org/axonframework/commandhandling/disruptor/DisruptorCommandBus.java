@@ -399,13 +399,13 @@ public class DisruptorCommandBus implements CommandBus {
 
         @SuppressWarnings("unchecked")
         @Override
-        public T load(Object aggregateIdentifier, Long expectedVersion) {
+        public T load(String aggregateIdentifier, Long expectedVersion) {
             return (T) CommandHandlerInvoker.getRepository(typeIdentifier).load(aggregateIdentifier, expectedVersion);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public T load(Object aggregateIdentifier) {
+        public T load(String aggregateIdentifier) {
             return (T) CommandHandlerInvoker.getRepository(typeIdentifier).load(aggregateIdentifier);
         }
 
@@ -420,7 +420,7 @@ public class DisruptorCommandBus implements CommandBus {
         public static final EventStreamDecorator INSTANCE = new NoOpEventStreamDecorator();
 
         @Override
-        public DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
+        public DomainEventStream decorateForRead(String aggregateType, String aggregateIdentifier,
                                                  DomainEventStream eventStream) {
             return eventStream;
         }

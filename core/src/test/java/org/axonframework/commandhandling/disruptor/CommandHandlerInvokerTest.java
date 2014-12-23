@@ -121,7 +121,7 @@ public class CommandHandlerInvokerTest {
         assertSame(repository1, repository2);
     }
 
-    public static class StubAggregate extends AbstractAnnotatedAggregateRoot<String> {
+    public static class StubAggregate extends AbstractAnnotatedAggregateRoot {
 
         @AggregateIdentifier
         private String id;

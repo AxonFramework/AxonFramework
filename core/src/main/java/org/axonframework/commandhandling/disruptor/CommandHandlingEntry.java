@@ -46,7 +46,7 @@ public class CommandHandlingEntry {
     private BlacklistDetectingCallback callback;
     // for recovery of corrupt aggregates
     private boolean isRecoverEntry;
-    private Object aggregateIdentifier;
+    private String aggregateIdentifier;
     private int invokerSegmentId;
     private int serializerSegmentId;
     private final boolean transactional;
@@ -164,7 +164,7 @@ public class CommandHandlingEntry {
      *
      * @return the identifier of the aggregate to recover
      */
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
@@ -236,7 +236,7 @@ public class CommandHandlingEntry {
      *
      * @param newAggregateIdentifier The identifier of the aggregate to recover
      */
-    public void resetAsRecoverEntry(Object newAggregateIdentifier) {
+    public void resetAsRecoverEntry(String newAggregateIdentifier) {
         this.isRecoverEntry = true;
         this.aggregateIdentifier = newAggregateIdentifier;
         this.command = null;

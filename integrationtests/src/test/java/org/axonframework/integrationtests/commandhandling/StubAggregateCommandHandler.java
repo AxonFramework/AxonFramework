@@ -37,14 +37,14 @@ public class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateUpdated(UpdateStubAggregateCommand command) {
-        StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString(), command.getAggregateVersion());
         aggregate.makeAChange();
     }
 
     @CommandHandler
     public void handleStubAggregateUpdatedWithExtraEvent(UpdateStubAggregateWithExtraEventCommand command,
                                                          UnitOfWork unitOfWork) {
-        StubAggregate aggregate = repository.load(command.getAggregateId());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString());
         aggregate.makeAChange();
         unitOfWork.publishEvent(new GenericEventMessage<>(new MyEvent()), eventBus);
         aggregate.makeAChange();
@@ -52,13 +52,13 @@ public class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateLooping(LoopingCommand command) {
-        StubAggregate aggregate = repository.load(command.getAggregateId());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString());
         aggregate.makeALoopingChange();
     }
 
     @CommandHandler
     public void handleProblematicCommand(ProblematicCommand command) {
-        StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString(), command.getAggregateVersion());
         aggregate.causeTrouble();
     }
 

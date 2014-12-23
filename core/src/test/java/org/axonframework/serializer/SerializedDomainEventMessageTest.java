@@ -46,7 +46,7 @@ public class SerializedDomainEventMessageTest {
     private MetaData deserializedMetaData = MetaData.emptyInstance();
     private Serializer serializer = mock(Serializer.class);
     private SerializedDomainEventData domainEventData = mock(SerializedDomainEventData.class);
-    private final UUID id = UUID.randomUUID();
+    private final String id = UUID.randomUUID().toString();
     private final long seqNo = 1L;
 
     @Before

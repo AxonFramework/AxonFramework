@@ -31,8 +31,8 @@ public class StubAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @Override
-    public Object getIdentifier() {
-        return identifier;
+    public String getIdentifier() {
+        return identifier.toString();
     }
 
     public void doSomething() {

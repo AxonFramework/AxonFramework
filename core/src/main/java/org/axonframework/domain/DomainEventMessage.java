@@ -44,7 +44,7 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      *
      * @return the identifier of the Aggregate that generated this DomainEvent
      */
-    Object getAggregateIdentifier();
+    String getAggregateIdentifier();
 
     /**
      * Returns a copy of this DomainEventMessage with the given <code>metaData</code>. The payload, {@link

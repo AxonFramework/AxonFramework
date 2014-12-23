@@ -59,21 +59,21 @@ public class SynchronousLoopbackTest {
 
     private CommandBus commandBus;
     private EventBus eventBus;
-    private UUID aggregateIdentifier;
+    private String aggregateIdentifier;
     private EventStore eventStore;
     private VoidCallback reportErrorCallback;
     private CommandCallback<Object> expectErrorCallback;
 
     @Before
     public void setUp() {
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = UUID.randomUUID().toString();
         commandBus = new SimpleCommandBus();
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
         eventStore.appendEvents("CountingAggregate", new SimpleDomainEventStream(
                 new GenericDomainEventMessage<>(aggregateIdentifier, 0,
-                                                                     new AggregateCreatedEvent(aggregateIdentifier),
-                                                                     null
+                                                new AggregateCreatedEvent(aggregateIdentifier),
+                                                null
                 )));
         reset(eventStore);
 
@@ -118,10 +118,10 @@ public class SynchronousLoopbackTest {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                 if (counterChangedEvent.getCounter() == 1) {
                     commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
                                                      counterChangedEvent.getCounter() + 1)), reportErrorCallback);
                     commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
                                                      counterChangedEvent.getCounter() + 2)), reportErrorCallback);
                 }
             }
@@ -152,10 +152,10 @@ public class SynchronousLoopbackTest {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                 if (counterChangedEvent.getCounter() == 1) {
                     commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
                                                      counterChangedEvent.getCounter() + 1)), reportErrorCallback);
                     commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
                                                      counterChangedEvent.getCounter() + 2)), reportErrorCallback);
                 }
             }
@@ -186,11 +186,11 @@ public class SynchronousLoopbackTest {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                 if (counterChangedEvent.getCounter() == 1) {
                     commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
                                                      counterChangedEvent.getCounter() + 1)), reportErrorCallback);
                     commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                     counterChangedEvent.getCounter() + 2)),
+                                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                         counterChangedEvent.getCounter() + 2)),
                                         reportErrorCallback);
                 } else if (counterChangedEvent.getCounter() == 2) {
                     throw new RuntimeException("Mock exception");
@@ -223,11 +223,11 @@ public class SynchronousLoopbackTest {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                 if (counterChangedEvent.getCounter() == 1) {
                     commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                     counterChangedEvent.getCounter() + 1)),
+                                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                         counterChangedEvent.getCounter() + 1)),
                                         reportErrorCallback);
                     commandBus.dispatch(
-                            asCommandMessage(new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
+                            asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
                                                                       counterChangedEvent.getCounter() + 2)),
                             reportErrorCallback);
                 } else if (counterChangedEvent.getCounter() == 2) {
@@ -269,15 +269,15 @@ public class SynchronousLoopbackTest {
 
     private static class ChangeCounterCommand {
 
-        private UUID aggregateId;
+        private String aggregateId;
         private int newValue;
 
-        private ChangeCounterCommand(UUID aggregateId, int newValue) {
+        private ChangeCounterCommand(String aggregateId, int newValue) {
             this.aggregateId = aggregateId;
             this.newValue = newValue;
         }
 
-        public UUID getAggregateId() {
+        public String getAggregateId() {
             return aggregateId;
         }
 
@@ -288,13 +288,13 @@ public class SynchronousLoopbackTest {
 
     private static class AggregateCreatedEvent {
 
-        private final UUID aggregateIdentifier;
+        private final String aggregateIdentifier;
 
-        private AggregateCreatedEvent(UUID aggregateIdentifier) {
+        private AggregateCreatedEvent(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
-        public UUID getAggregateIdentifier() {
+        public String getAggregateIdentifier() {
             return aggregateIdentifier;
         }
     }
@@ -306,9 +306,9 @@ public class SynchronousLoopbackTest {
         private int counter = 0;
 
         @AggregateIdentifier
-        private UUID identifier;
+        private String identifier;
 
-        private CountingAggregate(UUID identifier) {
+        private CountingAggregate(String identifier) {
             apply(new AggregateCreatedEvent(identifier));
         }
 
@@ -360,14 +360,14 @@ public class SynchronousLoopbackTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, String identifier) {
             List<DomainEventMessage> events = store.get(identifier);
             events = events == null ? new ArrayList<>() : events;
             return new SimpleDomainEventStream(events);
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented yet");
         }

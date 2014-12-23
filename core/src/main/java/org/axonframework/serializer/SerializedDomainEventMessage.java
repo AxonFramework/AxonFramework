@@ -42,7 +42,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
 
     private final long sequenceNumber;
     @SuppressWarnings("NonSerializableFieldInSerializableClass")
-    private final Object aggregateIdentifier;
+    private final String aggregateIdentifier;
     private final SerializedEventMessage<T> eventMessage;
 
     /**
@@ -69,7 +69,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @param aggregateIdentifier The identifier of the aggregate that generated the message
      * @param sequenceNumber      The sequence number of the generated event
      */
-    public SerializedDomainEventMessage(SerializedEventMessage<T> eventMessage, Object aggregateIdentifier,
+    public SerializedDomainEventMessage(SerializedEventMessage<T> eventMessage, String aggregateIdentifier,
                                         long sequenceNumber) {
         this.eventMessage = eventMessage;
         this.aggregateIdentifier = aggregateIdentifier;
@@ -98,7 +98,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

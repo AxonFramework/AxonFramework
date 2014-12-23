@@ -148,7 +148,7 @@ public class DisruptorContextConfigurationTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, String identifier) {
             DomainEventMessage message = storedEvents.get(identifier.toString());
             if (message == null) {
                 throw new EventStreamNotFoundException(type, identifier);
@@ -157,7 +157,7 @@ public class DisruptorContextConfigurationTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }

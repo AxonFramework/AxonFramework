@@ -42,7 +42,7 @@ public abstract class AbstractAggregateFactory<T extends EventSourcedAggregateRo
 
     @SuppressWarnings("unchecked")
     @Override
-    public final T createAggregate(Object aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+    public final T createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
         T aggregate;
         if (EventSourcedAggregateRoot.class.isAssignableFrom(firstEvent.getPayloadType())) {
             aggregate = (T) firstEvent.getPayload();
@@ -78,5 +78,5 @@ public abstract class AbstractAggregateFactory<T extends EventSourcedAggregateRo
      * @param firstEvent          The first event in the Event Stream of the Aggregate
      * @return The aggregate instance to initialize with the Event Stream
      */
-    protected abstract T doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent);
+    protected abstract T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent);
 }

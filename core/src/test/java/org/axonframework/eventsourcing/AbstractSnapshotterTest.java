@@ -51,7 +51,7 @@ public class AbstractSnapshotterTest {
         mockEventStore = mock(SnapshotEventStore.class);
         testSubject = new AbstractSnapshotter() {
             @Override
-            protected DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
+            protected DomainEventMessage createSnapshot(String typeIdentifier, String aggregateIdentifier,
                                                         DomainEventStream eventStream) {
                 long lastIdentifier = getLastIdentifierFrom(eventStream);
                 if (lastIdentifier <= 0) {
@@ -76,7 +76,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot() {
-        Object aggregateIdentifier = "aggregateIdentifier";
+        String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
@@ -90,7 +90,7 @@ public class AbstractSnapshotterTest {
     @Test
     public void testScheduleSnapshot_ConcurrencyExceptionIsSilenced()
             throws NoSuchFieldException, IllegalAccessException {
-        final Object aggregateIdentifier = "aggregateIdentifier";
+        final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
                 .doThrow(new ConcurrencyException("Mock"))
                 .when(mockEventStore).appendSnapshotEvent(eq("test"), isA(DomainEventMessage.class));
@@ -110,7 +110,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot_SnapshotIsNull() {
-        Object aggregateIdentifier = "aggregateIdentifier";
+        String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
@@ -121,7 +121,7 @@ public class AbstractSnapshotterTest {
 
     @Test
     public void testScheduleSnapshot_SnapshotReplacesOneEvent() {
-        Object aggregateIdentifier = "aggregateIdentifier";
+        String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents("test", aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,

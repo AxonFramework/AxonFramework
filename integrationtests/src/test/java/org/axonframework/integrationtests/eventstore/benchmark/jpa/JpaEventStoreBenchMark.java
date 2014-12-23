@@ -73,7 +73,7 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
         @Override
         public void run() {
             TransactionTemplate template = new TransactionTemplate(transactionManager);
-            final UUID aggregateId = UUID.randomUUID();
+            final String aggregateId = UUID.randomUUID().toString();
             // the inner class forces us into a final variable, hence the AtomicInteger
             final AtomicInteger eventSequence = new AtomicInteger(0);
             for (int t = 0; t < getTransactionCount(); t++) {

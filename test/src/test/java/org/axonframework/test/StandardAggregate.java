@@ -83,8 +83,8 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @Override
-    public Object getIdentifier() {
-        return identifier;
+    public String getIdentifier() {
+        return identifier == null ? null : identifier.toString();
     }
 
     @Override
@@ -100,7 +100,7 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     static class Factory extends AbstractAggregateFactory<StandardAggregate> {
 
         @Override
-        protected StandardAggregate doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
+        protected StandardAggregate doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
             return new StandardAggregate(aggregateIdentifier);
         }
 

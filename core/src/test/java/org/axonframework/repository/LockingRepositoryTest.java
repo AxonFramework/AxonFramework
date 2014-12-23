@@ -225,7 +225,7 @@ public class LockingRepositoryTest {
         }
 
         @Override
-        protected StubAggregate doLoad(Object aggregateIdentifier, Long expectedVersion) {
+        protected StubAggregate doLoad(String aggregateIdentifier, Long expectedVersion) {
             return store.get(aggregateIdentifier);
         }
 

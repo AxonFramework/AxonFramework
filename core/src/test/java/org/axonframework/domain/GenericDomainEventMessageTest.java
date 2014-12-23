@@ -33,7 +33,7 @@ public class GenericDomainEventMessageTest {
     public void testConstructor() {
         Object payload = new Object();
         long seqNo = 0;
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
         GenericDomainEventMessage<Object> message1 = new GenericDomainEventMessage<>(id, seqNo, payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
@@ -70,7 +70,7 @@ public class GenericDomainEventMessageTest {
     public void testWithMetaData() {
         Object payload = new Object();
         long seqNo = 0;
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>(id, seqNo, payload, metaData);
@@ -86,7 +86,7 @@ public class GenericDomainEventMessageTest {
     public void testAndMetaData() {
         Object payload = new Object();
         long seqNo = 0;
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>(id, seqNo, payload, metaData);

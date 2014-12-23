@@ -31,7 +31,7 @@ import javax.persistence.Version;
  * @since 0.6
  */
 @MappedSuperclass
-public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Serializable {
+public abstract class AbstractAggregateRoot<I> implements AggregateRoot, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
 
@@ -158,7 +158,7 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
 
     private EventContainer getEventContainer() {
         if (eventContainer == null) {
-            Object identifier = getIdentifier();
+            String identifier = getIdentifier();
             if (identifier == null) {
                 throw new AggregateIdentifierNotInitializedException(
                         "AggregateIdentifier is unknown in [" + getClass().getName() + "]. "

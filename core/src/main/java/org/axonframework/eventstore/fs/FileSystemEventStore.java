@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
+import java.util.NoSuchElementException;
 
 /**
  * Implementation of the {@link org.axonframework.eventstore.EventStore} that serializes objects (by default using
@@ -126,11 +127,44 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
     }
 
     @Override
-    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+    public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                         long lastSequenceNumber) {
         try {
             InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(type, identifier);
-            return new FileSystemBufferedReaderDomainEventStream(eventFileInputStream, eventSerializer, upcasterChain);
+            final FileSystemBufferedReaderDomainEventStream fullStream = new FileSystemBufferedReaderDomainEventStream(
+                    eventFileInputStream,
+                    eventSerializer,
+                    upcasterChain);
+            return new DomainEventStream() {
+                @Override
+                public boolean hasNext() {
+                    while (fullStream.hasNext() && fullStream.peek().getSequenceNumber() < firstSequenceNumber) {
+                        fullStream.next();
+                    }
+                    return fullStream.hasNext() && fullStream.peek().getSequenceNumber() <= lastSequenceNumber;
+                }
+
+                @Override
+                public DomainEventMessage next() {
+                    while (fullStream.hasNext() && fullStream.peek().getSequenceNumber() < firstSequenceNumber) {
+                        fullStream.next();
+                    }
+                    final DomainEventMessage next = fullStream.next();
+                    if (next.getSequenceNumber() > lastSequenceNumber) {
+                        throw new NoSuchElementException("Attempt to read beyond end of stream");
+                    }
+                    return next;
+                }
+
+                @Override
+                public DomainEventMessage peek() {
+                    final DomainEventMessage peek = fullStream.peek();
+                    if (!hasNext()) {
+                        throw new NoSuchElementException("Attempt to read beyond enf of stream");
+                    }
+                    return peek;
+                }
+            };
         } catch (IOException e) {
             throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
@@ -140,7 +174,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
     }
 
     @Override
-    public DomainEventStream readEvents(String type, Object aggregateIdentifier) {
+    public DomainEventStream readEvents(String type, String aggregateIdentifier) {
         try {
             if (!eventFileResolver.eventFileExists(type, aggregateIdentifier)) {
                 throw new EventStreamNotFoundException(type, aggregateIdentifier);

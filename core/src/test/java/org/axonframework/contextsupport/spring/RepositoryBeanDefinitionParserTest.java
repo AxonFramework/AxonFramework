@@ -69,7 +69,7 @@ public class RepositoryBeanDefinitionParserTest {
          * {@inheritDoc}
          */
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

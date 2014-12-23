@@ -98,7 +98,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

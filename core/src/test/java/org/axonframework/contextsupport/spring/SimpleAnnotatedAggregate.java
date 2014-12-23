@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 public class SimpleAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
     private static final long serialVersionUID = 2918101112106880702L;
-    private final Object identifier;
+    private final String identifier;
 
     @CommandHandler
     public SimpleAnnotatedAggregate(CreateSimpleAggregateCommand command) {
@@ -42,7 +42,7 @@ public class SimpleAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @Override
-    public Object getIdentifier() {
+    public String getIdentifier() {
         return identifier;
     }
 }

@@ -147,7 +147,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     }
 
     @Override
-    public DomainEventStream readEvents(String type, Object identifier) {
+    public DomainEventStream readEvents(String type, String identifier) {
         long snapshotSequenceNumber = -1;
         List<DomainEventMessage> lastSnapshotCommit = loadLastSnapshotEvent(type, identifier);
         if (lastSnapshotCommit != null && !lastSnapshotCommit.isEmpty()) {
@@ -155,7 +155,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         }
         final DBCursor dbCursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
                                                              type,
-                                                             identifier.toString(),
+                                                             identifier,
                                                              snapshotSequenceNumber + 1);
 
         DomainEventStream stream = new CursorBackedDomainEventStream(dbCursor, lastSnapshotCommit, identifier, false);
@@ -166,16 +166,16 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
     }
 
     @Override
-    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber) {
         return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
     }
 
     @Override
-    public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+    public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                         long lastSequenceNumber) {
         final DBCursor dbCursor = storageStrategy.findEvents(mongoTemplate.domainEventCollection(),
                                                              type,
-                                                             identifier.toString(),
+                                                             identifier,
                                                              firstSequenceNumber);
 
         DomainEventStream stream = new CursorBackedDomainEventStream(dbCursor, null, identifier, lastSequenceNumber,
@@ -223,10 +223,9 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
         return new MongoCriteriaBuilder();
     }
 
-    private List<DomainEventMessage> loadLastSnapshotEvent(String type, Object identifier) {
+    private List<DomainEventMessage> loadLastSnapshotEvent(String type, String identifier) {
         DBCursor dbCursor = storageStrategy.findLastSnapshot(mongoTemplate.snapshotEventCollection(),
-                                                             type,
-                                                             identifier.toString());
+                                                             type, identifier);
         if (!dbCursor.hasNext()) {
             return null;
         }

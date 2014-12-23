@@ -45,14 +45,14 @@ import static org.mockito.Mockito.*;
  */
 public class FileSystemEventStoreTest {
 
-    private Object aggregateIdentifier;
+    private String aggregateIdentifier;
     private File eventFileBaseDir;
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
     public void setUp() {
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = UUID.randomUUID().toString();
         eventFileBaseDir = tempFolder.getRoot();
     }
 
@@ -186,7 +186,7 @@ public class FileSystemEventStoreTest {
         FileSystemEventStore eventStore = new FileSystemEventStore(mockEventFileResolver);
 
         try {
-            eventStore.readEvents("test", UUID.randomUUID());
+            eventStore.readEvents("test", UUID.randomUUID().toString());
             fail("Expected an exception");
         } catch (EventStoreException e) {
             assertSame(exception, e.getCause());
@@ -195,7 +195,7 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testWrite_FileDoesNotExist() throws IOException {
-        Object aggregateIdentifier = "aggregateIdentifier";
+        String aggregateIdentifier = "aggregateIdentifier";
         IOException exception = new IOException("Mock");
         EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
         when(mockEventFileResolver.openEventFileForWriting(isA(String.class), isA(Object.class)))

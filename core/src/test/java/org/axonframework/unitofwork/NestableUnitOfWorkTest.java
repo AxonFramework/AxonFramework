@@ -195,7 +195,7 @@ public class NestableUnitOfWorkTest {
     }
 
     @SuppressWarnings("serial")
-    public static class Aggregate extends AbstractAnnotatedAggregateRoot<String> {
+    public static class Aggregate extends AbstractAnnotatedAggregateRoot {
 
         @AggregateIdentifier
         public String id;

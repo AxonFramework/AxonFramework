@@ -44,7 +44,7 @@ public interface Repository<T> {
      *                                    version
      * @see org.axonframework.unitofwork.UnitOfWork
      */
-    T load(Object aggregateIdentifier, Long expectedVersion);
+    T load(String aggregateIdentifier, Long expectedVersion);
 
     /**
      * Load the aggregate with the given unique identifier. No version checks are done when loading an aggregate,
@@ -55,7 +55,7 @@ public interface Repository<T> {
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
-    T load(Object aggregateIdentifier);
+    T load(String aggregateIdentifier);
 
     /**
      * Adds the given <code>aggregate</code> to the repository. The version of this aggregate must be <code>null</code>,

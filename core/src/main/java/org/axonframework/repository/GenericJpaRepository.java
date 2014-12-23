@@ -89,7 +89,7 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
     }
 
     @Override
-    protected T doLoad(Object aggregateIdentifier, Long expectedVersion) {
+    protected T doLoad(String aggregateIdentifier, Long expectedVersion) {
         T aggregate = entityManagerProvider.getEntityManager().find(getAggregateType(), aggregateIdentifier);
         if (aggregate == null) {
             throw new AggregateNotFoundException(aggregateIdentifier, format(

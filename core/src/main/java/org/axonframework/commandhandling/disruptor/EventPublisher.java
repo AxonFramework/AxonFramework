@@ -98,7 +98,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 try {
                     EventSourcedAggregateRoot aggregate = unitOfWork.getAggregate();
                     if (aggregate != null && blackListedAggregates.contains(aggregate.getIdentifier())) {
-                        rejectExecution(entry, unitOfWork, entry.getAggregateIdentifier());
+                        rejectExecution(entry, entry.getAggregateIdentifier());
                     } else {
                         processPublication(entry, unitOfWork, aggregate);
                     }
@@ -127,12 +127,11 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     @SuppressWarnings("unchecked")
-    private void rejectExecution(CommandHandlingEntry entry, DisruptorUnitOfWork unitOfWork,
-                                 Object aggregateIdentifier) {
+    private void rejectExecution(CommandHandlingEntry entry, String aggregateIdentifier) {
         executor.execute(new ReportResultTask(
                 entry.getCallback(), null,
                 new AggregateStateCorruptedException(
-                        unitOfWork.getAggregate(),
+                        aggregateIdentifier,
                         format("Aggregate %s has been blacklisted and will be ignored until "
                                        + "its state has been recovered.",
                                aggregateIdentifier))));
@@ -165,7 +164,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         }
     }
 
-    private Throwable performRollback(DisruptorUnitOfWork unitOfWork, Object aggregateIdentifier,
+    private Throwable performRollback(DisruptorUnitOfWork unitOfWork, String aggregateIdentifier,
                                       Throwable exceptionResult) {
         unitOfWork.onRollback(exceptionResult);
         if (aggregateIdentifier != null) {
@@ -215,7 +214,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         }
     }
 
-    private Throwable notifyBlacklisted(DisruptorUnitOfWork unitOfWork, Object aggregateIdentifier,
+    private Throwable notifyBlacklisted(DisruptorUnitOfWork unitOfWork, String aggregateIdentifier,
                                         Throwable cause) {
         Throwable exceptionResult;
         blackListedAggregates.add(aggregateIdentifier);

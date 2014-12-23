@@ -41,14 +41,13 @@ import static org.mockito.Mockito.*;
 public class SpringAggregateSnapshotterTest {
 
     private SpringAggregateSnapshotter testSubject;
-    private ApplicationContext mockApplicationContext;
     private PlatformTransactionManager mockTransactionManager;
-    private UUID aggregateIdentifier;
+    private String aggregateIdentifier;
     private SnapshotEventStore mockEventStore;
 
     @Before
     public void setUp() throws Exception {
-        mockApplicationContext = mock(ApplicationContext.class);
+        ApplicationContext mockApplicationContext = mock(ApplicationContext.class);
         mockEventStore = mock(SnapshotEventStore.class);
 
         testSubject = new SpringAggregateSnapshotter();
@@ -58,7 +57,7 @@ public class SpringAggregateSnapshotterTest {
                         "myFactory",
                         new AbstractAggregateFactory<StubAggregate>() {
                             @Override
-                            public StubAggregate doCreateAggregate(Object aggregateIdentifier,
+                            public StubAggregate doCreateAggregate(String aggregateIdentifier,
                                                                    DomainEventMessage firstEvent) {
                                 return new StubAggregate(aggregateIdentifier);
                             }
@@ -76,7 +75,7 @@ public class SpringAggregateSnapshotterTest {
         testSubject.setEventStore(mockEventStore);
         testSubject.afterPropertiesSet();
         mockTransactionManager = mock(PlatformTransactionManager.class);
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = UUID.randomUUID().toString();
 
         DomainEventMessage event1 = new GenericDomainEventMessage<>(aggregateIdentifier, 0L,
                                                                           "Mock contents", MetaData.emptyInstance());

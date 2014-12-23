@@ -36,7 +36,7 @@ public class AbstractRepositoryTest {
             }
 
             @Override
-            protected JpaAggregate doLoad(Object aggregateIdentifier, Long expectedVersion) {
+            protected JpaAggregate doLoad(String aggregateIdentifier, Long expectedVersion) {
                 return new JpaAggregate();
             }
 
@@ -63,7 +63,7 @@ public class AbstractRepositoryTest {
     public void testAggregateTypeVerification_WrongType() throws Exception {
         testSubject.add(new AbstractAggregateRoot() {
             @Override
-            public Object getIdentifier() {
+            public String getIdentifier() {
                 return "1";
             }
         });

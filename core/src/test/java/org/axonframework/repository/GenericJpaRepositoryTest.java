@@ -116,7 +116,7 @@ public class GenericJpaRepositoryTest {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 

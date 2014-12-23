@@ -43,7 +43,7 @@ public class EventContainer implements Serializable {
     private static final long serialVersionUID = -39816393359395878L;
 
     private final List<DomainEventMessage> events = new ArrayList<>();
-    private final Object aggregateIdentifier;
+    private final String aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
     private transient Long lastSequenceNumber; // NOSONAR (intentionally not set by deserialization)
     private transient List<EventRegistrationCallback> registrationCallbacks; // NOSONAR
@@ -54,7 +54,7 @@ public class EventContainer implements Serializable {
      *
      * @param aggregateIdentifier the aggregate identifier to assign to this container
      */
-    public EventContainer(Object aggregateIdentifier) {
+    public EventContainer(String aggregateIdentifier) {
         this.aggregateIdentifier = aggregateIdentifier;
     }
 

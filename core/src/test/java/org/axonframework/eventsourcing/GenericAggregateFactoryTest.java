@@ -45,7 +45,7 @@ public class GenericAggregateFactoryTest {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
         try {
-            factory.createAggregate(UUID.randomUUID(), new GenericDomainEventMessage(new Object(), 0, new Object()));
+            factory.createAggregate(UUID.randomUUID().toString(), new GenericDomainEventMessage<>("", 0, new Object()));
             fail("Expected IncompatibleAggregateException");
         } catch (IncompatibleAggregateException e) {
             // we got it
@@ -63,10 +63,10 @@ public class GenericAggregateFactoryTest {
         final ParameterResolverFactory parameterResolverFactory = mock(ParameterResolverFactory.class);
         GenericAggregateFactory<SpringWiredAggregate> factory =
                 new GenericAggregateFactory<>(SpringWiredAggregate.class,
-                                                                  parameterResolverFactory);
+                                              parameterResolverFactory);
         final SpringWiredAggregate aggregate = factory.createAggregate("test",
-                                                                       new GenericDomainEventMessage<Object>("test", 0,
-                                                                                                             "test"));
+                                                                       new GenericDomainEventMessage<>("test", 0,
+                                                                                                       "test"));
         assertSame(parameterResolverFactory, aggregate.getParameterResolverFactory());
     }
 
@@ -97,7 +97,7 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return "unsuitableAggregateId";
         }
     }
@@ -116,7 +116,7 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

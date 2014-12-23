@@ -34,14 +34,13 @@ import javax.persistence.MappedSuperclass;
  * <p/>
  * Implementations can call the {@link #apply(Object)} method to have an event applied.
  *
- * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @see org.axonframework.eventsourcing.annotation.EventSourcingHandler
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
 @MappedSuperclass
-public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSourcedAggregateRoot<I> {
+public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
     private static final long serialVersionUID = -1206026570158467937L;
     private transient MessageHandlerInvoker eventHandlerInvoker; // NOSONAR
@@ -64,7 +63,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
 
     @SuppressWarnings("unchecked")
     @Override
-    public I getIdentifier() {
+    public String getIdentifier() {
         ensureInspectorInitialized();
         return inspector.getIdentifier(this);
     }

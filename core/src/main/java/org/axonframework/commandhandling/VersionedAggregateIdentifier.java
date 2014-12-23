@@ -24,9 +24,7 @@ package org.axonframework.commandhandling;
  */
 public class VersionedAggregateIdentifier {
 
-    private static final long serialVersionUID = -5678446021335130329L;
-
-    private final Object identifier;
+    private final String identifier;
     private final Long version;
 
     /**
@@ -35,7 +33,7 @@ public class VersionedAggregateIdentifier {
      * @param identifier The identifier of the targeted aggregate
      * @param version    The expected version of the targeted aggregate, or {@code null} if the version is irrelevant
      */
-    public VersionedAggregateIdentifier(Object identifier, Long version) {
+    public VersionedAggregateIdentifier(String identifier, Long version) {
         this.identifier = identifier;
         this.version = version;
     }
@@ -45,7 +43,7 @@ public class VersionedAggregateIdentifier {
      *
      * @return the identifier of the targeted Aggregate
      */
-    public Object getIdentifier() {
+    public String getIdentifier() {
         return identifier;
     }
 

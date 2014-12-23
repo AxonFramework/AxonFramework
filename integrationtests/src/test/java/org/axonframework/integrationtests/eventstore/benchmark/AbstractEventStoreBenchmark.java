@@ -75,7 +75,7 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected abstract Runnable getRunnableInstance();
 
-    protected int saveAndLoadLargeNumberOfEvents(Object aggregateId, EventStore eventStore,
+    protected int saveAndLoadLargeNumberOfEvents(String aggregateId, EventStore eventStore,
                                                  int eventSequence) {
         List<DomainEventMessage<StubDomainEvent>> events = new ArrayList<>();
         for (int t = 0; t < getTransactionSize(); t++) {

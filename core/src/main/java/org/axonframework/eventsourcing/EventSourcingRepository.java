@@ -158,7 +158,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @throws AggregateNotFoundException when an aggregate with the given identifier does not exist
      */
     @Override
-    protected T doLoad(Object aggregateIdentifier, final Long expectedVersion) {
+    protected T doLoad(String aggregateIdentifier, final Long expectedVersion) {
         DomainEventStream events = null;
         DomainEventStream originalStream = null;
         try {

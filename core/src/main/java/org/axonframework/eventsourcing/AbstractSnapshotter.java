@@ -48,7 +48,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private TransactionManager transactionManager = new NoTransactionManager();
 
     @Override
-    public void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier) {
+    public void scheduleSnapshot(String typeIdentifier, String aggregateIdentifier) {
         executor.execute(new SilentTask(
                 new TransactionalRunnableWrapper(transactionManager,
                                                  createSnapshotterTask(typeIdentifier, aggregateIdentifier)
@@ -62,7 +62,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @return the task containing snapshot creation logic
      */
-    protected Runnable createSnapshotterTask(String typeIdentifier, Object aggregateIdentifier) {
+    protected Runnable createSnapshotterTask(String typeIdentifier, String aggregateIdentifier) {
         return new CreateSnapshotTask(typeIdentifier, aggregateIdentifier);
     }
 
@@ -76,7 +76,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param eventStream         The event stream containing the aggregate's past events
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
-    protected abstract DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
+    protected abstract DomainEventMessage createSnapshot(String typeIdentifier, String aggregateIdentifier,
                                                          DomainEventStream eventStream);
 
     /**
@@ -178,9 +178,9 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final class CreateSnapshotTask implements Runnable {
 
         private final String typeIdentifier;
-        private final Object aggregateIdentifier;
+        private final String aggregateIdentifier;
 
-        private CreateSnapshotTask(String typeIdentifier, Object aggregateIdentifier) {
+        private CreateSnapshotTask(String typeIdentifier, String aggregateIdentifier) {
             this.typeIdentifier = typeIdentifier;
             this.aggregateIdentifier = aggregateIdentifier;
         }

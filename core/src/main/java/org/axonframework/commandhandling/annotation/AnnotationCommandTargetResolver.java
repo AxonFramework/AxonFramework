@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -46,7 +47,7 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
 
     @Override
     public VersionedAggregateIdentifier resolveTarget(CommandMessage<?> command) {
-        Object aggregateIdentifier;
+        String aggregateIdentifier;
         Long aggregateVersion;
         try {
             aggregateIdentifier = findIdentifier(command);
@@ -70,18 +71,17 @@ public class AnnotationCommandTargetResolver implements CommandTargetResolver {
         return new VersionedAggregateIdentifier(aggregateIdentifier, aggregateVersion);
     }
 
-    @SuppressWarnings("unchecked")
-    private <I> I findIdentifier(CommandMessage<?> command)
+    private String findIdentifier(CommandMessage<?> command)
             throws InvocationTargetException, IllegalAccessException {
         for (Method m : methodsOf(command.getPayloadType())) {
             if (m.isAnnotationPresent(TargetAggregateIdentifier.class)) {
                 ensureAccessible(m);
-                return (I) m.invoke(command.getPayload());
+                return Optional.ofNullable(m.invoke(command.getPayload())).map(Object::toString).orElse(null);
             }
         }
         for (Field f : fieldsOf(command.getPayloadType())) {
             if (f.isAnnotationPresent(TargetAggregateIdentifier.class)) {
-                return (I) getFieldValue(f, command.getPayload());
+                return Optional.ofNullable(getFieldValue(f, command.getPayload())).map(Object::toString).orElse(null);
             }
         }
         return null;

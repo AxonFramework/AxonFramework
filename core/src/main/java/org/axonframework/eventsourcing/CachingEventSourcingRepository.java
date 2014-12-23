@@ -101,7 +101,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T doLoad(Object aggregateIdentifier, Long expectedVersion) {
+    public T doLoad(String aggregateIdentifier, Long expectedVersion) {
         T aggregate = cache.get(aggregateIdentifier);
         if (aggregate == null) {
             // if the event store doesn't support partial stream loading, we need to load the aggregate from the event store entirely

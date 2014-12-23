@@ -85,7 +85,7 @@ public class DisruptorCommandBusBenchmark {
         private String identifier;
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 
@@ -124,12 +124,12 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, String identifier) {
             return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier.toString())));
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }
@@ -158,7 +158,7 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
-            repository.load(command.getPayload().getAggregateIdentifier()).doSomething();
+            repository.load(command.getPayload().getAggregateIdentifier().toString()).doSomething();
             return null;
         }
 

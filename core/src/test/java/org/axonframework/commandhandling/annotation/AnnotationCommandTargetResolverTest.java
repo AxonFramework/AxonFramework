@@ -51,7 +51,7 @@ public class AnnotationCommandTargetResolverTest {
             }
         }));
 
-        assertSame(aggregateIdentifier, actual.getIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
         assertNull(actual.getVersion());
     }
 
@@ -70,7 +70,7 @@ public class AnnotationCommandTargetResolverTest {
             }
         }));
 
-        assertSame(aggregateIdentifier, actual.getIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
         assertEquals((Long) 1L, actual.getVersion());
     }
 
@@ -89,7 +89,7 @@ public class AnnotationCommandTargetResolverTest {
             }
         }));
 
-        assertEquals(aggregateIdentifier, actual.getIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
         assertEquals((Long) 1000230L, actual.getVersion());
     }
 
@@ -108,7 +108,7 @@ public class AnnotationCommandTargetResolverTest {
         final Object version = 1L;
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
                 asCommandMessage(new FieldAnnotatedCommand(aggregateIdentifier, version)));
-        assertEquals(aggregateIdentifier, actual.getIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
         assertEquals(version, actual.getVersion());
     }
 
@@ -118,7 +118,7 @@ public class AnnotationCommandTargetResolverTest {
         final Object version = 1L;
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
                 asCommandMessage(new FieldAnnotatedCommand(aggregateIdentifier, version)));
-        assertEquals(aggregateIdentifier, actual.getIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
         assertEquals(version, actual.getVersion());
     }
 
@@ -128,7 +128,7 @@ public class AnnotationCommandTargetResolverTest {
         final Object version = 1L;
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
                 asCommandMessage(new FieldAnnotatedCommand(aggregateIdentifier, version)));
-        assertEquals(aggregateIdentifier, actual.getIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
         assertEquals(version, actual.getVersion());
     }
 
@@ -138,7 +138,7 @@ public class AnnotationCommandTargetResolverTest {
         final Object version = "1";
         VersionedAggregateIdentifier actual = testSubject.resolveTarget(
                 asCommandMessage(new FieldAnnotatedCommand(aggregateIdentifier, version)));
-        assertEquals(aggregateIdentifier, actual.getIdentifier());
+        assertEquals(aggregateIdentifier.toString(), actual.getIdentifier());
         assertEquals((Long) 1L, actual.getVersion());
     }
 

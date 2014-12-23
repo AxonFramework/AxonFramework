@@ -254,7 +254,7 @@ public class MongoEventStoreTest_DocPerCommit {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        testSubject.readEvents("test", UUID.randomUUID());
+        testSubject.readEvents("test", UUID.randomUUID().toString());
     }
 
     @Test
@@ -348,7 +348,7 @@ public class MongoEventStoreTest_DocPerCommit {
 
     private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
         List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
-        final UUID aggregateIdentifier = UUID.randomUUID();
+        String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier, t, new StubStateChangedEvent(), null));
@@ -369,8 +369,8 @@ public class MongoEventStoreTest_DocPerCommit {
         }
 
         @Override
-        public UUID getIdentifier() {
-            return identifier;
+        public String getIdentifier() {
+            return identifier.toString();
         }
 
         @EventSourcingHandler

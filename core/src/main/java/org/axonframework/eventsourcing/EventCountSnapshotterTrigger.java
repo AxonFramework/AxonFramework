@@ -46,12 +46,12 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     private static final int DEFAULT_TRIGGER_VALUE = 50;
 
     private Snapshotter snapshotter;
-    private final ConcurrentMap<Object, AtomicInteger> counters = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, AtomicInteger> counters = new ConcurrentHashMap<>();
     private volatile boolean clearCountersAfterAppend = true;
     private int trigger = DEFAULT_TRIGGER_VALUE;
 
     @Override
-    public DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
+    public DomainEventStream decorateForRead(String aggregateType, String aggregateIdentifier,
                                              DomainEventStream eventStream) {
         AtomicInteger counter = new AtomicInteger(0);
         counters.put(aggregateIdentifier, counter);
@@ -61,13 +61,13 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     @Override
     public DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
                                                DomainEventStream eventStream) {
-        Object aggregateIdentifier = aggregate.getIdentifier();
+        String aggregateIdentifier = aggregate.getIdentifier();
         counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
         AtomicInteger counter = counters.get(aggregateIdentifier);
         return new TriggeringEventStream(aggregateType, aggregateIdentifier, eventStream, counter);
     }
 
-    private void triggerSnapshotIfRequired(String type, Object aggregateIdentifier,
+    private void triggerSnapshotIfRequired(String type, String aggregateIdentifier,
                                            final AtomicInteger eventCount) {
         if (eventCount.get() > trigger) {
             snapshotter.scheduleSnapshot(type, aggregateIdentifier);
@@ -188,9 +188,9 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     private final class TriggeringEventStream extends CountingEventStream {
 
         private final String aggregateType;
-        private final Object aggregateIdentifier;
+        private final String aggregateIdentifier;
 
-        private TriggeringEventStream(String aggregateType, Object aggregateIdentifier,
+        private TriggeringEventStream(String aggregateType, String aggregateIdentifier,
                                       DomainEventStream delegate, AtomicInteger counter) {
             super(delegate, counter);
             this.aggregateType = aggregateType;
@@ -216,23 +216,23 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
 
         @Override
         public void onEntryExpired(Object key) {
-            counters.remove(key);
+            counters.remove(key.toString());
         }
 
         @Override
         public void onEntryRemoved(Object key) {
-            counters.remove(key);
+            counters.remove(key.toString());
         }
     }
 
     private class SnapshotTriggeringListener extends UnitOfWorkListenerAdapter {
 
         private final String aggregateType;
-        private final Object aggregateIdentifier;
+        private final String aggregateIdentifier;
         private final AtomicInteger counter;
 
         public SnapshotTriggeringListener(String aggregateType,
-                                          Object aggregateIdentifier, AtomicInteger counter) {
+                                          String aggregateIdentifier, AtomicInteger counter) {
             this.aggregateType = aggregateType;
             this.aggregateIdentifier = aggregateIdentifier;
             this.counter = counter;

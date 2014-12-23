@@ -70,7 +70,7 @@ public class SerializationAwareDomainEventMessage<T> extends SerializationAwareE
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return domainEventMessage.getAggregateIdentifier();
     }
 

@@ -95,7 +95,7 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    protected T doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
+    protected T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
         try {
             return constructor.newInstance();
         } catch (InstantiationException e) {

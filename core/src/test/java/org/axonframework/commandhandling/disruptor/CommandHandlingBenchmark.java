@@ -48,17 +48,17 @@ public class CommandHandlingBenchmark {
 
         InMemoryEventStore eventStore = new InMemoryEventStore();
         eventStore.appendInitialEvent("test", new SimpleDomainEventStream(new GenericDomainEventMessage<>(
-                aggregateIdentifier, 0, new SomeEvent())));
+                aggregateIdentifier.toString(), 0, new SomeEvent())));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
         Repository<MyAggregate> repository = new Repository<MyAggregate>() {
             @Override
-            public MyAggregate load(Object aggregateIdentifier, Long expectedVersion) {
+            public MyAggregate load(String aggregateIdentifier, Long expectedVersion) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public MyAggregate load(Object aggregateIdentifier) {
+            public MyAggregate load(String aggregateIdentifier) {
                 return myAggregate;
             }
 
@@ -81,7 +81,7 @@ public class CommandHandlingBenchmark {
         System.out.println(String.format("Just did %d commands per second", ((COMMAND_COUNT * 1000) / (t2 - t1))));
     }
 
-    private static class MyAggregate extends AbstractAnnotatedAggregateRoot<UUID> {
+    private static class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
         private final UUID identifier;
 
@@ -94,8 +94,8 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public UUID getIdentifier() {
-            return identifier;
+        public String getIdentifier() {
+            return identifier.toString();
         }
 
         public void doSomething() {
@@ -122,7 +122,7 @@ public class CommandHandlingBenchmark {
 
         @Override
         public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
-            repository.load(aggregateIdentifier).doSomething();
+            repository.load(aggregateIdentifier.toString()).doSomething();
             return null;
         }
     }
@@ -143,13 +143,13 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String type, String identifier) {
             System.out.println(".");
             return storedEvents;
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }

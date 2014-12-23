@@ -107,7 +107,7 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
             List<DomainEventMessage> upcastEvents;
             do {
                 SerializedDomainEventData eventFromFile = eventMessageReader.readEventMessage();
-                upcastEvents = upcastAndDeserialize(eventFromFile, null, serializer, upcasterChain, false);
+                upcastEvents = upcastAndDeserialize(eventFromFile, serializer, upcasterChain, false);
             } while (upcastEvents.isEmpty());
             return upcastEvents;
         } catch (EOFException e) {

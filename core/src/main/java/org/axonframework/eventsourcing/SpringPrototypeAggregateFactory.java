@@ -50,7 +50,7 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public T doCreateAggregate(Object aggregateIdentifier, DomainEventMessage firstEvent) {
+    public T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
         return (T) applicationContext.getBean(prototypeBeanName);
     }
 

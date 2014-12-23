@@ -39,7 +39,7 @@ public class EventCountSnapshotterTriggerTest {
 
     private EventCountSnapshotterTrigger testSubject;
     private Snapshotter mockSnapshotter;
-    private Object aggregateIdentifier;
+    private String aggregateIdentifier;
     private Cache mockCache;
     private CapturingMatcher<Cache.EntryListener> listenerConfiguration;
     private EventSourcedAggregateRoot aggregate;

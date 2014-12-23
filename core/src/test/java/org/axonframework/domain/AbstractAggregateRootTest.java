@@ -87,14 +87,14 @@ public class AbstractAggregateRootTest {
 
     private static class AggregateRoot extends AbstractAggregateRoot {
 
-        private final Object identifier;
+        private final String identifier;
 
         private AggregateRoot() {
             identifier = IdentifierFactory.getInstance().generateIdentifier();
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 

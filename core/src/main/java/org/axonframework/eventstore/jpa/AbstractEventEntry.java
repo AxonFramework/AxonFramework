@@ -69,7 +69,7 @@ public abstract class AbstractEventEntry extends AbstractEventEntryData<byte[]> 
                                  SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
         super(event.getIdentifier(),
               type,
-              event.getAggregateIdentifier().toString(),
+              event.getAggregateIdentifier(),
               event.getSequenceNumber(),
               timestamp, payload.getType()
         );

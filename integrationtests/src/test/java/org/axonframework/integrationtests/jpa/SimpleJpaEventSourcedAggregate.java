@@ -57,7 +57,7 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
     }
 
     @Override
-    public Object getIdentifier() {
+    public String getIdentifier() {
         return identifier;
     }
 }

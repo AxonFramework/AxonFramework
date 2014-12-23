@@ -96,7 +96,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T load(Object aggregateIdentifier, Long expectedVersion) {
+    public T load(String aggregateIdentifier, Long expectedVersion) {
         lockManager.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
@@ -171,7 +171,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     @Override
-    protected abstract T doLoad(Object aggregateIdentifier, Long expectedVersion);
+    protected abstract T doLoad(String aggregateIdentifier, Long expectedVersion);
 
     /**
      * UnitOfWorkListeners that cleans up remaining locks after a UnitOfWork has been committed or rolled back.

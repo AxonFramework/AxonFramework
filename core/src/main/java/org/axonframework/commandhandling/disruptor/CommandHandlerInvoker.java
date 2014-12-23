@@ -128,7 +128,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         return repositories.get(typeIdentifier);
     }
 
-    private void removeEntry(Object aggregateIdentifier) {
+    private void removeEntry(String aggregateIdentifier) {
         for (DisruptorRepository repository : repositories.values()) {
             repository.removeFromCache(aggregateIdentifier);
         }
@@ -169,7 +169,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public T load(Object aggregateIdentifier, Long expectedVersion) {
+        public T load(String aggregateIdentifier, Long expectedVersion) {
             T aggregate = load(aggregateIdentifier);
             if (expectedVersion != null && aggregate.getVersion() > expectedVersion) {
                 throw new ConflictingAggregateVersionException(aggregateIdentifier,
@@ -180,7 +180,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public T load(Object aggregateIdentifier) {
+        public T load(String aggregateIdentifier) {
             T aggregateRoot = null;
             for (T cachedAggregate : firstLevelCache.keySet()) {
                 if (aggregateIdentifier.equals(cachedAggregate.getIdentifier())) {
@@ -189,7 +189,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 }
             }
             if (aggregateRoot == null) {
-                Object cachedItem = cache.get(aggregateIdentifier);
+                String cachedItem = cache.get(aggregateIdentifier);
                 if (cachedItem != null && aggregateFactory.getAggregateType().isInstance(cachedItem)) {
                     aggregateRoot = aggregateFactory.getAggregateType().cast(cachedItem);
                 }
@@ -239,7 +239,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             cache.put(aggregate.getIdentifier(), aggregate);
         }
 
-        private void removeFromCache(Object aggregateIdentifier) {
+        private void removeFromCache(String aggregateIdentifier) {
             for (T cachedAggregate : firstLevelCache.keySet()) {
                 if (aggregateIdentifier.equals(cachedAggregate.getIdentifier())) {
                     firstLevelCache.remove(cachedAggregate);
