@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
-import org.axonframework.monitoring.MonitorRegistry;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -51,7 +50,6 @@ public class SimpleCommandBus implements CommandBus {
 
     private final ConcurrentMap<String, CommandHandler<?>> subscriptions =
             new ConcurrentHashMap<>();
-    private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
     private volatile Iterable<? extends CommandHandlerInterceptor> handlerInterceptors = Collections.emptyList();
     private volatile Iterable<? extends CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
@@ -61,7 +59,6 @@ public class SimpleCommandBus implements CommandBus {
      * Initializes the SimpleCommandBus.
      */
     public SimpleCommandBus() {
-        MonitorRegistry.registerMonitoringBean(statistics, SimpleCommandBus.class);
     }
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
@@ -118,7 +115,6 @@ public class SimpleCommandBus implements CommandBus {
 
     private Object doDispatch(CommandMessage<?> command, CommandHandler commandHandler) throws Throwable {
         logger.debug("Dispatching command [{}]", command.getCommandName());
-        statistics.recordReceivedCommand();
         UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, handlerInterceptors);
 
@@ -149,7 +145,6 @@ public class SimpleCommandBus implements CommandBus {
     @Override
     public <T> void subscribe(String commandName, CommandHandler<? super T> handler) {
         subscriptions.put(commandName, handler);
-        statistics.reportHandlerRegistered(commandName);
     }
 
     /**
@@ -157,11 +152,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     @Override
     public <T> boolean unsubscribe(String commandName, CommandHandler<? super T> handler) {
-        if (subscriptions.remove(commandName, handler)) {
-            statistics.recordUnregisteredHandler(commandName);
-            return true;
-        }
-        return false;
+        return subscriptions.remove(commandName, handler);
     }
 
     /**

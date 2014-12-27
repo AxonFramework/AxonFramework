@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.monitoring.MonitorRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,13 +36,13 @@ public class SimpleEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
     private final Set<EventListener> listeners = new CopyOnWriteArraySet<>();
-    private final SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
+
+
 
     /**
      * Initializes the SimpleEventBus and registers the mbeans for management information.
      */
     public SimpleEventBus() {
-        MonitorRegistry.registerMonitoringBean(statistics, SimpleEventBus.class);
     }
 
     /**
@@ -53,7 +52,6 @@ public class SimpleEventBus implements EventBus {
     public void unsubscribe(EventListener eventListener) {
         String listenerType = classNameOf(eventListener);
         if (listeners.remove(eventListener)) {
-            statistics.recordUnregisteredListener(listenerType);
             logger.debug("EventListener {} unsubscribed successfully", listenerType);
         } else {
             logger.info("EventListener {} not removed. It was already unsubscribed", listenerType);
@@ -67,7 +65,6 @@ public class SimpleEventBus implements EventBus {
     public void subscribe(EventListener eventListener) {
         String listenerType = classNameOf(eventListener);
         if (listeners.add(eventListener)) {
-            statistics.listenerRegistered(listenerType);
             logger.debug("EventListener [{}] subscribed successfully", listenerType);
         } else {
             logger.info("EventListener [{}] not added. It was already subscribed", listenerType);
@@ -79,7 +76,6 @@ public class SimpleEventBus implements EventBus {
      */
     @Override
     public void publish(EventMessage... events) {
-        statistics.recordPublishedEvent();
         if (!listeners.isEmpty()) {
             for (EventMessage event : events) {
                 for (EventListener listener : listeners) {
