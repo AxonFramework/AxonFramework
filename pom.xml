@@ -23,7 +23,7 @@
     <version>3.0-SNAPSHOT</version>
     <modules>
         <module>core</module>
-        <module>springmessaging</module>
+        <module>spring</module>
         <module>test</module>
         <module>distributed-commandbus</module>
         <module>integrationtests</module>

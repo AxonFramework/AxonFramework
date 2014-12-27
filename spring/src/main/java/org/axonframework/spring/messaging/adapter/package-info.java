@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the Event Bus implementation using Spring Messaging
+ * Utility classes used to connect an Event Bus to a Spring Messaging Channel.
  */
-package org.axonframework.springmessaging.eventbus;
+package org.axonframework.spring.messaging.adapter;

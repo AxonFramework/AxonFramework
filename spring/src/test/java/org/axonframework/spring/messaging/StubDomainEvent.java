@@ -14,7 +14,20 @@
  * limitations under the License.
  */
 
+package org.axonframework.spring.messaging;
+
+import java.io.Serializable;
+
 /**
- * Utility classes used to connect an Event Bus to a Spring Messaging Channel.
+ * @author Allard Buijze
  */
-package org.axonframework.springmessaging.adapter;
+public class StubDomainEvent implements Serializable {
+
+    public StubDomainEvent() {
+    }
+
+    @Override
+    public String toString() {
+        return "StubDomainEvent";
+    }
+}

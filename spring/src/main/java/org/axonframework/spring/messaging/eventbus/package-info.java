@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.springmessaging.adapter;
-
 /**
- * @author Allard Buijze
- * @since 2.3.1
+ * Contains the Event Bus implementation using Spring Messaging
  */
-public class NoFilter implements EventFilter {
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean accept(Class<?> payloadType) {
-        return true;
-    }
-}
+package org.axonframework.spring.messaging.eventbus;

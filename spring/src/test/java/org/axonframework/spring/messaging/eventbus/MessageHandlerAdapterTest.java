@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.springmessaging.eventbus;
+package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.springmessaging.StubDomainEvent;
+import org.axonframework.spring.messaging.StubDomainEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.*;

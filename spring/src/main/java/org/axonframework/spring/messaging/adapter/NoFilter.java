@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.springmessaging.adapter;
+package org.axonframework.spring.messaging.adapter;
 
 /**
- * Interface describing an Event Filter. The Event Filter decides which events may be forwarded by adapters and which
- * should be blocked.
- *
  * @author Allard Buijze
  * @since 2.3.1
  */
-public interface EventFilter {
+public class NoFilter implements EventFilter {
 
     /**
-     * Whether or not this filter allows an event of the given type to pass through or not.
-     *
-     * @param payloadType The actual type of payload in the event.
-     * @return <code>true</code> if this event should be forwarded, <code>false</code> otherwise.
+     * {@inheritDoc}
      */
-    boolean accept(Class<?> payloadType);
+    @Override
+    public boolean accept(Class<?> payloadType) {
+        return true;
+    }
 }

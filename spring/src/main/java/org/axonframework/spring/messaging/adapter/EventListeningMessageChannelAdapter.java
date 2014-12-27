@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.springmessaging.adapter;
+package org.axonframework.spring.messaging.adapter;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;

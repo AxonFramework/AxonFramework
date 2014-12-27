@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.springmessaging.adapter;
+package org.axonframework.spring.messaging.adapter;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.springmessaging.StubDomainEvent;
+import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.messaging.Message;
