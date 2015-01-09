@@ -30,6 +30,7 @@
         <module>mongo</module>
         <module>amqp</module>
         <module>quickstart</module>
+        <module>metrics</module>
     </modules>
     <packaging>pom</packaging>
 
