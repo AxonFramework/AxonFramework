@@ -290,7 +290,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                     >http://lmax-exchange.github.io/disruptor/</link>), a small framework for
                 concurrent programming, to achieve much better performance, by just taking a
                 different approach to multithreading. Instead of doing the processing in the calling
-                thread, the tasks are handed of to two groups of threads, that each take care of a
+                thread, the tasks are handed off to two groups of threads, that each take care of a
                 part of the processing. The first group of threads will execute the command handler,
                 changing an aggregate's state. The second group will store and publish the events to
                 the Event Store and Event Bus. </para>
@@ -380,7 +380,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                         </listitem>
                         <listitem>
                             <para>TransactionManager: Defines the Transaction Manager that should
-                                ensure the storage of events and their publication are executed
+                                ensure that the storage and publication of events are executed
                                 transactionally.</para>
                         </listitem>
                         <listitem>
@@ -618,7 +618,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                 <para>The
                     <code>AggregateAnnotationCommandHandler</code>
                     still needs to know which
-                    aggregate instance (identified by it's unique Aggregate Identifier) to load and
+                    aggregate instance (identified by its unique Aggregate Identifier) to load and
                     which version to expect. By default, the
                     <code>AggregateAnnotationCommandHandler</code>
                     uses annotations on the
@@ -761,7 +761,7 @@ public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly 
     }
 }</programlisting><note>
                         <para>Note that each command must have exactly one handler in the aggregate.
-                            This means that you cannot annotated multiple entities (either root nor
+                            This means that you cannot annotate multiple entities (either root nor
                             not) with @CommandHandler, when they handle the same command type. This
                             also means that it is not possible to annotate fields containing
                             collections with <code>@CommandHandlingMember</code>. In case you need
@@ -955,7 +955,7 @@ try {
                     configure a <code>BeanValidationInterceptor</code> on your Command Bus, and it
                     will automatically find and configure your validator implementation. While it
                     uses sensible defaults, you can fine-tune it to your specific needs. <tip>
-                        <para>You want to spend as less resources on an invalid command as possible.
+                        <para>You want to spend as few resources on an invalid command as possible.
                             Therefore, this interceptor is generally placed in the very front of the
                             interceptor chain. In some cases, a Logging or Auditing interceptor
                             might need to be placed in front, with the validating interceptor
