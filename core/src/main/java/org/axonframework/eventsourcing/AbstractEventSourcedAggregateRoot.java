@@ -110,8 +110,9 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
                                                                      + "It must be initialized at the latest when the "
                                                                      + "first event is applied.");
                 }
-                handleRecursively(new GenericDomainEventMessage<Object>(null, 0, eventPayload, metaData));
-                registerEvent(metaData, eventPayload);
+                final GenericDomainEventMessage<Object> event = new GenericDomainEventMessage<Object>(null, 0, eventPayload, metaData);
+                handleRecursively(event);
+                registerEvent(event);
             } else {
                 // eventsToApply may heb been set to null by serialization
                 if (eventsToApply == null) {
