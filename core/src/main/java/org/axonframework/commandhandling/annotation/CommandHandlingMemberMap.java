@@ -25,9 +25,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker annotation for fields that contain a {@link java.util.Map} of Entities capable of handling Commands on behalf of the aggregate. When
- * a field is annotated with <code>@CommandHandlerMemberMap</code>, it is a hint towards Command Handler discovery
- * mechanisms that the entity should also be inspected for {@link org.axonframework.commandhandling.annotation.CommandHandler} annotated methods.
+ * Marker annotation for fields that contain a {@link java.util.Map} of Entities capable of handling Commands on behalf
+ * of the aggregate. When a field is annotated with <code>@CommandHandlerMemberMap</code>, it is a hint towards Command
+ * Handler discovery mechanisms that the entity should also be inspected for {@link
+ * org.axonframework.commandhandling.annotation.CommandHandler} annotated methods.
  * <p/>
  * Note that CommandHandler detection is done using static typing. This means that only the declared type of the field
  * can be inspected. If a subclass of that type is assigned to the field, any handlers declared on that subclass will
