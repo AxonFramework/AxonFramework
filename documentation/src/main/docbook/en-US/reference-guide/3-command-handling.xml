@@ -324,7 +324,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                             aggregate is created, all commands will be executed exactly in the order
                             they were dispatched. To ensure the order, use a callback on the
                             creating command to wait for the aggregate being created. It shouldn't
-                            take more than a few milliseconds. </para>
+                            take more than a few milliseconds.</para>
                     </listitem>
                 </itemizedlist></para>
             <simplesect>
@@ -773,6 +773,39 @@ public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly 
                                 <code>@CommandHandlingMember</code> annotated field is inspected for
                                 <code>@CommandHandler</code> methods.</para>
                     </note></para>
+                <para>Since version 2.4, it is also possible to annotate Collections of entities
+                    with <code>@CommandHandlingMemberCollection</code> and Maps with
+                        <code>@CommandHandlingMemberMap</code>. In the latter case, the values of
+                    the map must contain the entities, while the key contains a value that is used
+                    as their reference.</para>
+                <para>The <code>@CommandHandlingMemberCollection</code> annotation takes two
+                    mandatory properties: <code>entityId</code> and
+                        <code>commandTargetProperty</code>. Both are references to accessor methods
+                    that provide the values necessary for Axon to figure out which entity to forward
+                    the command to. The <code>entityId</code> property is used to identify the
+                    property on the aggregate, while <code>commandTargetProperty</code> identifies
+                    the property on the incoming command. If the returned values are
+                        <code>equals()</code> for a command/entity combination, the command is
+                    forwarded to that specific entity. On its turn, the entity may have other
+                    annotated fields to forward the command further.</para>
+                <para>The <code>@CommandHandlingMemberMap</code> is similar to the previous
+                    annotation, except that it only has the <code>commandTargetProperty</code>
+                    property. It identifies the property on the command that returns the value to
+                    use as a key for the Map. The entity returned from the map by that key receives
+                    the command.</para>
+                <para>If no Entity can be found in the annotated Collection or Map, Axon throws an
+                    IllegalStateException; apparently, the aggregate is not capable of processing
+                    that command at that point in time.</para>
+                <para>
+                    <note>
+                        <para>The field declaration for both the Collection or Map should contain
+                            proper generics to allow Axon to identify the type of Entity contained
+                            in the Collection or Map. If it is not possible to add the generics in
+                            the declaration (e.g. because you're using a custom implementation which
+                            already defines generic types), you must specify the type of entity used
+                            in the <code>entityType</code> property on the annotation.</para>
+                    </note>
+                </para>
             </simplesect>
         </sect2>
     </sect1>

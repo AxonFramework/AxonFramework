@@ -470,7 +470,9 @@
                     <code>EventSqlSchema</code> is responsible for creating the correct
                     <code>PreparedStatement</code>s for those. When you need to change a query that
                 is executed against the database, it will usually suffice to override a single
-                method in the <code>GenericEventSqlSchema</code>.</para>
+                method in the <code>GenericEventSqlSchema</code>. The is, for example, a
+                    <code>PostgresEventSqlSchema</code> implementaion for use with a PostgreSQL
+                database.</para>
             <warning>
                 <title>Timestamps and time zones</title>
                 <para>By default, Axon stores time stamps in the system timezone. However, many
@@ -508,6 +510,26 @@
             <para>The MongoDB doesn't take a lot of configuration. All it needs is a reference to
                 the collections to store the Events in, and you're set to go. For production
                 environments, you may want to double check the indexes on your collections.</para>
+        </sect2>
+        <sect2>
+            <title>Event Store Utilities</title>
+            <para>Axon provides a number of wrappers for Event Stores that may be useful in certain
+                circumstances. For example, an environment may replay events up to a certain moment
+                in time, in order to reproduce the state of the application at that moment.</para>
+            <para>The <code>TimestampCutoffReadonlyEventStore</code> is, as the name suggests, a
+                read-only event store that only returns events older than a specific time. This
+                allows you to reproduce state of an application at a specific time. This class is a
+                wrapper around another event store (e.g. the one used in production).</para>
+            <para>The <code>SequenceEventStore</code> is a wrapper around two other Event Stores.
+                When reading, it returns the events from both event stores. Appended events are only
+                appended to the second event store. This is useful in cases where two different
+                implementations of Event Stores are used for performance reasons, for example. The
+                first would be a larger, but slower event store, while the second is optimized for
+                quick reading and writing.</para>
+            <para>There is also an Event Store implementation that keeps te stored events in memory:
+                the <code>VolatileEventStore</code>. While it probably outperforms any other event
+                store out there, it is not really meant for long-term production use. However, it is
+                very useful in short-lived tools or tests that require an event store.</para>
         </sect2>
         <sect2>
             <title>Implementing your own event store</title>
