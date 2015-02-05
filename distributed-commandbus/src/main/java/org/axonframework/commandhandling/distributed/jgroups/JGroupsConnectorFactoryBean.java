@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.JChannel;
+import org.jgroups.util.Util;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -43,8 +44,8 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         ApplicationContextAware {
 
     private JGroupsConnector connector;
+    private JChannelFactory channelFactory = new JGroupsXmlConfigurationChannelFactory("tcp_mcast.xml");
     private Serializer serializer;
-    private String configuration = "tcp_mcast.xml";
     private String clusterName;
     private String channelName;
     private CommandBus localSegment;
@@ -55,6 +56,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private ApplicationContext applicationContext;
     private List<CommandHandlerInterceptor> interceptors;
     private long joinTimeout = -1;
+    private boolean registerMBean = false;
 
     @Override
     public Object getObject() throws Exception {
@@ -86,7 +88,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         if (clusterName == null) {
             clusterName = beanName;
         }
-        channel = new JChannel(configuration);
+        channel = channelFactory.createChannel();
         if (channelName != null) {
             channel.setName(channelName);
         }
@@ -107,12 +109,21 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
 
     /**
      * Sets the JGroups configuration file to load. Defaults to configuration using TCP with multicast discovery
-     * (tcp_mcast.xml).
+     * (tcp_mcast.xml). Alternatively the JChannel can be instantiated programatically by setting the
+     * {@link #setChannelFactory JChannelFactory}.
      *
      * @param configuration the JGroups configuration file
      */
     public void setConfiguration(String configuration) {
-        this.configuration = configuration;
+        this.channelFactory = new JGroupsXmlConfigurationChannelFactory(configuration);
+    }
+
+    /**
+     * Sets the JChannelFactory that allows programmatic definition of the JChannel.
+     * @param channelFactory
+     */
+    public void setChannelFactory(JChannelFactory channelFactory) {
+        this.channelFactory = channelFactory;
     }
 
     /**
@@ -180,6 +191,15 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         this.loadFactor = loadFactor;
     }
 
+    /**
+     * Registers the JChannel monitoring bean after the channel has connected. Defaults to false.
+     *
+     * @param registerMBean
+     */
+    public void setRegisterMBean(boolean registerMBean) {
+        this.registerMBean = registerMBean;
+    }
+
     @Override
     public void start() {
         try {
@@ -188,6 +208,9 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
                 connector.awaitJoined(joinTimeout, TimeUnit.MILLISECONDS);
             } else {
                 connector.awaitJoined();
+            }
+            if (registerMBean) {
+                Util.registerChannel(channel, null);
             }
         } catch (Exception e) {
             throw new ConnectionFailedException("Could not start JGroups Connector", e);
