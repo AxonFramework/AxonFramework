@@ -120,6 +120,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
 
     /**
      * Sets the JChannelFactory that allows programmatic definition of the JChannel.
+     *
      * @param channelFactory
      */
     public void setChannelFactory(JChannelFactory channelFactory) {

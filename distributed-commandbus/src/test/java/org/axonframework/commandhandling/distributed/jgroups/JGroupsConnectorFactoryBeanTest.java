@@ -43,7 +43,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({JGroupsConnectorFactoryBean.class, JChannel.class, JGroupsConnector.class,
-        JGroupsXmlConfigurationChannelFactory.class, Util.class})
+                        JGroupsXmlConfigurationChannelFactory.class, Util.class})
 public class JGroupsConnectorFactoryBeanTest {
 
     private JGroupsConnectorFactoryBean testSubject;
@@ -109,7 +109,7 @@ public class JGroupsConnectorFactoryBeanTest {
 
         verifyNew(JChannel.class).withArguments("custom.xml");
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("ClusterName"),
-                same(localSegment), same(serializer));
+                                                        same(localSegment), same(serializer));
         verify(mockApplicationContext, never()).getBean(Serializer.class);
         verify(mockChannel).setName("localname");
         verify(mockConnector).connect(200);

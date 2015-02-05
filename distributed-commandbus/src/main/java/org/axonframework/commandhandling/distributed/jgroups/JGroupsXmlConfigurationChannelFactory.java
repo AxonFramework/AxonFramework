@@ -22,6 +22,7 @@ import org.jgroups.JChannel;
  * @author Patrick Haas
  */
 public class JGroupsXmlConfigurationChannelFactory implements JChannelFactory {
+
     private final String configuration;
 
     public JGroupsXmlConfigurationChannelFactory(String configuration) {
