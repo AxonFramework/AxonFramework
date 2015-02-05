@@ -124,7 +124,6 @@ public class JGroupsConnectorFactoryBeanTest {
         verify(mockChannel).close();
     }
 
-
     @Test
     public void testCreateWithCustomChannel() throws Exception {
         JChannelFactory mockFactory = mock(JChannelFactory.class);
@@ -174,8 +173,6 @@ public class JGroupsConnectorFactoryBeanTest {
 
         verify(mockChannel).close();
     }
-
-
 
     @Test
     public void testSimpleProperties() {
