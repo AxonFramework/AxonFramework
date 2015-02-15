@@ -50,6 +50,7 @@ public class JGroupsConnectorFactoryBeanTest {
     private ApplicationContext mockApplicationContext;
     private JChannel mockChannel;
     private JGroupsConnector mockConnector;
+    private HashChangeListener mockListener;
 
     @Before
     public void setUp() throws Exception {
@@ -57,11 +58,16 @@ public class JGroupsConnectorFactoryBeanTest {
         mockApplicationContext = mock(ApplicationContext.class);
         mockChannel = mock(JChannel.class);
         mockConnector = mock(JGroupsConnector.class);
+        mockListener = mock(HashChangeListener.class);
         when(mockApplicationContext.getBean(Serializer.class)).thenReturn(new XStreamSerializer());
         whenNew(JChannel.class).withParameterTypes(String.class).withArguments(isA(String.class))
                 .thenReturn(mockChannel);
         whenNew(JGroupsConnector.class)
-                .withArguments(isA(JChannel.class), isA(String.class), isA(CommandBus.class), isA(Serializer.class))
+                .withArguments(isA(JChannel.class),
+                               isA(String.class),
+                               isA(CommandBus.class),
+                               isA(Serializer.class),
+                               anyObject() /*HashChangeListener or null */)
                 .thenReturn(mockConnector);
 
         testSubject = new JGroupsConnectorFactoryBean();
@@ -77,7 +83,7 @@ public class JGroupsConnectorFactoryBeanTest {
 
         verifyNew(JChannel.class).withArguments("tcp_mcast.xml");
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("beanName"), isA(
-                SimpleCommandBus.class), isA(Serializer.class));
+                SimpleCommandBus.class), isA(Serializer.class), isNull());
         verify(mockConnector).connect(100);
         verify(mockChannel, never()).close();
 
@@ -103,13 +109,14 @@ public class JGroupsConnectorFactoryBeanTest {
         SimpleCommandBus localSegment = new SimpleCommandBus();
         testSubject.setLocalSegment(localSegment);
         testSubject.setChannelName("localname");
+        testSubject.setHashChangeListener(mockListener);
         testSubject.afterPropertiesSet();
         testSubject.start();
         testSubject.getObject();
 
         verifyNew(JChannel.class).withArguments("custom.xml");
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("ClusterName"),
-                                                        same(localSegment), same(serializer));
+                                                        same(localSegment), same(serializer), same(mockListener));
         verify(mockApplicationContext, never()).getBean(Serializer.class);
         verify(mockChannel).setName("localname");
         verify(mockConnector).connect(200);
@@ -136,7 +143,7 @@ public class JGroupsConnectorFactoryBeanTest {
 
         verify(mockFactory).createChannel();
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("beanName"), isA(
-                SimpleCommandBus.class), isA(Serializer.class));
+                SimpleCommandBus.class), isA(Serializer.class), isNull());
         verify(mockConnector).connect(100);
         verify(mockChannel, never()).close();
 
@@ -161,7 +168,7 @@ public class JGroupsConnectorFactoryBeanTest {
         Util.registerChannel(eq(mockChannel), isNull(String.class));
 
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("beanName"), isA(
-                SimpleCommandBus.class), isA(Serializer.class));
+                SimpleCommandBus.class), isA(Serializer.class), isNull());
         verify(mockConnector).connect(100);
         verify(mockChannel, never()).close();
 
