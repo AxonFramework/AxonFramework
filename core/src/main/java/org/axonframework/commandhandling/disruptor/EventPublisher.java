@@ -194,7 +194,6 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 unitOfWork.onAfterCommit();
             }
         } catch (Exception e) {
-            e.printStackTrace();
             if (transaction != null) {
                 transactionManager.rollbackTransaction(transaction);
             }
