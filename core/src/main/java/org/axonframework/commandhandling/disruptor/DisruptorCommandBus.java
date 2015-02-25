@@ -26,6 +26,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.interceptors.SerializationOptimizingInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
@@ -48,6 +49,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static java.lang.String.format;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
@@ -118,13 +121,13 @@ public class DisruptorCommandBus implements CommandBus {
     private final List<CommandHandlerInterceptor> publisherInterceptors;
     private final ExecutorService executorService;
     private final boolean rescheduleOnCorruptState;
-    private volatile boolean started = true;
-    private volatile boolean disruptorShutDown = false;
     private final long coolingDownPeriod;
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
     private final int serializerCount;
     private final CommandCallback<Object> failureLoggingCallback = new FailureLoggingCommandCallback();
+    private volatile boolean started = true;
+    private volatile boolean disruptorShutDown = false;
 
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
@@ -254,6 +257,12 @@ public class DisruptorCommandBus implements CommandBus {
      */
     public <R> void doDispatch(CommandMessage command, CommandCallback<R> callback) {
         Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
+        final CommandHandler<?> commandHandler = commandHandlers.get(command.getCommandName());
+        if (commandHandler == null) {
+            throw new NoHandlerForCommandException(format("No handler was subscribed to command [%s]",
+                                                          command.getCommandName()));
+        }
+
         RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
         int invokerSegment = 0;
         int publisherSegment = 0;
@@ -274,13 +283,19 @@ public class DisruptorCommandBus implements CommandBus {
             }
         }
         long sequence = ringBuffer.next();
-        CommandHandlingEntry event = ringBuffer.get(sequence);
-        event.reset(command, commandHandlers.get(command.getCommandName()), invokerSegment, publisherSegment,
-                    serializerSegment, new BlacklistDetectingCallback<R>(callback, command, disruptor.getRingBuffer(),
-                                                                         this, rescheduleOnCorruptState),
-                    invokerInterceptors, publisherInterceptors
-        );
-        ringBuffer.publish(sequence);
+        try {
+            CommandHandlingEntry event = ringBuffer.get(sequence);
+            event.reset(command, commandHandler, invokerSegment, publisherSegment,
+                        serializerSegment, new BlacklistDetectingCallback<R>(callback,
+                                                                             command,
+                                                                             disruptor.getRingBuffer(),
+                                                                             this,
+                                                                             rescheduleOnCorruptState),
+                        invokerInterceptors, publisherInterceptors
+            );
+        } finally {
+            ringBuffer.publish(sequence);
+        }
     }
 
     /**
@@ -368,27 +383,6 @@ public class DisruptorCommandBus implements CommandBus {
         }
     }
 
-    private class ExceptionHandler implements com.lmax.disruptor.ExceptionHandler {
-
-        @Override
-        public void handleEventException(Throwable ex, long sequence, Object event) {
-            logger.error("Exception occurred while processing a {}.",
-                         ((CommandHandlingEntry) event).getCommand().getPayloadType().getSimpleName(),
-                         ex);
-        }
-
-        @Override
-        public void handleOnStartException(Throwable ex) {
-            logger.error("Failed to start the DisruptorCommandBus.", ex);
-            disruptor.shutdown();
-        }
-
-        @Override
-        public void handleOnShutdownException(Throwable ex) {
-            logger.error("Error while shutting down the DisruptorCommandBus", ex);
-        }
-    }
-
     private static class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
 
         private final String typeIdentifier;
@@ -429,6 +423,27 @@ public class DisruptorCommandBus implements CommandBus {
         public DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
                                                    DomainEventStream eventStream) {
             return eventStream;
+        }
+    }
+
+    private class ExceptionHandler implements com.lmax.disruptor.ExceptionHandler {
+
+        @Override
+        public void handleEventException(Throwable ex, long sequence, Object event) {
+            logger.error("Exception occurred while processing a {}.",
+                         ((CommandHandlingEntry) event).getCommand().getPayloadType().getSimpleName(),
+                         ex);
+        }
+
+        @Override
+        public void handleOnStartException(Throwable ex) {
+            logger.error("Failed to start the DisruptorCommandBus.", ex);
+            disruptor.shutdown();
+        }
+
+        @Override
+        public void handleOnShutdownException(Throwable ex) {
+            logger.error("Error while shutting down the DisruptorCommandBus", ex);
         }
     }
 }
