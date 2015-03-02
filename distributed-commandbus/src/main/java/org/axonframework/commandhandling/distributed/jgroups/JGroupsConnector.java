@@ -84,6 +84,7 @@ public class JGroupsConnector implements CommandBusConnector {
     private final Set<String> supportedCommandNames = new CopyOnWriteArraySet<String>();
     private volatile int currentLoadFactor;
     private final JGroupsConnector.MessageReceiver messageReceiver;
+    private final HashChangeListener hashChangeListener;
 
     /**
      * Initializes the Connector using given resources. The <code>channel</code> is used to connect this connector to
@@ -102,9 +103,32 @@ public class JGroupsConnector implements CommandBusConnector {
      * @param serializer   The serialized used to serialize messages before sending them to other members.
      */
     public JGroupsConnector(JChannel channel, String clusterName, CommandBus localSegment, Serializer serializer) {
+        this(channel, clusterName, localSegment, serializer, null);
+    }
+
+    /**
+     * Initializes the Connector using given resources. The <code>channel</code> is used to connect this connector to
+     * the other members. The <code>clusterName</code> is the name of the cluster the channel will be connected to. For
+     * local dispatching of commands, the given <code>localSegment</code> is used. When messages are remotely
+     * dispatched, the given <code>serializer</code> is used to serialize and deserialize the messages.
+     * <p/>
+     * Note that Connectors on different members need to have the same <code>channel</code> configuration,
+     * <code>clusterName</code> and <code>serializer</code> configuration in order to successfully set up a distributed
+     * cluster.
+     *
+     * @param channel            The channel (configured, but not connected) used to discover and connect with the
+     *                           other members
+     * @param clusterName        The name of the cluster to connect to
+     * @param localSegment       The command bus on which messages with this member as destination are dispatched on
+     * @param serializer         The serialized used to serialize messages before sending them to other members.
+     * @param hashChangeListener The listener to notify when the consistent hash is changed
+     */
+    public JGroupsConnector(JChannel channel, String clusterName, CommandBus localSegment, Serializer serializer,
+                            HashChangeListener hashChangeListener) {
         this.channel = channel;
         this.clusterName = clusterName;
         this.localSegment = localSegment;
+        this.hashChangeListener = hashChangeListener;
         this.serializer = new MessageSerializer(serializer);
         this.messageReceiver = new MessageReceiver();
     }
@@ -305,6 +329,9 @@ public class JGroupsConnector implements CommandBusConnector {
                             "A member was disconnected while waiting for a reply. {} messages are lost without reply.",
                             messagesLost);
                 }
+                if (hashChangeListener != null) {
+                    hashChangeListener.hashChanged(consistentHash);
+                }
             }
             if (!view.equals(currentView)) {
                 for (Address member : view.getMembers()) {
@@ -376,6 +403,9 @@ public class JGroupsConnector implements CommandBusConnector {
                 if (msg.getSrc().equals(channel.getAddress())) {
                     joinedCondition.markJoined(true);
                     logger.info("Local segment successfully joined the distributed command bus");
+                }
+                if (hashChangeListener != null) {
+                    hashChangeListener.hashChanged(consistentHash);
                 }
             } else {
                 logger.warn("Received join message from '{}', but a connection with the sender has been lost.",

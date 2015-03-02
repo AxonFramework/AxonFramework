@@ -187,22 +187,22 @@
                 </listitem>
             </itemizedlist>
             <programlisting language="java">public interface MyGateway {
-    
+
     // fire and forget
     void sendCommand(MyPayloadType command);
 
     // method that attaches meta data and will wait for a result for 10 seconds
     @Timeout(value = 10, unit = TimeUnit.SECONDS)
-    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command, 
+    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command,
                                              @MetaData("userId") String userId);
 
     // alternative that throws exceptions on timeout
     @Timeout(value = 20, unit = TimeUnit.SECONDS)
-    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command) 
+    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command)
                          throws TimeoutException, InterruptedException;
 
     // this method will also wait, caller decides how long
-    void sendCommandAndWait(MyPayloadType command, long timeout, TimeUnit unit) 
+    void sendCommandAndWait(MyPayloadType command, long timeout, TimeUnit unit)
                          throws TimeoutException, InterruptedException;
 }
 
@@ -665,7 +665,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                     </note>
                 </para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
-   
+
     @AggregateIdentifier
     private String id;
 
@@ -727,7 +727,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                         <code>@CommandHandlingMember</code>. Note that only the declared type of the
                     annotated field is inspected for Command Handlers. If a field value is null at
                     the time an incoming command arrives for that entity, an exception is thrown.<programlisting>public class MyAggregate extends AbstractAnnotatedAggregateRoot {
-   
+
     @AggregateIdentifier
     private String id;
 
@@ -1150,7 +1150,14 @@ try {
                         <para>Finally, the Serializer is used to serialize command messages before
                             they are sent over the wire.</para>
                     </listitem>
-                </itemizedlist></para>
+                </itemizedlist>
+                Optionally, a <code>HashChangeListener</code> may be configured. This listener will be notified
+                when the <code>ConsistentHash</code> used to route messages changes.
+                <note><para>When using a Cache, it
+                should be cleared out when the <code>ConsistentHash</code> changes to avoid potential data corruption
+                (e.g. when commands don't specify a <code>@TargetAggregateVersion</code> and an new member quickly
+                joins and leaves the JGroup, modifying the aggregate while it's still cached elsewhere.)</para></note>
+            </para>
             <para>Ultimately, the JGroupsConnector needs to actually connect, in order to dispatch
                 Messages to other segments. To do so, call the <code>connect()</code> method. It
                 takes a single parameter: the load factor. The load factor defines how much load,
