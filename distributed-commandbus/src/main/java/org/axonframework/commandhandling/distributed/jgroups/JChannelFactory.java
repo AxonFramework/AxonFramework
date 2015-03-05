@@ -22,8 +22,16 @@ import org.jgroups.JChannel;
  * JChannel factory used by the {@link JGroupsConnectorFactoryBean} to create the actual {@link JChannel}.
  *
  * @author Patrick Haas
+ * @since 2.5
  */
 public interface JChannelFactory {
 
+    /**
+     * Creates a JChannel instance, which is fully configured, but not connected.
+     *
+     * @return a fully configured JChannel
+     *
+     * @throws Exception when an error occurs creating the channel
+     */
     JChannel createChannel() throws Exception;
 }
