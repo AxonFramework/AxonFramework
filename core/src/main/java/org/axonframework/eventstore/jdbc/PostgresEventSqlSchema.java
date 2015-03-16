@@ -12,6 +12,7 @@ import java.sql.SQLException;
  * be accessed by using postgres encode(column, 'escape') function.
  *
  * @author Jochen Munz
+ * @since 2.4
  */
 public class PostgresEventSqlSchema<T> extends GenericEventSqlSchema<T> {
 

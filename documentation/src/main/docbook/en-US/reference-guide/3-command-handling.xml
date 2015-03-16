@@ -187,22 +187,22 @@
                 </listitem>
             </itemizedlist>
             <programlisting language="java">public interface MyGateway {
-    
+
     // fire and forget
     void sendCommand(MyPayloadType command);
 
     // method that attaches meta data and will wait for a result for 10 seconds
     @Timeout(value = 10, unit = TimeUnit.SECONDS)
-    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command, 
+    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command,
                                              @MetaData("userId") String userId);
 
     // alternative that throws exceptions on timeout
     @Timeout(value = 20, unit = TimeUnit.SECONDS)
-    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command) 
+    ReturnValue sendCommandAndWaitForAResult(MyPayloadType command)
                          throws TimeoutException, InterruptedException;
 
     // this method will also wait, caller decides how long
-    void sendCommandAndWait(MyPayloadType command, long timeout, TimeUnit unit) 
+    void sendCommandAndWait(MyPayloadType command, long timeout, TimeUnit unit)
                          throws TimeoutException, InterruptedException;
 }
 
@@ -290,7 +290,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                     >http://lmax-exchange.github.io/disruptor/</link>), a small framework for
                 concurrent programming, to achieve much better performance, by just taking a
                 different approach to multithreading. Instead of doing the processing in the calling
-                thread, the tasks are handed of to two groups of threads, that each take care of a
+                thread, the tasks are handed off to two groups of threads, that each take care of a
                 part of the processing. The first group of threads will execute the command handler,
                 changing an aggregate's state. The second group will store and publish the events to
                 the Event Store and Event Bus. </para>
@@ -324,7 +324,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                             aggregate is created, all commands will be executed exactly in the order
                             they were dispatched. To ensure the order, use a callback on the
                             creating command to wait for the aggregate being created. It shouldn't
-                            take more than a few milliseconds. </para>
+                            take more than a few milliseconds.</para>
                     </listitem>
                 </itemizedlist></para>
             <simplesect>
@@ -380,7 +380,7 @@ MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
                         </listitem>
                         <listitem>
                             <para>TransactionManager: Defines the Transaction Manager that should
-                                ensure the storage of events and their publication are executed
+                                ensure that the storage and publication of events are executed
                                 transactionally.</para>
                         </listitem>
                         <listitem>
@@ -618,7 +618,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                 <para>The
                     <code>AggregateAnnotationCommandHandler</code>
                     still needs to know which
-                    aggregate instance (identified by it's unique Aggregate Identifier) to load and
+                    aggregate instance (identified by its unique Aggregate Identifier) to load and
                     which version to expect. By default, the
                     <code>AggregateAnnotationCommandHandler</code>
                     uses annotations on the
@@ -665,7 +665,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                     </note>
                 </para>
                 <programlisting language="java">public class MyAggregate extends AbstractAnnotatedAggregateRoot {
-   
+
     @AggregateIdentifier
     private String id;
 
@@ -727,7 +727,7 @@ for (String supportedCommand : handler.supportedCommands()) {
                         <code>@CommandHandlingMember</code>. Note that only the declared type of the
                     annotated field is inspected for Command Handlers. If a field value is null at
                     the time an incoming command arrives for that entity, an exception is thrown.<programlisting>public class MyAggregate extends AbstractAnnotatedAggregateRoot {
-   
+
     @AggregateIdentifier
     private String id;
 
@@ -761,7 +761,7 @@ public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly 
     }
 }</programlisting><note>
                         <para>Note that each command must have exactly one handler in the aggregate.
-                            This means that you cannot annotated multiple entities (either root nor
+                            This means that you cannot annotate multiple entities (either root nor
                             not) with @CommandHandler, when they handle the same command type. This
                             also means that it is not possible to annotate fields containing
                             collections with <code>@CommandHandlingMember</code>. In case you need
@@ -773,6 +773,39 @@ public class MyEntity extends AbstractAnnotatedEntity { // extends not strictly 
                                 <code>@CommandHandlingMember</code> annotated field is inspected for
                                 <code>@CommandHandler</code> methods.</para>
                     </note></para>
+                <para>Since version 2.4, it is also possible to annotate Collections of entities
+                    with <code>@CommandHandlingMemberCollection</code> and Maps with
+                        <code>@CommandHandlingMemberMap</code>. In the latter case, the values of
+                    the map must contain the entities, while the key contains a value that is used
+                    as their reference.</para>
+                <para>The <code>@CommandHandlingMemberCollection</code> annotation takes two
+                    mandatory properties: <code>entityId</code> and
+                        <code>commandTargetProperty</code>. Both are references to accessor methods
+                    that provide the values necessary for Axon to figure out which entity to forward
+                    the command to. The <code>entityId</code> property is used to identify the
+                    property on the aggregate, while <code>commandTargetProperty</code> identifies
+                    the property on the incoming command. If the returned values are
+                        <code>equals()</code> for a command/entity combination, the command is
+                    forwarded to that specific entity. On its turn, the entity may have other
+                    annotated fields to forward the command further.</para>
+                <para>The <code>@CommandHandlingMemberMap</code> is similar to the previous
+                    annotation, except that it only has the <code>commandTargetProperty</code>
+                    property. It identifies the property on the command that returns the value to
+                    use as a key for the Map. The entity returned from the map by that key receives
+                    the command.</para>
+                <para>If no Entity can be found in the annotated Collection or Map, Axon throws an
+                    IllegalStateException; apparently, the aggregate is not capable of processing
+                    that command at that point in time.</para>
+                <para>
+                    <note>
+                        <para>The field declaration for both the Collection or Map should contain
+                            proper generics to allow Axon to identify the type of Entity contained
+                            in the Collection or Map. If it is not possible to add the generics in
+                            the declaration (e.g. because you're using a custom implementation which
+                            already defines generic types), you must specify the type of entity used
+                            in the <code>entityType</code> property on the annotation.</para>
+                    </note>
+                </para>
             </simplesect>
         </sect2>
     </sect1>
@@ -955,7 +988,7 @@ try {
                     configure a <code>BeanValidationInterceptor</code> on your Command Bus, and it
                     will automatically find and configure your validator implementation. While it
                     uses sensible defaults, you can fine-tune it to your specific needs. <tip>
-                        <para>You want to spend as less resources on an invalid command as possible.
+                        <para>You want to spend as few resources on an invalid command as possible.
                             Therefore, this interceptor is generally placed in the very front of the
                             interceptor chain. In some cases, a Logging or Auditing interceptor
                             might need to be placed in front, with the validating interceptor
@@ -1117,7 +1150,14 @@ try {
                         <para>Finally, the Serializer is used to serialize command messages before
                             they are sent over the wire.</para>
                     </listitem>
-                </itemizedlist></para>
+                </itemizedlist>
+                Optionally, a <code>HashChangeListener</code> may be configured. This listener will be notified
+                when the <code>ConsistentHash</code> used to route messages changes.
+                <note><para>When using a Cache, it
+                should be cleared out when the <code>ConsistentHash</code> changes to avoid potential data corruption
+                (e.g. when commands don't specify a <code>@TargetAggregateVersion</code> and an new member quickly
+                joins and leaves the JGroup, modifying the aggregate while it's still cached elsewhere.)</para></note>
+            </para>
             <para>Ultimately, the JGroupsConnector needs to actually connect, in order to dispatch
                 Messages to other segments. To do so, call the <code>connect()</code> method. It
                 takes a single parameter: the load factor. The load factor defines how much load,

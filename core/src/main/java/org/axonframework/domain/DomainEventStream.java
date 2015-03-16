@@ -64,4 +64,9 @@ public interface DomainEventStream extends Iterator<DomainEventMessage> {
      * @return the next event in the stream.
      */
     DomainEventMessage peek();
+
+    @Override
+    default void remove() {
+        throw new UnsupportedOperationException("Remove not supported");
+    }
 }

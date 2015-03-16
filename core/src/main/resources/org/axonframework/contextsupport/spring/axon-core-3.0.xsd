@@ -386,7 +386,7 @@
                                 </xsd:documentation>
                             </xsd:annotation>
                         </xsd:element>
-                        <xsd:element name="repositories">
+                        <xsd:element name="repositories" minOccurs="0">
                             <xsd:annotation>
                                 <xsd:documentation>Wrapper element for a list of &lt;repository&gt; elements. Each child
                                     element defines a supported aggregate type and the identifier of the repository to

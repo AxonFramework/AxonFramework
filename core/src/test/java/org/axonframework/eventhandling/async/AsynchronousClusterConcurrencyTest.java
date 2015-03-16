@@ -48,7 +48,7 @@ public class AsynchronousClusterConcurrencyTest {
         });
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = EventsPublisher.EVENTS_COUNT)
     public void testHandleEvents() throws InterruptedException {
         final AtomicInteger counter = new AtomicInteger();
         final AtomicInteger completed = new AtomicInteger();
@@ -66,11 +66,11 @@ public class AsynchronousClusterConcurrencyTest {
             }
         });
 
-        int threadCount = 100;
+        int threadCount = 50;
         for (int i = 0; i < threadCount; i++) {
             executor.submit(new EventsPublisher());
         }
-        while (counter.get() < threadCount * 30000) {
+        while (counter.get() < threadCount * EventsPublisher.EVENTS_COUNT) {
             Thread.sleep(10);
         }
 
@@ -79,15 +79,18 @@ public class AsynchronousClusterConcurrencyTest {
                                                                                                   TimeUnit.SECONDS));
 
         assertEquals(0, failed.get());
-        assertEquals(threadCount * 30000, counter.get());
-        assertEquals(threadCount * 30000, completed.get());
+        assertEquals(threadCount * EventsPublisher.EVENTS_COUNT, counter.get());
+        assertEquals(threadCount * EventsPublisher.EVENTS_COUNT, completed.get());
     }
 
     private class EventsPublisher implements Runnable {
 
+        private static final int ITERATIONS = 10000;
+        private static final int EVENTS_COUNT = ITERATIONS * 3;
+
         @Override
         public void run() {
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < ITERATIONS; i++) {
                 testSubject.publish(asEventMessage("1"));
                 testSubject.publish(asEventMessage("2"));
                 testSubject.publish(asEventMessage("3"));

@@ -18,7 +18,7 @@
     <title>Using Spring</title>
     <para>The AxonFramework has many integration points with the Spring Framework. All major
         building blocks in Axon are Spring configurable. Furthermore, there are some Bean Post
-        Processors that scan the application context for building blocks and automatically wires
+        Processors that scan the application context for building blocks and automatically wire
         them.</para>
     <para>In addition, the Axon Framework makes use of Spring's Extensible Schema-based
         configuration feature to make Axon application configuration even easier. Axon Framework has
@@ -59,8 +59,8 @@
             the following declarations:</para>
         <programlistingco>
             <areaspec>
-                <area coords="3 70"/>
-                <area coords="5 118"/>
+                <area xml:id="ex.nmsp.decl" coords="3 58"/>
+                <area xml:id="ex.nmsp.loc" coords="5 98"/>
             </areaspec>
             <programlisting language="xml"><![CDATA[<beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xmlle it produces more a compact  version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright (c) 2010-2014. Axon Framework
   ~
@@ -438,13 +438,13 @@
                     <code>EventEntryStore</code> and a <code>Serializer</code>. The EventEntryStore
                 defines how Events are appended to the event store. The serializer is used to
                 convert the payload and meta data of an event into an array of bytes, ready for
-                storage. In most cases, the DefaultEventEntryStore will suffice. t can be configured
+                storage. In most cases, the DefaultEventEntryStore will suffice. It can be configured
                 to accommodate all sort of different scenarios.</para>
             <para>The <code>DefaultEventEntryStore</code> uses a <code>ConnectionProvider</code> to
                 obtain connections. Typically, these connections can be obtained directly from a
-                DataSource. However, Axon will bind these connections the a Unit of Work, so that a
-                single connection in a Unit of Work. This ensures that a single transaction is used
-                to store all events, even when multiple Unit of Work are nested in the same
+                DataSource. However, Axon will bind these connections to a Unit of Work, so that a
+                single connection is used in a Unit of Work. This ensures that a single transaction is used
+                to store all events, even when multiple Units of Work are nested in the same
                 thread.</para>
             <note>
                 <title>JDBC Event Store and Spring</title>
@@ -460,8 +460,8 @@
                         <code>UnitOfWorkAwareConnectionProviderWrapper</code>, to ensure a single
                     connection is used during the course of a single Unit of Work.</para>
             </note>
-            <para>Most database speak more or less the same language. However, there many so-called
-                SQL Dialects. While the JDBC Event Store speaks a language all database should be
+            <para>Most databases speak more or less the same language. However, there many so-called
+                SQL Dialects. While the JDBC Event Store speaks a language all databases should be
                 able to understand, it is possible that specific database vendors provide better
                 performing alternatives to generic SQL commands. To accommodate those, the
                     <code>DefaultEventEntryStore</code> works with a <code>EventSqlSchema</code>.
@@ -470,7 +470,9 @@
                     <code>EventSqlSchema</code> is responsible for creating the correct
                     <code>PreparedStatement</code>s for those. When you need to change a query that
                 is executed against the database, it will usually suffice to override a single
-                method in the <code>GenericEventSqlSchema</code>.</para>
+                method in the <code>GenericEventSqlSchema</code>. The is, for example, a
+                    <code>PostgresEventSqlSchema</code> implementaion for use with a PostgreSQL
+                database.</para>
             <warning>
                 <title>Timestamps and time zones</title>
                 <para>By default, Axon stores time stamps in the system timezone. However, many
@@ -478,7 +480,7 @@
                     throughout the year. This could cause events to be returned in a different order
                     than how they were originally stored. It is recommended to store timestamps in
                     the UTC timezone, or use the millis-since-epoch format.</para>
-                <para>To force te JDBC Event Store to store dates in the UTC timezone, either
+                <para>To force the JDBC Event Store to store dates in the UTC timezone, either
                     configure Joda to generate all dates in UTC timezone, or tell the JDBC Event
                     Store to convert all timestamps to UTC. This can be done by setting
                     &lt;axon:jdbc-event-store ... force-utc-timestamp="true" ... />, or by calling
@@ -488,7 +490,7 @@
         </sect2>
         <sect2>
             <title>MongoDB Event Store</title>
-            <para>MongoDB is a document based NoSQL store. It scalability characteristics make it
+            <para>MongoDB is a document based NoSQL store. Its scalability characteristics make it
                 suitable for use as an Event Store. Axon provides the <code>MongoEventStore</code>, which uses
                 MongoDB as backing database. It is contained in the Axon Mongo module (Maven
                 artifactId <code>axon-mongo</code>).</para>
@@ -508,6 +510,26 @@
             <para>The MongoDB doesn't take a lot of configuration. All it needs is a reference to
                 the collections to store the Events in, and you're set to go. For production
                 environments, you may want to double check the indexes on your collections.</para>
+        </sect2>
+        <sect2>
+            <title>Event Store Utilities</title>
+            <para>Axon provides a number of wrappers for Event Stores that may be useful in certain
+                circumstances. For example, an environment may replay events up to a certain moment
+                in time, in order to reproduce the state of the application at that moment.</para>
+            <para>The <code>TimestampCutoffReadonlyEventStore</code> is, as the name suggests, a
+                read-only event store that only returns events older than a specific time. This
+                allows you to reproduce state of an application at a specific time. This class is a
+                wrapper around another event store (e.g. the one used in production).</para>
+            <para>The <code>SequenceEventStore</code> is a wrapper around two other Event Stores.
+                When reading, it returns the events from both event stores. Appended events are only
+                appended to the second event store. This is useful in cases where two different
+                implementations of Event Stores are used for performance reasons, for example. The
+                first would be a larger, but slower event store, while the second is optimized for
+                quick reading and writing.</para>
+            <para>There is also an Event Store implementation that keeps te stored events in memory:
+                the <code>VolatileEventStore</code>. While it probably outperforms any other event
+                store out there, it is not really meant for long-term production use. However, it is
+                very useful in short-lived tools or tests that require an event store.</para>
         </sect2>
         <sect2>
             <title>Implementing your own event store</title>
@@ -534,14 +556,14 @@
                 serialization is human readable. Quite useful for logging and debugging purposes. </para>
             <para>The XStreamSerializer can be configured. You can define aliases it should use for
                 certain packages, classes or even fields. Besides being a nice way to shorten
-                potentially long names, aliases can also be used when class definitions of event
+                potentially long names, aliases can also be used when class definitions of events
                 change. For more information about aliases, visit the <link
                     xmlns:ns1="http://www.w3.org/1999/xlink" ns1:href="http://xstream.codehaus.org/"
                     >XStream website</link>.</para>
             <para>Alternatively, Axon also provides the <code>JacksonSerializer</code>, which uses
                     <link xmlns:xlink="http://www.w3.org/1999/xlink"
                     xlink:href="https://github.com/FasterXML/jackson">Jackson</link> to serialize
-                Events into JSON. While it produces more a compact serialized form, it does require
+                Events into JSON. While it produces a more compact serialized form, it does require
                 that classes stick to the conventions (or configuration) required by Jackson.</para>
             <note>
                 <title>Spring XML Configuration and Serializer Customization</title>
@@ -563,8 +585,8 @@
             definitions also change over time. Since the Event Store is considered a read and
             append-only data source, your application must be able to read all events, regardless of
             when they have been added. This is where upcasting comes in. </para>
-        <para>Originally a concept of object-oriented programming, where: "a subclass gets cast to
-            it's superclass automatically when needed", the concept of upcasting can also be applied
+        <para>Originally a concept of object-oriented programming, where "a subclass gets cast to
+            its superclass automatically when needed", the concept of upcasting can also be applied
             to event sourcing. To upcast an event means to transform it from its original structure
             to its new structure. Unlike OOP upcasting, event upcasting cannot be done in full
             automation because the structure of the new event is unknown to the old event. Manually
@@ -740,8 +762,8 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                 </listitem>
                 <listitem>
                     <para>The <code>LazyUpcasterChain</code> prepares the events to be upcasted but
-                        only upcasts the events that are actually used. Whether or not your
-                        application needs all events this can give you a significant performance
+                        only upcasts the events that are actually used. Depending on whether or not your
+                        application needs all events, this can give you a significant performance
                         benefit. In the worst case it's as slow as the <code>SimpleUpcasterChain</code>. The
                         <code>LazyUpcasterChain</code> does not guarantee that all the events in an Event Stream
                         are in fact upcasted. When your upcasters rely on information from previous
@@ -894,7 +916,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
                             create snapshots for a variety of aggregate types. The
                                 <code>EventSourcingRepository</code> implementations provide access
                             to the <code>AggregateFactory</code> they use. This can be used to
-                            configure the same aggregate factories int he Snapshotter as the ones
+                            configure the same aggregate factories in the Snapshotter as the ones
                             used in the repositories.</para>
                     </listitem>
                 </itemizedlist></para>

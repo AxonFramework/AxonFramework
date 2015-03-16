@@ -39,7 +39,7 @@ import static java.lang.String.format;
  */
 public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
 
-    private final List<ContentTypeConverter> delegates;
+    private final List<ContentTypeConverter<?,?>> delegates;
     private final Class<T> target;
     private final Class<S> source;
 
@@ -102,15 +102,15 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      * @param delegates the chain of delegates to perform the conversion
      */
     @SuppressWarnings({"unchecked", "ConstantConditions"})
-    public ChainedConverter(List<ContentTypeConverter> delegates) {
+    public ChainedConverter(List<ContentTypeConverter<?,?>> delegates) {
         Assert.isTrue(delegates != null && !delegates.isEmpty(), "The given delegates may not be null or empty");
         Assert.isTrue(isContinuous(delegates), "The given delegates must form a continuous chain");
         this.delegates = new ArrayList<>(delegates);
-        target = this.delegates.get(this.delegates.size() - 1).targetType();
-        source = delegates.get(0).expectedSourceType();
+        target = (Class<T>) this.delegates.get(this.delegates.size() - 1).targetType();
+        source = (Class<S>) delegates.get(0).expectedSourceType();
     }
 
-    private boolean isContinuous(List<ContentTypeConverter> candidates) {
+    private boolean isContinuous(List<ContentTypeConverter<?,?>> candidates) {
         Class current = null;
         for (ContentTypeConverter candidate : candidates) {
             if (current == null || current.equals(candidate.expectedSourceType())) {
@@ -171,9 +171,10 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
             }
             while (!candidates.isEmpty() && !routes.isEmpty()) {
                 Route route = getShortestRoute();
-                for (ContentTypeConverter candidate : candidates) {
+                for (ContentTypeConverter candidate : new HashSet<>(candidates)) {
                     if (route.endPoint().equals(candidate.expectedSourceType())) {
                         Route newRoute = route.joinedWith(candidate);
+                        candidates.remove(candidate);
                         if (targetType.equals(newRoute.endPoint())) {
                             return newRoute;
                         }
@@ -186,18 +187,16 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
         }
 
         private Route buildInitialRoutes(Class<?> sourceType, Class<?> targetType) {
-            List<ContentTypeConverter> candidatesToRemove = new ArrayList<>();
-            for (ContentTypeConverter converter : candidates) {
+            for (ContentTypeConverter converter : new HashSet<>(candidates)) {
                 if (sourceType.equals(converter.expectedSourceType())) {
                     Route route = new Route(converter);
                     if (route.endPoint().equals(targetType)) {
                         return route;
                     }
                     routes.add(route);
-                    candidatesToRemove.add(converter);
+                    candidates.remove(converter);
                 }
             }
-            candidates.removeAll(candidatesToRemove);
             return null;
         }
 
@@ -233,7 +232,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
             return endPoint;
         }
 
-        private List<ContentTypeConverter> asList() {
+        private List<ContentTypeConverter<?,?>> asList() {
             return Arrays.asList(nodes);
         }
     }

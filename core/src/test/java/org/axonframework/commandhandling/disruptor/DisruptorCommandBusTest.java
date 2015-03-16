@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.RollbackOnAllExceptionsConfiguration;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
@@ -159,6 +160,29 @@ public class DisruptorCommandBusTest {
         inOrder.verify(mockUnitOfWorkListener).onCleanup(isA(UnitOfWork.class));
 
         verify(mockCallback).onSuccess(any());
+    }
+
+    @Test
+    public void testPublishUnsupportedCommand() throws Exception {
+        ExecutorService customExecutor = Executors.newCachedThreadPool();
+        testSubject = new DisruptorCommandBus(
+                inMemoryEventStore, eventBus,
+                new DisruptorConfiguration()
+                        .setBufferSize(8)
+                        .setProducerType(ProducerType.SINGLE)
+                        .setWaitStrategy(new SleepingWaitStrategy())
+                        .setExecutor(customExecutor)
+                        .setInvokerThreadCount(2)
+                        .setPublisherThreadCount(3)
+        );
+        try {
+            testSubject.dispatch(GenericCommandMessage.asCommandMessage("Test"));
+            fail("Expected exception");
+        } catch (NoHandlerForCommandException e) {
+            assertTrue(e.getMessage().contains(String.class.getSimpleName()));
+        } finally {
+            customExecutor.shutdownNow();
+        }
     }
 
     @Test

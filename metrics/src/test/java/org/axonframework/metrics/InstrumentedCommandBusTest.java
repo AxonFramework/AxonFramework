@@ -7,7 +7,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.testutils.MockException;
 import org.junit.*;
 
 import java.util.Arrays;
@@ -174,5 +173,26 @@ public class InstrumentedCommandBusTest {
         testSubject.getMetricSet().getMetrics().keySet()
                    .containsAll(Arrays.asList("supported-commands", "handling", "success",
                                               "failure", "command-response-time"));
+    }
+
+    public static class MockException extends RuntimeException {
+
+        public MockException(String message) {
+            super(message);
+        }
+
+        public MockException() {
+            super("Mock");
+        }
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+
+        @Override
+        public StackTraceElement[] getStackTrace() {
+            return new StackTraceElement[]{};
+        }
     }
 }

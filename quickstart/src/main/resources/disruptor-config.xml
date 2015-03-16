@@ -15,16 +15,16 @@
   ~ limitations under the License.
   -->
 
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:axon="http://www.axonframework.org/schema/core"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
-    <axon:disruptor-command-bus id="commandBus" event-bus="eventBus" event-store="eventStore">
-        <axon:repositories>
-            <axon:repository id="toDoRepository" aggregate-type="org.axonframework.quickstart.annotated.ToDoItem"/>
-        </axon:repositories>
-    </axon:disruptor-command-bus>
+    <axon:disruptor-command-bus id="commandBus" event-bus="eventBus" event-store="eventStore"/>
+
+    <axon:disruptor-repository id="toDoRepository"
+                               aggregate-type="org.axonframework.quickstart.annotated.ToDoItem"
+                               command-bus="commandBus"/>
 
     <bean id="commandGateway" class="org.axonframework.commandhandling.gateway.CommandGatewayFactoryBean">
         <property name="commandBus" ref="commandBus"/>

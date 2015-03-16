@@ -24,12 +24,14 @@ import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventhandling.annotation.Timestamp;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.joda.time.DateTime;
 import org.junit.*;
 
 import java.io.Serializable;
@@ -92,13 +94,24 @@ public class AbstractAnnotatedAggregateRootTest {
 
     @Test
     public void testIdentifierInitialization_LateInitialization() {
-        LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate();
+        LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
         assertEquals("lateIdentifier", aggregate.getIdentifier());
         assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
 
         DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
         assertFalse(((StubDomainEvent) uncommittedEvents.next().getPayload()).nested);
         assertTrue(((StubDomainEvent) uncommittedEvents.next().getPayload()).nested);
+    }
+
+    @Test
+    public void testTimestampInReconstructionIsSameAsInitialTimestamp() {
+        LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
+        DateTime firstTimestamp = aggregate.creationTime;
+
+        LateIdentifiedAggregate aggregate2 = new LateIdentifiedAggregate();
+        aggregate2.initializeState(aggregate.getUncommittedEvents());
+
+        assertSame(aggregate2.creationTime, firstTimestamp);
     }
 
     @Test
@@ -110,7 +123,7 @@ public class AbstractAnnotatedAggregateRootTest {
 
     @Test
     public void testSerializationSetsLiveStateToTrue() throws Exception {
-        LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate();
+        LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
         aggregate.commitEvents();
         final XStreamSerializer serializer = new XStreamSerializer();
         SerializedObject<String> serialized = serializer.serialize(aggregate, String.class);
@@ -182,8 +195,13 @@ public class AbstractAnnotatedAggregateRootTest {
         @AggregateIdentifier
         private String aggregateIdentifier;
 
-        private LateIdentifiedAggregate() {
-            apply(new StubDomainEvent(false));
+        private DateTime creationTime;
+
+        public LateIdentifiedAggregate() {
+        }
+
+        private LateIdentifiedAggregate(StubDomainEvent event) {
+            apply(event);
         }
 
         @Override
@@ -192,7 +210,10 @@ public class AbstractAnnotatedAggregateRootTest {
         }
 
         @EventSourcingHandler
-        public void myEventHandlerMethod(StubDomainEvent event) {
+        public void myEventHandlerMethod(StubDomainEvent event, @Timestamp DateTime timestamp) {
+            if (creationTime == null) {
+                creationTime = timestamp;
+            }
             aggregateIdentifier = "lateIdentifier";
             if (!event.nested) {
                 apply(new StubDomainEvent(true));

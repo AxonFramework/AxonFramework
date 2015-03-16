@@ -17,10 +17,11 @@
 package org.axonframework.eventstore;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.DomainEventStream;
 
 /**
  * Interface describing an event store that is able to store snapshot events. Implementations must also take the stored
- * snapshots into account when loading events. That means that any call to {@link #readEvents(String, Object)}
+ * snapshots into account when loading events. That means that any call to {@link #readEvents(String, String)}
  * readEvents(String, AggregateIdentifier)} should return an event stream
  * that starts with the latest suitable snapshot event available in the event store.
  *
@@ -41,4 +42,9 @@ public interface SnapshotEventStore extends EventStore {
      * @param snapshotEvent The event summarizing one or more domain events for a specific aggregate.
      */
     void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent);
+
+    /* the default implementation provided by EventStore is invalid for EventStore implementations that support
+    snapshots */
+    @Override
+    DomainEventStream readEvents(String type, String identifier);
 }

@@ -98,11 +98,13 @@ public class DisruptorCommandBusBeanDefinitionParser extends AbstractBeanDefinit
                         .addConstructorArgValue(configurationDefinition)
                         .getBeanDefinition();
         Element repoElement = DomUtils.getChildElementByTagName(element, ELEMENT_REPOSITORIES);
-        List<Element> repositories = DomUtils.getChildElementsByTagName(repoElement, ELEMENT_REPOSITORY);
-        String id = super.resolveId(element, definition, parserContext);
-        for (Element repository : repositories) {
-            parseRepository(repository, id, parserContext,
-                            configurationDefinition.getPropertyValues().getPropertyValue("cache"));
+        if (repoElement != null) {
+            List<Element> repositories = DomUtils.getChildElementsByTagName(repoElement, ELEMENT_REPOSITORY);
+            String id = super.resolveId(element, definition, parserContext);
+            for (Element repository : repositories) {
+                parseRepository(repository, id, parserContext,
+                                configurationDefinition.getPropertyValues().getPropertyValue("cache"));
+            }
         }
         definition.setDestroyMethodName("stop");
         return definition;

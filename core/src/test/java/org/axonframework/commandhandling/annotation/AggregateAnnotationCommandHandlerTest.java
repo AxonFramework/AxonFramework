@@ -37,6 +37,7 @@ import org.junit.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -126,7 +127,8 @@ public class AggregateAnnotationCommandHandlerTest {
                 // declared in the entities
                 UpdateNestedEntityStateCommand.class.getName(),
                 UpdateEntityStateCommand.class.getName(),
-                UpdateEntityFromCollectionStateCommand.class.getName()));
+                UpdateEntityFromCollectionStateCommand.class.getName(),
+                UpdateEntityFromMapStateCommand.class.getName()));
 
         assertEquals(expected, actual);
     }
@@ -394,7 +396,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandledByEntityFromCollection_NullIdInEvent() {
+    public void testCommandHandledByEntityFromCollection_NullIdInCommand() {
         String aggregateIdentifier = "abc123";
         final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         aggregate.initializeEntity("1");
@@ -445,14 +447,99 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Test(expected = AxonConfigurationException.class)
     public void testAnnotatedFieldMustBeACollection() throws Exception {
-        new AggregateAnnotationCommandHandler(WrongAnnotatedField.class, mockRepository);
+        new AggregateAnnotationCommandHandler(AnnotatedFieldIsNotCollection.class, mockRepository);
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testAnnotatedFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() throws Exception {
-        new AggregateAnnotationCommandHandler(FieldWithoutGenerics.class, mockRepository);
+    public void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() throws Exception {
+        new AggregateAnnotationCommandHandler(CollectionFieldWithoutGenerics.class, mockRepository);
+    }
+    
+    @Test
+    public void testCommandHandledByEntityFromMap() {
+        String aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        aggregate.initializeEntity("1");
+        aggregate.initializeEntity("2");
+        aggregate.initializeEntity("3");
+        when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                                    new UpdateEntityFromMapStateCommand("abc123", "2")),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    assertEquals("handled by 2", result);
+                                }
+
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    cause.printStackTrace();
+                                    fail("Did not expect exception");
+                                }
+                            }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
     }
 
+    @Test
+    public void testCommandHandledByEntityFromMap_NoEntityAvailable() {
+        String aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        aggregate.initializeEntity("1");
+        when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                                    new UpdateEntityFromMapStateCommand("abc123", "2")),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    fail("Expected exception");
+                                }
+
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    assertTrue(cause instanceof IllegalStateException);
+                                }
+                            }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
+    }
+
+    @Test
+    public void testCommandHandledByEntityFromMap_NullIdInCommand() {
+        String aggregateIdentifier = "abc123";
+        final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
+        aggregate.initializeEntity("1");
+        when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+                                    new UpdateEntityFromMapStateCommand("abc123", null)),
+                            new CommandCallback<Object>() {
+                                @Override
+                                public void onSuccess(Object result) {
+                                    fail("Expected exception");
+                                }
+
+                                @Override
+                                public void onFailure(Throwable cause) {
+                                    assertTrue(cause instanceof IllegalStateException);
+                                }
+                            }
+        );
+
+        verify(mockRepository).load(aggregateIdentifier, null);
+    }
+
+    @Test(expected = AxonConfigurationException.class)
+    public void testAnnotatedFieldMustBeAMap() throws Exception {
+        new AggregateAnnotationCommandHandler(AnnotatedFieldIsNotMap.class, mockRepository);
+    }
+
+    @Test(expected = AxonConfigurationException.class)
+    public void testAnnotatedMapFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() throws Exception {
+        new AggregateAnnotationCommandHandler(MapFieldWithoutGenerics.class, mockRepository);
+    }
+    
 
     private abstract static class AbstractStubCommandAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
@@ -479,6 +566,9 @@ public class AggregateAnnotationCommandHandlerTest {
         @CommandHandlingMemberCollection(entityId = "id", commandTargetProperty = "entityId")
         private List<StubCommandAnnotatedCollectionEntity> entities;
 
+        @CommandHandlingMemberMap(commandTargetProperty = "entityId")
+        private Map<String, StubCommandAnnotatedMapEntity> entityMap;
+        
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
                                              @org.axonframework.common.annotation.MetaData("notExist") String value) {
@@ -542,25 +632,29 @@ public class AggregateAnnotationCommandHandlerTest {
                 this.entities = new ArrayList<>();
             }
             this.entities.add(new StubCommandAnnotatedCollectionEntity(id));
+            if (this.entityMap == null) {
+            	this.entityMap = new HashMap<String, StubCommandAnnotatedMapEntity>();
+            }
+            this.entityMap.put(id, new StubCommandAnnotatedMapEntity(id));
         }
     }
 
-    private static class WrongAnnotatedField extends StubCommandAnnotatedAggregate {
+    private static class AnnotatedFieldIsNotCollection extends StubCommandAnnotatedAggregate {
 
         @CommandHandlingMemberCollection(entityId = "id", commandTargetProperty = "entityId")
         private Map<String, String> wrongField;
 
-        public WrongAnnotatedField(String aggregateIdentifier) {
+        public AnnotatedFieldIsNotCollection(String aggregateIdentifier) {
             super(aggregateIdentifier);
         }
     }
 
-    private static class FieldWithoutGenerics extends StubCommandAnnotatedAggregate {
+    private static class CollectionFieldWithoutGenerics extends StubCommandAnnotatedAggregate {
 
         @CommandHandlingMemberCollection(entityId = "id", commandTargetProperty = "entityId")
         private List wrongField;
 
-        public FieldWithoutGenerics(String aggregateIdentifier) {
+        public CollectionFieldWithoutGenerics(String aggregateIdentifier) {
             super(aggregateIdentifier);
         }
     }
@@ -605,6 +699,44 @@ public class AggregateAnnotationCommandHandlerTest {
             return "nested entity command handled just fine";
         }
     }
+    
+    private static class StubCommandAnnotatedMapEntity extends AbstractAnnotatedEntity {
+    	
+    	private String id;
+    	
+    	private StubCommandAnnotatedMapEntity(String id) {
+    		this.id = id;
+		}
+    	
+    	@CommandHandler
+    	public String handle(UpdateEntityFromMapStateCommand command) {
+    		return "handled by " + getId();
+    	}
+
+		private String getId() {
+			return id;
+		}
+    }
+
+    private static class AnnotatedFieldIsNotMap extends StubCommandAnnotatedAggregate {
+
+        @CommandHandlingMemberMap(commandTargetProperty = "entityId")
+        private Set<String> wrongField;
+
+        public AnnotatedFieldIsNotMap(String aggregateIdentifier) {
+            super(aggregateIdentifier);
+        }
+    }
+
+    private static class MapFieldWithoutGenerics extends StubCommandAnnotatedAggregate {
+
+        @CommandHandlingMemberMap(commandTargetProperty = "entityId")
+        private Map wrongField;
+
+        public MapFieldWithoutGenerics(String aggregateIdentifier) {
+            super(aggregateIdentifier);
+        }
+    }
 
     private static class UpdateNestedEntityStateCommand {
 
@@ -615,7 +747,7 @@ public class AggregateAnnotationCommandHandlerTest {
             this.aggregateId = aggregateId;
         }
     }
-
+    
     private static class CreateCommand {
 
         private final String id;
@@ -766,4 +898,21 @@ public class AggregateAnnotationCommandHandlerTest {
             return entityId;
         }
     }
+
+    private static class UpdateEntityFromMapStateCommand {
+    	@TargetAggregateIdentifier
+    	private final String aggregateId;
+    	
+    	private final String entityKey;
+    	
+    	private UpdateEntityFromMapStateCommand(String aggregateId, String entityId) {
+    		this.aggregateId = aggregateId;
+    		this.entityKey = entityId;
+    	}
+    	
+    	public String getEntityId() {
+    		return entityKey;
+    	}
+    }
+
 }

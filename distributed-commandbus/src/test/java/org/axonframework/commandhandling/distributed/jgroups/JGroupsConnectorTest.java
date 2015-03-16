@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -53,6 +55,7 @@ public class JGroupsConnectorTest {
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
     private String clusterName;
+    private RecordingHashChangeListener hashChangeListener;
 
     @Before
     public void setUp() throws Exception {
@@ -61,7 +64,9 @@ public class JGroupsConnectorTest {
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, new XStreamSerializer());
+        hashChangeListener = new RecordingHashChangeListener();
+        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, new XStreamSerializer(),
+                                          hashChangeListener);
         connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, new XStreamSerializer());
     }
 
@@ -178,7 +183,7 @@ public class JGroupsConnectorTest {
         ConsistentHash hashBefore = connector1.getConsistentHash();
         // secretly insert an illegal message
         channel1.getReceiver().receive(new Message(channel1.getAddress(), new IpAddress(12345),
-                                  new JoinMessage(10, Collections.<String>emptySet())));
+                                                   new JoinMessage(10, Collections.<String>emptySet())));
         ConsistentHash hash2After = connector1.getConsistentHash();
         assertEquals("That message should not have changed the ring", hashBefore, hash2After);
     }
@@ -259,11 +264,15 @@ public class JGroupsConnectorTest {
             FutureCallback<Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t % 3) == 0) {
-                connector1.send(message, new GenericCommandMessage<Object>("myCommand1", message,
-                            Collections.<String,Object>emptyMap()), callback);
+                connector1.send(message,
+                                new GenericCommandMessage<Object>("myCommand1", message,
+                                                                  Collections.<String, Object>emptyMap()),
+                                callback);
             } else {
-                connector2.send(message, new GenericCommandMessage<Object>("myCommand2", message,
-                            Collections.<String,Object>emptyMap()), callback);
+                connector2.send(message,
+                                new GenericCommandMessage<Object>("myCommand2", message,
+                                                                  Collections.<String, Object>emptyMap()),
+                                callback);
             }
             callbacks.add(callback);
         }
@@ -275,6 +284,29 @@ public class JGroupsConnectorTest {
         System.out.println("Node 2 got " + counter2.get());
         verify(mockCommandBus1, times(34)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
         verify(mockCommandBus2, times(66)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+    }
+
+    @Test(timeout = 300000)
+    public void testHashChangeNotification() throws Exception {
+        connector1.connect(10);
+        connector2.connect(10);
+
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        // connector 1 joined
+        ConsistentHash notify1 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+
+        // connector 2 joined
+        ConsistentHash notify2 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+        // Self and other node have joined
+        assertEquals(connector1.getConsistentHash(), notify2);
+
+        channel2.close();
+
+        // Other node has left
+        ConsistentHash notify3 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+        assertEquals(connector1.getConsistentHash(), notify3);
     }
 
 
@@ -302,6 +334,16 @@ public class JGroupsConnectorTest {
         public Object handle(CommandMessage<T> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
             counter.incrementAndGet();
             return "The Reply!";
+        }
+    }
+
+    private static class RecordingHashChangeListener implements HashChangeListener {
+
+        public final BlockingQueue<ConsistentHash> notifications = new LinkedBlockingQueue<ConsistentHash>();
+
+        @Override
+        public void hashChanged(ConsistentHash newHash) {
+            notifications.add(newHash);
         }
     }
 }

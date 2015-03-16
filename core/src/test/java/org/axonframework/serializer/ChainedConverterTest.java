@@ -23,9 +23,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.annotation.Documented;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -39,7 +40,7 @@ public class ChainedConverterTest {
     private SerializedObject<?> source;
     private Class<?> target;
     private SimpleSerializedType mockType;
-    private Set<ContentTypeConverter<?, ?>> candidates;
+    private List<ContentTypeConverter<?, ?>> candidates;
     private ContentTypeConverter<?, ?> stringToReaderConverter;
     private ContentTypeConverter<?, ?> stringToByteConverter;
     private ContentTypeConverter<?, ?> bytesToInputStreamConverter;
@@ -48,16 +49,20 @@ public class ChainedConverterTest {
     @Before
     public void setUp() throws Exception {
         mockType = new SimpleSerializedType("mock", "0");
-        candidates = new HashSet<>();
+        candidates = new ArrayList<>();
         numberToStringConverter = mockConverter(Number.class, String.class, "hello");
         stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
         stringToReaderConverter = mockConverter(String.class, Reader.class, new StringReader("hello"));
         bytesToInputStreamConverter = mockConverter(byte[].class, InputStream.class,
                                                     new ByteArrayInputStream("hello".getBytes()));
+        ContentTypeConverter<?, ?> inputStreamToNumberConverter = mockConverter(InputStream.class,
+                                                                                byte[].class,
+                                                                                "hello".getBytes());
 
         candidates.add(stringToByteConverter);
         candidates.add(stringToReaderConverter);
         candidates.add(bytesToInputStreamConverter);
+        candidates.add(inputStreamToNumberConverter);
         candidates.add(numberToStringConverter);
     }
 
@@ -118,7 +123,23 @@ public class ChainedConverterTest {
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testInexistentRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleSerializedObject<>(new StringReader("hello"), Reader.class, mockType);
+        source = new SimpleSerializedObject<Reader>(new StringReader("hello"), Reader.class, mockType);
+        testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
+    }
+
+    // Detects an issue where the ChainedConverter hangs as it evaluates a recursive route
+    @Test(expected = CannotConvertBetweenTypesException.class)
+    public void testAnotherInexistentRoute() throws Exception {
+        target = Number.class;
+        source = new SimpleSerializedObject<>("hello", String.class, mockType);
+        assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
+        testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
+    }
+
+    @Test(expected = CannotConvertBetweenTypesException.class)
+    public void testAThirdInexistentRoute() throws Exception {
+        target = Documented.class;
+        source = new SimpleSerializedObject<>("hello".getBytes(), byte[].class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
     }
 
