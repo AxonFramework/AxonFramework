@@ -298,7 +298,6 @@ public class JGroupsConnectorTest {
         verify(mockCommandBus2, times(66)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
-
     private static void closeSilently(JChannel channel) {
         try {
             channel.close();
