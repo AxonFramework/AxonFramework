@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -295,17 +294,19 @@ public class JGroupsConnectorTest {
         // wait for both connectors to have the same view
         waitForConnectorSync();
 
+        // connector 1 joined
         ConsistentHash notify1 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+
+        // connector 2 joined
         ConsistentHash notify2 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
-        ConsistentHash notify3 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
         // Self and other node have joined
-        assertEquals(connector1.getConsistentHash(), notify3);
+        assertEquals(connector1.getConsistentHash(), notify2);
 
         channel2.close();
 
         // Other node has left
-        ConsistentHash notify4 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
-        assertEquals(connector1.getConsistentHash(), notify4);
+        ConsistentHash notify3 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+        assertEquals(connector1.getConsistentHash(), notify3);
     }
 
 
