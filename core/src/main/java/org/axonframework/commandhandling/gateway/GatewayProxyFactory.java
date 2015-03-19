@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
@@ -100,7 +101,7 @@ public class GatewayProxyFactory {
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
     private final List<CommandDispatchInterceptor> dispatchInterceptors;
-    private final List<CommandCallback<?>> commandCallbacks;
+    private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
      * Initialize the factory sending Commands to the given <code>commandBus</code>, optionally intercepting them with
@@ -347,7 +348,7 @@ public class GatewayProxyFactory {
      * @param <R>      The type of return value the callback is interested in
      * @return this instance for further configuration
      */
-    public <R> GatewayProxyFactory registerCommandCallback(CommandCallback<R> callback) {
+    public <C, R> GatewayProxyFactory registerCommandCallback(CommandCallback<C, R> callback) {
         this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback));
         return this;
     }
@@ -425,17 +426,17 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class DispatchOnInvocationHandler<R> extends AbstractCommandGateway
+    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway
             implements InvocationHandler<Future<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
-        private final List<CommandCallback<? super R>> commandCallbacks;
+        private final List<CommandCallback<? super C, ? super R>> commandCallbacks;
         private final boolean forceCallbacks;
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
                                               List<CommandDispatchInterceptor> commandDispatchInterceptors,
                                               MetaDataExtractor[] metaDataExtractors, // NOSONAR
-                                              List<CommandCallback<? super R>> commandCallbacks,
+                                              List<CommandCallback<? super C, ? super R>> commandCallbacks,
                                               boolean forceCallbacks) {
             super(commandBus, retryScheduler, commandDispatchInterceptors);
             this.metaDataExtractors = metaDataExtractors; // NOSONAR
@@ -457,12 +458,12 @@ public class GatewayProxyFactory {
                 }
             }
             if (forceCallbacks || !commandCallbacks.isEmpty()) {
-                List<CommandCallback<? super R>> callbacks = new LinkedList<>();
-                FutureCallback<R> future = new FutureCallback<>();
+                List<CommandCallback<? super C, ? super R>> callbacks = new LinkedList<>();
+                FutureCallback<C, R> future = new FutureCallback<>();
                 callbacks.add(future);
                 for (Object arg : args) {
                     if (arg instanceof CommandCallback) {
-                        final CommandCallback<R> callback = (CommandCallback<R>) arg;
+                        final CommandCallback<C, R> callback = (CommandCallback<C, R>) arg;
                         callbacks.add(callback);
                     }
                 }
@@ -476,26 +477,26 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class CompositeCallback<R> implements CommandCallback<R> {
+    private static class CompositeCallback<C, R> implements CommandCallback<C, R> {
 
-        private final List<CommandCallback<? super R>> callbacks;
+        private final List<CommandCallback<? super C, ? super R>> callbacks;
 
         @SuppressWarnings("unchecked")
-        public CompositeCallback(List<CommandCallback<? super R>> callbacks) {
+        public CompositeCallback(List<CommandCallback<? super C, ? super R>> callbacks) {
             this.callbacks = new ArrayList<>(callbacks);
         }
 
         @Override
-        public void onSuccess(R result) {
-            for (CommandCallback<? super R> callback : callbacks) {
-                callback.onSuccess(result);
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+            for (CommandCallback<? super C, ? super R> callback : callbacks) {
+                callback.onSuccess(commandMessage, result);
             }
         }
 
         @Override
-        public void onFailure(Throwable cause) {
-            for (CommandCallback callback : callbacks) {
-                callback.onFailure(cause);
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+            for (CommandCallback<? super C, ? super R> callback : callbacks) {
+                callback.onFailure(commandMessage, cause);
             }
         }
     }
@@ -661,21 +662,21 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class TypeSafeCallbackWrapper<R> implements CommandCallback<Object> {
+    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, R> {
 
-        private final CommandCallback<R> delegate;
+        private final CommandCallback<C, R> delegate;
         private final Class<R> parameterType;
 
         @SuppressWarnings("unchecked")
-        public TypeSafeCallbackWrapper(CommandCallback<R> delegate) {
+        public TypeSafeCallbackWrapper(CommandCallback<C, R> delegate) {
             this.delegate = delegate;
             Class discoveredParameterType = Object.class;
             for (Method m : ReflectionUtils.methodsOf(delegate.getClass())) {
-                if (m.getGenericParameterTypes().length == 1
-                        && m.getGenericParameterTypes()[0] != Object.class
+                if (m.getGenericParameterTypes().length == 2
+                        && m.getGenericParameterTypes()[1] != Object.class
                         && "onSuccess".equals(m.getName())
                         && Modifier.isPublic(m.getModifiers())) {
-                    discoveredParameterType = m.getParameterTypes()[0];
+                    discoveredParameterType = m.getParameterTypes()[1];
                     if (discoveredParameterType != Object.class) {
                         break;
                     }
@@ -685,15 +686,15 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
             if (parameterType.isInstance(result)) {
-                delegate.onSuccess(parameterType.cast(result));
+                delegate.onSuccess(commandMessage, parameterType.cast(result));
             }
         }
 
         @Override
-        public void onFailure(Throwable cause) {
-            delegate.onFailure(cause);
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+            delegate.onFailure(commandMessage, cause);
         }
     }
 }

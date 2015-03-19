@@ -135,8 +135,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
         assertEquals(10, inMemoryEventStore.loadCounter.get());
         assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
                      inMemoryEventStore.storedEventCounter.get());
-        verify(mockCallback, times(990)).onSuccess(any());
-        verify(mockCallback, times(10)).onFailure(isA(RuntimeException.class));
+        verify(mockCallback, times(990)).onSuccess(any(), any());
+        verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
     }
 
     private static class StubAggregate extends AbstractEventSourcedAggregateRoot {

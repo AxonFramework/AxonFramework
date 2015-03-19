@@ -79,7 +79,7 @@ public class DisruptorContextConfigurationTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new StubCommand("snapshottest")));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new StubCommand("snapshottest")));
 
-        FutureCallback<Object> callback = new FutureCallback<>();
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new StubCommand("snapshottest")), callback);
         callback.awaitCompletion(1, TimeUnit.SECONDS);
 

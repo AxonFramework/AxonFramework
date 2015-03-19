@@ -20,7 +20,7 @@ package org.axonframework.commandhandling;
  * The RollbackConfiguration defines when a UnitOfWork should be rolled back when the command handler or any
  * interceptors
  * reported a failure. This decision will only impact the UnitOfWork (and potentially any transactions attached to it),
- * the {@link org.axonframework.commandhandling.CommandCallback#onFailure(Throwable)} will always be called.
+ * the {@link CommandCallback#onFailure(CommandMessage, Throwable)} will always be called.
  *
  * @author Martin Tilma
  * @since 1.1

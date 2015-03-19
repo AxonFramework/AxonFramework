@@ -113,14 +113,14 @@ public class JGroupsCommandBusRunner {
     private static void readAndSendMessages() throws Exception {
         String messageBase = UUID.randomUUID().toString();
         for (int t = 0; t < MESSAGE_COUNT; t++) {
-            dcb.dispatch(new GenericCommandMessage<>(messageBase + " #" + t), new VoidCallback() {
+            dcb.dispatch(new GenericCommandMessage<>(messageBase + " #" + t), new VoidCallback<Object>() {
                 @Override
-                protected void onSuccess() {
+                protected void onSuccess(CommandMessage<?> commandMessage) {
                     System.out.println("Successfully receive response");
                 }
 
                 @Override
-                public void onFailure(Throwable cause) {
+                public void onFailure(CommandMessage commandMessage, Throwable cause) {
                     cause.printStackTrace();
                 }
             });

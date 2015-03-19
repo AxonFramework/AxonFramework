@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
@@ -71,22 +72,22 @@ public class AggregateAnnotationCommandHandlerTest {
                     return null;
                 });
         testSubject = new AggregateAnnotationCommandHandler<>(StubCommandAnnotatedAggregate.class,
-                                                                                           mockRepository,
-                                                                                           new AnnotationCommandTargetResolver(),
-                                                                                           parameterResolverFactory);
+                                                              mockRepository,
+                                                              new AnnotationCommandTargetResolver(),
+                                                              parameterResolverFactory);
         AggregateAnnotationCommandHandler.subscribe(testSubject, commandBus);
     }
 
     @Test
     public void testAggregateConstructorThrowsException() {
-        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")), new VoidCallback() {
+        commandBus.dispatch(asCommandMessage(new FailingCreateCommand("id", "parameter")), new VoidCallback<Object>() {
             @Override
-            protected void onSuccess() {
+            protected void onSuccess(CommandMessage<?> commandMessage) {
                 fail("Expected exception");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage commandMessage, Throwable cause) {
                 assertEquals("parameter", cause.getMessage());
             }
         });
@@ -98,14 +99,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(eq(aggregateIdentifier), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(asCommandMessage(new FailingUpdateCommand(aggregateIdentifier, "parameter")),
-                            new VoidCallback() {
+                            new VoidCallback<Object>() {
                                 @Override
-                                protected void onSuccess() {
+                                protected void onSuccess(CommandMessage<?> commandMessage) {
                                     fail("Expected exception");
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage commandMessage, Throwable cause) {
                                     assertEquals("parameter", cause.getMessage());
                                 }
                             }
@@ -145,10 +146,11 @@ public class AggregateAnnotationCommandHandlerTest {
     public void testCommandHandlerCreatesAggregateInstance() {
 
         final CommandCallback callback = mock(CommandCallback.class);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new CreateCommand("id", "Hi")), callback);
+        final CommandMessage<Object> message = GenericCommandMessage.asCommandMessage(new CreateCommand("id", "Hi"));
+        commandBus.dispatch(message, callback);
         verify(mockRepository).add(isA(StubCommandAnnotatedAggregate.class));
         // make sure the identifier was invoked in the callback
-        verify(callback).onSuccess("id");
+        verify(callback).onSuccess(message, "id");
     }
 
     @Test
@@ -157,14 +159,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("Method works fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -181,14 +183,14 @@ public class AggregateAnnotationCommandHandlerTest {
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("Method with version works fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -205,14 +207,14 @@ public class AggregateAnnotationCommandHandlerTest {
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("Method with version works fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -228,14 +230,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("Field works fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -252,14 +254,14 @@ public class AggregateAnnotationCommandHandlerTest {
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("Field with version works fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -276,14 +278,14 @@ public class AggregateAnnotationCommandHandlerTest {
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("Field with integer version works fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -300,14 +302,14 @@ public class AggregateAnnotationCommandHandlerTest {
                 .thenReturn(new StubCommandAnnotatedAggregate(aggregateIdentifier));
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityStateCommand("abc123")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     fail("Expected an exception, as the entity was not initialized");
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     if (!cause.getMessage().contains("entity")) {
                                         cause.printStackTrace();
                                         fail("Got an exception, but not the right one.");
@@ -327,14 +329,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityStateCommand("abc123")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("entity command handled just fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -354,14 +356,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityFromCollectionStateCommand("abc123", "2")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("handled by 2", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -379,14 +381,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityFromCollectionStateCommand("abc123", "2")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     fail("Expected exception");
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     assertTrue(cause instanceof IllegalStateException);
                                 }
                             }
@@ -403,14 +405,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityFromCollectionStateCommand("abc123", null)),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     fail("Expected exception");
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     assertTrue(cause instanceof IllegalStateException);
                                 }
                             }
@@ -426,16 +428,15 @@ public class AggregateAnnotationCommandHandlerTest {
         aggregate.initializeEntity("1");
         aggregate.initializeEntity("2");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
-                                    new UpdateNestedEntityStateCommand("abc123")),
-                            new CommandCallback<Object>() {
+        commandBus.dispatch(new GenericCommandMessage<Object>(new UpdateNestedEntityStateCommand("abc123")),
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("nested entity command handled just fine", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -451,10 +452,11 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() throws Exception {
+    public void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined()
+            throws Exception {
         new AggregateAnnotationCommandHandler(CollectionFieldWithoutGenerics.class, mockRepository);
     }
-    
+
     @Test
     public void testCommandHandledByEntityFromMap() {
         String aggregateIdentifier = "abc123";
@@ -465,14 +467,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityFromMapStateCommand("abc123", "2")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     assertEquals("handled by 2", result);
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     cause.printStackTrace();
                                     fail("Did not expect exception");
                                 }
@@ -490,14 +492,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityFromMapStateCommand("abc123", "2")),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     fail("Expected exception");
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     assertTrue(cause instanceof IllegalStateException);
                                 }
                             }
@@ -514,14 +516,14 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(aggregate);
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(
                                     new UpdateEntityFromMapStateCommand("abc123", null)),
-                            new CommandCallback<Object>() {
+                            new CommandCallback<Object, Object>() {
                                 @Override
-                                public void onSuccess(Object result) {
+                                public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                                     fail("Expected exception");
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                                     assertTrue(cause instanceof IllegalStateException);
                                 }
                             }
@@ -539,7 +541,7 @@ public class AggregateAnnotationCommandHandlerTest {
     public void testAnnotatedMapFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() throws Exception {
         new AggregateAnnotationCommandHandler(MapFieldWithoutGenerics.class, mockRepository);
     }
-    
+
 
     private abstract static class AbstractStubCommandAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
 
@@ -568,11 +570,12 @@ public class AggregateAnnotationCommandHandlerTest {
 
         @CommandHandlingMemberMap(commandTargetProperty = "entityId")
         private Map<String, StubCommandAnnotatedMapEntity> entityMap;
-        
+
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
                                              @org.axonframework.common.annotation.MetaData("notExist") String value) {
             super(createCommand.getId());
+            Assert.assertNotNull(metaData);
             Assert.assertNotNull(unitOfWork);
             Assert.assertNull(value);
             apply(new StubDomainEvent());
@@ -633,7 +636,7 @@ public class AggregateAnnotationCommandHandlerTest {
             }
             this.entities.add(new StubCommandAnnotatedCollectionEntity(id));
             if (this.entityMap == null) {
-            	this.entityMap = new HashMap<String, StubCommandAnnotatedMapEntity>();
+                this.entityMap = new HashMap<String, StubCommandAnnotatedMapEntity>();
             }
             this.entityMap.put(id, new StubCommandAnnotatedMapEntity(id));
         }
@@ -699,23 +702,23 @@ public class AggregateAnnotationCommandHandlerTest {
             return "nested entity command handled just fine";
         }
     }
-    
-    private static class StubCommandAnnotatedMapEntity extends AbstractAnnotatedEntity {
-    	
-    	private String id;
-    	
-    	private StubCommandAnnotatedMapEntity(String id) {
-    		this.id = id;
-		}
-    	
-    	@CommandHandler
-    	public String handle(UpdateEntityFromMapStateCommand command) {
-    		return "handled by " + getId();
-    	}
 
-		private String getId() {
-			return id;
-		}
+    private static class StubCommandAnnotatedMapEntity extends AbstractAnnotatedEntity {
+
+        private String id;
+
+        private StubCommandAnnotatedMapEntity(String id) {
+            this.id = id;
+        }
+
+        @CommandHandler
+        public String handle(UpdateEntityFromMapStateCommand command) {
+            return "handled by " + getId();
+        }
+
+        private String getId() {
+            return id;
+        }
     }
 
     private static class AnnotatedFieldIsNotMap extends StubCommandAnnotatedAggregate {
@@ -747,7 +750,7 @@ public class AggregateAnnotationCommandHandlerTest {
             this.aggregateId = aggregateId;
         }
     }
-    
+
     private static class CreateCommand {
 
         private final String id;
@@ -900,19 +903,19 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     private static class UpdateEntityFromMapStateCommand {
-    	@TargetAggregateIdentifier
-    	private final String aggregateId;
-    	
-    	private final String entityKey;
-    	
-    	private UpdateEntityFromMapStateCommand(String aggregateId, String entityId) {
-    		this.aggregateId = aggregateId;
-    		this.entityKey = entityId;
-    	}
-    	
-    	public String getEntityId() {
-    		return entityKey;
-    	}
-    }
 
+        @TargetAggregateIdentifier
+        private final String aggregateId;
+
+        private final String entityKey;
+
+        private UpdateEntityFromMapStateCommand(String aggregateId, String entityId) {
+            this.aggregateId = aggregateId;
+            this.entityKey = entityId;
+        }
+
+        public String getEntityId() {
+            return entityKey;
+        }
+    }
 }

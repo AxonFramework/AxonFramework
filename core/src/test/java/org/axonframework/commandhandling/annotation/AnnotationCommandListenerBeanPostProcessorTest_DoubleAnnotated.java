@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.junit.*;
@@ -89,14 +90,14 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
         ((CommandHandler<Integer>) transactionalHandler).handle(GenericCommandMessage.asCommandMessage(12), null);
         assertEquals(2, transactionalHandler.getInvocations());
 
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), new VoidCallback() {
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), new VoidCallback<Object>() {
             @Override
-            protected void onSuccess() {
+            protected void onSuccess(CommandMessage<?> commandMessage) {
                 fail("Expected a security exception");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage commandMessage, Throwable cause) {
                 assertEquals(AccessDeniedException.class, cause.getClass());
             }
         });

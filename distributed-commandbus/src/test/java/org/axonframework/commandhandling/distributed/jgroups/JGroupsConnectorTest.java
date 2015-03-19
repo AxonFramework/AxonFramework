@@ -99,7 +99,7 @@ public class JGroupsConnectorTest {
         List<FutureCallback> callbacks = new ArrayList<>();
 
         for (int t = 0; t < 100; t++) {
-            FutureCallback<Object> callback = new FutureCallback<>();
+            FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t & 1) == 0) {
                 connector1.send(message, new GenericCommandMessage<Object>(message), callback);
@@ -146,14 +146,14 @@ public class JGroupsConnectorTest {
 
         waitForConnectorSync();
 
-        FutureCallback<Object> callback1 = new FutureCallback<>();
-        connector1.send("1", new GenericCommandMessage<Object>("Hello"), callback1);
-        FutureCallback<?> callback2 = new FutureCallback();
-        connector1.send("1", new GenericCommandMessage<Object>(1L), callback2);
+        FutureCallback<Object, Object> callback1 = new FutureCallback<>();
+        connector1.send("1", new GenericCommandMessage<>("Hello"), callback1);
+        FutureCallback<Object, Object> callback2 = new FutureCallback<>();
+        connector1.send("1", new GenericCommandMessage<>(1L), callback2);
 
-        FutureCallback<Object> callback3 = new FutureCallback<>();
+        FutureCallback<Object, Object> callback3 = new FutureCallback<>();
         connector2.send("1", new GenericCommandMessage<>("Hello"), callback3);
-        FutureCallback<?> callback4 = new FutureCallback();
+        FutureCallback<Object, Object> callback4 = new FutureCallback<>();
         connector2.send("1", new GenericCommandMessage<>(1L), callback4);
 
         assertEquals("The Reply!", callback1.get());
@@ -222,12 +222,12 @@ public class JGroupsConnectorTest {
         List<FutureCallback> callbacks = new ArrayList<>();
 
         for (int t = 0; t < 100; t++) {
-            FutureCallback<Object> callback = new FutureCallback<>();
+            FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t & 1) == 0) {
-                connector1.send(message, new GenericCommandMessage<Object>(message), callback);
+                connector1.send(message, new GenericCommandMessage<>(message), callback);
             } else {
-                connector2.send(message, new GenericCommandMessage<Object>(message), callback);
+                connector2.send(message, new GenericCommandMessage<>(message), callback);
             }
             callbacks.add(callback);
         }
@@ -261,17 +261,17 @@ public class JGroupsConnectorTest {
         List<FutureCallback> callbacks = new ArrayList<>();
 
         for (int t = 0; t < 100; t++) {
-            FutureCallback<Object> callback = new FutureCallback<>();
+            FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t % 3) == 0) {
                 connector1.send(message,
-                                new GenericCommandMessage<Object>("myCommand1", message,
-                                                                  Collections.<String, Object>emptyMap()),
+                                new GenericCommandMessage<>("myCommand1", message,
+                                                            Collections.<String, Object>emptyMap()),
                                 callback);
             } else {
                 connector2.send(message,
-                                new GenericCommandMessage<Object>("myCommand2", message,
-                                                                  Collections.<String, Object>emptyMap()),
+                                new GenericCommandMessage<>("myCommand2", message,
+                                                            Collections.<String, Object>emptyMap()),
                                 callback);
             }
             callbacks.add(callback);

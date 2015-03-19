@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
@@ -27,7 +26,6 @@ import org.junit.*;
 
 import java.util.Collections;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -36,18 +34,16 @@ import static org.mockito.Mockito.*;
 public class DistributedCommandBusTest {
 
     private DistributedCommandBus testSubject;
-    private CommandBus mockLocalSegment;
     private CommandBusConnector mockConnector;
     private RoutingStrategy mockRoutingStrategy;
     private CommandHandler<Object> mockHandler;
     private CommandMessage<?> message;
-    private FutureCallback<Object> callback;
+    private FutureCallback<Object, Object> callback;
     private CommandDispatchInterceptor mockDispatchInterceptor;
 
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
-        mockLocalSegment = mock(CommandBus.class);
         mockConnector = mock(CommandBusConnector.class);
         mockRoutingStrategy = mock(RoutingStrategy.class);
         when(mockRoutingStrategy.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
@@ -80,21 +76,15 @@ public class DistributedCommandBusTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = CommandDispatchException.class)
     public void testDispatchErrorIsPropagated_WithCallback() throws Exception {
         doThrow(new Exception()).when(mockConnector).send(anyString(),
                                                           any(CommandMessage.class),
                                                           any(CommandCallback.class));
         testSubject.dispatch(message, callback);
-        try {
-            callback.getResult();
-            fail("Expected Exception");
-        } catch (CommandDispatchException e) {
-            assertNotNull(e);
-        }
     }
 
-    @Test
+    @Test(expected = CommandDispatchException.class)
     public void testDispatchErrorIsPropagated_WithoutCallback() throws Exception {
         doThrow(new Exception("Mock")).when(mockConnector).send(anyString(), any(CommandMessage.class));
         testSubject.dispatch(message);

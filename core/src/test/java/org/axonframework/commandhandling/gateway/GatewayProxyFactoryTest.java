@@ -58,13 +58,13 @@ public class GatewayProxyFactoryTest {
         mockRetryScheduler = mock(RetryScheduler.class);
         testSubject = new GatewayProxyFactory(mockCommandBus, mockRetryScheduler);
         callback = spy(new StringCommandCallback());
-        testSubject.registerCommandCallback(new CommandCallback<String>() {
+        testSubject.registerCommandCallback(new CommandCallback<Object, String>() {
             @Override
-            public void onSuccess(String result) {
+            public void onSuccess(CommandMessage<?> commandMessage, String result) {
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
             }
         });
         testSubject.registerCommandCallback(callback);
@@ -75,9 +75,9 @@ public class GatewayProxyFactoryTest {
     public void testGateway_FireAndForget() {
         final Object metaTest = new Object();
         gateway.fireAndForget("Command", null, metaTest, "value");
-        verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<?>>() {
+        verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<Object>>() {
             @Override
-            public boolean matchesSafely(CommandMessage<?> item) {
+            public boolean matchesSafely(CommandMessage<Object> item) {
                 return item.getMetaData().get("test") == metaTest
                         && "value".equals(item.getMetaData().get("key"));
             }
@@ -97,9 +97,9 @@ public class GatewayProxyFactoryTest {
         gateway.fireAndForget("Command", org.axonframework.domain.MetaData.from(singletonMap("otherKey", "otherVal")),
                               metaTest, "value");
         // in this case, no callback is used
-        verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<?>>() {
+        verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<Object>>() {
             @Override
-            public boolean matchesSafely(CommandMessage<?> item) {
+            public boolean matchesSafely(CommandMessage<Object> item) {
                 return item.getMetaData().get("test") == metaTest
                         && "otherVal".equals(item.getMetaData().get("otherKey"))
                         && "value".equals(item.getMetaData().get("key"));
@@ -128,14 +128,14 @@ public class GatewayProxyFactoryTest {
     public void testGatewayWithReturnValue_Returns() throws InterruptedException {
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
-        doAnswer(new Success(cdl, "ReturnValue")).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(
-                CommandCallback.class));
+        doAnswer(new Success(cdl, "ReturnValue")).when(mockCommandBus).dispatch(isA(CommandMessage.class),
+                                                                                isA(CommandCallback.class));
         Thread t = new Thread(() -> result.set(gateway.waitForReturnValue("Command")));
         t.start();
         assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
         t.join();
         assertEquals("ReturnValue", result.get());
-        verify(callback).onSuccess("ReturnValue");
+        verify(callback).onSuccess(any(), eq("ReturnValue"));
     }
 
     @Test(timeout = 2000)
@@ -158,7 +158,7 @@ public class GatewayProxyFactoryTest {
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof CommandExecutionException);
         assertTrue(error.get().getCause() instanceof ExpectedException);
-        verify(callback).onFailure(isA(ExpectedException.class));
+        verify(callback).onFailure(any(), isA(ExpectedException.class));
     }
 
     @Test(timeout = 2000)
@@ -290,7 +290,7 @@ public class GatewayProxyFactoryTest {
         t.join();
         assertNull("Did not expect ReturnValue", result.get());
         assertTrue(error.get() instanceof ExpectedException);
-        verify(callback).onFailure(isA(ExpectedException.class));
+        verify(callback).onFailure(any(), isA(ExpectedException.class));
     }
 
     @Test(timeout = 2000)
@@ -408,8 +408,8 @@ public class GatewayProxyFactoryTest {
         assertEquals(0, cdl.getCount());
 
         assertNotNull(result);
-        verify(callback1).onSuccess(result);
-        verify(callback2).onSuccess(result);
+        verify(callback1).onSuccess(any(), eq(result));
+        verify(callback2).onSuccess(any(), eq(result));
     }
 
 
@@ -425,8 +425,8 @@ public class GatewayProxyFactoryTest {
             gateway.fireAndWaitAndInvokeCallbacks("Command", callback1, callback2);
             fail("Expected exception");
         } catch (CommandExecutionException e) {
-            verify(callback1).onFailure(exception);
-            verify(callback2).onFailure(exception);
+            verify(callback1).onFailure(any(), eq(exception));
+            verify(callback2).onFailure(any(), eq(exception));
         }
     }
 
@@ -443,8 +443,8 @@ public class GatewayProxyFactoryTest {
         gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
         assertEquals(0, cdl.getCount());
 
-        verify(callback1).onSuccess("OK");
-        verify(callback2).onSuccess("OK");
+        verify(callback1).onSuccess(any(), eq("OK"));
+        verify(callback2).onSuccess(any(), eq("OK"));
     }
 
     @Test(timeout = 2000)
@@ -460,9 +460,9 @@ public class GatewayProxyFactoryTest {
         gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
         assertEquals(0, cdl.getCount());
 
-        verify(callback1).onSuccess(42);
-        verify(callback2).onSuccess(42);
-        verify(callback, never()).onSuccess(anyObject());
+        verify(callback1).onSuccess(any(), eq(42));
+        verify(callback2).onSuccess(any(), eq(42));
+        verify(callback, never()).onSuccess(any(), anyObject());
     }
 
     @Test(timeout = 2000)
@@ -475,8 +475,8 @@ public class GatewayProxyFactoryTest {
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
         gateway.fireAsyncWithCallbacks("Command", callback1, callback2);
-        verify(callback1).onFailure(exception);
-        verify(callback2).onFailure(exception);
+        verify(callback1).onFailure(any(), eq(exception));
+        verify(callback2).onFailure(any(), eq(exception));
     }
 
     @Test(timeout = 2000)
@@ -570,19 +570,20 @@ public class GatewayProxyFactoryTest {
         @Override
         public Object answer(InvocationOnMock invocation) throws Throwable {
             cdl.countDown();
-            ((CommandCallback) invocation.getArguments()[1]).onSuccess(returnValue);
+            ((CommandCallback) invocation.getArguments()[1]).onSuccess((CommandMessage) invocation.getArguments()[0],
+                                                                       returnValue);
             return null;
         }
     }
 
-    public static class StringCommandCallback implements CommandCallback<String> {
+    public static class StringCommandCallback implements CommandCallback<Object, String> {
 
         @Override
-        public void onSuccess(String result) {
+        public void onSuccess(CommandMessage<?> commandMessage, String result) {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage commandMessage, Throwable cause) {
         }
     }
 
@@ -605,7 +606,8 @@ public class GatewayProxyFactoryTest {
             if (cdl != null) {
                 cdl.countDown();
             }
-            ((CommandCallback) invocation.getArguments()[1]).onFailure(e);
+            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
+                                                                       e);
             return null;
         }
     }

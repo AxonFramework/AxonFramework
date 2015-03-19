@@ -17,27 +17,32 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 
 /**
  * Abstract callback that can be extended when no result is expected from the command handler execution.
  *
+ * @param <C> The type of payload of the dispatched command
  * @author Allard Buijze
  * @since 0.6
  */
-public abstract class VoidCallback implements CommandCallback<Object> {
+public abstract class VoidCallback<C> implements CommandCallback<C, Object> {
 
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation merely invokes {@link #onSuccess()}.
+     * This implementation merely invokes {@link #onSuccess(org.axonframework.commandhandling.CommandMessage)}.
      */
+
     @Override
-    public void onSuccess(Object result) {
-        onSuccess();
+    public void onSuccess(CommandMessage<? extends C> commandMessage, Object result) {
+        onSuccess(commandMessage);
     }
 
     /**
      * Invoked when command handling execution was successful.
+     *
+     * @param commandMessage The command message successfully executed
      */
-    protected abstract void onSuccess();
+    protected abstract void onSuccess(CommandMessage<? extends C> commandMessage);
 }

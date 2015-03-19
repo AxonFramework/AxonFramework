@@ -33,5 +33,5 @@ public interface CommandDispatchInterceptor {
      * @param commandMessage The command message intended to be dispatched on the Command Bus
      * @return the command message to dispatch on the Command Bus
      */
-    CommandMessage<?> handle(CommandMessage<?> commandMessage);
+    <C> CommandMessage<? extends C> handle(CommandMessage<C> commandMessage);
 }

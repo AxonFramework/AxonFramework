@@ -52,8 +52,8 @@ public class DisruptorCommandBusTest {
     public void handleCommandWithoutUsingAggregate() throws ExecutionException, InterruptedException {
         commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> "ok");
 
-        final FutureCallback<String> callback = new FutureCallback<>();
-        commandBus.dispatch(new GenericCommandMessage<Object>("test"), callback);
+        final FutureCallback<String, String> callback = new FutureCallback<>();
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
 
         assertEquals("ok", callback.get());
     }

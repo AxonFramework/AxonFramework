@@ -82,7 +82,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     @Override
-    public <R> void send(Object command, CommandCallback<R> callback) {
+    public <C, R> void send(C command, CommandCallback<? super C, R> callback) {
         super.send(command, callback);
     }
 
@@ -100,7 +100,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command) {
-        FutureCallback<Object> futureCallback = new FutureCallback<>();
+        FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
         return (R) futureCallback.getResult();
     }
@@ -123,7 +123,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     @Override
     @SuppressWarnings("unchecked")
     public <R> R sendAndWait(Object command, long timeout, TimeUnit unit) {
-        FutureCallback<Object> futureCallback = new FutureCallback<>();
+        FutureCallback<Object, Object> futureCallback = new FutureCallback<>();
         send(command, futureCallback);
         return (R) futureCallback.getResult(timeout, unit);
     }

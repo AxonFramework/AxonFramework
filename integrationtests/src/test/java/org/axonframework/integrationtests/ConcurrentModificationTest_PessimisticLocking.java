@@ -18,6 +18,7 @@ package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
@@ -120,16 +121,16 @@ public class ConcurrentModificationTest_PessimisticLocking {
         }
     }
 
-    private static class SilentCallback implements CommandCallback<Object> {
+    private static class SilentCallback implements CommandCallback<Object, Object> {
 
-        public static final CommandCallback<Object> INSTANCE = new SilentCallback();
+        public static final CommandCallback<Object, Object> INSTANCE = new SilentCallback();
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage commandMessage, Object result) {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage commandMessage, Throwable cause) {
         }
     }
 }

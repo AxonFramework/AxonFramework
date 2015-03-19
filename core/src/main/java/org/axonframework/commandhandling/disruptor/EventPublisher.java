@@ -112,11 +112,12 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     @SuppressWarnings("unchecked")
     private void reschedule(CommandHandlingEntry entry) {
         failedCreateCommands.put(entry.getCommand(), logger);
-        executor.execute(new ReportResultTask(
-                entry.getCallback(), null,
-                new AggregateStateCorruptedException(
-                        entry.getAggregateIdentifier(), "Rescheduling command for execution. "
-                        + "It was executed against a potentially recently created command")));
+        executor.execute(new ReportResultTask(entry.getCommand(),
+                                              entry.getCallback(), null,
+                                              new AggregateStateCorruptedException(
+                                                      entry.getAggregateIdentifier(),
+                                                      "Rescheduling command for execution. It was executed against a "
+                                                              + "potentially recently created command")));
     }
 
     private void recoverAggregate(CommandHandlingEntry entry) {
@@ -128,13 +129,13 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     @SuppressWarnings("unchecked")
     private void rejectExecution(CommandHandlingEntry entry, String aggregateIdentifier) {
-        executor.execute(new ReportResultTask(
-                entry.getCallback(), null,
-                new AggregateStateCorruptedException(
-                        aggregateIdentifier,
-                        format("Aggregate %s has been blacklisted and will be ignored until "
-                                       + "its state has been recovered.",
-                               aggregateIdentifier))));
+        executor.execute(new ReportResultTask(entry.getCommand(),
+                                              entry.getCallback(), null,
+                                              new AggregateStateCorruptedException(
+                                                      aggregateIdentifier,
+                                                      format("Aggregate %s has been blacklisted and will be ignored "
+                                                                     + "until its state has been recovered.",
+                                                             aggregateIdentifier))));
     }
 
     @SuppressWarnings("unchecked")
@@ -152,7 +153,8 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
             unitOfWork.onCleanup();
         }
         if (exceptionResult != null || entry.getCallback().hasDelegate()) {
-            executor.execute(new ReportResultTask(entry.getCallback(), entry.getResult(), exceptionResult));
+            executor.execute(new ReportResultTask(entry.getCommand(), entry.getCallback(),
+                                                  entry.getResult(), exceptionResult));
         }
     }
 
@@ -226,13 +228,16 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         return exceptionResult;
     }
 
-    private static class ReportResultTask<R> implements Runnable {
+    private static class ReportResultTask<C, R> implements Runnable {
 
-        private final CommandCallback<R> callback;
+        private final CommandMessage<C> commandMessage;
+        private final CommandCallback<C, R> callback;
         private final R result;
         private final Throwable exceptionResult;
 
-        public ReportResultTask(CommandCallback<R> callback, R result, Throwable exceptionResult) {
+        public ReportResultTask(CommandMessage<C> commandMessage, CommandCallback<C, R> callback,
+                                R result, Throwable exceptionResult) {
+            this.commandMessage = commandMessage;
             this.callback = callback;
             this.result = result;
             this.exceptionResult = exceptionResult;
@@ -241,9 +246,9 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         @Override
         public void run() {
             if (exceptionResult != null) {
-                callback.onFailure(exceptionResult);
+                callback.onFailure(commandMessage, exceptionResult);
             } else {
-                callback.onSuccess(result);
+                callback.onSuccess(commandMessage, result);
             }
         }
     }

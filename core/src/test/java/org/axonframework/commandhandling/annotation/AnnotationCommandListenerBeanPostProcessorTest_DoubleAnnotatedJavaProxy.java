@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.junit.*;
 import org.junit.runner.*;
@@ -70,28 +71,28 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotatedJavaP
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), new FailureDetectingCallback());
     }
 
-    private static class FailureDetectingCallback implements CommandCallback<Object> {
+    private static class FailureDetectingCallback implements CommandCallback<Object, Object> {
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
             cause.printStackTrace();
             fail("Did not expect exception");
         }
     }
 
-    private static class SecurityVerifyingCallback implements CommandCallback<Object> {
+    private static class SecurityVerifyingCallback implements CommandCallback<Object, Object> {
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
             fail("Did not expect result");
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
             assertTrue(cause instanceof AccessDeniedException);
         }
     }

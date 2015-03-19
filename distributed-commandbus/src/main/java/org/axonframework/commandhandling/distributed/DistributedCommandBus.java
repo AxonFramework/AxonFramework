@@ -22,8 +22,6 @@ import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
@@ -43,7 +41,6 @@ public class DistributedCommandBus implements CommandBus {
 
     private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command "
             + "on the DistributedCommandBus";
-    private static final Logger logger = LoggerFactory.getLogger(DistributedCommandBus.class);
 
     private final RoutingStrategy routingStrategy;
     private final CommandBusConnector connector;
@@ -73,19 +70,14 @@ public class DistributedCommandBus implements CommandBus {
         this.routingStrategy = routingStrategy;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws CommandDispatchException when an error occurs while dispatching the command to a segment
-     */
     @Override
-    public void dispatch(CommandMessage<?> command) {
-        command = intercept(command);
-        String routingKey = routingStrategy.getRoutingKey(command);
+    public <C> void dispatch(CommandMessage<C> command) {
+        CommandMessage<? extends C> interceptedCommand = intercept(command);
+        String routingKey = routingStrategy.getRoutingKey(interceptedCommand);
         try {
-            connector.send(routingKey, command);
+            connector.send(routingKey, interceptedCommand);
         } catch (Exception e) {
-            logger.error(DISPATCH_ERROR_MESSAGE, e);
+            throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
         }
     }
 
@@ -95,19 +87,20 @@ public class DistributedCommandBus implements CommandBus {
      * @throws CommandDispatchException when an error occurs while dispatching the command to a segment
      */
     @Override
-    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
-        command = intercept(command);
-        String routingKey = routingStrategy.getRoutingKey(command);
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+        CommandMessage<? extends C> interceptedCommand = intercept(command);
+        String routingKey = routingStrategy.getRoutingKey(interceptedCommand);
         try {
-            connector.send(routingKey, command, callback);
+            connector.send(routingKey, interceptedCommand, callback);
         } catch (Exception e) {
-            callback.onFailure(new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e));
+            throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
         }
     }
 
-    private CommandMessage<?> intercept(CommandMessage<?> command) {
+    private <C> CommandMessage<? extends C> intercept(CommandMessage<C> command) {
+        CommandMessage<? extends C> interceptedCommand = command;
         for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
-            command = interceptor.handle(command);
+            interceptedCommand = interceptor.handle(interceptedCommand);
         }
         return command;
     }

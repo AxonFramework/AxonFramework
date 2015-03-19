@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -61,14 +60,8 @@ public class SimpleCommandBus implements CommandBus {
     public SimpleCommandBus() {
     }
 
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Override
-    public void dispatch(CommandMessage<?> command) {
-        doDispatch(intercept(command), new LoggingCallback(command));
-    }
-
-    @Override
-    public <R> void dispatch(CommandMessage<?> command, final CommandCallback<R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, R> callback) {
         doDispatch(intercept(command), callback);
     }
 
@@ -78,8 +71,8 @@ public class SimpleCommandBus implements CommandBus {
      * @param command The original command being dispatched
      * @return The command to actually dispatch
      */
-    protected CommandMessage<?> intercept(CommandMessage<?> command) {
-        CommandMessage<?> commandToDispatch = command;
+    protected <C> CommandMessage<? extends C> intercept(CommandMessage<C> command) {
+        CommandMessage<? extends C> commandToDispatch = command;
         for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
             commandToDispatch = interceptor.handle(commandToDispatch);
         }
@@ -94,13 +87,13 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     @SuppressWarnings({"unchecked"})
-    protected <R> void doDispatch(CommandMessage<?> command, CommandCallback<R> callback) {
+    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         try {
             CommandHandler handler = findCommandHandlerFor(command);
             Object result = doDispatch(command, handler);
-            callback.onSuccess((R) result);
+            callback.onSuccess(command, (R) result);
         } catch (Throwable throwable) {
-            callback.onFailure(throwable);
+            callback.onFailure(command, throwable);
         }
     }
 
@@ -113,7 +106,7 @@ public class SimpleCommandBus implements CommandBus {
         return handler;
     }
 
-    private Object doDispatch(CommandMessage<?> command, CommandHandler commandHandler) throws Throwable {
+    private <C> Object doDispatch(CommandMessage<C> command, CommandHandler<? super C> commandHandler) throws Throwable {
         logger.debug("Dispatching command [{}]", command.getCommandName());
         UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, handlerInterceptors);

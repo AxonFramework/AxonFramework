@@ -9,7 +9,6 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -46,6 +45,11 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
     private final Timer commandTimer;
     private final Gauge<Set<String>> supportedCommandsGauge;
 
+    /**
+     * Initialize the InstrumentedCommandBus, measuring behavior of the given <code>delegate</code>
+     *
+     * @param delegate The CommandBus instance to measure
+     */
     public InstrumentedCommandBus(CommandBus delegate) {
         this.delegate = delegate;
         supportedCommandsGauge = () -> new TreeSet<>(supportedCommands);
@@ -57,12 +61,7 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
     }
 
     @Override
-    public void dispatch(CommandMessage<?> command) {
-        dispatch(command, NoOpCallback.INSTANCE);
-    }
-
-    @Override
-    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         final Timer.Context time = commandTimer.time();
         handlingCounter.inc();
         try {
@@ -104,7 +103,8 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
 
     /**
      * The counter tracking the number of commands that executed successfully. A successful command is a command for
-     * which the callback's {@link org.axonframework.commandhandling.CommandCallback#onSuccess(Object)} method was
+     * which the callback's {@link org.axonframework.commandhandling.CommandCallback#onSuccess(org.axonframework.commandhandling.CommandMessage,
+     * Object)} method was
      * invoked (or would have been invoked, when no callback was provided).
      *
      * @return the counter that tracks the number of successfully executed commands
@@ -115,7 +115,8 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
 
     /**
      * The counter tracking the number of failed commands. A command counts as failed when the callback's
-     * {@link org.axonframework.commandhandling.CommandCallback#onFailure(Throwable)} method was invoked (or would
+     * {@link org.axonframework.commandhandling.CommandCallback#onFailure(org.axonframework.commandhandling.CommandMessage,
+     * Throwable)} method was invoked (or would
      * have been invoked, when no callback was provided).
      *
      * @return the counter that tracks the number of commands that resulted in a failure.
@@ -144,20 +145,20 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
         return supportedCommandsGauge;
     }
 
-    private class TimingCommandCallback<R> implements CommandCallback<R> {
+    private class TimingCommandCallback<C, R> implements CommandCallback<C, R> {
 
         private final Timer.Context timerContext;
-        private final CommandCallback<R> delegate;
+        private final CommandCallback<C, R> delegate;
 
-        public TimingCommandCallback(Timer.Context timerContext, CommandCallback<R> delegate) {
+        public TimingCommandCallback(Timer.Context timerContext, CommandCallback<C, R> delegate) {
             this.timerContext = timerContext;
             this.delegate = delegate;
         }
 
         @Override
-        public void onSuccess(R result) {
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
             try {
-                delegate.onSuccess(result);
+                delegate.onSuccess(commandMessage, result);
             } finally {
                 successCounter.inc();
                 updateMetrics();
@@ -165,9 +166,9 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
             try {
-                delegate.onFailure(cause);
+                delegate.onFailure(commandMessage, cause);
             } finally {
                 failureCounter.inc();
                 updateMetrics();

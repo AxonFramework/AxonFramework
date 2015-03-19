@@ -60,8 +60,9 @@ public class AsynchronousCommandBusTest {
     @Test
     public void testDispatchWithCallback() throws Throwable {
         testSubject.subscribe(Object.class.getName(), commandHandler);
-        CommandCallback<Object> mockCallback = mock(CommandCallback.class);
-        testSubject.dispatch(asCommandMessage(new Object()), mockCallback);
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
+        final CommandMessage<Object> command = asCommandMessage(new Object());
+        testSubject.dispatch(command, mockCallback);
 
         InOrder inOrder = inOrder(mockCallback, executorService, commandHandler, dispatchInterceptor,
                                   handlerInterceptor);
@@ -71,7 +72,7 @@ public class AsynchronousCommandBusTest {
                                                   isA(UnitOfWork.class),
                                                   isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle(isA(CommandMessage.class), isA(UnitOfWork.class));
-        inOrder.verify(mockCallback).onSuccess(isNull());
+        inOrder.verify(mockCallback).onSuccess(eq(command), isNull());
     }
 
     @SuppressWarnings("unchecked")
@@ -97,12 +98,14 @@ public class AsynchronousCommandBusTest {
         verify(executorService).shutdown();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testCallbackIsInvokedWhenNoHandlerIsRegistered() {
         final CommandCallback callback = mock(CommandCallback.class);
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        final CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("test");
+        testSubject.dispatch(command, callback);
 
-        verify(callback).onFailure(isA(NoHandlerForCommandException.class));
+        verify(callback).onFailure(eq(command), isA(NoHandlerForCommandException.class));
     }
 
     @Test

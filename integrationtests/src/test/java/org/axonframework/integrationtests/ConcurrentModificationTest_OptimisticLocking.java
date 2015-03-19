@@ -18,6 +18,7 @@ package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
@@ -102,14 +103,14 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
                     commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
                             SilentCallback.INSTANCE);
                     commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)),
-                            new VoidCallback() {
+                            new VoidCallback<Object>() {
                                 @Override
-                                protected void onSuccess() {
+                                protected void onSuccess(CommandMessage<?> commandMessage) {
                                     successCounter.incrementAndGet();
                                 }
 
                                 @Override
-                                public void onFailure(Throwable cause) {
+                                public void onFailure(CommandMessage commandMessage, Throwable cause) {
                                     failCounter.incrementAndGet();
                                 }
                             });
@@ -136,14 +137,13 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
         logger.info("Results: {} successful, {} failed.", successCounter.get(), failCounter.get());
 
         // to prove that all locks are properly cleared, this command must succeed.
-        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)), new VoidCallback() {
+        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)), new VoidCallback<Object>() {
             @Override
-            protected void onSuccess() {
-
+            protected void onSuccess(CommandMessage<?> commandMessage) {
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage commandMessage, Throwable cause) {
                 cause.printStackTrace();
                 fail("Should be succesful. Is there a lock hanging?");
             }
@@ -174,16 +174,16 @@ public class ConcurrentModificationTest_OptimisticLocking implements Thread.Unca
         uncaughtExceptions.add(e);
     }
 
-    private static class SilentCallback implements CommandCallback<Object> {
+    private static class SilentCallback implements CommandCallback<Object, Object> {
 
-        public static final CommandCallback<Object> INSTANCE = new SilentCallback();
+        public static final CommandCallback<Object, Object> INSTANCE = new SilentCallback();
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
         }
     }
 }

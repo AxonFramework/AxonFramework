@@ -565,16 +565,16 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
     }
 
-    private class ExecutionExceptionAwareCallback implements CommandCallback<Object> {
+    private class ExecutionExceptionAwareCallback implements CommandCallback<Object, Object> {
 
         private FixtureExecutionException exception;
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
             if (cause instanceof FixtureExecutionException) {
                 this.exception = (FixtureExecutionException) cause;
             }

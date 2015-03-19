@@ -20,7 +20,7 @@ import org.axonframework.domain.MetaData;
 
 /**
  * Default implementation of the CallbackBehavior interface. This implementation always returns <code>null</code>,
- * which results in the {@link org.axonframework.commandhandling.CommandCallback#onSuccess(Object)} method to be
+ * which results in the {@link org.axonframework.commandhandling.CommandCallback#onSuccess(org.axonframework.commandhandling.CommandMessage, Object)} method to be
  * invoked with a <code>null</code> result parameter.
  *
  * @author Allard Buijze

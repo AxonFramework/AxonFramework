@@ -46,11 +46,12 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      * @return a CommandMessage containing given <code>command</code> as payload, or <code>command</code> if it already
      *         implements CommandMessage.
      */
-    public static CommandMessage asCommandMessage(Object command) {
+    @SuppressWarnings("unchecked")
+    public static <C> CommandMessage<C> asCommandMessage(Object command) {
         if (CommandMessage.class.isInstance(command)) {
-            return (CommandMessage) command;
+            return (CommandMessage<C>) command;
         }
-        return new GenericCommandMessage<>(command);
+        return new GenericCommandMessage<>((C) command);
     }
 
     /**

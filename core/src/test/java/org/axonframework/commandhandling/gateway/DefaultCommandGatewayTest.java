@@ -68,7 +68,8 @@ public class DefaultCommandGatewayTest {
     public void testSendWithCallback_CommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
-                    .onFailure(new RuntimeException(new RuntimeException()));
+                    .onFailure((CommandMessage) invocation.getArguments()[0],
+                               new RuntimeException(new RuntimeException()));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -76,14 +77,14 @@ public class DefaultCommandGatewayTest {
                 .thenAnswer(new RescheduleCommand())
                 .thenReturn(false);
         final AtomicReference<Object> actualResult = new AtomicReference<>();
-        testSubject.send("Command", new CommandCallback<Object>() {
+        testSubject.send("Command", new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 actualResult.set(result);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                 actualResult.set(cause);
             }
         });
@@ -103,7 +104,8 @@ public class DefaultCommandGatewayTest {
     public void testSendWithoutCallback_CommandIsRetried() {
         doAnswer(invocation -> {
             ((CommandCallback) invocation.getArguments()[1])
-                    .onFailure(new RuntimeException(new RuntimeException()));
+                    .onFailure((CommandMessage) invocation.getArguments()[0],
+                               new RuntimeException(new RuntimeException()));
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -128,7 +130,8 @@ public class DefaultCommandGatewayTest {
     public void testSendAndWait_CommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1]).onFailure(failure);
+            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
+                                                                       failure);
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -157,7 +160,8 @@ public class DefaultCommandGatewayTest {
     public void testSendAndWaitWithTimeout_CommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
         doAnswer(invocation -> {
-            ((CommandCallback) invocation.getArguments()[1]).onFailure(failure);
+            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
+                                                                       failure);
             return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
@@ -220,9 +224,9 @@ public class DefaultCommandGatewayTest {
         CorrelationDataHolder.setCorrelationData(Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<?>>("header correlationId") {
+        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>("header correlationId") {
             @Override
-            protected boolean matchesSafely(CommandMessage<?> item) {
+            protected boolean matchesSafely(CommandMessage<Object> item) {
                 return "test".equals(item.getMetaData().get("correlationId"));
             }
         }), isA(CommandCallback.class));
@@ -237,10 +241,10 @@ public class DefaultCommandGatewayTest {
         CorrelationDataHolder.setCorrelationData(data);
         testSubject.send(new GenericCommandMessage<>("Hello", Collections.singletonMap("header", "value")));
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<?>>(
+        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>(
                 "header 'correlationId' and 'header'") {
             @Override
-            protected boolean matchesSafely(CommandMessage<?> item) {
+            protected boolean matchesSafely(CommandMessage<Object> item) {
                 return "test".equals(item.getMetaData().get("correlationId"))
                         && "value".equals(item.getMetaData().get("header"));
             }

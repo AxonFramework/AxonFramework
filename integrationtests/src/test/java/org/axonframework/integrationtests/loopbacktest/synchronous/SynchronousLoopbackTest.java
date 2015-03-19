@@ -18,6 +18,7 @@ package org.axonframework.integrationtests.loopbacktest.synchronous;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
@@ -62,7 +63,7 @@ public class SynchronousLoopbackTest {
     private String aggregateIdentifier;
     private EventStore eventStore;
     private VoidCallback reportErrorCallback;
-    private CommandCallback<Object> expectErrorCallback;
+    private CommandCallback<Object, Object> expectErrorCallback;
 
     @Before
     public void setUp() {
@@ -77,25 +78,24 @@ public class SynchronousLoopbackTest {
                 )));
         reset(eventStore);
 
-        reportErrorCallback = new VoidCallback() {
+        reportErrorCallback = new VoidCallback<Object>() {
             @Override
-            protected void onSuccess() {
-
+            protected void onSuccess(CommandMessage<?> commandMessage) {
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage commandMessage, Throwable cause) {
                 throw new RuntimeException("Failure", cause);
             }
         };
-        expectErrorCallback = new CommandCallback<Object>() {
+        expectErrorCallback = new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 fail("Expected this command to fail");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                 assertEquals("Mock exception", cause.getMessage());
             }
         };

@@ -25,7 +25,7 @@ import org.axonframework.commandhandling.CommandMessage;
 public class StubDispatchInterceptor implements CommandDispatchInterceptor {
 
     @Override
-    public CommandMessage<?> handle(CommandMessage<?> commandMessage) {
+    public <C> CommandMessage<? extends C> handle(CommandMessage<C> commandMessage) {
         return commandMessage;
     }
 }

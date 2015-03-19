@@ -42,18 +42,18 @@ public class RecordingCommandBus implements CommandBus {
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
-    public void dispatch(CommandMessage<?> command) {
+    public <C> void dispatch(CommandMessage<C> command) {
         dispatchedCommands.add(command);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         dispatchedCommands.add(command);
         try {
-            callback.onSuccess((R) callbackBehavior.handle(command.getPayload(), command.getMetaData()));
+            callback.onSuccess(command, (R) callbackBehavior.handle(command.getPayload(), command.getMetaData()));
         } catch (Throwable throwable) {
-            callback.onFailure(throwable);
+            callback.onFailure(command, throwable);
         }
     }
 

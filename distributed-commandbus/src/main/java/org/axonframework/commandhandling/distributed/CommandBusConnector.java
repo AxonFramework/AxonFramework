@@ -44,7 +44,7 @@ public interface CommandBusConnector {
      * @param command    The command to send to the (remote) member
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    void send(String routingKey, CommandMessage<?> command) throws Exception;
+    <C> void send(String routingKey, CommandMessage<C> command) throws Exception;
 
     /**
      * Sends the given <code>command</code> to the node assigned to handle messages with the given
@@ -56,7 +56,8 @@ public interface CommandBusConnector {
      * Implementations <em>should</em> always invoke the callback with an outcome.
      * <p/>
      * If a member's connection was lost, and the result of the command is unclear, the {@link
-     * CommandCallback#onFailure(Throwable)} method is invoked with a {@link RemoteCommandHandlingException} describing
+     * CommandCallback#onFailure(org.axonframework.commandhandling.CommandMessage, Throwable)} method is invoked with a
+     * {@link RemoteCommandHandlingException} describing
      * the failed connection. A client may choose to resend a command.
      * <p/>
      * Connectors route the commands based on the given <code>routingKey</code>. Using the same <code>routingKey</code>
@@ -69,10 +70,12 @@ public interface CommandBusConnector {
      * @param <R>        The type of object expected as return value in the callback
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <R> void send(String routingKey, CommandMessage<?> command, CommandCallback<R> callback) throws Exception;
+    <C, R> void send(String routingKey, CommandMessage<C> command, CommandCallback<? super C, R> callback)
+            throws Exception;
 
     /**
-     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code> to the local segment of the
+     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code> to the local segment of
+     * the
      * command bus.
      * <p/>
      * If a subscription already exists for the given type, the behavior is undefined. Implementations may throw an
@@ -93,7 +96,7 @@ public interface CommandBusConnector {
      * @param handler     The handler instance to unsubscribe from the CommandBus
      * @param <C>         The Type of command
      * @return <code>true</code> of this handler is successfully unsubscribed, <code>false</code> of the given
-     *         <code>handler</code> was not the current handler for given <code>commandType</code>.
+     * <code>handler</code> was not the current handler for given <code>commandType</code>.
      */
     <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler);
 }

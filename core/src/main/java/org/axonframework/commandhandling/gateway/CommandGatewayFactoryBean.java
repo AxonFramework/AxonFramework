@@ -48,7 +48,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
     private CommandBus commandBus;
     private RetryScheduler retryScheduler;
     private List<CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
-    private List<CommandCallback<?>> commandCallbacks = Collections.emptyList();
+    private List<CommandCallback<?, ?>> commandCallbacks = Collections.emptyList();
     private T gateway;
     private Class<T> gatewayInterface;
 
@@ -80,9 +80,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
             gatewayInterface = (Class<T>) CommandGateway.class;
         }
         final GatewayProxyFactory factory = new GatewayProxyFactory(commandBus, retryScheduler, dispatchInterceptors);
-        for (CommandCallback<?> commandCallback : commandCallbacks) {
-            factory.registerCommandCallback(commandCallback);
-        }
+        commandCallbacks.forEach(factory::registerCommandCallback);
         gateway = factory.createGateway(gatewayInterface);
     }
 
@@ -158,7 +156,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
      *
      * @param commandCallbacks The callbacks to register
      */
-    public void setCommandCallbacks(List<CommandCallback<?>> commandCallbacks) {
+    public void setCommandCallbacks(List<CommandCallback<?, ?>> commandCallbacks) {
         this.commandCallbacks = commandCallbacks;
     }
 }

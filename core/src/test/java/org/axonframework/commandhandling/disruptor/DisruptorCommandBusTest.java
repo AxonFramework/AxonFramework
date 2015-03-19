@@ -159,7 +159,7 @@ public class DisruptorCommandBusTest {
         inOrder.verify(mockUnitOfWorkListener).afterCommit(isA(UnitOfWork.class));
         inOrder.verify(mockUnitOfWorkListener).onCleanup(isA(UnitOfWork.class));
 
-        verify(mockCallback).onSuccess(any());
+        verify(mockCallback).onSuccess(eq(command), any());
     }
 
     @Test
@@ -260,8 +260,8 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        verify(mockCallback, times(990)).onSuccess(any());
-        verify(mockCallback, times(10)).onFailure(isA(RuntimeException.class));
+        verify(mockCallback, times(990)).onSuccess(any(), any());
+        verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -279,8 +279,8 @@ public class DisruptorCommandBusTest {
         assertFalse(customExecutor.awaitTermination(250, TimeUnit.MILLISECONDS));
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
-        verify(mockCallback, times(990)).onSuccess(any());
-        verify(mockCallback, times(10)).onFailure(isA(RuntimeException.class));
+        verify(mockCallback, times(990)).onSuccess(any(), any());
+        verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
     }
 
     @Test

@@ -6,10 +6,12 @@ import com.codahale.metrics.Timer;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.junit.*;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -112,14 +114,14 @@ public class InstrumentedCommandBusTest {
         assertEquals(0, failureCounter.getCount());
         assertEquals(0, successCounter.getCount());
 
-        testSubject.dispatch(asCommandMessage(1L), new CommandCallback<Object>() {
+        testSubject.dispatch(asCommandMessage(1L), new CommandCallback<Objects, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<? extends Objects> commandMessage, Object result) {
                 fail("Didn't expect success");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<? extends Objects> commandMessage, Throwable cause) {
                 assertNotNull(cause);
             }
         });
@@ -136,14 +138,15 @@ public class InstrumentedCommandBusTest {
         assertEquals(0, failureCounter.getCount());
         assertEquals(0, successCounter.getCount());
 
-        testSubject.dispatch(asCommandMessage("success"), new CommandCallback<Object>() {
+        testSubject.dispatch(asCommandMessage("success"), new CommandCallback<Object, Object>() {
+
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 assertEquals("success", result);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                 fail("Didn't expect failure");
             }
         });

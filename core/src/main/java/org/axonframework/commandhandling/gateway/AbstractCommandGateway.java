@@ -72,11 +72,11 @@ public abstract class AbstractCommandGateway {
      * @param callback The callback to notify with the processing result
      * @param <R>      The type of response expected from the command
      */
-    protected <R> void send(Object command, CommandCallback<R> callback) {
+    protected <C, R> void send(C command, CommandCallback<? super C, R> callback) {
         CommandMessage commandMessage = processInterceptors(createCommandMessage(command));
-        CommandCallback<R> commandCallback = callback;
+        CommandCallback<? super C, R> commandCallback = callback;
         if (retryScheduler != null) {
-            commandCallback = new RetryingCallback<>(callback, commandMessage, retryScheduler, commandBus);
+            commandCallback = new RetryingCallback<>(callback, retryScheduler, commandBus);
         }
         commandBus.dispatch(commandMessage, commandCallback);
     }
@@ -92,7 +92,7 @@ public abstract class AbstractCommandGateway {
             commandBus.dispatch(processInterceptors(createCommandMessage(command)));
         } else {
             CommandMessage<?> commandMessage = createCommandMessage(command);
-            send(commandMessage, new LoggingCallback(commandMessage));
+            send(commandMessage, LoggingCallback.INSTANCE);
         }
     }
 

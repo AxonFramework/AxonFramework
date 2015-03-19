@@ -17,6 +17,7 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
@@ -35,7 +36,7 @@ import static org.hamcrest.CoreMatchers.*;
  * @author Allard Buijze
  * @since 0.7
  */
-public class ResultValidatorImpl implements ResultValidator, CommandCallback<Object> {
+public class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Object> {
 
     private final Collection<DomainEventMessage> storedEvents;
     private final Collection<EventMessage> publishedEvents;
@@ -174,12 +175,12 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public void onSuccess(Object result) {
+    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
         actualReturnValue = result;
     }
 
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
         actualException = cause;
     }
 

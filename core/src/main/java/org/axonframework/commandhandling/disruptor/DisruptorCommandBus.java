@@ -125,7 +125,6 @@ public class DisruptorCommandBus implements CommandBus {
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
     private final int serializerCount;
-    private final CommandCallback<Object> failureLoggingCallback = new FailureLoggingCommandCallback();
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
 
@@ -233,14 +232,14 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public void dispatch(final CommandMessage<?> command) {
-        dispatch(command, failureLoggingCallback);
+    public <C> void dispatch(CommandMessage<C> command) {
+        dispatch(command, FailureLoggingCommandCallback.INSTANCE);
     }
 
     @Override
-    public <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         Assert.state(started, "CommandBus has been shut down. It is not accepting any Commands");
-        CommandMessage<?> commandToDispatch = command;
+        CommandMessage<? extends C> commandToDispatch = command;
         for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
             commandToDispatch = interceptor.handle(commandToDispatch);
         }
@@ -255,7 +254,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param callback The callback to notify when command handling is completed
      * @param <R>      The expected return type of the command
      */
-    public <R> void doDispatch(CommandMessage command, CommandCallback<R> callback) {
+    public <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final CommandHandler<?> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
@@ -286,7 +285,7 @@ public class DisruptorCommandBus implements CommandBus {
         try {
             CommandHandlingEntry event = ringBuffer.get(sequence);
             event.reset(command, commandHandler, invokerSegment, publisherSegment,
-                        serializerSegment, new BlacklistDetectingCallback<>(callback, command,
+                        serializerSegment, new BlacklistDetectingCallback<>(callback,
                                                                             disruptor.getRingBuffer(),
                                                                             this, rescheduleOnCorruptState),
                         invokerInterceptors, publisherInterceptors
@@ -369,15 +368,20 @@ public class DisruptorCommandBus implements CommandBus {
         }
     }
 
-    private static class FailureLoggingCommandCallback implements CommandCallback<Object> {
+    private static class FailureLoggingCommandCallback implements CommandCallback<Object, Object> {
 
-        @Override
-        public void onSuccess(Object result) {
+        private static final FailureLoggingCommandCallback INSTANCE = new FailureLoggingCommandCallback();
+
+        private FailureLoggingCommandCallback() {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
-            logger.info("An error occurred while handling a command.", cause);
+        public void onSuccess(CommandMessage<?> commandMessage, Object result) {
+        }
+
+        @Override
+        public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
+            logger.info("An error occurred while handling a command [{}].", commandMessage.getCommandName(), cause);
         }
     }
 

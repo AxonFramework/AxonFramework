@@ -66,7 +66,7 @@ public class BeanValidationInterceptor implements CommandHandlerInterceptor, Com
     }
 
     @Override
-    public CommandMessage<?> handle(CommandMessage<?> command) {
+    public <C> CommandMessage<? extends C> handle(CommandMessage<C> command) {
         Validator validator = validatorFactory.getValidator();
         Set<ConstraintViolation<Object>> violations = validateCommand(command.getPayload(), validator);
         if (violations != null && !violations.isEmpty()) {
