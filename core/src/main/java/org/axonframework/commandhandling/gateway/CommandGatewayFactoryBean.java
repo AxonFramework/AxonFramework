@@ -29,8 +29,6 @@ import org.springframework.beans.factory.annotation.Required;
 import java.util.Collections;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-
 /**
  * FactoryBean that creates a gateway instance for any given (compatible) interface. If no explicit interface is
  * provided, the {@link CommandGateway} interface is assumed.
@@ -119,17 +117,16 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
     }
 
     /**
-     * Sets the interceptors that should be invoked before a command is dispatched the the Command Bus.
+     * Add an interceptor that should be invoked before a command is dispatched the the Command Bus.
      * <p/>
-     * Note that these interceptors will be specific to this Gateway instance. Messages dispatched through other
+     * Note that interceptors added here are specific to this Gateway instance. Messages dispatched through other
      * gateways or directly to the command bus will not pass through these interceptors.
      *
-     * @param commandDispatchInterceptors the interceptors that should be invoked before a command is dispatched the
-     *                                    the
-     *                                    Command Bus
+     * @param commandDispatchInterceptor the interceptor that should be invoked before a command is dispatched the
+     *                                   the Command Bus
      */
-    public void setCommandDispatchInterceptors(CommandDispatchInterceptor... commandDispatchInterceptors) {
-        setCommandDispatchInterceptors(asList(commandDispatchInterceptors));
+    public void addCommandDispatchInterceptor(CommandDispatchInterceptor commandDispatchInterceptor) {
+        this.dispatchInterceptors.add(commandDispatchInterceptor);
     }
 
     /**
@@ -147,7 +144,8 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
     }
 
     /**
-     * Registers the <code>commandCallbacks</code>, which are invoked for each sent command, unless Axon is able to detect
+     * Registers the <code>commandCallbacks</code>, which are invoked for each sent command, unless Axon is able to
+     * detect
      * that the result of the command does not match the type accepted by that callback.
      * <p/>
      * Axon will check the signature of the onSuccess() method and only invoke the callback if the actual result of the
