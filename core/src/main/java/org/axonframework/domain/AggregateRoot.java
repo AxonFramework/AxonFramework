@@ -16,6 +16,8 @@
 
 package org.axonframework.domain;
 
+import java.util.List;
+
 /**
  * Interface defining a contract for entities that represent the aggregate root.
  *
@@ -53,7 +55,7 @@ public interface AggregateRoot {
      *
      * @return the DomainEventStream to the uncommitted events.
      */
-    DomainEventStream getUncommittedEvents();
+    List<DomainEventMessage<?>> getUncommittedEvents();
 
     /**
      * Returns the current version number of the aggregate, or <code>null</code> if the aggregate is newly created.

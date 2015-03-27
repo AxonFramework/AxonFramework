@@ -41,8 +41,6 @@ import javax.persistence.MappedSuperclass;
 public abstract class AbstractEventEntryData<T> implements SerializedDomainEventData<T> {
 
     @Id
-    private String type;
-    @Id
     private String aggregateIdentifier;
     @Id
     private long sequenceNumber;
@@ -59,17 +57,14 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
      * Initializes the fields in this entity using the values provided in the given parameters.
      *
      * @param eventIdentifier     The identifier of the event.
-     * @param type                The type identifier of the aggregate that published the event
      * @param aggregateIdentifier The identifier of the aggregate that published the event
      * @param sequenceNumber      The sequence number of the event
      * @param timestamp           The timestamp of the creation of the event
      * @param payloadType         The type of payload contained in the event
      */
-    public AbstractEventEntryData(String eventIdentifier, String type,
-                                  String aggregateIdentifier, long sequenceNumber, DateTime timestamp,
-                                  SerializedType payloadType) {
+    public AbstractEventEntryData(String eventIdentifier, String aggregateIdentifier, long sequenceNumber,
+                                  DateTime timestamp, SerializedType payloadType) {
         this.eventIdentifier = eventIdentifier;
-        this.type = type;
         this.payloadType = payloadType.getName();
         this.payloadRevision = payloadType.getRevision();
         this.aggregateIdentifier = aggregateIdentifier;
@@ -96,15 +91,6 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
     @Override
     public String getAggregateIdentifier() {
         return aggregateIdentifier;
-    }
-
-    /**
-     * Returns the type identifier of the aggregate.
-     *
-     * @return the type identifier of the aggregate.
-     */
-    public String getType() {
-        return type;
     }
 
     /**
@@ -145,7 +131,6 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
         private static final long serialVersionUID = 9182347799552520594L;
 
         private String aggregateIdentifier;
-        private String type;
         private long sequenceNumber;
 
         /**
@@ -165,31 +150,20 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
 
             PK pk = (PK) o;
 
-            if (sequenceNumber != pk.sequenceNumber) {
-                return false;
-            }
-            if (!aggregateIdentifier.equals(pk.aggregateIdentifier)) {
-                return false;
-            }
-            if (!type.equals(pk.type)) {
-                return false;
-            }
-
-            return true;
+            return sequenceNumber == pk.sequenceNumber
+                    && aggregateIdentifier.equals(pk.aggregateIdentifier);
         }
 
         @Override
         public int hashCode() {
             int result = aggregateIdentifier.hashCode();
-            result = 31 * result + type.hashCode();
             result = 31 * result + (int) (sequenceNumber ^ (sequenceNumber >>> 32));
             return result;
         }
 
         @Override
         public String toString() {
-            return "PK{type='" + type + '\''
-                    + ", aggregateIdentifier='" + aggregateIdentifier + '\''
+            return "PK{aggregateIdentifier='" + aggregateIdentifier + '\''
                     + ", sequenceNumber=" + sequenceNumber
                     + '}';
         }

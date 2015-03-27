@@ -44,17 +44,17 @@ public class AbstractAggregateRootTest {
         baos.write(serializer.serialize(testSubject, byte[].class).getData());
 
         assertEquals(0, deserialized(baos).getUncommittedEventCount());
-        assertFalse(deserialized(baos).getUncommittedEvents().hasNext());
+        assertEquals(0, deserialized(baos).getUncommittedEvents().size());
         assertNotNull(deserialized(baos).getIdentifier());
 
         AggregateRoot deserialized = deserialized(baos);
         deserialized.doSomething();
         assertEquals(1, deserialized.getUncommittedEventCount());
-        assertNotNull(deserialized.getUncommittedEvents().next());
+        assertNotNull(deserialized.getUncommittedEvents().get(0));
 
         AggregateRoot deserialized2 = deserialized(baos);
         deserialized2.doSomething();
-        assertNotNull(deserialized2.getUncommittedEvents().next());
+        assertNotNull(deserialized2.getUncommittedEvents().get(0));
         assertEquals(1, deserialized2.getUncommittedEventCount());
     }
 
@@ -71,18 +71,6 @@ public class AbstractAggregateRootTest {
         assertEquals(0, testSubject.getUncommittedEventCount());
         testSubject.doSomething();
         assertEquals(1, testSubject.getUncommittedEventCount());
-    }
-
-    @Test
-    public void testReadEventStreamDuringEventCommit() {
-        testSubject.doSomething();
-        testSubject.doSomething();
-        DomainEventStream uncommittedEvents = testSubject.getUncommittedEvents();
-        uncommittedEvents.next();
-        testSubject.commitEvents();
-        assertTrue(uncommittedEvents.hasNext());
-        assertNotNull(uncommittedEvents.next());
-        assertFalse(uncommittedEvents.hasNext());
     }
 
     private static class AggregateRoot extends AbstractAggregateRoot {

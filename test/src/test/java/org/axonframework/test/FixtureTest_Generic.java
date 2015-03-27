@@ -19,7 +19,6 @@ package org.axonframework.test;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventstore.EventStoreException;
@@ -27,6 +26,7 @@ import org.junit.*;
 
 import java.util.UUID;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -44,7 +44,6 @@ public class FixtureTest_Generic {
         fixture.setReportIllegalStateChange(false);
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StandardAggregate.class);
-        when(mockAggregateFactory.getTypeIdentifier()).thenReturn(StandardAggregate.class.getSimpleName());
         when(mockAggregateFactory.createAggregate(isA(String.class), isA(DomainEventMessage.class)))
                 .thenReturn(new StandardAggregate("id1"));
     }
@@ -105,7 +104,7 @@ public class FixtureTest_Generic {
                .when(new TestCommand("AggregateId"))
                .expectEvents(new MyEvent("AggregateId", 3));
 
-        DomainEventStream events = fixture.getEventStore().readEvents("StandardAggregate", "AggregateId");
+        DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {
             assertTrue(events.hasNext());
             DomainEventMessage next = events.next();
@@ -130,7 +129,7 @@ public class FixtureTest_Generic {
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
+        fixture.getEventStore().appendEvents(asList(
                 new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
                 new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
     }
@@ -138,7 +137,7 @@ public class FixtureTest_Generic {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
+        fixture.getEventStore().appendEvents(asList(
                 new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
                 new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
     }

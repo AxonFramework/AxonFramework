@@ -49,11 +49,11 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 
-import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
@@ -146,46 +146,37 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         this.eventEntryStore = eventEntryStore;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @SuppressWarnings("unchecked")
     @Override
-    public void appendEvents(String type, DomainEventStream events) {
-        DomainEventMessage event = null;
+    public void appendEvents(List<DomainEventMessage<?>> events) {
         try {
             EntityManager entityManager = entityManagerProvider.getEntityManager();
-            while (events.hasNext()) {
-                event = events.next();
-                validateIdentifier(event.getAggregateIdentifier().getClass());
+            for (DomainEventMessage<?> event : events) {
                 SerializedObject serializedPayload = serializer.serializePayload(event, eventEntryStore.getDataType());
                 SerializedObject serializedMetaData = serializer.serializeMetaData(event, eventEntryStore.getDataType());
-                eventEntryStore.persistEvent(type, event, serializedPayload, serializedMetaData, entityManager);
+                eventEntryStore.persistEvent(event, serializedPayload, serializedMetaData, entityManager);
             }
             entityManager.flush();
         } catch (RuntimeException exception) {
-            if (event != null
+            if (!events.isEmpty()
                     && persistenceExceptionResolver != null
                     && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
                 throw new ConcurrencyException(
                         String.format("Concurrent modification detected for Aggregate identifier [%s], sequence: [%s]",
-                                      event.getAggregateIdentifier(),
-                                      event.getSequenceNumber()),
+                                      events.get(0).getAggregateIdentifier(),
+                                      events.get(0).getSequenceNumber()),
                         exception);
             }
             throw exception;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @SuppressWarnings({"unchecked"})
     @Override
-    public DomainEventStream readEvents(String type, String identifier) {
+    public DomainEventStream readEvents(String identifier) {
         long snapshotSequenceNumber = -1;
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        SerializedDomainEventData lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(type, identifier,
+        SerializedDomainEventData lastSnapshotEvent = eventEntryStore.loadLastSnapshotEvent(identifier,
                                                                                             entityManager);
         DomainEventMessage snapshotEvent = null;
         if (lastSnapshotEvent != null) {
@@ -205,44 +196,32 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         }
 
         Iterator<? extends SerializedDomainEventData> entries =
-                eventEntryStore.fetchAggregateStream(type, identifier, snapshotSequenceNumber + 1,
+                eventEntryStore.fetchAggregateStream(identifier, snapshotSequenceNumber + 1,
                                                      batchSize, entityManager);
         if (snapshotEvent == null && !entries.hasNext()) {
-            throw new EventStreamNotFoundException(type, identifier);
+            throw new EventStreamNotFoundException(identifier);
         }
         return new CursorBackedDomainEventStream(snapshotEvent, entries, false);
     }
 
     @Override
-    public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber) {
-        return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
-    }
-
-    @Override
-    public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+    public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                         long lastSequenceNumber) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         int minimalBatchSize = (int) Math.min(batchSize, (lastSequenceNumber - firstSequenceNumber) + 2);
-        Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(type,
-                                                                                                     identifier,
+        Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(identifier,
                                                                                                      firstSequenceNumber,
                                                                                                      minimalBatchSize,
                                                                                                      entityManager);
         if (!entries.hasNext()) {
-            throw new EventStreamNotFoundException(type, identifier);
+            throw new EventStreamNotFoundException(identifier);
         }
         return new CursorBackedDomainEventStream(null, entries, lastSequenceNumber, false);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * Upon appending a snapshot, this particular EventStore implementation also prunes snapshots which are considered
-     * redundant because they fall outside of the range of maximum snapshots to archive.
-     */
     @SuppressWarnings("unchecked")
     @Override
-    public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) {
+    public void appendSnapshotEvent(DomainEventMessage snapshotEvent) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         // Persist snapshot before pruning redundant archived ones, in order to prevent snapshot misses when reloading
         // an aggregate, which may occur when a READ_UNCOMMITTED transaction isolation level is used.
@@ -250,9 +229,9 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
         SerializedObject serializedPayload = serializer.serializePayload(snapshotEvent, dataType);
         SerializedObject serializedMetaData = serializer.serializeMetaData(snapshotEvent, dataType);
         try {
-            eventEntryStore.persistSnapshot(type, snapshotEvent, serializedPayload, serializedMetaData, entityManager);
+            eventEntryStore.persistSnapshot(snapshotEvent, serializedPayload, serializedMetaData, entityManager);
             if (maxSnapshotsArchived > 0) {
-                eventEntryStore.pruneSnapshots(type, snapshotEvent, maxSnapshotsArchived,
+                eventEntryStore.pruneSnapshots(snapshotEvent, maxSnapshotsArchived,
                                                entityManagerProvider.getEntityManager());
             }
 
@@ -361,11 +340,11 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
 
     private final class CursorBackedDomainEventStream implements DomainEventStream, Closeable {
 
-        private Iterator<DomainEventMessage> currentBatch;
-        private DomainEventMessage next;
         private final Iterator<? extends SerializedDomainEventData> cursor;
         private final long lastSequenceNumber;
         private final boolean skipUnknownTypes;
+        private Iterator<DomainEventMessage> currentBatch;
+        private DomainEventMessage next;
 
         public CursorBackedDomainEventStream(DomainEventMessage snapshotEvent,
                                              Iterator<? extends SerializedDomainEventData> cursor,

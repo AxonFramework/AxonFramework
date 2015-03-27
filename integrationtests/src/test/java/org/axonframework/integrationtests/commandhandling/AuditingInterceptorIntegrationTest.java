@@ -20,18 +20,18 @@ import org.axonframework.auditing.AuditingInterceptor;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;
-import org.junit.internal.matchers.*;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.mockito.Mockito.*;
@@ -84,10 +84,10 @@ public class AuditingInterceptorIntegrationTest {
 
         commandBus.dispatch(asCommandMessage("command"));
 
-        verify(eventStore).appendEvents(eq("StubAggregate"), argThat(new TypeSafeMatcher<DomainEventStream>() {
+        verify(eventStore).appendEvents(argThat(new TypeSafeMatcher<List<DomainEventMessage<?>>>() {
             @Override
-            public boolean matchesSafely(DomainEventStream item) {
-                DomainEventMessage first = item.peek();
+            public boolean matchesSafely(List<DomainEventMessage<?>> item) {
+                DomainEventMessage first = item.get(0);
                 return "data".equals(first.getMetaData().get("audit"));
             }
 

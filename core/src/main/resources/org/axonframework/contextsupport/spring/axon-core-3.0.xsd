@@ -47,7 +47,7 @@
                     <xsd:attribute name="terminal" type="xsd:string" use="optional">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the EventBusTerminal implementation that publishes all
-                                EventMessages to all the Clusters, either in this VM or across VM's. Defaults to
+                                EventMessages to all the Clusters, either in this VM or across VMs. Defaults to
                                 an instance that dispatches directly to all known local clusters (i.e. SimpleEventBus
                                 behavior).
                             </xsd:documentation>
@@ -151,7 +151,7 @@
                                 <xsd:appinfo>
                                     <tool:annotation kind="ref">
                                         <tool:expected-type
-                                                type="org.axonframework.eventstore.management.EventStoreManagement"/>
+                                                type="org.axonframework.eventstore.EventStoreManagement"/>
                                     </tool:annotation>
                                 </xsd:appinfo>
                             </xsd:annotation>

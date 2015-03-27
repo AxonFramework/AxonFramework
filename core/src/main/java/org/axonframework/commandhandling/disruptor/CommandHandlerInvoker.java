@@ -52,7 +52,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<>();
     private static final Object PLACEHOLDER_VALUE = new Object();
 
-    private final ConcurrentMap<String, DisruptorRepository> repositories = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, DisruptorRepository> repositories = new ConcurrentHashMap<>();
     private final Cache cache;
     private final int segmentId;
     private final EventStore eventStore;
@@ -77,16 +77,16 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * <p/>
      * Calling this method from any other thread will return <code>null</code>.
      *
-     * @param typeIdentifier The type identifier of the aggregate
-     * @param <T>            The type of aggregate
+     * @param type The type of aggregate
+     * @param <T>  The type of aggregate
      * @return the repository instance for aggregate of given type
      */
     @SuppressWarnings("unchecked")
-    public static <T extends EventSourcedAggregateRoot> DisruptorRepository<T> getRepository(String typeIdentifier) {
+    public static <T extends EventSourcedAggregateRoot> DisruptorRepository<T> getRepository(Class<?> type) {
         final CommandHandlerInvoker invoker = CURRENT_INVOKER.get();
         Assert.state(invoker != null, "The repositories of a DisruptorCommandBus are only available "
                 + "in the invoker thread");
-        return invoker.repositories.get(typeIdentifier);
+        return invoker.repositories.get(type);
     }
 
     @Override
@@ -119,10 +119,10 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     @SuppressWarnings("unchecked")
     public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
                                                                                 EventStreamDecorator decorator) {
-        String typeIdentifier = aggregateFactory.getTypeIdentifier();
+        Class<T> typeIdentifier = aggregateFactory.getAggregateType();
         if (!repositories.containsKey(typeIdentifier)) {
             DisruptorRepository<T> repository = new DisruptorRepository<>(aggregateFactory, cache, eventStore,
-                                                                           decorator);
+                                                                          decorator);
             repositories.putIfAbsent(typeIdentifier, repository);
         }
         return repositories.get(typeIdentifier);
@@ -156,7 +156,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private final EventStreamDecorator decorator;
         private final AggregateFactory<T> aggregateFactory;
         private final Map<T, Object> firstLevelCache = new WeakHashMap<>();
-        private final String typeIdentifier;
         private final Cache cache;
 
         private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
@@ -165,7 +164,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             this.cache = cache;
             this.eventStore = eventStore;
             this.decorator = decorator;
-            this.typeIdentifier = this.aggregateFactory.getTypeIdentifier();
         }
 
         @Override
@@ -199,8 +197,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                              aggregateIdentifier);
                 DomainEventStream events = null;
                 try {
-                    events = decorator.decorateForRead(typeIdentifier, aggregateIdentifier,
-                                                       eventStore.readEvents(typeIdentifier, aggregateIdentifier));
+                    events = decorator.decorateForRead(aggregateIdentifier,
+                                                       eventStore.readEvents(aggregateIdentifier));
                     if (events.hasNext()) {
                         aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
                         aggregateRoot.initializeState(events);
@@ -222,7 +220,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             }
             if (aggregateRoot != null) {
                 DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
-                unitOfWork.setAggregateType(typeIdentifier);
                 unitOfWork.setEventStreamDecorator(decorator);
                 unitOfWork.registerAggregate(aggregateRoot, null, null);
             }
@@ -233,7 +230,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         public void add(T aggregate) {
             DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
             unitOfWork.setEventStreamDecorator(decorator);
-            unitOfWork.setAggregateType(typeIdentifier);
             unitOfWork.registerAggregate(aggregate, null, null);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
             cache.put(aggregate.getIdentifier(), aggregate);

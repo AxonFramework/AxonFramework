@@ -25,6 +25,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
@@ -35,6 +36,7 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.OptimisticLockManager;
 import org.axonframework.repository.PessimisticLockManager;
@@ -42,6 +44,7 @@ import org.axonframework.repository.Repository;
 import org.junit.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +74,7 @@ public class SynchronousLoopbackTest {
         commandBus = new SimpleCommandBus();
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
-        eventStore.appendEvents("CountingAggregate", new SimpleDomainEventStream(
+        eventStore.appendEvents(Arrays.asList(
                 new GenericDomainEventMessage<>(aggregateIdentifier, 0,
                                                 new AggregateCreatedEvent(aggregateIdentifier),
                                                 null
@@ -130,7 +133,7 @@ public class SynchronousLoopbackTest {
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
+        DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
@@ -140,7 +143,7 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
+        verify(eventStore, times(3)).appendEvents(anyList());
     }
 
     @Test
@@ -164,7 +167,7 @@ public class SynchronousLoopbackTest {
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
+        DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
@@ -174,7 +177,7 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
+        verify(eventStore, times(3)).appendEvents(anyList());
     }
 
     @Test
@@ -201,7 +204,7 @@ public class SynchronousLoopbackTest {
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
+        DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
@@ -211,7 +214,7 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
+        verify(eventStore, times(3)).appendEvents(anyList());
     }
 
     @Test
@@ -239,7 +242,7 @@ public class SynchronousLoopbackTest {
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
+        DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
@@ -249,7 +252,7 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
+        verify(eventStore, times(3)).appendEvents(anyList());
     }
 
     private static class CounterCommandHandler {
@@ -343,14 +346,14 @@ public class SynchronousLoopbackTest {
         }
     }
 
-    private static class InMemoryEventStore implements EventStore {
+    private class InMemoryEventStore implements EventStore {
 
-        private Map<Object, List<DomainEventMessage>> store = new HashMap<>();
+        protected Map<Object, List<DomainEventMessage>> store = new HashMap<>();
 
         @Override
-        public void appendEvents(String identifier, DomainEventStream events) {
-            while (events.hasNext()) {
-                DomainEventMessage next = events.next();
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            for (EventMessage event : events) {
+                DomainEventMessage next = (DomainEventMessage) event;
                 if (!store.containsKey(next.getAggregateIdentifier())) {
                     store.put(next.getAggregateIdentifier(), new ArrayList<>());
                 }
@@ -360,16 +363,20 @@ public class SynchronousLoopbackTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier) {
-            List<DomainEventMessage> events = store.get(identifier);
-            events = events == null ? new ArrayList<>() : events;
-            return new SimpleDomainEventStream(events);
-        }
-
-        @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
-            throw new UnsupportedOperationException("Not implemented yet");
+            if (!store.containsKey(identifier)) {
+                throw new AggregateNotFoundException(identifier, "Aggregate not found");
+            }
+            final List<DomainEventMessage> events = store.get(identifier);
+            List<DomainEventMessage> filteredEvents = new ArrayList<>();
+            for (DomainEventMessage message : events) {
+                if (message.getSequenceNumber() >= firstSequenceNumber
+                        && message.getSequenceNumber() <= lastSequenceNumber) {
+                    filteredEvents.add(message);
+                }
+            }
+            return new SimpleDomainEventStream(filteredEvents);
         }
     }
 }

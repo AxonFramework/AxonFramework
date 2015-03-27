@@ -17,6 +17,8 @@
 package org.axonframework.domain;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 import javax.persistence.Basic;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
@@ -26,14 +28,14 @@ import javax.persistence.Version;
  * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
  * events and maintains a version number based on the number of events generated.
  *
- * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @since 0.6
  */
 @MappedSuperclass
-public abstract class AbstractAggregateRoot<I> implements AggregateRoot, Serializable {
+public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
+    private static final List<DomainEventMessage<?>> NO_MESSAGES = Collections.emptyList();
 
     @Transient
     private volatile EventContainer eventContainer;
@@ -109,9 +111,9 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot, Seriali
      * {@inheritDoc}
      */
     @Override
-    public DomainEventStream getUncommittedEvents() {
+    public List<DomainEventMessage<?>> getUncommittedEvents() {
         if (eventContainer == null) {
-            return SimpleDomainEventStream.emptyStream();
+            return NO_MESSAGES;
         }
         return eventContainer.getEventStream();
     }

@@ -41,7 +41,7 @@ public interface UpcastingContext {
      *
      * @return the Identifier of the Aggregate to which the Event was applied, or <code>null</code> if not applicable
      */
-    Object getAggregateIdentifier();
+    String getAggregateIdentifier();
 
     /**
      * Returns the sequence number of the event in the aggregate, or <code>null</code> if the message wrapping the

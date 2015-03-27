@@ -34,12 +34,12 @@ public class LockManagerTest {
     private static final int ATTEMPTS = 3000;
 
     private LockManager lockManager;
-    private UUID aggregateIdentifier;
+    private String aggregateIdentifier;
 
     @Before
     public void setup() {
         lockManager = new PessimisticLockManager();
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = UUID.randomUUID().toString();
     }
 
     @Test

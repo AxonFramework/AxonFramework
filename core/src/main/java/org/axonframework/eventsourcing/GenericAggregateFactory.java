@@ -40,7 +40,6 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
  */
 public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extends AbstractAggregateFactory<T> {
 
-    private final String typeIdentifier;
     private final Class<T> aggregateType;
     private final Constructor<T> constructor;
 
@@ -76,7 +75,6 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
                       "The given aggregateType must be a subtype of EventSourcedAggregateRoot");
         Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
         this.aggregateType = aggregateType;
-        this.typeIdentifier = aggregateType.getSimpleName();
         try {
             this.constructor = ensureAccessible(aggregateType.getDeclaredConstructor());
         } catch (NoSuchMethodException e) {
@@ -112,11 +110,6 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
                     "The no-arg constructor of [%s] threw an exception on invocation.",
                     aggregateType.getSimpleName()), e);
         }
-    }
-
-    @Override
-    public String getTypeIdentifier() {
-        return typeIdentifier;
     }
 
     @Override

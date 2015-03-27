@@ -42,30 +42,28 @@ public class DomainEventEntry extends AbstractEventEntry {
     /**
      * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type     The type identifier of the aggregate root the event belongs to
      * @param event    The event to store in the eventstore
      * @param payload  The serialized version of the Event
      * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage<?> event,
+    public DomainEventEntry(DomainEventMessage<?> event,
                             SerializedObject<byte[]> payload,
                             SerializedObject<byte[]> metaData) {
-        super(type, event, payload, metaData);
+        super(event, payload, metaData);
     }
 
     /**
      * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type     The type identifier of the aggregate root the event belongs to
      * @param event    The event to store in the eventstore
      * @param dateTime The timestamp to store in the Event Store
      * @param payload  The serialized version of the Event
      * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage<?> event, DateTime dateTime,
+    public DomainEventEntry(DomainEventMessage<?> event, DateTime dateTime,
                             SerializedObject<byte[]> payload,
                             SerializedObject<byte[]> metaData) {
-        super(type, event, dateTime, payload, metaData);
+        super(event, dateTime, payload, metaData);
     }
 
 

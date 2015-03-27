@@ -63,11 +63,10 @@ public class DomainEventEntryTest {
         when(mockDomainEvent.getIdentifier()).thenReturn(eventIdentifier.toString());
         when(mockDomainEvent.getPayloadType()).thenReturn(String.class);
 
-        DomainEventEntry actualResult = new DomainEventEntry("test", mockDomainEvent, mockPayload, mockMetaData);
+        DomainEventEntry actualResult = new DomainEventEntry(mockDomainEvent, mockPayload, mockMetaData);
 
         assertEquals(aggregateIdentifier, actualResult.getAggregateIdentifier());
         assertEquals(2L, actualResult.getSequenceNumber());
         assertEquals(timestamp, actualResult.getTimestamp());
-        assertEquals("test", actualResult.getType());
     }
 }

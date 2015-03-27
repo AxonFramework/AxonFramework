@@ -4,6 +4,7 @@ import org.axonframework.cache.Cache;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -17,6 +18,7 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
+import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
 
 import java.util.Collections;
@@ -51,9 +53,10 @@ public class CommandHandlerInvokerTest {
                                    Collections.<CommandHandlerInterceptor>emptyList(),
                                    Collections.<CommandHandlerInterceptor>emptyList());
         eventStreamDecorator = mock(EventStreamDecorator.class);
-        when(eventStreamDecorator.decorateForAppend(anyString(), any(EventSourcedAggregateRoot.class), any(DomainEventStream.class))).thenAnswer(new ReturnsArgumentAt(2));
-        when(eventStreamDecorator.decorateForRead(anyString(), any(), any(DomainEventStream.class))).thenAnswer(
-                new ReturnsArgumentAt(2));
+        when(eventStreamDecorator.decorateForAppend(any(EventSourcedAggregateRoot.class), anyList()))
+                .thenAnswer(new ReturnsArgumentAt(1));
+        when(eventStreamDecorator.decorateForRead(any(), any(DomainEventStream.class)))
+                .thenAnswer(new ReturnsArgumentAt(1));
     }
 
     @Test
@@ -61,14 +64,14 @@ public class CommandHandlerInvokerTest {
         final Repository<StubAggregate> repository = testSubject.createRepository(
                 new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
-        when(mockEventStore.readEvents(anyString(), anyObject()))
+        when(mockEventStore.readEvents(anyObject()))
                 .thenReturn(new SimpleDomainEventStream(
-                        new GenericDomainEventMessage(aggregateIdentifier, 0, aggregateIdentifier)));
+                        new GenericDomainEventMessage<>(aggregateIdentifier, 0, aggregateIdentifier)));
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).get(aggregateIdentifier);
         verify(mockCache).put(eq(aggregateIdentifier), isA(StubAggregate.class));
-        verify(mockEventStore).readEvents(anyString(), eq(aggregateIdentifier));
+        verify(mockEventStore).readEvents(eq(aggregateIdentifier));
     }
 
     @Test
@@ -80,7 +83,7 @@ public class CommandHandlerInvokerTest {
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).get(aggregateIdentifier);
-        verify(mockEventStore, never()).readEvents(anyString(), eq(aggregateIdentifier));
+        verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
     }
 
     @Test
@@ -97,8 +100,9 @@ public class CommandHandlerInvokerTest {
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).put(eq(aggregateIdentifier), isA(StubAggregate.class));
-        verify(mockEventStore, never()).readEvents(anyString(), eq(aggregateIdentifier));
-        verify(mockEventStore, never()).appendEvents(anyString(), any(DomainEventStream.class));
+        verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
+        verify(mockEventStore, never()).appendEvents(anyList());
+        verify(mockEventStore, never()).appendEvents(Matchers.<DomainEventMessage<?>[]>anyVararg());
         assertTrue(commandHandlingEntry.getUnitOfWork().getAggregate() instanceof StubAggregate);
     }
 
@@ -108,7 +112,7 @@ public class CommandHandlerInvokerTest {
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).remove(aggregateIdentifier);
-        verify(mockEventStore, never()).readEvents(anyString(), eq(aggregateIdentifier));
+        verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
     }
 
     @Test

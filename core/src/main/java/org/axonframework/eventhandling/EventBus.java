@@ -42,7 +42,7 @@ public interface EventBus {
      *
      * @param events The collection of events to publish
      */
-    void publish(EventMessage... events);
+    void publish(EventMessage<?>... events);
 
     /**
      * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events

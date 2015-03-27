@@ -66,7 +66,7 @@ public class CommandHandlingTest {
         repository.load(aggregateIdentifier).doSomething();
         CurrentUnitOfWork.commit();
 
-        DomainEventStream es = mockEventStore.readEvents("", aggregateIdentifier);
+        DomainEventStream es = mockEventStore.readEvents(aggregateIdentifier);
         assertTrue(es.hasNext());
         assertEquals((Object) 0L, es.next().getSequenceNumber());
         assertTrue(es.hasNext());
@@ -83,20 +83,19 @@ public class CommandHandlingTest {
 
         private List<DomainEventMessage> storedEvents = new LinkedList<>();
 
+
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            while (events.hasNext()) {
-                storedEvents.add(events.next());
-            }
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            storedEvents.addAll(events);
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier) {
+        public DomainEventStream readEvents(String identifier) {
             return new SimpleDomainEventStream(new ArrayList<>(storedEvents));
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             return new SimpleDomainEventStream(
                     storedEvents.stream()

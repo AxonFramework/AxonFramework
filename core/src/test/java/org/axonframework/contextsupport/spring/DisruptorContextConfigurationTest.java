@@ -23,13 +23,14 @@ import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.repository.AggregateNotFoundException;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
@@ -37,9 +38,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -83,7 +85,7 @@ public class DisruptorContextConfigurationTest {
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new StubCommand("snapshottest")), callback);
         callback.awaitCompletion(1, TimeUnit.SECONDS);
 
-        Mockito.verify(mockSnaphotter).scheduleSnapshot("MyAggregate", "snapshottest");
+        Mockito.verify(mockSnaphotter).scheduleSnapshot(MyAggregate.class, "snapshottest");
     }
 
     public static class MyAggregate extends AbstractAnnotatedAggregateRoot {
@@ -132,34 +134,37 @@ public class DisruptorContextConfigurationTest {
 
     public static class InMemoryEventStore implements EventStore {
 
-        private final Map<String, DomainEventMessage> storedEvents = new ConcurrentHashMap<>();
+        protected Map<Object, List<DomainEventMessage>> store = new HashMap<>();
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            if (!events.hasNext()) {
-                return;
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            for (EventMessage event : events) {
+                if (event instanceof DomainEventMessage) {
+                    DomainEventMessage next = (DomainEventMessage) event;
+                    if (!store.containsKey(next.getAggregateIdentifier())) {
+                        store.put(next.getAggregateIdentifier(), new ArrayList<>());
+                    }
+                    List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
+                    eventList.add(next);
+                }
             }
-            String key = events.peek().getAggregateIdentifier().toString();
-            DomainEventMessage<?> lastEvent = null;
-            while (events.hasNext()) {
-                lastEvent = events.next();
-            }
-            storedEvents.put(key, lastEvent);
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier) {
-            DomainEventMessage message = storedEvents.get(identifier.toString());
-            if (message == null) {
-                throw new EventStreamNotFoundException(type, identifier);
-            }
-            return new SimpleDomainEventStream(Collections.singletonList(message));
-        }
-
-        @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
-            throw new UnsupportedOperationException("Not implemented");
+            if (!store.containsKey(identifier)) {
+                throw new AggregateNotFoundException(identifier, "Aggregate not found");
+            }
+            final List<DomainEventMessage> events = store.get(identifier);
+            List<DomainEventMessage> filteredEvents = new ArrayList<>();
+            for (DomainEventMessage message : events) {
+                if (message.getSequenceNumber() >= firstSequenceNumber
+                        && message.getSequenceNumber() <= lastSequenceNumber) {
+                    filteredEvents.add(message);
+                }
+            }
+            return new SimpleDomainEventStream(filteredEvents);
         }
     }
 }

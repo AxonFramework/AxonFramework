@@ -90,7 +90,7 @@ public interface FixtureConfiguration {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    GivenAggregateEventPublisher givenAggregate(Object aggregateIdentifier);
+    GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier);
 
     /**
      * Indicates that the given <code>applicationEvent</code> has been published in the past. This event is sent to the

@@ -79,7 +79,7 @@ public class AbstractEventSourcedAggregateRootTest {
 
         testSubject.commitEvents();
         assertEquals(new Long(1), testSubject.getVersion());
-        assertFalse(testSubject.getUncommittedEvents().hasNext());
+        assertEquals(0, testSubject.getUncommittedEvents().size());
     }
 
     /**

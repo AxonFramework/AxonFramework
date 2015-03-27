@@ -33,7 +33,7 @@ public class OptimisticLockManagerTest {
     @Test
     public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
         OptimisticLockManager manager = new OptimisticLockManager();
-        UUID identifier = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
         manager.obtainLock(identifier);
         manager.releaseLock(identifier);
 

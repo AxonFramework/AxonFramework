@@ -51,7 +51,7 @@ public class OptimisticLockManager implements LockManager {
      * {@inheritDoc}
      */
     @Override
-    public void obtainLock(Object aggregateIdentifier) {
+    public void obtainLock(String aggregateIdentifier) {
         boolean obtained = false;
         while (!obtained) {
             locks.putIfAbsent(aggregateIdentifier, new OptimisticLock());
@@ -67,7 +67,7 @@ public class OptimisticLockManager implements LockManager {
      * {@inheritDoc}
      */
     @Override
-    public void releaseLock(Object aggregateIdentifier) {
+    public void releaseLock(String aggregateIdentifier) {
         OptimisticLock lock = locks.get(aggregateIdentifier);
         if (lock != null) {
             lock.unlock(aggregateIdentifier);
@@ -76,8 +76,8 @@ public class OptimisticLockManager implements LockManager {
 
     private final class OptimisticLock {
 
-        private Long versionNumber;
         private final Map<Thread, Integer> threadsHoldingLock = new WeakHashMap<>();
+        private Long versionNumber;
         private boolean closed = false;
 
         private OptimisticLock() {
@@ -105,7 +105,7 @@ public class OptimisticLockManager implements LockManager {
             return true;
         }
 
-        private synchronized void unlock(Object aggregateIdentifier) {
+        private synchronized void unlock(String aggregateIdentifier) {
             Integer lockCount = threadsHoldingLock.get(Thread.currentThread());
             if (lockCount == null || lockCount == 1) {
                 threadsHoldingLock.remove(Thread.currentThread());

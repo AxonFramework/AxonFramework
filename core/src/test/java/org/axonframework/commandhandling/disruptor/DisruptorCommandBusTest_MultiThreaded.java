@@ -44,6 +44,7 @@ import org.junit.*;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -185,15 +186,15 @@ public class DisruptorCommandBusTest_MultiThreaded {
         private final AtomicInteger loadCounter = new AtomicInteger();
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            if (!events.hasNext()) {
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            if (events == null || events.isEmpty()) {
                 return;
             }
-            String key = events.peek().getAggregateIdentifier().toString();
+            String key = events.get(0).getAggregateIdentifier();
             DomainEventMessage<?> lastEvent = null;
-            while (events.hasNext()) {
+            for (EventMessage<?> event : events) {
                 storedEventCounter.incrementAndGet();
-                lastEvent = events.next();
+                lastEvent = (DomainEventMessage<?>) event;
                 if (FailingEvent.class.isAssignableFrom(lastEvent.getPayloadType())) {
                     throw new MockException("This is a failing event. EventStore refuses to store that");
                 }
@@ -202,17 +203,17 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier) {
+        public DomainEventStream readEvents(String identifier) {
             loadCounter.incrementAndGet();
-            DomainEventMessage message = storedEvents.get(identifier.toString());
+            DomainEventMessage message = storedEvents.get(identifier);
             if (message == null) {
-                throw new EventStreamNotFoundException(type, identifier);
+                throw new EventStreamNotFoundException(identifier);
             }
             return new SimpleDomainEventStream(Collections.singletonList(message));
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }

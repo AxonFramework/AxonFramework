@@ -46,13 +46,13 @@ import static org.mockito.Mockito.*;
  */
 public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtExceptionHandler {
 
+    private static final int CONCURRENT_MODIFIERS = 10;
     private EventSourcingRepository<SimpleAggregateRoot> repository;
     private String aggregateIdentifier;
     private EventBus mockEventBus;
     private EventStore eventStore;
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
     private List<Thread> startedThreads = new ArrayList<>();
-    private static final int CONCURRENT_MODIFIERS = 10;
 
     @Test(timeout = 60000)
     public void testPessimisticLocking() throws Throwable {
@@ -75,7 +75,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         int expectedEventCount = getSuccessfulModifications() * 2;
         assertTrue("It seems that no events have been published at all", lastSequenceNumber >= 0);
         // we publish two events at the time
-        verify(mockEventBus, times(expectedEventCount / 2)).publish(isA(DomainEventMessage.class), isA(DomainEventMessage.class));
+        verify(mockEventBus, times(expectedEventCount / 2)).publish(isA(DomainEventMessage.class), isA(
+                DomainEventMessage.class));
     }
 
     private int getSuccessfulModifications() {
@@ -85,7 +86,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private void initializeRepository(LockManager strategy) {
         eventStore = new InMemoryEventStore();
         repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore,
-                                                                      strategy);
+                                                   strategy);
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
 
@@ -115,7 +116,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
             }
         }
 
-        DomainEventStream committedEvents = eventStore.readEvents("SimpleAggregateRoot", aggregateIdentifier);
+        DomainEventStream committedEvents = eventStore.readEvents(aggregateIdentifier);
         long lastSequenceNumber = -1;
         while (committedEvents.hasNext()) {
             DomainEventMessage nextEvent = committedEvents.next();
@@ -203,13 +204,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @Override
         public SimpleAggregateRoot doCreateAggregate(String aggregateIdentifier,
-                                                   DomainEventMessage firstEvent) {
+                                                     DomainEventMessage firstEvent) {
             return new SimpleAggregateRoot(aggregateIdentifier);
-        }
-
-        @Override
-        public String getTypeIdentifier() {
-            return "SimpleAggregateRoot";
         }
 
         @Override
@@ -223,14 +219,12 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         private List<DomainEventMessage> domainEvents = new ArrayList<>();
 
         @Override
-        public synchronized void appendEvents(String type, DomainEventStream events) {
-            while (events.hasNext()) {
-                domainEvents.add(events.next());
-            }
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            domainEvents.addAll(events);
         }
 
         @Override
-        public synchronized DomainEventStream readEvents(String type, String identifier) {
+        public synchronized DomainEventStream readEvents(String identifier) {
             List<DomainEventMessage> relevant = new ArrayList<>();
             for (DomainEventMessage event : domainEvents) {
                 if (event.getAggregateIdentifier().equals(identifier)) {
@@ -242,7 +236,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }

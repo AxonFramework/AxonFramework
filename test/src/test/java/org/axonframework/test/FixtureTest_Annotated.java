@@ -19,10 +19,10 @@ package org.axonframework.test;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
 import org.junit.*;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -71,7 +71,7 @@ public class FixtureTest_Annotated {
                .when(new TestCommand("AggregateId"))
                .expectEvents(new MyEvent("AggregateId", 3));
 
-        DomainEventStream events = fixture.getEventStore().readEvents("StandardAggregate", "AggregateId");
+        DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {
             assertTrue(events.hasNext());
             DomainEventMessage next = events.next();
@@ -107,7 +107,7 @@ public class FixtureTest_Annotated {
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
+        fixture.getEventStore().appendEvents(Arrays.asList(
                 new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
                 new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
     }
@@ -115,7 +115,7 @@ public class FixtureTest_Annotated {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
+        fixture.getEventStore().appendEvents(Arrays.asList(
                 new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
                 new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
     }

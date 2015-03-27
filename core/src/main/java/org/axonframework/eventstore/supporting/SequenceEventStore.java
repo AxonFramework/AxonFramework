@@ -29,6 +29,7 @@ import org.axonframework.eventstore.management.EventStoreManagement;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Supplier;
 
 /**
@@ -80,30 +81,30 @@ public class SequenceEventStore implements EventStore, EventStoreManagement {
     }
 
     @Override
-    public synchronized void appendEvents(String type, DomainEventStream events) {
-        second.appendEvents(type, events);
+    public void appendEvents(List<DomainEventMessage<?>> events) {
+        second.appendEvents(events);
     }
 
     @Override
-    public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+    public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                         long lastSequenceNumber) {
         return new JoinedDomainEventStream(
-                ignoreMissing(() -> first.readEvents(type, identifier, firstSequenceNumber, lastSequenceNumber)),
-                second.readEvents(type, identifier, firstSequenceNumber, lastSequenceNumber));
+                ignoreMissing(() -> first.readEvents(identifier, firstSequenceNumber, lastSequenceNumber)),
+                second.readEvents(identifier, firstSequenceNumber, lastSequenceNumber));
     }
 
     @Override
-    public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber) {
+    public DomainEventStream readEvents(String identifier, long firstSequenceNumber) {
         return new JoinedDomainEventStream(
-                ignoreMissing(() -> first.readEvents(type, identifier, firstSequenceNumber)),
-                second.readEvents(type, identifier, firstSequenceNumber));
+                ignoreMissing(() -> first.readEvents(identifier, firstSequenceNumber)),
+                second.readEvents(identifier, firstSequenceNumber));
     }
 
     @Override
-    public synchronized DomainEventStream readEvents(String type, String identifier) {
+    public synchronized DomainEventStream readEvents(String identifier) {
         return new JoinedDomainEventStream(
-                ignoreMissing(() -> first.readEvents(type, identifier)),
-                second.readEvents(type, identifier));
+                ignoreMissing(() -> first.readEvents(identifier)),
+                second.readEvents(identifier));
     }
 
     private DomainEventStream ignoreMissing(Supplier<DomainEventStream> readEventsFunction) {

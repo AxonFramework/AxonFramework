@@ -20,7 +20,7 @@ import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.RollbackConfiguration;
-import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
@@ -204,9 +204,9 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     private void storeAndPublish(DisruptorUnitOfWork unitOfWork) {
-        DomainEventStream eventsToStore = unitOfWork.getEventsToStore();
-        if (eventsToStore.hasNext()) {
-            eventStore.appendEvents(unitOfWork.getAggregateType(), eventsToStore);
+        List<DomainEventMessage<?>> eventsToStore = unitOfWork.getEventsToStore();
+        if (eventsToStore != null && !eventsToStore.isEmpty()) {
+            eventStore.appendEvents(eventsToStore);
         }
         List<EventMessage> eventMessages = unitOfWork.getEventsToPublish();
         EventMessage[] eventsToPublish = eventMessages.toArray(new EventMessage[eventMessages.size()]);

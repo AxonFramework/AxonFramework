@@ -57,21 +57,21 @@ public final class DefaultEventEntryFactory implements EventEntryFactory<byte[]>
     }
 
     @Override
-    public Object createDomainEventEntry(String aggregateType, DomainEventMessage event,
+    public Object createDomainEventEntry(DomainEventMessage event,
                                          SerializedObject<byte[]> serializedPayload,
                                          SerializedObject<byte[]> serializedMetaData) {
         DateTime timestamp = event.getTimestamp();
         if (forceUtc) {
             timestamp = event.getTimestamp().toDateTime(DateTimeZone.UTC);
         }
-        return new DomainEventEntry(aggregateType, event, timestamp, serializedPayload, serializedMetaData);
+        return new DomainEventEntry(event, timestamp, serializedPayload, serializedMetaData);
     }
 
     @Override
-    public Object createSnapshotEventEntry(String aggregateType, DomainEventMessage snapshotEvent,
+    public Object createSnapshotEventEntry(DomainEventMessage snapshotEvent,
                                            SerializedObject<byte[]> serializedPayload,
                                            SerializedObject<byte[]> serializedMetaData) {
-        return new SnapshotEventEntry(aggregateType, snapshotEvent, serializedPayload, serializedMetaData);
+        return new SnapshotEventEntry(snapshotEvent, serializedPayload, serializedMetaData);
     }
 
     @Override

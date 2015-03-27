@@ -27,25 +27,19 @@ import org.axonframework.eventstore.management.EventStoreManagement;
 import org.joda.time.DateTime;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Knut-Olav Hoven
  */
 public class VolatileEventStore implements EventStore, EventStoreManagement {
 
-    static class AggregateTypedEventMessage {
-
-        String type;
-        DomainEventMessage<?> eventMessage;
-    }
-
-    private final ArrayList<AggregateTypedEventMessage> volatileEvents = new ArrayList<AggregateTypedEventMessage>();
+    private final ArrayList<DomainEventMessage<?>> volatileEvents = new ArrayList<>();
 
     @Override
     public synchronized void visitEvents(EventVisitor visitor) {
-        for (AggregateTypedEventMessage eventMessage : volatileEvents) {
-            visitor.doWithEvent(eventMessage.eventMessage);
-        }
+        volatileEvents.forEach(visitor::doWithEvent);
     }
 
     @Override
@@ -59,29 +53,24 @@ public class VolatileEventStore implements EventStore, EventStoreManagement {
     }
 
     @Override
-    public synchronized void appendEvents(String type, DomainEventStream events) {
-        while (events.hasNext()) {
-            AggregateTypedEventMessage obj = new AggregateTypedEventMessage();
-            obj.type = type;
-            obj.eventMessage = events.next();
-            volatileEvents.add(obj);
-        }
+    public synchronized void appendEvents(List<DomainEventMessage<?>> events) {
+        volatileEvents.addAll(events);
     }
 
     @Override
-    public synchronized DomainEventStream readEvents(String type, String identifier,
+    public DomainEventStream readEvents(String identifier) {
+        return readEvents(identifier, 0, Long.MAX_VALUE);
+    }
+
+    @Override
+    public synchronized DomainEventStream readEvents(String identifier,
                                                      long firstSequenceNumber, long lastSequenceNumber) {
-        ArrayList<DomainEventMessage<?>> selection = new ArrayList<DomainEventMessage<?>>();
-        for (AggregateTypedEventMessage typedMessage : volatileEvents) {
-            if (typedMessage.type.equals(type)) {
-                DomainEventMessage<?> evMsg = typedMessage.eventMessage;
-                if (identifier.equals(evMsg.getAggregateIdentifier())
-                        && evMsg.getSequenceNumber() >= firstSequenceNumber
-                        && evMsg.getSequenceNumber() <= lastSequenceNumber) {
-                    selection.add(typedMessage.eventMessage);
-                }
-            }
-        }
+        List<DomainEventMessage<?>> selection = volatileEvents
+                .stream()
+                .filter(message -> identifier.equals(message.getAggregateIdentifier())
+                        && message.getSequenceNumber() >= firstSequenceNumber
+                        && message.getSequenceNumber() <= lastSequenceNumber)
+                .collect(Collectors.toList());
 
         return new SimpleDomainEventStream(selection);
     }

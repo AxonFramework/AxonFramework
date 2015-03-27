@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventstore.EventStore;
 import org.junit.*;
@@ -70,18 +69,18 @@ public class SpringAggregateSnapshotterIntegrationTest {
     @Test
     public void testDuplicateSnapshotIsIgnored() throws Exception {
         final ExecutorService executor = Executors.newFixedThreadPool(2);
-        snapshotter.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(new GenericAggregateFactory<>(StubAggregate.class)));
+        snapshotter.setAggregateFactories(Arrays.asList(new GenericAggregateFactory<>(StubAggregate.class)));
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                eventStore.appendEvents("StubAggregate", new SimpleDomainEventStream(new GenericDomainEventMessage("id1", 0, "Payload1"),
-                                                                                     new GenericDomainEventMessage("id1", 1, "Payload2")));
+                eventStore.appendEvents(Arrays.asList(new GenericDomainEventMessage<>("id1", 0, "Payload1"),
+                                                      new GenericDomainEventMessage<>("id1", 1, "Payload2")));
             }
         });
         try {
             snapshotter.setExecutor(executor);
-            snapshotter.scheduleSnapshot("StubAggregate", "id1");
-            snapshotter.scheduleSnapshot("StubAggregate", "id1");
+            snapshotter.scheduleSnapshot(StubAggregate.class, "id1");
+            snapshotter.scheduleSnapshot(StubAggregate.class, "id1");
         } finally {
             executor.shutdown();
             executor.awaitTermination(1, TimeUnit.MINUTES);

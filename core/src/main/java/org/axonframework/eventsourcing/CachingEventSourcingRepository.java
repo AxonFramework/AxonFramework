@@ -18,12 +18,17 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -40,8 +45,8 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  */
 public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot> extends EventSourcingRepository<T> {
 
-    private Cache cache = NoCache.INSTANCE;
     private final EventStore eventStore;
+    private Cache cache = NoCache.INSTANCE;
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
@@ -108,14 +113,24 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
         } else if (!hasExpectedVersion(expectedVersion, aggregate.getVersion())) {
             // the event store support partial stream reading, so let's read the unseen events
-            resolveConflicts(aggregate, eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier,
-                                                              expectedVersion + 1, aggregate.getVersion()));
+            resolveConflicts(aggregate,
+                             readToList(eventStore.readEvents(aggregateIdentifier,
+                                                              expectedVersion + 1, aggregate.getVersion())));
         } else if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
         CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
         return aggregate;
     }
+
+    private List<DomainEventMessage<?>> readToList(DomainEventStream domainEventStream) {
+        List<DomainEventMessage<?>> unseenEvents = new ArrayList<>();
+        while (domainEventStream.hasNext()) {
+            unseenEvents.add(domainEventStream.next());
+        }
+        return unseenEvents;
+    }
+
 
     private boolean hasExpectedVersion(Long expectedVersion, Long actualVersion) {
         return expectedVersion == null || (actualVersion != null && actualVersion.equals(expectedVersion));
@@ -132,9 +147,9 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
 
     private class CacheClearingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
 
-        private final Object identifier;
+        private final String identifier;
 
-        public CacheClearingUnitOfWorkListener(Object identifier) {
+        public CacheClearingUnitOfWorkListener(String identifier) {
             this.identifier = identifier;
         }
 

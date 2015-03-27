@@ -105,11 +105,6 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
         }
 
         @Override
-        public String getTypeIdentifier() {
-            return StandardAggregate.class.getSimpleName();
-        }
-
-        @Override
         public Class<StandardAggregate> getAggregateType() {
             return StandardAggregate.class;
         }

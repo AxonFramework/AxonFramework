@@ -16,6 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventRegistrationCallback;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -47,85 +48,6 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
 public class RepositoryBeanDefinitionParserTest {
-
-    /**
-     * Mock {@link EventSourcedAggregateRoot} instance for the test.
-     *
-     * @author Ben Z. Tels
-     */
-    public static class EventSourcedAggregateRootMock implements EventSourcedAggregateRoot {
-
-        @AggregateIdentifier
-        private String id;
-
-        /**
-         *
-         */
-        public EventSourcedAggregateRootMock() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String getIdentifier() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void commitEvents() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int getUncommittedEventCount() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public DomainEventStream getUncommittedEvents() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean isDeleted() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        @Override
-        public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Long getVersion() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void initializeState(DomainEventStream domainEventStream) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-    }
 
     @Autowired
     private DefaultListableBeanFactory beanFactory;
@@ -199,7 +121,7 @@ public class RepositoryBeanDefinitionParserTest {
         ValueHolder secondArgument = beanDefinition.getConstructorArgumentValues().getArgumentValue(1, EventStore.class);
         assertNotNull("Second argument is wrong", secondArgument);
         assertEquals("Second argument is wrong", RuntimeBeanReference.class, secondArgument.getValue().getClass());
-        assertEquals("Wrong reference", "eventStore", ((RuntimeBeanReference)secondArgument.getValue()).getBeanName());
+        assertEquals("Wrong reference", "eventStore", ((RuntimeBeanReference) secondArgument.getValue()).getBeanName());
 
         ValueHolder thirdArgument = beanDefinition.getConstructorArgumentValues()
                                                    .getArgumentValue(2, BeanReference.class);
@@ -279,5 +201,84 @@ public class RepositoryBeanDefinitionParserTest {
                 "snapshotterTrigger");
         assertNotNull(snapshotTrigger);
 //        snapshotTrigger.
+    }
+
+    /**
+     * Mock {@link EventSourcedAggregateRoot} instance for the test.
+     *
+     * @author Ben Z. Tels
+     */
+    public static class EventSourcedAggregateRootMock implements EventSourcedAggregateRoot {
+
+        @AggregateIdentifier
+        private String id;
+
+        /**
+         *
+         */
+        public EventSourcedAggregateRootMock() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getIdentifier() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void commitEvents() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int getUncommittedEventCount() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public List<DomainEventMessage<?>> getUncommittedEvents() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isDeleted() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        @Override
+        public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public Long getVersion() {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void initializeState(DomainEventStream domainEventStream) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
     }
 }

@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -25,8 +24,8 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
@@ -35,6 +34,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -107,7 +107,7 @@ public class HybridJpaRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        verify(eventStore).appendEvents(eq("JpaEventSourcedAggregate"), streamContaining(1L));
+        verify(eventStore).appendEvents(streamContaining(1L));
         verify(eventListener).handle(isA(DomainEventMessage.class));
         assertNotNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier()));
     }
@@ -139,7 +139,7 @@ public class HybridJpaRepositoryTest {
         entityManager.flush();
         entityManager.clear();
 
-        verify(eventStore).appendEvents(eq("JpaEventSourcedAggregate"), streamContaining(2L));
+        verify(eventStore).appendEvents(streamContaining(2L));
         assertNull(entityManager.find(JpaEventSourcedAggregate.class, aggregate.getIdentifier()));
         verify(eventListener).handle(isEventWith(StubDomainEvent.class));
         verify(eventListener).handle(isEventWith(JpaEventSourcedAggregate.MyAggregateDeletedEvent.class));
@@ -177,31 +177,17 @@ public class HybridJpaRepositoryTest {
         verifyNoMoreInteractions(eventStore);
     }
 
-    private DomainEventStream streamContaining(final long expectedCount) {
-        return argThat(new BaseMatcher<DomainEventStream>() {
-
-            private Long previousCount = null;
+    private List<DomainEventMessage<?>> streamContaining(final long expectedCount) {
+        return argThat(new TypeSafeMatcher<List<DomainEventMessage<?>>>() {
 
             @Override
-            public boolean matches(Object o) {
-                if (previousCount != null) {
-                    return previousCount.equals(expectedCount);
-                }
-                long counter = 0;
-                if (o instanceof DomainEventStream) {
-                    DomainEventStream events = (DomainEventStream) o;
-                    while (events.hasNext()) {
-                        events.next();
-                        counter++;
-                    }
-                }
-                previousCount = counter;
-                return counter == expectedCount;
+            protected boolean matchesSafely(List<DomainEventMessage<?>> item) {
+                return item.size() == expectedCount;
             }
 
             @Override
             public void describeTo(Description description) {
-                description.appendText("DomainEventStream containing");
+                description.appendText("DomainEvents array containing");
                 description.appendValue(expectedCount);
                 description.appendText("events");
             }

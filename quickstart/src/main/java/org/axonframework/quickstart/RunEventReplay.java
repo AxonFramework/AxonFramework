@@ -20,7 +20,6 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.ClusteringEventBus;
 import org.axonframework.eventhandling.DefaultClusterSelector;
 import org.axonframework.eventhandling.EventBus;
@@ -86,7 +85,7 @@ public class RunEventReplay {
                         "todo2", 0, new ToDoItemCreatedEvent("todo2", "Another thing to do")),
                 new GenericDomainEventMessage<>("todo2", 0, new ToDoItemCompletedEvent("todo2"))
         };
-        eventStore.appendEvents("mock", new SimpleDomainEventStream(domainEventMessages));
+        eventStore.appendEvents(domainEventMessages);
 
         // we create an executor service with a single thread and start the replay as an asynchronous process
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -154,10 +153,8 @@ public class RunEventReplay {
         private final List<DomainEventMessage> eventMessages = new CopyOnWriteArrayList<>();
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            while (events.hasNext()) {
-                eventMessages.add(events.next());
-            }
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            eventMessages.addAll(events);
         }
 
         @Override
@@ -178,12 +175,12 @@ public class RunEventReplay {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier) {
+        public DomainEventStream readEvents(String identifier) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented yet");
         }

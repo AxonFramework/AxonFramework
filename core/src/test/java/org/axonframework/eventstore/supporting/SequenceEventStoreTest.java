@@ -31,11 +31,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class SequenceEventStoreTest {
 
+    private static DateTime future() {
+        return DateTime.now().plus(Duration.standardHours(1));
+    }
+
+    private static DateTime past() {
+        return DateTime.now().minus(Duration.standardHours(1));
+    }
+
     @Test
     public void readEvents_givenNoEvents() {
         SequenceEventStore es = givenNoEvents();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isFalse();
     }
@@ -44,7 +52,7 @@ public class SequenceEventStoreTest {
     public void readEvents_givenFirstThrowingEventStreamNotFoundException() {
         SequenceEventStore es = givenFirstThrowingEventStreamNotFoundException();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isFalse();
     }
@@ -53,7 +61,7 @@ public class SequenceEventStoreTest {
     public void readEvents_givenEventsFromBackend() {
         SequenceEventStore es = givenEventsFromBackend();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isTrue();
         assertThat(readEvents.next().getSequenceNumber()).isEqualTo(0L);
@@ -65,7 +73,7 @@ public class SequenceEventStoreTest {
     public void readEvents_givenVolatileEvents() {
         SequenceEventStore es = givenVolatileEvents();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isTrue();
         assertThat(readEvents.next().getSequenceNumber()).isEqualTo(0L);
@@ -77,7 +85,7 @@ public class SequenceEventStoreTest {
     public void readEvents_givenBackendEventsAndVolatileEvents() {
         SequenceEventStore es = givenBackendEventsAndVolatileEvents();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isTrue();
         assertThat(readEvents.next().getSequenceNumber()).isEqualTo(0L);
@@ -89,7 +97,7 @@ public class SequenceEventStoreTest {
     public void readEvents_givenVolatileEventsAndCutOffBackendEvents() {
         SequenceEventStore es = givenVolatileEventsAndCutOffBackendEvents();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isTrue();
         assertThat(readEvents.next().getSequenceNumber()).isEqualTo(0L);
@@ -166,8 +174,8 @@ public class SequenceEventStoreTest {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         VolatileEventStore backend = new VolatileEventStore() {
             @Override
-            public DomainEventStream readEvents(String type, String identifier, long first, long last) {
-                throw new EventStreamNotFoundException(type, identifier);
+            public DomainEventStream readEvents(String identifier, long first, long last) {
+                throw new EventStreamNotFoundException(identifier);
             }
         };
         return new SequenceEventStore(volatileEventStore, volatileEventStore, backend, backend);
@@ -180,7 +188,7 @@ public class SequenceEventStoreTest {
         EventContainer ec = new EventContainer("My-1");
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        backend.appendEvents("MyAggregate", ec.getEventStream());
+        backend.appendEvents(ec.getEventStream());
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
         return new SequenceEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
@@ -191,7 +199,7 @@ public class SequenceEventStoreTest {
         EventContainer ec = new EventContainer("My-1");
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        volatileEventStore.appendEvents("MyAggregate", ec.getEventStream());
+        volatileEventStore.appendEvents(ec.getEventStream());
 
         TimestampCutoffReadonlyEventStore backend = new VolatileEventStore().cutoff(future());
 
@@ -202,13 +210,13 @@ public class SequenceEventStoreTest {
         VolatileEventStore backend = new VolatileEventStore();
         EventContainer ecBack = new EventContainer("My-1");
         ecBack.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        backend.appendEvents("MyAggregate", ecBack.getEventStream());
+        backend.appendEvents(ecBack.getEventStream());
 
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         EventContainer ecVolatile = new EventContainer("My-1");
         ecVolatile.initializeSequenceNumber(0L);
         ecVolatile.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        volatileEventStore.appendEvents("MyAggregate", ecVolatile.getEventStream());
+        volatileEventStore.appendEvents(ecVolatile.getEventStream());
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
@@ -219,24 +227,16 @@ public class SequenceEventStoreTest {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
         EventContainer ecVolatile = new EventContainer("My-1");
         ecVolatile.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        volatileEventStore.appendEvents("MyAggregate", ecVolatile.getEventStream());
+        volatileEventStore.appendEvents(ecVolatile.getEventStream());
 
         VolatileEventStore backend = new VolatileEventStore();
         EventContainer ecBack = new EventContainer("My-1");
         ecBack.initializeSequenceNumber(0L);
         ecBack.addEvent(MetaData.emptyInstance(), new MyEvent("newer, cut off"));
-        backend.appendEvents("MyAggregate", ecBack.getEventStream());
+        backend.appendEvents(ecBack.getEventStream());
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(past());
 
         return new SequenceEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
-    }
-
-    private static DateTime future() {
-        return DateTime.now().plus(Duration.standardHours(1));
-    }
-
-    private static DateTime past() {
-        return DateTime.now().minus(Duration.standardHours(1));
     }
 }

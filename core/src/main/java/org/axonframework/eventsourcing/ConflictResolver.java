@@ -42,5 +42,5 @@ public interface ConflictResolver {
      * @throws org.axonframework.repository.ConflictingModificationException
      *          if any conflicting changes are detected
      */
-    void resolveConflicts(List<DomainEventMessage> appliedChanges, List<DomainEventMessage> committedChanges);
+    void resolveConflicts(List<DomainEventMessage<?>> appliedChanges, List<DomainEventMessage<?>> committedChanges);
 }

@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
@@ -32,6 +33,7 @@ import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -47,7 +49,7 @@ public class CommandHandlingBenchmark {
         CommandBus cb = new SimpleCommandBus();
 
         InMemoryEventStore eventStore = new InMemoryEventStore();
-        eventStore.appendInitialEvent("test", new SimpleDomainEventStream(new GenericDomainEventMessage<>(
+        eventStore.appendInitialEvent(new SimpleDomainEventStream(new GenericDomainEventMessage<>(
                 aggregateIdentifier.toString(), 0, new SomeEvent())));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
@@ -131,25 +133,25 @@ public class CommandHandlingBenchmark {
 
         private DomainEventStream storedEvents;
 
-        public void appendInitialEvent(String type, DomainEventStream events) {
+        public void appendInitialEvent(DomainEventStream events) {
             storedEvents = events;
         }
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
+        public void appendEvents(List<DomainEventMessage<?>> events) {
 //            while (events.hasNext()) {
 //                storedEvents.add(events.next());
 //            }
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier) {
+        public DomainEventStream readEvents(String identifier) {
             System.out.println(".");
             return storedEvents;
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }

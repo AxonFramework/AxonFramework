@@ -79,14 +79,14 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
     private static final int ORDER_DESC = -1;
 
     @Override
-    public DBObject[] createDocuments(String type, Serializer eventSerializer, List<DomainEventMessage> messages) {
-        return new DBObject[]{new CommitEntry(type, eventSerializer, messages).asDBObject()};
+    public DBObject[] createDocuments(Serializer eventSerializer, List<DomainEventMessage<?>> messages) {
+        return new DBObject[]{new CommitEntry(eventSerializer, messages).asDBObject()};
     }
 
     @Override
-    public DBCursor findEvents(DBCollection collection, String aggregateType, String aggregateIdentifier,
+    public DBCursor findEvents(DBCollection collection, String aggregateIdentifier,
                                long firstSequenceNumber) {
-        return collection.find(CommitEntry.forAggregate(aggregateType, aggregateIdentifier, firstSequenceNumber))
+        return collection.find(CommitEntry.forAggregate(aggregateIdentifier, firstSequenceNumber))
                          .sort(new BasicDBObject(CommitEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_ASC));
     }
 
@@ -101,16 +101,14 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
     }
 
     @Override
-    public List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier,
-                                                         Serializer serializer, UpcasterChain upcasterChain,
-                                                         boolean skipUnknownTypes) {
+    public List<DomainEventMessage> extractEventMessages(DBObject entry, Serializer serializer,
+                                                         UpcasterChain upcasterChain, boolean skipUnknownTypes) {
         return new CommitEntry(entry).getDomainEvents(serializer, upcasterChain, skipUnknownTypes);
     }
 
     @Override
     public void ensureIndexes(DBCollection eventsCollection, DBCollection snapshotsCollection) {
         eventsCollection.ensureIndex(new BasicDBObject(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
-                                             .append(CommitEntry.AGGREGATE_TYPE_PROPERTY, 1)
                                              .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
                                      "uniqueAggregateIndex",
                                      true);
@@ -120,18 +118,16 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                                      "orderedEventStreamIndex",
                                      false);
         snapshotsCollection.ensureIndex(new BasicDBObject(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
-                                             .append(CommitEntry.AGGREGATE_TYPE_PROPERTY, 1)
-                                             .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
-                                     "uniqueAggregateIndex",
-                                     true);
+                                                .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
+                                        "uniqueAggregateIndex",
+                                        true);
     }
 
     @Override
-    public DBCursor findLastSnapshot(DBCollection collection, String aggregateType, String aggregateIdentifier) {
+    public DBCursor findLastSnapshot(DBCollection collection, String aggregateIdentifier) {
         DBObject mongoEntry = BasicDBObjectBuilder
                 .start()
                 .add(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                .add(CommitEntry.AGGREGATE_TYPE_PROPERTY, aggregateType)
                 .get();
         return collection.find(mongoEntry)
                          .sort(new BasicDBObject(CommitEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_DESC))
@@ -149,7 +145,6 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
 
         private static final String AGGREGATE_IDENTIFIER_PROPERTY = "aggregateIdentifier";
         private static final String SEQUENCE_NUMBER_PROPERTY = "sequenceNumber";
-        private static final String AGGREGATE_TYPE_PROPERTY = "type";
         private static final String TIME_STAMP_PROPERTY = "timestamp";
         private static final String FIRST_TIME_STAMP_PROPERTY = "firstTimeStamp";
         private static final String LAST_TIME_STAMP_PROPERTY = "lastTimeStamp";
@@ -165,19 +160,16 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         private final long lastSequenceNumber;
         private final String firstTimestamp;
         private final String lastTimestamp;
-        private final String aggregateType;
         private final EventEntry[] eventEntries;
 
         /**
          * Constructor used to create a new event entry to store in Mongo.
          *
-         * @param aggregateType   String containing the aggregate type of the event
          * @param eventSerializer Serializer to use for the event to store
          * @param events          The events contained in this commit
          */
-        private CommitEntry(String aggregateType, Serializer eventSerializer, List<DomainEventMessage> events) {
-            this.aggregateType = aggregateType;
-            this.aggregateIdentifier = events.get(0).getAggregateIdentifier().toString();
+        private CommitEntry(Serializer eventSerializer, List<DomainEventMessage<?>> events) {
+            this.aggregateIdentifier = events.get(0).getAggregateIdentifier();
             this.firstSequenceNumber = events.get(0).getSequenceNumber();
             this.firstTimestamp = events.get(0).getTimestamp().toString();
             final DomainEventMessage lastEvent = events.get(events.size() - 1);
@@ -202,7 +194,6 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             this.lastSequenceNumber = ((Number) dbObject.get(LAST_SEQUENCE_NUMBER_PROPERTY)).longValue();
             this.firstTimestamp = (String) dbObject.get(FIRST_TIME_STAMP_PROPERTY);
             this.lastTimestamp = (String) dbObject.get(LAST_TIME_STAMP_PROPERTY);
-            this.aggregateType = (String) dbObject.get(AGGREGATE_TYPE_PROPERTY);
             List<DBObject> entries = (List<DBObject>) dbObject.get(EVENTS_PROPERTY);
             eventEntries = new EventEntry[entries.size()];
             for (int i = 0, entriesSize = entries.size(); i < entriesSize; i++) {
@@ -211,11 +202,26 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         }
 
         /**
+         * Returns the mongo DBObject used to query mongo for events for specified aggregate identifier.
+         *
+         * @param aggregateIdentifier Identifier of the aggregate to obtain the mongo DBObject for
+         * @param firstSequenceNumber number representing the first event to obtain
+         * @return Created DBObject based on the provided parameters to be used for a query
+         */
+        public static DBObject forAggregate(String aggregateIdentifier, long firstSequenceNumber) {
+            return BasicDBObjectBuilder.start()
+                                       .add(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
+                                       .add(CommitEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
+                                                                                                    firstSequenceNumber))
+                                       .get();
+        }
+
+        /**
          * Returns the actual DomainEvent from the CommitEntry using the provided Serializer.
          *
-         * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
-         * @param upcasterChain             Set of upcasters to use when an event needs upcasting before
-         *                                  de-serialization
+         * @param eventSerializer Serializer used to de-serialize the stored DomainEvent
+         * @param upcasterChain   Set of upcasters to use when an event needs upcasting before
+         *                        de-serialization
          * @return The actual DomainEventMessage instances stored in this entry
          */
         @SuppressWarnings("unchecked")
@@ -251,30 +257,12 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                                                                      .add(TIME_STAMP_PROPERTY, firstTimestamp)
                                                                      .add(FIRST_TIME_STAMP_PROPERTY, firstTimestamp)
                                                                      .add(LAST_TIME_STAMP_PROPERTY, lastTimestamp)
-                                                                     .add(AGGREGATE_TYPE_PROPERTY, aggregateType)
                                                                      .add(EVENTS_PROPERTY, events);
 
             for (EventEntry eventEntry : eventEntries) {
                 events.add(eventEntry.asDBObject());
             }
             return commitBuilder.get();
-        }
-
-        /**
-         * Returns the mongo DBObject used to query mongo for events for specified aggregate identifier and type.
-         *
-         * @param type                The type of the aggregate to create the mongo DBObject for
-         * @param aggregateIdentifier Identifier of the aggregate to obtain the mongo DBObject for
-         * @param firstSequenceNumber number representing the first event to obtain
-         * @return Created DBObject based on the provided parameters to be used for a query
-         */
-        public static DBObject forAggregate(String type, String aggregateIdentifier, long firstSequenceNumber) {
-            return BasicDBObjectBuilder.start()
-                                       .add(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                                       .add(CommitEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
-                                                                                                    firstSequenceNumber))
-                                       .add(CommitEntry.AGGREGATE_TYPE_PROPERTY, type)
-                                       .get();
         }
 
         private static class DomainEventData implements SerializedDomainEventData {

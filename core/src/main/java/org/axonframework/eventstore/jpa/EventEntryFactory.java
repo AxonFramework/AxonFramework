@@ -50,11 +50,11 @@ public interface EventEntryFactory<T> {
 
     /**
      * Returns the type used to store serialized payloads. This must correspond to the declared type of the
-     * snapshot event entry and domain event entry returned by {@link #createSnapshotEventEntry(String,
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
-     * org.axonframework.serializer.SerializedObject)} and {@link #createDomainEventEntry(String,
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
-     * org.axonframework.serializer.SerializedObject)} respectively.
+     * snapshot event entry and domain event entry returned by {@link
+     * #createSnapshotEventEntry(org.axonframework.domain.DomainEventMessage,
+     * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)} and {@link
+     * #createDomainEventEntry(org.axonframework.domain.DomainEventMessage,
+     * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)} respectively.
      *
      * @return the type used to store serialized payloads
      */
@@ -64,26 +64,24 @@ public interface EventEntryFactory<T> {
      * Creates an entity representing a Domain Event, which contains the data provided in the parameters, which can be
      * stored using the JPA Entity Manager configured on the JpaEventStore using this factory.
      *
-     * @param aggregateType      The type identifier of the aggregate that generated the domain event
      * @param event              The DomainEventMessage containing the data to store
      * @param serializedPayload  The serialized payload
      * @param serializedMetaData The serialized meta data
      * @return the instance to store using the EntityManager
      */
-    Object createDomainEventEntry(String aggregateType, DomainEventMessage event,
+    Object createDomainEventEntry(DomainEventMessage event,
                                   SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData);
 
     /**
      * Creates an entity representing a Snapshot Event, which contains the data provided in the parameters, which can
      * be stored using the JPA Entity Manager configured on the JpaEventStore using this factory.
      *
-     * @param aggregateType      The type identifier of the aggregate that generated the domain event
      * @param snapshotEvent      The DomainEventMessage containing the data to store
      * @param serializedPayload  The serialized payload
      * @param serializedMetaData The serialized meta data
      * @return the instance to store using the EntityManager
      */
-    Object createSnapshotEventEntry(String aggregateType, DomainEventMessage snapshotEvent,
+    Object createSnapshotEventEntry(DomainEventMessage snapshotEvent,
                                     SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData);
 
     /**

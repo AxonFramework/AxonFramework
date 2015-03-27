@@ -31,7 +31,7 @@ import org.joda.time.DateTime;
 public class SerializedDomainEventUpcastingContext implements UpcastingContext {
 
     private final String messageIdentifier;
-    private final Object aggregateIdentifier;
+    private final String aggregateIdentifier;
     private final Long sequenceNumber;
     private final DateTime timestamp;
     private final LazyDeserializingObject<MetaData> serializedMetaData;
@@ -58,7 +58,7 @@ public class SerializedDomainEventUpcastingContext implements UpcastingContext {
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 

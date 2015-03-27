@@ -44,7 +44,7 @@ public class AggregateSnapshotterTest {
     public void setUp() throws Exception {
         SnapshotEventStore mockEventStore = mock(SnapshotEventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
-        when(mockAggregateFactory.getTypeIdentifier()).thenReturn("test");
+        when(mockAggregateFactory.getAggregateType()).thenReturn(EventSourcedAggregateRoot.class);
         testSubject = new AggregateSnapshotter();
         testSubject.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(mockAggregateFactory));
         testSubject.setEventStore(mockEventStore);
@@ -62,7 +62,8 @@ public class AggregateSnapshotterTest {
         when(aggregate.getIdentifier()).thenReturn(aggregateIdentifier);
         when(mockAggregateFactory.createAggregate(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
-        DomainEventMessage snapshot = testSubject.createSnapshot("test", aggregateIdentifier, eventStream);
+        DomainEventMessage snapshot = testSubject.createSnapshot(EventSourcedAggregateRoot.class,
+                                                                 aggregateIdentifier, eventStream);
 
         verify(mockAggregateFactory).createAggregate(aggregateIdentifier, firstEvent);
         assertSame(aggregate, snapshot.getPayload());
@@ -86,7 +87,8 @@ public class AggregateSnapshotterTest {
         when(mockAggregateFactory.createAggregate(any(), any(DomainEventMessage.class)))
                 .thenAnswer(invocation -> ((DomainEventMessage) invocation.getArguments()[1]).getPayload());
 
-        DomainEventMessage snapshot = testSubject.createSnapshot("test", aggregateIdentifier.toString(), eventStream);
+        DomainEventMessage snapshot = testSubject.createSnapshot(EventSourcedAggregateRoot.class,
+                                                                 aggregateIdentifier.toString(), eventStream);
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getPayload());
 
         verify(mockAggregateFactory).createAggregate(any(), any(DomainEventMessage.class));

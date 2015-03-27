@@ -38,7 +38,6 @@ import org.axonframework.repository.NullLockManager;
 public class HybridJpaRepository<T extends AggregateRoot> extends GenericJpaRepository<T> {
 
     private EventStore eventStore;
-    private final String aggregateTypeIdentifier;
 
     /**
      * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> and the locking
@@ -49,57 +48,27 @@ public class HybridJpaRepository<T extends AggregateRoot> extends GenericJpaRepo
      */
     public HybridJpaRepository(EntityManagerProvider entityManagerProvider,
                                Class<T> aggregateType) {
-        this(entityManagerProvider, aggregateType, aggregateType.getSimpleName());
-    }
-
-    /**
-     * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> without locking.
-     * The events are appended to the event store under the given <code>aggregateTypeIdentifier</code>.
-     *
-     * @param entityManagerProvider   The EntityManagerProvider providing the EntityManager instance for this
-     *                                repository
-     * @param aggregateType           The type of aggregate stored in this repository.
-     * @param aggregateTypeIdentifier The type identifier to store events with
-     */
-    public HybridJpaRepository(EntityManagerProvider entityManagerProvider,
-                               Class<T> aggregateType, String aggregateTypeIdentifier) {
-        this(entityManagerProvider, aggregateType, aggregateTypeIdentifier, new NullLockManager());
+        this(entityManagerProvider, aggregateType, new NullLockManager());
     }
 
     /**
      * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> and a locking
      * mechanism based on the given <code>lockManager</code>.
      *
-     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this
+     *                              repository
      * @param aggregateType         The type of aggregate stored in this repository.
-     * @param lockManager       The locking strategy to use when loading and storing aggregates
+     * @param lockManager           The locking strategy to use when loading and storing aggregates
      */
-    public HybridJpaRepository(EntityManagerProvider entityManagerProvider,
-                               Class<T> aggregateType, LockManager lockManager) {
-        this(entityManagerProvider, aggregateType, aggregateType.getSimpleName(), lockManager);
-    }
-
-    /**
-     * Initializes a Hybrid Repository that stored entities of the given <code>aggregateType</code> and a locking
-     * mechanism based on the given <code>lockManager</code>.
-     *
-     * @param entityManagerProvider   The EntityManagerProvider providing the EntityManager instance for this
-     *                                repository
-     * @param aggregateType           The type of aggregate stored in this repository.
-     * @param aggregateTypeIdentifier The type identifier to store events with
-     * @param lockManager         The locking strategy to use when loading and storing aggregates
-     */
-    public HybridJpaRepository(EntityManagerProvider entityManagerProvider,
-                               Class<T> aggregateType, String aggregateTypeIdentifier,
+    public HybridJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
                                LockManager lockManager) {
         super(entityManagerProvider, aggregateType, lockManager);
-        this.aggregateTypeIdentifier = aggregateTypeIdentifier;
     }
 
     @Override
     protected void doDeleteWithLock(T aggregate) {
         if (eventStore != null) {
-            eventStore.appendEvents(getTypeIdentifier(), aggregate.getUncommittedEvents());
+            eventStore.appendEvents(aggregate.getUncommittedEvents());
         }
         super.doDeleteWithLock(aggregate);
     }
@@ -107,19 +76,9 @@ public class HybridJpaRepository<T extends AggregateRoot> extends GenericJpaRepo
     @Override
     protected void doSaveWithLock(T aggregate) {
         if (eventStore != null) {
-            eventStore.appendEvents(getTypeIdentifier(), aggregate.getUncommittedEvents());
+            eventStore.appendEvents(aggregate.getUncommittedEvents());
         }
         super.doSaveWithLock(aggregate);
-    }
-
-    /**
-     * Returns the type identifier to use when appending events in the event store. Default to the simple class name of
-     * the aggregateType provided in the constructor.
-     *
-     * @return the type identifier to use when appending events in the event store.
-     */
-    protected String getTypeIdentifier() {
-        return aggregateTypeIdentifier;
     }
 
     /**

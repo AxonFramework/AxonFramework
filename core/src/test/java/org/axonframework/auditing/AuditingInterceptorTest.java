@@ -29,8 +29,8 @@ import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;
-import org.junit.internal.matchers.*;
 
 import java.util.Collections;
 import java.util.List;
@@ -88,7 +88,7 @@ public class AuditingInterceptorTest {
 
         verify(mockAuditDataProvider, atLeast(1)).provideAuditDataFor(command);
         verify(mockAuditLogger, times(1)).logSuccessful(eq(command), any(Object.class), listWithTwoEventMessages());
-        DomainEventMessage eventFromAggregate = aggregate.getUncommittedEvents().next();
+        DomainEventMessage eventFromAggregate = aggregate.getUncommittedEvents().get(0);
         assertEquals("value", eventFromAggregate.getMetaData().get("key"));
     }
 

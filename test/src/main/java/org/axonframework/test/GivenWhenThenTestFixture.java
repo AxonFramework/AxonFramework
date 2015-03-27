@@ -66,7 +66,6 @@ import java.util.Set;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
-import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 import static org.axonframework.common.ReflectionUtils.*;
 
 /**
@@ -82,11 +81,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     private static final Logger logger = LoggerFactory.getLogger(GivenWhenThenTestFixture.class);
     private final Class<T> aggregateType;
+    private final SimpleCommandBus commandBus;
+    private final EventBus eventBus;
+    private final EventStore eventStore;
     private Repository<T> repository;
-    private SimpleCommandBus commandBus;
-    private EventBus eventBus;
-    private Object aggregateIdentifier;
-    private EventStore eventStore;
+    private String aggregateIdentifier;
     private Deque<DomainEventMessage> givenEvents;
     private Deque<DomainEventMessage> storedEvents;
     private List<EventMessage> publishedEvents;
@@ -185,20 +184,13 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                     payload = ((Message) event).getPayload();
                     metaData = ((Message) event).getMetaData();
                 }
-                this.givenEvents.add(new GenericDomainEventMessage<>(nullSafeToString(aggregateIdentifier),
-                                                                     sequenceNumber++, payload, metaData));
+                this.givenEvents.add(new GenericDomainEventMessage<>(aggregateIdentifier, sequenceNumber++,
+                                                                     payload, metaData));
             }
         } catch (RuntimeException e) {
             FixtureResourceParameterResolverFactory.clear();
         }
         return this;
-    }
-
-    private String nullSafeToString(Object value) {
-        if (value != null) {
-            return value.toString();
-        }
-        return null;
     }
 
     @Override
@@ -265,7 +257,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         if (!explicitCommandHandlersSet) {
             AggregateAnnotationCommandHandler<T> handler =
                     new AggregateAnnotationCommandHandler<>(aggregateType, repository,
-                                                             new AnnotationCommandTargetResolver());
+                                                            new AnnotationCommandTargetResolver());
             for (String supportedCommand : handler.supportedCommands()) {
                 commandBus.subscribe(supportedCommand, handler);
             }
@@ -276,7 +268,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork uow = DefaultUnitOfWork.startAndGet();
             try {
-                EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier.toString());
+                EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was considered deleted, "
                                                          + "but the Repository still contains a non-deleted copy of "
@@ -457,39 +449,33 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private class RecordingEventStore implements EventStore {
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            while (events.hasNext()) {
-                DomainEventMessage next = events.next();
-                validateIdentifier(next.getAggregateIdentifier().getClass());
-
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            for (DomainEventMessage event : events) {
                 if (aggregateIdentifier == null) {
-                    aggregateIdentifier = next.getAggregateIdentifier();
+                    aggregateIdentifier = event.getAggregateIdentifier();
                     injectAggregateIdentifier();
                 }
 
                 DomainEventMessage lastEvent = (storedEvents.isEmpty() ? givenEvents : storedEvents).peekLast();
 
                 if (lastEvent != null) {
-                    if (!lastEvent.getAggregateIdentifier().equals(next.getAggregateIdentifier())) {
+                    if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
                         throw new EventStoreException("Writing events for an unexpected aggregate. This could "
                                                               + "indicate that a wrong aggregate is being triggered.");
-                    } else if (lastEvent.getSequenceNumber() != next.getSequenceNumber() - 1) {
+                    } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
                         throw new EventStoreException(format("Unexpected sequence number on stored event. "
                                                                      + "Expected %s, but got %s.",
                                                              lastEvent.getSequenceNumber() + 1,
-                                                             next.getSequenceNumber()));
+                                                             event.getSequenceNumber()));
                     }
                 }
-                storedEvents.add(next);
+                storedEvents.add(event);
             }
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
-            if (identifier != null) {
-                validateIdentifier(identifier.getClass());
-            }
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
                 throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
                                                       + "to get the aggregate identifier to use");
@@ -507,7 +493,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
             return new SimpleDomainEventStream(
                     allEvents.stream()
                              .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
-                                             && m.getSequenceNumber() <= lastSequenceNumber)
+                                     && m.getSequenceNumber() <= lastSequenceNumber)
                              .collect(toList()));
         }
 
@@ -517,11 +503,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
             for (DomainEventMessage oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
                     givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getIdentifier(),
-                                                                          oldEvent.getTimestamp(),
-                                                                          aggregateIdentifier.toString(),
-                                                                          oldEvent.getSequenceNumber(),
-                                                                          oldEvent.getPayload(),
-                                                                          oldEvent.getMetaData()));
+                                                                    oldEvent.getTimestamp(),
+                                                                    aggregateIdentifier,
+                                                                    oldEvent.getSequenceNumber(),
+                                                                    oldEvent.getPayload(),
+                                                                    oldEvent.getMetaData()));
                 } else {
                     givenEvents.add(oldEvent);
                 }

@@ -62,7 +62,7 @@ public class EventPublicationOrderTest {
     @Test
     public void testPublicationOrderIsMaintained_AggregateAdded() {
         String aggregateId = UUID.randomUUID().toString();
-        when(eventStore.readEvents("StubAggregate", aggregateId))
+        when(eventStore.readEvents(aggregateId))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<Object>(aggregateId, 0,
                                                               new StubAggregateCreatedEvent(aggregateId))));

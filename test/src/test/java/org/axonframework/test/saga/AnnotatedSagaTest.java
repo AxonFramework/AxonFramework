@@ -38,15 +38,15 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenEventOccurs() {
-        UUID aggregate1 = UUID.randomUUID();
-        UUID aggregate2 = UUID.randomUUID();
+        String aggregate1 = UUID.randomUUID().toString();
+        String aggregate2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 .givenAggregate(aggregate1).published(
-                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1.toString())),
-                        new TriggerExistingSagaEvent(aggregate1.toString()))
-                .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(aggregate2.toString()))
-                .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1.toString()));
+                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
+                        new TriggerExistingSagaEvent(aggregate1))
+                .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(aggregate2))
+                .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1));
 
         validator.expectActiveSagas(1);
         validator.expectAssociationWith("identifier", aggregate2);
@@ -54,12 +54,12 @@ public class AnnotatedSagaTest {
         validator.expectScheduledEventOfType(Duration.standardMinutes(10), TimerTriggeredEvent.class);
         validator.expectScheduledEventMatching(Duration.standardMinutes(10), messageWithPayload(CoreMatchers.any(
                 TimerTriggeredEvent.class)));
-        validator.expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(aggregate1.toString()));
+        validator.expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(aggregate1));
         validator.expectScheduledEventOfType(fixture.currentTime().plusMinutes(10), TimerTriggeredEvent.class);
         validator.expectScheduledEventMatching(fixture.currentTime().plusMinutes(10),
                                                messageWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
         validator.expectScheduledEvent(fixture.currentTime().plusMinutes(10),
-                                       new TimerTriggeredEvent(aggregate1.toString()));
+                                       new TimerTriggeredEvent(aggregate1));
         validator.expectDispatchedCommandsEqualTo();
         validator.expectNoDispatchedCommands();
         validator.expectPublishedEventsMatching(noEvents());
@@ -85,8 +85,8 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WithApplicationEvents() {
-        UUID aggregate1 = UUID.randomUUID();
-        UUID aggregate2 = UUID.randomUUID();
+        String aggregate1 = UUID.randomUUID().toString();
+        String aggregate2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         fixture.givenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
                .andThenAPublished(new TimerTriggeredEvent(UUID.randomUUID().toString()))
@@ -103,13 +103,13 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenEventIsPublishedToEventBus() {
-        UUID aggregate1 = UUID.randomUUID();
-        UUID aggregate2 = UUID.randomUUID();
+        String aggregate1 = UUID.randomUUID().toString();
+        String aggregate2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         FixtureExecutionResult validator = fixture
-                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()),
-                                                      new TriggerExistingSagaEvent(aggregate1.toString()))
-                .whenAggregate(aggregate1).publishes(new TriggerExistingSagaEvent(aggregate1.toString()));
+                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1),
+                                                      new TriggerExistingSagaEvent(aggregate1))
+                .whenAggregate(aggregate1).publishes(new TriggerExistingSagaEvent(aggregate1));
 
         validator.expectActiveSagas(1);
         validator.expectAssociationWith("identifier", aggregate1);
@@ -122,15 +122,15 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() {
-        UUID aggregate1 = UUID.randomUUID();
+        String aggregate1 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 // event schedules a TriggerEvent after 10 minutes from t0
-                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()))
+                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1))
                         // time shifts to t0+5
                 .andThenTimeElapses(Duration.standardMinutes(5))
                         // reset event schedules a TriggerEvent after 10 minutes from t0+5
-                .andThenAggregate(aggregate1).published(new ResetTriggerEvent(aggregate1.toString()))
+                .andThenAggregate(aggregate1).published(new ResetTriggerEvent(aggregate1))
                         // when time shifts to t0+10
                 .whenTimeElapses(Duration.standardMinutes(6));
 
@@ -147,15 +147,15 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenTimeElapses_UsingMockGateway() throws Throwable {
-        UUID identifier = UUID.randomUUID();
-        UUID identifier2 = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
+        String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         final StubGateway gateway = mock(StubGateway.class);
         fixture.registerCommandGateway(StubGateway.class, gateway);
         when(gateway.send(eq("Say hi!"))).thenReturn("Hi again!");
 
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
                .whenTimeElapses(Duration.standardMinutes(35))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
@@ -170,13 +170,13 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenTimeElapses_UsingDefaults() throws Throwable {
-        UUID identifier = UUID.randomUUID();
-        UUID identifier2 = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
+        String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
 
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
                .whenTimeElapses(Duration.standardMinutes(35))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
@@ -189,16 +189,16 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenTimeElapses_UsingCallbackBehavior() throws Throwable {
-        UUID identifier = UUID.randomUUID();
-        UUID identifier2 = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
+        String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         CallbackBehavior commandHandler = mock(CallbackBehavior.class);
         when(commandHandler.handle(eq("Say hi!"), isA(MetaData.class))).thenReturn("Hi again!");
         fixture.setCallbackBehavior(commandHandler);
         fixture.registerCommandGateway(StubGateway.class);
 
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
                .whenTimeElapses(Duration.standardMinutes(35))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
@@ -212,12 +212,12 @@ public class AnnotatedSagaTest {
 
     @Test
     public void testFixtureApi_WhenTimeAdvances() {
-        UUID identifier = UUID.randomUUID();
-        UUID identifier2 = UUID.randomUUID();
+        String identifier = UUID.randomUUID().toString();
+        String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         fixture.registerCommandGateway(StubGateway.class);
-        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier.toString()))
-               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2.toString()))
+        fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
+               .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
 
                .whenTimeAdvancesTo(new DateTime().plus(Duration.standardDays(1)))
 

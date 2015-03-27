@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.IncomingMessageHandler;
 import org.axonframework.eventhandling.replay.ReplayingCluster;
-import org.axonframework.eventstore.management.EventStoreManagement;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.NoTransactionManager;
 import org.axonframework.unitofwork.TransactionManager;
 import org.springframework.beans.factory.FactoryBean;
@@ -121,7 +121,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
                 innerCluster.getConstructorArgumentValues().addGenericArgumentValue(parseOrderElement(orderedElement));
             }
         }
-        Map metaData = parseMetaData(element, parserContext, null);
+        Map metaData = parseMetaData(element, parserContext);
 
         AbstractBeanDefinition clusterBean = new GenericBeanDefinition();
         clusterBean.setBeanClass(MetaDataOverridingCluster.class);
@@ -161,7 +161,7 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             constructor.addIndexedArgumentValue(1, new RuntimeBeanReference(
                     replayElement.getAttribute(EVENT_STORE_ATTRIBUTE)));
         } else {
-            constructor.addIndexedArgumentValue(1, AutowiredBean.createAutowiredBean(EventStoreManagement.class));
+            constructor.addIndexedArgumentValue(1, AutowiredBean.createAutowiredBean(EventStore.class));
         }
         if (replayElement.hasAttribute(TRANSACTION_MANAGER_ATTRIBUTE)) {
             constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
@@ -224,12 +224,12 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         return isDefault;
     }
 
-    private Map parseMetaData(Element element, ParserContext parserContext, AbstractBeanDefinition beanDefinition) {
+    private Map parseMetaData(Element element, ParserContext parserContext) {
         Element metaDataElement = DomUtils.getChildElementByTagName(element, META_DATA_ELEMENT);
         if (metaDataElement == null) {
             return new ManagedMap();
         }
-        return parserContext.getDelegate().parseMapElement(metaDataElement, beanDefinition);
+        return parserContext.getDelegate().parseMapElement(metaDataElement, null);
     }
 
     private List<BeanDefinition> parseSelectors(Element selectorsElement, String clusterId) {

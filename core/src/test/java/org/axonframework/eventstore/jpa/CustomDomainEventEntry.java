@@ -37,13 +37,12 @@ public class CustomDomainEventEntry extends AbstractEventEntryData<String> {
     @Lob
     private String payload;
 
-    public CustomDomainEventEntry(String type, DomainEventMessage event,
+    public CustomDomainEventEntry(DomainEventMessage event,
                                   DateTime timestamp,
                                   SerializedObject<String> payload,
                                   SerializedObject<String> metaData) {
         super(event.getIdentifier(),
-              type,
-              event.getAggregateIdentifier().toString(),
+              event.getAggregateIdentifier(),
               event.getSequenceNumber(),
               timestamp, payload.getType()
         );

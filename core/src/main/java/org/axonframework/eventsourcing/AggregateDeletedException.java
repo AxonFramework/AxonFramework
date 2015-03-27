@@ -36,7 +36,7 @@ public class AggregateDeletedException extends AggregateNotFoundException {
      * @param aggregateIdentifier The identifier of the aggregate that has been deleted
      * @param message             The message describing the cause of the exception
      */
-    public AggregateDeletedException(Object aggregateIdentifier, String message) {
+    public AggregateDeletedException(String aggregateIdentifier, String message) {
         super(aggregateIdentifier, message);
     }
 
@@ -46,7 +46,7 @@ public class AggregateDeletedException extends AggregateNotFoundException {
      *
      * @param aggregateIdentifier The identifier of the aggregate that has been deleted
      */
-    public AggregateDeletedException(Object aggregateIdentifier) {
+    public AggregateDeletedException(String aggregateIdentifier) {
         this(aggregateIdentifier,
              String.format("Aggregate with identifier [%s] not found. It has been deleted.", aggregateIdentifier));
     }

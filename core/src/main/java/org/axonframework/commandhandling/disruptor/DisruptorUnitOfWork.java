@@ -18,10 +18,8 @@ package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.EventRegistrationCallback;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventStreamDecorator;
@@ -46,8 +44,7 @@ import java.util.Map;
  */
 public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallback {
 
-    private static final DomainEventStream EMPTY_DOMAIN_EVENT_STREAM = new SimpleDomainEventStream();
-    private DomainEventStream eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
+    private final List<DomainEventMessage<?>> eventsToStore = new ArrayList<>();
     private final List<EventMessage> eventsToPublish = new ArrayList<>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private final boolean transactional;
@@ -56,7 +53,6 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     private boolean committed;
     private Throwable rollbackReason;
     private EventSourcedAggregateRoot aggregate;
-    private String aggregateType;
     private EventStreamDecorator eventStreamDecorator;
 
     /**
@@ -72,7 +68,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     public void commit() {
         committed = true;
         if (aggregate != null) {
-            eventsToStore = aggregate.getUncommittedEvents();
+            eventsToStore.addAll(aggregate.getUncommittedEvents());
             aggregate.commitEvents();
         }
         CurrentUnitOfWork.clear(this);
@@ -115,7 +111,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         listeners.onCleanup(this);
 
         // clear the lists of events to make them garbage-collectible
-        eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
+        eventsToStore.clear();
         eventsToPublish.clear();
         eventStreamDecorator = null;
         this.resources.clear();
@@ -170,10 +166,6 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
     @Override
     public <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
                                                          SaveAggregateCallback<T> saveAggregateCallback) {
-        if (aggregateType == null) {
-            throw new IllegalStateException(
-                    "Cannot register an aggregate if the aggregate type of this Unit of Work hasn't been set.");
-        }
         if (aggregate != null && aggregateRoot != aggregate) { // NOSONAR - Intentional equality check
             throw new IllegalArgumentException(
                     "Cannot register more than one aggregate in this Unit Of Work. Either ensure each command "
@@ -227,11 +219,11 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
      *
      * @return the events that need to be stored as part of this Unit of Work
      */
-    public DomainEventStream getEventsToStore() {
+    public List<DomainEventMessage<?>> getEventsToStore() {
         if (eventStreamDecorator == null) {
             return eventsToStore;
         }
-        return eventStreamDecorator.decorateForAppend(aggregateType, aggregate, eventsToStore);
+        return eventStreamDecorator.decorateForAppend(aggregate, eventsToStore);
     }
 
     /**
@@ -257,24 +249,6 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
         DomainEventMessage<T> message = (DomainEventMessage<T>) listeners.onEventRegistered(this, event);
         eventsToPublish.add(message);
         return message;
-    }
-
-    /**
-     * Returns the type identifier of the aggregate handled in this unit of work.
-     *
-     * @return the type identifier of the aggregate handled in this unit of work
-     */
-    public String getAggregateType() {
-        return aggregateType;
-    }
-
-    /**
-     * Sets the type identifier of the aggregate handled in this unit of work
-     *
-     * @param aggregateType the type identifier of the aggregate handled in this unit of work
-     */
-    public void setAggregateType(String aggregateType) {
-        this.aggregateType = aggregateType;
     }
 
     /**

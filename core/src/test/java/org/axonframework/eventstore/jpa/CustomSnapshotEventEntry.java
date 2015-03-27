@@ -37,13 +37,12 @@ public class CustomSnapshotEventEntry extends AbstractEventEntryData<String> {
     @Lob
     private String payload;
 
-    public CustomSnapshotEventEntry(String type, DomainEventMessage event,
+    public CustomSnapshotEventEntry(DomainEventMessage event,
                                   DateTime timestamp,
                                   SerializedObject<String> payload,
                                   SerializedObject<String> metaData) {
         super(event.getIdentifier(),
-              type,
-              event.getAggregateIdentifier().toString(),
+              event.getAggregateIdentifier(),
               event.getSequenceNumber(),
               timestamp, payload.getType()
         );

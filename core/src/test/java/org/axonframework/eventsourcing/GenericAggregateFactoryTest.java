@@ -53,12 +53,6 @@ public class GenericAggregateFactoryTest {
     }
 
     @Test
-    public void testAggregateTypeIsSimpleName() {
-        GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
-        assertEquals("StubAggregate", factory.getTypeIdentifier());
-    }
-
-    @Test
     public void testParameterResolverIsRegisteredWithCreatedAggregate() {
         final ParameterResolverFactory parameterResolverFactory = mock(ParameterResolverFactory.class);
         GenericAggregateFactory<SpringWiredAggregate> factory =
@@ -78,7 +72,6 @@ public class GenericAggregateFactoryTest {
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
                 aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
-        assertEquals("StubAggregate", factory.getTypeIdentifier());
         assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshotMessage));
     }
 

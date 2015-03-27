@@ -25,7 +25,6 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -47,6 +46,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -67,22 +67,17 @@ import static org.junit.Assert.*;
 @ContextConfiguration(locations = {"/contexts/triple_uow_nesting_test.xml"})
 public class TripleUnitOfWorkNestingTest implements EventListener {
 
-    @Autowired
-    private CommandBus commandBus;
-
-    @Autowired
-    private EventStore eventStore;
-
-    @Autowired
-    private EventBus eventBus;
-
-    @Autowired
-    private PlatformTransactionManager transactionManager;
-
     private static String aggregateAIdentifier = "A";
     private static String aggregateBIdentifier = "B";
-
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
+    @Autowired
+    private CommandBus commandBus;
+    @Autowired
+    private EventStore eventStore;
+    @Autowired
+    private EventBus eventBus;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
     private List<EventMessage<?>> handledMessages;
 
     @Before
@@ -97,19 +92,23 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     @Test
     public void testLoopbackScenario() throws InterruptedException {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
-        eventStore.appendEvents("AggregateA", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(aggregateAIdentifier, (long) 0,
-                                                           new CreateEvent(aggregateAIdentifier), MetaData.emptyInstance())));
-        eventStore.appendEvents("AggregateB", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(aggregateBIdentifier, (long) 0,
-                                                           new CreateEvent(aggregateBIdentifier), MetaData.emptyInstance())));
+        eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
+                aggregateAIdentifier,
+                (long) 0,
+                new CreateEvent(aggregateAIdentifier),
+                MetaData.emptyInstance())}));
+        eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
+                aggregateBIdentifier,
+                (long) 0,
+                new CreateEvent(aggregateBIdentifier),
+                MetaData.emptyInstance())}));
         transactionManager.commit(tx);
-        assertEquals(1, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
-        assertEquals(1, toList(eventStore.readEvents("AggregateB", aggregateBIdentifier)).size());
+        assertEquals(1, toList(eventStore.readEvents(aggregateAIdentifier)).size());
+        assertEquals(1, toList(eventStore.readEvents(aggregateBIdentifier)).size());
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("hello"));
 
-        assertEquals(5, toList(eventStore.readEvents("AggregateA", aggregateAIdentifier)).size());
-        assertEquals(2, toList(eventStore.readEvents("AggregateB", aggregateBIdentifier)).size());
+        assertEquals(5, toList(eventStore.readEvents(aggregateAIdentifier)).size());
+        assertEquals(2, toList(eventStore.readEvents(aggregateBIdentifier)).size());
 
         for (int t = 0; t < 10; t++) {
             executor.submit(new SendCommandTask());
@@ -118,7 +117,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         assertTrue("Commands did not execute in a reasonable time. Are there any unreleased locks remaining?",
                    executor.awaitTermination(2, TimeUnit.SECONDS));
 
-        assertEquals(new HashSet(handledMessages).size(), handledMessages.size());
+        assertEquals(new HashSet<>(handledMessages).size(), handledMessages.size());
     }
 
     private List<DomainEventMessage> toList(DomainEventStream eventStream) {

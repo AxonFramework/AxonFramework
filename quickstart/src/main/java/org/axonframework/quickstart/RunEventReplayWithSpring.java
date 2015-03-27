@@ -18,7 +18,6 @@ package org.axonframework.quickstart;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.replay.ReplayingCluster;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
@@ -59,7 +58,7 @@ public class RunEventReplayWithSpring {
                         "todo2", 0, new ToDoItemCreatedEvent("todo2", "Another thing to do")),
                 new GenericDomainEventMessage<>("todo2", 0, new ToDoItemCompletedEvent("todo2"))
         };
-        eventStore.appendEvents("mock", new SimpleDomainEventStream(domainEventMessages));
+        eventStore.appendEvents(domainEventMessages);
 
         // we get the executor service from the application context and start the replay as an asynchronous process
         Future<Void> future = replayingCluster.startReplay(executor);

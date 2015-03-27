@@ -37,10 +37,12 @@ import org.axonframework.unitofwork.UnitOfWork;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 /**
@@ -58,8 +60,9 @@ public class DisruptorCommandBusBenchmark {
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
-        inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>(aggregateIdentifier, 0, new StubDomainEvent())));
+        inMemoryEventStore.appendEvents(asList(new GenericDomainEventMessage<>(aggregateIdentifier,
+                                                                               0,
+                                                                               new StubDomainEvent())));
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
@@ -95,7 +98,7 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         protected void handle(DomainEventMessage event) {
-            identifier = (String) event.getAggregateIdentifier();
+            identifier = event.getAggregateIdentifier();
         }
 
         @Override
@@ -110,27 +113,26 @@ public class DisruptorCommandBusBenchmark {
         private final CountDownLatch countDownLatch = new CountDownLatch((int) (COMMAND_COUNT + 1L));
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            if (!events.hasNext()) {
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            if (events == null || events.isEmpty()) {
                 return;
             }
-            String key = events.peek().getAggregateIdentifier().toString();
+            String key = events.get(0).getAggregateIdentifier();
             DomainEventMessage<?> lastEvent = null;
-            while (events.hasNext()) {
+            for (EventMessage<?> event : events) {
                 countDownLatch.countDown();
-                lastEvent = events.next();
+                lastEvent = (DomainEventMessage<?>) event;
             }
             storedEvents.put(key, lastEvent);
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier) {
-            return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier.toString())));
+        public DomainEventStream readEvents(String identifier) {
+            return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier)));
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
-                                            long lastSequenceNumber) {
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber, long lastSequenceNumber) {
             throw new UnsupportedOperationException("Not implemented");
         }
     }

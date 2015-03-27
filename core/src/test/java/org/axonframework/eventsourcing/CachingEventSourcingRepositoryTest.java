@@ -104,7 +104,7 @@ public class CachingEventSourcingRepositoryTest {
         CurrentUnitOfWork.commit();
 
         DefaultUnitOfWork.startAndGet();
-        DomainEventStream events = mockEventStore.readEvents("mock", aggregate1.getIdentifier());
+        DomainEventStream events = mockEventStore.readEvents(aggregate1.getIdentifier());
         List<EventMessage> eventList = new ArrayList<>();
         while (events.hasNext()) {
             eventList.add(events.next());
@@ -143,9 +143,9 @@ public class CachingEventSourcingRepositoryTest {
 
         assertEquals(3, mockEventStore.readEventsAsList(aggregate1.getIdentifier()).size());
 
-        verify(conflictResolver).resolveConflicts(argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+        verify(conflictResolver).resolveConflicts(argThat(new TypeSafeMatcher<List<DomainEventMessage<?>>>() {
             @Override
-            public boolean matchesSafely(List<DomainEventMessage> item) {
+            public boolean matchesSafely(List<DomainEventMessage<?>> item) {
                 return item.size() == 1 && item.get(0).getSequenceNumber() == 2;
             }
 
@@ -153,9 +153,9 @@ public class CachingEventSourcingRepositoryTest {
             public void describeTo(Description description) {
                 description.appendText("a list with 1 event, having sequence number 2");
             }
-        }), argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+        }), argThat(new TypeSafeMatcher<List<DomainEventMessage<?>>>() {
             @Override
-            public boolean matchesSafely(List<DomainEventMessage> item) {
+            public boolean matchesSafely(List<DomainEventMessage<?>> item) {
                 return item.size() == 1 && item.get(0).getSequenceNumber() == 1;
             }
 
@@ -166,7 +166,8 @@ public class CachingEventSourcingRepositoryTest {
         }));
     }
 
-    @Test @Ignore
+    @Test
+    @Ignore
     public void testLoadAggregateFromCacheWithExpectedVersion_ConcurrentModificationsDetected() {
         mockEventStore = spy(new InMemoryEventStore());
         testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore);
@@ -195,9 +196,9 @@ public class CachingEventSourcingRepositoryTest {
 
         verify(mockEventStore, never()).readEvents(anyString(), anyObject());
 
-        verify(conflictResolver).resolveConflicts(argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+        verify(conflictResolver).resolveConflicts(argThat(new TypeSafeMatcher<List<DomainEventMessage<?>>>() {
             @Override
-            public boolean matchesSafely(List<DomainEventMessage> item) {
+            public boolean matchesSafely(List<DomainEventMessage<?>> item) {
                 return item.size() == 1 && item.get(0).getSequenceNumber() == 2;
             }
 
@@ -205,9 +206,9 @@ public class CachingEventSourcingRepositoryTest {
             public void describeTo(Description description) {
                 description.appendText("a list with 1 event, having sequence number 2");
             }
-        }), argThat(new TypeSafeMatcher<List<DomainEventMessage>>() {
+        }), argThat(new TypeSafeMatcher<List<DomainEventMessage<?>>>() {
             @Override
-            public boolean matchesSafely(List<DomainEventMessage> item) {
+            public boolean matchesSafely(List<DomainEventMessage<?>> item) {
                 return item.size() == 1 && item.get(0).getSequenceNumber() == 1;
             }
 
@@ -254,8 +255,8 @@ public class CachingEventSourcingRepositoryTest {
         } catch (RuntimeException e) {
             // whatever
         }
-        Object identifier = aggregate1.getIdentifier();
-        assertEquals(null, cache.get(identifier));
+        String identifier = aggregate1.getIdentifier();
+        assertNull(cache.get(identifier));
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {
@@ -266,11 +267,6 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        public String getTypeIdentifier() {
-            return "mock";
-        }
-
-        @Override
         public Class<StubAggregate> getAggregateType() {
             return StubAggregate.class;
         }
@@ -278,22 +274,24 @@ public class CachingEventSourcingRepositoryTest {
 
     private class InMemoryEventStore implements EventStore {
 
-        protected Map<Object, List<DomainEventMessage>> store = new HashMap<>();
+        protected Map<String, List<DomainEventMessage>> store = new HashMap<>();
 
         @Override
-        public void appendEvents(String identifier, DomainEventStream events) {
-            while (events.hasNext()) {
-                DomainEventMessage next = events.next();
-                if (!store.containsKey(next.getAggregateIdentifier())) {
-                    store.put(next.getAggregateIdentifier(), new ArrayList<>());
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            for (EventMessage event : events) {
+                if (event instanceof DomainEventMessage) {
+                    DomainEventMessage next = (DomainEventMessage) event;
+                    if (!store.containsKey(next.getAggregateIdentifier())) {
+                        store.put(next.getAggregateIdentifier(), new ArrayList<>());
+                    }
+                    List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
+                    eventList.add(next);
                 }
-                List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
-                eventList.add(next);
             }
         }
 
         @Override
-        public DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber,
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             if (!store.containsKey(identifier)) {
                 throw new AggregateNotFoundException(identifier, "Aggregate not found");
@@ -309,7 +307,7 @@ public class CachingEventSourcingRepositoryTest {
             return new SimpleDomainEventStream(filteredEvents);
         }
 
-        public List<DomainEventMessage> readEventsAsList(Object identifier) {
+        public List<DomainEventMessage> readEventsAsList(String identifier) {
             return store.get(identifier);
         }
     }

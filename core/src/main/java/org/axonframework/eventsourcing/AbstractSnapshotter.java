@@ -20,6 +20,7 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.unitofwork.NoTransactionManager;
@@ -48,36 +49,37 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private TransactionManager transactionManager = new NoTransactionManager();
 
     @Override
-    public void scheduleSnapshot(String typeIdentifier, String aggregateIdentifier) {
+    public void scheduleSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType, String aggregateIdentifier) {
         executor.execute(new SilentTask(
                 new TransactionalRunnableWrapper(transactionManager,
-                                                 createSnapshotterTask(typeIdentifier, aggregateIdentifier)
+                                                 createSnapshotterTask(aggregateType, aggregateIdentifier)
                 )));
     }
 
     /**
      * Creates an instance of a task that contains the actual snapshot creation logic.
      *
-     * @param typeIdentifier      The type of the aggregate to create a snapshot for
+     * @param aggregateType       The type of the aggregate to create a snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @return the task containing snapshot creation logic
      */
-    protected Runnable createSnapshotterTask(String typeIdentifier, String aggregateIdentifier) {
-        return new CreateSnapshotTask(typeIdentifier, aggregateIdentifier);
+    protected Runnable createSnapshotterTask(Class<? extends EventSourcedAggregateRoot> aggregateType,
+                                             String aggregateIdentifier) {
+        return new CreateSnapshotTask(aggregateType, aggregateIdentifier);
     }
 
     /**
-     * Creates a snapshot event for an aggregate of the given <code>typeIdentifier</code> of which passed events are
-     * available in the given <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is
+     * Creates a snapshot event for an aggregate of which passed events are available in the given
+     * <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is
      * not necessary or appropriate for the given event stream.
      *
-     * @param typeIdentifier      The aggregate's type identifier
+     * @param aggregateType       The aggregate's type identifier
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @param eventStream         The event stream containing the aggregate's past events
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
-    protected abstract DomainEventMessage createSnapshot(String typeIdentifier, String aggregateIdentifier,
-                                                         DomainEventStream eventStream);
+    protected abstract DomainEventMessage createSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType,
+                                                         String aggregateIdentifier, DomainEventStream eventStream);
 
     /**
      * Sets the transactionManager that wraps the snapshot creation in a transaction. By default, no transactions are
@@ -94,7 +96,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @return the event store this snapshotter uses to load domain events and store snapshot events.
      */
-    protected SnapshotEventStore getEventStore() {
+    protected EventStore getEventStore() {
         return eventStore;
     }
 
@@ -177,23 +179,24 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     private final class CreateSnapshotTask implements Runnable {
 
-        private final String typeIdentifier;
+        private final Class<? extends EventSourcedAggregateRoot> aggregateType;
         private final String aggregateIdentifier;
 
-        private CreateSnapshotTask(String typeIdentifier, String aggregateIdentifier) {
-            this.typeIdentifier = typeIdentifier;
+        private CreateSnapshotTask(Class<? extends EventSourcedAggregateRoot> aggregateType,
+                                   String aggregateIdentifier) {
+            this.aggregateType = aggregateType;
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
         @Override
         public void run() {
-            DomainEventStream eventStream = eventStore.readEvents(typeIdentifier, aggregateIdentifier);
+            DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
             try {
                 // a snapshot should only be stored if the snapshot replaces at least more than one event
                 long firstEventSequenceNumber = eventStream.peek().getSequenceNumber();
-                DomainEventMessage snapshotEvent = createSnapshot(typeIdentifier, aggregateIdentifier, eventStream);
+                DomainEventMessage snapshotEvent = createSnapshot(aggregateType, aggregateIdentifier, eventStream);
                 if (snapshotEvent != null && snapshotEvent.getSequenceNumber() > firstEventSequenceNumber) {
-                    eventStore.appendSnapshotEvent(typeIdentifier, snapshotEvent);
+                    eventStore.appendSnapshotEvent(snapshotEvent);
                 }
             } finally {
                 IOUtils.closeQuietlyIfCloseable(eventStream);

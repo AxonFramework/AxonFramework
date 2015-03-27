@@ -16,12 +16,12 @@
 
 package org.axonframework.eventstore.supporting;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventContainer;
 import org.axonframework.domain.MetaData;
-import org.junit.Test;
+import org.junit.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Knut-Olav Hoven
@@ -32,7 +32,7 @@ public class VolatileEventStoreTest {
     public void readEvents_givenNoEvents() {
         VolatileEventStore es = new VolatileEventStore();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isFalse();
     }
@@ -44,14 +44,14 @@ public class VolatileEventStoreTest {
         EventContainer ec1 = new EventContainer("My-1");
         ec1.addEvent(MetaData.emptyInstance(), new MyEvent(1));
         ec1.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        es.appendEvents("MyAggregate", ec1.getEventStream());
+        es.appendEvents(ec1.getEventStream());
 
         EventContainer ec2 = new EventContainer("My-2");
         ec2.addEvent(MetaData.emptyInstance(), new MyEvent(21));
         ec2.addEvent(MetaData.emptyInstance(), new MyEvent(22));
-        es.appendEvents("MyAggregate", ec2.getEventStream());
+        es.appendEvents(ec2.getEventStream());
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isTrue();
         assertThat(readEvents.next().getSequenceNumber()).isEqualTo(0L);
@@ -78,7 +78,7 @@ public class VolatileEventStoreTest {
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
         ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
 
-        es.appendEvents("MyAggregate", ec.getEventStream());
+        es.appendEvents(ec.getEventStream());
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 

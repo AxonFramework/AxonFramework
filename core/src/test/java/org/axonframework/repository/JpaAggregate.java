@@ -24,7 +24,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 @Entity
-public class JpaAggregate extends AbstractAggregateRoot<String> {
+public class JpaAggregate extends AbstractAggregateRoot {
 
     private static final long serialVersionUID = -7075224524414732603L;
 

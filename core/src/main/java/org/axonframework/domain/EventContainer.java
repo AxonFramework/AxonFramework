@@ -42,7 +42,7 @@ public class EventContainer implements Serializable {
 
     private static final long serialVersionUID = -39816393359395878L;
 
-    private final List<DomainEventMessage> events = new ArrayList<>();
+    private final List<DomainEventMessage<?>> events = new ArrayList<>();
     private final String aggregateIdentifier;
     private Long lastCommittedSequenceNumber;
     private transient Long lastSequenceNumber; // NOSONAR (intentionally not set by deserialization)
@@ -87,12 +87,12 @@ public class EventContainer implements Serializable {
      */
     public <T> DomainEventMessage<T> addEvent(DomainEventMessage<T> domainEventMessage) {
         if (domainEventMessage.getAggregateIdentifier() == null) {
-            domainEventMessage = new GenericDomainEventMessage<T>(domainEventMessage.getIdentifier(),
-                                                                  domainEventMessage.getTimestamp(),
-                                                                  aggregateIdentifier,
-                                                                  domainEventMessage.getSequenceNumber(),
-                                                                  domainEventMessage.getPayload(),
-                                                                  domainEventMessage.getMetaData());
+            domainEventMessage = new GenericDomainEventMessage<>(domainEventMessage.getIdentifier(),
+                                                                 domainEventMessage.getTimestamp(),
+                                                                 aggregateIdentifier,
+                                                                 domainEventMessage.getSequenceNumber(),
+                                                                 domainEventMessage.getPayload(),
+                                                                 domainEventMessage.getMetaData());
         }
         if (registrationCallbacks != null) {
             for (EventRegistrationCallback callback : registrationCallbacks) {
@@ -105,14 +105,14 @@ public class EventContainer implements Serializable {
     }
 
     /**
-     * Read the events inside this container using a {@link org.axonframework.domain.DomainEventStream}. The returned
-     * stream is a snapshot of the uncommitted events in the aggregate at the time of the invocation. Once returned,
-     * newly applied events are not accessible from the returned event stream.
+     * Read the events inside this container. The returned stream is a snapshot of the uncommitted events in the
+     * aggregate at the time of the invocation. Once returned, newly applied events are not accessible from the
+     * returned event stream.
      *
      * @return a DomainEventStream providing access to the events in this container
      */
-    public DomainEventStream getEventStream() {
-        return new SimpleDomainEventStream(events);
+    public List<DomainEventMessage<?>> getEventStream() {
+        return new ArrayList<>(events);
     }
 
     /**
@@ -130,7 +130,7 @@ public class EventContainer implements Serializable {
      * @param lastKnownSequenceNumber the sequence number of the last known event
      */
     public void initializeSequenceNumber(Long lastKnownSequenceNumber) {
-        Assert.state(events.size() == 0, "Cannot set first sequence number if events have already been added");
+        Assert.state(events.isEmpty(), "Cannot set first sequence number if events have already been added");
         lastCommittedSequenceNumber = lastKnownSequenceNumber;
     }
 

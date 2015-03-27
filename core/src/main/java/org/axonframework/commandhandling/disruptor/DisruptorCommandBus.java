@@ -30,6 +30,7 @@ import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.interceptors.SerializationOptimizingInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -267,7 +268,7 @@ public class DisruptorCommandBus implements CommandBus {
         int publisherSegment = 0;
         int serializerSegment = 0;
         if ((commandHandlerInvokers.length > 1 || publisherCount > 1 || serializerCount > 1)) {
-            Object aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
+            String aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
             if (aggregateIdentifier != null) {
                 int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
                 if (commandHandlerInvokers.length > 1) {
@@ -330,7 +331,7 @@ public class DisruptorCommandBus implements CommandBus {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
             invoker.createRepository(aggregateFactory, decorator);
         }
-        return new DisruptorRepository<>(aggregateFactory.getTypeIdentifier());
+        return new DisruptorRepository<>(aggregateFactory.getAggregateType());
     }
 
     @Override
@@ -387,27 +388,27 @@ public class DisruptorCommandBus implements CommandBus {
 
     private static class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
 
-        private final String typeIdentifier;
+        private final Class<T> type;
 
-        public DisruptorRepository(String typeIdentifier) {
-            this.typeIdentifier = typeIdentifier;
+        public DisruptorRepository(Class<T> type) {
+            this.type = type;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public T load(String aggregateIdentifier, Long expectedVersion) {
-            return (T) CommandHandlerInvoker.getRepository(typeIdentifier).load(aggregateIdentifier, expectedVersion);
+            return (T) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier, expectedVersion);
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public T load(String aggregateIdentifier) {
-            return (T) CommandHandlerInvoker.getRepository(typeIdentifier).load(aggregateIdentifier);
+            return (T) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier);
         }
 
         @Override
         public void add(T aggregate) {
-            CommandHandlerInvoker.getRepository(typeIdentifier).add(aggregate);
+            CommandHandlerInvoker.getRepository(type).add(aggregate);
         }
     }
 
@@ -416,15 +417,14 @@ public class DisruptorCommandBus implements CommandBus {
         public static final EventStreamDecorator INSTANCE = new NoOpEventStreamDecorator();
 
         @Override
-        public DomainEventStream decorateForRead(String aggregateType, String aggregateIdentifier,
-                                                 DomainEventStream eventStream) {
+        public DomainEventStream decorateForRead(String aggregateIdentifier, DomainEventStream eventStream) {
             return eventStream;
         }
 
         @Override
-        public DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
-                                                   DomainEventStream eventStream) {
-            return eventStream;
+        public List<DomainEventMessage<?>> decorateForAppend(EventSourcedAggregateRoot aggregate,
+                                                             List<DomainEventMessage<?>> events) {
+            return events;
         }
     }
 

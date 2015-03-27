@@ -60,23 +60,22 @@ public class FileSystemSnapshotEventReader {
     /**
      * Reads the latest snapshot of the given aggregate identifier.
      *
-     * @param type       the aggregate's type
      * @param identifier the aggregate's identifier
      * @return The latest snapshot of the given aggregate identifier
      *
      * @throws IOException when reading the <code>snapshotEventFile</code> or reading the <code>eventFile</code> failed
      */
-    public DomainEventMessage readSnapshotEvent(String type, Object identifier) throws IOException {
+    public DomainEventMessage readSnapshotEvent(String identifier) throws IOException {
         DomainEventMessage snapshotEvent = null;
 
         FileSystemSnapshotEventEntry fileSystemSnapshotEvent = readLastSnapshotEntry();
-        if(fileSystemSnapshotEvent != null) {
+        if (fileSystemSnapshotEvent != null) {
             long actuallySkipped = eventFile.skip(fileSystemSnapshotEvent.getBytesToSkipInEventFile());
             if (actuallySkipped != fileSystemSnapshotEvent.getBytesToSkipInEventFile()) {
                 logger.warn(
                         "The skip operation did not actually skip the expected amount of bytes. "
-                                + "The event log of aggregate of type {} and identifier {} might be corrupt.",
-                        type, identifier);
+                                + "The event log of aggregate with identifier {} might be corrupt.",
+                        identifier);
             }
             snapshotEvent = fileSystemSnapshotEvent.getEventMessage();
         }
@@ -100,7 +99,7 @@ public class FileSystemSnapshotEventReader {
     }
 
     private FileSystemSnapshotEventEntry readSnapshotEventEntry(DataInputStream snapshotEventFileDataInputStream)
-            throws IOException{
+            throws IOException {
         FileSystemEventMessageReader snapshotEventReader =
                 new FileSystemEventMessageReader(snapshotEventFileDataInputStream);
         try {

@@ -21,7 +21,7 @@ import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.FixedValueParameterResolver;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.annotation.Timestamp;
@@ -71,11 +71,10 @@ public class AbstractAnnotatedAggregateRootTest {
         assertTrue(testSubject.entity.appliedEvents.get(1).nested);
         assertFalse(testSubject.entity.appliedEvents.get(2).nested);
 
-        DomainEventStream uncommittedEvents = testSubject.getUncommittedEvents();
-        int i = 0;
-        while (uncommittedEvents.hasNext()) {
-            assertSame(testSubject.entity.appliedEvents.get(i), uncommittedEvents.next().getPayload());
-            i++;
+        List<DomainEventMessage<?>> uncommittedEvents = testSubject.getUncommittedEvents();
+
+        for (int i = 0; i < uncommittedEvents.size(); i++) {
+            assertSame(testSubject.entity.appliedEvents.get(i), uncommittedEvents.get(i).getPayload());
         }
     }
 
@@ -96,11 +95,11 @@ public class AbstractAnnotatedAggregateRootTest {
     public void testIdentifierInitialization_LateInitialization() {
         LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
         assertEquals("lateIdentifier", aggregate.getIdentifier());
-        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
+        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().get(0).getAggregateIdentifier());
 
-        DomainEventStream uncommittedEvents = aggregate.getUncommittedEvents();
-        assertFalse(((StubDomainEvent) uncommittedEvents.next().getPayload()).nested);
-        assertTrue(((StubDomainEvent) uncommittedEvents.next().getPayload()).nested);
+        List<DomainEventMessage<?>> uncommittedEvents = aggregate.getUncommittedEvents();
+        assertFalse(((StubDomainEvent) uncommittedEvents.get(0).getPayload()).nested);
+        assertTrue(((StubDomainEvent) uncommittedEvents.get(1).getPayload()).nested);
     }
 
     @Test
@@ -109,7 +108,7 @@ public class AbstractAnnotatedAggregateRootTest {
         DateTime firstTimestamp = aggregate.creationTime;
 
         LateIdentifiedAggregate aggregate2 = new LateIdentifiedAggregate();
-        aggregate2.initializeState(aggregate.getUncommittedEvents());
+        aggregate2.initializeState(new SimpleDomainEventStream(aggregate.getUncommittedEvents()));
 
         assertSame(aggregate2.creationTime, firstTimestamp);
     }
@@ -118,7 +117,7 @@ public class AbstractAnnotatedAggregateRootTest {
     public void testIdentifierInitialization_JavaxPersistenceId() {
         JavaxPersistenceIdIdentifiedAggregate aggregate = new JavaxPersistenceIdIdentifiedAggregate();
         assertEquals("lateIdentifier", aggregate.getIdentifier());
-        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().peek().getAggregateIdentifier());
+        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().get(0).getAggregateIdentifier());
     }
 
     @Test

@@ -36,6 +36,7 @@ public class AcceptAllConflictResolver implements ConflictResolver {
      * This implementation does nothing, hence accepting all unseen changes
      */
     @Override
-    public void resolveConflicts(List<DomainEventMessage> appliedChanges, List<DomainEventMessage> committedChanges) {
+    public void resolveConflicts(List<DomainEventMessage<?>> appliedChanges,
+                                 List<DomainEventMessage<?>> committedChanges) {
     }
 }

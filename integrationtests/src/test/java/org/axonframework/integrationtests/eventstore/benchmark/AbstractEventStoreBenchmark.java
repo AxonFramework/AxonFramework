@@ -18,7 +18,6 @@ package org.axonframework.integrationtests.eventstore.benchmark;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
 import org.springframework.context.ApplicationContext;
@@ -39,13 +38,13 @@ public abstract class AbstractEventStoreBenchmark {
     private static final int TRANSACTION_COUNT = 50;
     private static final int TRANSACTION_SIZE = 50;
 
-    protected abstract void prepareEventStore();
-
     protected static AbstractEventStoreBenchmark prepareBenchMark(String... appContexts) {
         Assert.notEmpty(appContexts);
         ApplicationContext context = new ClassPathXmlApplicationContext(appContexts);
         return context.getBean(AbstractEventStoreBenchmark.class);
     }
+
+    protected abstract void prepareEventStore();
 
     public void startBenchMark() throws InterruptedException {
         prepareEventStore();
@@ -77,15 +76,14 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected int saveAndLoadLargeNumberOfEvents(String aggregateId, EventStore eventStore,
                                                  int eventSequence) {
-        List<DomainEventMessage<StubDomainEvent>> events = new ArrayList<>();
+        List<DomainEventMessage<?>> events = new ArrayList<>(getTransactionSize());
         for (int t = 0; t < getTransactionSize(); t++) {
             events.add(new GenericDomainEventMessage<>(
                     aggregateId,
                     eventSequence++,
-                    new StubDomainEvent(), null
-            ));
+                    new StubDomainEvent(), null));
         }
-        eventStore.appendEvents("benchmark", new SimpleDomainEventStream(events));
+        eventStore.appendEvents(events);
         return eventSequence;
     }
 

@@ -76,7 +76,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
 
     @Override
     public void add(T aggregate) {
-        final Object aggregateIdentifier = aggregate.getIdentifier();
+        final String aggregateIdentifier = aggregate.getIdentifier();
         lockManager.obtainLock(aggregateIdentifier);
         try {
             super.add(aggregate);
@@ -178,9 +178,9 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     private class LockCleaningListener extends UnitOfWorkListenerAdapter {
 
-        private final Object aggregateIdentifier;
+        private final String aggregateIdentifier;
 
-        public LockCleaningListener(Object aggregateIdentifier) {
+        public LockCleaningListener(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 

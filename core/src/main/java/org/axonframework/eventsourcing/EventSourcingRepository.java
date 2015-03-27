@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -56,9 +55,9 @@ import java.util.Set;
 public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
 
     private final EventStore eventStore;
-    private ConflictResolver conflictResolver;
     private final Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<>();
     private final AggregateFactory<T> aggregateFactory;
+    private ConflictResolver conflictResolver;
 
     /**
      * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
@@ -122,13 +121,12 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      */
     @Override
     protected void doSaveWithLock(T aggregate) {
-        DomainEventStream eventStream = aggregate.getUncommittedEvents();
+        List<DomainEventMessage<?>> eventStream = aggregate.getUncommittedEvents();
         try {
-            Iterator<EventStreamDecorator> iterator = eventStreamDecorators.descendingIterator();
-            while (iterator.hasNext()) {
-                eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), aggregate, eventStream);
+            for (EventStreamDecorator eventStreamDecorator : eventStreamDecorators) {
+                eventStream = eventStreamDecorator.decorateForAppend(aggregate, eventStream);
             }
-            eventStore.appendEvents(getTypeIdentifier(), eventStream);
+            eventStore.appendEvents(eventStream);
         } finally {
             IOUtils.closeQuietlyIfCloseable(eventStream);
         }
@@ -163,17 +161,17 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         DomainEventStream originalStream = null;
         try {
             try {
-                events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
+                events = eventStore.readEvents(aggregateIdentifier);
             } catch (EventStreamNotFoundException e) {
                 throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found", e);
             }
             originalStream = events;
             for (EventStreamDecorator decorator : eventStreamDecorators) {
-                events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
+                events = decorator.decorateForRead(aggregateIdentifier, events);
             }
 
             final T aggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
-            List<DomainEventMessage> unseenEvents = new ArrayList<>();
+            List<DomainEventMessage<?>> unseenEvents = new ArrayList<>();
             aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
             if (aggregate.isDeleted()) {
                 throw new AggregateDeletedException(aggregateIdentifier);
@@ -204,29 +202,8 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @param aggregate    The aggregate containing the potential conflicts
      * @param unseenEvents The events that have been concurrently applied
      */
-    protected void resolveConflicts(T aggregate, DomainEventStream unseenEvents) {
-        CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, asList(unseenEvents)));
-    }
-
-    private List<DomainEventMessage> asList(DomainEventStream domainEventStream) {
-        List<DomainEventMessage> unseenEvents = new ArrayList<>();
-        while (domainEventStream.hasNext()) {
-            unseenEvents.add(domainEventStream.next());
-        }
-        return unseenEvents;
-    }
-
-    /**
-     * Return the type identifier belonging to the AggregateFactory of this repository.
-     *
-     * @return the type identifier belonging to the AggregateFactory of this repository
-     */
-    public String getTypeIdentifier() {
-        if (aggregateFactory == null) {
-            throw new IllegalStateException("Either an aggregate factory must be configured (recommended), "
-                                                    + "or the getTypeIdentifier() method must be overridden.");
-        }
-        return aggregateFactory.getTypeIdentifier();
+    protected void resolveConflicts(T aggregate, List<DomainEventMessage<?>> unseenEvents) {
+        CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
     }
 
     /**
@@ -276,31 +253,6 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         this.conflictResolver = conflictResolver;
     }
 
-    private final class ConflictResolvingListener extends UnitOfWorkListenerAdapter {
-
-        private final T aggregate;
-        private final List<DomainEventMessage> unseenEvents;
-
-        private ConflictResolvingListener(T aggregate, List<DomainEventMessage> unseenEvents) {
-            this.aggregate = aggregate;
-            this.unseenEvents = unseenEvents;
-        }
-
-        @Override
-        public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-                                    List<EventMessage> events) {
-            if (hasPotentialConflicts()) {
-                conflictResolver.resolveConflicts(asList(aggregate.getUncommittedEvents()), unseenEvents);
-            }
-        }
-
-        private boolean hasPotentialConflicts() {
-            return aggregate.getUncommittedEventCount() > 0
-                    && aggregate.getVersion() != null
-                    && !unseenEvents.isEmpty();
-        }
-    }
-
     /**
      * Wrapper around a DomainEventStream that captures all passing events of which the sequence number is larger than
      * the expected version number.
@@ -308,10 +260,10 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     private static final class CapturingEventStream implements DomainEventStream, Closeable {
 
         private final DomainEventStream eventStream;
-        private final List<DomainEventMessage> unseenEvents;
+        private final List<DomainEventMessage<?>> unseenEvents;
         private final Long expectedVersion;
 
-        private CapturingEventStream(DomainEventStream events, List<DomainEventMessage> unseenEvents,
+        private CapturingEventStream(DomainEventStream events, List<DomainEventMessage<?>> unseenEvents,
                                      Long expectedVersion) {
             eventStream = events;
             this.unseenEvents = unseenEvents;
@@ -340,6 +292,31 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         @Override
         public void close() throws IOException {
             IOUtils.closeQuietlyIfCloseable(eventStream);
+        }
+    }
+
+    private final class ConflictResolvingListener extends UnitOfWorkListenerAdapter {
+
+        private final T aggregate;
+        private final List<DomainEventMessage<?>> unseenEvents;
+
+        private ConflictResolvingListener(T aggregate, List<DomainEventMessage<?>> unseenEvents) {
+            this.aggregate = aggregate;
+            this.unseenEvents = unseenEvents;
+        }
+
+        @Override
+        public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+                                    List<EventMessage> events) {
+            if (hasPotentialConflicts()) {
+                conflictResolver.resolveConflicts(aggregate.getUncommittedEvents(), unseenEvents);
+            }
+        }
+
+        private boolean hasPotentialConflicts() {
+            return aggregate.getUncommittedEventCount() > 0
+                    && aggregate.getVersion() != null
+                    && !unseenEvents.isEmpty();
         }
     }
 }

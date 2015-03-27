@@ -35,19 +35,18 @@ import static org.mockito.Mockito.*;
  */
 public class SerializedDomainEventMessageTest {
 
+    private final String id = UUID.randomUUID().toString();
+    private final long seqNo = 1L;
     private SerializedObject<String> serializedPayload = new SimpleSerializedObject<>("serialized",
                                                                                             String.class,
                                                                                             "java.lang.Object",
                                                                                             "1");
     private SerializedObject<String> serializedMetaData = new SerializedMetaData<>("serialized",
                                                                                          String.class);
-
     private Object deserializedPayload = new Object();
     private MetaData deserializedMetaData = MetaData.emptyInstance();
     private Serializer serializer = mock(Serializer.class);
     private SerializedDomainEventData domainEventData = mock(SerializedDomainEventData.class);
-    private final String id = UUID.randomUUID().toString();
-    private final long seqNo = 1L;
 
     @Before
     public void setUp() {
@@ -118,7 +117,7 @@ public class SerializedDomainEventMessageTest {
         SerializedObject<byte[]> payload = serializer.serialize(message.getPayload(), byte[].class);
         SerializedObject<byte[]> metaData = serializer.serialize(message.getMetaData(), byte[].class);
 
-        SerializedDomainEventData data = new DomainEventEntry("Object", message, payload, metaData);
+        SerializedDomainEventData data = new DomainEventEntry(message, payload, metaData);
 
         SerializedDomainEventMessage<String> sdem = new SerializedDomainEventMessage<>(data, serializer);
 

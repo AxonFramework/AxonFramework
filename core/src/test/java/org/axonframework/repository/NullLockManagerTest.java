@@ -31,7 +31,7 @@ public class NullLockManagerTest {
     public void testInvocationHasNoEffect() {
         NullLockManager manager = new NullLockManager();
         assertTrue(manager.validateLock(null));
-        manager.obtainLock(UUID.randomUUID());
-        manager.releaseLock(UUID.randomUUID());
+        manager.obtainLock(UUID.randomUUID().toString());
+        manager.releaseLock(UUID.randomUUID().toString());
     }
 }

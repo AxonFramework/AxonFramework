@@ -58,6 +58,6 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
         reloaded.doSomething();
 
         assertEquals(3, reloaded.getInvocationCount());
-        assertEquals(2L, reloaded.getUncommittedEvents().next().getSequenceNumber());
+        assertEquals(2L, reloaded.getUncommittedEvents().get(0).getSequenceNumber());
     }
 }

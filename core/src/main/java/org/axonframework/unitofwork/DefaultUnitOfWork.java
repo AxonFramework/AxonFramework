@@ -49,8 +49,8 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
             new LinkedHashMap<>();
     private final Map<EventBus, List<EventMessage<?>>> eventsToPublish = new HashMap<>();
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
-    private Status dispatcherStatus = Status.READY;
     private final TransactionManager transactionManager;
+    private Status dispatcherStatus = Status.READY;
     private Object backingTransaction;
 
     /**
@@ -68,11 +68,6 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
      */
     public DefaultUnitOfWork(TransactionManager<?> transactionManager) {
         this.transactionManager = transactionManager;
-    }
-
-    private static enum Status {
-
-        READY, DISPATCHING
     }
 
     /**
@@ -185,7 +180,7 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
     }
 
     @SuppressWarnings({"unchecked"})
-    private <T extends AggregateRoot> T findSimilarAggregate(Class<T> aggregateType, Object identifier) {
+    private <T extends AggregateRoot> T findSimilarAggregate(Class<T> aggregateType, String identifier) {
         for (AggregateRoot aggregate : registeredAggregates.keySet()) {
             if (aggregateType.isInstance(aggregate) && identifier.equals(aggregate.getIdentifier())) {
                 return (T) aggregate;
@@ -306,6 +301,11 @@ public class DefaultUnitOfWork extends NestableUnitOfWork {
             events.addAll(entry.getValue());
         }
         return Collections.unmodifiableList(events);
+    }
+
+    private static enum Status {
+
+        READY, DISPATCHING
     }
 
     private static class AggregateEntry<T extends AggregateRoot> {

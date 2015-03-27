@@ -30,11 +30,24 @@ public class DefaultEventEntryStoreTest {
 
     private static final byte[] payloadBytes = "Hello World".getBytes();
     private final String aggregateIdentifier = "agg1";
-    private String aggregateType = "foz";
     private String snap_aggregateType = "snap";
     private DefaultEventEntryStore testSubject;
     private Connection connection;
 	private JDBCDataSource dataSource;
+
+    private static SerializedMetaData<byte[]> getMetaData() {
+        return new SerializedMetaData<>("Meta is meta".getBytes(), byte[].class);
+    }
+
+    private static SimpleSerializedObject<byte[]> getPayload() {
+        return new SimpleSerializedObject<>(payloadBytes, byte[].class,
+                                            new SimpleSerializedType("java.lang.String", "3"));
+    }
+
+    private static SimpleSerializedObject<byte[]> getPayloadv4() {
+        return new SimpleSerializedObject<>(payloadBytes, byte[].class,
+                                            new SimpleSerializedType("java.lang.String", "4"));
+    }
 
     @Before
     public void createDatabase() throws SQLException {
@@ -56,11 +69,14 @@ public class DefaultEventEntryStoreTest {
     public void fetchAggregateStreamShouldWork() throws SQLException {
         deleteCurrentPersistentEvents();
         DomainEventMessage first = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        testSubject.persistEvent(aggregateType, first, getPayload(), getMetaData());
+        testSubject.persistEvent(first, getPayload(), getMetaData());
         DomainEventMessage second = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
-        testSubject.persistEvent(aggregateType, second, getPayload(), getMetaData());
+        testSubject.persistEvent(second, getPayload(), getMetaData());
 
-        final Iterator<? extends SerializedDomainEventData> actual = testSubject.fetchAggregateStream(aggregateType, aggregateIdentifier, 1, 1);
+        final Iterator<? extends SerializedDomainEventData> actual = testSubject.fetchAggregateStream(
+                aggregateIdentifier,
+                1,
+                1);
 
         checkSame(first, actual.next());
         checkSame(second, actual.next());
@@ -79,11 +95,11 @@ public class DefaultEventEntryStoreTest {
     public void fetchAggregateStreamWorks() throws SQLException {
         deleteCurrentPersistentEvents();
         DomainEventMessage dem = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        testSubject.persistEvent(aggregateType, dem, getPayload(), getMetaData());
+        testSubject.persistEvent(dem, getPayload(), getMetaData());
         DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
-        testSubject.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
+        testSubject.persistEvent(dem2, getPayload(), getMetaData());
 
-        Iterator<? extends SerializedDomainEventData> stream = testSubject.fetchAggregateStream(aggregateType, "agg1", 0, 1);
+        Iterator<? extends SerializedDomainEventData> stream = testSubject.fetchAggregateStream("agg1", 0, 1);
         assertTrue(stream.hasNext());
         SerializedDomainEventData next = stream.next();
         assertEquals(dem.getSequenceNumber(), next.getSequenceNumber());
@@ -97,11 +113,11 @@ public class DefaultEventEntryStoreTest {
     public void persistSnapshots() throws SQLException {
         deleteCurrentSnapshotEvents();
         DomainEventMessage dem = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        testSubject.persistSnapshot(snap_aggregateType, dem, getPayload(), getMetaData());
+        testSubject.persistSnapshot(dem, getPayload(), getMetaData());
         DomainEventMessage expected = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
-        testSubject.persistSnapshot(snap_aggregateType, expected, getPayload(), getMetaData());
+        testSubject.persistSnapshot(expected, getPayload(), getMetaData());
 
-        final SerializedDomainEventData actual = testSubject.loadLastSnapshotEvent(snap_aggregateType, "agg1");
+        final SerializedDomainEventData actual = testSubject.loadLastSnapshotEvent("agg1");
         checkSame(expected, actual);
     }
 
@@ -109,11 +125,11 @@ public class DefaultEventEntryStoreTest {
     public void pruneSnapshots() throws SQLException {
         deleteCurrentSnapshotEvents();
         DomainEventMessage dem = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        testSubject.persistSnapshot(snap_aggregateType, dem, getPayload(), getMetaData());
+        testSubject.persistSnapshot(dem, getPayload(), getMetaData());
         DomainEventMessage expected = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
-        testSubject.persistSnapshot(snap_aggregateType, expected, getPayload(), getMetaData());
+        testSubject.persistSnapshot(expected, getPayload(), getMetaData());
 
-        testSubject.pruneSnapshots(snap_aggregateType, expected, 1);
+        testSubject.pruneSnapshots(expected, 1);
         ResultSet resultSet = connection.prepareStatement("select count(*) from SnapshotEventEntry").executeQuery();
         resultSet.next();
         assertEquals(1, resultSet.getInt(1));
@@ -124,9 +140,9 @@ public class DefaultEventEntryStoreTest {
     public void filteredFetchPayloadRevision() throws SQLException {
         deleteCurrentPersistentEvents();
         DomainEventMessage dem1 = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        testSubject.persistEvent(aggregateType, dem1, getPayload(), getMetaData());
+        testSubject.persistEvent(dem1, getPayload(), getMetaData());
         DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
-        testSubject.persistEvent(aggregateType, dem2, getPayloadv4(), getMetaData());
+        testSubject.persistEvent(dem2, getPayloadv4(), getMetaData());
 
         JdbcCriteriaBuilder builder = new JdbcCriteriaBuilder();
         JdbcCriteria criteria = (JdbcCriteria) builder.property("payloadrevision").lessThan("4");
@@ -142,16 +158,16 @@ public class DefaultEventEntryStoreTest {
         final SerializedDomainEventData ret1 = iterator.next();
         assertEquals(122, ret1.getSequenceNumber());
 
-        assertFalse( iterator.hasNext());
+        assertFalse(iterator.hasNext());
     }
 
     @Test
     public void filteredFetch() throws SQLException {
         deleteCurrentPersistentEvents();
         DomainEventMessage dem1 = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        testSubject.persistEvent(aggregateType, dem1, getPayload(), getMetaData());
+        testSubject.persistEvent(dem1, getPayload(), getMetaData());
         DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
-        testSubject.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
+        testSubject.persistEvent(dem2, getPayload(), getMetaData());
 
         final Iterator<? extends SerializedDomainEventData> iterator = testSubject.fetchFiltered(
                 null, Collections.emptyList(), 1);
@@ -171,9 +187,9 @@ public class DefaultEventEntryStoreTest {
     public void filteredFetchLargerBatchSize() throws SQLException {
         deleteCurrentPersistentEvents();
         DomainEventMessage dem1 = new GenericDomainEventMessage(aggregateIdentifier, 122, "apayload");
-        testSubject.persistEvent(aggregateType, dem1, getPayload(), getMetaData());
+        testSubject.persistEvent(dem1, getPayload(), getMetaData());
         DomainEventMessage dem2 = new GenericDomainEventMessage(aggregateIdentifier, 123, "apayload2");
-        testSubject.persistEvent(aggregateType, dem2, getPayload(), getMetaData());
+        testSubject.persistEvent(dem2, getPayload(), getMetaData());
 
         final Iterator<? extends SerializedDomainEventData> iterator = testSubject.fetchFiltered(
                 null, Collections.emptyList(), 100);
@@ -196,18 +212,5 @@ public class DefaultEventEntryStoreTest {
         assertEquals(expected.getIdentifier(), actual.getEventIdentifier());
         assertTrue(Arrays.equals(payloadBytes, (byte[]) actual.getPayload().getData()));
         assertEquals("[B", actual.getPayload().getContentType().getName());
-    }
-
-    private static SerializedMetaData<byte[]> getMetaData() {
-        return new SerializedMetaData<>("Meta is meta".getBytes(), byte[].class);
-    }
-
-    private static SimpleSerializedObject<byte[]> getPayload() {
-        return new SimpleSerializedObject<>(payloadBytes, byte[].class,
-                new SimpleSerializedType("java.lang.String", "3"));
-    }
-    private static SimpleSerializedObject<byte[]> getPayloadv4() {
-        return new SimpleSerializedObject<>(payloadBytes, byte[].class,
-                new SimpleSerializedType("java.lang.String", "4"));
     }
 }

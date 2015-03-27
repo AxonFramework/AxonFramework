@@ -45,16 +45,6 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
     T createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent);
 
     /**
-     * Returns the type identifier for this aggregate factory. The type identifier is used by the EventStore to
-     * organize data related to the same type of aggregate.
-     * <p/>
-     * Tip: in most cases, the simple class name would be a good start.
-     *
-     * @return the type identifier of the aggregates this repository stores
-     */
-    String getTypeIdentifier();
-
-    /**
      * Returns the type of aggregate this factory creates. All instances created by this factory must be an
      * <code>instanceOf</code> this type.
      *

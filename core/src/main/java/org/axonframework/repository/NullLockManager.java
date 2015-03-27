@@ -44,7 +44,7 @@ public class NullLockManager implements LockManager {
      * This implementation does nothing.
      */
     @Override
-    public void obtainLock(Object aggregateIdentifier) {
+    public void obtainLock(String aggregateIdentifier) {
     }
 
     /**
@@ -53,6 +53,6 @@ public class NullLockManager implements LockManager {
      * This implementation does nothing.
      */
     @Override
-    public void releaseLock(Object aggregateIdentifier) {
+    public void releaseLock(String aggregateIdentifier) {
     }
 }

@@ -42,7 +42,6 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
         implements InitializingBean, ApplicationContextAware, BeanNameAware {
 
     private String prototypeBeanName;
-    private String typeIdentifier;
     private ApplicationContext applicationContext;
     private String beanName;
     private Class<?> aggregateType;
@@ -61,11 +60,6 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
             ((AbstractAnnotatedAggregateRoot) aggregate).registerParameterResolverFactory(parameterResolverFactory);
         }
         return aggregate;
-    }
-
-    @Override
-    public String getTypeIdentifier() {
-        return typeIdentifier;
     }
 
     @SuppressWarnings("unchecked")
@@ -89,18 +83,6 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
     }
 
     /**
-     * Sets the type identifier of the aggregate served by this repository. The type identifier is used to identify
-     * events in the event store as belonging to an aggregate served by this repository.
-     * <p/>
-     * Defaults to the bean name of the prototype bean.
-     *
-     * @param typeIdentifier the type identifier of the aggregate served by this repository.
-     */
-    public void setTypeIdentifier(String typeIdentifier) {
-        this.typeIdentifier = typeIdentifier;
-    }
-
-    /**
      * Sets the parameter resolver with which parameters of annotated event handlers in the aggregae are resolved.
      *
      * @param parameterResolverFactory the factory that provides resolver for parameters.
@@ -121,9 +103,6 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        if (this.typeIdentifier == null) {
-            this.typeIdentifier = prototypeBeanName;
-        }
         if (!applicationContext.isPrototype(prototypeBeanName)) {
             throw new IncompatibleAggregateException(
                     format("Cannot initialize repository '%s'. "

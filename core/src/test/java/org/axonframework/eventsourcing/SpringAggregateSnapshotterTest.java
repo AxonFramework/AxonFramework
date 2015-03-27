@@ -63,11 +63,6 @@ public class SpringAggregateSnapshotterTest {
                             }
 
                             @Override
-                            public String getTypeIdentifier() {
-                                return "stub";
-                            }
-
-                            @Override
                             public Class<StubAggregate> getAggregateType() {
                                 return StubAggregate.class;
                             }
@@ -81,15 +76,15 @@ public class SpringAggregateSnapshotterTest {
                                                                           "Mock contents", MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<>(aggregateIdentifier, 1L,
                                                                           "Mock contents", MetaData.emptyInstance());
-        when(mockEventStore.readEvents("stub", aggregateIdentifier))
+        when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(event1, event2));
     }
 
     @Test
     public void testSnapshotCreated_NoTransaction() {
-        testSubject.scheduleSnapshot("stub", aggregateIdentifier);
+        testSubject.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStore).appendSnapshotEvent(eq("stub"), eventSequence(1L));
+        verify(mockEventStore).appendSnapshotEvent(eventSequence(1L));
     }
 
     @Test
@@ -100,9 +95,9 @@ public class SpringAggregateSnapshotterTest {
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(newlyCreatedTransaction);
 
-        testSubject.scheduleSnapshot("stub", aggregateIdentifier);
+        testSubject.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStore).appendSnapshotEvent(eq("stub"), eventSequence(1L));
+        verify(mockEventStore).appendSnapshotEvent(eventSequence(1L));
         verify(mockTransactionManager).commit(newlyCreatedTransaction);
     }
 
@@ -114,9 +109,9 @@ public class SpringAggregateSnapshotterTest {
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
 
-        testSubject.scheduleSnapshot("stub", aggregateIdentifier);
+        testSubject.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStore).appendSnapshotEvent(eq("stub"), eventSequence(1L));
+        verify(mockEventStore).appendSnapshotEvent(eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
     }
 
@@ -128,11 +123,11 @@ public class SpringAggregateSnapshotterTest {
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
         doThrow(new RuntimeException("Stub"))
-                .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEventMessage.class));
+                .when(mockEventStore).appendSnapshotEvent(isA(DomainEventMessage.class));
 
-        testSubject.scheduleSnapshot("stub", aggregateIdentifier);
+        testSubject.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStore).appendSnapshotEvent(eq("stub"), eventSequence(1L));
+        verify(mockEventStore).appendSnapshotEvent(eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
         verify(mockTransactionManager, never()).rollback(existingTransaction);
     }
@@ -145,11 +140,11 @@ public class SpringAggregateSnapshotterTest {
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
         doThrow(new RuntimeException("Stub"))
-                .when(mockEventStore).appendSnapshotEvent(isA(String.class), isA(DomainEventMessage.class));
+                .when(mockEventStore).appendSnapshotEvent(isA(DomainEventMessage.class));
 
-        testSubject.scheduleSnapshot("stub", aggregateIdentifier);
+        testSubject.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStore).appendSnapshotEvent(eq("stub"), eventSequence(1L));
+        verify(mockEventStore).appendSnapshotEvent(eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
         verify(mockTransactionManager).rollback(existingTransaction);
     }

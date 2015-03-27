@@ -16,11 +16,15 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.internal.stubbing.answers.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.*;
@@ -35,37 +39,37 @@ public class CompositeEventStreamDecoratorTest {
     public void setUp() throws Exception {
         decorator1 = mock(EventStreamDecorator.class);
         decorator2 = mock(EventStreamDecorator.class);
-        when(decorator1.decorateForRead(anyString(), any(), any(DomainEventStream.class)))
-                .thenAnswer(new ReturnsArgumentAt(2));
-        when(decorator2.decorateForRead(anyString(), any(), any(DomainEventStream.class)))
-                .thenAnswer(new ReturnsArgumentAt(2));
-        when(decorator1.decorateForAppend(anyString(), any(EventSourcedAggregateRoot.class), any(DomainEventStream.class)))
-                .thenAnswer(new ReturnsArgumentAt(2));
-        when(decorator2.decorateForAppend(anyString(), any(EventSourcedAggregateRoot.class), any(DomainEventStream.class)))
-                .thenAnswer(new ReturnsArgumentAt(2));
+        when(decorator1.decorateForRead(any(), any(DomainEventStream.class)))
+                .thenAnswer(new ReturnsArgumentAt(1));
+        when(decorator2.decorateForRead(any(), any(DomainEventStream.class)))
+                .thenAnswer(new ReturnsArgumentAt(1));
+        when(decorator1.decorateForAppend(any(EventSourcedAggregateRoot.class), anyList()))
+                .thenAnswer(new ReturnsArgumentAt(1));
+        when(decorator2.decorateForAppend(any(EventSourcedAggregateRoot.class), anyList()))
+                .thenAnswer(new ReturnsArgumentAt(1));
         testSubject  = new CompositeEventStreamDecorator(asList(decorator1, decorator2));
     }
 
     @Test
     public void testDecorateForRead() throws Exception {
         final SimpleDomainEventStream eventStream = new SimpleDomainEventStream();
-        testSubject.decorateForRead("test", "id", eventStream);
+        testSubject.decorateForRead("id", eventStream);
 
         InOrder inOrder = inOrder(decorator1, decorator2);
-        inOrder.verify(decorator1).decorateForRead("test", "id", eventStream);
-        inOrder.verify(decorator2).decorateForRead("test", "id", eventStream);
+        inOrder.verify(decorator1).decorateForRead("id", eventStream);
+        inOrder.verify(decorator2).decorateForRead("id", eventStream);
         verifyNoMoreInteractions(decorator1, decorator2);
     }
 
     @Test
     public void testDecorateForAppend() throws Exception {
-        final SimpleDomainEventStream eventStream = new SimpleDomainEventStream();
         final EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);
-        testSubject.decorateForAppend("test", aggregate, eventStream);
+        List<DomainEventMessage<?>> eventStream = new ArrayList<>();
+        testSubject.decorateForAppend(aggregate, eventStream);
 
         InOrder inOrder = inOrder(decorator1, decorator2);
-        inOrder.verify(decorator2).decorateForAppend("test", aggregate, eventStream);
-        inOrder.verify(decorator1).decorateForAppend("test", aggregate, eventStream);
+        inOrder.verify(decorator2).decorateForAppend(aggregate, eventStream);
+        inOrder.verify(decorator1).decorateForAppend(aggregate, eventStream);
         verifyNoMoreInteractions(decorator1, decorator2);
     }
 }

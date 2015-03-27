@@ -22,7 +22,6 @@ import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -57,6 +56,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -130,7 +130,7 @@ public class MongoEventStoreTest_DocPerCommit {
         StubAggregateRoot aggregate = new StubAggregateRoot();
         // no events
         assertEquals(0, aggregate.getUncommittedEventCount());
-        testSubject.appendEvents("test", aggregate.getUncommittedEvents());
+        testSubject.appendEvents(aggregate.getUncommittedEvents());
 
         assertEquals(0, mongoTemplate.domainEventCollection().count());
     }
@@ -138,7 +138,7 @@ public class MongoEventStoreTest_DocPerCommit {
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getUncommittedEvents());
         // just one commit
         assertEquals(1, mongoTemplate.domainEventCollection().count());
         // with multiple events
@@ -146,8 +146,8 @@ public class MongoEventStoreTest_DocPerCommit {
                      ((List) mongoTemplate.domainEventCollection().findOne().get("events")).size());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents("test", aggregate2.getUncommittedEvents());
-        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
+        testSubject.appendEvents(aggregate2.getUncommittedEvents());
+        DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> actualEvents = new ArrayList<>();
         long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
@@ -172,10 +172,10 @@ public class MongoEventStoreTest_DocPerCommit {
         when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
                 .thenAnswer(invocation -> {
                     SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
-                    return Arrays.asList(serializedObject, serializedObject);
+                    return asList(serializedObject, serializedObject);
                 });
 
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getUncommittedEvents());
 
         testSubject.setUpcasterChain(mockUpcasterChain);
 
@@ -186,13 +186,13 @@ public class MongoEventStoreTest_DocPerCommit {
                      ((List) mongoTemplate.domainEventCollection().findOne().get("events")).size());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
+        testSubject.appendEvents(asList(
                 new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
-                                                      0,
-                                                      new Object(),
-                                                      Collections.singletonMap("key", (Object) "Value"))));
+                                                0,
+                                                new Object(),
+                                                Collections.singletonMap("key", (Object) "Value"))));
 
-        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -214,14 +214,14 @@ public class MongoEventStoreTest_DocPerCommit {
 
     @Test
     public void testLoadWithSnapshotEvent() {
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
-        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
         aggregate1.changeState();
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
 
-        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
@@ -232,18 +232,18 @@ public class MongoEventStoreTest_DocPerCommit {
 
     @Test
     public void testLoadWithMultipleSnapshotEvents() {
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
-        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
         aggregate1.changeState();
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
-        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
         aggregate1.changeState();
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
 
-        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
+        DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
@@ -254,14 +254,14 @@ public class MongoEventStoreTest_DocPerCommit {
 
     @Test(expected = EventStreamNotFoundException.class)
     public void testLoadNonExistent() {
-        testSubject.readEvents("test", UUID.randomUUID().toString());
+        testSubject.readEvents(UUID.randomUUID().toString());
     }
 
     @Test
     public void testVisitAllEvents() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        testSubject.appendEvents("type1", new SimpleDomainEventStream(createDomainEvents(77)));
-        testSubject.appendEvents("type2", new SimpleDomainEventStream(createDomainEvents(23)));
+        testSubject.appendEvents(createDomainEvents(77));
+        testSubject.appendEvents(createDomainEvents(23));
 
         testSubject.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEventMessage.class));
@@ -270,10 +270,10 @@ public class MongoEventStoreTest_DocPerCommit {
     @Test
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
+        testSubject.appendEvents(createDomainEvents(10));
         final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test");
-        testSubject.appendEvents("test", new SimpleDomainEventStream(eventMessage));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
+        testSubject.appendEvents(asList(eventMessage));
+        testSubject.appendEvents(createDomainEvents(10));
         // we upcast the event to two instances, one of which is an unknown class
         testSubject.setUpcasterChain(new LazyUpcasterChain(Arrays.<Upcaster>asList(new StubUpcaster())));
         testSubject.visitEvents(eventVisitor);
@@ -286,14 +286,14 @@ public class MongoEventStoreTest_DocPerCommit {
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        testSubject.appendEvents(createDomainEvents(11));
         DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
         DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        testSubject.appendEvents(createDomainEvents(12));
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        testSubject.appendEvents(createDomainEvents(13));
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+        testSubject.appendEvents(createDomainEvents(14));
         DateTimeUtils.setCurrentMillisSystem();
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
@@ -308,15 +308,15 @@ public class MongoEventStoreTest_DocPerCommit {
     public void testVisitEvents_BetweenTimestamps() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        testSubject.appendEvents(createDomainEvents(11));
         DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
         DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        testSubject.appendEvents(createDomainEvents(12));
         DateTime twoPM = new DateTime(2011, 12, 18, 14, 0, 0, 0);
         DateTimeUtils.setCurrentMillisFixed(twoPM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        testSubject.appendEvents(createDomainEvents(13));
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+        testSubject.appendEvents(createDomainEvents(14));
         DateTimeUtils.setCurrentMillisSystem();
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
@@ -330,14 +330,14 @@ public class MongoEventStoreTest_DocPerCommit {
     public void testVisitEvents_OnOrAfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        testSubject.appendEvents(createDomainEvents(11));
         DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
         DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        testSubject.appendEvents(createDomainEvents(12));
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        testSubject.appendEvents(createDomainEvents(13));
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+        testSubject.appendEvents(createDomainEvents(14));
         DateTimeUtils.setCurrentMillisSystem();
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
@@ -346,9 +346,9 @@ public class MongoEventStoreTest_DocPerCommit {
     }
 
 
-    private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
-        List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<>();
-        String aggregateIdentifier = UUID.randomUUID().toString();
+    private List<DomainEventMessage<?>> createDomainEvents(int numberOfEvents) {
+        List<DomainEventMessage<?>> events = new ArrayList<>(numberOfEvents);
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
                     aggregateIdentifier, t, new StubStateChangedEvent(), null));

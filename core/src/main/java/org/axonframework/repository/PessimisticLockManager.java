@@ -17,8 +17,8 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateRoot;
 import org.axonframework.common.lock.IdentifierBasedLock;
+import org.axonframework.domain.AggregateRoot;
 
 /**
  * Implementation of the {@link LockManager} that uses a pessimistic locking strategy. Calls to obtainLock will block
@@ -36,8 +36,8 @@ public class PessimisticLockManager implements LockManager {
      */
     @Override
     public boolean validateLock(AggregateRoot aggregate) {
-        Object aggregateIdentifier = aggregate.getIdentifier();
-        return lock.hasLock(aggregateIdentifier.toString());
+        String aggregateIdentifier = aggregate.getIdentifier();
+        return lock.hasLock(aggregateIdentifier);
     }
 
     /**
@@ -46,8 +46,8 @@ public class PessimisticLockManager implements LockManager {
      * @param aggregateIdentifier the identifier of the aggregate to obtains a lock for.
      */
     @Override
-    public void obtainLock(Object aggregateIdentifier) {
-        lock.obtainLock(aggregateIdentifier.toString());
+    public void obtainLock(String aggregateIdentifier) {
+        lock.obtainLock(aggregateIdentifier);
     }
 
     /**
@@ -58,7 +58,7 @@ public class PessimisticLockManager implements LockManager {
      * @throws IllegalMonitorStateException if a lock was obtained, but is not currently held by the current thread
      */
     @Override
-    public void releaseLock(Object aggregateIdentifier) {
-        lock.releaseLock(aggregateIdentifier.toString());
+    public void releaseLock(String aggregateIdentifier) {
+        lock.releaseLock(aggregateIdentifier);
     }
 }

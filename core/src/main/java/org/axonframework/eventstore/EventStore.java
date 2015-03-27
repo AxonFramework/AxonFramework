@@ -16,7 +16,11 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Abstraction of the event storage mechanism. Domain Events are stored and read as {@link
@@ -28,27 +32,35 @@ import org.axonframework.domain.DomainEventStream;
 public interface EventStore {
 
     /**
-     * Append the events in the given {@link org.axonframework.domain.DomainEventStream stream} to the event store.
+     * Append the given <code>events</code> to the event store.
      *
-     * @param type   The type descriptor of the object to store
-     * @param events The event stream containing the events to store
-     * @throws EventStoreException if an error occurs while storing the events in the event stream
+     * @param events The events to append to the event store
+     * @throws EventStoreException if an error occurs while storing the events
      */
-    void appendEvents(String type, DomainEventStream events);
+    default void appendEvents(DomainEventMessage<?>... events) {
+        appendEvents(Arrays.asList(events));
+    }
+
+    /**
+     * Append the given <code>events</code> to the event store.
+     *
+     * @param events The events to append to the event store
+     * @throws EventStoreException if an error occurs while storing the events
+     */
+    void appendEvents(List<DomainEventMessage<?>> events);
 
     /**
      * Read the events of the aggregate identified by the given type and identifier that allow the current aggregate
      * state to be rebuilt. Implementations may omit or replace events (e.g. by using snapshot events) from the stream
      * for performance purposes.
      *
-     * @param type       The type descriptor of the object to retrieve
      * @param identifier The unique aggregate identifier of the events to load
      * @return an event stream containing the events of the aggregate
      *
      * @throws EventStoreException if an error occurs while reading the events in the event stream
      */
-    default DomainEventStream readEvents(String type, String identifier) {
-        return readEvents(type, identifier, 0, Long.MAX_VALUE);
+    default DomainEventStream readEvents(String identifier) {
+        return readEvents(identifier, 0, Long.MAX_VALUE);
     }
 
     /**
@@ -57,30 +69,26 @@ public interface EventStore {
      * <p/>
      * The returned stream will not contain any snapshot events.
      *
-     * @param type                The type identifier of the aggregate
      * @param identifier          The identifier of the aggregate
      * @param firstSequenceNumber The sequence number of the first event to find
      * @return a Stream containing events for the given aggregate, starting at the given first sequence number
      */
-    default DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber) {
-        return readEvents(type, identifier, firstSequenceNumber, Long.MAX_VALUE);
+    default DomainEventStream readEvents(String identifier, long firstSequenceNumber) {
+        return readEvents(identifier, firstSequenceNumber, Long.MAX_VALUE);
     }
 
     /**
-     * Returns a Stream containing events for the aggregate identified by the given {@code type} and {@code
-     * identifier}, starting at the event with the given {@code firstSequenceNumber} (included) up to and including the
-     * event with given {@code lastSequenceNumber}.
-     * If no event with given {@code lastSequenceNumber} exists, the returned stream will simply read until the end of
-     * the aggregate's events.
+     * Returns a Stream containing events for the aggregate identified by the given {@code identifier}, starting at the
+     * event with the given {@code firstSequenceNumber} (included) up to and including the event with given {@code
+     * lastSequenceNumber}. If no event with given {@code lastSequenceNumber} exists, the returned stream will simply
+     * read until the end of the aggregate's events.
      * <p/>
      * The returned stream will not contain any snapshot events.
      *
-     * @param type                The type identifier of the aggregate
      * @param identifier          The identifier of the aggregate
      * @param firstSequenceNumber The sequence number of the first event to find
      * @param lastSequenceNumber  The sequence number of the last event in the stream
      * @return a Stream containing events for the given aggregate, starting at the given first sequence number
      */
-    DomainEventStream readEvents(String type, String identifier, long firstSequenceNumber, long lastSequenceNumber);
-
+    DomainEventStream readEvents(String identifier, long firstSequenceNumber, long lastSequenceNumber);
 }
