@@ -26,6 +26,7 @@ import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
+import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.Connection;
@@ -36,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 
@@ -96,11 +96,12 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     @Override
     public SerializedDomainEventData<T> loadLastSnapshotEvent(String aggregateType, Object identifier) {
         ResultSet result = null;
+        PreparedStatement preparedStatement = null;
         Connection connection = null;
         try {
             connection = connectionProvider.getConnection();
-            result = sqlSchema.sql_loadLastSnapshot(connection, identifier, aggregateType)
-                              .executeQuery();
+            preparedStatement = sqlSchema.sql_loadLastSnapshot(connection, identifier, aggregateType);
+            result = preparedStatement.executeQuery();
             if (result.next()) {
                 return sqlSchema.createSerializedDomainEventData(result);
             }
@@ -110,6 +111,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                                                   + aggregateType + "/" + identifier, e);
         } finally {
             closeQuietly(result);
+            closeQuietly(preparedStatement);
             closeQuietly(connection);
         }
     }
