@@ -387,12 +387,6 @@
             <uniqueVersion>false</uniqueVersion>
         </repository>
     </distributionManagement>
-    <scm>
-        <connection>scm:git:git://github.com/AxonFramework/AxonFramework.git</connection>
-        <developerConnection>scm:git:git@github.com:AxonFramework/AxonFramework.git</developerConnection>
-        <url>https://github.com/AxonFramework/AxonFramework</url>
-        <tag>HEAD</tag>
-    </scm>
 
     <developers>
         <developer>
