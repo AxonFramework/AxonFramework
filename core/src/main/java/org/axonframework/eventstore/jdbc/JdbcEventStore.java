@@ -47,20 +47,19 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
- * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as
- * a
+ * An EventStore implementation that uses JDBC to store DomainEvents in a database. The actual DomainEvent is stored as a
  * serialized blob of bytes. Other columns are used to store meta-data that allow quick finding of DomainEvents for a
  * specific aggregate in the correct order.
  * <p/>
