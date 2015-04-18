@@ -32,8 +32,6 @@
 
     <rabbit:connection-factory id="connectionFactory"/>
 
-    <axon:event-bus terminal="terminal"/>
-
     <axon:cluster id="cluster1" default="true">
         <axon:meta-data>
             <entry key="AMQP.Config">
@@ -44,9 +42,9 @@
         </axon:meta-data>
     </axon:cluster>
 
-    <axon-amqp:terminal id="terminal" exchange-name="Axon.EventBus" transactional="true">
+    <axon-amqp:eventBus id="terminal" exchange-name="Axon.EventBus" transactional="true">
         <axon-amqp:default-configuration prefetch="100"/>
-    </axon-amqp:terminal>
+    </axon-amqp:eventBus>
 
     <bean id="serializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 </beans>

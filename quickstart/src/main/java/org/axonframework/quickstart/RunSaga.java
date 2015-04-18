@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
@@ -84,7 +85,7 @@ public class RunSaga {
         AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(sagaRepository, sagaFactory, ToDoSaga.class);
 
         // and we need to subscribe the Saga Manager to the Event Bus
-        eventBus.subscribe(sagaManager);
+        eventBus.subscribe(new SimpleCluster("saga", sagaManager));
 
         // That's the infrastructure we need...
         // Let's pretend a few things are happening

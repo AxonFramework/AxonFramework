@@ -33,15 +33,15 @@
 
     <axon:jpa-saga-repository id="jpaSagaRepository" use-explicit-flush="true"/>
 
-    <bean class="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
+    <bean class="org.axonframework.spring.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
 
-    <bean class="org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor">
+    <bean class="org.axonframework.spring.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor">
         <property name="commandBus" ref="commandBus"/>
     </bean>
 
     <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
         <property name="transactionManager">
-            <bean class="org.axonframework.unitofwork.SpringTransactionManager">
+            <bean class="org.axonframework.spring.unitofwork.SpringTransactionManager">
                 <property name="transactionManager" ref="transactionManager"/>
             </bean>
         </property>

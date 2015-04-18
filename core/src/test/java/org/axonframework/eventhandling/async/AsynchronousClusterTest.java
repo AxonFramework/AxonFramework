@@ -93,8 +93,8 @@ public class AsynchronousClusterTest {
 
         doThrow(new MockException()).when(mockEventListener).handle(message1);
 
-        testSubject.publish(message1);
-        testSubject.publish(message2);
+        testSubject.handle(message1);
+        testSubject.handle(message2);
 
         verify(mockEventListener, times(2)).handle(isA(EventMessage.class));
         assertEquals(Arrays.<EventMessage>asList(message1), failedMessages);
@@ -123,7 +123,7 @@ public class AsynchronousClusterTest {
         testSubject.subscribe(new AnnotationEventListenerAdapter(handler2));
 
         final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
-        testSubject.publish(eventMessage);
+        testSubject.handle(eventMessage);
 
         InOrder inOrder = Mockito.inOrder(handler1, handler2);
         inOrder.verify(handler1).onEvent("test");
@@ -148,7 +148,7 @@ public class AsynchronousClusterTest {
         final GenericEventMessage<String> message1 = new GenericEventMessage<>("Message 1");
         final GenericEventMessage<String> message2 = new GenericEventMessage<>("Message 2");
 
-        testSubject.publish(message1, message2);
+        testSubject.handle(message1, message2);
 
         verify(executor, times(2)).execute(isA(Runnable.class));
         verify(mockTransactionManager, times(2)).startTransaction();
@@ -205,7 +205,7 @@ public class AsynchronousClusterTest {
         doNothing().when(mockEventListener3).handle(isA(EventMessage.class));
 
         final GenericEventMessage message = new GenericEventMessage("test");
-        testSubject.publish(message);
+        testSubject.handle(message);
 
         verify(mockEventListener1).handle(message);
         verify(mockEventListener2).handle(message);

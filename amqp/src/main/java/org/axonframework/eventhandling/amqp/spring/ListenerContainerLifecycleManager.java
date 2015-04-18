@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import org.springframework.context.SmartLifecycle;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Manages the lifecycle of the SimpleMessageListenerContainers that have been created to receive messages for
@@ -46,10 +48,10 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
 
     // guarded by "this"
     private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<>();
+    private final ConcurrentMap<Cluster, SimpleMessageListenerContainer> containerPerCluster = new ConcurrentHashMap<>();
     // guarded by "this"
     private boolean started = false;
     private SpringAMQPConsumerConfiguration defaultConfiguration;
-
     private int phase = Integer.MAX_VALUE;
 
     /**
@@ -73,9 +75,10 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
                                                          + "ListenerContainerLifeCycleManager");
         }
         if (containerPerQueue.containsKey(queueName)) {
-            ClusterMessageListener existingListener = (ClusterMessageListener) containerPerQueue.get(queueName)
-                                                                                                .getMessageListener();
+            final SimpleMessageListenerContainer container = containerPerQueue.get(queueName);
+            ClusterMessageListener existingListener = (ClusterMessageListener) container.getMessageListener();
             existingListener.addCluster(cluster);
+            containerPerCluster.put(cluster, container);
             if (started && logger.isWarnEnabled()) {
                 logger.warn("A cluster was configured on queue [{}], "
                                     + "while the Container for that queue was already processing events. "
@@ -87,9 +90,19 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
             newContainer.setQueueNames(queueName);
             newContainer.setMessageListener(new ClusterMessageListener(cluster, messageConverter));
             containerPerQueue.put(queueName, newContainer);
+            containerPerCluster.put(cluster, newContainer);
             if (started) {
                 newContainer.start();
             }
+        }
+    }
+
+    public void unregisterCluster(Cluster cluster) {
+        SimpleMessageListenerContainer container = containerPerCluster.get(cluster);
+        final ClusterMessageListener listener = (ClusterMessageListener) container.getMessageListener();
+        listener.removeCluster(cluster);
+        if (listener.isEmpty()) {
+            container.stop();
         }
     }
 
@@ -99,11 +112,8 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     }
 
     @Override
-    public synchronized void stop(Runnable callback) {
-        for (SimpleMessageListenerContainer container : containerPerQueue.values()) {
-            container.stop();
-        }
-        started = false;
+    public void stop(Runnable callback) {
+        stop();
         callback.run();
     }
 

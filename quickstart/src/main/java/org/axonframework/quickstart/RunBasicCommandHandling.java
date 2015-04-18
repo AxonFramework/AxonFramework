@@ -21,16 +21,18 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
+import org.axonframework.quickstart.annotated.ToDoEventHandler;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.handler.CreateToDoCommandHandler;
 import org.axonframework.quickstart.handler.MarkCompletedCommandHandler;
-import org.axonframework.quickstart.handler.ToDoEventListener;
 import org.axonframework.quickstart.handler.ToDoItem;
 
 import java.io.File;
@@ -67,7 +69,7 @@ public class RunBasicCommandHandling {
                 new MarkCompletedCommandHandler(repository));
 
         // We register an event listener to see which events are created
-        eventBus.subscribe(new ToDoEventListener());
+        eventBus.subscribe(new SimpleCluster("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // and let's send some Commands on the CommandBus using the special runner configured with our CommandGateway.
         CommandGenerator.sendCommands(commandGateway);

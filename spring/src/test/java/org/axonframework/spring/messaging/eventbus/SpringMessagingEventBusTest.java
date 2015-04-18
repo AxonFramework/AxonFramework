@@ -17,7 +17,7 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
@@ -33,57 +33,57 @@ import static org.mockito.Mockito.*;
 public class SpringMessagingEventBusTest {
 
     private SpringMessagingEventBus testSubject;
-    private EventListener mockListener;
+    private Cluster mockCluster;
     private SubscribableChannel mockChannel;
 
     @Before
     public void setUp() {
         testSubject = new SpringMessagingEventBus();
-        mockListener = mock(EventListener.class);
+        mockCluster = mock(Cluster.class);
         mockChannel = mock(SubscribableChannel.class);
         testSubject.setChannel(mockChannel);
     }
 
     @Test
     public void testSubscribeListener() {
-        testSubject.subscribe(mockListener);
+        testSubject.subscribe(mockCluster);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }
 
     @Test
     public void testUnsubscribeListener() {
-        testSubject.unsubscribe(mockListener);
+        testSubject.unsubscribe(mockCluster);
 
         verify(mockChannel, never()).unsubscribe(isA(MessageHandler.class));
 
-        testSubject.subscribe(mockListener);
-        testSubject.unsubscribe(mockListener);
+        testSubject.subscribe(mockCluster);
+        testSubject.unsubscribe(mockCluster);
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
     }
 
     @Test
     public void testUnsubscribeListener_UnsubscribedTwice() {
-        testSubject.unsubscribe(mockListener);
+        testSubject.unsubscribe(mockCluster);
 
         verify(mockChannel, never()).unsubscribe(isA(MessageHandler.class));
 
-        testSubject.subscribe(mockListener);
-        testSubject.unsubscribe(mockListener);
-        testSubject.unsubscribe(mockListener);
+        testSubject.subscribe(mockCluster);
+        testSubject.unsubscribe(mockCluster);
+        testSubject.unsubscribe(mockCluster);
 
         verify(mockChannel).unsubscribe(any(MessageHandler.class));
     }
 
     @Test
     public void testSubscribeListener_SubscribedTwice() {
-        testSubject.unsubscribe(mockListener);
+        testSubject.unsubscribe(mockCluster);
 
         verify(mockChannel, never()).unsubscribe(isA(MessageHandler.class));
 
-        testSubject.subscribe(mockListener);
-        testSubject.subscribe(mockListener);
+        testSubject.subscribe(mockCluster);
+        testSubject.subscribe(mockCluster);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }

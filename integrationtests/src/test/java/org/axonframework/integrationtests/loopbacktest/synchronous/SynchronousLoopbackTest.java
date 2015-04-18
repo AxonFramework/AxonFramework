@@ -30,6 +30,7 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
@@ -129,7 +130,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(el);
+        eventBus.subscribe(new SimpleCluster("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
@@ -163,7 +164,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(el);
+        eventBus.subscribe(new SimpleCluster("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
@@ -200,7 +201,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(el);
+        eventBus.subscribe(new SimpleCluster("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
@@ -238,7 +239,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(el);
+        eventBus.subscribe(new SimpleCluster("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 

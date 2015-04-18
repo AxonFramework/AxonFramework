@@ -37,8 +37,8 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
@@ -691,17 +691,17 @@ public class DisruptorCommandBusTest {
         private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
 
         @Override
-        public void publish(EventMessage... events) {
+        public void publish(List<EventMessage<?>> events) {
             publisherCountDown.countDown();
         }
 
         @Override
-        public void subscribe(EventListener eventListener) {
+        public void subscribe(Cluster cluster) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
         @Override
-        public void unsubscribe(EventListener eventListener) {
+        public void unsubscribe(Cluster cluster) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
     }

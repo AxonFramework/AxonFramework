@@ -44,7 +44,7 @@
 
     <bean class="org.axonframework.saga.spring.SpringResourceInjector"/>
 
-    <bean class="org.axonframework.eventhandling.scheduling.java.SimpleEventSchedulerFactoryBean">
+    <bean class="org.axonframework.spring.eventhandling.scheduling.java.SimpleEventSchedulerFactoryBean">
         <property name="transactionManager" ref="transactionManager"/>
         <property name="executorService" ref="threadPoolExecutor"/>
     </bean>

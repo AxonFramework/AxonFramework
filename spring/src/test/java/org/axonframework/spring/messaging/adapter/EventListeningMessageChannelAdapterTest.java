@@ -43,6 +43,7 @@ public class EventListeningMessageChannelAdapterTest {
         mockChannel = mock(MessageChannel.class);
         mockFilter = mock(EventFilter.class);
         testSubject = new EventListeningMessageChannelAdapter(mockEventBus, mockChannel);
+        testSubject.setBeanName("stub");
     }
 
     @Test
@@ -55,9 +56,9 @@ public class EventListeningMessageChannelAdapterTest {
 
     @Test
     public void testEventListenerRegisteredOnInit() throws Exception {
-        verify(mockEventBus, never()).subscribe(testSubject);
+        verify(mockEventBus, never()).subscribe(any());
         testSubject.afterPropertiesSet();
-        verify(mockEventBus).subscribe(testSubject);
+        verify(mockEventBus).subscribe(any());
     }
 
     @SuppressWarnings({"unchecked"})

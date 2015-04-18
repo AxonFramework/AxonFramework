@@ -24,6 +24,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
@@ -112,6 +113,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     final List<String> events = new ArrayList<>();
 
+    private SimpleCluster cluster;
+
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
@@ -121,7 +124,9 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         cache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
 
         eventBus = new SimpleEventBus();
-        eventBus.subscribe(new LoggingEventListener(events));
+        cluster = new SimpleCluster("logging");
+        cluster.subscribe(new LoggingEventListener(events));
+        eventBus.subscribe(cluster);
         events.clear();
 
         EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(tempFolder.newFolder()));
@@ -159,8 +164,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     public void testMinimalScenario(String id) {
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventBus.subscribe(new CommandExecutingEventListener("1", null, true));
-        eventBus.subscribe(new CommandExecutingEventListener("2", null, true));
+        cluster.subscribe(new CommandExecutingEventListener("1", null, true));
+        cluster.subscribe(new CommandExecutingEventListener("2", null, true));
 
         UnitOfWork uow = uowFactory.createUnitOfWork();
         repository.add(new Aggregate(id));
@@ -185,17 +190,17 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         //
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventBus.subscribe(new CommandExecutingEventListener("UOW4", null, true));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW5", null, true));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW3", null, true));
+        cluster.subscribe(new CommandExecutingEventListener("UOW4", null, true));
+        cluster.subscribe(new CommandExecutingEventListener("UOW5", null, true));
+        cluster.subscribe(new CommandExecutingEventListener("UOW3", null, true));
 
         // Execute commands to update after the previous update has been performed
-        eventBus.subscribe(new CommandExecutingEventListener("UOW7", "UOW6", true));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW6", "UOW3", true));
+        cluster.subscribe(new CommandExecutingEventListener("UOW7", "UOW6", true));
+        cluster.subscribe(new CommandExecutingEventListener("UOW6", "UOW3", true));
 
-        eventBus.subscribe(new CommandExecutingEventListener("UOW10", "UOW8", false)); // roll back
-        eventBus.subscribe(new CommandExecutingEventListener("UOW9", "UOW4", true));
-        eventBus.subscribe(new CommandExecutingEventListener("UOW8", "UOW4", true));
+        cluster.subscribe(new CommandExecutingEventListener("UOW10", "UOW8", false)); // roll back
+        cluster.subscribe(new CommandExecutingEventListener("UOW9", "UOW4", true));
+        cluster.subscribe(new CommandExecutingEventListener("UOW8", "UOW4", true));
 
         Aggregate a = new Aggregate(id);
 

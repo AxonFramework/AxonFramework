@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
 
-import java.util.Set;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A cluster represents a group of Event Listeners that are treated as a single group by the {@link
@@ -48,7 +49,20 @@ public interface Cluster extends EventProcessingMonitorSupport {
      *
      * @param events The Events to publish in the cluster
      */
-    void publish(EventMessage... events);
+    default void handle(EventMessage... events) {
+        handle(Arrays.asList(events));
+    }
+
+    /**
+     * Publishes the given Events to the members of this cluster.
+     * <p/>
+     * Implementations may do this synchronously or asynchronously. Although {@link EventListener EventListeners} are
+     * discouraged to throw exceptions, it is possible that they are propagated through this method invocation. In that
+     * case, no guarantees can be given about the delivery of Events at all Cluster members.
+     *
+     * @param events The Events to publish in the cluster
+     */
+    void handle(List<EventMessage<?>> events);
 
     /**
      * Subscribe the given {@code eventListener} to this cluster. If the listener is already subscribed, nothing
@@ -68,15 +82,9 @@ public interface Cluster extends EventProcessingMonitorSupport {
      */
     void unsubscribe(EventListener eventListener);
 
-    /**
-     * Returns a read-only view on the members in the cluster. This view may be updated by the Cluster when members
-     * subscribe or
-     * unsubscribe. Cluster implementations may also return the view representing the state at the moment this method
-     * is invoked.
-     *
-     * @return a view of the members of this cluster
-     */
-    Set<EventListener> getMembers();
+    default ProcessingToken lastProcessedToken() {
+        return null;
+    }
 
     /**
      * Returns the MetaData of this Cluster.

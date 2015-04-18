@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2012. Axon Framework
+  ~ Copyright (c) 2010-2015. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
   ~ limitations under the License.
   -->
 
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:axon="http://www.axonframework.org/schema/core"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
@@ -25,15 +25,7 @@
 
     <axon:event-bus id="eventBusTerminal" terminal="terminal"/>
 
-    <axon:event-bus id="eventBusTerminalClusterSelector" terminal="terminal" cluster-selector="clusterSelector"/>
-
-    <axon:event-bus id="eventBusClusterSelector" cluster-selector="clusterSelector"/>
-
     <bean id="terminal" class="org.axonframework.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventhandling.EventBusTerminal"/>
-    </bean>
-
-    <bean id="clusterSelector" class="org.axonframework.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventhandling.ClusterSelector"/>
+        <property name="mockType" value="org.axonframework.eventhandling.PublicationStrategy"/>
     </bean>
 </beans>

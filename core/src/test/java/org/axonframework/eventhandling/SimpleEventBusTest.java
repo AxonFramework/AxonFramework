@@ -27,16 +27,16 @@ import static org.mockito.Mockito.*;
  */
 public class SimpleEventBusTest {
 
-    private EventListener listener1;
-    private EventListener listener2;
+    private Cluster listener1;
+    private Cluster listener2;
     private EventBus testSubject;
-    private EventListener listener3;
+    private Cluster listener3;
 
     @Before
     public void setUp() {
-        listener1 = mock(EventListener.class);
-        listener2 = mock(EventListener.class);
-        listener3 = mock(EventListener.class);
+        listener1 = mock(Cluster.class);
+        listener2 = mock(Cluster.class);
+        listener3 = mock(Cluster.class);
         testSubject = new SimpleEventBus();
     }
 
@@ -58,9 +58,9 @@ public class SimpleEventBusTest {
         testSubject.unsubscribe(listener3);
         testSubject.publish(newEvent());
 
-        verify(listener1, times(2)).handle(isA(EventMessage.class));
-        verify(listener2, times(2)).handle(isA(EventMessage.class));
-        verify(listener3, times(2)).handle(isA(EventMessage.class));
+        verify(listener1, times(2)).handle(anyList());
+        verify(listener2, times(2)).handle(anyList());
+        verify(listener3, times(2)).handle(anyList());
     }
 
     private EventMessage newEvent() {

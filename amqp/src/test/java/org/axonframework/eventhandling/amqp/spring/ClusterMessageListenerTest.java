@@ -52,7 +52,7 @@ public class ClusterMessageListenerTest {
         outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
         testSubject.onMessage(new Message(baos.toByteArray(), new MessageProperties()));
 
-        verify(cluster).publish(argThat(new TypeSafeMatcher<EventMessage>() {
+        verify(cluster).handle(argThat(new TypeSafeMatcher<EventMessage>() {
             @Override
             public boolean matchesSafely(EventMessage item) {
                 return "Event".equals(item.getPayload());
@@ -80,6 +80,6 @@ public class ClusterMessageListenerTest {
                                                          .getBytes(Charset.forName("UTF-8"));
         testSubject.onMessage(new Message(body, new MessageProperties()));
 
-        verify(cluster, never()).publish(any(EventMessage.class));
+        verify(cluster, never()).handle(any(EventMessage.class));
     }
 }

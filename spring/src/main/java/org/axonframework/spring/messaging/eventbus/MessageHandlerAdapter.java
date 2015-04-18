@@ -17,7 +17,7 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.Cluster;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 
@@ -29,15 +29,15 @@ import org.springframework.messaging.MessageHandler;
  */
 public class MessageHandlerAdapter implements MessageHandler {
 
-    private final EventListener eventListener;
+    private final Cluster cluster;
 
     /**
      * Initialize an adapter for the given <code>eventListener</code>.
      *
-     * @param eventListener the event listener to adapt
+     * @param cluster the cluster to adapt
      */
-    public MessageHandlerAdapter(EventListener eventListener) {
-        this.eventListener = eventListener;
+    public MessageHandlerAdapter(Cluster cluster) {
+        this.cluster = cluster;
     }
 
     /**
@@ -45,6 +45,6 @@ public class MessageHandlerAdapter implements MessageHandler {
      */
     @Override
     public void handleMessage(Message<?> message) {
-        eventListener.handle(new GenericEventMessage<>(message.getPayload(), message.getHeaders()));
+        cluster.handle(new GenericEventMessage<>(message.getPayload(), message.getHeaders()));
     }
 }

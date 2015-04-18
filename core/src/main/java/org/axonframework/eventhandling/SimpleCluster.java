@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,8 +56,12 @@ public class SimpleCluster extends AbstractCluster {
         super(name, new EventListenerOrderComparator(orderResolver));
     }
 
+    public SimpleCluster(String name, EventListener... initialListeners) {
+        super(name, initialListeners);
+    }
+
     @Override
-    public void doPublish(final List<EventMessage> events, final Set<EventListener> eventListeners,
+    public void doPublish(final List<EventMessage<?>> events, final Set<EventListener> eventListeners,
                           final MultiplexingEventProcessingMonitor monitor) {
         try {
             for (EventMessage event : events) {
@@ -72,7 +76,7 @@ public class SimpleCluster extends AbstractCluster {
         }
     }
 
-    private void notifyMonitors(final List<EventMessage> events, final EventProcessingMonitor monitor,
+    private void notifyMonitors(final List<EventMessage<?>> events, final EventProcessingMonitor monitor,
                                      final RuntimeException exception) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().registerListener(new MonitorInvoker(monitor, events, exception));
@@ -86,10 +90,10 @@ public class SimpleCluster extends AbstractCluster {
     private static class MonitorInvoker extends UnitOfWorkListenerAdapter {
 
         private final EventProcessingMonitor monitor;
-        private final List<EventMessage> events;
+        private final List<EventMessage<?>> events;
         private final RuntimeException exception;
 
-        public MonitorInvoker(EventProcessingMonitor monitor, List<EventMessage> events,
+        public MonitorInvoker(EventProcessingMonitor monitor, List<EventMessage<?>> events,
                               RuntimeException exception) {
             this.monitor = monitor;
             this.events = events;

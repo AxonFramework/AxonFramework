@@ -174,7 +174,7 @@ public class AsynchronousCluster extends AbstractCluster {
     }
 
     @Override
-    protected void doPublish(final List<EventMessage> events, Set<EventListener> eventListeners,
+    protected void doPublish(final List<EventMessage<?>> events, Set<EventListener> eventListeners,
                              final MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {

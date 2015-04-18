@@ -17,12 +17,13 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -43,29 +44,29 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SpringMessagingEventBus implements EventBus {
 
-    private final ConcurrentMap<EventListener, MessageHandler> handlers =
+    private final ConcurrentMap<Cluster, MessageHandler> handlers =
             new ConcurrentHashMap<>();
     private SubscribableChannel channel;
 
     @Override
-    public void publish(EventMessage... events) {
+    public void publish(List<EventMessage<?>> events) {
         for (EventMessage event : events) {
             channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData()));
         }
     }
 
     @Override
-    public void unsubscribe(EventListener eventListener) {
-        MessageHandler messageHandler = handlers.remove(eventListener);
+    public void unsubscribe(Cluster cluster) {
+        MessageHandler messageHandler = handlers.remove(cluster);
         if (messageHandler != null) {
             channel.unsubscribe(messageHandler);
         }
     }
 
     @Override
-    public void subscribe(EventListener eventListener) {
-        MessageHandler messagehandler = new MessageHandlerAdapter(eventListener);
-        MessageHandler oldHandler = handlers.putIfAbsent(eventListener, messagehandler);
+    public void subscribe(Cluster cluster) {
+        MessageHandler messagehandler = new MessageHandlerAdapter(cluster);
+        MessageHandler oldHandler = handlers.putIfAbsent(cluster, messagehandler);
         if (oldHandler == null) {
             channel.subscribe(messagehandler);
         }

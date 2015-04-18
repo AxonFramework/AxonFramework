@@ -21,6 +21,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
@@ -40,10 +41,13 @@ public class NestableUnitOfWorkTest {
 
     private UnitOfWorkFactory uowFactory;
     private EventBus eventBus;
+    private SimpleCluster cluster;
 
     @Before
     public void setUp() throws Exception {
         eventBus = new SimpleEventBus();
+        cluster = new SimpleCluster("cluster");
+        eventBus.subscribe(cluster);
         uowFactory = new DefaultUnitOfWorkFactory();
     }
 
@@ -73,7 +77,7 @@ public class NestableUnitOfWorkTest {
                 inner.commit();
             }
         });
-        eventBus.subscribe(eventListener);
+        cluster.subscribe(eventListener);
 
         UnitOfWork outer = uowFactory.createUnitOfWork();
         outer.publishEvent(initialEvent, eventBus);
@@ -115,7 +119,7 @@ public class NestableUnitOfWorkTest {
                 }
             }
         });
-        eventBus.subscribe(eventListener);
+        cluster.subscribe(eventListener);
 
         UnitOfWork outer = uowFactory.createUnitOfWork();
         outer.publishEvent(initialEvent, eventBus);
@@ -157,7 +161,7 @@ public class NestableUnitOfWorkTest {
                 inner.commit();
             }
         });
-        eventBus.subscribe(eventListener);
+        cluster.subscribe(eventListener);
 
         UnitOfWork outer = uowFactory.createUnitOfWork();
         outer.registerListener(mockUoWListener);

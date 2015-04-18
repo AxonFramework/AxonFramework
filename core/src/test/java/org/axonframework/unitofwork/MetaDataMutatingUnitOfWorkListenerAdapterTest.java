@@ -22,8 +22,8 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -70,17 +69,17 @@ public class MetaDataMutatingUnitOfWorkListenerAdapterTest {
         publishedMessages = new ArrayList<>();
         mockEventBus = new EventBus() {
             @Override
-            public void publish(EventMessage... events) {
-                publishedMessages.addAll(Arrays.asList(events));
+            public void publish(List<EventMessage<?>> events) {
+                publishedMessages.addAll(events);
             }
 
             @Override
-            public void subscribe(EventListener eventListener) {
+            public void subscribe(Cluster cluster) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public void unsubscribe(EventListener eventListener) {
+            public void unsubscribe(Cluster cluster) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
         };

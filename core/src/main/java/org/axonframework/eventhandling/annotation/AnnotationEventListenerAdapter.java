@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListenerProxy;
-import org.axonframework.eventhandling.replay.ReplayAware;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
@@ -32,24 +30,10 @@ import org.axonframework.eventhandling.replay.ReplayAware;
  * @see org.axonframework.eventhandling.EventListener
  * @since 0.1
  */
-public class AnnotationEventListenerAdapter implements EventListenerProxy, ReplayAware {
+public class AnnotationEventListenerAdapter implements EventListenerProxy {
 
     private final MessageHandlerInvoker invoker;
-    private final ReplayAware replayAware;
     private final Class<?> listenerType;
-
-    /**
-     * Subscribe the given <code>annotatedEventListener</code> to the given <code>eventBus</code>.
-     *
-     * @param annotatedEventListener The annotated event listener
-     * @param eventBus               The event bus to subscribe to
-     * @return an AnnotationEventListenerAdapter that wraps the listener. Can be used to unsubscribe.
-     */
-    public static AnnotationEventListenerAdapter subscribe(Object annotatedEventListener, EventBus eventBus) {
-        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(annotatedEventListener);
-        eventBus.subscribe(adapter);
-        return adapter;
-    }
 
     /**
      * Wraps the given <code>annotatedEventListener</code>, allowing it to be subscribed to an Event Bus.
@@ -72,12 +56,6 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy, Repla
         this.invoker = new MessageHandlerInvoker(annotatedEventListener, parameterResolverFactory, false,
                                                  AnnotatedEventHandlerDefinition.INSTANCE);
         this.listenerType = annotatedEventListener.getClass();
-        if (annotatedEventListener instanceof ReplayAware) {
-            this.replayAware = (ReplayAware) annotatedEventListener;
-        } else {
-            // as soon as annotations are supported, their handlers should come here...
-            this.replayAware = new NoOpReplayAware();
-        }
     }
 
     /**
@@ -91,35 +69,5 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy, Repla
     @Override
     public Class<?> getTargetType() {
         return listenerType;
-    }
-
-    @Override
-    public void beforeReplay() {
-        replayAware.beforeReplay();
-    }
-
-    @Override
-    public void afterReplay() {
-        replayAware.afterReplay();
-    }
-
-    @Override
-    public void onReplayFailed(Throwable cause) {
-        replayAware.onReplayFailed(cause);
-    }
-
-    private static final class NoOpReplayAware implements ReplayAware {
-
-        @Override
-        public void beforeReplay() {
-        }
-
-        @Override
-        public void afterReplay() {
-        }
-
-        @Override
-        public void onReplayFailed(Throwable cause) {
-        }
     }
 }

@@ -17,7 +17,7 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -34,14 +34,14 @@ public class MessageHandlerAdapterTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testMessageForwarded() {
-        EventListener mockEventListener = mock(EventListener.class);
-        MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockEventListener);
+        Cluster mockCluster = mock(Cluster.class);
+        MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockCluster);
 
         final StubDomainEvent payload = new StubDomainEvent();
         adapter.handleMessage(new GenericMessage<>(payload));
         adapter.handleMessage(new GenericMessage<>(new StubDomainEvent()));
 
-        verify(mockEventListener, times(1)).handle(argThat(new BaseMatcher<EventMessage>() {
+        verify(mockCluster, times(1)).handle(argThat(new BaseMatcher<EventMessage>() {
             @Override
             public boolean matches(Object o) {
                 return ((o instanceof EventMessage) && ((EventMessage) o).getPayload().equals(payload));

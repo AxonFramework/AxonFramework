@@ -16,7 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.unitofwork.SpringTransactionManager;
 import org.axonframework.unitofwork.TransactionManager;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;

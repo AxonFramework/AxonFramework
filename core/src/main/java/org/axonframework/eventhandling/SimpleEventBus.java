@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.domain.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -35,26 +36,30 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class SimpleEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
-    private final Set<EventListener> listeners = new CopyOnWriteArraySet<>();
+    private final Set<Cluster> clusters = new CopyOnWriteArraySet<>();
 
-
+    private final PublicationStrategy publicationStrategy;
 
     /**
-     * Initializes the SimpleEventBus and registers the mbeans for management information.
+     * Initializes the EmbeddedEventBus using a
      */
     public SimpleEventBus() {
+        this(new DirectTerminal());
+    }
+
+    public SimpleEventBus(PublicationStrategy publicationStrategy) {
+        this.publicationStrategy = publicationStrategy;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void unsubscribe(EventListener eventListener) {
-        String listenerType = classNameOf(eventListener);
-        if (listeners.remove(eventListener)) {
-            logger.debug("EventListener {} unsubscribed successfully", listenerType);
+    public void unsubscribe(Cluster cluster) {
+        if (this.clusters.remove(cluster)) {
+            logger.debug("EventListener {} unsubscribed successfully", cluster.getName());
         } else {
-            logger.info("EventListener {} not removed. It was already unsubscribed", listenerType);
+            logger.info("EventListener {} not removed. It was already unsubscribed", cluster.getName());
         }
     }
 
@@ -62,40 +67,27 @@ public class SimpleEventBus implements EventBus {
      * {@inheritDoc}
      */
     @Override
-    public void subscribe(EventListener eventListener) {
-        String listenerType = classNameOf(eventListener);
-        if (listeners.add(eventListener)) {
-            logger.debug("EventListener [{}] subscribed successfully", listenerType);
+    public void subscribe(Cluster cluster) {
+        if (this.clusters.add(cluster)) {
+            logger.debug("Cluster [{}] subscribed successfully", cluster.getName());
         } else {
-            logger.info("EventListener [{}] not added. It was already subscribed", listenerType);
+            logger.info("Cluster [{}] not added. It was already subscribed", cluster.getName());
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void publish(EventMessage... events) {
-        if (!listeners.isEmpty()) {
-            for (EventMessage event : events) {
-                for (EventListener listener : listeners) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                                     event.getPayloadType().getSimpleName(), classNameOf(listener));
-                    }
-                    listener.handle(event);
-                }
+    public void publish(List<EventMessage<?>> events) {
+        // AXON-308 Attach to Unit of Work lifecycle
+        publicationStrategy.publish(events, clusters);
+    }
+
+    private static class DirectTerminal implements PublicationStrategy {
+
+        @Override
+        public void publish(List<EventMessage<?>> events, Set<Cluster> clusters) {
+            for (Cluster cluster : clusters) {
+                cluster.handle(events);
             }
         }
-    }
-
-    private String classNameOf(EventListener eventListener) {
-        Class<?> listenerType;
-        if (eventListener instanceof EventListenerProxy) {
-            listenerType = ((EventListenerProxy) eventListener).getTargetType();
-        } else {
-            listenerType = eventListener.getClass();
-        }
-        return listenerType.getSimpleName();
     }
 }

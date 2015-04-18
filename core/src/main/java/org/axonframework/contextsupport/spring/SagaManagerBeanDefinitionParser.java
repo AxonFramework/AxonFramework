@@ -17,6 +17,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.saga.SagaManager;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
@@ -110,16 +111,18 @@ public class SagaManagerBeanDefinitionParser extends AbstractBeanDefinitionParse
         private volatile EventBus eventBus;
         private volatile SagaManager sagaManager;
         private volatile boolean started = false;
+        private volatile SimpleCluster cluster;
 
         @Override
         public void start() {
-            eventBus.subscribe(sagaManager);
+            cluster = new SimpleCluster("sagaManager-" + sagaManager.getTargetType().getSimpleName(), sagaManager);
+            eventBus.subscribe(cluster);
             started = true;
         }
 
         @Override
         public void stop() {
-            eventBus.unsubscribe(sagaManager);
+            eventBus.unsubscribe(cluster);
             started = false;
         }
 

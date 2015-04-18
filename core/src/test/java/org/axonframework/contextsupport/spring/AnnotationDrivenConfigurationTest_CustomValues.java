@@ -19,8 +19,10 @@ package org.axonframework.contextsupport.spring;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.*;
 import org.junit.runner.*;
@@ -58,6 +60,9 @@ public class AnnotationDrivenConfigurationTest_CustomValues {
     @Autowired
     private DefaultListableBeanFactory beanFactory;
 
+    @Autowired
+    private Cluster clusterSpy;
+
     @Test
     public void testAnnotationConfigurationAnnotationWrapsBeans() throws Exception {
         Object eventHandler = applicationContext.getBean("eventHandler");
@@ -69,7 +74,8 @@ public class AnnotationDrivenConfigurationTest_CustomValues {
 
         verify(commandBus).subscribe(String.class.getName(),
                                      (org.axonframework.commandhandling.CommandHandler<? super Object>) commandHandler);
-        verify(eventBus).subscribe((EventListener) eventHandler);
+        verify(eventBus).subscribe(clusterSpy);
+        verify(clusterSpy).subscribe((EventListener) eventHandler);
     }
 
     @Test
@@ -127,8 +133,13 @@ public class AnnotationDrivenConfigurationTest_CustomValues {
             final EventBus mock = mock(EventBus.class);
             doThrow(new AssertionError("Should not interact with this event bus"))
                     .when(mock)
-                    .subscribe(any(EventListener.class));
+                    .subscribe(any(Cluster.class));
             return mock;
+        }
+
+        @Bean
+        public Cluster cluster() {
+            return spy(new SimpleCluster("myCluster"));
         }
     }
 

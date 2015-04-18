@@ -515,7 +515,7 @@
             Snapshot creation when 20 or more events are required to reload the aggregate's current
             state. </para>
         <para>The snapshotter is configured as follows:</para>
-<programlisting language="xml"><![CDATA[<bean id="snapshotter" class="org.axonframework.eventsourcing.SpringAggregateSnapshotter">
+<programlisting language="xml"><![CDATA[<bean id="snapshotter" class="org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter">
     <property name="eventStore" ref="eventStore"/>
     <property name="executor" ref="taskExecutor"/>
 </bean>

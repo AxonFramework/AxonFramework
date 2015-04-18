@@ -32,7 +32,7 @@ public class AxonAMQPNamespaceHandler extends NamespaceHandlerSupport {
      */
     @Override
     public void init() {
-        registerBeanDefinitionParser("terminal", new TerminalBeanDefinitionParser());
+        registerBeanDefinitionParser("eventBus", new EventBusBeanDefinitionParser());
         registerBeanDefinitionParser("configuration", new AMQPConfigurationBeanDefinitionParser());
     }
 }

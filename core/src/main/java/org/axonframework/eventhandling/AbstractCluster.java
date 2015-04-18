@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,17 @@ public abstract class AbstractCluster implements Cluster {
     }
 
     /**
+     * Initializes the cluster with given <code>name</code>. The order in which listeners are organized in the cluster
+     * is undefined.
+     *
+     * @param name The name of this cluster
+     */
+    protected AbstractCluster(String name, EventListener... initialListeners) {
+        this(name);
+        eventListeners.addAll(Arrays.asList(initialListeners));
+    }
+
+    /**
      * Initializes the cluster with given <code>name</code>, using given <code>comparator</code> to order the listeners
      * in the cluster. The order of invocation of the members in this cluster is according the order provided by the
      * comparator.
@@ -73,8 +84,8 @@ public abstract class AbstractCluster implements Cluster {
     }
 
     @Override
-    public void publish(EventMessage... events) {
-        doPublish(Arrays.asList(events), eventListeners, eventProcessingMonitor);
+    public void handle(List<EventMessage<?>> events) {
+        doPublish(events, eventListeners, eventProcessingMonitor);
     }
 
     /**
@@ -99,7 +110,7 @@ public abstract class AbstractCluster implements Cluster {
      * @param eventListeners         The event listeners subscribed at the moment the event arrived
      * @param eventProcessingMonitor The monitor to notify after completion.
      */
-    protected abstract void doPublish(List<EventMessage> events, Set<EventListener> eventListeners,
+    protected abstract void doPublish(List<EventMessage<?>> events, Set<EventListener> eventListeners,
                                       MultiplexingEventProcessingMonitor eventProcessingMonitor);
 
     @Override
@@ -133,7 +144,6 @@ public abstract class AbstractCluster implements Cluster {
      * time the iterator was created. The iterator does not allow the {@link java.util.Iterator#remove()} method to be
      * invoked.
      */
-    @Override
     public Set<EventListener> getMembers() {
         return immutableEventListeners;
     }

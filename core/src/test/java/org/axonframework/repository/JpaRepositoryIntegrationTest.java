@@ -18,8 +18,10 @@ package org.axonframework.repository;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -58,10 +60,13 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
     private List<DomainEventMessage> capturedEvents;
 
+    private Cluster cluster = new SimpleCluster("test");
+
     @Before
     public void setUp() {
         capturedEvents = new ArrayList<>();
-        eventBus.subscribe(this);
+        eventBus.subscribe(cluster);
+        cluster.subscribe(this);
     }
 
     @SuppressWarnings({"unchecked"})

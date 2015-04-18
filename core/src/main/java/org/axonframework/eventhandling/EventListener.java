@@ -27,6 +27,7 @@ import org.axonframework.domain.EventMessage;
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
+@FunctionalInterface
 public interface EventListener {
 
     /**

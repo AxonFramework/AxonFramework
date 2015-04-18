@@ -18,8 +18,10 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
@@ -67,6 +69,7 @@ public class HybridJpaRepositoryTest {
     private UnitOfWork unitOfWork;
 
     private EventListener eventListener;
+    private Cluster cluster = new SimpleCluster("cluster");
 
     @Before
     public void prepareUnitOfWork() {
@@ -77,7 +80,8 @@ public class HybridJpaRepositoryTest {
         }
         eventListener = mock(EventListener.class);
         unitOfWork = DefaultUnitOfWork.startAndGet();
-        eventBus.subscribe(eventListener);
+        eventBus.subscribe(cluster);
+        cluster.subscribe(eventListener);
         Mockito.reset(eventStore, eventListener);
     }
 

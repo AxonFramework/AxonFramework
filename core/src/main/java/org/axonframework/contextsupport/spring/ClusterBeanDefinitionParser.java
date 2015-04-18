@@ -17,26 +17,21 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.AnnotationClusterSelector;
-import org.axonframework.eventhandling.ClassNamePatternClusterSelector;
-import org.axonframework.eventhandling.ClassNamePrefixClusterSelector;
 import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.ClusterSelector;
-import org.axonframework.eventhandling.DefaultClusterSelector;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SpringAnnotationOrderResolver;
 import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
 import org.axonframework.eventhandling.replay.IncomingMessageHandler;
-import org.axonframework.eventhandling.replay.ReplayingCluster;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.unitofwork.NoTransactionManager;
-import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.spring.eventhandling.AnnotationClusterSelector;
+import org.axonframework.spring.eventhandling.ClassNamePatternClusterSelector;
+import org.axonframework.spring.eventhandling.ClassNamePrefixClusterSelector;
+import org.axonframework.spring.eventhandling.ClusterSelector;
+import org.axonframework.spring.eventhandling.DefaultClusterSelector;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConstructorArgumentValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -47,7 +42,6 @@ import org.springframework.beans.factory.xml.AbstractBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.core.Ordered;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
@@ -56,8 +50,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowiredBeanWithFallback;
 
 /**
  * BeanDefinitionParser implementation that parses "cluster" elements. It creates the cluster as well as a selector
@@ -76,13 +68,6 @@ import static org.axonframework.contextsupport.spring.AutowiredBean.createAutowi
 public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
     private static final String META_DATA_ELEMENT = "meta-data";
-
-    private static final String REPLAY_ELEMENT = "replay-config";
-    private static final String TRANSACTION_MANAGER_ATTRIBUTE = "transaction-manager";
-    private static final String EVENT_STORE_ATTRIBUTE = "event-store";
-    private static final String COMMIT_THRESHOLD_ATTRIBUTE = "commit-threshold";
-    private static final String INCOMING_MESSAGE_HANDLER_REF = "incoming-message-handler-ref";
-    private static final String INCOMING_MESSAGES_ATTRIBUTE = "incoming-messages";
 
     private static final String SELECTORS_ELEMENT = "selectors";
     private static final String SELECTOR_CLASS_NAME_MATCHES_ELEMENT = "class-name-matches";
@@ -137,9 +122,6 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
             throw new AxonConfigurationException(
                     "Cluster with id '" + clusterId + "' is not a default cluster, nor defines any selectors");
         }
-        if (DomUtils.getChildElementByTagName(element, REPLAY_ELEMENT) != null) {
-            return wrapInReplayingCluster(DomUtils.getChildElementByTagName(element, REPLAY_ELEMENT), clusterBean);
-        }
         return clusterBean;
     }
 
@@ -149,48 +131,6 @@ public class ClusterBeanDefinitionParser extends AbstractBeanDefinitionParser {
         } else {
             return BeanDefinitionBuilder.genericBeanDefinition(SpringAnnotationOrderResolver.class).getBeanDefinition();
         }
-    }
-
-    private AbstractBeanDefinition wrapInReplayingCluster(Element replayElement,
-                                                          AbstractBeanDefinition targetClusterDefinition) {
-        GenericBeanDefinition replayingCluster = new GenericBeanDefinition();
-        replayingCluster.setBeanClass(ReplayingCluster.class);
-        final ConstructorArgumentValues constructor = replayingCluster.getConstructorArgumentValues();
-        constructor.addIndexedArgumentValue(0, targetClusterDefinition);
-        if (replayElement.hasAttribute(EVENT_STORE_ATTRIBUTE)) {
-            constructor.addIndexedArgumentValue(1, new RuntimeBeanReference(
-                    replayElement.getAttribute(EVENT_STORE_ATTRIBUTE)));
-        } else {
-            constructor.addIndexedArgumentValue(1, AutowiredBean.createAutowiredBean(EventStore.class));
-        }
-        if (replayElement.hasAttribute(TRANSACTION_MANAGER_ATTRIBUTE)) {
-            constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
-                    .genericBeanDefinition(TransactionManagerFactoryBean.class)
-                    .addPropertyReference("transactionManager",
-                                          replayElement.getAttribute(TRANSACTION_MANAGER_ATTRIBUTE))
-                    .getBeanDefinition());
-        } else {
-            constructor.addIndexedArgumentValue(2, BeanDefinitionBuilder
-                    .genericBeanDefinition(TransactionManagerFactoryBean.class)
-                    .addPropertyValue("transactionManager",
-                                      createAutowiredBeanWithFallback(new NoTransactionManager(),
-                                                                      TransactionManager.class,
-                                                                      PlatformTransactionManager.class))
-                    .getBeanDefinition());
-        }
-        constructor.addIndexedArgumentValue(3, replayElement.getAttribute(COMMIT_THRESHOLD_ATTRIBUTE));
-        Object incomingMessageHandlerDefinition;
-        if (replayElement.hasAttribute(INCOMING_MESSAGE_HANDLER_REF)) {
-            incomingMessageHandlerDefinition = new RuntimeBeanReference(
-                    replayElement.getAttribute(INCOMING_MESSAGE_HANDLER_REF));
-        } else {
-            incomingMessageHandlerDefinition = BeanDefinitionBuilder
-                    .genericBeanDefinition(IncomingMessageHandlerFactoryBean.class)
-                    .addPropertyValue("policy", replayElement.getAttribute(INCOMING_MESSAGES_ATTRIBUTE))
-                    .getBeanDefinition();
-        }
-        constructor.addIndexedArgumentValue(4, incomingMessageHandlerDefinition);
-        return replayingCluster;
     }
 
     private boolean parseClusterSelector(Element element, ParserContext parserContext, String clusterId) {

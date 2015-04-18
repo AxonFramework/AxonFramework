@@ -91,9 +91,9 @@ public class AsynchronousClusterConcurrencyTest {
         @Override
         public void run() {
             for (int i = 0; i < ITERATIONS; i++) {
-                testSubject.publish(asEventMessage("1"));
-                testSubject.publish(asEventMessage("2"));
-                testSubject.publish(asEventMessage("3"));
+                testSubject.handle(asEventMessage("1"));
+                testSubject.handle(asEventMessage("2"));
+                testSubject.handle(asEventMessage("3"));
             }
         }
     }

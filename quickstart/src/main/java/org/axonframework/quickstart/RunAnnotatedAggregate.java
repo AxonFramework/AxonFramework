@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHa
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -63,7 +64,7 @@ public class RunAnnotatedAggregate {
         AggregateAnnotationCommandHandler.subscribe(ToDoItem.class, repository, commandBus);
 
         // We register an event listener to see which events are created
-        AnnotationEventListenerAdapter.subscribe(new ToDoEventHandler(), eventBus);
+        eventBus.subscribe(new SimpleCluster("logging", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // and let's send some Commands on the CommandBus.
         CommandGenerator.sendCommands(commandGateway);

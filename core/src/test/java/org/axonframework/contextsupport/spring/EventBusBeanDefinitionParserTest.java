@@ -16,9 +16,8 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.eventhandling.AutowiringClusterSelector;
-import org.axonframework.eventhandling.ClusteringEventBus;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,16 +41,9 @@ public class EventBusBeanDefinitionParserTest {
     public void eventBusElement() {
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition("eventBus");
         assertNotNull("Bean definition not created", beanDefinition);
-        assertEquals("Wrong bean class", ClusteringEventBus.class.getName(), beanDefinition.getBeanClassName());
+        assertEquals("Wrong bean class", SimpleEventBus.class.getName(), beanDefinition.getBeanClassName());
         assertEquals("wrong amount of constructor arguments"
-                , 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-
-        BeanDefinition selectorDef = (BeanDefinition) beanDefinition.getConstructorArgumentValues()
-                                                                    .getArgumentValue(0, BeanDefinition.class)
-                                                                    .getValue();
-        assertEquals("constructor value is wrong", AutowiringClusterSelector.class.getName(),
-                     selectorDef.getBeanClassName());
-
+                , 0, beanDefinition.getConstructorArgumentValues().getArgumentCount());
 
         EventBus eventBus = beanFactory.getBean("eventBus", EventBus.class);
         assertNotNull(eventBus);
@@ -61,52 +53,14 @@ public class EventBusBeanDefinitionParserTest {
     public void eventBusElementWithTerminal() {
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition("eventBusTerminal");
         assertNotNull("Bean definition not created", beanDefinition);
-        assertEquals("Wrong bean class", ClusteringEventBus.class.getName(), beanDefinition.getBeanClassName());
+        assertEquals("Wrong bean class", SimpleEventBus.class.getName(), beanDefinition.getBeanClassName());
         assertEquals("wrong amount of constructor arguments"
-                , 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        BeanDefinition selectorDef = (BeanDefinition) beanDefinition.getConstructorArgumentValues()
-                                                                    .getArgumentValue(0, BeanDefinition.class)
-                                                                    .getValue();
-        assertEquals("constructor value is wrong", AutowiringClusterSelector.class.getName(),
-                     selectorDef.getBeanClassName());
+                , 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
+
         BeanReference terminalRef = (BeanReference) beanDefinition.getConstructorArgumentValues()
-                                                                  .getArgumentValue(1, BeanReference.class)
+                                                                  .getArgumentValue(0, BeanReference.class)
                                                                   .getValue();
         assertEquals("constructor value is wrong", "terminal", terminalRef.getBeanName());
         assertNotNull(beanFactory.getBean("eventBusTerminal", EventBus.class));
-    }
-
-    @Test
-    public void eventBusElementWithTerminalAndClusterSelector() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("eventBusTerminalClusterSelector");
-        assertNotNull("Bean definition not created", beanDefinition);
-        assertEquals("Wrong bean class", ClusteringEventBus.class.getName(), beanDefinition.getBeanClassName());
-        assertEquals("wrong amount of constructor arguments"
-                , 2, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        BeanReference selectorRef = (BeanReference) beanDefinition.getConstructorArgumentValues()
-                                                                    .getArgumentValue(0, BeanReference.class)
-                                                                    .getValue();
-        assertEquals("constructor value is wrong", "clusterSelector", selectorRef.getBeanName());
-        BeanReference terminalRef = (BeanReference) beanDefinition.getConstructorArgumentValues()
-                                                                  .getArgumentValue(1, BeanReference.class)
-                                                                  .getValue();
-        assertEquals("constructor value is wrong", "terminal", terminalRef.getBeanName());
-
-        assertNotNull(beanFactory.getBean("eventBusTerminalClusterSelector", EventBus.class));
-    }
-
-    @Test
-    public void eventBusElementWithClusterSelector() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("eventBusClusterSelector");
-        assertNotNull("Bean definition not created", beanDefinition);
-        assertEquals("Wrong bean class", ClusteringEventBus.class.getName(), beanDefinition.getBeanClassName());
-        assertEquals("wrong amount of constructor arguments"
-                , 1, beanDefinition.getConstructorArgumentValues().getArgumentCount());
-        BeanReference selectorRef = (BeanReference) beanDefinition.getConstructorArgumentValues()
-                                                                  .getArgumentValue(0, BeanReference.class)
-                                                                  .getValue();
-        assertEquals("constructor value is wrong", "clusterSelector", selectorRef.getBeanName());
-
-        assertNotNull(beanFactory.getBean("eventBusClusterSelector", EventBus.class));
     }
 }

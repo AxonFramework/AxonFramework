@@ -36,8 +36,8 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -518,16 +518,16 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private class RecordingEventBus implements EventBus {
 
         @Override
-        public void publish(EventMessage... events) {
-            publishedEvents.addAll(Arrays.asList(events));
+        public void publish(List<EventMessage<?>> events) {
+            publishedEvents.addAll(events);
         }
 
         @Override
-        public void subscribe(EventListener eventListener) {
+        public void subscribe(Cluster eventListener) {
         }
 
         @Override
-        public void unsubscribe(EventListener eventListener) {
+        public void unsubscribe(Cluster eventListener) {
         }
     }
 

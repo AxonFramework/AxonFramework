@@ -18,15 +18,17 @@ package org.axonframework.unitofwork.nesting;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
+import org.mockito.*;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.Mockito.*;
 
@@ -36,7 +38,7 @@ import static org.mockito.Mockito.*;
 public class SimpleListenerPublishingEventTest {
 
     private EventBus eventBus;
-    private EventListener eventListener;
+    private Cluster cluster;
 
     @Before
     public void setUp() throws Exception {
@@ -44,8 +46,8 @@ public class SimpleListenerPublishingEventTest {
             CurrentUnitOfWork.get().rollback();
         }
         eventBus = new SimpleEventBus();
-        eventListener = mock(EventListener.class);
-        eventBus.subscribe(eventListener);
+        cluster = mock(Cluster.class);
+        eventBus.subscribe(cluster);
     }
 
     @After
@@ -64,12 +66,13 @@ public class SimpleListenerPublishingEventTest {
                                                                                     true));
         uow.publishEvent(event,
                          eventBus);
-        verify(eventListener, never()).handle(isA(EventMessage.class));
+        verify(cluster, never()).handle(Matchers.<EventMessage[]>anyVararg());
+        verify(cluster, never()).handle(Matchers.<List<EventMessage<?>>>any());
         doAnswer(invocation -> {
             CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>("Second"), eventBus);
             return null;
-        }).when(eventListener).handle(event);
+        }).when(cluster).handle(Collections.singletonList(event));
         uow.commit();
-        verify(eventListener, times(2)).handle(isA(EventMessage.class));
+        verify(cluster, times(2)).handle(Matchers.<List<EventMessage<?>>>any());
     }
 }

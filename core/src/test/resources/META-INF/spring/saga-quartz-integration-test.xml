@@ -44,7 +44,7 @@
 
     <bean class="org.axonframework.saga.spring.SpringResourceInjector"/>
 
-    <bean class="org.axonframework.eventhandling.scheduling.quartz.QuartzEventSchedulerFactoryBean">
+    <bean class="org.axonframework.spring.eventhandling.scheduling.quartz.QuartzEventSchedulerFactoryBean">
         <property name="scheduler" ref="scheduler"/>
         <property name="eventBus" ref="eventBus"/>
         <property name="transactionManager" ref="transactionManager"/>

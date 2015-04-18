@@ -19,6 +19,8 @@ package org.axonframework.spring.messaging.adapter;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -32,11 +34,12 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Allard Buijze
  * @since 2.3.1
  */
-public class EventListeningMessageChannelAdapter implements EventListener, InitializingBean {
+public class EventListeningMessageChannelAdapter implements EventListener, InitializingBean, BeanNameAware {
 
     private final MessageChannel channel;
     private final EventFilter filter;
     private final EventBus eventBus;
+    private String beanName;
 
     /**
      * Initialize an adapter to forward messages from the given <code>eventBus</code> to the given
@@ -72,7 +75,7 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
      */
     @Override
     public void afterPropertiesSet() {
-        eventBus.subscribe(this);
+        eventBus.subscribe(new SimpleCluster(beanName, this));
     }
 
     /**
@@ -86,5 +89,10 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
         if (filter.accept(event.getPayload().getClass())) {
             channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData()));
         }
+    }
+
+    @Override
+    public void setBeanName(String name) {
+        this.beanName = name;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * MessageListener implementation that deserializes incoming messages and forwards them to one or more clusters. The
- * <code>byte[]</code> making up the message payload must the format as used by the {@link SpringAMQPTerminal}.
+ * <code>byte[]</code> making up the message payload must the format as used by the {@link SpringAMQPEventBus}.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -56,12 +56,16 @@ public class ClusterMessageListener implements MessageListener {
 
     @Override
     public void onMessage(Message message) {
+        if (clusters.isEmpty()) {
+            return;
+        }
+
         try {
             EventMessage eventMessage = messageConverter.readAMQPMessage(message.getBody(),
                                                                          message.getMessageProperties().getHeaders());
             if (eventMessage != null) {
                 for (Cluster cluster : clusters) {
-                    cluster.publish(eventMessage);
+                    cluster.handle(eventMessage);
                 }
             }
         } catch (UnknownSerializedTypeException e) {
@@ -76,5 +80,13 @@ public class ClusterMessageListener implements MessageListener {
      */
     public void addCluster(Cluster cluster) {
         clusters.add(cluster);
+    }
+
+    public void removeCluster(Cluster cluster) {
+        clusters.remove(cluster);
+    }
+
+    public boolean isEmpty() {
+        return clusters.isEmpty();
     }
 }

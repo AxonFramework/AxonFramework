@@ -16,16 +16,16 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.axonframework.correlation.CorrelationDataProvider;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
+import org.axonframework.spring.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor;
+import org.axonframework.spring.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.PropertyValue;

@@ -17,7 +17,7 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.eventsourcing.SpringAggregateSnapshotter;
+import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
 import org.axonframework.eventstore.EventStore;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;

@@ -17,12 +17,11 @@
 package org.axonframework.contextsupport.spring;
 
 import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.ClusterSelector;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.OrderResolver;
 import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SpringAnnotationOrderResolver;
-import org.axonframework.eventhandling.replay.ReplayingCluster;
+import org.axonframework.spring.eventhandling.ClusterSelector;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +66,6 @@ public class ClusterBeanDefinitionParserTest {
         assertNotNull(cluster5);
         assertNotNull(selector1);
         assertNotNull(selector2);
-        assertTrue(cluster3 instanceof ReplayingCluster);
 
         assertEquals(SimpleCluster.class, cluster1.getClass());
         assertEquals("value", cluster1.getMetaData().getProperty("meta"));

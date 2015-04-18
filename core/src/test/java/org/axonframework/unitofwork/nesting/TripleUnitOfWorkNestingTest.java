@@ -26,8 +26,10 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
@@ -80,9 +82,12 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     private PlatformTransactionManager transactionManager;
     private List<EventMessage<?>> handledMessages;
 
+    private Cluster cluster = new SimpleCluster("default");
+
     @Before
     public void setUp() throws Exception {
-        eventBus.subscribe(this);
+        cluster.subscribe(this);
+        eventBus.subscribe(cluster);
         handledMessages = new ArrayList<>();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
@@ -107,7 +112,8 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         assertEquals(1, toList(eventStore.readEvents(aggregateBIdentifier)).size());
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("hello"));
 
-        assertEquals(5, toList(eventStore.readEvents(aggregateAIdentifier)).size());
+        final List<DomainEventMessage> messages = toList(eventStore.readEvents(aggregateAIdentifier));
+        assertEquals(5, messages.size());
         assertEquals(2, toList(eventStore.readEvents(aggregateBIdentifier)).size());
 
         for (int t = 0; t < 10; t++) {

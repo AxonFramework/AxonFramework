@@ -16,7 +16,7 @@
 
 package org.axonframework.contextsupport.spring;
 
-import org.axonframework.common.jdbc.SpringDataSourceConnectionProvider;
+import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.eventstore.jdbc.DefaultEventEntryStore;
 import org.axonframework.eventstore.jdbc.GenericEventSqlSchema;

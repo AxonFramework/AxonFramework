@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.Cluster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -42,10 +41,10 @@ public class DiscardingIncomingMessageHandler implements IncomingMessageHandler 
     }
 
     @Override
-    public List<EventMessage> onIncomingMessages(Cluster destination, EventMessage... messages) {
-        if (messages != null && messages.length > 0 && logger.isInfoEnabled()) {
+    public List<EventMessage<?>> onIncomingMessages(Cluster destination, List<EventMessage<?>> messages) {
+        if (messages != null && !messages.isEmpty() && logger.isInfoEnabled()) {
             final StringBuilder msg = new StringBuilder("Discarding ")
-                    .append(messages.length)
+                    .append(messages.size())
                     .append(" messages on cluster [")
                     .append(destination.getName())
                     .append("] during an event replay: [");
@@ -60,7 +59,7 @@ public class DiscardingIncomingMessageHandler implements IncomingMessageHandler 
             msg.append("]");
             logger.info(msg.toString());
         }
-        return messages == null ? null : Arrays.asList(messages);
+        return messages;
     }
 
     @Override

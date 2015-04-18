@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2014. Axon Framework
+  ~ Copyright (c) 2010-2015. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -53,21 +53,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventhandling.EventBusTerminal"/>
-                                </tool:annotation>
-                            </xsd:appinfo>
-                        </xsd:annotation>
-                    </xsd:attribute>
-                    <xsd:attribute name="cluster-selector" type="xsd:string" use="optional">
-                        <xsd:annotation>
-                            <xsd:documentation>Reference to the ClusterSelector implementation that arranges
-                                EventListener into clusters. By default, auto-detects clusters defined in the
-                                application contexts. If none are present, reverts to a ClusterSelector implementation
-                                that puts all Event Listeners in a single Simple Cluster (i.e. SimpleEventBus behavior).
-                            </xsd:documentation>
-                            <xsd:appinfo>
-                                <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventhandling.ClusterSelector"/>
+                                    <tool:expected-type type="org.axonframework.eventhandling.PublicationStrategy"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -86,7 +72,7 @@
             <xsd:appinfo>
                 <tool:annotation>
                     <tool:exports type="org.axonframework.eventhandling.Cluster"/>
-                    <tool:exports type="org.axonframework.eventhandling.ClusterSelector"/>
+                    <tool:exports type="org.axonframework.spring.eventhandling.ClusterSelector"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -114,7 +100,7 @@
                         </xsd:documentation>
                         <xsd:appinfo>
                             <tool:annotation>
-                                <tool:exports type="org.axonframework.eventhandling.ClusterSelector"/>
+                                <tool:exports type="org.axonframework.spring.eventhandling.ClusterSelector"/>
                             </tool:annotation>
                         </xsd:appinfo>
                     </xsd:annotation>
@@ -677,7 +663,7 @@
                     <tool:exports
                             type="org.axonframework.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor"/>
                     <tool:exports
-                            type="org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
+                            type="org.axonframework.spring.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>

@@ -109,12 +109,12 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     }
 
     @Override
-    public synchronized List<EventMessage> onIncomingMessages(Cluster destination, EventMessage... messages) {
+    public synchronized List<EventMessage<?>> onIncomingMessages(Cluster destination, List<EventMessage<?>> messages) {
         if (!inReplay) {
-            destination.publish(messages);
+            destination.handle(messages);
             return null;
         }
-        List<EventMessage> discarded = null;
+        List<EventMessage<?>> discarded = null;
         for (EventMessage message : messages) {
             if (message.getTimestamp().isAfter(backlogThreshold)) {
                 if (replayedMessages.contains(message.getIdentifier())) {
@@ -140,7 +140,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
                         && !(backloggedMessage instanceof DomainEventMessage)) {
 
                     processedMessages.add(backloggedMessage);
-                    destination.publish(backloggedMessage);
+                    destination.handle(backloggedMessage);
                 } else if (backloggedMessage.getIdentifier().equals(message.getIdentifier())) {
                     processedMessages.add(backloggedMessage);
                 }
@@ -171,7 +171,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
         while (!backlog.isEmpty()) {
             EventMessage message = backlog.poll();
             if (message != null && !replayedMessages.contains(message.getIdentifier())) {
-                destination.publish(message);
+                destination.handle(message);
             }
         }
         replayedMessages.clear();

@@ -46,7 +46,6 @@ import org.mockito.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -283,7 +282,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testLoadWithSnapshotEvent() {
         testSubject.appendEvents(aggregate1.getUncommittedEvents());
         aggregate1.commitEvents();
@@ -303,7 +301,6 @@ public class JdbcEventStoreTest {
         assertEquals(2, domainEvents.size());
     }
 
-    @Transactional
     @Test
     public void testInsertDuplicateSnapshot() throws Exception {
         testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>("id1", 1, "test"));
@@ -317,13 +314,11 @@ public class JdbcEventStoreTest {
 
 
     @Test(expected = EventStreamNotFoundException.class)
-    @Transactional
     public void testLoadNonExistent() {
         testSubject.readEvents(UUID.randomUUID().toString());
     }
 
     @Test
-    @Transactional
     public void testVisitAllEvents() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents(createDomainEvents(77));
@@ -334,7 +329,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents(createDomainEvents(10));
@@ -349,7 +343,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
@@ -369,7 +362,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testVisitEvents_BetweenTimestamps() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
@@ -392,7 +384,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testVisitEvents_OnOrAfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
@@ -412,7 +403,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test(expected = ConcurrencyException.class)
-    @Transactional
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
         testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", 0L, "Mock contents",
                                                                                MetaData.emptyInstance())));
@@ -422,7 +412,6 @@ public class JdbcEventStoreTest {
 
     @DirtiesContext
     @Test
-    @Transactional
     public void testStoreDuplicateEvent_NoSqlExceptionTranslator() {
         testSubject.setPersistenceExceptionResolver(null);
         try {
@@ -444,7 +433,6 @@ public class JdbcEventStoreTest {
     @SuppressWarnings({"PrimitiveArrayArgumentToVariableArgMethod", "unchecked"})
     @DirtiesContext
     @Test
-    @Transactional
     public void testCustomEventEntryStore() {
         EventEntryStore<String> eventEntryStore = mock(EventEntryStore.class);
         when(eventEntryStore.getDataType()).thenReturn(String.class);
@@ -476,7 +464,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testReadPartialStream_WithoutEnd() {
         final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents(asList(
@@ -504,7 +491,6 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testReadPartialStream_WithEnd() {
         final String aggregateIdentifier = UUID.randomUUID().toString();
         testSubject.appendEvents(asList(

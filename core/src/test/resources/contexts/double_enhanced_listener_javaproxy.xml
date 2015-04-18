@@ -30,8 +30,8 @@
     <axon:event-bus id="eventBus"/>
     <axon:command-bus id="commandBus"/>
 
-    <bean class="org.axonframework.eventhandling.annotation.TransactionalListener"/>
-    <bean class="org.axonframework.commandhandling.annotation.TransactionalCommandHandler"/>
+    <bean class="org.axonframework.spring.eventhandling.annotation.TransactionalListener"/>
+    <bean class="org.axonframework.spring.commandhandling.annotation.TransactionalCommandHandler"/>
 
     <bean id="transactionManager" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.springframework.transaction.PlatformTransactionManager"/>

@@ -14,6 +14,5 @@
 # limitations under the License.
 #
 
-http\://www.axonframework.org/schema/axon-amqp-2.0.xsd=org/axonframework/contextsupport/spring/amqp/axon-amqp-2.0.xsd
-http\://www.axonframework.org/schema/axon-amqp-2.1.xsd=org/axonframework/contextsupport/spring/amqp/axon-amqp-2.1.xsd
-http\://www.axonframework.org/schema/axon-amqp.xsd=org/axonframework/contextsupport/spring/amqp/axon-amqp-2.1.xsd
+http\://www.axonframework.org/schema/axon-amqp-3.0.xsd=org/axonframework/contextsupport/spring/amqp/axon-amqp-3.0.xsd
+http\://www.axonframework.org/schema/axon-amqp.xsd=org/axonframework/contextsupport/spring/amqp/axon-amqp-3.0.xsd
