@@ -111,6 +111,14 @@ public final class MethodMessageHandlerInspector {
     }
 
     /**
+     * Clears the cached message handlers. This method needs to be called if the underlying inspectors change for this VM.
+     * This may happen when running multiple test cases in the same JVM, since each test case may be using new implementations,
+     * for instance a new spring context per-test.
+     */
+    public static void clearCache(){
+        INSPECTORS.clear();
+    }
+    /**
      * Initialize an MethodMessageHandlerInspector, where the given <code>handlerDefinition</code> is used to detect
      * which methods are message handlers.
      *
