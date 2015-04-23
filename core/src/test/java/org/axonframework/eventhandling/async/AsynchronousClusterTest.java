@@ -27,8 +27,12 @@ import org.axonframework.eventhandling.OrderResolver;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
 import org.mockito.*;
 import org.mockito.invocation.*;
@@ -60,7 +64,18 @@ public class AsynchronousClusterTest {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
+                // since we need to pretend we run in another thread, we clear the Unit of Work first
+                UnitOfWork currentUnitOfWork = null;
+                if (CurrentUnitOfWork.isStarted()) {
+                    currentUnitOfWork = CurrentUnitOfWork.get();
+                    CurrentUnitOfWork.clear(currentUnitOfWork);
+                }
+
                 ((Runnable) invocation.getArguments()[0]).run();
+
+                if (currentUnitOfWork != null) {
+                    CurrentUnitOfWork.set(currentUnitOfWork);
+                }
                 return null;
             }
         }).when(executor).execute(isA(Runnable.class));
@@ -98,15 +113,17 @@ public class AsynchronousClusterTest {
                                               new DefaultUnitOfWorkFactory(mockTransactionManager),
                                               new SequentialPolicy(), new DefaultErrorHandler(RetryPolicy.proceed()),
                                               new OrderResolver() {
-            @Override
-            public int orderOf(EventListener listener) {
-                if (listener instanceof EventListenerProxy) {
-                    return ((EventListenerProxy) listener).getTargetType().getSuperclass()
-                                                          .getAnnotation(Order.class).value();
-                }
-                return 0;
-            }
-        });
+                                                  @Override
+                                                  public int orderOf(EventListener listener) {
+                                                      if (listener instanceof EventListenerProxy) {
+                                                          return ((EventListenerProxy) listener).getTargetType()
+                                                                                                .getSuperclass()
+                                                                                                .getAnnotation(Order.class)
+                                                                                                .value();
+                                                      }
+                                                      return 0;
+                                                  }
+                                              });
         final List<EventMessage> ackedMessages = listenForAcknowledgedMessages();
 
         final FirstHandler handler1 = spy(new FirstHandler());
@@ -148,6 +165,34 @@ public class AsynchronousClusterTest {
     }
 
     @Test
+    public void testEventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
+        final GenericEventMessage<String> message1 = new GenericEventMessage<String>("Message 1");
+        final GenericEventMessage<String> message2 = new GenericEventMessage<String>("Message 2");
+
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        uow.registerListener(new UnitOfWorkListenerAdapter() {
+            @Override
+            public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
+                verify(executor, never()).execute(isA(Runnable.class));
+                verify(mockTransactionManager, never()).startTransaction();
+                verify(mockTransactionManager, never()).commitTransaction(any());
+            }
+        });
+
+        testSubject.publish(message1, message2);
+
+        verify(executor, never()).execute(isA(Runnable.class));
+        verify(mockTransactionManager, never()).startTransaction();
+        verify(mockTransactionManager, never()).commitTransaction(any());
+
+        uow.commit();
+
+        verify(executor, times(2)).execute(isA(Runnable.class));
+        verify(mockTransactionManager, times(2)).startTransaction();
+        verify(mockTransactionManager, times(2)).commitTransaction(any());
+    }
+
+    @Test
     public void testExceptionsIgnoredWhenErrorPolicyIsProceed_IncludesAsyncHandler() {
         final List<EventMessage> ackedMessages = listenForAcknowledgedMessages();
         final List<EventMessage> failedMessages = listenForFailedMessages();
@@ -156,7 +201,8 @@ public class AsynchronousClusterTest {
         EventListener mockEventListener2 = mock(EventListener.class);
         AsyncHandler mockEventListener3 = mock(AsyncHandler.class);
 
-        final ArgumentCaptor<EventProcessingMonitor> argumentCaptor = ArgumentCaptor.forClass(EventProcessingMonitor.class);
+        final ArgumentCaptor<EventProcessingMonitor> argumentCaptor = ArgumentCaptor
+                .forClass(EventProcessingMonitor.class);
         doNothing().when(mockEventListener3).subscribeEventProcessingMonitor(argumentCaptor.capture());
 
         testSubject.subscribe(mockEventListener1);
@@ -185,7 +231,9 @@ public class AsynchronousClusterTest {
         assertEquals(message, failedMessages.get(0));
     }
 
-    private static interface AsyncHandler extends EventListener, EventProcessingMonitorSupport {}
+    private static interface AsyncHandler extends EventListener, EventProcessingMonitorSupport {
+
+    }
 
     @Order(1)
     private static class FirstHandler {
@@ -194,7 +242,6 @@ public class AsynchronousClusterTest {
         public void onEvent(String event) {
 
         }
-
     }
 
     @Order(2)
@@ -204,7 +251,6 @@ public class AsynchronousClusterTest {
         public void onEvent(String event) {
 
         }
-
     }
 
     private List<EventMessage> listenForAcknowledgedMessages() {
@@ -214,12 +260,13 @@ public class AsynchronousClusterTest {
         doAnswer(new Answer() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                ackedMessages.addAll((List<EventMessage>)invocationOnMock.getArguments()[0]);
+                ackedMessages.addAll((List<EventMessage>) invocationOnMock.getArguments()[0]);
                 return null;
             }
         }).when(monitor).onEventProcessingCompleted(isA(List.class));
         return ackedMessages;
     }
+
     private List<EventMessage> listenForFailedMessages() {
         final EventProcessingMonitor monitor = mock(EventProcessingMonitor.class);
         testSubject.subscribeEventProcessingMonitor(monitor);
