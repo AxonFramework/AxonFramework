@@ -207,6 +207,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         Iterator<? extends SerializedDomainEventData> entries =
                 eventEntryStore.fetchAggregateStream(type, identifier, snapshotSequenceNumber + 1, batchSize);
         if (snapshotEvent == null && !entries.hasNext()) {
+            IOUtils.closeQuietlyIfCloseable(entries);
             throw new EventStreamNotFoundException(type, identifier);
         }
         return new IteratorDomainEventStream(snapshotEvent, entries, identifier, false);

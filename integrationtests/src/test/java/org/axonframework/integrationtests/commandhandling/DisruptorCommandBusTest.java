@@ -21,10 +21,15 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -41,6 +46,9 @@ public class DisruptorCommandBusTest {
 
     @Autowired
     private CommandBus commandBus;
+
+    @Autowired
+    private EventBus eventBus;
 
     /**
      * Test that reproduces a "circluar dependency" problem with DisruptorCommandBus in combination with JPA event
@@ -64,5 +72,34 @@ public class DisruptorCommandBusTest {
         commandBus.dispatch(new GenericCommandMessage<Object>("test"), callback);
 
         assertEquals("ok", callback.get());
+    }
+
+    @DirtiesContext
+    @Test
+    public void handleCommandWithoutUsingAggregate_PublicationFails() throws ExecutionException, InterruptedException {
+        commandBus.subscribe(String.class.getName(), new CommandHandler<Object>() {
+            @Override
+            public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+                unitOfWork.publishEvent(GenericEventMessage.asEventMessage("test"), eventBus);
+                return "ok";
+            }
+        });
+        final RuntimeException failure = new RuntimeException("Test");
+        eventBus.subscribe(new EventListener() {
+            @Override
+            public void handle(EventMessage event) {
+                throw failure;
+            }
+        });
+
+        final FutureCallback<String> callback = new FutureCallback<String>();
+        commandBus.dispatch(new GenericCommandMessage<Object>("test"), callback);
+
+        try {
+            callback.getResult();
+            fail("Expected exception result");
+        } catch (RuntimeException e) {
+            assertEquals(failure, e);
+        }
     }
 }
