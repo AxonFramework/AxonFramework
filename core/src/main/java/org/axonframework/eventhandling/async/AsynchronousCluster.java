@@ -19,13 +19,16 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.common.Assert;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.AbstractCluster;
-import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerOrderComparator;
+import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
 import org.axonframework.eventhandling.OrderResolver;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,10 +174,21 @@ public class AsynchronousCluster extends AbstractCluster {
     }
 
     @Override
-    protected void doPublish(List<EventMessage> events, Set<EventListener> eventListeners,
-                             MultiplexingEventProcessingMonitor eventProcessingMonitor) {
-        for (EventMessage event : events) {
-            schedule(event, eventProcessingMonitor);
+    protected void doPublish(final List<EventMessage> events, Set<EventListener> eventListeners,
+                             final MultiplexingEventProcessingMonitor eventProcessingMonitor) {
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
+                @Override
+                public void afterCommit(UnitOfWork unitOfWork) {
+                    for (EventMessage event : events) {
+                        schedule(event, eventProcessingMonitor);
+                    }
+                }
+            });
+        } else {
+            for (EventMessage event : events) {
+                schedule(event, eventProcessingMonitor);
+            }
         }
     }
 

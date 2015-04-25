@@ -97,18 +97,19 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     public SerializedDomainEventData<T> loadLastSnapshotEvent(String identifier) {
         ResultSet result = null;
         Connection connection = null;
+        PreparedStatement statement = null;
         try {
             connection = connectionProvider.getConnection();
-            result = sqlSchema.sql_loadLastSnapshot(connection, identifier)
-                              .executeQuery();
+            statement = sqlSchema.sql_loadLastSnapshot(connection, identifier);
+            result = statement.executeQuery();
             if (result.next()) {
                 return sqlSchema.createSerializedDomainEventData(result);
             }
             return null;
         } catch (SQLException e) {
-            throw new EventStoreException("Exception while attempting to load last snapshot event of "
-                                                  + identifier, e);
+            throw new EventStoreException("Exception while attempting to load last snapshot event of " + identifier, e);
         } finally {
+            closeQuietly(statement);
             closeQuietly(result);
             closeQuietly(connection);
         }

@@ -19,9 +19,12 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventBus;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -39,6 +42,9 @@ public class DisruptorCommandBusTest {
     @Autowired
     private CommandBus commandBus;
 
+    @Autowired
+    private EventBus eventBus;
+
     /**
      * Test that reproduces a "circluar dependency" problem with DisruptorCommandBus in combination with JPA event
      * store.
@@ -55,6 +61,27 @@ public class DisruptorCommandBusTest {
         final FutureCallback<String, String> callback = new FutureCallback<>();
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
 
-        assertEquals("ok", callback.get());
+        assertEquals("ok", callback.getResult());
+    }
+
+    @DirtiesContext
+    @Test
+    public void handleCommandWithoutUsingAggregate_PublicationFails() throws ExecutionException, InterruptedException {
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+            unitOfWork.publishEvent(GenericEventMessage.asEventMessage("test"), eventBus);
+            return "ok";
+        });
+        final RuntimeException failure = new RuntimeException("Test");
+        eventBus.subscribe(e -> { throw failure; });
+
+        final FutureCallback<String, String> callback = new FutureCallback<>();
+        commandBus.dispatch(new GenericCommandMessage<>("test"), callback);
+
+        try {
+            callback.getResult();
+            fail("Expected exception result");
+        } catch (RuntimeException e) {
+            assertEquals(failure, e);
+        }
     }
 }

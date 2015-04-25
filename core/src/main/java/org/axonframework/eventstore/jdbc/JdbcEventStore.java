@@ -57,8 +57,7 @@ import javax.sql.DataSource;
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
 /**
- * An EventStore implementation that uses JPA to store DomainEvents in a database. The actual DomainEvent is stored as
- * a
+ * An EventStore implementation that uses JDBC to store DomainEvents in a database. The actual DomainEvent is stored as a
  * serialized blob of bytes. Other columns are used to store meta-data that allow quick finding of DomainEvents for a
  * specific aggregate in the correct order.
  * <p/>
@@ -195,6 +194,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         Iterator<? extends SerializedDomainEventData> entries =
                 eventEntryStore.fetchAggregateStream(identifier, snapshotSequenceNumber + 1, batchSize);
         if (snapshotEvent == null && !entries.hasNext()) {
+            IOUtils.closeQuietlyIfCloseable(entries);
             throw new EventStreamNotFoundException(identifier);
         }
         return new IteratorDomainEventStream(snapshotEvent, entries, false);

@@ -28,11 +28,13 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.RollbackOnAllExceptionsConfiguration;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
@@ -51,6 +53,7 @@ import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.dom4j.Document;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -94,7 +97,7 @@ public class DisruptorCommandBusTest {
     @Before
     public void setUp() throws Exception {
         aggregateIdentifier = UUID.randomUUID().toString();
-        eventBus = new CountingEventBus();
+        eventBus = spy(new CountingEventBus());
         stubHandler = new StubHandler();
         inMemoryEventStore = new InMemoryEventStore();
 
@@ -160,6 +163,51 @@ public class DisruptorCommandBusTest {
         inOrder.verify(mockUnitOfWorkListener).onCleanup(isA(UnitOfWork.class));
 
         verify(mockCallback).onSuccess(eq(command), any());
+    }
+
+    /* see AXON-323: http://issues.axonframework.org/youtrack/issue/AXON-323 */
+    @Test
+    public void testEventsPublishedWithoutAggregateArePassedToListener() throws Exception {
+        final EventBus eventBus = mock(EventBus.class);
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus,
+                                              new DisruptorConfiguration()
+        .setInvokerInterceptors(Collections.<CommandHandlerInterceptor>singletonList(new CommandHandlerInterceptor() {
+            @Override
+            public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
+                                 InterceptorChain interceptorChain) throws Throwable {
+                unitOfWork.registerListener(new UnitOfWorkListenerAdapter() {
+                    @Override
+                    public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
+                        return event.andMetaData(Collections.singletonMap("meta-key", "value"));
+                    }
+                });
+                return interceptorChain.proceed();
+            }
+        })));
+        testSubject.subscribe(String.class.getName(), new CommandHandler<String>() {
+            @Override
+            public Object handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+                unitOfWork.publishEvent(GenericEventMessage.asEventMessage("ok"), eventBus);
+                return null;
+            }
+        });
+
+        final FutureCallback<String, Void> callback = new FutureCallback<>();
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+
+        callback.awaitCompletion(5, TimeUnit.SECONDS);
+
+        verify(eventBus).publish(argThat(new org.hamcrest.TypeSafeMatcher<EventMessage>() {
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("an event with meta data");
+            }
+
+            @Override
+            protected boolean matchesSafely(EventMessage item) {
+                return "value".equals(item.getMetaData().get("meta-key"));
+            }
+        }));
     }
 
     @Test

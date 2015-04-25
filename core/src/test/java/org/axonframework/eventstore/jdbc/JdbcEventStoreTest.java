@@ -21,6 +21,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
+import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -42,6 +43,8 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.junit.*;
 import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,8 +57,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.sql.Statement;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -75,10 +80,9 @@ public class JdbcEventStoreTest {
     public void setUp() throws SQLException {
         JDBCDataSource dataSource = new org.hsqldb.jdbc.JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
-        this.conn = dataSource.getConnection();
-
-        final GenericEventSqlSchema sqldef = new GenericEventSqlSchema();
-        final DefaultEventEntryStore eventEntryStore1 = new DefaultEventEntryStore(dataSource, sqldef);
+        this.conn = spy(dataSource.getConnection());
+        doNothing().when(conn).close();
+        final DefaultEventEntryStore<String> eventEntryStore1 = new DefaultEventEntryStore<>(() -> conn);
         eventEntryStore1.createSchema();
         testSubject = new JdbcEventStore(eventEntryStore1);
 
@@ -97,6 +101,7 @@ public class JdbcEventStoreTest {
 
     @After
     public void tearDown() throws SQLException {
+        reset(conn);
         conn.createStatement().execute("SHUTDOWN");
         conn.close();
         // just to make sure
@@ -120,6 +125,29 @@ public class JdbcEventStoreTest {
         return resultSet.getLong(1);
     }
 
+    /* see AXON-321: http://issues.axonframework.org/youtrack/issue/AXON-321 */
+    @Test
+    public void testResourcesProperlyClosedWhenAggregateStreamIsNotFound() throws SQLException {
+        reset(conn);
+        doNothing().when(conn).close();
+        final List<PreparedStatement> statements = new ArrayList<>();
+        final List<ResultSet> resultSets = new ArrayList<>();
+        doAnswer(new StatementAnswer(resultSets, statements)).when(conn).prepareStatement(anyString());
+
+        try {
+            testSubject.readEvents("noSuchId");
+            fail("Expected EventStreamNotFoundException");
+        } catch (EventStreamNotFoundException e) {
+            verify(conn, atLeastOnce()).prepareStatement(anyString());
+            for (Statement statement : statements) {
+                verify(statement).close();
+            }
+            for (ResultSet resultSet : resultSets) {
+                verify(resultSet).close();
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testStoreAndLoadEvents() throws SQLException {
@@ -128,7 +156,7 @@ public class JdbcEventStoreTest {
         assertEquals((long) aggregate1.getUncommittedEventCount(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents(asList(
+        testSubject.appendEvents(singletonList(
                 new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
                                                 0,
                                                 new Object(),
@@ -179,7 +207,7 @@ public class JdbcEventStoreTest {
         assertEquals((long) aggregate1.getUncommittedEventCount(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents(asList(
+        testSubject.appendEvents(singletonList(
                 new GenericDomainEventMessage<>(aggregate2.getIdentifier(), 0, new Object(),
                                                 Collections.singletonMap("key", "Value"))));
 
@@ -311,10 +339,10 @@ public class JdbcEventStoreTest {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents(createDomainEvents(10));
         final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test");
-        testSubject.appendEvents(asList(eventMessage));
+        testSubject.appendEvents(singletonList(eventMessage));
         testSubject.appendEvents(createDomainEvents(10));
         // we upcast the event to two instances, one of which is an unknown class
-        testSubject.setUpcasterChain(new LazyUpcasterChain(Arrays.<Upcaster>asList(new StubUpcaster())));
+        testSubject.setUpcasterChain(new LazyUpcasterChain(singletonList(new StubUpcaster())));
         testSubject.visitEvents(eventVisitor);
 
         verify(eventVisitor, times(21)).doWithEvent(isA(DomainEventMessage.class));
@@ -386,10 +414,10 @@ public class JdbcEventStoreTest {
     @Test(expected = ConcurrencyException.class)
     @Transactional
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
-        testSubject.appendEvents(asList(new GenericDomainEventMessage<>("123", 0L,
-                                                                        "Mock contents", MetaData.emptyInstance())));
-        testSubject.appendEvents(asList(new GenericDomainEventMessage<>("123", 0L,
-                                                                        "Mock contents", MetaData.emptyInstance())));
+        testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", 0L, "Mock contents",
+                                                                               MetaData.emptyInstance())));
+        testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", 0L, "Mock contents",
+                                                                               MetaData.emptyInstance())));
     }
 
     @DirtiesContext
@@ -398,14 +426,10 @@ public class JdbcEventStoreTest {
     public void testStoreDuplicateEvent_NoSqlExceptionTranslator() {
         testSubject.setPersistenceExceptionResolver(null);
         try {
-            testSubject.appendEvents(asList(new GenericDomainEventMessage<>("123",
-                                                                            (long) 0,
-                                                                            "Mock contents",
-                                                                            MetaData.emptyInstance())));
-            testSubject.appendEvents(asList(new GenericDomainEventMessage<>("123",
-                                                                            (long) 0,
-                                                                            "Mock contents",
-                                                                            MetaData.emptyInstance())));
+            testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", (long) 0, "Mock contents",
+                                                                                   MetaData.emptyInstance())));
+            testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", (long) 0, "Mock contents",
+                                                                                   MetaData.emptyInstance())));
         } catch (ConcurrencyException ex) {
             fail("Didn't expect exception to be translated");
         } catch (Exception ex) {
@@ -438,7 +462,7 @@ public class JdbcEventStoreTest {
         GenericDomainEventMessage<String> eventMessage = new GenericDomainEventMessage<>(
                 UUID.randomUUID().toString(), 0L, "Mock contents", MetaData.emptyInstance());
         when(eventEntryStore.fetchAggregateStream(any(), anyInt(), anyInt()))
-                .thenReturn(new ArrayList(asList(new DomainEventEntry(
+                .thenReturn(new ArrayList(singletonList(new DomainEventEntry(
                         eventMessage,
                         mockSerializedObject("Mock contents".getBytes()),
                         mockSerializedObject("Mock contents".getBytes())))).iterator());
@@ -564,10 +588,6 @@ public class JdbcEventStoreTest {
         }
     }
 
-    private static class BadIdentifierType {
-
-    }
-
     private static class StubUpcaster implements Upcaster<byte[]> {
 
         @Override
@@ -592,7 +612,37 @@ public class JdbcEventStoreTest {
         @Override
         public List<SerializedType> upcast(SerializedType serializedType) {
             return Arrays.<SerializedType>asList(new SimpleSerializedType("unknownType1", "2"),
-                                                 new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
+                    new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
+        }
+    }
+
+    private static class StatementAnswer implements Answer<Statement> {
+
+        private final List<ResultSet> resultSets;
+        private final List<PreparedStatement> statements;
+
+        public StatementAnswer(List<ResultSet> resultSets, List<PreparedStatement> statements) {
+            this.resultSets = resultSets;
+            this.statements = statements;
+        }
+
+        @Override
+        public Statement answer(InvocationOnMock invocation) throws Throwable {
+            final PreparedStatement spy = (PreparedStatement) spy(invocation.callRealMethod());
+            doAnswer(new ResultSetAnswer()).when(spy).executeQuery(anyString());
+            doAnswer(new ResultSetAnswer()).when(spy).executeQuery();
+            statements.add(spy);
+            return spy;
+        }
+
+        private class ResultSetAnswer implements Answer<ResultSet> {
+
+            @Override
+            public ResultSet answer(InvocationOnMock invocation) throws Throwable {
+                final ResultSet resultSet = (ResultSet) spy(invocation.callRealMethod());
+                resultSets.add(resultSet);
+                return resultSet;
+            }
         }
     }
 }

@@ -60,7 +60,7 @@ public class PayloadsMatcher extends BaseMatcher<List<? extends Message<?>>> {
 
     @Override
     public void describeTo(Description description) {
-        description.appendText("List with EventMessages with Payloads matching <");
+        description.appendText("List with Messages with Payloads matching <");
         matcher.describeTo(description);
         description.appendText(">");
     }
