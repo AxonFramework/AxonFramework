@@ -114,11 +114,17 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
                                              .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
                                      "uniqueAggregateIndex",
                                      true);
+        eventsCollection.ensureIndex(new BasicDBObject(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
+                                             .append(CommitEntry.AGGREGATE_TYPE_PROPERTY, 1)
+                                             .append(CommitEntry.EVENTS_PROPERTY + "." + CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
+                                     "uniqueAggregateEventIndex",
+                                     true);
 
         eventsCollection.ensureIndex(new BasicDBObject(CommitEntry.TIME_STAMP_PROPERTY, 1)
                                              .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),
                                      "orderedEventStreamIndex",
                                      false);
+
         snapshotsCollection.ensureIndex(new BasicDBObject(CommitEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
                                              .append(CommitEntry.AGGREGATE_TYPE_PROPERTY, 1)
                                              .append(CommitEntry.SEQUENCE_NUMBER_PROPERTY, 1),

@@ -29,6 +29,7 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.mongoutils.MongoLauncher;
+import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.SimpleSerializedObject;
@@ -215,6 +216,24 @@ public class MongoEventStoreTest_DocPerCommit {
             assertEquals(actualEvents.get(t).getMetaData(), actualEvents.get(t + 1).getMetaData());
             assertNotNull(actualEvents.get(t).getPayload());
             assertNotNull(actualEvents.get(t + 1).getPayload());
+        }
+    }
+
+    // For some reason, the indices are not actually in my mongo instance by the time this
+    // test method gets called despite ensureIndices getting called in setUp
+    @Ignore
+    @DirtiesContext
+    @Test
+    public void testStoreDuplicateAggregate() {
+        testSubject.appendEvents("type1", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>("aggregate1", 0, "payload"),
+                new GenericDomainEventMessage<String>("aggregate1", 1, "payload")));
+        try {
+            testSubject.appendEvents("type1", new SimpleDomainEventStream(
+                    new GenericDomainEventMessage<String>("aggregate1", 1, "payload")));
+            fail("Expected ConcurrencyException");
+        } catch (final ConcurrencyException e) {
+            assertNotNull(e);
         }
     }
 
