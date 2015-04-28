@@ -29,6 +29,8 @@ import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.FixtureResourceParameterResolverFactory;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
+import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.utils.AutowiredResourceInjector;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.axonframework.test.utils.RecordingCommandBus;
@@ -36,7 +38,9 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
 import org.joda.time.Duration;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,10 +61,10 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     private final AnnotatedSagaManager sagaManager;
     private final List<Object> registeredResources = new LinkedList<Object>();
 
-    private Map<Object, AggregateEventPublisherImpl> aggregatePublishers =
-            new HashMap<Object, AggregateEventPublisherImpl>();
-    private FixtureExecutionResultImpl fixtureExecutionResult;
+    private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<Object, AggregateEventPublisherImpl>();
+    private final FixtureExecutionResultImpl fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
+    private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
 
     /**
      * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given <code>sagaType</code>.
@@ -83,7 +87,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         registeredResources.add(eventScheduler);
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus, commandBus,
-                                                                sagaType);
+                                                                sagaType, fieldFilters);
         FixtureResourceParameterResolverFactory.clear();
         for (Object resource : registeredResources) {
             FixtureResourceParameterResolverFactory.registerResource(resource);
@@ -208,6 +212,17 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         return gateway;
     }
 
+    @Override
+    public FixtureConfiguration registerFieldFilter(FieldFilter fieldFilter) {
+        this.fieldFilters.add(fieldFilter);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName) {
+        return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+    }
+
     private AggregateEventPublisherImpl getPublisherFor(Object aggregateIdentifier) {
         if (!aggregatePublishers.containsKey(aggregateIdentifier)) {
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
@@ -323,6 +338,25 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                 return future.get();
             }
             return null;
+        }
+    }
+
+    private class MutableFieldFilter implements FieldFilter {
+
+        private final List<FieldFilter> filters = new ArrayList<FieldFilter>();
+
+        @Override
+        public boolean accept(Field field) {
+            for (FieldFilter filter : filters) {
+                if (!filter.accept(field)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public void add(FieldFilter fieldFilter) {
+            filters.add(fieldFilter);
         }
     }
 }

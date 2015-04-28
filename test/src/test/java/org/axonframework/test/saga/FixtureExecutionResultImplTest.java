@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
+import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -55,7 +56,7 @@ public class FixtureExecutionResultImplTest {
         eventScheduler = new StubEventScheduler();
         sagaRepository = new InMemorySagaRepository();
         testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,
-                                                     commandBus, StubSaga.class);
+                                                     commandBus, StubSaga.class, AllFieldsFilter.instance());
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
         applicationEvent = new TimerTriggeredEvent(identifier);
@@ -64,7 +65,7 @@ public class FixtureExecutionResultImplTest {
     @Test
     public void testStartRecording() {
         testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,
-                                                     commandBus, StubSaga.class);
+                                                     commandBus, StubSaga.class, AllFieldsFilter.instance());
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         eventBus.publish(new GenericEventMessage<TriggerSagaStartEvent>(new TriggerSagaStartEvent(identifier)));
         testSubject.startRecording();
