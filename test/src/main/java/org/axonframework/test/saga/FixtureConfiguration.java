@@ -16,6 +16,9 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.test.FixtureExecutionException;
+import org.axonframework.test.ResultValidator;
+import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.joda.time.DateTime;
 
@@ -73,6 +76,32 @@ public interface FixtureConfiguration {
      * @return the gateway implementation being registered as a resource.
      */
     <T> T registerCommandGateway(Class<T> gatewayInterface, T stubImplementation);
+
+    /**
+     * Registers the given <code>fieldFilter</code>, which is used to define which Fields are used when comparing
+     * objects. The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectReturnValue(Object)},
+     * for example, use this filter.
+     * <p/>
+     * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
+     * accepted.
+     * <p/>
+     * By default, all Fields are included in the comparison.
+     *
+     * @param fieldFilter The FieldFilter that defines which fields to include in the comparison
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration registerFieldFilter(FieldFilter fieldFilter);
+
+    /**
+     * Indicates that a field with given <code>fieldName</code>, which is declared in given <code>declaringClass</code>
+     * is ignored when performing deep equality checks.
+     *
+     * @param declaringClass The class declaring the field
+     * @param fieldName The name of the field
+     * @return the current FixtureConfiguration, for fluent interfacing
+     * @throws FixtureExecutionException when no such field is declared
+     */
+    FixtureConfiguration registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
      * Sets the instance that defines the behavior of the Command Bus when a command is dispatched with a callback.

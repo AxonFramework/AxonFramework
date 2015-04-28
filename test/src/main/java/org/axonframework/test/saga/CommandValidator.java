@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
+import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -40,14 +41,17 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
 public class CommandValidator {
 
     private final RecordingCommandBus commandBus;
+    private final FieldFilter fieldFilter;
 
     /**
      * Creates a validator which monitors the given <code>commandBus</code>.
      *
-     * @param commandBus the command bus to monitor
+     * @param commandBus  the command bus to monitor
+     * @param fieldFilter the filter describing the Fields to include in a comparison
      */
-    public CommandValidator(RecordingCommandBus commandBus) {
+    public CommandValidator(RecordingCommandBus commandBus, FieldFilter fieldFilter) {
         this.commandBus = commandBus;
+        this.fieldFilter = fieldFilter;
     }
 
     /**
@@ -126,7 +130,7 @@ public class CommandValidator {
                                                     expected.getClass().getSimpleName(),
                                                     actual.getClass().getSimpleName()));
             }
-            EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<Object>(expected);
+            EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<Object>(expected, fieldFilter);
             if (!matcher.matches(actual)) {
                 throw new AxonAssertionError(format("Unexpected command at index %s (0-based). "
                                                             + "Field value of '%s.%s', expected <%s>, but got <%s>",

@@ -17,10 +17,12 @@
 package org.axonframework.test;
 
 import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.core.IsNull;
 import org.junit.*;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -59,6 +61,23 @@ public class FixtureTest_RegularParams {
                 .when(new TestCommand("aggregateId"));
         validator.expectReturnValue(null);
         validator.expectEvents(new MyEvent("aggregateId", 2));
+    }
+
+    @Test
+    public void testExpectEventsIgnoresFilteredField() {
+        ResultValidator validator = fixture
+                .registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
+                                                                      fixture.getEventBus()))
+                .registerFieldFilter(new FieldFilter() {
+                    @Override
+                    public boolean accept(Field field) {
+                        return !field.getName().equals("someBytes");
+                    }
+                })
+                .given(new MyEvent("aggregateId", 1))
+                .when(new TestCommand("aggregateId"));
+        validator.expectReturnValue(null);
+        validator.expectEvents(new MyEvent("aggregateId", 2, "ignored".getBytes()));
     }
 
     @Test
@@ -102,6 +121,22 @@ public class FixtureTest_RegularParams {
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<5>"));
             assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("<4>"));
         }
+    }
+
+    @Test
+    public void testFixtureIgnoredStateChangeInFilteredField() {
+        List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
+                                            new MyEvent("aggregateId", 3));
+        fixture.registerFieldFilter(new FieldFilter() {
+            @Override
+            public boolean accept(Field field) {
+                return !field.getName().equals("lastNumber");
+            }
+        });
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(),
+                                                                     fixture.getEventBus()))
+               .given(givenEvents)
+               .when(new IllegalStateChangeCommand("aggregateId", 5));
     }
 
     @Test
