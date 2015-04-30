@@ -222,6 +222,24 @@ public class MongoEventStoreTest_DocPerCommit {
         }
     }
 
+    // For some reason, the indices are not actually in my mongo instance by the time this
+    // test method gets called despite ensureIndices getting called in setUp
+    @Ignore
+    @DirtiesContext
+    @Test
+    public void testStoreDuplicateAggregate() {
+        testSubject.appendEvents("type1", new SimpleDomainEventStream(
+                new GenericDomainEventMessage<String>("aggregate1", 0, "payload"),
+                new GenericDomainEventMessage<String>("aggregate1", 1, "payload")));
+        try {
+            testSubject.appendEvents("type1", new SimpleDomainEventStream(
+                    new GenericDomainEventMessage<String>("aggregate1", 1, "payload")));
+            fail("Expected ConcurrencyException");
+        } catch (final ConcurrencyException e) {
+            assertNotNull(e);
+        }
+    }
+
     @Test
     public void testAppendEventsFromConcurrentProcessing() {
         testSubject.appendEvents("type1", aggregate2.getUncommittedEvents());
