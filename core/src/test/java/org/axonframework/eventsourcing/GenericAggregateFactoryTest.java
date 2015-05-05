@@ -20,6 +20,7 @@ import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.testutils.MockException;
 import org.junit.*;
@@ -55,10 +56,10 @@ public class GenericAggregateFactoryTest {
     @Test
     public void testParameterResolverIsRegisteredWithCreatedAggregate() {
         final ParameterResolverFactory parameterResolverFactory = mock(ParameterResolverFactory.class);
-        GenericAggregateFactory<SpringWiredAggregate> factory =
-                new GenericAggregateFactory<>(SpringWiredAggregate.class,
+        GenericAggregateFactory<AnnotatedAggregate> factory =
+                new GenericAggregateFactory<>(AnnotatedAggregate.class,
                                               parameterResolverFactory);
-        final SpringWiredAggregate aggregate = factory.createAggregate("test",
+        final AnnotatedAggregate aggregate = factory.createAggregate("test",
                                                                        new GenericDomainEventMessage<>("test", 0,
                                                                                                        "test"));
         assertSame(parameterResolverFactory, aggregate.getParameterResolverFactory());
@@ -117,5 +118,13 @@ public class GenericAggregateFactoryTest {
         protected Collection<EventSourcedEntity> getChildEntities() {
             return null;
         }
+    }
+
+    private static class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
+
+        public ParameterResolverFactory getParameterResolverFactory() {
+            return super.createParameterResolverFactory();
+        }
+
     }
 }

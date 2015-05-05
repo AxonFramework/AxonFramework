@@ -30,13 +30,12 @@
         <constructor-arg ref="mongoDb"/>
     </bean>
 
-    <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongo"
+    <bean id="mongoDb" factory-bean="mongoFactoryBean" factory-method="createMongo"
           lazy-init="true"/>
 
     <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory" lazy-init="true">
         <property name="mongoOptions">
-            <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
-                  factory-method="createMongoOptions"/>
+            <bean factory-bean="mongoOptionsFactory" factory-method="createMongoOptions"/>
         </property>
     </bean>
 
@@ -45,7 +44,7 @@
     </bean>
 
     <!-- Axon saga's -->
-    <bean id="springResourceInjector" class="org.axonframework.saga.spring.SpringResourceInjector"/>
+    <bean id="springResourceInjector" class="org.axonframework.spring.saga.SpringResourceInjector"/>
 
     <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
         <constructor-arg ref="sagaMongoTemplate"/>

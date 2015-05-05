@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.SupportedCommandNamesAware;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
@@ -41,9 +42,8 @@ import java.util.Set;
  * @since 0.5
  */
 public class AnnotationCommandHandlerAdapter
-        implements org.axonframework.commandhandling.CommandHandler<Object> {
+        implements org.axonframework.commandhandling.CommandHandler<Object>, SupportedCommandNamesAware {
 
-    private final CommandBus commandBus;
     private final Map<String, MethodMessageHandler> handlers = new HashMap<>();
     private final Object target;
     private final ParameterResolverFactory parameterResolverFactory;
@@ -106,7 +106,6 @@ public class AnnotationCommandHandlerAdapter
         }
         this.parameterResolverFactory = parameterResolverFactory;
         this.target = annotatedCommandHandler;
-        this.commandBus = null;
     }
 
     /**
@@ -142,6 +141,11 @@ public class AnnotationCommandHandlerAdapter
      * @return the set of commands supported by the annotated command handler
      */
     public Set<String> supportedCommands() {
+        return handlers.keySet();
+    }
+
+    @Override
+    public Set<String> supportedCommandNames() {
         return handlers.keySet();
     }
 }

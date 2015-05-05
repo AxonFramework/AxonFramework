@@ -170,7 +170,7 @@ public class AsynchronousClusterTest {
             }
         });
 
-        testSubject.publish(message1, message2);
+        testSubject.handle(message1, message2);
 
         verify(executor, never()).execute(isA(Runnable.class));
         verify(mockTransactionManager, never()).startTransaction();

@@ -36,6 +36,7 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.axonframework.serializer.UnknownSerializedTypeException;
+import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
@@ -64,6 +65,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
@@ -73,13 +75,11 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {
-        "classpath:/META-INF/spring/db-context.xml",
-        "classpath:/META-INF/spring/eventstore-jdbc-test-context.xml"})
+@ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
 public class JdbcEventStore_JpaBackedTest {
 
-    @Autowired
     private JdbcEventStore testSubject;
+
     @PersistenceContext
     private EntityManager entityManager;
     private StubAggregateRoot aggregate1;
@@ -89,8 +89,13 @@ public class JdbcEventStore_JpaBackedTest {
     private PlatformTransactionManager txManager;
     private TransactionTemplate template;
 
+    @Autowired
+    private DataSource dataSource;
+
     @Before
     public void setUp() {
+        testSubject = new JdbcEventStore(new SpringDataSourceConnectionProvider(dataSource));
+
         template = new TransactionTemplate(txManager);
         aggregate1 = new StubAggregateRoot(UUID.randomUUID());
         for (int t = 0; t < 10; t++) {

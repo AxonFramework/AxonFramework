@@ -23,6 +23,7 @@
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
     <context:annotation-config/>
+    <axon:annotation-config />
 
     <axon:saga-manager id="sagaManager" event-bus="eventBus" saga-repository="jpaSagaRepository">
         <axon:async transaction-manager="transactionManager"/>
@@ -32,12 +33,6 @@
     </axon:saga-manager>
 
     <axon:jpa-saga-repository id="jpaSagaRepository" use-explicit-flush="true"/>
-
-    <bean class="org.axonframework.spring.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor"/>
-
-    <bean class="org.axonframework.spring.commandhandling.annotation.AnnotationCommandHandlerBeanPostProcessor">
-        <property name="commandBus" ref="commandBus"/>
-    </bean>
 
     <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
         <property name="transactionManager">

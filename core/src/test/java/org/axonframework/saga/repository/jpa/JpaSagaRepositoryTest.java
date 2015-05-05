@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.repository.jpa;
 
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
@@ -25,7 +26,6 @@ import org.axonframework.saga.repository.StubSaga;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -34,7 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Set;
 import java.util.UUID;
 import javax.persistence.EntityManager;
-import javax.persistence.Persistence;
 import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
@@ -47,7 +46,6 @@ import static org.junit.Assert.*;
 @Transactional
 public class JpaSagaRepositoryTest {
 
-    @Autowired
     private JpaSagaRepository repository;
 
     @PersistenceContext
@@ -56,6 +54,8 @@ public class JpaSagaRepositoryTest {
 
     @Before
     public void setUp() {
+        repository = new JpaSagaRepository(new SimpleEntityManagerProvider(entityManager));
+
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
         entityManager.createQuery("DELETE FROM AssociationValueEntry");

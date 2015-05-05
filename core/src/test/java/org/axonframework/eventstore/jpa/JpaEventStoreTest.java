@@ -58,6 +58,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,6 +66,7 @@ import java.util.List;
 import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
@@ -74,27 +76,31 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {
-        "classpath:/META-INF/spring/db-context.xml",
-        "classpath:/META-INF/spring/eventstore-jpa-test-context.xml"})
+@ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
 public class JpaEventStoreTest {
 
-    @Autowired
     private JpaEventStore testSubject;
+
     @PersistenceContext
     private EntityManager entityManager;
     private StubAggregateRoot aggregate1;
     private StubAggregateRoot aggregate2;
 
-    @Autowired
     private EntityManagerProvider entityManagerProvider;
+
+    @Autowired
+    private DataSource dataSource;
 
     @Autowired
     private PlatformTransactionManager txManager;
     private TransactionTemplate template;
 
     @Before
-    public void setUp() {
+    public void setUp() throws SQLException {
+        entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
+        testSubject = new JpaEventStore(entityManagerProvider);
+        testSubject.setDataSource(dataSource);
+
         template = new TransactionTemplate(txManager);
         aggregate1 = new StubAggregateRoot(UUID.randomUUID());
         for (int t = 0; t < 10; t++) {

@@ -19,8 +19,12 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.OrderResolver;
+import org.axonframework.eventhandling.SimpleCluster;
 import org.junit.*;
 import org.junit.runner.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +76,9 @@ public class DisruptorCommandBusTest {
             return "ok";
         });
         final RuntimeException failure = new RuntimeException("Test");
-        eventBus.subscribe(e -> { throw failure; });
+        SimpleCluster cluster = new SimpleCluster("test");
+        cluster.subscribe(e -> { throw failure; });
+        eventBus.subscribe(cluster);
 
         final FutureCallback<String, String> callback = new FutureCallback<>();
         commandBus.dispatch(new GenericCommandMessage<>("test"), callback);

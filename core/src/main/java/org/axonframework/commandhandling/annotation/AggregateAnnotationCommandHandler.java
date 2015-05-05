@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.commandhandling.SupportedCommandNamesAware;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.AbstractMessageHandler;
@@ -47,7 +48,7 @@ import static org.axonframework.commandhandling.annotation.CommandMessageHandler
  * @since 1.2
  */
 public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
-        implements CommandHandler<Object> {
+        implements CommandHandler<Object>, SupportedCommandNamesAware {
 
     private final Repository<T> repository;
 
@@ -205,6 +206,11 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      */
     protected Object resolveReturnValue(CommandMessage<?> command, T createdAggregate) {
         return createdAggregate.getIdentifier();
+    }
+
+    @Override
+    public Set<String> supportedCommandNames() {
+        return handlers.keySet();
     }
 
     private class AggregateConstructorCommandHandler implements CommandHandler<Object> {

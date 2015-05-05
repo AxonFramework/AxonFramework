@@ -16,6 +16,7 @@
 
 package org.axonframework.saga.repository.jdbc;
 
+import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
@@ -25,6 +26,7 @@ import org.axonframework.saga.repository.StubSaga;
 import org.axonframework.saga.repository.jpa.AssociationValueEntry;
 import org.axonframework.saga.repository.jpa.SagaEntry;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -39,6 +41,7 @@ import java.util.Set;
 import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
 
 import static org.junit.Assert.*;
 
@@ -46,19 +49,25 @@ import static org.junit.Assert.*;
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "/META-INF/spring/jdbc-saga-repository-test.xml")
+@ContextConfiguration(locations = "/META-INF/spring/db-context.xml")
 @Transactional
 public class JdbcSagaRepository_JpaBackedTest {
 
-    @Autowired
     private JdbcSagaRepository repository;
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Autowired
+    private DataSource dataSource;
+
     private XStreamSerializer serializer;
 
     @Before
     public void setUp() {
+        repository = new JdbcSagaRepository(new UnitOfWorkAwareConnectionProviderWrapper(
+                new SpringDataSourceConnectionProvider(dataSource)));
+
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
         entityManager.createQuery("DELETE FROM AssociationValueEntry");
