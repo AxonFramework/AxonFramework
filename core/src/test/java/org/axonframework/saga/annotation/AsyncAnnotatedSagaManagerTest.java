@@ -108,7 +108,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
@@ -142,7 +142,7 @@ public class AsyncAnnotatedSagaManagerTest {
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
 
-   @Test
+    @Test
     public void testSingleSagaLifeCycle_NonTransientFailure() throws InterruptedException {
         final StubInMemorySagaRepository spy = spy(sagaRepository);
         testSubject.setSagaRepository(spy);
@@ -157,7 +157,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 seconds", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 0, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
@@ -185,7 +185,7 @@ public class AsyncAnnotatedSagaManagerTest {
         doCallRealMethod().when(spy).add(isA(Saga.class));
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 seconds", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
 
@@ -208,7 +208,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1000, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
 
@@ -233,7 +233,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 0, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
@@ -255,7 +255,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 1, sagaRepository.getLiveSagas());
         logger.setLevel(oldLevel);
@@ -280,7 +280,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1500, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
