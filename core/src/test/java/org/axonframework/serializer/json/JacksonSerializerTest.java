@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.axonframework.domain.MetaData;
 import org.axonframework.serializer.AnnotationRevisionResolver;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ContentTypeConverter;
@@ -30,6 +31,7 @@ import org.junit.*;
 
 import java.io.InputStream;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -144,6 +146,19 @@ public class JacksonSerializerTest {
         assertTrue(testSubject.getConverterFactory() instanceof ChainingConverterFactory);
         verify(objectMapper).reader(SimpleSerializableType.class);
         verify(objectMapper).writer();
+    }
+
+    @Test
+    public void testSerializeMetaData() {
+        testSubject = new JacksonSerializer();
+
+        SerializedObject<byte[]> serialized = testSubject.serialize(MetaData.from(singletonMap("test", "test")),
+                                                                    byte[].class);
+        MetaData actual = testSubject.deserialize(serialized);
+
+        assertNotNull(actual);
+        assertEquals("test", actual.get("test"));
+        assertEquals(1, actual.size());
     }
 
     public static class SimpleSerializableType {

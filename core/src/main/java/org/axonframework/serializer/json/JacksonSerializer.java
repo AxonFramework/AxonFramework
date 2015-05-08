@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import org.axonframework.domain.MetaData;
 import org.axonframework.serializer.AnnotationRevisionResolver;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ConverterFactory;
@@ -138,6 +139,7 @@ public class JacksonSerializer implements Serializer {
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module")
                         .addSerializer(ReadableInstant.class, new ToStringSerializer())
+                        .addDeserializer(MetaData.class, new MetaDataDeserializer())
                         .addDeserializer(DateTime.class, new JodaDeserializer<DateTime>(DateTime.class))
                         .addDeserializer(Instant.class, new JodaDeserializer<Instant>(Instant.class))
                         .addDeserializer(MutableDateTime.class,
