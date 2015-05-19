@@ -54,7 +54,7 @@ public class StubEventScheduler implements EventScheduler {
      * the real "current time", the time of the Event Scheduler is fixed.
      */
     public StubEventScheduler() {
-        this(null);
+        this(ZonedDateTime.now());
     }
 
     /**
