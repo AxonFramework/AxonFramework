@@ -17,8 +17,9 @@
 package org.axonframework.test.saga;
 
 import org.hamcrest.Matcher;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 /**
  * Interface towards an object that contains the results of a Fixture execution. It provides methods to assert that
@@ -101,7 +102,7 @@ public interface FixtureExecutionResult {
      * @param matcher       A matcher defining the event expected to be published
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEventMatching(DateTime scheduledTime, Matcher<?> matcher);
+    FixtureExecutionResult expectScheduledEventMatching(ZonedDateTime scheduledTime, Matcher<?> matcher);
 
     /**
      * Asserts that an event equal to the given ApplicationEvent has been scheduled for publication at the given
@@ -117,7 +118,7 @@ public interface FixtureExecutionResult {
      * @param event         The expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, Object event);
+    FixtureExecutionResult expectScheduledEvent(ZonedDateTime scheduledTime, Object event);
 
     /**
      * Asserts that an event of the given <code>eventType</code> has been scheduled for publication at the given
@@ -130,7 +131,7 @@ public interface FixtureExecutionResult {
      * @param eventType     The type of the expected event
      * @return the FixtureExecutionResult for method chaining
      */
-    FixtureExecutionResult expectScheduledEventOfType(DateTime scheduledTime, Class<?> eventType);
+    FixtureExecutionResult expectScheduledEventOfType(ZonedDateTime scheduledTime, Class<?> eventType);
 
     /**
      * Asserts that the given commands have been dispatched in exactly the order given. The command objects are

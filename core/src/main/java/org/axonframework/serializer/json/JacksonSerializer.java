@@ -34,17 +34,11 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.axonframework.serializer.UnknownSerializedTypeException;
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.joda.time.LocalTime;
-import org.joda.time.MonthDay;
-import org.joda.time.MutableDateTime;
-import org.joda.time.ReadableInstant;
-import org.joda.time.YearMonth;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * Serializer implementation that uses Jackson to serialize objects into a JSON format. Although the Jackson serializer
@@ -137,16 +131,16 @@ public class JacksonSerializer implements Serializer {
         this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module")
-                        .addSerializer(ReadableInstant.class, new ToStringSerializer())
-                        .addDeserializer(DateTime.class, new JodaDeserializer<DateTime>(DateTime.class))
-                        .addDeserializer(Instant.class, new JodaDeserializer<Instant>(Instant.class))
-                        .addDeserializer(MutableDateTime.class,
-                                         new JodaDeserializer<MutableDateTime>(MutableDateTime.class))
-                        .addDeserializer(YearMonth.class, new JodaDeserializer<YearMonth>(YearMonth.class))
-                        .addDeserializer(MonthDay.class, new JodaDeserializer<MonthDay>(MonthDay.class))
-                        .addDeserializer(LocalDate.class, new JodaDeserializer<LocalDate>(LocalDate.class))
-                        .addDeserializer(LocalTime.class, new JodaDeserializer<LocalTime>(LocalTime.class))
-                        .addDeserializer(LocalDateTime.class, new JodaDeserializer<LocalDateTime>(LocalDateTime.class))
+                        .addSerializer(TemporalAccessor.class, new ToStringSerializer())
+                        .addDeserializer(ZonedDateTime.class, new Jsr310Deserializer<ZonedDateTime>(ZonedDateTime.class))
+//                        .addDeserializer(Instant.class, new JodaDeserializer<Instant>(Instant.class))
+//                        .addDeserializer(MutableDateTime.class,
+//                                new JodaDeserializer<MutableDateTime>(MutableDateTime.class))
+//                        .addDeserializer(YearMonth.class, new JodaDeserializer<YearMonth>(YearMonth.class))
+//                        .addDeserializer(MonthDay.class, new JodaDeserializer<MonthDay>(MonthDay.class))
+//                        .addDeserializer(LocalDate.class, new JodaDeserializer<LocalDate>(LocalDate.class))
+//                        .addDeserializer(LocalTime.class, new JodaDeserializer<LocalTime>(LocalTime.class))
+                        .addDeserializer(LocalDateTime.class, new Jsr310Deserializer<LocalDateTime>(LocalDateTime.class))
         );
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);

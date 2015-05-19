@@ -25,10 +25,10 @@ import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ContentTypeConverter;
 import org.axonframework.serializer.RevisionResolver;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
 import org.junit.*;
 
 import java.io.InputStream;
+import java.time.ZonedDateTime;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -39,12 +39,12 @@ import static org.mockito.Mockito.*;
 public class JacksonSerializerTest {
 
     private JacksonSerializer testSubject;
-    private DateTime time;
+    private ZonedDateTime time;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new JacksonSerializer();
-        time = new DateTime();
+        time = ZonedDateTime.now();
     }
 
     @Test
@@ -149,16 +149,16 @@ public class JacksonSerializerTest {
     public static class SimpleSerializableType {
 
         private final String value;
-        private final DateTime time;
+        private final ZonedDateTime time;
         private final SimpleSerializableType nested;
 
         public SimpleSerializableType(String value) {
-            this(value, new DateTime(), null);
+            this(value, ZonedDateTime.now(), null);
         }
 
         @JsonCreator
         public SimpleSerializableType(@JsonProperty("value") String value,
-                                      @JsonProperty("time") DateTime time,
+                                      @JsonProperty("time") ZonedDateTime time,
                                       @JsonProperty("nested") SimpleSerializableType nested) {
             this.value = value;
             this.time = time;
@@ -173,7 +173,7 @@ public class JacksonSerializerTest {
             return value;
         }
 
-        public DateTime getTime() {
+        public ZonedDateTime getTime() {
             return time;
         }
     }

@@ -18,9 +18,9 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
 
 import javax.persistence.Entity;
+import java.time.ZonedDateTime;
 
 /**
  * JPA compliant wrapper around a DomainEvent. It stores a DomainEvent by extracting some of the information needed to
@@ -62,7 +62,7 @@ public class DomainEventEntry extends AbstractEventEntry {
      * @param payload  The serialized version of the Event
      * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage event, DateTime dateTime,
+    public DomainEventEntry(String type, DomainEventMessage event, ZonedDateTime dateTime,
                             SerializedObject<byte[]> payload,
                             SerializedObject<byte[]> metaData) {
         super(type, event, dateTime, payload, metaData);

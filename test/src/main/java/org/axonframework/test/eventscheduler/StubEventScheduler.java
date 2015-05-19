@@ -20,10 +20,10 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.ReadableInstant;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableSet;
@@ -46,7 +46,7 @@ public class StubEventScheduler implements EventScheduler {
 
     private final NavigableSet<StubScheduleToken> scheduledEvents = new TreeSet<StubScheduleToken>();
     private final AtomicInteger counter = new AtomicInteger(0);
-    private DateTime currentDateTime;
+    private ZonedDateTime currentDateTime;
 
     /**
      * Creates an instance of the StubScheduler that uses the current date time as its conceptual "current time".
@@ -64,12 +64,12 @@ public class StubEventScheduler implements EventScheduler {
      * @param currentDateTime The instant to use as current Date and Time
      */
 
-    public StubEventScheduler(ReadableInstant currentDateTime) {
-        this.currentDateTime = new DateTime(currentDateTime);
+    public StubEventScheduler(TemporalAccessor currentDateTime) {
+        this.currentDateTime = ZonedDateTime.from(currentDateTime);
     }
 
     @Override
-    public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
+    public ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event) {
         EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
         StubScheduleToken token = new StubScheduleToken(triggerDateTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);
@@ -79,7 +79,7 @@ public class StubEventScheduler implements EventScheduler {
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
         EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
-        DateTime scheduleTime = currentDateTime.plus(triggerDuration);
+        ZonedDateTime scheduleTime = currentDateTime.plus(triggerDuration);
         StubScheduleToken token = new StubScheduleToken(scheduleTime, eventMessage, counter.getAndIncrement());
         scheduledEvents.add(token);
         return token;
@@ -108,7 +108,7 @@ public class StubEventScheduler implements EventScheduler {
      *
      * @return the "Current Date Time" as used by the scheduler
      */
-    public DateTime getCurrentDateTime() {
+    public ZonedDateTime getCurrentDateTime() {
         return currentDateTime;
     }
 
@@ -137,7 +137,7 @@ public class StubEventScheduler implements EventScheduler {
      * @param newDateTime The time to advance the "current time" of the scheduler to
      * @return A list of Events scheduled for publication on or before the new time
      */
-    public List<EventMessage> advanceTime(DateTime newDateTime) {
+    public List<EventMessage> advanceTime(ZonedDateTime newDateTime) {
         List<EventMessage> triggeredEvents = new ArrayList<EventMessage>();
         while (!scheduledEvents.isEmpty() && !scheduledEvents.first().getScheduleTime().isAfter(newDateTime)) {
             triggeredEvents.add(advanceToNextTrigger());

@@ -19,9 +19,9 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.SimpleSerializedType;
-import org.joda.time.DateTime;
 
 import java.io.Serializable;
+import java.time.ZonedDateTime;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -66,7 +66,7 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
      * @param payloadType         The type of payload contained in the event
      */
     public AbstractEventEntryData(String eventIdentifier, String type,
-                                  String aggregateIdentifier, long sequenceNumber, DateTime timestamp,
+                                  String aggregateIdentifier, long sequenceNumber, ZonedDateTime timestamp,
                                   SerializedType payloadType) {
         this.eventIdentifier = eventIdentifier;
         this.type = type;
@@ -123,8 +123,8 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
      * @return the time stamp of the associated event.
      */
     @Override
-    public DateTime getTimestamp() {
-        return new DateTime(timeStamp);
+    public ZonedDateTime getTimestamp() {
+        return ZonedDateTime.parse(timeStamp);
     }
 
     /**

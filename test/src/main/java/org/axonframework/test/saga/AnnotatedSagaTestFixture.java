@@ -34,12 +34,11 @@ import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.utils.AutowiredResourceInjector;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.axonframework.test.utils.RecordingCommandBus;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
-import org.joda.time.Duration;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -108,7 +107,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public FixtureExecutionResult whenTimeAdvancesTo(DateTime newDateTime) {
+    public FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) {
         try {
             fixtureExecutionResult.startRecording();
             for (EventMessage event : eventScheduler.advanceTime(newDateTime)) {
@@ -162,7 +161,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public ContinuedGivenState andThenTimeAdvancesTo(final DateTime newDateTime) {
+    public ContinuedGivenState andThenTimeAdvancesTo(final ZonedDateTime newDateTime) {
         for (EventMessage event : eventScheduler.advanceTime(newDateTime)) {
             sagaManager.handle(event);
         }
@@ -194,7 +193,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public DateTime currentTime() {
+    public ZonedDateTime currentTime() {
         return eventScheduler.getCurrentDateTime();
     }
 
@@ -256,7 +255,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         }
 
         private void publish(Object... events) {
-            DateTimeUtils.setCurrentMillisFixed(currentTime().getMillis());
+//            DateTimeUtils.setCurrentMillisFixed(currentTime().getMillis());
 
             try {
                 for (Object event : events) {
@@ -275,7 +274,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                     }
                 }
             } finally {
-                DateTimeUtils.setCurrentMillisSystem();
+//                DateTimeUtils.setCurrentMillisSystem();
             }
         }
     }

@@ -21,9 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventContainer;
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.junit.Test;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 /**
  * @author Knut-Olav Hoven
@@ -120,11 +121,11 @@ public class TimestampCutoffReadonlyEventStoreTest {
         return new TimestampCutoffReadonlyEventStore(backend, backend, past());
     }
 
-    private static DateTime future() {
-        return DateTime.now().plus(Duration.standardHours(1));
+    private static ZonedDateTime future() {
+        return ZonedDateTime.now().plus(Duration.ofHours(1));
     }
 
-    private static DateTime past() {
-        return DateTime.now().minus(Duration.standardHours(1));
+    private static ZonedDateTime past() {
+        return ZonedDateTime.now().minus(Duration.ofHours(1));
     }
 }

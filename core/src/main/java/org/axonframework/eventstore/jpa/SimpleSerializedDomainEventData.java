@@ -20,7 +20,9 @@ import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * Simple implementation of the {@link SerializedDomainEventData} class, used to reduce memory consumptions by queries
@@ -36,7 +38,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
     private final String eventIdentifier;
     private final String aggregateIdentifier;
     private final long sequenceNumber;
-    private final DateTime timestamp;
+    private final ZonedDateTime timestamp;
     private final SerializedObject<T> serializedPayload;
     private final SerializedObject<T> serializedMetaData;
 
@@ -50,7 +52,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
      * @param aggregateIdentifier The identifier of the aggregate
      * @param sequenceNumber      The sequence number of the event
      * @param timestamp           The timestamp of the event (format must be supported by {@link
-     *                            DateTime#DateTime(Object)})
+     *                            ZonedDateTime#parse(CharSequence)})
      * @param payloadType         The type identifier of the serialized payload
      * @param payloadRevision     The revision of the serialized payload
      * @param payload             The serialized representation of the event
@@ -76,7 +78,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
      * @param aggregateIdentifier The identifier of the aggregate
      * @param sequenceNumber      The sequence number of the event
      * @param timestamp           The timestamp of the event (format must be supported by {@link
-     *                            DateTime#DateTime(Object)})
+     *                            ZonedDateTime#parse(CharSequence)})
      * @param serializedPayload   The serialized representation of the event
      * @param serializedMetaData  The serialized representation of the meta data
      */
@@ -87,7 +89,11 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
         this.eventIdentifier = eventIdentifier;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
-        this.timestamp = new DateTime(timestamp);
+        if(timestamp instanceof TemporalAccessor) {
+            this.timestamp = ZonedDateTime.from((TemporalAccessor)timestamp);
+        } else {
+            this.timestamp = ZonedDateTime.parse((CharSequence) timestamp);
+        }
         this.serializedPayload = serializedPayload;
         this.serializedMetaData = serializedMetaData;
     }
@@ -108,7 +114,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public ZonedDateTime getTimestamp() {
         return timestamp;
     }
 

@@ -17,7 +17,8 @@
 package org.axonframework.test.eventscheduler;
 
 import org.axonframework.domain.EventMessage;
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
 
 /**
  * Interface describing an event to be scheduled at a given date and time.
@@ -32,7 +33,7 @@ public interface ScheduledItem {
      *
      * @return time the event was scheduled for publication
      */
-    DateTime getScheduleTime();
+    ZonedDateTime getScheduleTime();
 
     /**
      * The Event scheduled for publication.

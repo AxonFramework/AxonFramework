@@ -16,8 +16,8 @@
 
 package org.axonframework.domain;
 
-import org.joda.time.DateTime;
-
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
 import java.util.Map;
 
 /**
@@ -31,7 +31,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
 
     private static final long serialVersionUID = -8370948891267874107L;
 
-    private final DateTime timestamp;
+    private final ZonedDateTime timestamp;
 
     /**
      * Returns the given event as an EventMessage. If <code>event</code> already implements EventMessage, it is
@@ -73,7 +73,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      */
     public GenericEventMessage(T payload, Map<String, ?> metaData) {
         super(IdentifierFactory.getInstance().generateIdentifier(), payload, metaData);
-        this.timestamp = new DateTime();
+        this.timestamp = ZonedDateTime.now();
     }
 
     /**
@@ -84,7 +84,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
      */
-    public GenericEventMessage(String identifier, DateTime timestamp, T payload, Map<String, ?> metaData) {
+    public GenericEventMessage(String identifier, ZonedDateTime timestamp, T payload, Map<String, ?> metaData) {
         super(identifier, payload, metaData);
         this.timestamp = timestamp;
     }
@@ -102,8 +102,8 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
     }
 
     @Override
-    public DateTime getTimestamp() {
-        return timestamp;
+    public ZonedDateTime getTimestamp() {
+        return ZonedDateTime.from(timestamp);
     }
 
     @Override

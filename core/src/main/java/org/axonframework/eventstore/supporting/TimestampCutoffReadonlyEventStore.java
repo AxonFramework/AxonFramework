@@ -18,6 +18,7 @@ package org.axonframework.eventstore.supporting;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.ZonedDateTime;
 
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
@@ -27,12 +28,11 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
-import org.joda.time.DateTime;
 
 /**
  * <p>
  * Takes a backend, both {@link EventStore} and {@link EventStoreManagement}, and functions as a filter based on a
- * {@link DateTime}.
+ * {@link ZonedDateTime}.
  * </p>
  * 
  * <p>
@@ -50,12 +50,12 @@ import org.joda.time.DateTime;
 public class TimestampCutoffReadonlyEventStore implements EventStore, EventStoreManagement {
     private final EventStore backend;
     private final EventStoreManagement backendManagement;
-    private final DateTime cutoffTimestamp;
+    private final ZonedDateTime cutoffTimestamp;
 
     public TimestampCutoffReadonlyEventStore(
             EventStore backend,
             EventStoreManagement backendManagement,
-            DateTime snapshotTimestamp) {
+            ZonedDateTime snapshotTimestamp) {
         this.backend = backend;
         this.backendManagement = backendManagement;
         this.cutoffTimestamp = snapshotTimestamp;
@@ -66,7 +66,7 @@ public class TimestampCutoffReadonlyEventStore implements EventStore, EventStore
         backendManagement.visitEvents(cutOffEventVisitor(visitor, cutoffTimestamp));
     }
 
-    private static EventVisitor cutOffEventVisitor(final EventVisitor visitor, final DateTime snapshotTimestamp) {
+    private static EventVisitor cutOffEventVisitor(final EventVisitor visitor, final ZonedDateTime snapshotTimestamp) {
         return new EventVisitor() {
             @Override
             public void doWithEvent(DomainEventMessage domainEvent) {
@@ -105,14 +105,14 @@ public class TimestampCutoffReadonlyEventStore implements EventStore, EventStore
     }
 
     private static final class TimestampCutOffDomainEventStream implements DomainEventStream, Closeable {
-        private final DateTime timeStampCutOff;
+        private final ZonedDateTime timeStampCutOff;
         private final DomainEventStream events;
 
         private DomainEventMessage next;
 
         public TimestampCutOffDomainEventStream(
                 DomainEventStream events,
-                DateTime timeStampCutOff) {
+                ZonedDateTime timeStampCutOff) {
             this.events = events;
             this.timeStampCutOff = timeStampCutOff;
             this.next = findNextItem();

@@ -19,8 +19,8 @@ package org.axonframework.serializer;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
 
+import java.time.ZonedDateTime;
 import java.util.Map;
 
 /**
@@ -38,7 +38,7 @@ import java.util.Map;
 public class SerializedEventMessage<T> implements EventMessage<T>, SerializationAware {
 
     private static final long serialVersionUID = -4704515337335869770L;
-    private final DateTime timestamp;
+    private final ZonedDateTime timestamp;
     private final SerializedMessage<T> message;
 
     /**
@@ -51,7 +51,7 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
      * @param serializer         The serializer to deserialize the payload and meta data with
      * @throws UnknownSerializedTypeException if the type of the serialized object cannot be resolved to a class
      */
-    public SerializedEventMessage(String eventIdentifier, DateTime timestamp, SerializedObject<?> serializedPayload,
+    public SerializedEventMessage(String eventIdentifier, ZonedDateTime timestamp, SerializedObject<?> serializedPayload,
                                   SerializedObject<?> serializedMetaData, Serializer serializer) {
         message = new SerializedMessage<T>(eventIdentifier, serializedPayload, serializedMetaData, serializer);
         this.timestamp = timestamp;
@@ -78,7 +78,7 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public ZonedDateTime getTimestamp() {
         return timestamp;
     }
 

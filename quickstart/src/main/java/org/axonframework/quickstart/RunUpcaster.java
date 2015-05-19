@@ -36,10 +36,11 @@ import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcastingContext;
 import org.dom4j.Document;
 import org.dom4j.Element;
-import org.joda.time.DateTime;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 /**
@@ -128,9 +129,9 @@ public class RunUpcaster {
 
         private final String todoId;
         private final String description;
-        private final DateTime deadline;
+        private final ZonedDateTime deadline;
 
-        public NewToDoItemWithDeadlineCreatedEvent(String todoId, String description, DateTime deadline) {
+        public NewToDoItemWithDeadlineCreatedEvent(String todoId, String description, ZonedDateTime deadline) {
             this.todoId = todoId;
             this.description = description;
             this.deadline = deadline;
@@ -144,14 +145,14 @@ public class RunUpcaster {
             return description;
         }
 
-        public DateTime getDeadline() {
+        public ZonedDateTime getDeadline() {
             return deadline;
         }
 
         @Override
         public String toString() {
             return "NewToDoItemWithDeadlineCreatedEvent(" + todoId + ", '" + description + "' before "
-                    + deadline.toString("dd-MM-YYYY") + " at " + deadline.toString("HH:mm") + ")";
+                    + deadline.format(DateTimeFormatter.ISO_DATE) + " at " + deadline.format(DateTimeFormatter.ISO_TIME) + ")";
         }
     }
 }

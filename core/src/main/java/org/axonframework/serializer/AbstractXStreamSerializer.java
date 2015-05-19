@@ -34,10 +34,11 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
-import org.joda.time.DateTime;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -129,7 +130,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
         }
-        xStream.registerConverter(new JodaTimeConverter());
+        xStream.registerConverter(new Jsr310Converter());
         xStream.addImmutableType(UUID.class);
         xStream.aliasPackage("axon.domain", "org.axonframework.domain");
         xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
@@ -147,8 +148,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         xStream.aliasField("value", AssociationValue.class, "propertyValue");
 
         // for backward compatibility
-        xStream.alias("localDateTime", DateTime.class);
-        xStream.alias("dateTime", DateTime.class);
+        xStream.alias("localDateTime", LocalDateTime.class);
+        xStream.alias("dateTime", ZonedDateTime.class);
         xStream.alias("uuid", UUID.class);
 
         xStream.alias("meta-data", MetaData.class);
@@ -326,14 +327,13 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     /**
      * XStream Converter to serialize DateTime classes as a String.
      */
-    private static final class JodaTimeConverter implements Converter {
-
+    private static final class Jsr310Converter implements Converter {
         /**
          * {@inheritDoc}
          */
         @Override
         public boolean canConvert(Class type) {
-            return type != null && DateTime.class.getPackage().equals(type.getPackage());
+            return type != null && ZonedDateTime.class.getPackage().equals(type.getPackage());
         }
 
         @Override
@@ -344,13 +344,14 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         @SuppressWarnings("unchecked")
         @Override
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+            Class requiredType = context.getRequiredType();
             try {
-                Constructor constructor = context.getRequiredType().getConstructor(Object.class);
-                return constructor.newInstance(reader.getValue());
+                Method fromMethod = requiredType.getMethod("parse", CharSequence.class);
+                return fromMethod.invoke(null, reader.getValue());
             } catch (Exception e) { // NOSONAR
                 throw new SerializationException(String.format(
-                        "An exception occurred while deserializing a Joda Time object: %s",
-                        context.getRequiredType().getSimpleName()), e);
+                        "An exception occurred while deserializing a Java Time object: %s",
+                        requiredType.getSimpleName()), e);
             }
         }
     }
