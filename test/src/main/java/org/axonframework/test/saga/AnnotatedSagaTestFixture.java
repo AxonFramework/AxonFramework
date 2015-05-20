@@ -37,8 +37,7 @@ import org.axonframework.test.utils.RecordingCommandBus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -255,8 +254,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         }
 
         private void publish(Object... events) {
-//            DateTimeUtils.setCurrentMillisFixed(currentTime().getMillis());
-
+            GenericEventMessage.setClock(Clock.fixed(Instant.now(), ZoneOffset.UTC);
             try {
                 for (Object event : events) {
                     if (event instanceof EventMessage) {
@@ -274,7 +272,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                     }
                 }
             } finally {
-//                DateTimeUtils.setCurrentMillisSystem();
+                GenericEventMessage.setClock(Clock.systemDefaultZone());
             }
         }
     }

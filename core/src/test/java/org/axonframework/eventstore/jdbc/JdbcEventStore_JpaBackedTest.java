@@ -16,11 +16,7 @@
 
 package org.axonframework.eventstore.jdbc;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -58,6 +54,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,12 +106,6 @@ public class JdbcEventStore_JpaBackedTest {
                 entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
             }
         });
-    }
-
-    @After
-    public void tearDown() {
-        // just to make sure
-//        DateTimeUtils.setCurrentMillisSystem();
     }
 
     @Test(expected = DataIntegrityViolationException.class)
@@ -529,68 +521,66 @@ public class JdbcEventStore_JpaBackedTest {
         verify(eventVisitor, times(21)).doWithEvent(isA(DomainEventMessage.class));
     }
 
-//    @Test
-//    @Transactional
-//    public void testVisitEvents_AfterTimestamp() {
-//        EventVisitor eventVisitor = mock(EventVisitor.class);
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-//        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-//        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-//        DateTimeUtils.setCurrentMillisSystem();
-//
-//        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
-//        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThan(onePM), eventVisitor);
-//        verify(eventVisitor, times(13 + 14)).doWithEvent(isA(DomainEventMessage.class));
-//    }
+    @Test
+    @Transactional
+    public void testVisitEvents_AfterTimestamp() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        Clock clock = Clock.fixed(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC);
+        GenericEventMessage.setClock(clock);
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(onePM.toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
 
-//    @Test
-//    @Transactional
-//    public void testVisitEvents_BetweenTimestamps() {
-//        EventVisitor eventVisitor = mock(EventVisitor.class);
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-//        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-//        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-//        DateTime twoPM = new DateTime(2011, 12, 18, 14, 0, 0, 0);
-//        DateTimeUtils.setCurrentMillisFixed(twoPM.getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-//        DateTimeUtils.setCurrentMillisSystem();
-//
-//        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
-//        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM)
-//                                               .and(criteriaBuilder.property("timeStamp").lessThanEquals(twoPM)),
-//                                eventVisitor);
-//        verify(eventVisitor, times(12 + 13)).doWithEvent(isA(DomainEventMessage.class));
-//    }
+        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
+        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThan(onePM), eventVisitor);
+        verify(eventVisitor, times(13 + 14)).doWithEvent(isA(DomainEventMessage.class));
+    }
 
-//    @Test
-//    @Transactional
-//    public void testVisitEvents_OnOrAfterTimestamp() {
-//        EventVisitor eventVisitor = mock(EventVisitor.class);
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-//        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-//        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-//        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-//        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-//        DateTimeUtils.setCurrentMillisSystem();
-//
-//        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
-//        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM), eventVisitor);
-//        verify(eventVisitor, times(12 + 13 + 14)).doWithEvent(isA(DomainEventMessage.class));
-//    }
+    @Test
+    @Transactional
+    public void testVisitEvents_BetweenTimestamps() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(onePM.toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        ZonedDateTime twoPM = ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(twoPM.toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+
+        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
+        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM)
+                                               .and(criteriaBuilder.property("timeStamp").lessThanEquals(twoPM)),
+                                eventVisitor);
+        verify(eventVisitor, times(12 + 13)).doWithEvent(isA(DomainEventMessage.class));
+    }
+
+    @Test
+    @Transactional
+    public void testVisitEvents_OnOrAfterTimestamp() {
+        EventVisitor eventVisitor = mock(EventVisitor.class);
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(onePM.toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
+        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
+
+        CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
+        testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM), eventVisitor);
+        verify(eventVisitor, times(12 + 13 + 14)).doWithEvent(isA(DomainEventMessage.class));
+    }
 
     @Test(expected = ConcurrencyException.class)
     @Transactional

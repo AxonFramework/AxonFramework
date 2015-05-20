@@ -317,7 +317,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
         if (forceUtc) {
             return UTC_FORMATTER.withZone(ZoneOffset.UTC).format(input);
         } else {
-            return input.toString();
+            return UTC_FORMATTER.format(input);
         }
     }
 

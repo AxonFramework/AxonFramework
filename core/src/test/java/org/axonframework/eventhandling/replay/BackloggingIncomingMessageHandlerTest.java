@@ -48,7 +48,6 @@ public class BackloggingIncomingMessageHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-//        DateTimeUtils.setCurrentMillisFixed(START_TIME.getMillis());
         this.testSubject = new BackloggingIncomingMessageHandler();
         this.mockCluster = mock(Cluster.class);
         messages.put(MINUTE_BEFORE_START, newDomainEventMessage("id1", MINUTE_BEFORE_START));
@@ -59,11 +58,6 @@ public class BackloggingIncomingMessageHandlerTest {
 
         this.testSubject.prepareForReplay(mockCluster);
     }
-
-//    @After
-//    public void tearDown() throws Exception {
-//        DateTimeUtils.setCurrentMillisSystem();
-//    }
 
     @Test
     public void testEventBackloggedForProcessing() throws Exception {

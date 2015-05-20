@@ -16,6 +16,7 @@
 
 package org.axonframework.domain;
 
+import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.Map;
@@ -30,6 +31,8 @@ import java.util.Map;
 public class GenericEventMessage<T> extends GenericMessage<T> implements EventMessage<T> {
 
     private static final long serialVersionUID = -8370948891267874107L;
+
+    private static Clock clock = Clock.systemDefaultZone();
 
     private final ZonedDateTime timestamp;
 
@@ -73,7 +76,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      */
     public GenericEventMessage(T payload, Map<String, ?> metaData) {
         super(IdentifierFactory.getInstance().generateIdentifier(), payload, metaData);
-        this.timestamp = ZonedDateTime.now();
+        this.timestamp = ZonedDateTime.now(clock);
     }
 
     /**
@@ -125,5 +128,13 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
     @Override
     public String toString() {
         return String.format("GenericEventMessage[%s]", getPayload().toString());
+    }
+
+    /**
+     *
+     * @param clock
+     */
+    public static void setClock(Clock clock) {
+        GenericEventMessage.clock = clock;
     }
 }
