@@ -16,8 +16,8 @@
 
 package org.axonframework.domain;
 
-import org.joda.time.DateTime;
-
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
 import java.util.Map;
 
 /**
@@ -53,7 +53,7 @@ public interface EventMessage<T> extends Message<T> {
      *
      * @return the timestamp of this event.
      */
-    DateTime getTimestamp();
+    ZonedDateTime getTimestamp();
 
     /**
      * Returns a copy of this EventMessage with the given <code>metaData</code>. The payload, {@link #getTimestamp()

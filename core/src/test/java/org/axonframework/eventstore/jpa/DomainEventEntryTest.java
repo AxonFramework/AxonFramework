@@ -22,9 +22,9 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
 import org.junit.*;
 
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -54,7 +54,7 @@ public class DomainEventEntryTest {
     @Test
     public void testDomainEventEntry_WrapEventsCorrectly() {
         String aggregateIdentifier = UUID.randomUUID().toString();
-        DateTime timestamp = new DateTime();
+        ZonedDateTime timestamp = ZonedDateTime.now();
         UUID eventIdentifier = UUID.randomUUID();
 
         when(mockDomainEvent.getAggregateIdentifier()).thenReturn(aggregateIdentifier);

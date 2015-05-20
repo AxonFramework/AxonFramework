@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.supporting;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 
 import org.axonframework.domain.DomainEventMessage;
@@ -26,7 +27,6 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
-import org.joda.time.DateTime;
 
 /**
  * @author Knut-Olav Hoven
@@ -82,7 +82,7 @@ public class VolatileEventStore implements EventStore, EventStoreManagement {
         return new SimpleDomainEventStream(selection);
     }
 
-    public TimestampCutoffReadonlyEventStore cutoff(DateTime cutOffTimestamp) {
+    public TimestampCutoffReadonlyEventStore cutoff(ZonedDateTime cutOffTimestamp) {
         return new TimestampCutoffReadonlyEventStore(this, this, cutOffTimestamp);
     }
 }

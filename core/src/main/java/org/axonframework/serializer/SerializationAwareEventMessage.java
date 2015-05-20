@@ -18,8 +18,8 @@ package org.axonframework.serializer;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
 
+import java.time.ZonedDateTime;
 import java.util.Map;
 
 /**
@@ -87,7 +87,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public ZonedDateTime getTimestamp() {
         return eventMessage.getTimestamp();
     }
 

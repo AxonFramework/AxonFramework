@@ -19,13 +19,13 @@ package org.axonframework.eventhandling.annotation;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
-import org.joda.time.DateTime;
-import org.joda.time.ReadableInstant;
 import org.junit.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
 import java.lang.annotation.Annotation;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -53,7 +53,7 @@ public class TimestampParameterResolverFactoryTest {
     @Test
     public void testResolvesToDateTimeWhenAnnotated() throws Exception {
         ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                DateTime.class,
+                ZonedDateTime.class,
                                                                 new Annotation[]{annotation});
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
@@ -63,7 +63,7 @@ public class TimestampParameterResolverFactoryTest {
     @Test
     public void testResolvesToReadableInstantWhenAnnotated() throws Exception {
         ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                ReadableInstant.class,
+                                                                TemporalAccessor.class,
                                                                 new Annotation[]{annotation});
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
@@ -73,7 +73,7 @@ public class TimestampParameterResolverFactoryTest {
     @Test
     public void testIgnoredWhenNotAnnotated() throws Exception {
         ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                DateTime.class,
+                                                                ZonedDateTime.class,
                                                                 new Annotation[0]);
         assertNull(resolver);
     }

@@ -18,8 +18,9 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 /**
  * Implementation of the EventEntryFactory that provides the default Axon entities, which store payload and meta data
@@ -60,9 +61,9 @@ public final class DefaultEventEntryFactory implements EventEntryFactory<byte[]>
     public Object createDomainEventEntry(String aggregateType, DomainEventMessage event,
                                          SerializedObject<byte[]> serializedPayload,
                                          SerializedObject<byte[]> serializedMetaData) {
-        DateTime timestamp = event.getTimestamp();
+        ZonedDateTime timestamp = event.getTimestamp();
         if (forceUtc) {
-            timestamp = event.getTimestamp().toDateTime(DateTimeZone.UTC);
+            timestamp = event.getTimestamp().withZoneSameInstant(ZoneOffset.UTC);
         }
         return new DomainEventEntry(aggregateType, event, timestamp, serializedPayload, serializedMetaData);
     }
@@ -90,7 +91,7 @@ public final class DefaultEventEntryFactory implements EventEntryFactory<byte[]>
      * This implementation returns the a String containing a ISO-8601 representation of the given date.
      */
     @Override
-    public String resolveDateTimeValue(DateTime dateTime) {
+    public String resolveDateTimeValue(ZonedDateTime dateTime) {
         return dateTime.toString();
     }
 }

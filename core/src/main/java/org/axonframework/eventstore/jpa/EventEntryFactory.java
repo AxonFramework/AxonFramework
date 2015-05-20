@@ -18,7 +18,8 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
 
 /**
  * Interface describing a factory that creates Entities for the JpaEventStore to persist. The EventEntryFactory allows
@@ -108,5 +109,5 @@ public interface EventEntryFactory<T> {
      * @param dateTime The date to return the representation for
      * @return The value used to store the given date
      */
-    Object resolveDateTimeValue(DateTime dateTime);
+    Object resolveDateTimeValue(ZonedDateTime dateTime);
 }

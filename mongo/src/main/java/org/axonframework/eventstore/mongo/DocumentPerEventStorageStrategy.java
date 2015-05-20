@@ -29,8 +29,8 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
-import org.joda.time.DateTime;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
@@ -266,8 +266,8 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         }
 
         @Override
-        public DateTime getTimestamp() {
-            return new DateTime(timeStamp);
+        public ZonedDateTime getTimestamp() {
+            return ZonedDateTime.parse(timeStamp);
         }
 
         @SuppressWarnings("unchecked")

@@ -30,8 +30,8 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
-import org.joda.time.DateTime;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -305,7 +305,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             }
 
             @Override
-            public DateTime getTimestamp() {
+            public ZonedDateTime getTimestamp() {
                 return eventEntry.getTimestamp();
             }
 
@@ -395,8 +395,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             return sequenceNumber;
         }
 
-        public DateTime getTimestamp() {
-            return new DateTime(timestamp);
+        public ZonedDateTime getTimestamp() {
+            return ZonedDateTime.parse(timestamp);
         }
 
         public DBObject asDBObject() {

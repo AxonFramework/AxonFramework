@@ -26,11 +26,11 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -91,15 +91,15 @@ public class SimpleEventScheduler implements EventScheduler {
     }
 
     @Override
-    public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
-        return schedule(new Duration(null, triggerDateTime), event);
+    public ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event) {
+        return schedule(Duration.between(ZonedDateTime.now(), triggerDateTime), event);
     }
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
         String tokenId = IdentifierFactory.getInstance().generateIdentifier();
         ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(event, tokenId),
-                                                             triggerDuration.getMillis(),
+                                                             triggerDuration.toMillis(),
                                                              TimeUnit.MILLISECONDS);
         tokens.put(tokenId, future);
         return new SimpleScheduleToken(tokenId);

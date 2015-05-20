@@ -16,8 +16,7 @@
 
 package org.axonframework.domain;
 
-import org.joda.time.DateTime;
-
+import java.time.ZonedDateTime;
 import java.util.Map;
 
 /**
@@ -73,7 +72,7 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
      * @param payload             The payload of the message
      * @param metaData            The meta data of the message
      */
-    public GenericDomainEventMessage(String identifier, DateTime timestamp, Object aggregateIdentifier,
+    public GenericDomainEventMessage(String identifier, ZonedDateTime timestamp, Object aggregateIdentifier,
                                      long sequenceNumber, T payload, Map<String, ?> metaData) {
         super(identifier, timestamp, payload, metaData);
         this.aggregateIdentifier = aggregateIdentifier;

@@ -17,6 +17,11 @@
 package org.axonframework.unitofwork;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
@@ -24,6 +29,8 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.serializer.SerializationException;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.*;
 
 import java.io.ByteArrayInputStream;
@@ -31,6 +38,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Method;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -174,6 +183,7 @@ public class MetaDataMutatingUnitOfWorkListenerAdapterTest {
         assertEquals(1, publishedMessages.size());
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final XStream xStream = new XStream();
+        xStream.registerConverter(new Jsr310Converter());
         xStream.toXML(publishedMessages.get(0), baos);
         EventMessage actual = (EventMessage) xStream.fromXML(new ByteArrayInputStream(baos.toByteArray()));
 
@@ -186,5 +196,37 @@ public class MetaDataMutatingUnitOfWorkListenerAdapterTest {
         assertEquals("test1", actual.getMetaData().get("test1"));
         assertEquals("test2", actual.getMetaData().get("test2"));
         assertEquals("test3", actual.getMetaData().get("test3"));
+    }
+
+    /**
+     * XStream Converter to serialize DateTime classes as a String.
+     */
+    private static final class Jsr310Converter implements Converter {
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean canConvert(Class type) {
+            return type != null && ZonedDateTime.class.getPackage().equals(type.getPackage());
+        }
+
+        @Override
+        public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+            writer.setValue(source.toString());
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+            Class requiredType = context.getRequiredType();
+            try {
+                Method fromMethod = requiredType.getMethod("parse", CharSequence.class);
+                return fromMethod.invoke(null, reader.getValue());
+            } catch (Exception e) { // NOSONAR
+                throw new SerializationException(String.format(
+                        "An exception occurred while deserializing a Java Time object: %s",
+                        requiredType.getSimpleName()), e);
+            }
+        }
     }
 }

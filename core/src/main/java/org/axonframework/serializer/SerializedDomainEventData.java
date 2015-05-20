@@ -16,7 +16,7 @@
 
 package org.axonframework.serializer;
 
-import org.joda.time.DateTime;
+import java.time.ZonedDateTime;
 
 /**
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
@@ -55,7 +55,7 @@ public interface SerializedDomainEventData<T> {
      *
      * @return the timestamp at which the event was first created
      */
-    DateTime getTimestamp();
+    ZonedDateTime getTimestamp();
 
     /**
      * Returns the serialized data of the MetaData of the serialized Event.

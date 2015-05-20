@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.scheduling;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 /**
  * Interface towards a mechanism capable of scheduling the publication of events. The accuracy of the publication time
@@ -40,7 +40,7 @@ public interface EventScheduler {
      * @param event           The event to publish
      * @return the token to use when cancelling the schedule
      */
-    ScheduleToken schedule(DateTime triggerDateTime, Object event);
+    ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event);
 
     /**
      * Schedule the given <code>event</code> for publication after the given <code>triggerDuration</code>.  The

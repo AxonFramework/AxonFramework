@@ -20,10 +20,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.Mongo;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -39,8 +36,6 @@ import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
@@ -55,6 +50,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -360,40 +358,38 @@ public class MongoEventStoreTest {
     @Test
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(onePM.toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-        DateTimeUtils.setCurrentMillisSystem();
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThan(onePM), eventVisitor);
         ArgumentCaptor<DomainEventMessage> captor = ArgumentCaptor.forClass(DomainEventMessage.class);
         verify(eventVisitor, times(13 + 14)).doWithEvent(captor.capture());
-        assertEquals(new DateTime(2011, 12, 18, 14, 0, 0, 0), captor.getAllValues().get(0).getTimestamp());
-        assertEquals(new DateTime(2011, 12, 18, 14, 0, 0, 1), captor.getAllValues().get(26).getTimestamp());
+        assertEquals(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC), captor.getAllValues().get(0).getTimestamp());
+        assertEquals(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1, ZoneOffset.UTC), captor.getAllValues().get(26).getTimestamp());
     }
 
     @DirtiesContext
     @Test
     public void testVisitEvents_BetweenTimestamps() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(onePM.toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-        DateTime twoPM = new DateTime(2011, 12, 18, 14, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(twoPM.getMillis());
+        ZonedDateTime twoPM = ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(twoPM.toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-        DateTimeUtils.setCurrentMillisSystem();
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM)
@@ -406,16 +402,15 @@ public class MongoEventStoreTest {
     @Test
     public void testVisitEvents_OnOrAfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        GenericEventMessage.setClock(Clock.fixed(onePM.toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        GenericEventMessage.setClock(Clock.fixed(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1, ZoneOffset.UTC).toInstant(), ZoneOffset.UTC));
         testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-        DateTimeUtils.setCurrentMillisSystem();
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM), eventVisitor);

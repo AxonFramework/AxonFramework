@@ -20,7 +20,8 @@ import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.CallbackBehavior;
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
 
 /**
  * Interface describing action to perform on a Saga Test Fixture during the configuration phase.
@@ -149,5 +150,5 @@ public interface FixtureConfiguration {
      *
      * @return the simulated "current time" of the fixture.
      */
-    DateTime currentTime();
+    ZonedDateTime currentTime();
 }

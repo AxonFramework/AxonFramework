@@ -18,7 +18,8 @@ package org.axonframework.upcasting;
 
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
 
 /**
  * SerializedDomainEventData implementation that can be used to duplicate existing SerializedDomainEventData instances
@@ -66,7 +67,7 @@ public class UpcastSerializedDomainEventData<T> implements SerializedDomainEvent
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public ZonedDateTime getTimestamp() {
         return original.getTimestamp();
     }
 

@@ -19,10 +19,10 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -384,8 +384,8 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                                        .setMaxResults(batchSize);
             for (Map.Entry<String, Object> entry : params.entrySet()) {
                 Object value = entry.getValue();
-                if (value instanceof DateTime) {
-                    value = eventEntryFactory.resolveDateTimeValue((DateTime) entry.getValue());
+                if (value instanceof ZonedDateTime) {
+                    value = eventEntryFactory.resolveDateTimeValue((ZonedDateTime) entry.getValue());
                 }
                 query.setParameter(entry.getKey(), value);
             }

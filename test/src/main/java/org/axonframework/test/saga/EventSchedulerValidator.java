@@ -22,9 +22,9 @@ import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -54,7 +54,7 @@ public class EventSchedulerValidator {
      * @param matcher  The matcher that must match with the event scheduled at the given time
      */
     public void assertScheduledEventMatching(Duration duration, Matcher<?> matcher) {
-        DateTime targetTime = eventScheduler.getCurrentDateTime().plus(duration);
+        ZonedDateTime targetTime = eventScheduler.getCurrentDateTime().plus(duration);
         assertScheduledEventMatching(targetTime, matcher);
     }
 
@@ -65,7 +65,7 @@ public class EventSchedulerValidator {
      * @param scheduledTime the time at which the event should be published
      * @param matcher       The matcher that must match with the event scheduled at the given time
      */
-    public void assertScheduledEventMatching(DateTime scheduledTime,
+    public void assertScheduledEventMatching(ZonedDateTime scheduledTime,
                                              Matcher<?> matcher) {
 
         List<ScheduledItem> schedule = eventScheduler.getScheduledItems();

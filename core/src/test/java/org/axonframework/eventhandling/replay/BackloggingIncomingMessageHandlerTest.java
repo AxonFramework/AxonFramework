@@ -22,11 +22,10 @@ import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.eventhandling.Cluster;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
-import org.joda.time.Duration;
 import org.junit.*;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,17 +38,16 @@ public class BackloggingIncomingMessageHandlerTest {
 
     private BackloggingIncomingMessageHandler testSubject;
 
-    private static final DateTime START_TIME = new DateTime();
-    private static final DateTime MINUTE_BEFORE_START = START_TIME.minus(Duration.standardMinutes(1));
-    private static final DateTime SECOND_BEFORE_START = START_TIME.minus(Duration.standardSeconds(1));
-    private static final DateTime SECOND_AFTER_START = START_TIME.plus(Duration.standardSeconds(1));
-    private static final DateTime MINUTE_AFTER_START = START_TIME.plus(Duration.standardMinutes(1));
+    private static final ZonedDateTime START_TIME = ZonedDateTime.now();
+    private static final ZonedDateTime MINUTE_BEFORE_START = START_TIME.minus(Duration.ofMinutes(1));
+    private static final ZonedDateTime SECOND_BEFORE_START = START_TIME.minus(Duration.ofSeconds(1));
+    private static final ZonedDateTime SECOND_AFTER_START = START_TIME.plus(Duration.ofSeconds(1));
+    private static final ZonedDateTime MINUTE_AFTER_START = START_TIME.plus(Duration.ofMinutes(1));
     private Cluster mockCluster;
-    private Map<DateTime, DomainEventMessage> messages = new HashMap<DateTime, DomainEventMessage>();
+    private Map<ZonedDateTime, DomainEventMessage> messages = new HashMap<ZonedDateTime, DomainEventMessage>();
 
     @Before
     public void setUp() throws Exception {
-        DateTimeUtils.setCurrentMillisFixed(START_TIME.getMillis());
         this.testSubject = new BackloggingIncomingMessageHandler();
         this.mockCluster = mock(Cluster.class);
         messages.put(MINUTE_BEFORE_START, newDomainEventMessage("id1", MINUTE_BEFORE_START));
@@ -59,11 +57,6 @@ public class BackloggingIncomingMessageHandlerTest {
         messages.put(MINUTE_AFTER_START, newDomainEventMessage("id5", MINUTE_AFTER_START));
 
         this.testSubject.prepareForReplay(mockCluster);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        DateTimeUtils.setCurrentMillisSystem();
     }
 
     @Test
@@ -156,12 +149,12 @@ public class BackloggingIncomingMessageHandlerTest {
         verifyNoMoreInteractions(mockCluster);
     }
 
-    private DomainEventMessage<String> newDomainEventMessage(String identifier, DateTime timestamp) {
+    private DomainEventMessage<String> newDomainEventMessage(String identifier, ZonedDateTime timestamp) {
         return new GenericDomainEventMessage<String>(identifier, timestamp, "aggregate", 0, "payload@" + timestamp.toString(),
                                                      MetaData.emptyInstance());
     }
 
-    private EventMessage<String> newEventMessage(String identifier, DateTime timestamp) {
+    private EventMessage<String> newEventMessage(String identifier, ZonedDateTime timestamp) {
         return new GenericEventMessage<String>(identifier, timestamp, "payload@" + timestamp.toString(),
                                                      MetaData.emptyInstance());
     }
