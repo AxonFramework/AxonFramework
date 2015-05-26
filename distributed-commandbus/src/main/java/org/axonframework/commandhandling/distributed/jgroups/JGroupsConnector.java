@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
+import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.serializer.MessageSerializer;
@@ -343,7 +344,7 @@ public class JGroupsConnector implements CommandBusConnector {
             try {
                 final CommandMessage commandMessage = message.getCommandMessage(serializer);
                 if (message.isExpectReply()) {
-                    localSegment.dispatch(commandMessage, new ReplyingCallback(msg, commandMessage));
+                    localSegment.dispatch(commandMessage, new ReplyingCallback(channel,msg, commandMessage,serializer));
                 } else {
                     localSegment.dispatch(commandMessage);
                 }
@@ -391,42 +392,6 @@ public class JGroupsConnector implements CommandBusConnector {
                     callback.onSuccess(replyMessage.getReturnValue(serializer));
                 } else {
                     callback.onFailure(replyMessage.getError(serializer));
-                }
-            }
-        }
-
-        private class ReplyingCallback implements CommandCallback<Object> {
-
-            private final Message msg;
-            private final CommandMessage commandMessage;
-
-            public ReplyingCallback(Message msg, CommandMessage commandMessage) {
-                this.msg = msg;
-                this.commandMessage = commandMessage;
-            }
-
-            @Override
-            public void onSuccess(Object result) {
-                try {
-                    channel.send(msg.getSrc(), new ReplyMessage(commandMessage.getIdentifier(),
-                                                                result,
-                                                                null, serializer));
-                } catch (Exception e) {
-                    logger.error("Unable to send reply to command [name: {}, id: {}]. ",
-                                 new Object[]{commandMessage.getCommandName(),
-                                         commandMessage.getIdentifier(),
-                                         e});
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable cause) {
-                try {
-                    channel.send(msg.getSrc(), new ReplyMessage(commandMessage.getIdentifier(),
-                                                                null,
-                                                                cause, serializer));
-                } catch (Exception e) {
-                    logger.error("Unable to send reply:", e);
                 }
             }
         }

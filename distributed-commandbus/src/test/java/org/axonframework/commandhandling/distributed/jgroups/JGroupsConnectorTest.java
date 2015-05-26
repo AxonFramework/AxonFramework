@@ -16,8 +16,6 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import static java.util.Collections.*;
-
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
@@ -26,6 +24,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
@@ -55,6 +54,7 @@ public class JGroupsConnectorTest {
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
     private String clusterName;
+    private XStreamSerializer serializer;
 
     @Before
     public void setUp() throws Exception {
@@ -63,14 +63,33 @@ public class JGroupsConnectorTest {
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, new XStreamSerializer());
-        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, new XStreamSerializer());
+        serializer = new XStreamSerializer();
+        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, serializer);
+        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, serializer);
     }
 
     @After
     public void tearDown() {
         closeSilently(channel1);
         closeSilently(channel2);
+    }
+
+    @Test
+    public void testSetupOfReplyingCallback() throws InterruptedException {
+        final String mockPayload = "DummyString";
+        final CommandMessage commandMessage = new GenericCommandMessage(mockPayload);
+
+        final DispatchMessage dispatchMessage = new DispatchMessage(commandMessage,serializer,true);
+        final Message message = new Message(channel1.getAddress(),dispatchMessage);
+
+        connector1.connect(20);
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        channel1.getReceiver().receive(message);
+
+        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
+        verify(mockCommandBus1).dispatch(refEq(commandMessage),any(ReplyingCallback.class));
+
     }
 
     @SuppressWarnings("unchecked")
