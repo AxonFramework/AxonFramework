@@ -59,7 +59,7 @@ public class ReplyingCallback implements CommandCallback<Object> {
                     new Object[]{commandMessage.getCommandName(),
                             commandMessage.getIdentifier(),
                             e});
-            throw new CommandResponseProcessingFailedException(String.format("An error occurred while attempting to process command response of type : %s", result.getClass().getName()),e);
+            throw new CommandResponseProcessingFailedException(String.format("An error occurred while attempting to process command response of type : %s, Exception Message: %s", result.getClass().getName(), e.getMessage()),e);
         }
     }
 
@@ -71,7 +71,8 @@ public class ReplyingCallback implements CommandCallback<Object> {
                     cause, serializer));
         } catch (Exception e) {
             logger.error("Unable to send reply:", e);
-            throw new CommandResponseProcessingFailedException(String.format("An error occurred while attempting to process command exception response of type : %s", e.getClass().getName()),e);
+            //Not capturing the causative exception while throwing - the causative exception may not be serializable and this may cause the commandbus to hangup.
+            throw new CommandResponseProcessingFailedException(String.format("An error occurred while attempting to process command exception response of type : %s, Exception Message:: %s", e.getClass().getName(), e.getMessage()));
         }
     }
 }

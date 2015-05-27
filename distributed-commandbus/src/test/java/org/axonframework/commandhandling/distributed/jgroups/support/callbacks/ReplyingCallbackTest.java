@@ -24,15 +24,19 @@ import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.refEq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.isNotNull;
 
 /**
  * @author Srideep Prasad
@@ -51,6 +55,9 @@ public class ReplyingCallbackTest {
     private Serializer mockSerializer;
     @Mock
     private Address mockAddr;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     private static final String IDENTIFIER = "identifier";
 
@@ -72,12 +79,15 @@ public class ReplyingCallbackTest {
         verify(mockChannel).send(eq(mockAddr),refEq(expectedReplyMsg));
     }
 
-    @Test(expected = CommandResponseProcessingFailedException.class)
+    @Test
     public void testOnSuccessWithExceptionDuringChannelSend() throws Exception {
         Object dummyData = new Object();
         ReplyMessage expectedReplyMsg = new ReplyMessage(IDENTIFIER, dummyData, null, mockSerializer);
+        Exception expectedCause = new Exception("Serialization Exception!");
 
-        doThrow(new Exception("Serialization Exception!")).when(mockChannel).send(same(mockAddr),refEq(expectedReplyMsg));
+        doThrow(expectedCause).when(mockChannel).send(same(mockAddr),refEq(expectedReplyMsg));
+        expectedException.expect(CommandResponseProcessingFailedException.class);
+        expectedException.expectCause(is(expectedCause));
 
         replyingCallback.onSuccess(dummyData);
     }
@@ -92,12 +102,15 @@ public class ReplyingCallbackTest {
         verify(mockChannel).send(eq(mockAddr),refEq(expectedReplyMsg));
     }
 
-    @Test(expected = CommandResponseProcessingFailedException.class)
+    @Test
     public void testOnFailureWithExceptionDuringChannelSend() throws Exception {
         Exception exception = new Exception();
         ReplyMessage expectedReplyMsg = new ReplyMessage(IDENTIFIER, null, exception, mockSerializer);
 
         doThrow(new Exception("Serialization Exception!")).when(mockChannel).send(same(mockAddr), refEq(expectedReplyMsg));
+        expectedException.expect(CommandResponseProcessingFailedException.class);
+        expectedException.expectCause(is(isNotNull(Exception.class)));
+
         replyingCallback.onFailure(exception);
     }
 }
