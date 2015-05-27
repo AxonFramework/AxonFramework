@@ -37,7 +37,7 @@ public class ReplyingCallback implements CommandCallback<Object> {
     private final Message msg;
     private final CommandMessage commandMessage;
     private final JChannel channel;
-    private Serializer serializer;
+    private final Serializer serializer;
 
     private static final Logger logger = LoggerFactory.getLogger(ReplyingCallback.class);
 
