@@ -30,8 +30,8 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
-import org.joda.time.DateTime;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -158,8 +158,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         private final String aggregateIdentifier;
         private final long firstSequenceNumber;
         private final long lastSequenceNumber;
-        private final String firstTimestamp;
-        private final String lastTimestamp;
+        private final long firstTimestamp;
+        private final long lastTimestamp;
         private final EventEntry[] eventEntries;
 
         /**
@@ -171,9 +171,9 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         private CommitEntry(Serializer eventSerializer, List<DomainEventMessage<?>> events) {
             this.aggregateIdentifier = events.get(0).getAggregateIdentifier();
             this.firstSequenceNumber = events.get(0).getSequenceNumber();
-            this.firstTimestamp = events.get(0).getTimestamp().toString();
+            this.firstTimestamp = events.get(0).getTimestamp().toEpochMilli();
             final DomainEventMessage lastEvent = events.get(events.size() - 1);
-            this.lastTimestamp = lastEvent.getTimestamp().toString();
+            this.lastTimestamp = lastEvent.getTimestamp().toEpochMilli();
             this.lastSequenceNumber = lastEvent.getSequenceNumber();
             eventEntries = new EventEntry[events.size()];
             for (int i = 0, eventsLength = events.size(); i < eventsLength; i++) {
@@ -192,8 +192,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             this.aggregateIdentifier = (String) dbObject.get(AGGREGATE_IDENTIFIER_PROPERTY);
             this.firstSequenceNumber = ((Number) dbObject.get(FIRST_SEQUENCE_NUMBER_PROPERTY)).longValue();
             this.lastSequenceNumber = ((Number) dbObject.get(LAST_SEQUENCE_NUMBER_PROPERTY)).longValue();
-            this.firstTimestamp = (String) dbObject.get(FIRST_TIME_STAMP_PROPERTY);
-            this.lastTimestamp = (String) dbObject.get(LAST_TIME_STAMP_PROPERTY);
+            this.firstTimestamp = (long) dbObject.get(FIRST_TIME_STAMP_PROPERTY);
+            this.lastTimestamp = (long) dbObject.get(LAST_TIME_STAMP_PROPERTY);
             List<DBObject> entries = (List<DBObject>) dbObject.get(EVENTS_PROPERTY);
             eventEntries = new EventEntry[entries.size()];
             for (int i = 0, entriesSize = entries.size(); i < entriesSize; i++) {
@@ -291,8 +291,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             }
 
             @Override
-            public DateTime getTimestamp() {
-                return eventEntry.getTimestamp();
+            public Instant getTimestamp() {
+                return Instant.ofEpochMilli(eventEntry.getTimestamp());
             }
 
             @Override
@@ -326,7 +326,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
         private final Object serializedMetaData;
         private final String eventIdentifier;
         private final long sequenceNumber;
-        private final String timestamp;
+        private final long timestamp;
 
         private EventEntry(Serializer serializer, DomainEventMessage event) {
             this.eventIdentifier = event.getIdentifier();
@@ -342,7 +342,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             this.payloadRevision = serializedPayloadObject.getType().getRevision();
             this.serializedMetaData = serializedMetaDataObject.getData();
             this.sequenceNumber = event.getSequenceNumber();
-            this.timestamp = event.getTimestamp().toString();
+            this.timestamp = event.getTimestamp().toEpochMilli();
         }
 
         private EventEntry(DBObject dbObject) {
@@ -352,7 +352,7 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             this.serializedMetaData = dbObject.get(META_DATA_PROPERTY);
             this.eventIdentifier = (String) dbObject.get(EVENT_IDENTIFIER_PROPERTY);
             this.sequenceNumber = (Long) dbObject.get(EVENT_SEQUENCE_NUMBER_PROPERTY);
-            this.timestamp = (String) dbObject.get(EVENT_TIMESTAMP_PROPERTY);
+            this.timestamp = (long) dbObject.get(EVENT_TIMESTAMP_PROPERTY);
         }
 
         public Class<?> getRepresentationType() {
@@ -381,8 +381,8 @@ public class DocumentPerCommitStorageStrategy implements StorageStrategy {
             return sequenceNumber;
         }
 
-        public DateTime getTimestamp() {
-            return new DateTime(timestamp);
+        public long getTimestamp() {
+            return timestamp;
         }
 
         public DBObject asDBObject() {

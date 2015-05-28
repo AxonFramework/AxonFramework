@@ -23,8 +23,10 @@ import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Matcher;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
@@ -104,19 +106,19 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     }
 
     @Override
-    public FixtureExecutionResult expectScheduledEventMatching(DateTime scheduledTime,
+    public FixtureExecutionResult expectScheduledEventMatching(ZonedDateTime scheduledTime,
                                                                Matcher<?> matcher) {
         eventSchedulerValidator.assertScheduledEventMatching(scheduledTime, matcher);
         return this;
     }
 
     @Override
-    public FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, Object applicationEvent) {
+    public FixtureExecutionResult expectScheduledEvent(ZonedDateTime scheduledTime, Object applicationEvent) {
         return expectScheduledEventMatching(scheduledTime, messageWithPayload(equalTo(applicationEvent)));
     }
 
     @Override
-    public FixtureExecutionResult expectScheduledEventOfType(DateTime scheduledTime,
+    public FixtureExecutionResult expectScheduledEventOfType(ZonedDateTime scheduledTime,
                                                              Class<?> eventType) {
         return expectScheduledEventMatching(scheduledTime, messageWithPayload(any(eventType)));
     }

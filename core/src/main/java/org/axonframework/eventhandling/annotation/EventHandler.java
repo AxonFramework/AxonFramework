@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  * not present.</li>
  * <li>Parameters of type {@link org.axonframework.domain.MetaData} will have the entire Meta Data of an Event Message
  * injected.</li>
- * <li>Parameters of type {@link org.joda.time.DateTime} will resolve to the timestamp of the EventMessage. This is the
+ * <li>Parameters of type {@link java.time.Instant} will resolve to the timestamp of the EventMessage. This is the
  * time at which the Event was generated.</li>
  * <li>Parameters assignable to {@link org.axonframework.domain.Message} will have the entire {@link
  * org.axonframework.domain.EventMessage} injected (if the message is assignable to that parameter). If the first

@@ -18,10 +18,7 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.domain.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -40,8 +37,7 @@ import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
+
 import org.junit.*;
 import org.junit.runner.*;
 import org.mockito.*;
@@ -59,6 +55,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.SQLException;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -123,7 +122,7 @@ public class JpaEventStoreTest {
     @After
     public void tearDown() {
         // just to make sure
-        DateTimeUtils.setCurrentMillisSystem();
+        setClock(Clock.systemDefaultZone());
     }
 
     @Test(expected = DataIntegrityViolationException.class)
@@ -139,7 +138,7 @@ public class JpaEventStoreTest {
                     TransactionStatus status) {
                 entityManager.persist(new DomainEventEntry(new GenericDomainEventMessage<>(
                         "a",
-                        new DateTime(),
+                        Instant.now(),
                         "someValue",
                         0,
                         "",
@@ -154,7 +153,7 @@ public class JpaEventStoreTest {
                     TransactionStatus status) {
                 entityManager.persist(new DomainEventEntry(new GenericDomainEventMessage<>(
                         "a",
-                        new DateTime(),
+                        Instant.now(),
                         "anotherValue",
                         0,
                         "",
@@ -541,16 +540,16 @@ public class JpaEventStoreTest {
     @Transactional
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999000000, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(11));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        setClock(onePM);
         testSubject.appendEvents(createDomainEvents(12));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(13));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1000000, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(14));
-        DateTimeUtils.setCurrentMillisSystem();
+        setClock(Clock.systemDefaultZone());
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThan(onePM), eventVisitor);
@@ -561,17 +560,17 @@ public class JpaEventStoreTest {
     @Transactional
     public void testVisitEvents_BetweenTimestamps() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999000000, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(11));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        setClock(onePM);
         testSubject.appendEvents(createDomainEvents(12));
-        DateTime twoPM = new DateTime(2011, 12, 18, 14, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(twoPM.getMillis());
+        ZonedDateTime twoPM = ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC);
+        setClock(twoPM);
         testSubject.appendEvents(createDomainEvents(13));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1000000, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(14));
-        DateTimeUtils.setCurrentMillisSystem();
+        setClock(Clock.systemDefaultZone());
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM)
@@ -584,16 +583,16 @@ public class JpaEventStoreTest {
     @Transactional
     public void testVisitEvents_OnOrAfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999000000, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(11));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        setClock(onePM);
         testSubject.appendEvents(createDomainEvents(12));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(13));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1000000, ZoneOffset.UTC));
         testSubject.appendEvents(createDomainEvents(14));
-        DateTimeUtils.setCurrentMillisSystem();
+        setClock(Clock.systemDefaultZone());
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM), eventVisitor);
@@ -822,8 +821,8 @@ public class JpaEventStoreTest {
                                             }
 
                                             @Override
-                                            public String resolveDateTimeValue(DateTime dateTime) {
-                                                return dateTime.toString();
+                                            public long resolveDateTimeValue(TemporalAccessor dateTime) {
+                                                return Instant.from(dateTime).toEpochMilli();
                                             }
                                         }));
 
@@ -931,4 +930,12 @@ public class JpaEventStoreTest {
                                                  new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
         }
     }
+
+    private void setClock(ZonedDateTime zonedDateTime) {
+        setClock(Clock.fixed(zonedDateTime.toInstant(), zonedDateTime.getZone()));
+    }
+    private void setClock(Clock clock) {
+        GenericEventMessage.clock = clock;
+    }
+
 }

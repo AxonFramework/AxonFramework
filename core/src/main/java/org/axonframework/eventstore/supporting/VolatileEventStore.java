@@ -24,8 +24,9 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
-import org.joda.time.DateTime;
 
+
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -75,7 +76,7 @@ public class VolatileEventStore implements EventStore, EventStoreManagement {
         return new SimpleDomainEventStream(selection);
     }
 
-    public TimestampCutoffReadonlyEventStore cutoff(DateTime cutOffTimestamp) {
+    public TimestampCutoffReadonlyEventStore cutoff(Instant cutOffTimestamp) {
         return new TimestampCutoffReadonlyEventStore(this, this, cutOffTimestamp);
     }
 }

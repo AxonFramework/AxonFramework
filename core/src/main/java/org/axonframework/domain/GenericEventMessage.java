@@ -16,8 +16,10 @@
 
 package org.axonframework.domain;
 
-import org.joda.time.DateTime;
 
+
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -31,7 +33,9 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
 
     private static final long serialVersionUID = -8370948891267874107L;
 
-    private final DateTime timestamp;
+    private final Instant timestamp;
+
+    public static Clock clock = Clock.systemDefaultZone();
 
     /**
      * Returns the given event as an EventMessage. If <code>event</code> already implements EventMessage, it is
@@ -73,7 +77,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      */
     public GenericEventMessage(T payload, Map<String, ?> metaData) {
         super(IdentifierFactory.getInstance().generateIdentifier(), payload, metaData);
-        this.timestamp = new DateTime();
+        this.timestamp = Instant.now(clock);
     }
 
     /**
@@ -84,7 +88,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
      */
-    public GenericEventMessage(String identifier, DateTime timestamp, T payload, Map<String, ?> metaData) {
+    public GenericEventMessage(String identifier, Instant timestamp, T payload, Map<String, ?> metaData) {
         super(identifier, payload, metaData);
         this.timestamp = timestamp;
     }
@@ -102,7 +106,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 

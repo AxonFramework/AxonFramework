@@ -18,8 +18,11 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * Implementation of the EventEntryFactory that provides the default Axon entities, which store payload and meta data
@@ -60,10 +63,7 @@ public final class DefaultEventEntryFactory implements EventEntryFactory<byte[]>
     public Object createDomainEventEntry(DomainEventMessage event,
                                          SerializedObject<byte[]> serializedPayload,
                                          SerializedObject<byte[]> serializedMetaData) {
-        DateTime timestamp = event.getTimestamp();
-        if (forceUtc) {
-            timestamp = event.getTimestamp().toDateTime(DateTimeZone.UTC);
-        }
+        Instant timestamp = event.getTimestamp();
         return new DomainEventEntry(event, timestamp, serializedPayload, serializedMetaData);
     }
 
@@ -87,10 +87,10 @@ public final class DefaultEventEntryFactory implements EventEntryFactory<byte[]>
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation returns the a String containing a ISO-8601 representation of the given date.
+     * This implementation returns the a long containing the millis-since-Epoch representation of the given date.
      */
     @Override
-    public String resolveDateTimeValue(DateTime dateTime) {
-        return dateTime.toString();
+    public long resolveDateTimeValue(TemporalAccessor dateTime) {
+        return Instant.from(dateTime).toEpochMilli();
     }
 }

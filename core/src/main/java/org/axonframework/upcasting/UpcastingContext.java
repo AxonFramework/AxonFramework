@@ -17,7 +17,9 @@
 package org.axonframework.upcasting;
 
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
+
 
 /**
  * Interface describing an object that provides contextual information about the object being upcast. Generally, this
@@ -57,7 +59,7 @@ public interface UpcastingContext {
      *
      * @return the timestamp at which the event was first created, if available
      */
-    DateTime getTimestamp();
+    Instant getTimestamp();
 
     /**
      * Returns the meta data of the message wrapping the object being upcast. If the meta data is not available, or is

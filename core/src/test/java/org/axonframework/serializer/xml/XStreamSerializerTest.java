@@ -19,14 +19,15 @@ package org.axonframework.serializer.xml;
 import org.axonframework.domain.StubDomainEvent;
 import org.axonframework.serializer.Revision;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateMidnight;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Period;
 
 import static org.junit.Assert.*;
 
@@ -154,15 +155,15 @@ public class XStreamSerializerTest {
 
         private static final long serialVersionUID = 1L;
         private String name;
-        private DateMidnight date;
-        private DateTime dateTime;
+        private LocalDate date;
+        private Instant dateTime;
         private Period period;
 
         public TestEvent(String name) {
             this.name = name;
-            this.date = new DateMidnight();
-            this.dateTime = new DateTime();
-            this.period = new Period(100);
+            this.date = LocalDate.now();
+            this.dateTime = Instant.now();
+            this.period = Period.ofDays(100);
         }
 
         public String getName() {

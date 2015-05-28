@@ -17,7 +17,6 @@
 package org.axonframework.serializer;
 
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.converters.collections.MapConverter;
@@ -34,9 +33,7 @@ import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
-import org.joda.time.DateTime;
 
-import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -129,7 +126,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
         }
-        xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.aliasPackage("axon.domain", "org.axonframework.domain");
         xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
@@ -147,8 +143,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         xStream.aliasField("value", AssociationValue.class, "propertyValue");
 
         // for backward compatibility
-        xStream.alias("localDateTime", DateTime.class);
-        xStream.alias("dateTime", DateTime.class);
         xStream.alias("uuid", UUID.class);
 
         xStream.alias("meta-data", MetaData.class);
@@ -322,38 +316,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return xStream.getMapper().serializedClass(type);
     }
 
-
-    /**
-     * XStream Converter to serialize DateTime classes as a String.
-     */
-    private static final class JodaTimeConverter implements Converter {
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean canConvert(Class type) {
-            return type != null && DateTime.class.getPackage().equals(type.getPackage());
-        }
-
-        @Override
-        public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
-            writer.setValue(source.toString());
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-            try {
-                Constructor constructor = context.getRequiredType().getConstructor(Object.class);
-                return constructor.newInstance(reader.getValue());
-            } catch (Exception e) { // NOSONAR
-                throw new SerializationException(String.format(
-                        "An exception occurred while deserializing a Joda Time object: %s",
-                        context.getRequiredType().getSimpleName()), e);
-            }
-        }
-    }
 
     /**
      * Class that marshals MetaData in the least verbose way.

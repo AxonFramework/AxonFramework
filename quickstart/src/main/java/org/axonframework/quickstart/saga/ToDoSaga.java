@@ -27,9 +27,9 @@ import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.EndSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
-import org.joda.time.Duration;
 
 import javax.annotation.Resource;
+import java.time.Duration;
 
 /**
  * @author Allard Buijze
@@ -46,7 +46,7 @@ public class ToDoSaga extends AbstractAnnotatedSaga {
     @StartSaga
     @SagaEventHandler(associationProperty = "todoId")
     public void onToDoItemCreated(ToDoItemCreatedEvent event) {
-        deadline = eventScheduler.schedule(Duration.standardSeconds(2),
+        deadline = eventScheduler.schedule(Duration.ofSeconds(2),
                                            new ToDoItemDeadlineExpiredEvent(event.getTodoId()));
     }
 

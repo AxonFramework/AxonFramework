@@ -28,8 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.*;
 import static org.ops4j.pax.exam.CoreOptions.*;
 

@@ -21,8 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import org.axonframework.serializer.AnnotationRevisionResolver;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ConverterFactory;
@@ -34,15 +33,6 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.axonframework.serializer.UnknownSerializedTypeException;
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.joda.time.LocalTime;
-import org.joda.time.MonthDay;
-import org.joda.time.MutableDateTime;
-import org.joda.time.ReadableInstant;
-import org.joda.time.YearMonth;
 
 import java.io.IOException;
 
@@ -135,19 +125,7 @@ public class JacksonSerializer implements Serializer {
         this.converterFactory = converterFactory;
         this.objectMapper = objectMapper;
         this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
-        this.objectMapper.registerModule(
-                new SimpleModule("Axon-Jackson Module")
-                        .addSerializer(ReadableInstant.class, new ToStringSerializer())
-                        .addDeserializer(DateTime.class, new JodaDeserializer<>(DateTime.class))
-                        .addDeserializer(Instant.class, new JodaDeserializer<>(Instant.class))
-                        .addDeserializer(MutableDateTime.class,
-                                         new JodaDeserializer<>(MutableDateTime.class))
-                        .addDeserializer(YearMonth.class, new JodaDeserializer<>(YearMonth.class))
-                        .addDeserializer(MonthDay.class, new JodaDeserializer<>(MonthDay.class))
-                        .addDeserializer(LocalDate.class, new JodaDeserializer<>(LocalDate.class))
-                        .addDeserializer(LocalTime.class, new JodaDeserializer<>(LocalTime.class))
-                        .addDeserializer(LocalDateTime.class, new JodaDeserializer<>(LocalDateTime.class))
-        );
+        this.objectMapper.registerModule(new JSR310Module());
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
         }

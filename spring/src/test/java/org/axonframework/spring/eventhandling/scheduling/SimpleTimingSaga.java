@@ -20,8 +20,9 @@ import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
-import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.time.Duration;
 
 /**
  * @author Allard Buijze
@@ -32,7 +33,7 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
 
     private transient EventScheduler timer;
     private volatile boolean triggered = false;
-    private static final Duration SCHEDULE_DURATION = new Duration(50);
+    private static final Duration SCHEDULE_DURATION = Duration.ofMillis(50);
 
     @StartSaga
     @SagaEventHandler(associationProperty = "association")

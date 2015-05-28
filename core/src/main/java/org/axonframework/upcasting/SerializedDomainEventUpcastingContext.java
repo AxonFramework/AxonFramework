@@ -20,7 +20,9 @@ import org.axonframework.domain.MetaData;
 import org.axonframework.serializer.LazyDeserializingObject;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.Serializer;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
+
 
 /**
  * Implementation of UpcastingContext that builds a context based on the information of a serialized domain event
@@ -33,7 +35,7 @@ public class SerializedDomainEventUpcastingContext implements UpcastingContext {
     private final String messageIdentifier;
     private final String aggregateIdentifier;
     private final Long sequenceNumber;
-    private final DateTime timestamp;
+    private final Instant timestamp;
     private final LazyDeserializingObject<MetaData> serializedMetaData;
 
     /**
@@ -68,7 +70,7 @@ public class SerializedDomainEventUpcastingContext implements UpcastingContext {
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 

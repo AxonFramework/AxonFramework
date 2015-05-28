@@ -17,14 +17,13 @@ package org.axonframework.eventstore.jdbc;
 
 import org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventData;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * @param <T> The type used when storing serialized data
@@ -34,8 +33,6 @@ import java.sql.SQLException;
  */
 @SuppressWarnings("JpaQueryApiInspection")
 public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
-
-    private static final DateTimeFormatter UTC_FORMATTER = ISODateTimeFormat.dateTime().withZoneUTC();
 
     private static final String STD_FIELDS = "eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, "
             + "payloadType, payloadRevision, payload, metaData";
@@ -113,7 +110,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_insertDomainEventEntry(Connection conn, String eventIdentifier,
                                                         String aggregateIdentifier, long sequenceNumber,
-                                                        DateTime timestamp, String eventType, String eventRevision,
+                                                        Instant timestamp, String eventType, String eventRevision,
                                                         T eventPayload, T eventMetaData)
             throws SQLException {
         return doInsertEventEntry(schemaConfiguration.domainEventEntryTable(),
@@ -125,7 +122,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_insertSnapshotEventEntry(Connection conn, String eventIdentifier,
                                                           String aggregateIdentifier, long sequenceNumber,
-                                                          DateTime timestamp, String eventType, String eventRevision,
+                                                          Instant timestamp, String eventType, String eventRevision,
                                                           T eventPayload, T eventMetaData) throws SQLException {
         return doInsertEventEntry(schemaConfiguration.snapshotEntryTable(),
                                   conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
@@ -135,9 +132,9 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     /**
      * Creates a statement to insert an entry with given attributes in the given <code>tableName</code>. This method
-     * is used by {@link #sql_insertDomainEventEntry(java.sql.Connection, String, String, long, org.joda.time.DateTime,
+     * is used by {@link #sql_insertDomainEventEntry(java.sql.Connection, String, String, long, Instant,
      * String, String, Object, Object)} and {@link #sql_insertSnapshotEventEntry(java.sql.Connection, String, String,
-     * long, org.joda.time.DateTime, String, String, Object, Object)}, and provides an easier way to
+     * long, Instant, String, String, Object, Object)}, and provides an easier way to
      * change to types of columns used.
      *
      * @param tableName           The name of the table to insert the entry into
@@ -156,7 +153,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
      */
     protected PreparedStatement doInsertEventEntry(String tableName, Connection connection, String eventIdentifier,
                                                    String aggregateIdentifier,
-                                                   long sequenceNumber, DateTime timestamp, String eventType,
+                                                   long sequenceNumber, Instant timestamp, String eventType,
                                                    String eventRevision,
                                                    T eventPayload, T eventMetaData)
             throws SQLException {
@@ -167,7 +164,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
         preparedStatement.setString(1, eventIdentifier);
         preparedStatement.setString(2, aggregateIdentifier);
         preparedStatement.setLong(3, sequenceNumber);
-        preparedStatement.setString(4, sql_dateTime(timestamp));
+        preparedStatement.setLong(4, sql_dateTime(timestamp));
         preparedStatement.setString(5, eventType);
         preparedStatement.setString(6, eventRevision);
         preparedStatement.setObject(7, eventPayload);
@@ -219,8 +216,8 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         for (int i = 0; i < params.length; i++) {
             Object param = params[i];
-            if (param instanceof DateTime) {
-                param = sql_dateTime((DateTime) param);
+            if (param instanceof TemporalAccessor) {
+                param = sql_dateTime((TemporalAccessor) param);
             }
 
             if (param instanceof byte[]) {
@@ -306,12 +303,8 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     }
 
     @Override
-    public String sql_dateTime(DateTime input) {
-        if (forceUtc) {
-            return input.toString(UTC_FORMATTER);
-        } else {
-            return input.toString();
-        }
+    public Long sql_dateTime(TemporalAccessor input) {
+        return Instant.from(input).toEpochMilli();
     }
 
     @Override

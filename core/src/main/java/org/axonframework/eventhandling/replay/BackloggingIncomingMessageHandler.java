@@ -20,9 +20,10 @@ import org.axonframework.common.Assert;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 
+
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -49,7 +50,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     private boolean inReplay = false;
     private final Queue<EventMessage> backlog;
     private final Set<String> replayedMessages = new HashSet<>();
-    private DateTime backlogThreshold;
+    private Instant backlogThreshold;
     private final Duration timeMargin;
 
 
@@ -57,11 +58,11 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
      * Creates a new BackloggingIncomingMessageHandler. Event Messages that have been generated more than 5 seconds
      * before the start of the replay are not placed in the backlog, as they are assumed to be processed by the replay
      * process. If the latency of the replayed cluster is expected to be more than 5 seconds, use the {@link
-     * #BackloggingIncomingMessageHandler(org.joda.time.Duration)} constructor to provide a margin that better suits
+     * #BackloggingIncomingMessageHandler(Duration)} constructor to provide a margin that better suits
      * the latency.
      */
     public BackloggingIncomingMessageHandler() {
-        this(Duration.standardSeconds(5));
+        this(Duration.ofSeconds(5));
     }
 
     /**
@@ -105,7 +106,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
         Assert.isFalse(inReplay, "This message handler is already performing a replay. "
                 + "Are you using the same instances on multiple clusters?");
         inReplay = true;
-        backlogThreshold = new DateTime().minus(timeMargin); // NOSONAR - Partially synchronization variable
+        backlogThreshold = Instant.now().minus(timeMargin); // NOSONAR - Partially synchronization variable
     }
 
     @Override
