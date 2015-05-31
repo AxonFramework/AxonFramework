@@ -32,11 +32,11 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.refEq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.isNotNull;
 
 /**
  * @author Srideep Prasad
@@ -109,7 +109,7 @@ public class ReplyingCallbackTest {
 
         doThrow(new Exception("Serialization Exception!")).when(mockChannel).send(same(mockAddr), refEq(expectedReplyMsg));
         expectedException.expect(CommandResponseProcessingFailedException.class);
-        expectedException.expectCause(is(isNotNull(Exception.class)));
+        expectedException.expectCause(nullValue(Exception.class));
 
         replyingCallback.onFailure(exception);
     }
