@@ -22,8 +22,10 @@ import org.jgroups.Address;
 import org.jgroups.View;
 
 /**
- * Internal class used used by JGroupsConnector. For internal use only. Pulled outside to allow for seamless unit testing
+ * Callback implementation which wraps another callback, and is aware of the JGroups node responsible for providing the
+ * value to invoke the wrapped callback with.
  *
+ * @param <R> The expected type of return value
  * @author Allard Buijze
  * @since 2.0
  */
@@ -32,13 +34,27 @@ public class MemberAwareCommandCallback<R> implements CommandCallback<R> {
     private final Address dest;
     private final CommandCallback<R> callback;
 
+    /**
+     * Initialize the callback, where the given <code>dest</code> is responsible for providing the value to invoke the
+     * given <code>callback</code> with.
+     *
+     * @param dest     The destination of the command of which the result is to be passed to the callback
+     * @param callback The callback to invoke with the result of the command
+     */
     public MemberAwareCommandCallback(Address dest, CommandCallback<R> callback) {
         this.dest = dest;
         this.callback = callback;
     }
 
-    public boolean isMemberLive(View currentView) {
-        return currentView.containsMember(dest);
+    /**
+     * Indicates whether the node responsible for providing the value to invoke the callback with is still alive in the
+     * given <code>currentView</code>.
+     *
+     * @param view The view containing the currently available nodes in the JGroups cluster
+     * @return <code>true</code> if the node is live, otherwise <code>false</code>
+     */
+    public boolean isMemberLive(View view) {
+        return view.containsMember(dest);
     }
 
     @Override

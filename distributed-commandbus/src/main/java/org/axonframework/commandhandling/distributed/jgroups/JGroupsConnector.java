@@ -402,7 +402,9 @@ public class JGroupsConnector implements CommandBusConnector {
             try {
                 final CommandMessage commandMessage = message.getCommandMessage(serializer);
                 if (message.isExpectReply()) {
-                    localSegment.dispatch(commandMessage, new ReplyingCallback(channel,msg, commandMessage,serializer));
+                    localSegment.dispatch(commandMessage, new ReplyingCallback(channel,
+                                                                               msg.getSrc(), commandMessage,serializer
+                    ));
                 } else {
                     localSegment.dispatch(commandMessage);
                 }

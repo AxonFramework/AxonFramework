@@ -22,14 +22,11 @@ import org.axonframework.commandhandling.distributed.jgroups.ReplyMessage;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.junit.*;
+import org.junit.rules.*;
+import org.junit.runner.*;
+import org.mockito.*;
+import org.mockito.runners.*;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -48,8 +45,6 @@ public class ReplyingCallbackTest {
     @Mock
     private JChannel mockChannel;
     @Mock
-    private Message mockMsg;
-    @Mock
     private CommandMessage mockCommandMsg;
     @Mock
     private Serializer mockSerializer;
@@ -63,10 +58,8 @@ public class ReplyingCallbackTest {
 
     @Before
     public void setup(){
-        replyingCallback = new ReplyingCallback(mockChannel,mockMsg,mockCommandMsg,mockSerializer);
+        replyingCallback = new ReplyingCallback(mockChannel, mockAddr, mockCommandMsg,mockSerializer);
         when(mockCommandMsg.getIdentifier()).thenReturn(IDENTIFIER);
-        when(mockMsg.getSrc()).thenReturn(mockAddr);
-
     }
 
     @Test

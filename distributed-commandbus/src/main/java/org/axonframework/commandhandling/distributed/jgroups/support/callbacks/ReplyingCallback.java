@@ -21,28 +21,37 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.jgroups.CommandResponseProcessingFailedException;
 import org.axonframework.commandhandling.distributed.jgroups.ReplyMessage;
 import org.axonframework.serializer.Serializer;
+import org.jgroups.Address;
 import org.jgroups.JChannel;
-import org.jgroups.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Internal class used used by JGroupsConnector. For internal use only. Pulled outside to allow for seamless unit testing
+ * Callback implementation that forwards the callback invocation as a reply to an incoming message.
  *
  * @author Allard Buijze
  * @since 2.0
  */
 public class ReplyingCallback implements CommandCallback<Object> {
 
-    private final Message msg;
     private final CommandMessage commandMessage;
     private final JChannel channel;
     private final Serializer serializer;
 
     private static final Logger logger = LoggerFactory.getLogger(ReplyingCallback.class);
+    private final Address address;
 
-    public ReplyingCallback(JChannel channel, Message msg, CommandMessage commandMessage, Serializer serializer) {
-        this.msg = msg;
+    /**
+     * Initialize the callback to send a reply for an incoming <code>commandMessage</code> to given <code>address</code> using the given <code>channel</code>.
+     * The given <code>serializer</code> is used to serialize the reply message.
+     *
+     * @param channel        The channel to send the reply on
+     * @param address        The destination for the reply message
+     * @param commandMessage The incoming command message
+     * @param serializer     The serializer to serialize the reply with
+     */
+    public ReplyingCallback(JChannel channel, Address address, CommandMessage commandMessage, Serializer serializer) {
+        this.address = address;
         this.commandMessage = commandMessage;
         this.channel = channel;
         this.serializer = serializer;
@@ -51,28 +60,31 @@ public class ReplyingCallback implements CommandCallback<Object> {
     @Override
     public void onSuccess(Object result) {
         try {
-            channel.send(msg.getSrc(), new ReplyMessage(commandMessage.getIdentifier(),
-                    result,
-                    null, serializer));
+            channel.send(address, new ReplyMessage(commandMessage.getIdentifier(),
+                                                   result,
+                                                   null, serializer));
         } catch (Exception e) {
             logger.error("Unable to send reply to command [name: {}, id: {}]. ",
-                    new Object[]{commandMessage.getCommandName(),
-                            commandMessage.getIdentifier(),
-                            e});
-            throw new CommandResponseProcessingFailedException(String.format("An error occurred while attempting to process command response of type : %s, Exception Message: %s", result.getClass().getName(), e.getMessage()),e);
+                         commandMessage.getCommandName(), commandMessage.getIdentifier(), e);
+            throw new CommandResponseProcessingFailedException(String.format(
+                    "An error occurred while attempting to process command response of type : %s, Exception Message: %s",
+                    result.getClass().getName(), e.getMessage()), e);
         }
     }
 
     @Override
     public void onFailure(Throwable cause) {
         try {
-            channel.send(msg.getSrc(), new ReplyMessage(commandMessage.getIdentifier(),
-                    null,
-                    cause, serializer));
+            channel.send(address, new ReplyMessage(commandMessage.getIdentifier(),
+                                                   null,
+                                                   cause, serializer));
         } catch (Exception e) {
             logger.error("Unable to send reply:", e);
-            //Not capturing the causative exception while throwing - the causative exception may not be serializable and this may cause the commandbus to hangup.
-            throw new CommandResponseProcessingFailedException(String.format("An error occurred while attempting to process command exception response of type : %s, Exception Message:: %s", e.getClass().getName(), e.getMessage()));
+            //Not capturing the causative exception while throwing - the causative exception may not be serializable and this may cause the command bus to hang.
+            throw new CommandResponseProcessingFailedException(String.format(
+                    "An error occurred while attempting to process command exception response of type : %s, Exception Message:: %s",
+                    e.getClass().getName(),
+                    e.getMessage()));
         }
     }
 }
