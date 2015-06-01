@@ -24,15 +24,13 @@ import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
+import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.MemberAwareCommandCallback;
+import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.Serializer;
-import org.jgroups.Address;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
+import org.jgroups.*;
 import org.jgroups.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,17 +39,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -413,7 +402,7 @@ public class JGroupsConnector implements CommandBusConnector {
             try {
                 final CommandMessage commandMessage = message.getCommandMessage(serializer);
                 if (message.isExpectReply()) {
-                    localSegment.dispatch(commandMessage, new ReplyingCallback(msg, commandMessage));
+                    localSegment.dispatch(commandMessage, new ReplyingCallback(channel,msg, commandMessage,serializer));
                 } else {
                     localSegment.dispatch(commandMessage);
                 }
@@ -465,41 +454,6 @@ public class JGroupsConnector implements CommandBusConnector {
             }
         }
 
-        private class ReplyingCallback implements CommandCallback<Object> {
-
-            private final Message msg;
-            private final CommandMessage commandMessage;
-
-            public ReplyingCallback(Message msg, CommandMessage commandMessage) {
-                this.msg = msg;
-                this.commandMessage = commandMessage;
-            }
-
-            @Override
-            public void onSuccess(Object result) {
-                try {
-                    channel.send(msg.getSrc(), new ReplyMessage(commandMessage.getIdentifier(),
-                                                                result,
-                                                                null, serializer));
-                } catch (Exception e) {
-                    logger.error("Unable to send reply to command [name: {}, id: {}]. ",
-                                 new Object[]{commandMessage.getCommandName(),
-                                         commandMessage.getIdentifier(),
-                                         e});
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable cause) {
-                try {
-                    channel.send(msg.getSrc(), new ReplyMessage(commandMessage.getIdentifier(),
-                                                                null,
-                                                                cause, serializer));
-                } catch (Exception e) {
-                    logger.error("Unable to send reply:", e);
-                }
-            }
-        }
     }
 
     private List<String> getMemberNames(View view) {
@@ -530,31 +484,6 @@ public class JGroupsConnector implements CommandBusConnector {
 
         public boolean isJoined() {
             return success;
-        }
-    }
-
-    private static class MemberAwareCommandCallback<R> implements CommandCallback<R> {
-
-        private final Address dest;
-        private final CommandCallback<R> callback;
-
-        public MemberAwareCommandCallback(Address dest, CommandCallback<R> callback) {
-            this.dest = dest;
-            this.callback = callback;
-        }
-
-        public boolean isMemberLive(View currentView) {
-            return currentView.containsMember(dest);
-        }
-
-        @Override
-        public void onSuccess(R result) {
-            callback.onSuccess(result);
-        }
-
-        @Override
-        public void onFailure(Throwable cause) {
-            callback.onFailure(cause);
         }
     }
 
