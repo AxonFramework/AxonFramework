@@ -20,9 +20,10 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
-import org.joda.time.DateTime;
+
 import org.junit.*;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
@@ -55,7 +56,7 @@ public class SerializedDomainEventMessageTest {
         when(domainEventData.getMetaData()).thenReturn(serializedMetaData);
         when(domainEventData.getPayload()).thenReturn(serializedPayload);
         when(domainEventData.getSequenceNumber()).thenReturn(seqNo);
-        when(domainEventData.getTimestamp()).thenReturn(new DateTime());
+        when(domainEventData.getTimestamp()).thenReturn(Instant.now());
         when(serializer.deserialize(serializedMetaData)).thenReturn(deserializedMetaData);
         when(serializer.deserialize(serializedPayload)).thenReturn(deserializedPayload);
         when(serializer.classForType(isA(SerializedType.class))).thenReturn(Object.class);

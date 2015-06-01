@@ -19,8 +19,9 @@ package org.axonframework.serializer;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
 
+
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -141,7 +142,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return eventMessage.getTimestamp();
     }
 

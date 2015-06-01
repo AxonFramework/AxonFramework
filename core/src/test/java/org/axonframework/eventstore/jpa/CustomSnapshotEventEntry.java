@@ -20,10 +20,11 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
+
 
 import javax.persistence.Entity;
 import javax.persistence.Lob;
+import java.time.Instant;
 
 /**
  * @author Allard Buijze
@@ -38,7 +39,7 @@ public class CustomSnapshotEventEntry extends AbstractEventEntryData<String> {
     private String payload;
 
     public CustomSnapshotEventEntry(DomainEventMessage event,
-                                  DateTime timestamp,
+                                  Instant timestamp,
                                   SerializedObject<String> payload,
                                   SerializedObject<String> metaData) {
         super(event.getIdentifier(),

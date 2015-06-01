@@ -31,11 +31,12 @@ import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.joda.time.DateTime;
+
 import org.junit.*;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -105,7 +106,7 @@ public class AbstractAnnotatedAggregateRootTest {
     @Test
     public void testTimestampInReconstructionIsSameAsInitialTimestamp() {
         LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
-        DateTime firstTimestamp = aggregate.creationTime;
+        Instant firstTimestamp = aggregate.creationTime;
 
         LateIdentifiedAggregate aggregate2 = new LateIdentifiedAggregate();
         aggregate2.initializeState(new SimpleDomainEventStream(aggregate.getUncommittedEvents()));
@@ -194,7 +195,7 @@ public class AbstractAnnotatedAggregateRootTest {
         @AggregateIdentifier
         private String aggregateIdentifier;
 
-        private DateTime creationTime;
+        private Instant creationTime;
 
         public LateIdentifiedAggregate() {
         }
@@ -209,7 +210,7 @@ public class AbstractAnnotatedAggregateRootTest {
         }
 
         @EventSourcingHandler
-        public void myEventHandlerMethod(StubDomainEvent event, @Timestamp DateTime timestamp) {
+        public void myEventHandlerMethod(StubDomainEvent event, @Timestamp Instant timestamp) {
             if (creationTime == null) {
                 creationTime = timestamp;
             }

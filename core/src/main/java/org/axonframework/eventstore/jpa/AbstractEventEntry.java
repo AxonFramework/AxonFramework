@@ -20,8 +20,9 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
 
+
+import java.time.Instant;
 import java.util.Arrays;
 import javax.persistence.Basic;
 import javax.persistence.Lob;
@@ -63,7 +64,7 @@ public abstract class AbstractEventEntry extends AbstractEventEntryData<byte[]> 
      * @param payload   The serialized payload of the Event
      * @param metaData  The serialized metaData of the Event
      */
-    protected AbstractEventEntry(DomainEventMessage event, DateTime timestamp,
+    protected AbstractEventEntry(DomainEventMessage event, Instant timestamp,
                                  SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
         super(event.getIdentifier(),
               event.getAggregateIdentifier(),

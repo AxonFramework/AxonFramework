@@ -34,12 +34,12 @@ import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.utils.AutowiredResourceInjector;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.axonframework.test.utils.RecordingCommandBus;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
-import org.joda.time.Duration;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -96,7 +96,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(elapsedTime).forEach(sagaManager::handle);
+            eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -104,10 +104,10 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public FixtureExecutionResult whenTimeAdvancesTo(DateTime newDateTime) {
+    public FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(newDateTime).forEach(sagaManager::handle);
+            eventScheduler.advanceTime(newDateTime, sagaManager::handle);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -149,13 +149,13 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) {
-        eventScheduler.advanceTime(elapsedTime).forEach(sagaManager::handle);
+        eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
         return this;
     }
 
     @Override
-    public ContinuedGivenState andThenTimeAdvancesTo(final DateTime newDateTime) {
-        eventScheduler.advanceTime(newDateTime).forEach(sagaManager::handle);
+    public ContinuedGivenState andThenTimeAdvancesTo(final ZonedDateTime newDateTime) {
+        eventScheduler.advanceTime(newDateTime, sagaManager::handle);
         return this;
     }
 
@@ -184,7 +184,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public DateTime currentTime() {
+    public ZonedDateTime currentTime() {
         return eventScheduler.getCurrentDateTime();
     }
 
@@ -307,7 +307,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         }
 
         private void publish(Object... events) {
-            DateTimeUtils.setCurrentMillisFixed(currentTime().getMillis());
+            GenericEventMessage.clock = Clock.fixed(currentTime().toInstant(),currentTime().getZone());
 
             try {
                 for (Object event : events) {
@@ -326,7 +326,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                     }
                 }
             } finally {
-                DateTimeUtils.setCurrentMillisSystem();
+                GenericEventMessage.clock = Clock.systemDefaultZone();
             }
         }
     }

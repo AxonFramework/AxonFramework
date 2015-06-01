@@ -35,10 +35,13 @@ import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcastingContext;
 import org.dom4j.Document;
 import org.dom4j.Element;
-import org.joda.time.DateTime;
+
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 
 /**
@@ -109,7 +112,7 @@ public class RunUpcaster {
             // and add an element for the new "deadline" field
             rootElement.addElement("deadline")
                     // we set the value of the field to the default value: one day after the event was created
-                    .setText(context.getTimestamp().plusDays(1).toString());
+                    .setText(context.getTimestamp().plus(1, ChronoUnit.DAYS).toString());
             // we return the modified Document
             return data;
         }
@@ -129,9 +132,9 @@ public class RunUpcaster {
 
         private final String todoId;
         private final String description;
-        private final DateTime deadline;
+        private final Instant deadline;
 
-        public NewToDoItemWithDeadlineCreatedEvent(String todoId, String description, DateTime deadline) {
+        public NewToDoItemWithDeadlineCreatedEvent(String todoId, String description, Instant deadline) {
             this.todoId = todoId;
             this.description = description;
             this.deadline = deadline;
@@ -145,14 +148,15 @@ public class RunUpcaster {
             return description;
         }
 
-        public DateTime getDeadline() {
+        public Instant getDeadline() {
             return deadline;
         }
 
         @Override
         public String toString() {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-YYYY' at 'HH:mm");
             return "NewToDoItemWithDeadlineCreatedEvent(" + todoId + ", '" + description + "' before "
-                    + deadline.toString("dd-MM-YYYY") + " at " + deadline.toString("HH:mm") + ")";
+                    + formatter.format(deadline) + ")";
         }
     }
 }

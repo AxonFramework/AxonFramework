@@ -22,7 +22,7 @@ import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test that reproduces a problem where a structured aggregate (containing multiple entities) is not serialized

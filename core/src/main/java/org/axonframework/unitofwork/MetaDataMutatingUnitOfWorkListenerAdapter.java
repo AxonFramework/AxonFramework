@@ -20,8 +20,8 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +113,7 @@ public abstract class MetaDataMutatingUnitOfWorkListenerAdapter extends UnitOfWo
         }
 
         @Override
-        public DateTime getTimestamp() {
+        public Instant getTimestamp() {
             return event.getTimestamp();
         }
 

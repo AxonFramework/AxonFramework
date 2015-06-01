@@ -24,15 +24,16 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
-import org.joda.time.DateTime;
+
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 
 /**
  * <p>
- * Takes a backend {@link EventStore}, and functions as a filter based on a {@link DateTime}.
+ * Takes a backend {@link EventStore}, and functions as a filter based on a {@link Instant}.
  * </p><p>
  * Only events that are older than the provided cut-off datetime are returned to caller or handed to an {@link
  * EventVisitor}.
@@ -47,18 +48,18 @@ public class TimestampCutoffReadonlyEventStore implements EventStore, EventStore
 
     private final EventStore backend;
     private final EventStoreManagement backendManagement;
-    private final DateTime cutoffTimestamp;
+    private final Instant cutoffTimestamp;
 
     public TimestampCutoffReadonlyEventStore(
             EventStore backend,
             EventStoreManagement backendManagement,
-            DateTime snapshotTimestamp) {
+            Instant snapshotTimestamp) {
         this.backend = backend;
         this.backendManagement = backendManagement;
         this.cutoffTimestamp = snapshotTimestamp;
     }
 
-    private static EventVisitor cutOffEventVisitor(final EventVisitor visitor, final DateTime snapshotTimestamp) {
+    private static EventVisitor cutOffEventVisitor(final EventVisitor visitor, final Instant snapshotTimestamp) {
         return domainEvent -> {
             if (domainEvent.getTimestamp().isBefore(snapshotTimestamp)) {
                 visitor.doWithEvent(domainEvent);
@@ -108,12 +109,12 @@ public class TimestampCutoffReadonlyEventStore implements EventStore, EventStore
 
     private static final class TimestampCutOffDomainEventStream implements DomainEventStream, Closeable {
 
-        private final DateTime timeStampCutOff;
+        private final Instant timeStampCutOff;
         private final DomainEventStream events;
 
         private DomainEventMessage next;
 
-        public TimestampCutOffDomainEventStream(DomainEventStream events, DateTime timeStampCutOff) {
+        public TimestampCutOffDomainEventStream(DomainEventStream events, Instant timeStampCutOff) {
             this.events = events;
             this.timeStampCutOff = timeStampCutOff;
             this.next = findNextItem();

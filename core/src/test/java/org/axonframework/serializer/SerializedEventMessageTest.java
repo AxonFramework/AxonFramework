@@ -18,9 +18,10 @@ package org.axonframework.serializer;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
+
 import org.junit.*;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class SerializedEventMessageTest {
     private MetaData deserializedMetaData = MetaData.emptyInstance();
     private Serializer serializer = mock(Serializer.class);
     private String eventId = "eventId";
-    private DateTime timestamp = new DateTime();
+    private Instant timestamp = Instant.now();
 
     @Before
     public void setUp() {

@@ -19,9 +19,11 @@ package org.axonframework.eventstore.supporting;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.EventContainer;
 import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
 import org.junit.*;
+
+import java.time.Duration;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,12 +32,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class TimestampCutoffReadonlyEventStoreTest {
 
-    private static DateTime future() {
-        return DateTime.now().plus(Duration.standardHours(1));
+    private static Instant future() {
+        return Instant.now().plus(Duration.ofHours(1));
     }
 
-    private static DateTime past() {
-        return DateTime.now().minus(Duration.standardHours(1));
+    private static Instant past() {
+        return Instant.now().minus(Duration.ofHours(1));
     }
 
     @Test

@@ -20,6 +20,10 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import org.axonframework.common.Assert;
 
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
+
 /**
  * Implementation of the simple Mongo Operators (those without special structural requirements), such as Less Than,
  * Less Than Equals, etc.
@@ -52,6 +56,11 @@ public class SimpleMongoOperator extends MongoCriteria {
 
     @Override
     public DBObject asMongoObject() {
-        return new BasicDBObject(property.getName(), new BasicDBObject(operator, expression.toString()));
+        if(expression instanceof TemporalAccessor) {
+            long timeStamp = Instant.from((TemporalAccessor) expression).toEpochMilli();
+            return new BasicDBObject(property.getName(), new BasicDBObject(operator, timeStamp));
+        } else {
+            return new BasicDBObject(property.getName(), new BasicDBObject(operator, expression.toString()));
+        }
     }
 }

@@ -23,7 +23,6 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.Saga;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.joda.time.Duration;
 import org.junit.*;
 import org.quartz.SchedulerException;
 
@@ -32,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -73,7 +73,7 @@ public class SimpleEventSchedulerTest {
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        testSubject.schedule(new Duration(30), new Object());
+        testSubject.schedule(Duration.ofMillis(30), new Object());
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus).publish(isA(EventMessage.class));
     }
@@ -101,8 +101,8 @@ public class SimpleEventSchedulerTest {
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         EventMessage<Object> event1 = createEvent();
         final EventMessage<Object> event2 = createEvent();
-        ScheduleToken token1 = testSubject.schedule(new Duration(100), event1);
-        testSubject.schedule(new Duration(120), event2);
+        ScheduleToken token1 = testSubject.schedule(Duration.ofMillis(100), event1);
+        testSubject.schedule(Duration.ofMillis(120), event2);
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);

@@ -19,9 +19,10 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.SimpleSerializedType;
-import org.joda.time.DateTime;
+
 
 import java.io.Serializable;
+import java.time.Instant;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Id;
@@ -47,7 +48,7 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
     @Column(nullable = false, unique = true)
     private String eventIdentifier;
     @Basic(optional = false)
-    private String timeStamp;
+    private Long timeStamp;
     @Basic(optional = false)
     private String payloadType;
     @Basic
@@ -63,13 +64,13 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
      * @param payloadType         The type of payload contained in the event
      */
     public AbstractEventEntryData(String eventIdentifier, String aggregateIdentifier, long sequenceNumber,
-                                  DateTime timestamp, SerializedType payloadType) {
+                                  Instant timestamp, SerializedType payloadType) {
         this.eventIdentifier = eventIdentifier;
         this.payloadType = payloadType.getName();
         this.payloadRevision = payloadType.getRevision();
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
-        this.timeStamp = timestamp.toString();
+        this.timeStamp = timestamp.toEpochMilli();
     }
 
     /**
@@ -109,8 +110,8 @@ public abstract class AbstractEventEntryData<T> implements SerializedDomainEvent
      * @return the time stamp of the associated event.
      */
     @Override
-    public DateTime getTimestamp() {
-        return new DateTime(timeStamp);
+    public Instant getTimestamp() {
+        return Instant.ofEpochMilli(timeStamp);
     }
 
     /**

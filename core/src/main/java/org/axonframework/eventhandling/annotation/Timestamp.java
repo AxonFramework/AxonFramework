@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation indication that a parameter on an Event Handler method should be injected with the Timestamp of an Event
- * Message. The parameter type must be assignable from {@link org.joda.time.DateTime}.
+ * Message. The parameter type must be assignable from {@link java.time.Instant}.
  *
  * @author Allard Buijze
  * @since 2.0

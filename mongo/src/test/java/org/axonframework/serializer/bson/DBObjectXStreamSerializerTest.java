@@ -18,13 +18,14 @@ package org.axonframework.serializer.bson;
 
 import org.axonframework.serializer.Revision;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateMidnight;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
+
 import org.junit.*;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -170,15 +171,15 @@ public class DBObjectXStreamSerializerTest {
         private static final long serialVersionUID = 1L;
         private String name;
         private List<String> someListOfString;
-        private DateMidnight date;
-        private DateTime dateTime;
+        private LocalDate date;
+        private Instant dateTime;
         private Period period;
 
         public TestEvent(String name) {
             this.name = name;
-            this.date = new DateMidnight();
-            this.dateTime = new DateTime();
-            this.period = new Period(100);
+            this.date = LocalDate.now();
+            this.dateTime = Instant.now();
+            this.period = Period.ofDays(100);
             this.someListOfString = new ArrayList<>();
             someListOfString.add("First");
             someListOfString.add("Second");

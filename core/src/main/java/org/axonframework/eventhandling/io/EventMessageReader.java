@@ -22,10 +22,11 @@ import org.axonframework.serializer.SerializedEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
+
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.time.Instant;
 
 /**
  * Reader that reads EventMessage instances written to the underlying input. Typically, these messages have been
@@ -93,7 +94,7 @@ public class EventMessageReader {
                                                                                               payloadRevision);
         SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(metaData, byte[].class);
 
-        SerializedEventMessage<T> message = new SerializedEventMessage<>(identifier, new DateTime(timestamp),
+        SerializedEventMessage<T> message = new SerializedEventMessage<>(identifier, Instant.parse(timestamp),
                                                                           serializedPayload, serializedMetaData,
                                                                           serializer);
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {

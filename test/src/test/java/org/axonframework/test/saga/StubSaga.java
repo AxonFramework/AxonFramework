@@ -25,8 +25,8 @@ import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.EndSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
-import org.joda.time.Duration;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message) {
         handledEvents.add(event);
-        timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
+        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
@@ -54,7 +54,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleForcedSagaStart(ForceTriggerSagaStartEvent event) {
         handledEvents.add(event);
-        timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
+        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
@@ -89,7 +89,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
     public void handleResetTriggerEvent(ResetTriggerEvent event) {
         handledEvents.add(event);
         scheduler.cancelSchedule(timer);
-        timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
+        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 

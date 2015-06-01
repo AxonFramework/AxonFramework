@@ -17,12 +17,14 @@
 package org.axonframework.eventstore.jdbc;
 
 import org.axonframework.serializer.SerializedDomainEventData;
-import org.joda.time.DateTime;
+
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * Interface describing the operations that the JDBC Event Store needs to do on a backing database. This abstraction
@@ -66,7 +68,7 @@ public interface EventSqlSchema<T> {
      */
     PreparedStatement sql_insertDomainEventEntry(Connection connection, String eventIdentifier,
                                                  String aggregateIdentifier, long sequenceNumber,
-                                                 DateTime timestamp, String eventType, String eventRevision,
+                                                 Instant timestamp, String eventType, String eventRevision,
                                                  T eventPayload,
                                                  T eventMetaData) throws SQLException;
 
@@ -88,7 +90,7 @@ public interface EventSqlSchema<T> {
      */
     PreparedStatement sql_insertSnapshotEventEntry(Connection connection, String eventIdentifier,
                                                    String aggregateIdentifier, long sequenceNumber,
-                                                   DateTime timestamp, String eventType, String eventRevision,
+                                                   Instant timestamp, String eventType, String eventRevision,
                                                    T eventPayload,
                                                    T eventMetaData) throws SQLException;
 
@@ -185,12 +187,12 @@ public interface EventSqlSchema<T> {
     SerializedDomainEventData<T> createSerializedDomainEventData(ResultSet resultSet) throws SQLException;
 
     /**
-     * Converts a {@link DateTime} to a data value suitable for the database scheme.
+     * Converts a {@link Instant} to a data value suitable for the database scheme.
      *
-     * @param input {@link DateTime} to convert
+     * @param input {@link Instant} to convert
      * @return data representing the date time suitable for the current SQL scheme
      */
-    Object sql_dateTime(DateTime input);
+    Object sql_dateTime(TemporalAccessor input);
 
     /**
      * Returns the type used to store serialized payloads.

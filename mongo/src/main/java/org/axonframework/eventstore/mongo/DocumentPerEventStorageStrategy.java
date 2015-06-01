@@ -29,8 +29,9 @@ import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
-import org.joda.time.DateTime;
 
+
+import java.time.Instant;
 import java.util.List;
 
 import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
@@ -160,7 +161,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
          */
         private final String aggregateIdentifier;
         private final long sequenceNumber;
-        private final String timeStamp;
+        private final long timeStamp;
         private final Object serializedPayload;
         private final String payloadType;
         private final String payloadRevision;
@@ -188,7 +189,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
             this.payloadType = serializedPayloadObject.getType().getName();
             this.payloadRevision = serializedPayloadObject.getType().getRevision();
             this.serializedMetaData = serializedMetaDataObject.getData();
-            this.timeStamp = event.getTimestamp().toString();
+            this.timeStamp = event.getTimestamp().toEpochMilli();
         }
 
         /**
@@ -200,7 +201,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
             this.aggregateIdentifier = (String) dbObject.get(AGGREGATE_IDENTIFIER_PROPERTY);
             this.sequenceNumber = ((Number) dbObject.get(SEQUENCE_NUMBER_PROPERTY)).longValue();
             this.serializedPayload = dbObject.get(SERIALIZED_PAYLOAD_PROPERTY);
-            this.timeStamp = (String) dbObject.get(TIME_STAMP_PROPERTY);
+            this.timeStamp = (long) dbObject.get(TIME_STAMP_PROPERTY);
             this.payloadType = (String) dbObject.get(PAYLOAD_TYPE_PROPERTY);
             this.payloadRevision = (String) dbObject.get(PAYLOAD_REVISION_PROPERTY);
             this.serializedMetaData = dbObject.get(META_DATA_PROPERTY);
@@ -266,8 +267,8 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         }
 
         @Override
-        public DateTime getTimestamp() {
-            return new DateTime(timeStamp);
+        public Instant getTimestamp() {
+            return Instant.ofEpochMilli(timeStamp);
         }
 
         @SuppressWarnings("unchecked")

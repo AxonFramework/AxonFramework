@@ -25,8 +25,7 @@ import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -39,6 +38,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
 import static org.quartz.JobKey.jobKey;
 
@@ -60,7 +63,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
 
     @Override
-    public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
+    public ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event) {
         Assert.state(initialized, "Scheduler is not yet initialized");
         EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
         String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
@@ -105,16 +108,16 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      * @param jobKey          The key of the job to be triggered
      * @return a configured Trigger for the Job with key <code>jobKey</code>
      */
-    protected Trigger buildTrigger(DateTime triggerDateTime, JobKey jobKey) {
+    protected Trigger buildTrigger(ZonedDateTime triggerDateTime, JobKey jobKey) {
         return TriggerBuilder.newTrigger()
                              .forJob(jobKey)
-                             .startAt(triggerDateTime.toDate())
+                             .startAt(Date.from(triggerDateTime.toInstant()))
                              .build();
     }
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
-        return schedule(new DateTime().plus(triggerDuration), event);
+        return schedule(ZonedDateTime.now().plus(triggerDuration), event);
     }
 
     @Override

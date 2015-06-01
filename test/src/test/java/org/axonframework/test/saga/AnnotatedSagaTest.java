@@ -21,10 +21,12 @@ import org.axonframework.domain.MetaData;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.hamcrest.CoreMatchers;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
 import org.junit.*;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 import static org.axonframework.test.matchers.Matchers.*;
@@ -51,10 +53,10 @@ public class AnnotatedSagaTest {
         validator.expectActiveSagas(1);
         validator.expectAssociationWith("identifier", aggregate2);
         validator.expectNoAssociationWith("identifier", aggregate1);
-        validator.expectScheduledEventOfType(Duration.standardMinutes(10), TimerTriggeredEvent.class);
-        validator.expectScheduledEventMatching(Duration.standardMinutes(10), messageWithPayload(CoreMatchers.any(
+        validator.expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
+        validator.expectScheduledEventMatching(Duration.ofMinutes(10), messageWithPayload(CoreMatchers.any(
                 TimerTriggeredEvent.class)));
-        validator.expectScheduledEvent(Duration.standardMinutes(10), new TimerTriggeredEvent(aggregate1));
+        validator.expectScheduledEvent(Duration.ofMinutes(10), new TimerTriggeredEvent(aggregate1));
         validator.expectScheduledEventOfType(fixture.currentTime().plusMinutes(10), TimerTriggeredEvent.class);
         validator.expectScheduledEventMatching(fixture.currentTime().plusMinutes(10),
                                                messageWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
@@ -114,7 +116,7 @@ public class AnnotatedSagaTest {
         validator.expectActiveSagas(1);
         validator.expectAssociationWith("identifier", aggregate1);
         validator.expectNoAssociationWith("identifier", aggregate2);
-        validator.expectScheduledEventMatching(Duration.standardMinutes(10),
+        validator.expectScheduledEventMatching(Duration.ofMinutes(10),
                                                Matchers.messageWithPayload(CoreMatchers.any(Object.class)));
         validator.expectDispatchedCommandsEqualTo();
         validator.expectPublishedEventsMatching(listWithAnyOf(messageWithPayload(any(SagaWasTriggeredEvent.class))));
@@ -128,17 +130,17 @@ public class AnnotatedSagaTest {
                 // event schedules a TriggerEvent after 10 minutes from t0
                 .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1))
                         // time shifts to t0+5
-                .andThenTimeElapses(Duration.standardMinutes(5))
+                .andThenTimeElapses(Duration.ofMinutes(5))
                         // reset event schedules a TriggerEvent after 10 minutes from t0+5
                 .andThenAggregate(aggregate1).published(new ResetTriggerEvent(aggregate1))
                         // when time shifts to t0+10
-                .whenTimeElapses(Duration.standardMinutes(6));
+                .whenTimeElapses(Duration.ofMinutes(6));
 
         validator.expectActiveSagas(1);
         validator.expectAssociationWith("identifier", aggregate1);
         // 6 minutes have passed since the 10minute timer was reset,
         // so expect the timer to be scheduled for 4 minutes (t0 + 15)
-        validator.expectScheduledEventMatching(Duration.standardMinutes(4),
+        validator.expectScheduledEventMatching(Duration.ofMinutes(4),
                                                Matchers.messageWithPayload(CoreMatchers.any(Object.class)));
         validator.expectNoDispatchedCommands();
         validator.expectPublishedEvents();
@@ -156,7 +158,7 @@ public class AnnotatedSagaTest {
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
-               .whenTimeElapses(Duration.standardMinutes(35))
+               .whenTimeElapses(Duration.ofMinutes(35))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
                .expectNoAssociationWith("identifier", identifier2)
@@ -177,7 +179,7 @@ public class AnnotatedSagaTest {
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
-               .whenTimeElapses(Duration.standardMinutes(35))
+               .whenTimeElapses(Duration.ofMinutes(35))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
                .expectNoAssociationWith("identifier", identifier2)
@@ -199,7 +201,7 @@ public class AnnotatedSagaTest {
 
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
-               .whenTimeElapses(Duration.standardMinutes(35))
+               .whenTimeElapses(Duration.ofMinutes(35))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
                .expectNoAssociationWith("identifier", identifier2)
@@ -219,7 +221,7 @@ public class AnnotatedSagaTest {
         fixture.givenAggregate(identifier).published(new TriggerSagaStartEvent(identifier))
                .andThenAggregate(identifier2).published(new TriggerExistingSagaEvent(identifier2))
 
-               .whenTimeAdvancesTo(new DateTime().plus(Duration.standardDays(1)))
+               .whenTimeAdvancesTo(ZonedDateTime.now().plus(Duration.ofDays(1)))
 
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", identifier)
