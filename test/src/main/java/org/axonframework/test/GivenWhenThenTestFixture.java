@@ -45,6 +45,9 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.Repository;
+import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.IgnoreField;
+import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -93,6 +96,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private AggregateRoot workingAggregate;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
+    private final List<FieldFilter> fieldFilters = new ArrayList<>();
 
     /**
      * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
@@ -163,6 +167,17 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     @Override
+    public FixtureConfiguration<T> registerFieldFilter(FieldFilter fieldFilter) {
+        this.fieldFilters.add(fieldFilter);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName) {
+        return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+    }
+
+    @Override
     public TestExecutor given(Object... domainEvents) {
         return given(Arrays.asList(domainEvents));
     }
@@ -228,12 +243,14 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     public ResultValidator when(Object command, Map<String, ?> metaData) {
         try {
             finalizeConfiguration();
-            ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents);
+            final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
+            ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents,
+                                                                          fieldFilter);
             commandBus.setHandlerInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
 
             commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
-            detectIllegalStateChanges();
+            detectIllegalStateChanges(fieldFilter);
             resultValidator.assertValidRecording();
             return resultValidator;
         } finally {
@@ -264,7 +281,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
     }
 
-    private void detectIllegalStateChanges() {
+    private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork uow = DefaultUnitOfWork.startAndGet();
             try {
@@ -275,7 +292,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
                                                          + "the aggregate. Make sure the aggregate explicitly marks "
                                                          + "itself as deleted in an EventHandler.");
                 }
-                assertValidWorkingAggregateState(aggregate2);
+                assertValidWorkingAggregateState(aggregate2, fieldFilter);
             } catch (AggregateNotFoundException notFound) {
                 if (!workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was not considered deleted, " //NOSONAR
@@ -293,7 +310,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
     }
 
-    private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate) {
+    private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate,
+                                                  MatchAllFieldFilter fieldFilter) {
         HashSet<ComparationEntry> comparedEntries = new HashSet<>();
         if (!workingAggregate.getClass().equals(eventSourcedAggregate.getClass())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
@@ -305,11 +323,11 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         ensureValuesEqual(workingAggregate,
                           eventSourcedAggregate,
                           eventSourcedAggregate.getClass().getName(),
-                          comparedEntries);
+                          comparedEntries, fieldFilter);
     }
 
     private void ensureValuesEqual(Object workingValue, Object eventSourcedValue, String propertyPath,
-                                   Set<ComparationEntry> comparedEntries) {
+                                   Set<ComparationEntry> comparedEntries, FieldFilter fieldFilter) {
         if (explicitlyUnequal(workingValue, eventSourcedValue)) {
             throw new AxonAssertionError(format("Illegal state change detected! "
                                                         + "Property \"%s\" has different value when sourcing events.\n"
@@ -319,13 +337,16 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         } else if (workingValue != null && comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue))
                 && !hasEqualsMethod(workingValue.getClass())) {
             for (Field field : fieldsOf(workingValue.getClass())) {
-                if (!Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
+                if (fieldFilter.accept(field) &&
+                        !Modifier.isStatic(field.getModifiers())
+                        && !Modifier.isTransient(field.getModifiers())) {
                     ensureAccessible(field);
                     String newPropertyPath = propertyPath + "." + field.getName();
                     try {
                         Object workingFieldValue = field.get(workingValue);
                         Object eventSourcedFieldValue = field.get(eventSourcedValue);
-                        ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries);
+                        ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath,
+                                          comparedEntries, fieldFilter);
                     } catch (IllegalAccessException e) {
                         logger.warn("Could not access field \"{}\". Unable to detect inappropriate state changes.",
                                     newPropertyPath);

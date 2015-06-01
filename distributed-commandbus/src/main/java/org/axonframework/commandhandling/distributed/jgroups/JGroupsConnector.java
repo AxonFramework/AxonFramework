@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
+import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.serializer.MessageSerializer;
@@ -355,9 +356,8 @@ public class JGroupsConnector implements CommandBusConnector {
                 joinedCondition.markJoined(true);
             } else if (!view.equals(currentView)) {
                 view.getMembers().stream()
-                    .filter(member ->
-                                    (currentView == null || !currentView.containsMember(member))
-                                            && !member.equals(channel.getAddress()))
+                    .filter(member -> (currentView == null || !currentView.containsMember(member))
+                            && !member.equals(channel.getAddress()))
                     .forEach(member -> {
                         logger.info("New member detected: [{}]. Sending it my configuration.", member);
                         sendMembershipUpdate(member);
@@ -402,7 +402,9 @@ public class JGroupsConnector implements CommandBusConnector {
             try {
                 final CommandMessage commandMessage = message.getCommandMessage(serializer);
                 if (message.isExpectReply()) {
-                    localSegment.dispatch(commandMessage, new ReplyingCallback(msg, commandMessage));
+                    localSegment.dispatch(commandMessage, new ReplyingCallback(channel,
+                                                                               msg.getSrc(), serializer
+                    ));
                 } else {
                     localSegment.dispatch(commandMessage);
                 }
@@ -445,42 +447,6 @@ public class JGroupsConnector implements CommandBusConnector {
                     callback.reportSuccess(replyMessage.getReturnValue(serializer));
                 } else {
                     callback.reportFailure(replyMessage.getError(serializer));
-                }
-            }
-        }
-
-        private class ReplyingCallback implements CommandCallback<Object, Object> {
-
-            private final Message msg;
-            private final CommandMessage<?> commandMessage;
-
-            public ReplyingCallback(Message msg, CommandMessage<?> commandMessage) {
-                this.msg = msg;
-                this.commandMessage = commandMessage;
-            }
-
-            @Override
-            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
-                try {
-                    channel.send(msg.getSrc(), new ReplyMessage(this.commandMessage.getIdentifier(),
-                                                                result,
-                                                                null, serializer));
-                } catch (Exception e) {
-                    logger.error("Unable to send reply to command [name: {}, id: {}]. ",
-                                 this.commandMessage.getCommandName(),
-                                 this.commandMessage.getIdentifier(),
-                                 e);
-                }
-            }
-
-            @Override
-            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                try {
-                    channel.send(msg.getSrc(), new ReplyMessage(this.commandMessage.getIdentifier(),
-                                                                null,
-                                                                cause, serializer));
-                } catch (Exception e) {
-                    logger.error("Unable to send reply:", e);
                 }
             }
         }
@@ -540,7 +506,7 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     @FunctionalInterface
-    private static interface UpdateFunction {
+    private interface UpdateFunction {
 
         ConsistentHash update(ConsistentHash hash);
     }

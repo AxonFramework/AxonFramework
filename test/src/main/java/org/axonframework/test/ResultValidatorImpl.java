@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
+import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -45,16 +46,20 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     private Throwable actualException;
 
     private final Reporter reporter = new Reporter();
+    private final FieldFilter fieldFilter;
 
     /**
      * Initialize the ResultValidatorImpl with the given <code>storedEvents</code> and <code>publishedEvents</code>.
      *
      * @param storedEvents    The events that were stored during command execution
      * @param publishedEvents The events that were published during command execution
+     * @param fieldFilter     The filter describing which fields to include in the comparison
      */
-    public ResultValidatorImpl(Collection<DomainEventMessage> storedEvents, Collection<EventMessage> publishedEvents) {
+    public ResultValidatorImpl(Collection<DomainEventMessage> storedEvents, Collection<EventMessage> publishedEvents,
+                               FieldFilter fieldFilter) {
         this.storedEvents = storedEvents;
         this.publishedEvents = publishedEvents;
+        this.fieldFilter = fieldFilter;
     }
 
     @Override
@@ -200,7 +205,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         if (!expectedEvent.getClass().equals(actualEvent.getClass())) {
             return false;
         }
-        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedEvent);
+        EqualFieldsMatcher<Object> matcher = new EqualFieldsMatcher<>(expectedEvent, fieldFilter);
         if (!matcher.matches(actualEvent)) {
             reporter.reportDifferentEventContents(expectedEvent.getClass(),
                                                   matcher.getFailedField(),

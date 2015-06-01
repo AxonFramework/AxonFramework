@@ -1,12 +1,11 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.MyOtherEvent;
+import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 public class EventValidatorTest {
 
@@ -14,8 +13,7 @@ public class EventValidatorTest {
 
     @Before
     public void setUp(){
-        EventBus eventBusShouldNotBeUsed = null;
-        testSubject = new EventValidator(eventBusShouldNotBeUsed);
+        testSubject = new EventValidator(null, AllFieldsFilter.instance());
     }
 
     @Test

@@ -154,6 +154,7 @@ public abstract class Matchers {
      * not set on the expected event.
      *
      * @param expected The event with the expected field values
+     * @param filter   The filter describing the Fields to include in the comparison
      * @param <T>      The type of event to match against
      * @return a matcher that matches based on the equality of field values
      */

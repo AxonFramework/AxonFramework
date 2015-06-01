@@ -60,6 +60,12 @@ public class EqualFieldsMatcherTest {
     }
 
     @Test
+    public void testMatches_WrongFieldValueInIgnoredField() {
+        testSubject = Matchers.equalTo(expectedEvent, field -> !field.getName().equals("someValue"));
+        assertTrue(testSubject.matches(new MyEvent(aggregateId, 2)));
+    }
+
+    @Test
     public void testMatches_WrongFieldValueInArray() {
         assertFalse(testSubject.matches(new MyEvent(aggregateId, 1, new byte[]{1, 2})));
         assertEquals("someBytes", testSubject.getFailedField().getName());

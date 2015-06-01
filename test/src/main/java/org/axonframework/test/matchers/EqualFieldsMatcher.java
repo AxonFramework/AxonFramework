@@ -45,13 +45,15 @@ public class EqualFieldsMatcher<T> extends BaseMatcher<T> {
      * @param expected The expected object
      */
     public EqualFieldsMatcher(T expected) {
-        this(expected, f -> true);
+        this(expected, AllFieldsFilter.instance());
     }
+
     /**
      * Initializes an EqualFieldsMatcher that will match an object with equal properties as the given
      * <code>expected</code> object.
      *
      * @param expected The expected object
+     * @param filter   The filter describing the fields to include in the comparison
      */
     public EqualFieldsMatcher(T expected, FieldFilter filter) {
         this.expected = expected;
