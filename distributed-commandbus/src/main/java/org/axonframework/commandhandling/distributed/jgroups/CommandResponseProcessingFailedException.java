@@ -15,15 +15,20 @@
  */
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.common.AxonException;
+import org.axonframework.common.AxonNonTransientException;
 
 /**
- * Exception indicating that a failure occured during processing of a command response. Typically this would imply an unserializable command response / exception message
+ * Exception indicating that a failure occurred during processing of a command response. Typically this would imply an
+ * command response or exception message that could not be serialized.
+ * <p/>
+ * Typically, this exception indicates a non-transient exception.
  *
  * @author Srideep Prasad
+ * @since 2.4.2
  */
+public class CommandResponseProcessingFailedException extends AxonNonTransientException {
 
-public class CommandResponseProcessingFailedException extends AxonException{
+    private static final long serialVersionUID = -1318148724064577512L;
 
     /**
      * Initializes the exception using the given <code>message</code>.
