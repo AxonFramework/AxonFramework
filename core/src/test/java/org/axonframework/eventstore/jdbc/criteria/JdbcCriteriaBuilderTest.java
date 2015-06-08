@@ -62,13 +62,14 @@ public class JdbcCriteriaBuilderTest {
         ParameterRegistry parameters = new ParameterRegistry();
         criteria.parse("entry", query, parameters);
         assertEquals(
-                "(((entry.property < ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?))) OR (entry.property4 <> ?)",
+                "(((entry.property < ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?,?))) OR (entry.property4 <> ?)",
                 query.toString());
-        assertEquals(4, parameters.getParameters().size());
+        assertEquals(5, parameters.getParameters().size());
         assertEquals("less", parameters.getParameters().get(0));
         assertEquals("gte", parameters.getParameters().get(1));
-        assertEquals("4", parameters.getParameters().get(3));
-        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get(2));
+        assertEquals("4", parameters.getParameters().get(4));
+        assertEquals("piet", parameters.getParameters().get(2));
+        assertEquals("klaas", parameters.getParameters().get(3));
     }
 
     @Test
@@ -83,12 +84,13 @@ public class JdbcCriteriaBuilderTest {
         ParameterRegistry parameters = new ParameterRegistry();
         criteria.parse("entry", query, parameters);
         assertEquals(
-                "(((entry.property <= ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?))) OR (entry.property4 <> entry.property4)",
+                "(((entry.property <= ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?,?))) OR (entry.property4 <> entry.property4)",
                 query.toString());
-        assertEquals(3, parameters.getParameters().size());
+        assertEquals(4, parameters.getParameters().size());
         assertEquals("lte", parameters.getParameters().get(0));
         assertEquals("gte", parameters.getParameters().get(1));
-        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get(2));
+        assertEquals("piet", parameters.getParameters().get(2));
+        assertEquals("klaas", parameters.getParameters().get(3));
     }
     @Test
     public void testBuildCriteria_ComplexStructureWithEqualNull() throws Exception {
@@ -102,12 +104,13 @@ public class JdbcCriteriaBuilderTest {
         ParameterRegistry parameters = new ParameterRegistry();
         criteria.parse("entry", query, parameters);
         assertEquals(
-                "(((entry.property < ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?))) OR (entry.property4 IS NULL)",
+                "(((entry.property < ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?,?))) OR (entry.property4 IS NULL)",
                 query.toString());
-        assertEquals(3, parameters.getParameters().size());
+        assertEquals(4, parameters.getParameters().size());
         assertEquals("less", parameters.getParameters().get(0));
         assertEquals("gte", parameters.getParameters().get(1));
-        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get(2));
+        assertEquals("piet", parameters.getParameters().get(2));
+        assertEquals("klaas", parameters.getParameters().get(3));
     }
 
     @Test
@@ -122,13 +125,14 @@ public class JdbcCriteriaBuilderTest {
         ParameterRegistry parameters = new ParameterRegistry();
         criteria.parse("entry", query, parameters);
         assertEquals(
-                "(((entry.property < ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?))) OR (entry.property4 = ?)",
+                "(((entry.property < ?) AND (entry.property2 >= ?)) OR (entry.property3 IN (?,?))) OR (entry.property4 = ?)",
                 query.toString());
-        assertEquals(4, parameters.getParameters().size());
+        assertEquals(5, parameters.getParameters().size());
         assertEquals("less", parameters.getParameters().get(0));
         assertEquals("gte", parameters.getParameters().get(1));
-        assertEquals("4", parameters.getParameters().get(3));
-        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get(2));
+        assertEquals("4", parameters.getParameters().get(4));
+        assertEquals("piet", parameters.getParameters().get(2));
+        assertEquals("klaas", parameters.getParameters().get(3));
     }
 
     @Test
@@ -143,9 +147,10 @@ public class JdbcCriteriaBuilderTest {
         ParameterRegistry parameters = new ParameterRegistry();
         criteria.parse("entry", query, parameters);
         assertEquals(
-                "(((entry.property < entry.prop1) AND (entry.property2 >= ?)) OR (entry.property3 IN (?))) OR (entry.property4 = entry.property4)",
+                "(((entry.property < entry.prop1) AND (entry.property2 >= ?)) OR (entry.property3 IN (?,?))) OR (entry.property4 = entry.property4)",
                 query.toString());
-        assertEquals(2, parameters.getParameters().size());
+        assertEquals(3, parameters.getParameters().size());
         assertEquals("gte", parameters.getParameters().get(0));
-        assertArrayEquals(new String[]{"piet", "klaas"}, (Object[]) parameters.getParameters().get(1));
+        assertEquals("piet", parameters.getParameters().get(1));
+        assertEquals("klaas", parameters.getParameters().get(2));
     }}
