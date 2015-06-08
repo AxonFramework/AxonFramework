@@ -16,6 +16,10 @@
 
 package org.axonframework.eventstore.jdbc.criteria;
 
+import java.util.Collection;
+
+import static java.util.Arrays.asList;
+
 /**
  * Abstract implementation to use for testing whether an item is present in a collection or not.
  *
@@ -47,14 +51,33 @@ public class CollectionOperator extends JdbcCriteria {
     public void parse(String entryKey, StringBuilder whereClause, ParameterRegistry parameters) {
         property.parse(entryKey, whereClause);
         whereClause.append(" ")
-                   .append(operator)
-                   .append(" ");
+                .append(operator)
+                .append(" ");
         if (expression instanceof JdbcProperty) {
             ((JdbcProperty) expression).parse(entryKey, whereClause);
         } else {
-            whereClause.append("(")
-                       .append(parameters.register(expression))
-                       .append(")");
+            whereClause.append("(");
+            if (expression instanceof Object[]) {
+                addSequence(whereClause, parameters, asList((Object[]) expression));
+            } else if (expression instanceof Collection) {
+                addSequence(whereClause, parameters, (Collection)expression);
+
+            } else {
+                whereClause.append(parameters.register(expression));
+            }
+            whereClause.append(")");
+        }
+    }
+
+    private void addSequence(StringBuilder whereClause, ParameterRegistry parameters, Collection collection) {
+        boolean first = true;
+        for(Object ob : collection) {
+            if (!first) {
+                whereClause.append(',');
+            } else {
+                first = false;
+            }
+            whereClause.append(parameters.register(ob));
         }
     }
 }
