@@ -26,7 +26,6 @@ import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
-import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.Connection;
@@ -37,7 +36,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import javax.sql.DataSource;
 
+import static java.lang.String.format;
 import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
 
 /**
@@ -358,13 +359,20 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             }
             StringBuilder sb = new StringBuilder();
             if (lastItem != null) {
-                sb.append("(")
-                  .append("(e.timeStamp > ?)")
-                  .append(" OR ")
-                  .append("(e.timeStamp = ? AND e.sequenceNumber > ?)")
-                  .append(" OR ")
-                  .append("(e.timeStamp = ? AND e.sequenceNumber = ? AND e.aggregateIdentifier > ?)")
-                  .append(")");
+                SchemaConfiguration sc = sqlSchema.getSchemaConfiguration();
+                if (sc.isDefault()) {
+                    sb.append("((e.timeStamp > ?) OR (e.timeStamp = ? AND e.sequenceNumber > ?) OR (e.timeStamp = ? AND e.sequenceNumber = ? AND e.aggregateIdentifier > ?))");
+                } else {
+                    sb.append(format("((e.%s > ?) OR (e.%s = ? AND e.%s > ?) OR (e.%s = ? AND e.%s = ? AND e.%s > ?))",
+                            sc.timeStampColumn(),
+                            sc.timeStampColumn(),
+                            sc.sequenceNumberColumn(),
+                            sc.timeStampColumn(),
+                            sc.sequenceNumberColumn(),
+                            sc.aggregateIdentifierColumn()
+                    ));
+                }
+
                 Object dateTimeSql = sqlSchema.sql_dateTime(lastItem.getTimestamp());
                 params.add(0, dateTimeSql);
 
