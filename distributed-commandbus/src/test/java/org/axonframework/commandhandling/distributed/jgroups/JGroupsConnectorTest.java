@@ -16,7 +16,12 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
@@ -79,7 +84,7 @@ public class JGroupsConnectorTest {
     @Test
     public void testSetupOfReplyingCallback() throws InterruptedException {
         final String mockPayload = "DummyString";
-        final CommandMessage commandMessage = new GenericCommandMessage(mockPayload);
+        final CommandMessage commandMessage = new GenericCommandMessage<String>(mockPayload);
 
         final DispatchMessage dispatchMessage = new DispatchMessage(commandMessage,serializer,true);
         final Message message = new Message(channel1.getAddress(),dispatchMessage);

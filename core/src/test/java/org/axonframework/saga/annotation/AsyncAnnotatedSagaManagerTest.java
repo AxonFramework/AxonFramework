@@ -19,8 +19,10 @@ package org.axonframework.saga.annotation;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.annotation.DefaultParameterResolverFactory;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
+import org.axonframework.common.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
@@ -53,12 +55,13 @@ public class AsyncAnnotatedSagaManagerTest {
     private static Level oldLevel;
 
     private AsyncAnnotatedSagaManager testSubject;
-    private EventBus eventBus;
     private AsyncAnnotatedSagaManagerTest.StubInMemorySagaRepository sagaRepository;
     private ExecutorService executorService;
     private EventProcessingMonitor mockMonitor;
     private List<EventMessage> ackedMessages;
     private List<EventMessage> failedMessages;
+    private InvocationLogger invocationLogger;
+    private MultiParameterResolverFactory resolverFactory;
 
     @BeforeClass
     public static void disableLogging() {
@@ -74,8 +77,11 @@ public class AsyncAnnotatedSagaManagerTest {
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() {
-        eventBus = mock(EventBus.class);
-        testSubject = new AsyncAnnotatedSagaManager(StubAsyncSaga.class);
+        invocationLogger = new InvocationLogger();
+        resolverFactory = MultiParameterResolverFactory.ordered(
+                new DefaultParameterResolverFactory(),
+                new SimpleResourceParameterResolverFactory(invocationLogger));
+        testSubject = new AsyncAnnotatedSagaManager(resolverFactory, StubAsyncSaga.class);
         sagaRepository = new StubInMemorySagaRepository();
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
@@ -108,7 +114,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
@@ -142,7 +148,7 @@ public class AsyncAnnotatedSagaManagerTest {
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
 
-   @Test
+    @Test
     public void testSingleSagaLifeCycle_NonTransientFailure() throws InterruptedException {
         final StubInMemorySagaRepository spy = spy(sagaRepository);
         testSubject.setSagaRepository(spy);
@@ -157,7 +163,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 seconds", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 0, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
@@ -185,7 +191,7 @@ public class AsyncAnnotatedSagaManagerTest {
         doCallRealMethod().when(spy).add(isA(Saga.class));
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 seconds", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
 
@@ -208,7 +214,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1000, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
 
@@ -218,7 +224,7 @@ public class AsyncAnnotatedSagaManagerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testNullAssociationIgnoresEvent() throws InterruptedException {
-        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
+        testSubject = new AsyncAnnotatedSagaManager(resolverFactory, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
                                                     ThirdStubAsyncSaga.class);
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
@@ -233,7 +239,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 0, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
@@ -241,7 +247,7 @@ public class AsyncAnnotatedSagaManagerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testExceptionsFromHandlerAreIgnored() throws InterruptedException {
-        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class);
+        testSubject = new AsyncAnnotatedSagaManager(resolverFactory, StubAsyncSaga.class);
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
         testSubject.setExecutor(executorService);
@@ -255,7 +261,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 1, sagaRepository.getLiveSagas());
         logger.setLevel(oldLevel);
@@ -263,7 +269,7 @@ public class AsyncAnnotatedSagaManagerTest {
 
     @Test
     public void testMultipleDisconnectedSagaLifeCycle_WithOptionalStart() throws InterruptedException {
-        testSubject = new AsyncAnnotatedSagaManager(eventBus, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
+        testSubject = new AsyncAnnotatedSagaManager(resolverFactory, StubAsyncSaga.class, AnotherStubAsyncSaga.class,
                                                     ThirdStubAsyncSaga.class);
         testSubject.setSagaRepository(sagaRepository);
         executorService = Executors.newCachedThreadPool();
@@ -280,7 +286,7 @@ public class AsyncAnnotatedSagaManagerTest {
         }
         testSubject.stop();
         executorService.shutdown();
-        assertTrue("Service refused to stop in 1 second", executorService.awaitTermination(1, TimeUnit.SECONDS));
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
         assertEquals("Incorrect known saga count", 1500, sagaRepository.getKnownSagas());
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
@@ -312,75 +318,80 @@ public class AsyncAnnotatedSagaManagerTest {
 
         @StartSaga(forceNew = false)
         @SagaEventHandler(associationProperty = "association")
-        public void handleOptionallyCreateNew(OptionallyCreateNewEvent event) {
+        public void handleOptionallyCreateNew(OptionallyCreateNewEvent event, InvocationLogger invocationLogger) {
+            invocationLogger.logEvent(event);
         }
 
         @StartSaga(forceNew = true)
         @SagaEventHandler(associationProperty = "association")
-        public void handleOptionallyCreateNew(ForceCreateNewEvent event) {
+        public void handleOptionallyCreateNew(ForceCreateNewEvent event, InvocationLogger invocationLogger) {
+            invocationLogger.logEvent(event);
         }
 
         @SagaEventHandler(associationProperty = "association")
-        public void handleAddAssociation(AddAssociationEvent event) {
+        public void handleAddAssociation(AddAssociationEvent event, InvocationLogger invocationLogger) {
             associateWith("association", event.getNewAssociation());
+            invocationLogger.logEvent(event);
         }
 
         @SagaEventHandler(associationProperty = "association")
-        public void handleUpdate(UpdateEvent event) {
+        public void handleUpdate(UpdateEvent event, InvocationLogger invocationLogger) {
+            invocationLogger.logEvent(event);
         }
 
         @SagaEventHandler(associationProperty = "association")
-        public void createError(GenerateErrorOnHandlingEvent event) {
+        public void createError(GenerateErrorOnHandlingEvent event, InvocationLogger invocationLogger) {
+            invocationLogger.logEvent(event);
             throw new RuntimeException("Stub");
         }
 
         @EndSaga
         @SagaEventHandler(associationProperty = "association")
-        public void handleDelete(DeleteEvent event) {
-//            deleteInvocations++;
+        public void handleDelete(DeleteEvent event, InvocationLogger invocationLogger) {
+            invocationLogger.logEvent(event);
         }
     }
 
-    private static class OptionallyCreateNewEvent extends AbstractSagaTestEvent {
+    public static class OptionallyCreateNewEvent extends AbstractSagaTestEvent {
 
-        private OptionallyCreateNewEvent(String association) {
+        public OptionallyCreateNewEvent(String association) {
             super(association);
         }
     }
 
-    private static class ForceCreateNewEvent extends AbstractSagaTestEvent {
+    public static class ForceCreateNewEvent extends AbstractSagaTestEvent {
 
-        private ForceCreateNewEvent(String association) {
+        public ForceCreateNewEvent(String association) {
             super(association);
         }
     }
 
-    private static class UpdateEvent extends AbstractSagaTestEvent {
+    public static class UpdateEvent extends AbstractSagaTestEvent {
 
-        private UpdateEvent(String association) {
+        public UpdateEvent(String association) {
             super(association);
         }
     }
 
-    private static class DeleteEvent extends AbstractSagaTestEvent {
+    public static class DeleteEvent extends AbstractSagaTestEvent {
 
-        private DeleteEvent(String association) {
+        public DeleteEvent(String association) {
             super(association);
         }
     }
 
-    private static class GenerateErrorOnHandlingEvent extends AbstractSagaTestEvent {
+    public static class GenerateErrorOnHandlingEvent extends AbstractSagaTestEvent {
 
-        private GenerateErrorOnHandlingEvent(String association) {
+        public GenerateErrorOnHandlingEvent(String association) {
             super(association);
         }
     }
 
-    private static class AddAssociationEvent extends AbstractSagaTestEvent {
+    public static class AddAssociationEvent extends AbstractSagaTestEvent {
 
         private final String newAssociation;
 
-        private AddAssociationEvent(String association, String newAssociation) {
+        public AddAssociationEvent(String association, String newAssociation) {
             super(association);
             this.newAssociation = newAssociation;
         }
@@ -390,11 +401,11 @@ public class AsyncAnnotatedSagaManagerTest {
         }
     }
 
-    private static class AbstractSagaTestEvent {
+    public static class AbstractSagaTestEvent {
 
         private final String association;
 
-        private AbstractSagaTestEvent(String association) {
+        public AbstractSagaTestEvent(String association) {
             this.association = association;
         }
 
