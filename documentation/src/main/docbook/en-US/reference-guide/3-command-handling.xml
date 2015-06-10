@@ -208,7 +208,7 @@
 
 // To create an instance:
 GatewayProxyFactory factory = new GatewayProxyFactory(commandBus);
-MyGateway myGateway = factory.createInstance(MyGateway.class);</programlisting>
+MyGateway myGateway = factory.createGateway(MyGateway.class);</programlisting>
             <simplesect>
                 <title>Configuring a custom Command Gateway in Spring</title>
                 <para>When using Spring, the easiest way to create a custom Command Gateway is by
