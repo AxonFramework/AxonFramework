@@ -38,13 +38,13 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     private static final long serialVersionUID = 2385024168304711298L;
 
     private final AssociationValues associationValues = new AssociationValuesImpl();
-    private final String identifier;
+    private final String sagaIdentifier;
     private transient volatile SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector;
-    private volatile boolean isActive = true;
+    private volatile boolean active = true;
     private transient ParameterResolverFactory parameterResolverFactory;
 
     /**
-     * Initialize the saga with a random identifier. The identifier used is provided by {@link
+     * Initialize the saga with a random sagaIdentifier. The sagaIdentifier used is provided by {@link
      * org.axonframework.domain.IdentifierFactory#generateIdentifier()}, which defaults to a randomly generated {@link
      * java.util.UUID}.
      */
@@ -53,18 +53,18 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     }
 
     /**
-     * Initialize the saga with the given identifier.
+     * Initialize the saga with the given sagaIdentifier.
      *
-     * @param identifier the identifier to initialize the saga with.
+     * @param identifier the sagaIdentifier to initialize the saga with.
      */
     protected AbstractAnnotatedSaga(String identifier) {
-        this.identifier = identifier;
+        this.sagaIdentifier = identifier;
         associationValues.add(new AssociationValue("sagaIdentifier", identifier));
     }
 
     @Override
     public String getSagaIdentifier() {
-        return identifier;
+        return sagaIdentifier;
     }
 
     @Override
@@ -74,7 +74,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     @Override
     public final void handle(EventMessage event) {
-        if (isActive) {
+        if (active) {
             ensureInspectorInitialized();
             SagaMethodMessageHandler handler = inspector.findHandlerMethod(this, event);
             handler.invoke(this, event);
@@ -105,14 +105,14 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
 
     @Override
     public boolean isActive() {
-        return isActive;
+        return active;
     }
 
     /**
      * Marks the saga as ended. Ended saga's may be cleaned up by the repository when they are committed.
      */
     protected void end() {
-        isActive = false;
+        active = false;
     }
 
     /**

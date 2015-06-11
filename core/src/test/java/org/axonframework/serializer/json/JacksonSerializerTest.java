@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.domain.MetaData;
+import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.repository.StubSaga;
 import org.axonframework.serializer.AnnotationRevisionResolver;
 import org.axonframework.serializer.ChainingConverterFactory;
 import org.axonframework.serializer.ContentTypeConverter;
@@ -160,6 +162,22 @@ public class JacksonSerializerTest {
         assertEquals("test", actual.get("test"));
         assertEquals(1, actual.size());
     }
+
+    @Test
+    public void testSerializeSagaInstance() throws Exception {
+        testSubject = new JacksonSerializer();
+
+        final StubSaga saga = new StubSaga("test");
+        saga.registerAssociationValue(new AssociationValue("key", "value"));
+        SerializedObject<String> serialized = testSubject.serialize(saga, String.class);
+        System.out.println(serialized.getData());
+        StubSaga actual = testSubject.deserialize(serialized);
+
+        assertNotNull(actual);
+        assertEquals(2, saga.getAssociationValues().size());
+
+    }
+
 
     public static class SimpleSerializableType {
 

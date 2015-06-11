@@ -16,34 +16,18 @@
 
 package org.axonframework.serializer.json;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import com.sun.xml.internal.ws.developer.*;
 import org.axonframework.domain.MetaData;
-import org.axonframework.serializer.AnnotationRevisionResolver;
-import org.axonframework.serializer.ChainingConverterFactory;
-import org.axonframework.serializer.ConverterFactory;
-import org.axonframework.serializer.RevisionResolver;
-import org.axonframework.serializer.SerializationException;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.SimpleSerializedType;
-import org.axonframework.serializer.UnknownSerializedTypeException;
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.joda.time.LocalTime;
-import org.joda.time.MonthDay;
-import org.joda.time.MutableDateTime;
-import org.joda.time.ReadableInstant;
-import org.joda.time.YearMonth;
+import org.axonframework.saga.AssociationValue;
+import org.axonframework.saga.AssociationValues;
+import org.axonframework.serializer.*;
+import org.joda.time.*;
 
 import java.io.IOException;
 
@@ -135,6 +119,7 @@ public class JacksonSerializer implements Serializer {
         this.revisionResolver = revisionResolver;
         this.converterFactory = converterFactory;
         this.objectMapper = objectMapper;
+
         this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module")
@@ -143,13 +128,19 @@ public class JacksonSerializer implements Serializer {
                         .addDeserializer(DateTime.class, new JodaDeserializer<DateTime>(DateTime.class))
                         .addDeserializer(Instant.class, new JodaDeserializer<Instant>(Instant.class))
                         .addDeserializer(MutableDateTime.class,
-                                         new JodaDeserializer<MutableDateTime>(MutableDateTime.class))
+                                new JodaDeserializer<MutableDateTime>(MutableDateTime.class))
                         .addDeserializer(YearMonth.class, new JodaDeserializer<YearMonth>(YearMonth.class))
                         .addDeserializer(MonthDay.class, new JodaDeserializer<MonthDay>(MonthDay.class))
                         .addDeserializer(LocalDate.class, new JodaDeserializer<LocalDate>(LocalDate.class))
                         .addDeserializer(LocalTime.class, new JodaDeserializer<LocalTime>(LocalTime.class))
                         .addDeserializer(LocalDateTime.class, new JodaDeserializer<LocalDateTime>(LocalDateTime.class))
         );
+
+        this.objectMapper.registerModule(new SimpleModule("Axon-Saga Module")
+                .addDeserializer(AssociationValues.class, new AssociationValuesDeserializer())
+                .setMixInAnnotation(AssociationValue.class, AssociationValueMixin.class));
+
+
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
         }
@@ -173,14 +164,14 @@ public class JacksonSerializer implements Serializer {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
                 return new SimpleSerializedObject<T>((T) getWriter().writeValueAsString(object),
-                                                     expectedRepresentation, typeForClass(object.getClass()));
+                        expectedRepresentation, typeForClass(object.getClass()));
             }
 
             byte[] serializedBytes = getWriter().writeValueAsBytes(object);
             T serializedContent = converterFactory.getConverter(byte[].class, expectedRepresentation)
-                                                  .convert(serializedBytes);
+                    .convert(serializedBytes);
             return new SimpleSerializedObject<T>(serializedContent, expectedRepresentation,
-                                                 typeForClass(object.getClass()));
+                    typeForClass(object.getClass()));
         } catch (JsonProcessingException e) {
             throw new SerializationException("Unable to serialize object", e);
         }
@@ -231,8 +222,8 @@ public class JacksonSerializer implements Serializer {
                         .readValue((JsonNode) serializedObject.getData());
             }
             SerializedObject<byte[]> byteSerialized = converterFactory.getConverter(serializedObject.getContentType(),
-                                                                                    byte[].class)
-                                                                      .convert(serializedObject);
+                    byte[].class)
+                    .convert(serializedObject);
             return getReader(classForType(serializedObject.getType())).readValue(byteSerialized.getData());
         } catch (IOException e) {
             throw new SerializationException("Error while deserializing object", e);
