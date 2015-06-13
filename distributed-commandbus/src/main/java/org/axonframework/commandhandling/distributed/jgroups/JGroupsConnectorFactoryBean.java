@@ -55,6 +55,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private ApplicationContext applicationContext;
     private List<CommandHandlerInterceptor> interceptors;
     private long joinTimeout = -1;
+    private HashChangeListener hashChangeListener;
 
     @Override
     public Object getObject() throws Exception {
@@ -90,7 +91,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         if (channelName != null) {
             channel.setName(channelName);
         }
-        connector = new JGroupsConnector(channel, clusterName, localSegment, serializer);
+        connector = new JGroupsConnector(channel, clusterName, localSegment, serializer, hashChangeListener);
     }
 
     /**
@@ -178,6 +179,17 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
      */
     public void setLoadFactor(int loadFactor) {
         this.loadFactor = loadFactor;
+    }
+
+    /**
+     * Register a {@link HashChangeListener} with the {@link JGroupsConnector}. The listener
+     * will be notified when the consistent hash changes due to members joining or leaving the
+     * JGroup.
+     *
+     * @param hashChangeListener
+     */
+    public void setHashChangeListener(HashChangeListener hashChangeListener) {
+        this.hashChangeListener = hashChangeListener;
     }
 
     @Override
