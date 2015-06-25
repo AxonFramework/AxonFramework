@@ -19,66 +19,67 @@ package org.axonframework.mongoutils;
 import de.flapdoodle.embed.mongo.Command;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.ArtifactStoreBuilder;
-import de.flapdoodle.embed.mongo.config.DownloadConfigBuilder;
-import de.flapdoodle.embed.mongo.config.IMongodConfig;
-import de.flapdoodle.embed.mongo.config.MongodConfigBuilder;
-import de.flapdoodle.embed.mongo.config.Net;
-import de.flapdoodle.embed.mongo.config.RuntimeConfigBuilder;
+import de.flapdoodle.embed.mongo.config.*;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.config.IRuntimeConfig;
 import de.flapdoodle.embed.process.extract.ITempNaming;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.SocketFactory;
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.net.ServerSocketFactory;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
  */
 public class MongoLauncher {
 
+    public static final int MONGO_DEFAULT_PORT = 27017;
+    public static final String LOCALHOST = "127.0.0.1";
     private static final Logger logger = LoggerFactory.getLogger(MongoLauncher.class);
     private static final AtomicInteger counter = new AtomicInteger();
 
-    public static MongodExecutable prepareExecutable() throws IOException {
-        int port = 27017;
+    private static boolean isMongoRunning() {
         try {
-            final ServerSocketFactory socketFactory = ServerSocketFactory.getDefault();
-            ServerSocket socket = socketFactory.createServerSocket(port);
-            socket.close();
-            if (!socket.isClosed()) {
-                logger.warn("Didn't manage to close socket for some reason. Tests may start failing...");
+            final Socket mongoSocket = SocketFactory.getDefault().createSocket(LOCALHOST, MONGO_DEFAULT_PORT);
+
+            if (mongoSocket.isConnected()) {
+                mongoSocket.close();
+                return true;
             }
         } catch (IOException e) {
-            logger.info("Port 27017 is taken. Assuming MongoDB is running");
-            // returning a mock, so we can call close on it, which is ignored
+            return false;
+        }
+        return false;
+    }
+
+    public static MongodExecutable prepareExecutable() throws IOException {
+        if (isMongoRunning()) {
             return mock(MongodExecutable.class);
         }
 
         IMongodConfig mongodConfig = new MongodConfigBuilder()
                 .version(Version.Main.PRODUCTION)
-                .net(new Net(port, false))
+                .net(new Net(MONGO_DEFAULT_PORT, false))
                 .build();
 
         Command command = Command.MongoD;
         IRuntimeConfig runtimeConfig = new RuntimeConfigBuilder()
                 .defaults(command)
                 .artifactStore(new ArtifactStoreBuilder()
-                                       .defaults(command)
-                                       .download(new DownloadConfigBuilder()
-                                                         .defaultsForCommand(command))
-                                       .executableNaming(new ITempNaming() {
-                                           @Override
-                                           public String nameFor(String prefix, String postfix) {
-                                               return prefix + "_axontest_" + counter.getAndIncrement() + "_" + postfix;
-                                           }
-                                       }))
+                        .defaults(command)
+                        .download(new DownloadConfigBuilder()
+                                .defaultsForCommand(command))
+                        .executableNaming(new ITempNaming() {
+                            @Override
+                            public String nameFor(String prefix, String postfix) {
+                                return prefix + "_axontest_" + counter.getAndIncrement() + "_" + postfix;
+                            }
+                        }))
                 .build();
 
         MongodStarter runtime = MongodStarter.getInstance(runtimeConfig);
