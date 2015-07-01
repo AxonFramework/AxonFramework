@@ -24,8 +24,6 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +76,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
 
     @Override
     public void add(T aggregate) {
-        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregate.getIdentifier()));
+        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregate.getIdentifier()));
         super.add(aggregate);
     }
 
@@ -119,7 +117,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
         } else if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
-        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
+        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregateIdentifier));
         return aggregate;
     }
 
@@ -143,19 +141,5 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      */
     public void setCache(Cache cache) {
         this.cache = cache;
-    }
-
-    private class CacheClearingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
-
-        private final String identifier;
-
-        public CacheClearingUnitOfWorkListener(String identifier) {
-            this.identifier = identifier;
-        }
-
-        @Override
-        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-            cache.remove(identifier);
-        }
     }
 }

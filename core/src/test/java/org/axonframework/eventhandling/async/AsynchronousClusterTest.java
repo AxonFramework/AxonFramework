@@ -31,7 +31,6 @@ import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
 import org.mockito.*;
 import org.springframework.core.annotation.Order;
@@ -160,14 +159,11 @@ public class AsynchronousClusterTest {
         final GenericEventMessage<String> message1 = new GenericEventMessage<String>("Message 1");
         final GenericEventMessage<String> message2 = new GenericEventMessage<String>("Message 2");
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-        uow.registerListener(new UnitOfWorkListenerAdapter() {
-            @Override
-            public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
-                verify(executor, never()).execute(isA(Runnable.class));
-                verify(mockTransactionManager, never()).startTransaction();
-                verify(mockTransactionManager, never()).commitTransaction(any());
-            }
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message1);
+        uow.onPrepareCommit(u -> {
+            verify(executor, never()).execute(isA(Runnable.class));
+            verify(mockTransactionManager, never()).startTransaction();
+            verify(mockTransactionManager, never()).commitTransaction(any());
         });
 
         testSubject.handle(message1, message2);

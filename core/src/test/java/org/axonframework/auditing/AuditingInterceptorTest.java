@@ -22,11 +22,9 @@ import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -73,9 +71,9 @@ public class AuditingInterceptorTest {
     @Test
     public void testInterceptCommand_SuccessfulExecution() throws Throwable {
         when(mockInterceptorChain.proceed()).thenReturn("Return value");
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         StubAggregate aggregate = new StubAggregate();
-        uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
+        //TODO: Fix uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
         GenericCommandMessage<String> command = new GenericCommandMessage<>("Command!");
         Object result = testSubject.handle(command, uow, mockInterceptorChain);
         verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
@@ -97,7 +95,7 @@ public class AuditingInterceptorTest {
     public void testInterceptCommand_FailedExecution() throws Throwable {
         RuntimeException mockException = new MockException();
         when(mockInterceptorChain.proceed()).thenThrow(mockException);
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
 
         GenericCommandMessage command = new GenericCommandMessage("Command!");
         try {
@@ -107,7 +105,7 @@ public class AuditingInterceptorTest {
         }
 
         StubAggregate aggregate = new StubAggregate();
-        uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
+        //TODO: Fix uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
         aggregate.doSomething();
         aggregate.doSomething();
 

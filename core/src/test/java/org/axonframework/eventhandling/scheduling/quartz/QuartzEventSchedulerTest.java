@@ -115,7 +115,7 @@ public class QuartzEventSchedulerTest {
     public void testScheduleJob_CustomUnitOfWork() throws InterruptedException, SchedulerException {
         final UnitOfWorkFactory unitOfWorkFactory = mock(UnitOfWorkFactory.class);
         UnitOfWork unitOfWork = mock(UnitOfWork.class);
-        when(unitOfWorkFactory.createUnitOfWork()).thenReturn(unitOfWork);
+        when(unitOfWorkFactory.createUnitOfWork(any())).thenReturn(unitOfWork);
         testSubject.setUnitOfWorkFactory(unitOfWorkFactory);
         testSubject.initialize();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -130,7 +130,7 @@ public class QuartzEventSchedulerTest {
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
         InOrder inOrder = inOrder(unitOfWorkFactory, unitOfWork, eventBus);
-        inOrder.verify(unitOfWorkFactory).createUnitOfWork();
+        inOrder.verify(unitOfWorkFactory).createUnitOfWork(any());
         inOrder.verify(unitOfWork).commit();
 
         // the unit of work doesn't actually publish...

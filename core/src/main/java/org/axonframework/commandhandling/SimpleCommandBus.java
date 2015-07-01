@@ -108,7 +108,7 @@ public class SimpleCommandBus implements CommandBus {
 
     private <C> Object doDispatch(CommandMessage<C> command, CommandHandler<? super C> commandHandler) throws Throwable {
         logger.debug("Dispatching command [{}]", command.getCommandName());
-        UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
+        UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(command);
         InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, handlerInterceptors);
 
         Object returnValue;

@@ -19,7 +19,7 @@ package org.axonframework.spring.jdbc;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.spring.unitofwork.SpringTransactionManager;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.junit.runner.*;
@@ -52,6 +52,12 @@ public class SpringDataSourceConnectionProviderTest {
     private PlatformTransactionManager transactionManager;
     @Autowired
     private ConnectionProvider connectionProvider;
+    private DefaultUnitOfWorkFactory unitOfWorkFactory;
+
+    @Before
+    public void setUp() throws Exception {
+        unitOfWorkFactory = new DefaultUnitOfWorkFactory(new SpringTransactionManager(transactionManager));
+    }
 
     @Transactional
     @Test
@@ -61,7 +67,7 @@ public class SpringDataSourceConnectionProviderTest {
             return null;
         });
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(new SpringTransactionManager(transactionManager));
+        UnitOfWork uow = unitOfWorkFactory.createUnitOfWork(null);
         Connection connection = connectionProvider.getConnection();
 
         connection.commit();
@@ -76,7 +82,7 @@ public class SpringDataSourceConnectionProviderTest {
             mockConnection = (Connection) spy;
             return spy;
         }).when(dataSource).getConnection();
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(new SpringTransactionManager(transactionManager));
+        UnitOfWork uow = unitOfWorkFactory.createUnitOfWork(null);
         Connection connection = connectionProvider.getConnection();
         assertNotSame(connection, mockConnection);
 

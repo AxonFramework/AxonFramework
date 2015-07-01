@@ -46,7 +46,7 @@ public class StubAggregateCommandHandler {
                                                          UnitOfWork unitOfWork) {
         StubAggregate aggregate = repository.load(command.getAggregateId().toString());
         aggregate.makeAChange();
-        unitOfWork.publishEvent(new GenericEventMessage<>(new MyEvent()), eventBus);
+        eventBus.publish(new GenericEventMessage<>(new MyEvent()));
         aggregate.makeAChange();
     }
 

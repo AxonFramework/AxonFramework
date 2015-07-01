@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.dsl.EventHandlerGroup;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
@@ -27,18 +26,15 @@ import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.interceptors.SerializationOptimizingInterceptor;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
-import org.axonframework.serializer.Serializer;
 import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +121,6 @@ public class DisruptorCommandBus implements CommandBus {
     private final long coolingDownPeriod;
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
-    private final int serializerCount;
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
 
@@ -136,10 +131,9 @@ public class DisruptorCommandBus implements CommandBus {
      * the case of errors.
      *
      * @param eventStore The EventStore where generated events must be stored
-     * @param eventBus   The EventBus where generated events must be published
      */
-    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus) {
-        this(eventStore, eventBus, new DisruptorConfiguration());
+    public DisruptorCommandBus(EventStore eventStore) {
+        this(eventStore, new DisruptorConfiguration());
     }
 
     /**
@@ -147,14 +141,11 @@ public class DisruptorCommandBus implements CommandBus {
      * execution are immediately requested from the Configuration's Executor, if any. Otherwise, they are created.
      *
      * @param eventStore    The EventStore where generated events must be stored
-     * @param eventBus      The EventBus where generated events must be published
      * @param configuration The configuration for the command bus
      */
     @SuppressWarnings("unchecked")
-    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus,
-                               DisruptorConfiguration configuration) {
+    public DisruptorCommandBus(EventStore eventStore, DisruptorConfiguration configuration) {
         Assert.notNull(eventStore, "eventStore may not be null");
-        Assert.notNull(eventBus, "eventBus may not be null");
         Assert.notNull(configuration, "configuration may not be null");
         Executor executor = configuration.getExecutor();
         if (executor == null) {
@@ -169,57 +160,36 @@ public class DisruptorCommandBus implements CommandBus {
         publisherInterceptors = new ArrayList<>(configuration.getPublisherInterceptors());
         dispatchInterceptors = new ArrayList<>(configuration.getDispatchInterceptors());
         TransactionManager transactionManager = configuration.getTransactionManager();
-        disruptor = new Disruptor<>(
-                new CommandHandlingEntry.Factory(configuration.getTransactionManager() != null),
-                configuration.getBufferSize(),
-                executor,
-                configuration.getProducerType(),
-                configuration.getWaitStrategy());
+        disruptor = new Disruptor<>(CommandHandlingEntry::new,
+                                    configuration.getBufferSize(),
+                                    executor,
+                                    configuration.getProducerType(),
+                                    configuration.getWaitStrategy());
         commandTargetResolver = configuration.getCommandTargetResolver();
 
         // configure invoker Threads
         commandHandlerInvokers = initializeInvokerThreads(eventStore, configuration);
-        // configure serializer Threads
-        SerializerHandler[] serializerThreads = initializeSerializerThreads(configuration);
-        serializerCount = serializerThreads.length;
         // configure publisher Threads
-        EventPublisher[] publishers = initializePublisherThreads(eventStore, eventBus, configuration, executor,
+        EventPublisher[] publishers = initializePublisherThreads(eventStore, configuration, executor,
                                                                  transactionManager);
         publisherCount = publishers.length;
         disruptor.handleExceptionsWith(new ExceptionHandler());
 
-        EventHandlerGroup<CommandHandlingEntry> eventHandlerGroup = disruptor.handleEventsWith(commandHandlerInvokers);
-        if (serializerThreads.length > 0) {
-            eventHandlerGroup = eventHandlerGroup.then(serializerThreads);
-            invokerInterceptors.add(new SerializationOptimizingInterceptor());
-        }
-        eventHandlerGroup.then(publishers);
+        disruptor.handleEventsWith(commandHandlerInvokers)
+                 .then(publishers);
 
         coolingDownPeriod = configuration.getCoolingDownPeriod();
         disruptor.start();
     }
 
-    private EventPublisher[] initializePublisherThreads(EventStore eventStore, EventBus eventBus,
-                                                        DisruptorConfiguration configuration, Executor executor,
-                                                        TransactionManager transactionManager) {
+    private EventPublisher[] initializePublisherThreads(EventStore eventStore, DisruptorConfiguration configuration,
+                                                        Executor executor, TransactionManager transactionManager) {
         EventPublisher[] publishers = new EventPublisher[configuration.getPublisherThreadCount()];
         for (int t = 0; t < publishers.length; t++) {
-            publishers[t] = new EventPublisher(eventStore, eventBus, executor, transactionManager,
+            publishers[t] = new EventPublisher(eventStore, executor, transactionManager,
                                                configuration.getRollbackConfiguration(), t);
         }
         return publishers;
-    }
-
-    private SerializerHandler[] initializeSerializerThreads(DisruptorConfiguration configuration) {
-        if (!configuration.isPreSerializationConfigured()) {
-            return new SerializerHandler[0];
-        }
-        Serializer serializer = configuration.getSerializer();
-        SerializerHandler[] serializerThreads = new SerializerHandler[configuration.getSerializerThreadCount()];
-        for (int t = 0; t < serializerThreads.length; t++) {
-            serializerThreads[t] = new SerializerHandler(serializer, t, configuration.getSerializedRepresentation());
-        }
-        return serializerThreads;
     }
 
     private CommandHandlerInvoker[] initializeInvokerThreads(EventStore eventStore,
@@ -266,16 +236,12 @@ public class DisruptorCommandBus implements CommandBus {
         RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
         int invokerSegment = 0;
         int publisherSegment = 0;
-        int serializerSegment = 0;
-        if ((commandHandlerInvokers.length > 1 || publisherCount > 1 || serializerCount > 1)) {
+        if ((commandHandlerInvokers.length > 1 || publisherCount > 1)) {
             String aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
             if (aggregateIdentifier != null) {
                 int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
                 if (commandHandlerInvokers.length > 1) {
                     invokerSegment = idHash % commandHandlerInvokers.length;
-                }
-                if (serializerCount > 1) {
-                    serializerSegment = idHash % serializerCount;
                 }
                 if (publisherCount > 1) {
                     publisherSegment = idHash % publisherCount;
@@ -286,9 +252,8 @@ public class DisruptorCommandBus implements CommandBus {
         try {
             CommandHandlingEntry event = ringBuffer.get(sequence);
             event.reset(command, commandHandler, invokerSegment, publisherSegment,
-                        serializerSegment, new BlacklistDetectingCallback<>(callback,
-                                                                            disruptor.getRingBuffer(),
-                                                                            this, rescheduleOnCorruptState),
+                        new BlacklistDetectingCallback<>(callback, disruptor.getRingBuffer(),
+                                                         this, rescheduleOnCorruptState),
                         invokerInterceptors, publisherInterceptors
             );
         } finally {

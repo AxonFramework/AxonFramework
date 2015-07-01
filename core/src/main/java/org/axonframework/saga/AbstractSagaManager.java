@@ -24,8 +24,6 @@ import org.axonframework.correlation.MultiCorrelationDataProvider;
 import org.axonframework.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,13 +165,7 @@ public abstract class AbstractSagaManager implements SagaManager {
         if (sagaInstance == null || !CurrentUnitOfWork.isStarted()) {
             lock.releaseLock(sagaId);
         } else if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
-                @Override
-                public void onCleanup(UnitOfWork unitOfWork) {
-                    // a reference to the saga is maintained to prevent it from GC until after the UoW commit
-                    lock.releaseLock(sagaInstance.getSagaIdentifier());
-                }
-            });
+            CurrentUnitOfWork.get().onCleanup(u -> lock.releaseLock(sagaInstance.getSagaIdentifier()));
         }
     }
 
@@ -181,12 +173,7 @@ public abstract class AbstractSagaManager implements SagaManager {
         if (!CurrentUnitOfWork.isStarted()) {
             sagaMap.remove(sagaIdentifier);
         } else {
-            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
-                @Override
-                public void afterCommit(UnitOfWork unitOfWork) {
-                    sagaMap.remove(sagaIdentifier);
-                }
-            });
+            CurrentUnitOfWork.get().afterCommit(u -> sagaMap.remove(sagaIdentifier));
         }
     }
 
@@ -291,7 +278,7 @@ public abstract class AbstractSagaManager implements SagaManager {
      * Sets the correlation data provider for this SagaManager. It will provide the data to attach to messages sent by
      * Sagas managed by this manager.
      *
-     * @param correlationDataProvider    the correlation data provider for this SagaManager
+     * @param correlationDataProvider the correlation data provider for this SagaManager
      */
     public void setCorrelationDataProvider(CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
         this.correlationDataProvider = correlationDataProvider;

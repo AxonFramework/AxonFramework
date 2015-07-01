@@ -49,7 +49,7 @@ public class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     @Test
     public void testResolveParameterValue() throws Exception {
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         try {
             assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(GenericCommandMessage.class)));
         } finally {
@@ -60,7 +60,7 @@ public class CurrentUnitOfWorkParameterResolverFactoryTest {
     @Test
     public void testMatches() throws Exception {
         assertFalse(testSubject.matches(mock(GenericCommandMessage.class)));
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         try {
             assertFalse(testSubject.matches(mock(Message.class)));
             assertTrue(testSubject.matches(mock(GenericCommandMessage.class)));

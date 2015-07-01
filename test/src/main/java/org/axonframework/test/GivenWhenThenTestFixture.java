@@ -50,7 +50,6 @@ import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +60,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -283,7 +281,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
-            UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+            UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
             try {
                 EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
@@ -558,16 +556,17 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
                              InterceptorChain interceptorChain)
                 throws Throwable {
-            unitOfWork.registerListener(new UnitOfWorkListenerAdapter() {
-                @Override
-                public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-                                            List<EventMessage> events) {
-                    Iterator<AggregateRoot> iterator = aggregateRoots.iterator();
-                    if (iterator.hasNext()) {
-                        workingAggregate = iterator.next();
-                    }
-                }
-            });
+            // TODO: Fix
+//            unitOfWork.onPrepareCommit(new UnitOfWorkListenerAdapter() {
+//                @Override
+//                public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+//                                            List<EventMessage> events) {
+//                    Iterator<AggregateRoot> iterator = aggregateRoots.iterator();
+//                    if (iterator.hasNext()) {
+//                        workingAggregate = iterator.next();
+//                    }
+//                }
+//            });
             return interceptorChain.proceed();
         }
     }

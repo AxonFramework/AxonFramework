@@ -185,7 +185,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
 
     @Override
     public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-        unitOfWork.attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+        unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
         return handlers.get(commandMessage.getCommandName()).handle(commandMessage, unitOfWork);
     }
 

@@ -19,7 +19,6 @@ package org.axonframework.repository;
 import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.SaveAggregateCallback;
 
 /**
@@ -62,7 +61,8 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
         if (aggregate.getVersion() != null) {
             throw new IllegalArgumentException("Only newly created (unpersisted) aggregates may be added.");
         }
-        CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
+        // TODO: Fix
+//        CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
     }
 
     /**
@@ -75,7 +75,9 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     public T load(String aggregateIdentifier, Long expectedVersion) {
         T aggregate = doLoad(aggregateIdentifier, expectedVersion);
         validateOnLoad(aggregate, expectedVersion);
-        return CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
+        // TODO: Fix
+//        return CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
+        return null;
     }
 
     /**

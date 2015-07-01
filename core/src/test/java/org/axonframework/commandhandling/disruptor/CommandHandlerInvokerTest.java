@@ -48,8 +48,8 @@ public class CommandHandlerInvokerTest {
         aggregateIdentifier = "mockAggregate";
         mockCommandMessage = mock(CommandMessage.class);
         mockCommandHandler = mock(CommandHandler.class);
-        commandHandlingEntry = new CommandHandlingEntry(false);
-        commandHandlingEntry.reset(mockCommandMessage, mockCommandHandler, 0, 0, 0, null,
+        commandHandlingEntry = new CommandHandlingEntry();
+        commandHandlingEntry.reset(mockCommandMessage, mockCommandHandler, 0, 0, null,
                                    Collections.<CommandHandlerInterceptor>emptyList(),
                                    Collections.<CommandHandlerInterceptor>emptyList());
         eventStreamDecorator = mock(EventStreamDecorator.class);
@@ -103,7 +103,6 @@ public class CommandHandlerInvokerTest {
         verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
         verify(mockEventStore, never()).appendEvents(anyList());
         verify(mockEventStore, never()).appendEvents(Matchers.<DomainEventMessage<?>[]>anyVararg());
-        assertTrue(commandHandlingEntry.getUnitOfWork().getAggregate() instanceof StubAggregate);
     }
 
     @Test

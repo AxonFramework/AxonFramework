@@ -55,13 +55,13 @@ public class CommandHandlingTest {
 
     @Test
     public void testCommandHandlerLoadsSameAggregateTwice() {
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         StubAggregate stubAggregate = new StubAggregate(aggregateIdentifier);
         stubAggregate.doSomething();
         repository.add(stubAggregate);
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         repository.load(aggregateIdentifier).doSomething();
         repository.load(aggregateIdentifier).doSomething();
         CurrentUnitOfWork.commit();

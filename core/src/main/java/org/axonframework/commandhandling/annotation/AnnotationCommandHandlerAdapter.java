@@ -127,7 +127,7 @@ public class AnnotationCommandHandlerAdapter
                 throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());
             }
             if (unitOfWork != null) {
-                unitOfWork.attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+                unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
             }
             return handler.invoke(target, command);
         } catch (InvocationTargetException e) {

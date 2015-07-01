@@ -34,8 +34,6 @@ import org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Exchange;
@@ -90,7 +88,49 @@ public class SpringAMQPEventBus implements EventBus, InitializingBean, Applicati
                 doSendMessage(channel, amqpMessage);
             }
             if (CurrentUnitOfWork.isStarted()) {
-                CurrentUnitOfWork.get().registerListener(new ChannelTransactionUnitOfWorkListener(channel));
+                final Channel channel1 = channel;
+                CurrentUnitOfWork.get().onCommit(u -> {
+                    if ((isTransactional || waitForAck) && !channel.isOpen()) {
+                        throw new EventPublicationFailedException(
+                                "Unable to Commit UnitOfWork changes to AMQP: Channel is closed.",
+                                channel.getCloseReason());
+                    }
+                });
+                CurrentUnitOfWork.get().afterCommit(u -> {
+                    try {
+                        if (isTransactional) {
+                            channel.txCommit();
+                        } else if (waitForAck) {
+                            try {
+                                channel.waitForConfirmsOrDie(publisherAckTimeout);
+                            } catch (IOException ex) {
+                                throw new EventPublicationFailedException(
+                                        "Failed to receive acknowledgements for all events",
+                                        ex);
+                            } catch (TimeoutException ex) {
+                                throw new EventPublicationFailedException(
+                                        "Timeout while waiting for publisher acknowledgements",
+                                        ex);
+                            }
+                        }
+                    } catch (IOException e) {
+                        logger.warn("Unable to commit transaction on channel.", e);
+                    } catch (InterruptedException e) {
+                        logger.warn("Interrupt received when waiting for message confirms.");
+                        Thread.currentThread().interrupt();
+                    }
+                    tryClose(channel);
+                });
+                CurrentUnitOfWork.get().onRollback((u, e) -> {
+                    try {
+                        if (isTransactional) {
+                            channel.txRollback();
+                        }
+                    } catch (IOException ex) {
+                        logger.warn("Unable to rollback transaction on channel.", ex);
+                    }
+                    tryClose(channel);
+                });
             } else if (isTransactional) {
                 channel.txCommit();
             } else if (waitForAck) {
@@ -348,67 +388,5 @@ public class SpringAMQPEventBus implements EventBus, InitializingBean, Applicati
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-    }
-
-    private class ChannelTransactionUnitOfWorkListener extends UnitOfWorkListenerAdapter {
-
-        private final Channel channel;
-        private boolean isOpen;
-
-        public ChannelTransactionUnitOfWorkListener(Channel channel) {
-            this.channel = channel;
-            isOpen = true;
-        }
-
-        @Override
-        public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
-            if ((isTransactional || waitForAck) && isOpen && !channel.isOpen()) {
-                throw new EventPublicationFailedException(
-                        "Unable to Commit UnitOfWork changes to AMQP: Channel is closed.", channel.getCloseReason());
-            }
-        }
-
-        @Override
-        public void afterCommit(UnitOfWork unitOfWork) {
-            if (isOpen) {
-                try {
-                    if (isTransactional) {
-                        channel.txCommit();
-                    } else if (waitForAck) {
-                        waitForConfirmations();
-                    }
-                } catch (IOException e) {
-                    logger.warn("Unable to commit transaction on channel.", e);
-                } catch (InterruptedException e) {
-                    logger.warn("Interrupt received when waiting for message confirms.");
-                    Thread.currentThread().interrupt();
-                }
-                tryClose(channel);
-            }
-        }
-
-        private void waitForConfirmations() throws InterruptedException {
-            try {
-                channel.waitForConfirmsOrDie(publisherAckTimeout);
-            } catch (IOException ex) {
-                throw new EventPublicationFailedException("Failed to receive acknowledgements for all events", ex);
-            } catch (TimeoutException ex) {
-                throw new EventPublicationFailedException("Timeout while waiting for publisher acknowledgements",
-                                                          ex);
-            }
-        }
-
-        @Override
-        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-            try {
-                if (isTransactional) {
-                    channel.txRollback();
-                }
-            } catch (IOException e) {
-                logger.warn("Unable to rollback transaction on channel.", e);
-            }
-            tryClose(channel);
-            isOpen = false;
-        }
     }
 }

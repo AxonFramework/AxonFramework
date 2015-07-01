@@ -19,7 +19,6 @@ package org.axonframework.eventhandling;
 import org.axonframework.correlation.CorrelationDataHolder;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.MetaData;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 
 import java.util.Collections;
 import java.util.Map;
@@ -37,9 +36,10 @@ import static org.axonframework.domain.GenericEventMessage.asEventMessage;
  * The template also allows addition of Meta Data properties to all Events sent through this template.
  *
  * @author Allard Buijze
- * @since 2.2
  * @see org.axonframework.correlation.CorrelationDataHolder
+ * @since 2.2
  */
+@Deprecated
 public class EventTemplate {
 
     private final EventBus eventBus;
@@ -94,11 +94,7 @@ public class EventTemplate {
     }
 
     private void doPublish(EventMessage<?> message) {
-        if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().publishEvent(message, eventBus);
-        } else {
-            eventBus.publish(message);
-        }
+        eventBus.publish(message);
     }
 
     private EventMessage<Object> createEventMessage(Object payload) {

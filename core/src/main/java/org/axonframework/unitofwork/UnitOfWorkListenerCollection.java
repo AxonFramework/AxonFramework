@@ -16,16 +16,15 @@
 
 package org.axonframework.unitofwork;
 
-import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.EnumMap;
+import java.util.LinkedList;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * This class is responsible for notifying registered listeners in a specific order of precedence.
@@ -42,124 +41,68 @@ import java.util.Set;
  * @author Frank Versnel
  * @since 2.0
  */
-public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
+public class UnitOfWorkListenerCollection {
 
     private static final Logger logger = LoggerFactory.getLogger(UnitOfWorkListenerCollection.class);
 
-    private final Deque<UnitOfWorkListener> listeners = new ArrayDeque<>();
+    private final EnumMap<UnitOfWork.Phase, Deque<Consumer<UnitOfWork>>> listeners = new EnumMap<>(UnitOfWork.Phase.class);
+    private final Deque<BiConsumer<UnitOfWork, Throwable>> rollbackListeners = new ArrayDeque<>();
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * Listeners are called in the reversed order of precedence.
-     */
-    @Override
-    public void afterCommit(UnitOfWork unitOfWork) {
-        logger.debug("Notifying listeners after commit");
-        Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
-        while (descendingIterator.hasNext()) {
-            UnitOfWorkListener listener = descendingIterator.next();
+    private static final Deque<Consumer<UnitOfWork>> EMPTY = new LinkedList<>();
+
+    public void invokeListeners(UnitOfWork unitOfWork, Consumer<UnitOfWork.Phase> phaseConsumer,
+                                UnitOfWork.Phase... phases) {
+        for (UnitOfWork.Phase phase : phases) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] after commit", listener.getClass().getName());
+                logger.debug("Notifying listeners for phase {}", phase.toString());
             }
-            listener.afterCommit(unitOfWork);
+            if (phaseConsumer != null) {
+                phaseConsumer.accept(phase);
+            }
+            if (UnitOfWork.Phase.ROLLBACK.equals(phase)) {
+                rollbackListeners.forEach(l -> l.accept(unitOfWork, null));
+            }
+
+            listeners.getOrDefault(phase, EMPTY).forEach(i -> i.accept(unitOfWork));
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * Listeners are called in the reversed order of precedence.
-     */
-    @Override
-    public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-        logger.debug("Notifying listeners of rollback");
-        Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
-        while (descendingIterator.hasNext()) {
-            UnitOfWorkListener listener = descendingIterator.next();
-            if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] of rollback", listener.getClass().getName());
-            }
-            listener.onRollback(unitOfWork, failureCause);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * Listeners are called in the order of precedence.
-     */
-    @Override
-    public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
-        EventMessage<T> newEvent = event;
-        for (UnitOfWorkListener listener : listeners) {
-            newEvent = listener.onEventRegistered(unitOfWork, newEvent);
-        }
-        return newEvent;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * Listeners are called in the order of precedence.
-     */
-    @Override
-    public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots, List<EventMessage> events) {
-        logger.debug("Notifying listeners of commit request");
-        for (UnitOfWorkListener listener : listeners) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] of upcoming commit", listener.getClass().getName());
-            }
-            listener.onPrepareCommit(unitOfWork, aggregateRoots, events);
-        }
-        logger.debug("Listeners successfully notified");
-    }
-
-    @Override
-    public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
-        logger.debug("Notifying listeners of transaction commit request");
-        for (UnitOfWorkListener listener : listeners) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Notifying listener [{}] of upcoming transaction commit", listener.getClass().getName());
-            }
-            listener.onPrepareTransactionCommit(unitOfWork, transaction);
-        }
-        logger.debug("Listeners successfully notified");
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * Listeners are called in the reversed order of precedence.
-     */
-    @Override
-    public void onCleanup(UnitOfWork unitOfWork) {
-        logger.debug("Notifying listeners of cleanup");
-        Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
-        while (descendingIterator.hasNext()) {
-            UnitOfWorkListener listener = descendingIterator.next();
-            try {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
-                }
-                listener.onCleanup(unitOfWork);
-            } catch (RuntimeException e) {
-                logger.warn("Listener raised an exception on cleanup. Ignoring...", e);
-            }
-        }
-        logger.debug("Listeners successfully notified");
+    public void invokeRollbackListeners(UnitOfWork unitOfWork, Throwable e, Consumer<UnitOfWork.Phase> phaseConsumer) {
+        phaseConsumer.accept(UnitOfWork.Phase.ROLLBACK);
+        listeners.getOrDefault(UnitOfWork.Phase.ROLLBACK, EMPTY).forEach(l -> l.accept(unitOfWork));
+        rollbackListeners.forEach(l -> l.accept(unitOfWork, e));
     }
 
     /**
      * Adds a listener to the collection. Note that the order in which you register the listeners determines the order
      * in which they will be handled during the various stages of a unit of work.
      *
-     * @param listener the listener to be added
+     * @param phase   The phase of the unit of work to attach the handler to
+     * @param handler The handler to invoke in the given phase
      */
-    public void add(UnitOfWorkListener listener) {
+    public void addListener(UnitOfWork.Phase phase, Consumer<UnitOfWork> handler) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Registering listener: {}", listener.getClass().getName());
+            logger.debug("Registering listener {} for phase {}", handler.getClass().getName(), phase.toString());
         }
-        listeners.add(listener);
+        final Deque<Consumer<UnitOfWork>> consumers = listeners.computeIfAbsent(phase, p -> new ArrayDeque<>());
+        if (phase.isCallbackOrderAsc()) {
+            consumers.add(handler);
+        } else {
+            consumers.addFirst(handler);
+        }
+    }
+
+    public void addRollbackListener(BiConsumer<UnitOfWork, Throwable> handler) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Registering listener {} for phase {}",
+                         handler.getClass().getName(),
+                         UnitOfWork.Phase.ROLLBACK.toString());
+        }
+        rollbackListeners.addFirst(handler);
+    }
+
+    public void clear() {
+        listeners.forEach((p, c) -> c.clear());
+        rollbackListeners.clear();
     }
 }

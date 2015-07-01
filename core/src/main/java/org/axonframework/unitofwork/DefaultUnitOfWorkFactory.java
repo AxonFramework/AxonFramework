@@ -16,6 +16,8 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.domain.Message;
+
 /**
  * {@link UnitOfWorkFactory} implementation that creates instances of the {@link DefaultUnitOfWork}.
  *
@@ -45,7 +47,14 @@ public class DefaultUnitOfWorkFactory implements UnitOfWorkFactory {
     }
 
     @Override
-    public UnitOfWork createUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet(transactionManager);
+    public UnitOfWork createUnitOfWork(Message<?> message) {
+        if (transactionManager != null) {
+            Object transaction = transactionManager.startTransaction();
+            final DefaultUnitOfWork unitOfWork = new DefaultUnitOfWork(message);
+            unitOfWork.onCommit(u -> transactionManager.commitTransaction(transaction));
+            unitOfWork.onRollback((u, e) -> transactionManager.rollbackTransaction(transaction));
+            return unitOfWork;
+        }
+        return DefaultUnitOfWork.startAndGet(message);
     }
 }

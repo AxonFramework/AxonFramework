@@ -50,7 +50,8 @@ public class AuditingInterceptor implements CommandHandlerInterceptor {
         AuditingUnitOfWorkListener auditListener = new AuditingUnitOfWorkListener(command,
                                                                                   auditDataProvider,
                                                                                   auditLogger);
-        unitOfWork.registerListener(auditListener);
+        // TODO: Fix
+//        unitOfWork.registerListener(auditListener);
         Object returnValue = chain.proceed();
         auditListener.setReturnValue(returnValue);
         return returnValue;

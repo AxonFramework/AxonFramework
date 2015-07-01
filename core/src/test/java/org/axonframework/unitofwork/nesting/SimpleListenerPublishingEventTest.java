@@ -59,17 +59,16 @@ public class SimpleListenerPublishingEventTest {
 
     @Test
     public void testEventPublishedByListenerIsHandled() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
         GenericEventMessage<Object> event = new GenericEventMessage<>("First",
-                                                                            Collections.<String, Object>singletonMap(
-                                                                                    "continue",
-                                                                                    true));
-        uow.publishEvent(event,
-                         eventBus);
+                                                                      Collections.<String, Object>singletonMap(
+                                                                              "continue",
+                                                                              true));
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(event);
+        eventBus.publish(event);
         verify(cluster, never()).handle(Matchers.<EventMessage[]>anyVararg());
         verify(cluster, never()).handle(Matchers.<List<EventMessage<?>>>any());
         doAnswer(invocation -> {
-            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>("Second"), eventBus);
+            eventBus.publish(new GenericEventMessage<>("Second"));
             return null;
         }).when(cluster).handle(Collections.singletonList(event));
         uow.commit();

@@ -134,8 +134,8 @@ public class AbstractAnnotatedAggregateRootTest {
 
     @Test
     public void testAggregateRetrievesParameterResolverFactoryFromUnitOfWork() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-        uow.attachResource(ParameterResolverFactory.class.getName(), MultiParameterResolverFactory.ordered(
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        uow.resources().put(ParameterResolverFactory.class.getName(), MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(CustomParameterAggregateRoot.class),
                 (memberAnnotations, parameterType, parameterAnnotations) -> {
                     if (String.class.equals(parameterType)) {

@@ -167,7 +167,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         cluster.subscribe(new CommandExecutingEventListener("1", null, true));
         cluster.subscribe(new CommandExecutingEventListener("2", null, true));
 
-        UnitOfWork uow = uowFactory.createUnitOfWork();
+        UnitOfWork uow = uowFactory.createUnitOfWork(null);
         repository.add(new Aggregate(id));
         uow.commit();
 
@@ -205,7 +205,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         Aggregate a = new Aggregate(id);
 
         // First command: Create Aggregate
-        UnitOfWork uow1 = uowFactory.createUnitOfWork();
+        UnitOfWork uow1 = uowFactory.createUnitOfWork(null);
         repository.add(a);
         uow1.commit();
 
@@ -223,7 +223,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     private Aggregate loadAggregate(String id) {
-        UnitOfWork uow = uowFactory.createUnitOfWork();
+        UnitOfWork uow = uowFactory.createUnitOfWork(null);
         Aggregate verify = repository.load(id);
         uow.rollback();
         return verify;
@@ -276,7 +276,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;
 
-                UnitOfWork nested = uowFactory.createUnitOfWork();
+                UnitOfWork nested = uowFactory.createUnitOfWork(event);
                 Aggregate aggregate = repository.load(created.id);
                 aggregate.update(token);
                 nested.commit();
@@ -285,7 +285,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
             if (previousToken != null && payload instanceof AggregateUpdatedEvent) {
                 AggregateUpdatedEvent updated = (AggregateUpdatedEvent) payload;
                 if (updated.token.equals(previousToken)) {
-                    UnitOfWork nested = uowFactory.createUnitOfWork();
+                    UnitOfWork nested = uowFactory.createUnitOfWork(event);
                     Aggregate aggregate = repository.load(updated.id);
                     aggregate.update(token);
                     if (commit) {

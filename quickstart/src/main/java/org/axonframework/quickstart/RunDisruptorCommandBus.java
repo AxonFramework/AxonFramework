@@ -49,11 +49,12 @@ public class RunDisruptorCommandBus {
         // a Simple Event Bus will do
         EventBus eventBus = new SimpleEventBus();
 
+        // TODO: Listeners should subscribe to Event Store instead of Event Bus
         // we register the event handlers
         eventBus.subscribe(new SimpleCluster("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // we use default settings for the disruptor command bus
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
 
         // now, we obtain a repository from the command bus
         Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<>(ToDoItem.class));

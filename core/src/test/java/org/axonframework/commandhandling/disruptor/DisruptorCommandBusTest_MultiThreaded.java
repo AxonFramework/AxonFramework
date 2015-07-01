@@ -86,7 +86,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     @Test//(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Throwable {
         testSubject = new DisruptorCommandBus(
-                inMemoryEventStore, eventBus,
+                inMemoryEventStore,
                 new DisruptorConfiguration().setBufferSize(4)
                                             .setProducerType(ProducerType.MULTI)
                                             .setWaitStrategy(new SleepingWaitStrategy())

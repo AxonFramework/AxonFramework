@@ -62,9 +62,9 @@ public class FireEventJob implements Job {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
             UnitOfWorkFactory unitOfWorkFactory =
                     (UnitOfWorkFactory) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
-            UnitOfWork uow = unitOfWorkFactory.createUnitOfWork();
+            UnitOfWork uow = unitOfWorkFactory.createUnitOfWork(eventMessage);
             try {
-                uow.publishEvent(eventMessage, eventBus);
+                eventBus.publish(eventMessage);
             } finally {
                 uow.commit();
             }

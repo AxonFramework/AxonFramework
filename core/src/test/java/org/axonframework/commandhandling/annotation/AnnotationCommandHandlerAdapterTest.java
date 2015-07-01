@@ -28,6 +28,7 @@ import org.junit.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -50,6 +51,7 @@ public class AnnotationCommandHandlerAdapterTest {
         parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
         testSubject = new AnnotationCommandHandlerAdapter(mockTarget, parameterResolverFactory);
         mockUnitOfWork = mock(UnitOfWork.class);
+        when(mockUnitOfWork.resources()).thenReturn(mock(Map.class));
         CurrentUnitOfWork.set(mockUnitOfWork);
     }
 
@@ -65,7 +67,7 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
 
-        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -75,18 +77,19 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(1, mockTarget.returningHandlerInvoked);
 
-        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
     public void testHandlerDispatching_WithCustomCommandName() throws Throwable {
-        Object actualReturnValue = testSubject.handle(new GenericCommandMessage("almostLong", 1L, null), mockUnitOfWork);
+        Object actualReturnValue = testSubject.handle(new GenericCommandMessage("almostLong", 1L, null),
+                                                      mockUnitOfWork);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
         assertEquals(1, mockTarget.almostDuplicateReturningHandlerInvoked);
 
-        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -97,7 +100,7 @@ public class AnnotationCommandHandlerAdapterTest {
         } catch (Exception ex) {
             assertEquals(Exception.class, ex.getClass());
         }
-        verify(mockUnitOfWork).attachResource(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -115,8 +118,8 @@ public class AnnotationCommandHandlerAdapterTest {
     @Test(expected = NoHandlerForCommandException.class)
     public void testHandle_NoHandlerForCommand() throws Throwable {
         testSubject.handle(GenericCommandMessage.asCommandMessage(new LinkedList<>()), null);
-        verify(mockUnitOfWork, never()).attachResource(ParameterResolverFactory.class.getName(),
-                                                       parameterResolverFactory);
+        verify(mockUnitOfWork.resources(), never()).put(ParameterResolverFactory.class.getName(),
+                                                        parameterResolverFactory);
     }
 
     private static class MyCommandHandler {

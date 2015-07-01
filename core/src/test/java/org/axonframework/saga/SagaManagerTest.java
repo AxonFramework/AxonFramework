@@ -19,6 +19,7 @@ package org.axonframework.saga;
 import org.apache.commons.collections.set.ListOrderedSet;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.domain.Message;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
@@ -136,7 +137,7 @@ public class SagaManagerTest {
 
         doAnswer(invocationOnMock -> {
             if (nestingCounter.decrementAndGet() > 0) {
-                UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+                UnitOfWork uow = DefaultUnitOfWork.startAndGet((Message<?>) invocationOnMock.getArguments()[0]);
                 try {
                     testSubject.handle(event);
                 } finally {

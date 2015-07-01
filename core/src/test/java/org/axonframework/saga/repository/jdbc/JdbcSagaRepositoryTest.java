@@ -134,7 +134,7 @@ public class JdbcSagaRepositoryTest {
 
     @Test
     public void testSaveSaga_InsideUnitOfWorkWithoutConnection() throws SQLException {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
 
         String identifier = UUID.randomUUID().toString();
         StubSaga saga = new StubSaga(identifier);

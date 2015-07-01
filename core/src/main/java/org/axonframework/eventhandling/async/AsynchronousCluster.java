@@ -26,9 +26,7 @@ import org.axonframework.eventhandling.OrderResolver;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,12 +175,9 @@ public class AsynchronousCluster extends AbstractCluster {
     protected void doPublish(final List<EventMessage<?>> events, Set<EventListener> eventListeners,
                              final MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
-                @Override
-                public void afterCommit(UnitOfWork unitOfWork) {
-                    for (EventMessage event : events) {
-                        schedule(event, eventProcessingMonitor);
-                    }
+            CurrentUnitOfWork.get().afterCommit(u -> {
+                for (EventMessage event : events) {
+                    schedule(event, eventProcessingMonitor);
                 }
             });
         } else {

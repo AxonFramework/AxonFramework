@@ -42,7 +42,7 @@ public class SerializationOptimizingInterceptor implements CommandHandlerInterce
     public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
                          InterceptorChain interceptorChain)
             throws Throwable {
-        unitOfWork.registerListener(listener);
+//        unitOfWork.registerListener(listener);
         return interceptorChain.proceed();
     }
 

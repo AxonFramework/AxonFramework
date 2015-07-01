@@ -145,13 +145,13 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
         @CommandHandler
         public void handle(String stringCommand) {
-            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>("Mock"), eventBus);
+            eventBus.publish(new GenericEventMessage<>("Mock"));
             aggregateARepository.load(aggregateAIdentifier).doSomething(stringCommand);
         }
 
         @CommandHandler
         public void handle(Object objectCommand) {
-            CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<>("Mock"), eventBus);
+            eventBus.publish(new GenericEventMessage<>("Mock"));
             aggregateBRepository.load(aggregateBIdentifier).doSomething();
         }
     }

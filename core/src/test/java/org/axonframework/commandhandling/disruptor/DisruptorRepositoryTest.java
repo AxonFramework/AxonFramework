@@ -4,7 +4,6 @@ import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHa
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
@@ -21,11 +20,10 @@ import static org.mockito.Mockito.*;
 public class DisruptorRepositoryTest {
 
     private final EventStore eventStore = mock(EventStore.class);
-    private final SimpleEventBus eventBus = new SimpleEventBus();
 
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
         Repository<Aggregate> repository = commandBus
                 .createRepository(new GenericAggregateFactory<>(Aggregate.class));
 
@@ -40,7 +38,7 @@ public class DisruptorRepositoryTest {
         gateway.sendAndWait(new CreateCommandAndEvent(aggregateId));
 
         // Load the aggretate from the repository -- from "worker" thread
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         try {
             Aggregate aggregate = repository.load(aggregateId);
             fail("Expected IllegalStateException");

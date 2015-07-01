@@ -485,7 +485,7 @@ public class GatewayProxyFactoryTest {
         final AtomicReference<Throwable> error = new AtomicReference<>();
         doAnswer(new Failure(new RuntimeException(new DeadlockException("Mock"))))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         try {
             result.set(gateway.waitForReturnValue("Command"));
         } catch (Exception e) {

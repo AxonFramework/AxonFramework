@@ -79,7 +79,7 @@ public class HybridJpaRepositoryTest {
             CurrentUnitOfWork.get().rollback();
         }
         eventListener = mock(EventListener.class);
-        unitOfWork = DefaultUnitOfWork.startAndGet();
+        unitOfWork = DefaultUnitOfWork.startAndGet(null);
         eventBus.subscribe(cluster);
         cluster.subscribe(eventListener);
         Mockito.reset(eventStore, eventListener);
@@ -88,7 +88,7 @@ public class HybridJpaRepositoryTest {
     @After
     public void clearUnitOfWork() {
         try {
-            if (unitOfWork.isStarted()) {
+            if (unitOfWork.isActive()) {
                 unitOfWork.rollback();
             }
         } finally {

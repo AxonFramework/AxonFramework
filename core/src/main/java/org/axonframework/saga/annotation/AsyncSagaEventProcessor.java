@@ -24,6 +24,7 @@ import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.correlation.CorrelationDataHolder;
 import org.axonframework.correlation.CorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.domain.Message;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
@@ -176,7 +177,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         }
         for (String sagaId : sagaIds) {
             if (ownedByCurrentProcessor(sagaId) && !processedSagas.containsKey(sagaId)) {
-                ensureActiveUnitOfWork();
+                ensureActiveUnitOfWork(entry.getPublishedEvent());
                 final Saga saga = sagaRepository.load(sagaId);
                 if (parameterResolverFactory != null) {
                     ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(parameterResolverFactory);
@@ -188,7 +189,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             if (sagaType.isInstance(saga) && saga.isActive()
                     && containsAny(saga.getAssociationValues(), entry.getAssociationValues())) {
                 try {
-                    ensureActiveUnitOfWork();
+                    ensureActiveUnitOfWork(entry.getPublishedEvent());
                     saga.handle(entry.getPublishedEvent());
                 } catch (Exception e) {
                     logger.error("Saga threw an exception while handling an Event. Ignoring and moving on...", e);
@@ -213,7 +214,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         try {
             Set<String> committedSagas = new HashSet<>();
             if (!processedSagas.isEmpty()) {
-                ensureActiveUnitOfWork();
+                ensureActiveUnitOfWork(null);
                 for (Saga saga : processedSagas.values()) {
                     if (newlyCreatedSagas.containsKey(saga.getSagaIdentifier())) {
                         sagaRepository.add(saga);
@@ -246,7 +247,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     }
 
     private void processNewSagaInstance(AsyncSagaProcessingEvent entry, AssociationValue associationValue) {
-        ensureActiveUnitOfWork();
+        ensureActiveUnitOfWork(entry.getPublishedEvent());
         final AbstractAnnotatedSaga newSaga = entry.getNewSaga();
         if (parameterResolverFactory != null) {
             newSaga.registerParameterResolverFactory(parameterResolverFactory);
@@ -257,9 +258,10 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         newlyCreatedSagas.put(newSaga.getSagaIdentifier(), newSaga);
     }
 
-    private void ensureActiveUnitOfWork() {
-        if (unitOfWork == null || !unitOfWork.isStarted()) {
-            unitOfWork = unitOfWorkFactory.createUnitOfWork();
+    private void ensureActiveUnitOfWork(Message<?> message) {
+        if (unitOfWork == null || !unitOfWork.isActive()) {
+            // TODO: Implement batching support
+            unitOfWork = unitOfWorkFactory.createUnitOfWork(message);
         }
     }
 

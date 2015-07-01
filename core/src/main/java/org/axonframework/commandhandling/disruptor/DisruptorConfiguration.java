@@ -65,7 +65,6 @@ public class DisruptorConfiguration {
     private CommandTargetResolver commandTargetResolver;
     private int invokerThreadCount = 1;
     private int publisherThreadCount = 1;
-    private int serializerThreadCount = 1;
     private Serializer serializer;
     private Class<?> serializedRepresentation = byte[].class;
 
@@ -402,29 +401,6 @@ public class DisruptorConfiguration {
     }
 
     /**
-     * Returns the configured number of threads that should perform the pre-serialization step. This value is ignored
-     * unless a serializer is set using {@link #setSerializer(org.axonframework.serializer.Serializer)}.
-     *
-     * @return the number of threads to perform pre-serialization with
-     */
-    public int getSerializerThreadCount() {
-        return serializerThreadCount;
-    }
-
-    /**
-     * Sets the number of threads that should perform the pre-serialization step. This value is ignored
-     * unless a serializer is set using {@link #setSerializer(org.axonframework.serializer.Serializer)}.
-     *
-     * @param newSerializerThreadCount the number of threads to perform pre-serialization with
-     * @return <code>this</code> for method chaining
-     */
-    public DisruptorConfiguration setSerializerThreadCount(int newSerializerThreadCount) {
-        Assert.isTrue(newSerializerThreadCount >= 0, "SerializerThreadCount must be >= 0");
-        this.serializerThreadCount = newSerializerThreadCount;
-        return this;
-    }
-
-    /**
      * Returns the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization should be
      * done.
      *
@@ -446,39 +422,6 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setSerializer(Serializer newSerializer) {
         this.serializer = newSerializer;
-        return this;
-    }
-
-    /**
-     * Indicates whether pre-serialization is configured. Is <code>true</code> when a serializer and at
-     * least one thread is configured.
-     *
-     * @return whether pre-serialization is configured
-     */
-    public boolean isPreSerializationConfigured() {
-        return serializer != null && serializerThreadCount > 0;
-    }
-
-    /**
-     * Returns the type of data the serialized object should be represented in. Defaults to a byte array.
-     *
-     * @return the type of data the serialized object should be represented in
-     */
-    public Class<?> getSerializedRepresentation() {
-        return serializedRepresentation;
-    }
-
-    /**
-     * Sets the type of data the serialized object should be represented in. Defaults to a byte array
-     * (<code>byte[]</code>).
-     *
-     * @param newSerializedRepresentation the type of data the serialized object should be represented in. May not be
-     *                                    <code>null</code>.
-     * @return <code>this</code> for method chaining
-     */
-    public DisruptorConfiguration setSerializedRepresentation(Class<?> newSerializedRepresentation) {
-        Assert.notNull(newSerializedRepresentation, "Serialized representation may not be null");
-        this.serializedRepresentation = newSerializedRepresentation;
         return this;
     }
 

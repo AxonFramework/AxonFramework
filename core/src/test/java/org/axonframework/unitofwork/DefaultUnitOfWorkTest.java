@@ -16,55 +16,56 @@
 
 package org.axonframework.unitofwork;
 
-import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.testutils.MockException;
 import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
 public class DefaultUnitOfWorkTest {
 
-    private DefaultUnitOfWork testSubject;
-    private EventBus mockEventBus;
-    private AggregateRoot mockAggregateRoot;
-    private EventMessage event1 = new GenericEventMessage<>(1);
-    private EventMessage event2 = new GenericEventMessage<>(2);
-    private EventListener listener1;
-    private EventListener listener2;
-    private SaveAggregateCallback callback;
+    private List<PhaseTransition> phaseTransitions = new ArrayList<>();
+    private UnitOfWork outer;
+    private UnitOfWork inner;
 
     @SuppressWarnings({"unchecked", "deprecation"})
     @Before
     public void setUp() {
+        phaseTransitions.clear();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
-        testSubject = new DefaultUnitOfWork();
-        mockEventBus = mock(EventBus.class);
-        mockAggregateRoot = mock(AggregateRoot.class);
-        listener1 = mock(EventListener.class, "listener1");
-        listener2 = mock(EventListener.class, "listener2");
-        callback = mock(SaveAggregateCallback.class);
-        doAnswer(new PublishEvent(event1)).doAnswer(new PublishEvent(event2))
-                .when(callback).save(mockAggregateRoot);
-        doAnswer(invocation -> {
-            listener1.handle((EventMessage) invocation.getArguments()[0]);
-            listener2.handle((EventMessage) invocation.getArguments()[0]);
-            return null;
-        }).when(mockEventBus).publish(isA(EventMessage.class));
+
+        outer = new DefaultUnitOfWork(new GenericEventMessage<>("Input 1")) {
+            @Override
+            public String toString() {
+                return "outer";
+            }
+        };
+        inner = new DefaultUnitOfWork(new GenericEventMessage<>("Input 2")) {
+            @Override
+            public String toString() {
+                return "inner";
+            }
+        };
+        registerListeners(outer);
+        registerListeners(inner);
+    }
+
+    private void registerListeners(UnitOfWork unitOfWork) {
+        unitOfWork.onPrepareCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.PREPARE_COMMIT)));
+        unitOfWork.onCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.COMMIT)));
+        unitOfWork.afterCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.AFTER_COMMIT)));
+        unitOfWork.onRollback((u, e) -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.ROLLBACK)));
+        unitOfWork.onCleanup(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.CLEANUP)));
     }
 
     @After
@@ -72,284 +73,146 @@ public class DefaultUnitOfWorkTest {
         assertFalse("A UnitOfWork was not properly cleared", CurrentUnitOfWork.isStarted());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testTransactionBoundUnitOfWorkLifecycle() {
-        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        TransactionManager<Object> mockTransactionManager = mock(TransactionManager.class);
-        when(mockTransactionManager.startTransaction()).thenReturn(new Object());
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransactionManager);
-        uow.registerListener(mockListener);
-        verify(mockTransactionManager).startTransaction();
-        verifyZeroInteractions(mockListener);
-
-        uow.commit();
-
-        InOrder inOrder = inOrder(mockListener, mockTransactionManager);
-        inOrder.verify(mockListener).onPrepareCommit(eq(uow), anySet(), anyList());
-        inOrder.verify(mockListener).onPrepareTransactionCommit(eq(uow), any());
-        inOrder.verify(mockTransactionManager).commitTransaction(any());
-        inOrder.verify(mockListener).afterCommit(eq(uow));
-        inOrder.verify(mockListener).onCleanup(uow);
-        verifyNoMoreInteractions(mockListener, mockTransactionManager);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testTransactionBoundUnitOfWorkLifecycle_Rollback() {
-        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        TransactionManager<Object> mockTransactionManager = mock(TransactionManager.class);
-        when(mockTransactionManager.startTransaction()).thenReturn(new Object());
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransactionManager);
-        uow.registerListener(mockListener);
-        verify(mockTransactionManager).startTransaction();
-        verifyZeroInteractions(mockListener);
-
-        uow.rollback();
-
-        InOrder inOrder = inOrder(mockListener, mockTransactionManager);
-        inOrder.verify(mockTransactionManager).rollbackTransaction(any());
-        inOrder.verify(mockListener).onRollback(eq(uow), any(Throwable.class));
-        inOrder.verify(mockListener).onCleanup(uow);
-        verifyNoMoreInteractions(mockListener, mockTransactionManager);
-    }
-
-    @Test
-    public void testUnitOfWorkRegistersListenerWithParent() {
-        UnitOfWork parentUoW = mock(UnitOfWork.class);
-        CurrentUnitOfWork.set(parentUoW);
-        UnitOfWork innerUow = DefaultUnitOfWork.startAndGet();
-        innerUow.rollback();
-        parentUoW.rollback();
-        CurrentUnitOfWork.clear(parentUoW);
-        verify(parentUoW).registerListener(isA(UnitOfWorkListener.class));
-    }
-
-    @Test
-    public void testInnerUnitOfWorkRolledBackWithOuter() {
-        final AtomicBoolean isRolledBack = new AtomicBoolean(false);
-        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
-        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
-        inner.registerListener(new UnitOfWorkListenerAdapter() {
-            @Override
-            public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-                isRolledBack.set(true);
-            }
+    public void testInnerUnitOfWorkNotifiedOfOuterCommitFailure() {
+        outer.onPrepareCommit(u -> {
+            inner.start();
+            inner.commit();
         });
-        inner.commit();
-        outer.rollback();
-        assertTrue("The inner UoW wasn't properly rolled back", isRolledBack.get());
-        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
-    }
-
-    @Test
-    public void testInnerUnitOfWorkCommittedBackWithOuter() {
-        final AtomicBoolean isCommitted = new AtomicBoolean(false);
-        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
-        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
-        inner.registerListener(new UnitOfWorkListenerAdapter() {
-            @Override
-            public void afterCommit(UnitOfWork unitOfWork) {
-                isCommitted.set(true);
-            }
+        outer.onCommit(u -> {
+            throw new MockException();
         });
-        inner.commit();
-        assertFalse("The inner UoW was committed prematurely", isCommitted.get());
+        outer.start();
         outer.commit();
-        assertTrue("The inner UoW wasn't properly committed", isCommitted.get());
+
         assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Test
-    public void testSagaEventsDoNotOvertakeRegularEvents() {
-        testSubject.start();
-        doAnswer(invocation -> {
-            DefaultUnitOfWork uow = new DefaultUnitOfWork();
-            uow.start();
-            uow.registerAggregate(mockAggregateRoot, mockEventBus, callback);
-            uow.commit();
-            return null;
-        }).when(listener1).handle(event1);
-        testSubject.registerAggregate(mockAggregateRoot, mockEventBus, callback);
-        testSubject.commit();
-
-        InOrder inOrder = inOrder(listener1, listener2, callback);
-        inOrder.verify(listener1, times(1)).handle(event1);
-        inOrder.verify(listener2, times(1)).handle(event1);
-        inOrder.verify(listener1, times(1)).handle(event2);
-        inOrder.verify(listener2, times(1)).handle(event2);
+        assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.ROLLBACK),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.ROLLBACK),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.CLEANUP),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.CLEANUP)
+        ), phaseTransitions);
     }
 
     @Test
-    public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnPrepareCommit() {
-        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        doThrow(new MockException()).when(mockListener).onPrepareCommit(isA(UnitOfWork.class),
-                                                                        anySetOf(AggregateRoot.class),
-                                                                        anyListOf(EventMessage.class));
-        testSubject.registerListener(mockListener);
-        testSubject.start();
-        try {
-            testSubject.commit();
-            fail("Expected exception");
-        } catch (RuntimeException e) {
-            assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
-            assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
-        }
-        verify(mockListener).onRollback(isA(UnitOfWork.class), isA(RuntimeException.class));
-        verify(mockListener, never()).afterCommit(isA(UnitOfWork.class));
-        verify(mockListener).onCleanup(isA(UnitOfWork.class));
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Test
-    public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnCommitAggregate() {
-        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        doThrow(new MockException()).when(callback).save(isA(AggregateRoot.class));
-        testSubject.registerListener(mockListener);
-        testSubject.registerAggregate(mockAggregateRoot, mockEventBus, callback);
-        testSubject.start();
-        try {
-            testSubject.commit();
-            fail("Expected exception");
-        } catch (RuntimeException e) {
-            assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
-            assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
-        }
-        verify(mockListener).onPrepareCommit(isA(UnitOfWork.class), anySetOf(AggregateRoot.class), anyListOf(
-                EventMessage.class));
-        verify(mockListener).onRollback(isA(UnitOfWork.class), isA(RuntimeException.class));
-        verify(mockListener, never()).afterCommit(isA(UnitOfWork.class));
-        verify(mockListener).onCleanup(isA(UnitOfWork.class));
-    }
-
-    @SuppressWarnings({"unchecked"})
-    @Test
-    public void testUnitOfWorkRolledBackOnCommitFailure_ErrorOnDispatchEvents() {
-        UnitOfWorkListener mockListener = mock(UnitOfWorkListener.class);
-        when(mockListener.onEventRegistered(isA(UnitOfWork.class), Matchers.<EventMessage<Object>>any()))
-                .thenAnswer(new ReturnParameterAnswer(1));
-
-        doThrow(new MockException()).when(mockEventBus).publish(isA(EventMessage.class));
-        testSubject.start();
-        testSubject.registerListener(mockListener);
-        testSubject.publishEvent(new GenericEventMessage<>(new Object()), mockEventBus);
-        try {
-            testSubject.commit();
-            fail("Expected exception");
-        } catch (RuntimeException e) {
-            assertThat(e, new ArgumentMatcher<RuntimeException>() {
-                @Override
-                public boolean matches(Object o) {
-                    return "Mock".equals(((RuntimeException) o).getMessage());
-                }
-            });
-            assertEquals("Got an exception, but the wrong one", MockException.class, e.getClass());
-            assertEquals("Got an exception, but the wrong one", "Mock", e.getMessage());
-        }
-        verify(mockListener).onPrepareCommit(isA(UnitOfWork.class), anySetOf(AggregateRoot.class),
-                                             anyListOf(EventMessage.class));
-        verify(mockListener).onRollback(isA(UnitOfWork.class), isA(RuntimeException.class));
-        verify(mockListener, never()).afterCommit(isA(UnitOfWork.class));
-        verify(mockListener).onCleanup(isA(UnitOfWork.class));
-    }
-
-    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-    @Test
-    public void testUnitOfWorkCleanupDelayedUntilOuterUnitOfWorkIsCleanedUp_InnerCommit() {
-        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class);
-        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class);
-        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
-        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
-        inner.registerListener(innerListener);
-        outer.registerListener(outerListener);
-        inner.commit();
-        verify(innerListener, never()).afterCommit(isA(UnitOfWork.class));
-        verify(innerListener, never()).onCleanup(isA(UnitOfWork.class));
+    public void testInnerUnitOfWorkNotifiedOfOuterPrepareCommitFailure() {
+        outer.onPrepareCommit(u -> {
+            inner.start();
+            inner.commit();
+        });
+        outer.onPrepareCommit(u -> {
+            throw new MockException();
+        });
+        outer.start();
         outer.commit();
 
-        InOrder inOrder = inOrder(innerListener, outerListener);
-        inOrder.verify(innerListener).afterCommit(isA(UnitOfWork.class));
-        inOrder.verify(outerListener).afterCommit(isA(UnitOfWork.class));
-        inOrder.verify(innerListener).onCleanup(isA(UnitOfWork.class));
-        inOrder.verify(outerListener).onCleanup(isA(UnitOfWork.class));
+        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.ROLLBACK),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.ROLLBACK),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.CLEANUP),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.CLEANUP)
+        ), phaseTransitions);
     }
 
-    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored", "NullableProblems"})
     @Test
-    public void testUnitOfWorkCleanupDelayedUntilOuterUnitOfWorkIsCleanedUp_InnerRollback() {
-        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class);
-        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class);
-        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
-        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
-        inner.registerListener(innerListener);
-        outer.registerListener(outerListener);
-        inner.rollback();
-        verify(innerListener, never()).afterCommit(isA(UnitOfWork.class));
-        verify(innerListener, never()).onCleanup(isA(UnitOfWork.class));
+    public void testInnerUnitOfWorkNotifiedOfOuterCommit() {
+        outer.onPrepareCommit(u -> {
+            inner.start();
+            inner.commit();
+        });
+        outer.start();
         outer.commit();
 
-        InOrder inOrder = inOrder(innerListener, outerListener);
-        inOrder.verify(innerListener).onRollback(isA(UnitOfWork.class), (Throwable) isNull());
-        inOrder.verify(outerListener).afterCommit(isA(UnitOfWork.class));
-        inOrder.verify(innerListener).onCleanup(isA(UnitOfWork.class));
-        inOrder.verify(outerListener).onCleanup(isA(UnitOfWork.class));
+        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.AFTER_COMMIT),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.AFTER_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.CLEANUP),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.CLEANUP)
+        ), phaseTransitions);
     }
 
-    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored", "NullableProblems"})
     @Test
-    public void testUnitOfWorkCleanupDelayedUntilOuterUnitOfWorkIsCleanedUp_InnerCommit_OuterRollback() {
-        UnitOfWorkListener outerListener = mock(UnitOfWorkListener.class, "outerListener");
-        UnitOfWorkListener innerListener = mock(UnitOfWorkListener.class, "innerListener");
-        UnitOfWork outer = DefaultUnitOfWork.startAndGet();
-        UnitOfWork inner = DefaultUnitOfWork.startAndGet();
-        inner.registerListener(innerListener);
-        outer.registerListener(outerListener);
-        inner.commit();
-        verify(innerListener, never()).afterCommit(isA(UnitOfWork.class));
-        verify(innerListener, never()).onCleanup(isA(UnitOfWork.class));
-        outer.rollback();
-        verify(outerListener, never()).onPrepareCommit(isA(UnitOfWork.class),
-                                                       anySetOf(AggregateRoot.class),
-                                                       anyListOf(EventMessage.class));
+    public void testInnerUnitRollbackDoesNotAffectOuterCommit() {
+        outer.onPrepareCommit(u -> {
+            inner.start();
+            inner.rollback(new MockException());
+        });
+        outer.start();
+        outer.commit();
 
-        InOrder inOrder = inOrder(innerListener, outerListener);
-        inOrder.verify(innerListener).onPrepareCommit(isA(UnitOfWork.class),
-                                                      anySetOf(AggregateRoot.class),
-                                                      anyListOf(EventMessage.class));
-
-        inOrder.verify(innerListener).onRollback(isA(UnitOfWork.class), (Throwable) isNull());
-        inOrder.verify(outerListener).onRollback(isA(UnitOfWork.class), (Throwable) isNull());
-        inOrder.verify(innerListener).onCleanup(isA(UnitOfWork.class));
-        inOrder.verify(outerListener).onCleanup(isA(UnitOfWork.class));
+        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.ROLLBACK),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.AFTER_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.CLEANUP),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.CLEANUP)
+        ), phaseTransitions);
     }
 
-    private static class ReturnParameterAnswer implements Answer<Object> {
+    @Test
+    public void testInnerUnitCommitFailureDoesNotAffectOuterCommit() {
+        outer.onPrepareCommit(u -> {
+            inner.start();
+            inner.onCommit(uow -> { throw new MockException(); });
+            inner.commit();
+        });
+        outer.start();
+        outer.commit();
 
-        private final int parameterIndex;
+        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.ROLLBACK),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.COMMIT),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.AFTER_COMMIT),
+                                   new PhaseTransition(inner, UnitOfWork.Phase.CLEANUP),
+                                   new PhaseTransition(outer, UnitOfWork.Phase.CLEANUP)
+        ), phaseTransitions);
+    }
 
-        private ReturnParameterAnswer(int parameterIndex) {
-            this.parameterIndex = parameterIndex;
+    private static class PhaseTransition {
+
+        private final UnitOfWork.Phase phase;
+        private final UnitOfWork unitOfWork;
+
+        public PhaseTransition(UnitOfWork unitOfWork, UnitOfWork.Phase phase) {
+            this.unitOfWork = unitOfWork;
+            this.phase = phase;
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
-            return invocation.getArguments()[parameterIndex];
-        }
-    }
-
-    private class PublishEvent implements Answer {
-
-        private final EventMessage event;
-
-        private PublishEvent(EventMessage event) {
-            this.event = event;
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            PhaseTransition that = (PhaseTransition) o;
+            return Objects.equals(phase, that.phase) &&
+                    Objects.equals(unitOfWork, that.unitOfWork);
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
-            CurrentUnitOfWork.get().publishEvent(event, mockEventBus);
-            return null;
+        public int hashCode() {
+            return Objects.hash(phase, unitOfWork);
+        }
+
+        @Override
+        public String toString() {
+            return unitOfWork + " " + phase;
         }
     }
 }

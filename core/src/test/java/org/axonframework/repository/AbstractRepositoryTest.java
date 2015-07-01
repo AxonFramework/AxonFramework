@@ -44,7 +44,7 @@ public class AbstractRepositoryTest {
             protected void doDelete(JpaAggregate aggregate) {
             }
         };
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
     }
 
     @After

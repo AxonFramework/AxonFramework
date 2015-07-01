@@ -26,8 +26,6 @@ import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.NoTransactionManager;
-import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.springframework.amqp.rabbit.connection.Connection;
@@ -90,15 +88,14 @@ public class SpringAMQPEventBusTest {
 
     @Test
     public void testSendMessage_WithTransactionalUnitOfWork() throws IOException {
-        TransactionManager<?> mockTransaction = new NoTransactionManager();
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransaction);
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
 
         Connection connection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(connection);
         Channel transactionalChannel = mock(Channel.class);
         when(transactionalChannel.isOpen()).thenReturn(true);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
-        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
                 .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
@@ -118,15 +115,14 @@ public class SpringAMQPEventBusTest {
 
     @Test
     public void testSendMessage_WithTransactionalUnitOfWork_ChannelClosedBeforeCommit() throws IOException {
-        TransactionManager<?> mockTransaction = new NoTransactionManager();
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(mockTransaction);
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
 
         Connection connection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(connection);
         Channel transactionalChannel = mock(Channel.class);
         when(transactionalChannel.isOpen()).thenReturn(false);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
-        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
                 .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
@@ -150,13 +146,13 @@ public class SpringAMQPEventBusTest {
 
     @Test
     public void testSendMessage_WithUnitOfWorkRollback() throws IOException {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
 
         Connection connection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(connection);
         Channel transactionalChannel = mock(Channel.class);
         when(connection.createChannel(true)).thenReturn(transactionalChannel);
-        GenericEventMessage<String> message = new GenericEventMessage<>("Message");
         when(serializer.serialize(message.getPayload(), byte[].class))
                 .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
@@ -195,7 +191,7 @@ public class SpringAMQPEventBusTest {
         when(serializer.serialize(message.getMetaData(), byte[].class))
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
 
         testSubject.publish(message);
         verify(channel, never()).waitForConfirms();

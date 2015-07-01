@@ -18,18 +18,14 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.AggregateRoot;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.LockingRepository;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,7 +33,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -176,8 +171,13 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             if (aggregate.isDeleted()) {
                 throw new AggregateDeletedException(aggregateIdentifier);
             }
-            CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
-
+            CurrentUnitOfWork.get().onPrepareCommit(u -> {
+                if (aggregate.getUncommittedEventCount() > 0
+                        && aggregate.getVersion() != null
+                        && !unseenEvents.isEmpty()) {
+                    conflictResolver.resolveConflicts(aggregate.getUncommittedEvents(), unseenEvents);
+                }
+            });
             return aggregate;
         } finally {
             IOUtils.closeQuietlyIfCloseable(events);
@@ -203,7 +203,13 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @param unseenEvents The events that have been concurrently applied
      */
     protected void resolveConflicts(T aggregate, List<DomainEventMessage<?>> unseenEvents) {
-        CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
+        CurrentUnitOfWork.get().onPrepareCommit(u -> {
+            if (aggregate.getUncommittedEventCount() > 0
+                    && aggregate.getVersion() != null
+                    && !unseenEvents.isEmpty()) {
+                conflictResolver.resolveConflicts(aggregate.getUncommittedEvents(), unseenEvents);
+            }
+        });
     }
 
     /**
@@ -292,31 +298,6 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         @Override
         public void close() throws IOException {
             IOUtils.closeQuietlyIfCloseable(eventStream);
-        }
-    }
-
-    private final class ConflictResolvingListener extends UnitOfWorkListenerAdapter {
-
-        private final T aggregate;
-        private final List<DomainEventMessage<?>> unseenEvents;
-
-        private ConflictResolvingListener(T aggregate, List<DomainEventMessage<?>> unseenEvents) {
-            this.aggregate = aggregate;
-            this.unseenEvents = unseenEvents;
-        }
-
-        @Override
-        public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-                                    List<EventMessage> events) {
-            if (hasPotentialConflicts()) {
-                conflictResolver.resolveConflicts(aggregate.getUncommittedEvents(), unseenEvents);
-            }
-        }
-
-        private boolean hasPotentialConflicts() {
-            return aggregate.getUncommittedEventCount() > 0
-                    && aggregate.getVersion() != null
-                    && !unseenEvents.isEmpty();
         }
     }
 }

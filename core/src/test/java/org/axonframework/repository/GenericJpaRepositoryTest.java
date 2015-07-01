@@ -43,7 +43,7 @@ public class GenericJpaRepositoryTest {
         mockEntityManager = mock(EntityManager.class);
         testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
                                                                  StubJpaAggregate.class);
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
         when(mockEntityManager.find(StubJpaAggregate.class, "123")).thenReturn(aggregate);

@@ -18,8 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.List;
 import java.util.Set;
@@ -79,35 +77,12 @@ public class SimpleCluster extends AbstractCluster {
     private void notifyMonitors(final List<EventMessage<?>> events, final EventProcessingMonitor monitor,
                                      final RuntimeException exception) {
         if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().registerListener(new MonitorInvoker(monitor, events, exception));
+            CurrentUnitOfWork.get().afterCommit(u -> monitor.onEventProcessingCompleted(events));
+            CurrentUnitOfWork.get().onRollback((u, e) -> monitor.onEventProcessingFailed(events, exception == null ? e : exception));
         } else if (exception == null) {
             monitor.onEventProcessingCompleted(events);
         } else {
             monitor.onEventProcessingFailed(events, exception);
-        }
-    }
-
-    private static class MonitorInvoker extends UnitOfWorkListenerAdapter {
-
-        private final EventProcessingMonitor monitor;
-        private final List<EventMessage<?>> events;
-        private final RuntimeException exception;
-
-        public MonitorInvoker(EventProcessingMonitor monitor, List<EventMessage<?>> events,
-                              RuntimeException exception) {
-            this.monitor = monitor;
-            this.events = events;
-            this.exception = exception;
-        }
-
-        @Override
-        public void afterCommit(UnitOfWork unitOfWork) {
-            monitor.onEventProcessingCompleted(events);
-        }
-
-        @Override
-        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-            monitor.onEventProcessingFailed(events, exception == null ? failureCause : exception);
         }
     }
 }

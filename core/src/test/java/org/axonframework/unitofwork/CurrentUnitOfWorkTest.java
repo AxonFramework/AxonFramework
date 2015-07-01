@@ -57,9 +57,9 @@ public class CurrentUnitOfWorkTest {
 
     @Test
     public void testNotCurrentUnitOfWorkCommitted() {
-        DefaultUnitOfWork outerUoW = new DefaultUnitOfWork();
+        DefaultUnitOfWork outerUoW = new DefaultUnitOfWork(null);
         outerUoW.start();
-        new DefaultUnitOfWork().start();
+        new DefaultUnitOfWork(null).start();
         try {
             outerUoW.commit();
         } catch (IllegalStateException e) {

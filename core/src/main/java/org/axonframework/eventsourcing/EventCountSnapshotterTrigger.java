@@ -21,8 +21,6 @@ import org.axonframework.common.io.IOUtils;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -65,9 +63,8 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         AtomicInteger counter = counters.get(aggregateIdentifier);
         counter.addAndGet(eventStream.size());
         if (counter.get() > trigger) {
-            CurrentUnitOfWork.get().registerListener(new SnapshotTriggeringListener(aggregate.getClass(),
-                                                                                    aggregateIdentifier,
-                                                                                    counter));
+            CurrentUnitOfWork.get().onCleanup(u -> triggerSnapshotIfRequired(aggregate.getClass(),
+                                                                             aggregateIdentifier, counter));
         }
         return eventStream;
     }
@@ -198,25 +195,6 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         @Override
         public void onEntryRemoved(Object key) {
             counters.remove(key.toString());
-        }
-    }
-
-    private class SnapshotTriggeringListener extends UnitOfWorkListenerAdapter {
-
-        private final Class<? extends EventSourcedAggregateRoot> aggregateType;
-        private final String aggregateIdentifier;
-        private final AtomicInteger counter;
-
-        public SnapshotTriggeringListener(Class<? extends EventSourcedAggregateRoot> aggregateType,
-                                          String aggregateIdentifier, AtomicInteger counter) {
-            this.aggregateType = aggregateType;
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.counter = counter;
-        }
-
-        @Override
-        public void onCleanup(UnitOfWork unitOfWork) {
-            triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, counter);
         }
     }
 }

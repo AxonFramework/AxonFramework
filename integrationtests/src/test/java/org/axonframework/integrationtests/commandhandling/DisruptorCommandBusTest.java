@@ -72,7 +72,7 @@ public class DisruptorCommandBusTest {
     @Test
     public void handleCommandWithoutUsingAggregate_PublicationFails() throws ExecutionException, InterruptedException {
         commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
-            unitOfWork.publishEvent(GenericEventMessage.asEventMessage("test"), eventBus);
+            eventBus.publish(GenericEventMessage.asEventMessage("test"));
             return "ok";
         });
         final RuntimeException failure = new RuntimeException("Test");

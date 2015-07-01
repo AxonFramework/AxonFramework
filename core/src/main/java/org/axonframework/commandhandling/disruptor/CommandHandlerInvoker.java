@@ -94,15 +94,19 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         if (entry.isRecoverEntry()) {
             removeEntry(entry.getAggregateIdentifier());
         } else if (entry.getInvokerId() == segmentId) {
-            DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
-            unitOfWork.start();
+            entry.start();
             try {
                 Object result = entry.getInvocationInterceptorChain().proceed(entry.getCommand());
                 entry.setResult(result);
-                unitOfWork.commit();
             } catch (Throwable throwable) {
                 entry.setExceptionResult(throwable);
-                unitOfWork.rollback(throwable);
+            } finally {
+                EventSourcedAggregateRoot aggregateRoot = entry.getResource("AggregateRoot");
+                if (aggregateRoot != null) {
+                    entry.publishMessages(aggregateRoot.getUncommittedEvents());
+                    aggregateRoot.commitEvents();
+                }
+                entry.pause();
             }
         }
     }
@@ -218,21 +222,15 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
                 cache.put(aggregateIdentifier, aggregateRoot);
             }
-            if (aggregateRoot != null) {
-                DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
-                unitOfWork.setEventStreamDecorator(decorator);
-                unitOfWork.registerAggregate(aggregateRoot, null, null);
-            }
+            CurrentUnitOfWork.get().resources().put("AggregateRoot", aggregateRoot);
             return aggregateRoot;
         }
 
         @Override
         public void add(T aggregate) {
-            DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
-            unitOfWork.setEventStreamDecorator(decorator);
-            unitOfWork.registerAggregate(aggregate, null, null);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
             cache.put(aggregate.getIdentifier(), aggregate);
+            CurrentUnitOfWork.get().resources().put("AggregateRoot", aggregate);
         }
 
         private void removeFromCache(String aggregateIdentifier) {

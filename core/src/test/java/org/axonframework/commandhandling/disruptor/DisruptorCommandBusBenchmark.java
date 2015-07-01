@@ -56,7 +56,7 @@ public class DisruptorCommandBusBenchmark {
         CountingEventBus eventBus = new CountingEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore);
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";

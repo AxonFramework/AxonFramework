@@ -258,7 +258,7 @@ public class JdbcSagaRepository_JpaBackedTest {
     @DirtiesContext
     @Test
     public void testEndSaga() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         String identifier = UUID.randomUUID().toString();
         StubSaga saga = new StubSaga(identifier);
         saga.associate("key", "value");

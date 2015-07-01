@@ -134,9 +134,9 @@ public class SimpleEventScheduler implements EventScheduler {
             if (logger.isInfoEnabled()) {
                 logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
-            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
+            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
             try {
-                unitOfWork.publishEvent(eventMessage, eventBus);
+                eventBus.publish(eventMessage);
                 unitOfWork.commit();
             } finally {
                 tokens.remove(tokenId);

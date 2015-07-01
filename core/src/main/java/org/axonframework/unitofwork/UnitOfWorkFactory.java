@@ -16,6 +16,8 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.domain.Message;
+
 /**
  * The <code>UnitOfWorkFactory</code> interface is used to obtain UnitOfWork instances to manage activity in command
  * handling processes.
@@ -30,10 +32,10 @@ package org.axonframework.unitofwork;
 public interface UnitOfWorkFactory {
 
     /**
-     * Creates a new UnitOfWork instance. The instance's {@link UnitOfWork#isStarted()} method returns
+     * Creates a new UnitOfWork instance. The instance's {@link UnitOfWork#isActive()} method returns
      * <code>true</code>.
      *
      * @return a new UnitOfWork instance, which has been started.
      */
-    UnitOfWork createUnitOfWork();
+    UnitOfWork createUnitOfWork(Message<?> message);
 }

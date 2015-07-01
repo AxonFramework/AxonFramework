@@ -90,7 +90,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         mockEventBus = mock(EventBus.class);
         repository.setEventBus(mockEventBus);
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         SimpleAggregateRoot aggregate = new SimpleAggregateRoot();
         repository.add(aggregate);
         uow.commit();
@@ -145,7 +145,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         Thread t = new Thread(() -> {
             try {
                 awaitFor.await();
-                UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+                UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
                 SimpleAggregateRoot aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.doOperation();
                 aggregate.doOperation();

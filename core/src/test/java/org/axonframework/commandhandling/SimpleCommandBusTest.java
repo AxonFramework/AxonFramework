@@ -74,7 +74,7 @@ public class SimpleCommandBusTest {
         testSubject.setUnitOfWorkFactory(spyUnitOfWorkFactory);
         testSubject.subscribe(String.class.getName(), (command, unitOfWork) -> {
             assertTrue(CurrentUnitOfWork.isStarted());
-            assertTrue(unitOfWork.isStarted());
+            assertTrue(unitOfWork.isActive());
             assertNotNull(CurrentUnitOfWork.get());
             assertNotNull(unitOfWork);
             assertSame(CurrentUnitOfWork.get(), unitOfWork);
@@ -92,7 +92,7 @@ public class SimpleCommandBusTest {
                                      fail("Did not expect exception");
                                  }
                              });
-        verify(spyUnitOfWorkFactory).createUnitOfWork();
+        verify(spyUnitOfWorkFactory).createUnitOfWork(null);
         assertFalse(CurrentUnitOfWork.isStarted());
     }
 
@@ -122,7 +122,7 @@ public class SimpleCommandBusTest {
     public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() {
         UnitOfWorkFactory mockUnitOfWorkFactory = mock(DefaultUnitOfWorkFactory.class);
         UnitOfWork mockUnitOfWork = mock(UnitOfWork.class);
-        when(mockUnitOfWorkFactory.createUnitOfWork()).thenReturn(mockUnitOfWork);
+        when(mockUnitOfWorkFactory.createUnitOfWork(any())).thenReturn(mockUnitOfWork);
 
         testSubject.setUnitOfWorkFactory(mockUnitOfWorkFactory);
         testSubject.subscribe(String.class.getName(), (command, unitOfWork) -> {

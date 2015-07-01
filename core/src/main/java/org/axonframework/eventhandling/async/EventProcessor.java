@@ -221,7 +221,7 @@ public class EventProcessor implements Runnable {
         if (event != null) {
             UnitOfWork uow = null;
             try {
-                uow = unitOfWorkFactory.createUnitOfWork();
+                uow = unitOfWorkFactory.createUnitOfWork(event);
                 processingResult = doHandle(event);
                 if (processingResult.requiresRollback()) {
                     uow.rollback();
@@ -245,7 +245,7 @@ public class EventProcessor implements Runnable {
                     retryAfter = System.currentTimeMillis() + processingResult.waitTime();
                 }
                 // the batch failed.
-                if (uow != null && uow.isStarted()) {
+                if (uow != null && uow.isActive()) {
                     uow.rollback();
                 }
 

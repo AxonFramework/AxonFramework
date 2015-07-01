@@ -75,7 +75,7 @@ public class CachingEventSourcingRepositoryTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testAggregatesRetrievedFromCache() {
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         final StubAggregate aggregate1 = new StubAggregate();
         aggregate1.doSomething();
 
@@ -96,14 +96,14 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         StubAggregate reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
         assertSame(aggregate1, reloadedAggregate1);
         aggregate1.doSomething();
         aggregate1.doSomething();
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         DomainEventStream events = mockEventStore.readEvents(aggregate1.getIdentifier());
         List<EventMessage> eventList = new ArrayList<>();
         while (events.hasNext()) {
@@ -128,7 +128,7 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.setConflictResolver(conflictResolver);
         StubAggregate aggregate1 = new StubAggregate();
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         aggregate1.doSomething();
         aggregate1.doSomething();
         testSubject.add(aggregate1);
@@ -136,7 +136,7 @@ public class CachingEventSourcingRepositoryTest {
 
         assertNotNull(((StubAggregate) cache.get(aggregate1.getIdentifier())).getVersion());
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         StubAggregate loadedAggregate = testSubject.load(aggregate1.getIdentifier(), 0L);
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
@@ -179,7 +179,7 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.setConflictResolver(conflictResolver);
         StubAggregate aggregate1 = new StubAggregate();
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         aggregate1.doSomething();
         aggregate1.doSomething();
         testSubject.add(aggregate1);
@@ -187,7 +187,7 @@ public class CachingEventSourcingRepositoryTest {
 
         assertNotNull(((StubAggregate) cache.get(aggregate1.getIdentifier())).getVersion());
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         StubAggregate loadedAggregate = testSubject.load(aggregate1.getIdentifier(), 0L);
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
@@ -221,18 +221,18 @@ public class CachingEventSourcingRepositoryTest {
 
     @Test
     public void testLoadDeletedAggregate() {
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         StubAggregate aggregate1 = new StubAggregate();
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
         String identifier = aggregate1.getIdentifier();
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         aggregate1.delete();
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         try {
             testSubject.load(identifier);
             fail("Expected AggregateDeletedException");
@@ -245,7 +245,7 @@ public class CachingEventSourcingRepositoryTest {
 
     @Test
     public void testCacheClearedAfterRollbackOfAddedAggregate() {
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         StubAggregate aggregate1 = new StubAggregate("id1");
         aggregate1.doSomething();
         testSubject.add(aggregate1);

@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,8 +78,12 @@ public class SimpleEventBus implements EventBus {
 
     @Override
     public void publish(List<EventMessage<?>> events) {
-        // AXON-308 Attach to Unit of Work lifecycle
-        publicationStrategy.publish(events, clusters);
+        // TODO: AXON-308 Attach to Unit of Work lifecycle
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().onPrepareCommit(u -> publicationStrategy.publish(events, clusters));
+        } else {
+            publicationStrategy.publish(events, clusters);
+        }
     }
 
     private static class DirectTerminal implements PublicationStrategy {
