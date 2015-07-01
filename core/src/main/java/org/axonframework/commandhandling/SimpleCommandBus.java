@@ -231,7 +231,7 @@ public class SimpleCommandBus implements CommandBus {
 
     /**
      * Sets the RollbackConfiguration that allows you to change when the UnitOfWork is committed. If not set the
-     * RollbackOnAllExceptionsConfiguration will be used, which triggers a rollback on all exceptions.
+     * RollbackOnUncheckedExceptionConfiguration will be used, which triggers a rollback on all unchecked exceptions.
      *
      * @param rollbackConfiguration The RollbackConfiguration.
      */
