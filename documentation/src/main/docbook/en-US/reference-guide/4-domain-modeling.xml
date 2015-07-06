@@ -117,9 +117,6 @@
                     Aggregate's boundaries.
                 </quote>
             </para>
-            <para>A more extensive definition can be found on: <link
-                    xlink:href="http://domaindrivendesign.org/freelinking/Aggregate"
-                    >http://domaindrivendesign.org/freelinking/Aggregate</link>. </para>
         </note>
         <para>For example, a "Contact" aggregate could contain two entities: Contact and Address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
