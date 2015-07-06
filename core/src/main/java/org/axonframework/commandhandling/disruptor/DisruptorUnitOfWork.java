@@ -219,7 +219,7 @@ public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallbac
 
     @Override
     public void publishEvent(EventMessage event, EventBus eventBus) {
-        eventsToPublish.add(event);
+        eventsToPublish.add(listeners.onEventRegistered(this, event));
     }
 
     /**

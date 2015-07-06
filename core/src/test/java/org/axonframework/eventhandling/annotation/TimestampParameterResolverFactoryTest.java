@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.joda.time.DateTime;
+import org.joda.time.ReadableInstant;
 import org.junit.*;
 import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
@@ -53,6 +54,16 @@ public class TimestampParameterResolverFactoryTest {
     public void testResolvesToDateTimeWhenAnnotated() throws Exception {
         ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
                                                                 DateTime.class,
+                                                                new Annotation[]{annotation});
+        final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
+        assertTrue(resolver.matches(message));
+        assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
+    }
+
+    @Test
+    public void testResolvesToReadableInstantWhenAnnotated() throws Exception {
+        ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
+                                                                ReadableInstant.class,
                                                                 new Annotation[]{annotation});
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));

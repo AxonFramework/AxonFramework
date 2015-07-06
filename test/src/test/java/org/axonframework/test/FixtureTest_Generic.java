@@ -58,7 +58,7 @@ public class FixtureTest_Generic {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
 
         fixture.given(new MyEvent("id1", 1))
-                .when(new TestCommand("id1"));
+               .when(new TestCommand("id1"));
 
         verify(mockAggregateFactory).createAggregate(eq("id1"), isA(DomainEventMessage.class));
     }
@@ -83,6 +83,15 @@ public class FixtureTest_Generic {
                .when(new CreateAggregateCommand());
     }
 
+    @Test
+    public void testStoringExistingAggregateGeneratesException() {
+        fixture.registerAggregateFactory(mockAggregateFactory);
+        fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
+        fixture.given(new MyEvent("aggregateId", 1))
+               .when(new CreateAggregateCommand("aggregateId"))
+               .expectException(EventStoreException.class);
+    }
+
     @Test(expected = FixtureExecutionException.class)
     public void testInjectResources_CommandHandlerAlreadyRegistered() {
         fixture.registerAggregateFactory(mockAggregateFactory);
@@ -99,7 +108,7 @@ public class FixtureTest_Generic {
                .expectEvents(new MyEvent("AggregateId", 3));
 
         DomainEventStream events = fixture.getEventStore().readEvents("StandardAggregate", "AggregateId");
-        for (int t=0;t<3;t++) {
+        for (int t = 0; t < 3; t++) {
             assertTrue(events.hasNext());
             DomainEventMessage next = events.next();
             assertEquals("AggregateId", next.getAggregateIdentifier());

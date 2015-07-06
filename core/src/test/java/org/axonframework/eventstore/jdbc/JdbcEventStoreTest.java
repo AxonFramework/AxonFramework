@@ -17,7 +17,12 @@
 package org.axonframework.eventstore.jdbc;
 
 
-import org.axonframework.domain.*;
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.DomainEventStream;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.domain.MetaData;
+import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -25,7 +30,11 @@ import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
-import org.axonframework.serializer.*;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.SerializedType;
+import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.SimpleSerializedType;
+import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
@@ -33,12 +42,10 @@ import org.axonframework.upcasting.UpcastingContext;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.*;
+import org.mockito.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +53,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -67,10 +79,15 @@ public class JdbcEventStoreTest {
     public void setUp() throws SQLException {
         JDBCDataSource dataSource = new org.hsqldb.jdbc.JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
-        this.conn = dataSource.getConnection();
-
+        this.conn = spy(dataSource.getConnection());
+        doNothing().when(conn).close();
         final GenericEventSqlSchema sqldef = new GenericEventSqlSchema();
-        final DefaultEventEntryStore eventEntryStore1 = new DefaultEventEntryStore(dataSource, sqldef);
+        final DefaultEventEntryStore eventEntryStore1 = new DefaultEventEntryStore(new ConnectionProvider() {
+            @Override
+            public Connection getConnection() throws SQLException {
+                return conn;
+            }
+        }, sqldef);
         eventEntryStore1.createSchema();
         testSubject = new JdbcEventStore(eventEntryStore1);
 
@@ -89,6 +106,7 @@ public class JdbcEventStoreTest {
 
     @After
     public void tearDown() throws SQLException {
+        reset(conn);
         conn.createStatement().execute("SHUTDOWN");
         conn.close();
         // just to make sure
@@ -115,8 +133,31 @@ public class JdbcEventStoreTest {
         final ResultSet resultSet = preparedStatement.executeQuery();
         resultSet.next();
         return resultSet.getLong(1);
-
     }
+
+    /* see AXON-321: http://issues.axonframework.org/youtrack/issue/AXON-321 */
+    @Test
+    public void testResourcesProperlyClosedWhenAggregateStreamIsNotFound() throws SQLException {
+        reset(conn);
+        doNothing().when(conn).close();
+        final List<PreparedStatement> statements = new ArrayList<PreparedStatement>();
+        final List<ResultSet> resultSets = new ArrayList<ResultSet>();
+        doAnswer(new StatementAnswer(resultSets, statements)).when(conn).prepareStatement(anyString());
+
+        try {
+            testSubject.readEvents("notExist", "noSuchId");
+            fail("Expected EventStreamNotFoundException");
+        } catch (EventStreamNotFoundException e) {
+            verify(conn, atLeastOnce()).prepareStatement(anyString());
+            for (Statement statement : statements) {
+                verify(statement).close();
+            }
+            for (ResultSet resultSet : resultSets) {
+                verify(resultSet).close();
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testStoreAndLoadEvents() throws SQLException {
@@ -597,6 +638,36 @@ public class JdbcEventStoreTest {
         public List<SerializedType> upcast(SerializedType serializedType) {
             return Arrays.<SerializedType>asList(new SimpleSerializedType("unknownType1", "2"),
                     new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
+        }
+    }
+
+    private static class StatementAnswer implements Answer<Statement> {
+
+        private final List<ResultSet> resultSets;
+        private final List<PreparedStatement> statements;
+
+        public StatementAnswer(List<ResultSet> resultSets, List<PreparedStatement> statements) {
+            this.resultSets = resultSets;
+            this.statements = statements;
+        }
+
+        @Override
+        public Statement answer(InvocationOnMock invocation) throws Throwable {
+            final PreparedStatement spy = (PreparedStatement) spy(invocation.callRealMethod());
+            doAnswer(new ResultSetAnswer()).when(spy).executeQuery(anyString());
+            doAnswer(new ResultSetAnswer()).when(spy).executeQuery();
+            statements.add(spy);
+            return spy;
+        }
+
+        private class ResultSetAnswer implements Answer<ResultSet> {
+
+            @Override
+            public ResultSet answer(InvocationOnMock invocation) throws Throwable {
+                final ResultSet resultSet = (ResultSet) spy(invocation.callRealMethod());
+                resultSets.add(resultSet);
+                return resultSet;
+            }
         }
     }
 }

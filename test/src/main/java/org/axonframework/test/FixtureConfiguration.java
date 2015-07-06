@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.Repository;
+import org.axonframework.test.matchers.FieldFilter;
 
 import java.util.List;
 
@@ -146,6 +147,32 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerInjectableResource(Object resource);
+
+    /**
+     * Registers the given <code>fieldFilter</code>, which is used to define which Fields are used when comparing
+     * objects. The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectReturnValue(Object)},
+     * for example, use this filter.
+     * <p/>
+     * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
+     * accepted.
+     * <p/>
+     * By default, all Fields are included in the comparison.
+     *
+     * @param fieldFilter The FieldFilter that defines which fields to include in the comparison
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerFieldFilter(FieldFilter fieldFilter);
+
+    /**
+     * Indicates that a field with given <code>fieldName</code>, which is declared in given <code>declaringClass</code>
+     * is ignored when performing deep equality checks.
+     *
+     * @param declaringClass The class declaring the field
+     * @param fieldName The name of the field
+     * @return the current FixtureConfiguration, for fluent interfacing
+     * @throws FixtureExecutionException when no such field is declared
+     */
+    FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event

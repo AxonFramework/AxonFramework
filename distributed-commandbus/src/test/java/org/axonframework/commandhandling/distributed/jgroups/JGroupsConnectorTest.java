@@ -24,17 +24,22 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.stack.IpAddress;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -53,6 +58,8 @@ public class JGroupsConnectorTest {
     private JGroupsConnector connector2;
     private CommandBus mockCommandBus2;
     private String clusterName;
+    private RecordingHashChangeListener hashChangeListener;
+    private XStreamSerializer serializer;
 
     @Before
     public void setUp() throws Exception {
@@ -61,14 +68,35 @@ public class JGroupsConnectorTest {
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
-        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, new XStreamSerializer());
-        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, new XStreamSerializer());
+        hashChangeListener = new RecordingHashChangeListener();
+        serializer = new XStreamSerializer();
+        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, serializer,
+                                          hashChangeListener);
+        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, serializer);
     }
 
     @After
     public void tearDown() {
         closeSilently(channel1);
         closeSilently(channel2);
+    }
+
+    @Test
+    public void testSetupOfReplyingCallback() throws InterruptedException {
+        final String mockPayload = "DummyString";
+        final CommandMessage commandMessage = new GenericCommandMessage<String>(mockPayload);
+
+        final DispatchMessage dispatchMessage = new DispatchMessage(commandMessage,serializer,true);
+        final Message message = new Message(channel1.getAddress(),dispatchMessage);
+
+        connector1.connect(20);
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        channel1.getReceiver().receive(message);
+
+        //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
+        verify(mockCommandBus1).dispatch(refEq(commandMessage),any(ReplyingCallback.class));
+
     }
 
     @SuppressWarnings("unchecked")
@@ -178,7 +206,7 @@ public class JGroupsConnectorTest {
         ConsistentHash hashBefore = connector1.getConsistentHash();
         // secretly insert an illegal message
         channel1.getReceiver().receive(new Message(channel1.getAddress(), new IpAddress(12345),
-                                  new JoinMessage(10, Collections.<String>emptySet())));
+                                                   new JoinMessage(10, Collections.<String>emptySet())));
         ConsistentHash hash2After = connector1.getConsistentHash();
         assertEquals("That message should not have changed the ring", hashBefore, hash2After);
     }
@@ -236,6 +264,74 @@ public class JGroupsConnectorTest {
         verify(mockCommandBus2, never()).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testConnectAndDispatchMessages_CustomCommandName() throws Exception {
+        final AtomicInteger counter1 = new AtomicInteger(0);
+        final AtomicInteger counter2 = new AtomicInteger(0);
+
+        connector1.subscribe("myCommand1", new CountingCommandHandler(counter1));
+        connector1.connect(80);
+        assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
+
+        connector2.subscribe("myCommand2", new CountingCommandHandler(counter2));
+        connector2.connect(20);
+        assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
+
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        List<FutureCallback> callbacks = new ArrayList<FutureCallback>();
+
+        for (int t = 0; t < 100; t++) {
+            FutureCallback<Object> callback = new FutureCallback<Object>();
+            String message = "message" + t;
+            if ((t % 3) == 0) {
+                connector1.send(message,
+                                new GenericCommandMessage<Object>("myCommand1", message,
+                                                                  Collections.<String, Object>emptyMap()),
+                                callback);
+            } else {
+                connector2.send(message,
+                                new GenericCommandMessage<Object>("myCommand2", message,
+                                                                  Collections.<String, Object>emptyMap()),
+                                callback);
+            }
+            callbacks.add(callback);
+        }
+        for (FutureCallback callback : callbacks) {
+            assertEquals("The Reply!", callback.get());
+        }
+        assertEquals(100, counter1.get() + counter2.get());
+        System.out.println("Node 1 got " + counter1.get());
+        System.out.println("Node 2 got " + counter2.get());
+        verify(mockCommandBus1, times(34)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+        verify(mockCommandBus2, times(66)).dispatch(any(CommandMessage.class), isA(CommandCallback.class));
+    }
+
+    @Test(timeout = 300000)
+    public void testHashChangeNotification() throws Exception {
+        connector1.connect(10);
+        connector2.connect(10);
+
+        // wait for both connectors to have the same view
+        waitForConnectorSync();
+
+        // connector 1 joined
+        ConsistentHash notify1 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+
+        // connector 2 joined
+        ConsistentHash notify2 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+        // Self and other node have joined
+        assertEquals(connector1.getConsistentHash(), notify2);
+
+        channel2.close();
+
+        // Other node has left
+        ConsistentHash notify3 = hashChangeListener.notifications.poll(5, TimeUnit.SECONDS);
+        assertEquals(connector1.getConsistentHash(), notify3);
+    }
+
 
     private static void closeSilently(JChannel channel) {
         try {
@@ -261,6 +357,16 @@ public class JGroupsConnectorTest {
         public Object handle(CommandMessage<T> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
             counter.incrementAndGet();
             return "The Reply!";
+        }
+    }
+
+    private static class RecordingHashChangeListener implements HashChangeListener {
+
+        public final BlockingQueue<ConsistentHash> notifications = new LinkedBlockingQueue<ConsistentHash>();
+
+        @Override
+        public void hashChanged(ConsistentHash newHash) {
+            notifications.add(newHash);
         }
     }
 }

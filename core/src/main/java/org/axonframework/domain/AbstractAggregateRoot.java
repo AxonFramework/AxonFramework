@@ -73,6 +73,17 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
     }
 
     /**
+     * Registers an event message to be published when the aggregate is saved.
+     *
+     * @param message The message to publish
+     * @param <T>     The payload type carried by the message
+     * @return The event as registered by the aggregate
+     */
+    protected <T> DomainEventMessage<T> registerEventMessage(DomainEventMessage<T> message) {
+        return getEventContainer().addEvent(message);
+    }
+
+    /**
      * Marks this aggregate as deleted, instructing a Repository to remove that aggregate at an appropriate time.
      * <p/>
      * Note that different Repository implementation may react differently to aggregates marked for deletion.

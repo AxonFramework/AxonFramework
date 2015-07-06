@@ -147,8 +147,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     protected abstract void doDelete(T aggregate);
 
     /**
-     * Sets the event bus to which newly stored events should be published. Optional. By default, the repository tries
-     * to autowire the event bus.
+     * Sets the event bus to which newly stored events should be published.
      *
      * @param eventBus the event bus to publish events to
      */

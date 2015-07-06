@@ -117,9 +117,6 @@
                     Aggregate's boundaries.
                 </quote>
             </para>
-            <para>A more extensive definition can be found on: <link
-                    xlink:href="http://domaindrivendesign.org/freelinking/Aggregate"
-                    >http://domaindrivendesign.org/freelinking/Aggregate</link>. </para>
         </note>
         <para>For example, a "Contact" aggregate could contain two entities: Contact and Address. To
             keep the entire aggregate in a consistent state, adding an address to a contact should
@@ -366,9 +363,9 @@
         <sect2>
             <title>Complex Aggregate structures</title>
             <para>Complex business logic often requires more than what an aggregate with only an
-                aggregate root can provide. In that case, it important that the complexity is spread
+                aggregate root can provide. In that case, it is important that the complexity is spread
                 over a number of entities within the aggregate. When using event sourcing, not only
-                the aggregate root needs to use event to trigger state transitions, but so does each
+                the aggregate root needs to use events to trigger state transitions, but so does each
                 of the entities within that aggregate.
             </para>
             <para>Axon provides support for event sourcing in complex aggregate structures. All
@@ -403,7 +400,7 @@
                             collections, such as <code>Set</code>, <code>List</code>, etc); </para>
                     </listitem>
                     <listitem>
-                        <para>inside both they keys and the values of fields containing a
+                        <para>inside both the keys and the values of fields containing a
                                 <code>java.util.Map</code>
                         </para>
                     </listitem>

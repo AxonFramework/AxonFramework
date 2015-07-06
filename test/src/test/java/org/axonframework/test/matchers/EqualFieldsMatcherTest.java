@@ -21,6 +21,8 @@ import org.axonframework.test.MyOtherEvent;
 import org.hamcrest.StringDescription;
 import org.junit.*;
 
+import java.lang.reflect.Field;
+
 import static org.junit.Assert.*;
 
 /**
@@ -57,6 +59,17 @@ public class EqualFieldsMatcherTest {
     public void testMatches_WrongFieldValue() {
         assertFalse(testSubject.matches(new MyEvent(aggregateId, 2)));
         assertEquals("someValue", testSubject.getFailedField().getName());
+    }
+
+    @Test
+    public void testMatches_WrongFieldValueInIgnoredField() {
+        testSubject = Matchers.equalTo(expectedEvent, new FieldFilter() {
+            @Override
+            public boolean accept(Field field) {
+                return !field.getName().equals("someValue");
+            }
+        });
+        assertTrue(testSubject.matches(new MyEvent(aggregateId, 2)));
     }
 
     @Test

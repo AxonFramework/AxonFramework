@@ -15,9 +15,10 @@
   ~ limitations under the License.
   -->
 
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:axon="http://www.axonframework.org/schema/core"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
        http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
@@ -63,10 +64,16 @@
                     </bean>
                 </axon:event-processors>
             </axon:repository>
-            <axon:repository id="myOtherAggregateRepository"
-                             aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
         </axon:repositories>
     </axon:disruptor-command-bus>
+
+    <axon:disruptor-repository id="myOtherAggregateRepository" command-bus="disruptorCommandBus"
+                               aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate"/>
+
+    <axon:disruptor-repository id="theThirdAggregateRepository" cache="mockCache"
+                               aggregate-type="org.axonframework.contextsupport.spring.SimpleAnnotatedAggregate">
+        <axon:snapshotter-trigger event-count-threshold="10" snapshotter-ref="snapshotter"/>
+    </axon:disruptor-repository>
 
     <bean id="rollbackConfig" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.commandhandling.RollbackConfiguration"/>

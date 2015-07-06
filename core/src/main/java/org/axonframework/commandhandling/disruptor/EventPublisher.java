@@ -194,11 +194,18 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 unitOfWork.onAfterCommit();
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            if (transaction != null) {
-                transactionManager.rollbackTransaction(transaction);
+            try {
+                if (transaction != null) {
+                    transactionManager.rollbackTransaction(transaction);
+                }
+            } catch (Exception te) {
+                logger.info("Failed to explicitly rollback the transaction: ", te);
             }
-            exceptionResult = notifyBlacklisted(unitOfWork, aggregate.getIdentifier(), e);
+            if (aggregate != null) {
+                exceptionResult = notifyBlacklisted(unitOfWork, aggregate.getIdentifier(), e);
+            } else {
+                exceptionResult = e;
+            }
         }
         return exceptionResult;
     }

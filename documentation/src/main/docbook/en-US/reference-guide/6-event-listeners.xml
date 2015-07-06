@@ -76,8 +76,8 @@
             </note>
             <simplesect>
                 <title><code>ClusterSelector</code></title>
-                <para>The primary responsibility of the <code>ClusterSelector</code> is to, as the
-                    name suggests, select a cluster for each Event Listener that subscribes to the
+                <para>The primary responsibility of the <code>ClusterSelector</code> is, as the
+                    name suggests, to select a cluster for each Event Listener that subscribes to the
                     Event Bus. By default, all Event Listeners are placed in a single Cluster
                     instance, which dispatches events to its members sequentially and in the calling
                     thread (similar to how the <code>SimpleEventBus</code> works). By providing a
@@ -139,11 +139,11 @@
                     not be replayed, such as ones sending emails, as well as Saga Manager should be
                     placed in a separate cluster. Care should be taken to never replay events on a
                     cluster containing this type of Listener.</para>
-                <para>In some circumstances, it is desirable to ensure a specific handler is invoked
+                <para>In some circumstances, it is desirable to ensure that a specific handler is invoked
                     before another. To achieve this, some clusters allow an <code>OrderResolver</code> to be
                     configured. The <code>OrderResolver</code> provides an integer value for each given handler,
                     which defines the relative order in which handlers need to be invoked. Listeners
-                    for which the resolver provide a lower value are invoked before those with a
+                    for which the resolver provides a lower value are invoked before those with a
                     higher value. The order in which Listeners with the same value are invoked is
                     undefined. </para>
                 <para>Clusters that have been defined in a Spring context using the
@@ -179,7 +179,7 @@
                 occasionally, it is necessary to publish an event from another component, directly
                 to the Event Bus. To publish an event, simply wrap the payload describing the event
                 in an <code>EventMessage</code>. The
-                    <code>GenericEventMessage.asEventMessage(Object)</code> method allows you wrap
+                    <code>GenericEventMessage.asEventMessage(Object)</code> method allows you to wrap
                 any object into an <code>EventMessage</code>. If the passed object is already an
                     <code>EventMessage</code>, it is simply returned.</para>
             <para>Publishing Events to the Event Bus directly could, in some cases, give unwanted
@@ -203,7 +203,7 @@
     </sect1>
     <sect1 xml:id="event-listeners">
         <title>Event Listeners</title>
-        <para>Event listeners are the component that act on incoming events. Events may be of any
+        <para>Event listeners are the components that act on incoming events. Events may be of any
             type. In the Axon Framework, all event listeners must implement the
                 <code>EventListener</code> interface. </para>
         <sect2>
@@ -398,7 +398,7 @@ public class SubListener extends TopListener {
         </note>
         <para>The <code>AsynchronousCluster</code> needs an <code>Executor</code>, for example a
                 <code>ThreadPoolExecutor</code> and a <code>SequencingPolicy</code>, a definition of
-            which events may be processed in parallel, and which sequentially. Finally a
+            which events may be processed in parallel, and which events may be processed sequentially. Finally a
                 <code>TransactionManager</code> can be provided to process events within a
             transaction, such as a database transaction.</para>
         <para>The <code>Executor</code> is responsible for executing the event processing. The

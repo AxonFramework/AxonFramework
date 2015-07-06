@@ -3,6 +3,7 @@ package org.axonframework.test.saga;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.test.AxonAssertionError;
+import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.junit.*;
 
@@ -21,7 +22,7 @@ public class CommandValidatorTest {
     @Before
     public void setUp() {
         commandBus = mock(RecordingCommandBus.class);
-        testSubject = new CommandValidator(commandBus);
+        testSubject = new CommandValidator(commandBus, AllFieldsFilter.instance());
     }
 
     @Test

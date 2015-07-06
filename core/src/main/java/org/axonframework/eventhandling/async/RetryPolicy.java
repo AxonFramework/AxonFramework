@@ -25,9 +25,8 @@ import java.util.concurrent.TimeUnit;
  * cannot be recovered from, and should be ignored.</li>
  * <li>{@link #skip()} will rollback the Unit of Work and proceed with the next event, effectively skipping the
  * events.</li>
- * <li>{@link #retryAfter(int, java.util.concurrent.TimeUnit)} tells the scheduler to roll back the current
- * Unit of Work and process it again after the given amount of time. All Event Listeners will receive the event
- * again.</li></ul>
+ * <li>{@link #retryAfter(long, TimeUnit)} tells the scheduler to roll back the current Unit of Work and process it
+ * again after the given amount of time. All Event Listeners will receive the event again.</li></ul>
  *
  * @author Allard Buijze
  * @since 2.0
@@ -53,7 +52,7 @@ public abstract class RetryPolicy {
      * be regarded as not processed. The Event will not be handled by any remaining Event Listeners in the Cluster.
      *
      * @return A RetryPolicy instance requesting the scheduler to rollback the Unit of Work and continue processing the
-     *         next Event.
+     * next Event.
      */
     public static RetryPolicy skip() {
         return SKIP;
@@ -67,7 +66,7 @@ public abstract class RetryPolicy {
      * @param unit    The unit of time for the timeout
      * @return a RetryPolicy requesting a rollback and a retry of the failed Event after the given timeout
      */
-    public static RetryPolicy retryAfter(int timeout, TimeUnit unit) {
+    public static RetryPolicy retryAfter(long timeout, TimeUnit unit) {
         return new SimpleRetryPolicy(unit.toMillis(timeout), true, true);
     }
 
@@ -90,7 +89,7 @@ public abstract class RetryPolicy {
      * Indicates whether the scheduler should rollback the Unit of Work wrapping the event handling.
      *
      * @return <code>true</code> to indicate the scheduler should perform a rollback or <code>false</code> to request a
-     *         commit.
+     * commit.
      */
     public abstract boolean requiresRollback();
 

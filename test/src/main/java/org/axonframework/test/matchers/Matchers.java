@@ -148,6 +148,22 @@ public abstract class Matchers {
     }
 
     /**
+     * Matches against each event of the same runtime type that has all field values equal to the fields in the
+     * expected
+     * event. All fields are compared, except for the aggregate identifier and sequence number, as they are generally
+     * not set on the expected event.
+     *
+     * @param expected The event with the expected field values
+     * @param filter   The filter describing the Fields to include in the comparison
+     * @param <T>      The type of event to match against
+     * @return a matcher that matches based on the equality of field values
+     */
+    @Factory
+    public static <T> EqualFieldsMatcher<T> equalTo(T expected, FieldFilter filter) {
+        return new EqualFieldsMatcher<T>(expected, filter);
+    }
+
+    /**
      * Matches against <code>null</code> or <code>void</code>. Can be used to make sure no trailing events remain when
      * using an Exact Sequence Matcher ({@link #exactSequenceOf(org.hamcrest.Matcher[])}).
      *

@@ -68,10 +68,19 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_NoHistoricActivity() {
+    public void testFixtureApi_AggregatePublishedEvent_NoHistoricActivity() {
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         fixture.givenNoPriorActivity()
                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
+               .expectActiveSagas(1)
+               .expectAssociationWith("identifier", "id");
+    }
+
+    @Test // testing issue AXON-279
+    public void testFixtureApi_PublishedEvent_NoHistoricActivity() {
+        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
+        fixture.givenNoPriorActivity()
+               .whenPublishingA(new GenericEventMessage<TriggerSagaStartEvent>(new TriggerSagaStartEvent("id")))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id");
     }

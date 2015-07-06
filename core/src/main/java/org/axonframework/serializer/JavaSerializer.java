@@ -71,7 +71,6 @@ public class JavaSerializer implements Serializer {
         } catch (IOException e) {
             throw new SerializationException("An exception occurred writing serialized data to the output stream", e);
         }
-        new SimpleSerializedType(instance.getClass().getName(), revisionOf(instance.getClass()));
         T converted = converterFactory.getConverter(byte[].class, expectedType)
                                       .convert(baos.toByteArray());
         return new SimpleSerializedObject<T>(converted, expectedType, instance.getClass().getName(),

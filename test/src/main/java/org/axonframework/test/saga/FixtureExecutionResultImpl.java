@@ -20,13 +20,12 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
+import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Matcher;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-
-import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.equalTo;
 import static org.axonframework.test.matchers.Matchers.messageWithPayload;
@@ -43,7 +42,8 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     private final RepositoryContentValidator repositoryContentValidator;
     private final EventValidator eventValidator;
     private final EventSchedulerValidator eventSchedulerValidator;
-    private CommandValidator commandValidator;
+    private final CommandValidator commandValidator;
+    private final FieldFilter fieldFilter;
 
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
@@ -53,13 +53,15 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
      * @param eventBus       The event bus to monitor
      * @param commandBus     The command bus to monitor
      * @param sagaType       The type of Saga under test
+     * @param fieldFilter    The FieldFilter describing the fields to include in equality checks
      */
     FixtureExecutionResultImpl(InMemorySagaRepository sagaRepository, StubEventScheduler eventScheduler,
                                EventBus eventBus, RecordingCommandBus commandBus,
-                               Class<? extends AbstractAnnotatedSaga> sagaType) {
-        commandValidator = new CommandValidator(commandBus);
+                               Class<? extends AbstractAnnotatedSaga> sagaType, FieldFilter fieldFilter) {
+        this.fieldFilter = fieldFilter;
+        commandValidator = new CommandValidator(commandBus, fieldFilter);
         repositoryContentValidator = new RepositoryContentValidator(sagaRepository, sagaType);
-        eventValidator = new EventValidator(eventBus);
+        eventValidator = new EventValidator(eventBus, fieldFilter);
         eventSchedulerValidator = new EventSchedulerValidator(eventScheduler);
     }
 
@@ -97,7 +99,7 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectScheduledEvent(Duration duration, Object applicationEvent) {
-        return expectScheduledEventMatching(duration, messageWithPayload(equalTo(applicationEvent)));
+        return expectScheduledEventMatching(duration, messageWithPayload(equalTo(applicationEvent, fieldFilter)));
     }
 
     @Override
@@ -114,7 +116,7 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
 
     @Override
     public FixtureExecutionResult expectScheduledEvent(DateTime scheduledTime, Object applicationEvent) {
-        return expectScheduledEventMatching(scheduledTime, messageWithPayload(equalTo(applicationEvent)));
+        return expectScheduledEventMatching(scheduledTime, messageWithPayload(equalTo(applicationEvent, fieldFilter)));
     }
 
     @Override

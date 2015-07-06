@@ -21,10 +21,9 @@ import org.axonframework.common.Assert;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.String.format;
 
@@ -157,11 +156,11 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
      */
     private static final class RouteCalculator {
 
-        private final Set<ContentTypeConverter<?, ?>> candidates;
+        private final Collection<ContentTypeConverter<?, ?>> candidates;
         private final List<Route> routes = new LinkedList<Route>();
 
         private RouteCalculator(Collection<ContentTypeConverter<?, ?>> candidates) {
-            this.candidates = new HashSet<ContentTypeConverter<?, ?>>(candidates);
+            this.candidates = new CopyOnWriteArrayList<ContentTypeConverter<?, ?>>(candidates);
         }
 
         private Route calculateRoute(Class<?> sourceType, Class<?> targetType) {
@@ -174,6 +173,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
                 for (ContentTypeConverter candidate : candidates) {
                     if (route.endPoint().equals(candidate.expectedSourceType())) {
                         Route newRoute = route.joinedWith(candidate);
+                        candidates.remove(candidate);
                         if (targetType.equals(newRoute.endPoint())) {
                             return newRoute;
                         }
@@ -186,7 +186,6 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
         }
 
         private Route buildInitialRoutes(Class<?> sourceType, Class<?> targetType) {
-            List<ContentTypeConverter> candidatesToRemove = new ArrayList<ContentTypeConverter>();
             for (ContentTypeConverter converter : candidates) {
                 if (sourceType.equals(converter.expectedSourceType())) {
                     Route route = new Route(converter);
@@ -194,10 +193,9 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
                         return route;
                     }
                     routes.add(route);
-                    candidatesToRemove.add(converter);
+                    candidates.remove(converter);
                 }
             }
-            candidates.removeAll(candidatesToRemove);
             return null;
         }
 

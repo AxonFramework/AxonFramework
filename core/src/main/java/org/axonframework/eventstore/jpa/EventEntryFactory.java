@@ -18,6 +18,7 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
+import org.joda.time.DateTime;
 
 /**
  * Interface describing a factory that creates Entities for the JpaEventStore to persist. The EventEntryFactory allows
@@ -98,4 +99,14 @@ public interface EventEntryFactory<T> {
      * @return the entity name of the Snapshot Event Entry provided by this factory
      */
     String getSnapshotEventEntryEntityName();
+
+    /**
+     * Returns the representation used for the given <code>dateTime</code> in the event entry.
+     * <p/>
+     * For example, if the date is stored as an ISO-8601 String, this methods return the dateTime.toString().
+     *
+     * @param dateTime The date to return the representation for
+     * @return The value used to store the given date
+     */
+    Object resolveDateTimeValue(DateTime dateTime);
 }

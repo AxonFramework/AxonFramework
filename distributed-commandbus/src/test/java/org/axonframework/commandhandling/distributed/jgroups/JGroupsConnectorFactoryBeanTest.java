@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.jgroups.JChannel;
+import org.jgroups.util.Util;
 import org.junit.*;
 import org.junit.runner.*;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -33,30 +34,40 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.same;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 /**
  * @author Allard Buijze
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({JGroupsConnectorFactoryBean.class, JChannel.class, JGroupsConnector.class})
+@PrepareForTest({JGroupsConnectorFactoryBean.class, JChannel.class, JGroupsConnector.class,
+                        JGroupsXmlConfigurationChannelFactory.class, Util.class})
 public class JGroupsConnectorFactoryBeanTest {
 
     private JGroupsConnectorFactoryBean testSubject;
     private ApplicationContext mockApplicationContext;
     private JChannel mockChannel;
     private JGroupsConnector mockConnector;
+    private HashChangeListener mockListener;
 
     @Before
     public void setUp() throws Exception {
+        mockStatic(Util.class);
         mockApplicationContext = mock(ApplicationContext.class);
         mockChannel = mock(JChannel.class);
         mockConnector = mock(JGroupsConnector.class);
+        mockListener = mock(HashChangeListener.class);
         when(mockApplicationContext.getBean(Serializer.class)).thenReturn(new XStreamSerializer());
         whenNew(JChannel.class).withParameterTypes(String.class).withArguments(isA(String.class))
                 .thenReturn(mockChannel);
         whenNew(JGroupsConnector.class)
-                .withArguments(isA(JChannel.class), isA(String.class), isA(CommandBus.class), isA(Serializer.class))
+                .withArguments(isA(JChannel.class),
+                               isA(String.class),
+                               isA(CommandBus.class),
+                               isA(Serializer.class),
+                               anyObject() /*HashChangeListener or null */)
                 .thenReturn(mockConnector);
 
         testSubject = new JGroupsConnectorFactoryBean();
@@ -72,9 +83,12 @@ public class JGroupsConnectorFactoryBeanTest {
 
         verifyNew(JChannel.class).withArguments("tcp_mcast.xml");
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("beanName"), isA(
-                SimpleCommandBus.class), isA(Serializer.class));
+                SimpleCommandBus.class), isA(Serializer.class), isNull());
         verify(mockConnector).connect(100);
         verify(mockChannel, never()).close();
+
+        verifyStatic(never());
+        Util.registerChannel(any(JChannel.class), anyString());
 
         testSubject.stop(new Runnable() {
             @Override
@@ -95,16 +109,67 @@ public class JGroupsConnectorFactoryBeanTest {
         SimpleCommandBus localSegment = new SimpleCommandBus();
         testSubject.setLocalSegment(localSegment);
         testSubject.setChannelName("localname");
+        testSubject.setHashChangeListener(mockListener);
         testSubject.afterPropertiesSet();
         testSubject.start();
         testSubject.getObject();
 
         verifyNew(JChannel.class).withArguments("custom.xml");
         verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("ClusterName"),
-                                                        same(localSegment), same(serializer));
+                                                        same(localSegment), same(serializer), same(mockListener));
         verify(mockApplicationContext, never()).getBean(Serializer.class);
         verify(mockChannel).setName("localname");
         verify(mockConnector).connect(200);
+        verify(mockChannel, never()).close();
+
+        testSubject.stop(new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
+
+        verify(mockChannel).close();
+    }
+
+    @Test
+    public void testCreateWithCustomChannel() throws Exception {
+        JChannelFactory mockFactory = mock(JChannelFactory.class);
+        when(mockFactory.createChannel()).thenReturn(mockChannel);
+
+        testSubject.setChannelFactory(mockFactory);
+        testSubject.afterPropertiesSet();
+        testSubject.start();
+        testSubject.getObject();
+
+        verify(mockFactory).createChannel();
+        verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("beanName"), isA(
+                SimpleCommandBus.class), isA(Serializer.class), isNull());
+        verify(mockConnector).connect(100);
+        verify(mockChannel, never()).close();
+
+        testSubject.stop(new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
+
+        verify(mockChannel).close();
+    }
+
+    @Test
+    public void testRegisterMBean() throws Exception {
+
+        testSubject.setRegisterMBean(true);
+        testSubject.afterPropertiesSet();
+        testSubject.start();
+        testSubject.getObject();
+
+        verifyStatic(times(1));
+        Util.registerChannel(eq(mockChannel), isNull(String.class));
+
+        verifyNew(JGroupsConnector.class).withArguments(eq(mockChannel), eq("beanName"), isA(
+                SimpleCommandBus.class), isA(Serializer.class), isNull());
+        verify(mockConnector).connect(100);
         verify(mockChannel, never()).close();
 
         testSubject.stop(new Runnable() {

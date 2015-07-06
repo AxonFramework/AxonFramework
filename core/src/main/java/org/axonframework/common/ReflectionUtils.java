@@ -36,10 +36,11 @@ import java.util.Map;
  * @since 0.7
  */
 public abstract class ReflectionUtils {
+
     /**
      * A map of Primitive types to their respective wrapper types.
      */
-    private static final Map<Class<?>,Class<?>> primitiveWrapperTypeMap = new HashMap<Class<?>,Class<?>>(8);
+    private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new HashMap<Class<?>, Class<?>>(8);
 
     private ReflectionUtils() {
         // utility class
@@ -65,8 +66,8 @@ public abstract class ReflectionUtils {
      * @return the value of the <code>field</code> in the <code>object</code>
      *
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
-     *                               made
-     *                               accessible
+     * made
+     * accessible
      */
     public static Object getFieldValue(Field field, Object object) {
         ensureAccessible(field);
@@ -139,7 +140,7 @@ public abstract class ReflectionUtils {
      * @return the given <code>member</code>, for easier method chaining
      *
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
-     *                               made accessible
+     * made accessible
      */
     public static <T extends AccessibleObject> T ensureAccessible(T member) {
         if (!isAccessible(member)) {
@@ -215,6 +216,7 @@ public abstract class ReflectionUtils {
      *
      * @param primitiveType The primitive type to return boxed wrapper type for
      * @return the boxed wrapper type for the given <code>primitiveType</code>
+     *
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
     public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
@@ -224,7 +226,6 @@ public abstract class ReflectionUtils {
         Class<?> primitiveWrapperType = primitiveWrapperTypeMap.get(primitiveType);
         Assert.notNull(primitiveWrapperType, "no wrapper found for primitiveType: " + primitiveType);
         return primitiveWrapperType;
-
     }
 
     private static void addMethodsOnDeclaredInterfaces(Class<?> currentClazz, List<Method> methods) {
@@ -232,5 +233,16 @@ public abstract class ReflectionUtils {
             methods.addAll(Arrays.asList(iface.getDeclaredMethods()));
             addMethodsOnDeclaredInterfaces(iface, methods);
         }
+    }
+
+    /**
+     * Indicates whether the given field has the "transient" modifier
+     *
+     * @param field the field to inspect
+     * @return <code>true</code> if the field is marked transient, otherwise <code>false
+     * </code>
+     */
+    public static boolean isTransient(Field field) {
+        return Modifier.isTransient(field.getModifiers());
     }
 }
