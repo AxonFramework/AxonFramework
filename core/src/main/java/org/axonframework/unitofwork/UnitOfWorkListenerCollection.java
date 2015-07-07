@@ -134,20 +134,24 @@ public class UnitOfWorkListenerCollection implements UnitOfWorkListener {
      */
     @Override
     public void onCleanup(UnitOfWork unitOfWork) {
-        logger.debug("Notifying listeners of cleanup");
-        Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
-        while (descendingIterator.hasNext()) {
-            UnitOfWorkListener listener = descendingIterator.next();
-            try {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
+        try {
+            logger.debug("Notifying listeners of cleanup");
+            Iterator<UnitOfWorkListener> descendingIterator = listeners.descendingIterator();
+            while (descendingIterator.hasNext()) {
+                UnitOfWorkListener listener = descendingIterator.next();
+                try {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Notifying listener [{}] of cleanup", listener.getClass().getName());
+                    }
+                    listener.onCleanup(unitOfWork);
+                } catch (RuntimeException e) {
+                    logger.warn("Listener raised an exception on cleanup. Ignoring...", e);
                 }
-                listener.onCleanup(unitOfWork);
-            } catch (RuntimeException e) {
-                logger.warn("Listener raised an exception on cleanup. Ignoring...", e);
             }
+            logger.debug("Listeners successfully notified");
+        } finally {
+            listeners.clear();
         }
-        logger.debug("Listeners successfully notified");
     }
 
     /**
