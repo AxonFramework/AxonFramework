@@ -70,6 +70,30 @@ public class EventProcessorTest {
     }
 
     @Test
+    public void testEventProcessingSchedule_ProcessEventsOrderByTimestamp() throws InterruptedException {
+        EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
+        Thread.sleep(1);
+        EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<StubDomainEvent>(new StubDomainEvent());
+        final EventListener listener = mock(EventListener.class);
+        ScheduledExecutorService mockExecutorService = mock(ScheduledExecutorService.class);
+        testSubject = new EventProcessor(mockExecutorService, new NullShutdownCallback(),
+                new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
+                new DefaultUnitOfWorkFactory(mockTransactionManager),
+                Collections.singleton(listener), multiplexingEventProcessingMonitor);
+
+        testSubject.scheduleEvent(event2);
+        testSubject.scheduleEvent(event1);
+        testSubject.run();
+        InOrder inOrder = inOrder(listener, mockTransactionManager);
+        inOrder.verify(mockTransactionManager).startTransaction();
+        inOrder.verify(listener).handle(event1);
+        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransactionManager).startTransaction();
+        inOrder.verify(listener).handle(event2);
+        inOrder.verify(mockTransactionManager).commitTransaction(any());
+    }
+
+    @Test
     public void testEventProcessingSchedule_FailedEventIgnored() {
         MockEventListener listener = executeEventProcessing(RetryPolicy.proceed());
 
