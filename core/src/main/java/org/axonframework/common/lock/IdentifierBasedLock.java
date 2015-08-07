@@ -95,15 +95,17 @@ public class IdentifierBasedLock {
      *
      * @param identifier the identifier of the lock to obtain.
      */
-    public void obtainLock(String identifier) {
+    public AutoCloseableLock obtainLock(String identifier) {
         boolean lockObtained = false;
+        DisposableLock lock = null;
         while (!lockObtained) {
-            DisposableLock lock = lockFor(identifier);
+            lock = lockFor(identifier);
             lockObtained = lock.lock();
             if (!lockObtained) {
                 locks.remove(identifier, lock);
             }
         }
+        return lock;
     }
 
     /**
@@ -119,7 +121,7 @@ public class IdentifierBasedLock {
             throw new IllegalLockUsageException("No lock for this identifier was ever obtained");
         }
         DisposableLock lock = lockFor(identifier);
-        lock.unlock(identifier);
+        lock.unlock();
     }
 
     private boolean isLockAvailableFor(String identifier) {
@@ -129,19 +131,22 @@ public class IdentifierBasedLock {
     private DisposableLock lockFor(String identifier) {
         DisposableLock lock = locks.get(identifier);
         while (lock == null) {
-            locks.putIfAbsent(identifier, new DisposableLock());
+            locks.putIfAbsent(identifier, new DisposableLock(identifier));
             lock = locks.get(identifier);
         }
         return lock;
     }
 
-    private final class DisposableLock {
+    private final class DisposableLock implements AutoCloseableLock {
 
         private final PubliclyOwnedReentrantLock lock;
         // guarded by "lock"
         private boolean isClosed = false;
 
-        private DisposableLock() {
+        private String identifier;
+
+        private DisposableLock(String identifier) {
+            this.identifier = identifier;
             this.lock = new PubliclyOwnedReentrantLock();
         }
 
@@ -149,15 +154,19 @@ public class IdentifierBasedLock {
             return lock.isHeldByCurrentThread();
         }
 
-        private void unlock(String identifier) {
+        public void unlock() {
             try {
                 lock.unlock();
             } finally {
-                disposeIfUnused(identifier);
+                disposeIfUnused();
             }
         }
 
-        private boolean lock() {
+        private String getIdentifier() {
+            return identifier;
+        }
+
+        public boolean lock() {
             try {
                 if (!lock.tryLock(0, TimeUnit.NANOSECONDS)) {
                     do {
@@ -185,7 +194,7 @@ public class IdentifierBasedLock {
             }
         }
 
-        private void disposeIfUnused(String identifier) {
+        private void disposeIfUnused() {
             if (lock.tryLock()) {
                 try {
                     if (lock.getHoldCount() == 1) {
@@ -206,6 +215,7 @@ public class IdentifierBasedLock {
         public boolean isHeldBy(Thread owner) {
             return lock.isHeldBy(owner);
         }
+
     }
 
     private static final class PubliclyOwnedReentrantLock extends ReentrantLock {
