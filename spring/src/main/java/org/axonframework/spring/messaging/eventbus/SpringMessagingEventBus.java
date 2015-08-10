@@ -17,8 +17,8 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.EventBus;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -42,16 +42,17 @@ import java.util.concurrent.ConcurrentMap;
  * @author Allard Buijze
  * @since 2.3.1
  */
-public class SpringMessagingEventBus implements EventBus {
+public class SpringMessagingEventBus extends AbstractEventBus {
 
     private final ConcurrentMap<Cluster, MessageHandler> handlers =
             new ConcurrentHashMap<>();
     private SubscribableChannel channel;
 
     @Override
-    public void publish(List<EventMessage<?>> events) {
+    protected void prepareCommit(List<EventMessage<?>> events) {
         for (EventMessage event : events) {
-            channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData()));
+            channel.send(new GenericMessage<>(event.getPayload(),
+                                              event.getMetaData()));
         }
     }
 

@@ -16,8 +16,6 @@
 
 package org.axonframework.domain;
 
-import java.util.List;
-
 /**
  * Interface defining a contract for entities that represent the aggregate root.
  *
@@ -35,29 +33,7 @@ public interface AggregateRoot {
     String getIdentifier();
 
     /**
-     * Clears the events currently marked as "uncommitted" and clears any known EventRegistrationCallbacks (see {@link
-     * #addEventRegistrationCallback(EventRegistrationCallback)}).
-     *
-     * @see org.axonframework.domain.EventContainer#commit()
-     */
-    void commitEvents();
-
-    /**
-     * Returns the number of uncommitted events currently available in the aggregate.
-     *
-     * @return the number of uncommitted events currently available in the aggregate.
-     */
-    int getUncommittedEventCount();
-
-    /**
-     * Returns a DomainEventStream to the events in the aggregate that have been raised since creation or the last
-     * commit.
-     *
-     * @return the DomainEventStream to the uncommitted events.
-     */
-    List<DomainEventMessage<?>> getUncommittedEvents();
-
-    /**
+     * TODO: Fix documentation
      * Returns the current version number of the aggregate, or <code>null</code> if the aggregate is newly created.
      * This
      * version must reflect the version number of the aggregate on which changes are applied.
@@ -70,7 +46,9 @@ public interface AggregateRoot {
      *
      * @return the current version number of this aggregate, or <code>null</code> if no events were ever committed
      */
-    Long getVersion();
+    default Long getVersion() {
+        return null;
+    }
 
     /**
      * Indicates whether this aggregate has been marked as deleted. When <code>true</code>, it is an instruction to the
@@ -82,15 +60,4 @@ public interface AggregateRoot {
      * @return <code>true</code> if this aggregate was marked as deleted, otherwise <code>false</code>.
      */
     boolean isDeleted();
-
-    /**
-     * Adds an EventRegistrationCallback, which is notified when the aggregate registers an Event for publication.
-     * These callbacks are cleared when the aggregate is committed.
-     * <p/>
-     * If the aggregate contains uncommitted events, they are all passed to the given
-     * <code>eventRegistrationCallback</code> for processing.
-     *
-     * @param eventRegistrationCallback the callback to notify when an event is registered
-     */
-    void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback);
 }

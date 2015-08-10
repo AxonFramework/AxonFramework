@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * @author Allard Buijze
  * @since 0.5
  */
-public class SimpleEventBus implements EventBus {
+public class SimpleEventBus extends AbstractEventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
     private final Set<Cluster> clusters = new CopyOnWriteArraySet<>();
@@ -77,13 +76,8 @@ public class SimpleEventBus implements EventBus {
     }
 
     @Override
-    public void publish(List<EventMessage<?>> events) {
-        // TODO: AXON-308 Attach to Unit of Work lifecycle
-        if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().onPrepareCommit(u -> publicationStrategy.publish(events, clusters));
-        } else {
-            publicationStrategy.publish(events, clusters);
-        }
+    protected void prepareCommit(List<EventMessage<?>> events) {
+        publicationStrategy.publish(events, clusters);
     }
 
     private static class DirectTerminal implements PublicationStrategy {

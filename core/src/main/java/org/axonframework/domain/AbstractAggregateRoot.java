@@ -16,13 +16,14 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
-import javax.persistence.Basic;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
-import javax.persistence.Version;
 
 /**
  * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
@@ -38,17 +39,9 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     private static final List<DomainEventMessage<?>> NO_MESSAGES = Collections.emptyList();
 
     @Transient
-    private volatile EventContainer eventContainer;
-
-    @Transient
     private boolean deleted = false;
 
-    @Basic(optional = true)
-    private Long lastEventSequenceNumber;
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @Version
-    private Long version;
+    private static final String EVENT_BUS_KEY = EventBus.class.getName();
 
     /**
      * Registers an event to be published when the aggregate is saved, containing the given <code>payload</code> and no
@@ -58,7 +51,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @param <T>     The type of payload
      * @return The Event holding the given <code>payload</code>
      */
-    protected <T> DomainEventMessage<T> registerEvent(T payload) {
+    protected <T> EventMessage<T> registerEvent(T payload) {
         return registerEvent(MetaData.emptyInstance(), payload);
     }
 
@@ -70,8 +63,10 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @param <T>      The type of payload
      * @return The Event holding the given <code>payload</code>
      */
-    protected <T> DomainEventMessage<T> registerEvent(MetaData metaData, T payload) {
-        return getEventContainer().addEvent(metaData, payload);
+    protected <T> EventMessage<T> registerEvent(MetaData metaData, T payload) {
+        final GenericEventMessage<T> message = new GenericEventMessage<>(payload, metaData);
+        registerEventMessage(message);
+        return message;
     }
 
     /**
@@ -81,8 +76,11 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @param <T>     The payload type carried by the message
      * @return The event as registered by the aggregate
      */
-    protected <T> DomainEventMessage<T> registerEventMessage(DomainEventMessage<T> message) {
-        return getEventContainer().addEvent(message);
+    protected <T> void registerEventMessage(EventMessage<T> message) {
+        if (CurrentUnitOfWork.isStarted()) {
+            EventBus eventBus = CurrentUnitOfWork.get().getResource(EVENT_BUS_KEY);
+            eventBus.publish(message);
+        }
     }
 
     /**
@@ -102,84 +100,4 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
         return deleted;
     }
 
-    @Override
-    public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        getEventContainer().addEventRegistrationCallback(eventRegistrationCallback);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public List<DomainEventMessage<?>> getUncommittedEvents() {
-        if (eventContainer == null) {
-            return NO_MESSAGES;
-        }
-        return eventContainer.getEventStream();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void commitEvents() {
-        if (eventContainer != null) {
-            lastEventSequenceNumber = eventContainer.getLastSequenceNumber();
-            eventContainer.commit();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getUncommittedEventCount() {
-        return eventContainer != null ? eventContainer.size() : 0;
-    }
-
-    /**
-     * Initialize the event stream using the given sequence number of the last known event. This will cause the new
-     * events to be attached to this aggregate to be assigned a continuous sequence number.
-     *
-     * @param lastSequenceNumber The sequence number of the last event from this aggregate
-     */
-    protected void initializeEventStream(long lastSequenceNumber) {
-        getEventContainer().initializeSequenceNumber(lastSequenceNumber);
-        lastEventSequenceNumber = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
-    }
-
-    /**
-     * Returns the sequence number of the last committed event, or <code>null</code> if no events have been committed
-     * before.
-     *
-     * @return the sequence number of the last committed event
-     */
-    protected Long getLastCommittedEventSequenceNumber() {
-        if (eventContainer == null) {
-            return lastEventSequenceNumber;
-        }
-        return eventContainer.getLastCommittedSequenceNumber();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Long getVersion() {
-        return version;
-    }
-
-    private EventContainer getEventContainer() {
-        if (eventContainer == null) {
-            String identifier = getIdentifier();
-            if (identifier == null) {
-                throw new AggregateIdentifierNotInitializedException(
-                        "AggregateIdentifier is unknown in [" + getClass().getName() + "]. "
-                                + "Make sure the Aggregate Identifier is initialized before registering events.");
-            }
-            eventContainer = new EventContainer(identifier);
-            eventContainer.initializeSequenceNumber(lastEventSequenceNumber);
-        }
-        return eventContainer;
-    }
 }

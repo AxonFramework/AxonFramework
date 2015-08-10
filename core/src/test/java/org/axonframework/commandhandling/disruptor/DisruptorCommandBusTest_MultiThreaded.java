@@ -169,8 +169,8 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            identifier = (String) event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage)event).getAggregateIdentifier();
         }
 
         @Override

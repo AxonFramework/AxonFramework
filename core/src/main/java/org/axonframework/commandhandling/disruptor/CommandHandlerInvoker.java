@@ -30,7 +30,6 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.ConflictingAggregateVersionException;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,11 +100,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             } catch (Throwable throwable) {
                 entry.setExceptionResult(throwable);
             } finally {
-                EventSourcedAggregateRoot aggregateRoot = entry.getResource("AggregateRoot");
-                if (aggregateRoot != null) {
-                    entry.publishMessages(aggregateRoot.getUncommittedEvents());
-                    aggregateRoot.commitEvents();
-                }
                 entry.pause();
             }
         }
@@ -222,7 +216,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
                 cache.put(aggregateIdentifier, aggregateRoot);
             }
-            CurrentUnitOfWork.get().resources().put("AggregateRoot", aggregateRoot);
             return aggregateRoot;
         }
 
@@ -230,7 +223,6 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         public void add(T aggregate) {
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
             cache.put(aggregate.getIdentifier(), aggregate);
-            CurrentUnitOfWork.get().resources().put("AggregateRoot", aggregate);
         }
 
         private void removeFromCache(String aggregateIdentifier) {

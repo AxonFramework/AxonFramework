@@ -160,13 +160,20 @@ public class DisruptorCommandBusTest {
         final EventBus eventBus = mock(EventBus.class);
         testSubject = new DisruptorCommandBus(inMemoryEventStore,
                                               new DisruptorConfiguration()
-        .setInvokerInterceptors(Collections.<CommandHandlerInterceptor>singletonList(new CommandHandlerInterceptor() {
-            @Override
-            public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
-                                 InterceptorChain interceptorChain) throws Throwable {
-                return interceptorChain.proceed();
-            }
-        })));
+                                                      .setInvokerInterceptors(Collections
+                                                                                      .<CommandHandlerInterceptor>singletonList(
+                                                                                              new CommandHandlerInterceptor() {
+                                                                                                  @Override
+                                                                                                  public Object handle(
+                                                                                                          CommandMessage<?> commandMessage,
+                                                                                                          UnitOfWork unitOfWork,
+                                                                                                          InterceptorChain interceptorChain)
+                                                                                                          throws
+                                                                                                          Throwable {
+                                                                                                      return interceptorChain
+                                                                                                              .proceed();
+                                                                                                  }
+                                                                                              })));
         testSubject.subscribe(String.class.getName(), new CommandHandler<String>() {
             @Override
             public Object handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
@@ -444,8 +451,8 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            identifier = event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage) event).getAggregateIdentifier();
         }
 
         @Override

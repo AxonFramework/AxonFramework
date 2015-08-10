@@ -51,7 +51,7 @@ public class SimpleDomainEventStream implements DomainEventStream {
      * @param events the list of domain events to stream
      * @throws IllegalArgumentException if no events are supplied
      */
-    public SimpleDomainEventStream(DomainEventMessage... events) {
+    public SimpleDomainEventStream(DomainEventMessage<?>... events) {
         this.events = Arrays.copyOfRange(events, 0, events.length);
     }
 

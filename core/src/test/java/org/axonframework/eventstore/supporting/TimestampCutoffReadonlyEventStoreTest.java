@@ -17,7 +17,6 @@
 package org.axonframework.eventstore.supporting;
 
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventContainer;
 import org.axonframework.domain.MetaData;
 
 import org.junit.*;

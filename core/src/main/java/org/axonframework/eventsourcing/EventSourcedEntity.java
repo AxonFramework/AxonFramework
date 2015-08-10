@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 
 /**
  * Interface towards an Event Sourced Entity that is part of an aggregate, but not its root. Events applied to the
@@ -47,5 +47,5 @@ public interface EventSourcedEntity {
      *
      * @param event The event to handle
      */
-    void handleRecursively(DomainEventMessage event);
+    void handleRecursively(EventMessage event);
 }

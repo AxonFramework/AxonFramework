@@ -17,7 +17,6 @@
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.eventsourcing.HybridJpaRepository;
 import org.axonframework.repository.GenericJpaRepository;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.OptimisticLockManager;

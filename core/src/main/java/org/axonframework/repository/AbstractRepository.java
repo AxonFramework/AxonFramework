@@ -19,7 +19,10 @@ package org.axonframework.repository;
 import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.unitofwork.SaveAggregateCallback;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
@@ -38,7 +41,7 @@ import org.axonframework.unitofwork.SaveAggregateCallback;
 public abstract class AbstractRepository<T extends AggregateRoot> implements Repository<T> {
 
     private final Class<T> aggregateType;
-    private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
+    private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
     private EventBus eventBus;
 
     /**
@@ -69,15 +72,30 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * {@inheritDoc}
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
-     * @throws RuntimeException           any exception thrown by implementing classes
+     * @throws RuntimeException any exception thrown by implementing classes
      */
     @Override
     public T load(String aggregateIdentifier, Long expectedVersion) {
         T aggregate = doLoad(aggregateIdentifier, expectedVersion);
         validateOnLoad(aggregate, expectedVersion);
-        // TODO: Fix
-//        return CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
-        return null;
+        UnitOfWork uow = CurrentUnitOfWork.get();
+        if (uow != null) {
+            uow.onPrepareCommit(u -> {
+                if (aggregate.isDeleted()) {
+                    doDelete(aggregate);
+                } else {
+                    doSave(aggregate);
+                }
+                if (aggregate.isDeleted()) {
+                    postDelete(aggregate);
+                } else {
+                    postSave(aggregate);
+                }
+            });
+        } else if (logger.isWarnEnabled()) {
+            logger.warn("Aggregate is loaded outside the scope of a Unit of Work. Changes may not be persisted");
+        }
+        return aggregate;
     }
 
     /**
@@ -99,9 +117,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param aggregate       The loaded aggregate
      * @param expectedVersion The expected version of the aggregate
      * @throws ConflictingModificationException
-     *
      * @throws ConflictingAggregateVersionException
-     *
      */
     protected void validateOnLoad(T aggregate, Long expectedVersion) {
         if (expectedVersion != null && aggregate.getVersion() != null &&
@@ -154,6 +170,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param eventBus the event bus to publish events to
      */
     public void setEventBus(EventBus eventBus) {
+        // TODO: Change to constructor parameter
         this.eventBus = eventBus;
     }
 
@@ -173,23 +190,5 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param aggregate The aggregate instance being saved
      */
     protected void postDelete(T aggregate) {
-    }
-
-    private class SimpleSaveAggregateCallback implements SaveAggregateCallback<T> {
-
-        @Override
-        public void save(final T aggregate) {
-            if (aggregate.isDeleted()) {
-                doDelete(aggregate);
-            } else {
-                doSave(aggregate);
-            }
-            aggregate.commitEvents();
-            if (aggregate.isDeleted()) {
-                postDelete(aggregate);
-            } else {
-                postSave(aggregate);
-            }
-        }
     }
 }

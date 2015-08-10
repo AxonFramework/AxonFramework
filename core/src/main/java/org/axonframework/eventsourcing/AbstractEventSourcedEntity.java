@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.MetaData;
 
 import java.util.Collection;
@@ -44,7 +44,7 @@ public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
     }
 
     @Override
-    public void handleRecursively(DomainEventMessage event) {
+    public void handleRecursively(EventMessage event) {
         handle(event);
         Collection<? extends EventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
@@ -70,11 +70,11 @@ public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
      *
      * @param event The event to handle
      */
-    protected abstract void handle(DomainEventMessage event);
+    protected abstract void handle(EventMessage event);
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(org.axonframework.domain.DomainEventMessage)} event handler method} for processing.
+     * the {@link #handle(EventMessage)} event handler method} for processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *
@@ -86,8 +86,8 @@ public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
 
     /**
      * Apply the provided event and attaching the given <code>metaData</code>. Applying events means they are added to
-     * the uncommitted event queue and forwarded to the {@link #handle(org.axonframework.domain.DomainEventMessage)}
-     * event handler method} for processing.
+     * the uncommitted event queue and forwarded to the {@link #handle(EventMessage)} event handler method} for
+     * processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *

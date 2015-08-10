@@ -16,12 +16,8 @@
 
 package org.axonframework.domain;
 
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.junit.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -37,40 +33,12 @@ public class AbstractAggregateRootTest {
         testSubject = new AggregateRoot();
     }
 
-    @Test
-    public void testSerializability_GenericXStreamSerializer() throws IOException {
-        XStreamSerializer serializer = new XStreamSerializer();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(serializer.serialize(testSubject, byte[].class).getData());
-
-        assertEquals(0, deserialized(baos).getUncommittedEventCount());
-        assertEquals(0, deserialized(baos).getUncommittedEvents().size());
-        assertNotNull(deserialized(baos).getIdentifier());
-
-        AggregateRoot deserialized = deserialized(baos);
-        deserialized.doSomething();
-        assertEquals(1, deserialized.getUncommittedEventCount());
-        assertNotNull(deserialized.getUncommittedEvents().get(0));
-
-        AggregateRoot deserialized2 = deserialized(baos);
-        deserialized2.doSomething();
-        assertNotNull(deserialized2.getUncommittedEvents().get(0));
-        assertEquals(1, deserialized2.getUncommittedEventCount());
-    }
-
-    private AggregateRoot deserialized(ByteArrayOutputStream baos) {
-        XStreamSerializer serializer = new XStreamSerializer();
-        return (AggregateRoot) serializer.deserialize(new SimpleSerializedObject<>(baos.toByteArray(),
-                                                                                         byte[].class,
-                                                                                         "ignored",
-                                                                                         "0"));
-    }
 
     @Test
     public void testRegisterEvent() {
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(0, (long) CurrentUnitOfWork.get().getResource("Events/" + testSubject.getIdentifier()));
         testSubject.doSomething();
-        assertEquals(1, testSubject.getUncommittedEventCount());
+        assertEquals(1, (long) CurrentUnitOfWork.get().getResource("Events/" + testSubject.getIdentifier()));
     }
 
     private static class AggregateRoot extends AbstractAggregateRoot {

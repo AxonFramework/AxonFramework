@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * This class represents a UnitOfWork in which modifications are made to aggregates. A typical UnitOfWork scope is the
@@ -106,6 +107,14 @@ public interface UnitOfWork {
     Message<?> getMessage();
 
     Map<String, Object> resources();
+
+    default <T> T getOrComputeResource(String key, Function<? super String, T> mappingFunction) {
+        return (T) resources().computeIfAbsent(key, mappingFunction);
+    }
+
+    default <T> T getOrDefaultResource(String key, T defaultValue) {
+        return (T) resources().getOrDefault(key, defaultValue);
+    }
 
     /**
      * Returns the resource previously attached under given <code>name</code>, or <code>null</code> if no such resource

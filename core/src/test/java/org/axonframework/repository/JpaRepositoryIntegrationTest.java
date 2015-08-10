@@ -83,7 +83,6 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         assertEquals(1, results.size());
         JpaAggregate aggregate = results.get(0);
         assertEquals(originalAggregate.getIdentifier(), aggregate.getIdentifier());
-        assertEquals(0, aggregate.getUncommittedEventCount());
 
         uow = DefaultUnitOfWork.startAndGet(null);
         JpaAggregate storedAggregate = repository.load(originalAggregate.getIdentifier());
@@ -108,7 +107,6 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         uow.commit();
 
         assertEquals((Long) 1L, aggregate.getVersion());
-        assertEquals(0L, aggregate.getUncommittedEventCount());
         assertEquals(2, capturedEvents.size());
         assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
         assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
@@ -131,7 +129,6 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(0L, aggregate.getUncommittedEventCount());
         assertEquals(2, capturedEvents.size());
         assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
         assertEquals(1L, capturedEvents.get(1).getSequenceNumber());

@@ -21,9 +21,9 @@ import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.AMQPMessage;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
@@ -59,7 +59,7 @@ import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQ
  * @author Allard Buijze
  * @since 2.0
  */
-public class SpringAMQPEventBus implements EventBus, InitializingBean, ApplicationContextAware {
+public class SpringAMQPEventBus extends AbstractEventBus implements InitializingBean, ApplicationContextAware {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAMQPEventBus.class);
     private static final String DEFAULT_EXCHANGE_NAME = "Axon.EventBus";
@@ -77,8 +77,8 @@ public class SpringAMQPEventBus implements EventBus, InitializingBean, Applicati
     private long publisherAckTimeout;
 
     @Override
-    public void publish(List<EventMessage<?>> events) {
-        final Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
+    protected void prepareCommit(List<EventMessage<?>> events) {
+        Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
             if (waitForAck) {
                 channel.confirmSelect();
@@ -88,7 +88,6 @@ public class SpringAMQPEventBus implements EventBus, InitializingBean, Applicati
                 doSendMessage(channel, amqpMessage);
             }
             if (CurrentUnitOfWork.isStarted()) {
-                final Channel channel1 = channel;
                 CurrentUnitOfWork.get().onCommit(u -> {
                     if ((isTransactional || waitForAck) && !channel.isOpen()) {
                         throw new EventPublicationFailedException(

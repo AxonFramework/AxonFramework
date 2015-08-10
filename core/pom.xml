@@ -86,10 +86,18 @@
             </exclusions>
         </dependency>
 
+        <!-- Used for class mocking -->
         <dependency>
             <groupId>cglib</groupId>
-            <artifactId>cglib-nodep</artifactId>
-            <version>2.2.2</version>
+            <artifactId>cglib</artifactId>
+            <version>3.1</version>
+        </dependency>
+        <!-- Use version 5 to be compliant with Java 8 -->
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>5.0.3</version>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>

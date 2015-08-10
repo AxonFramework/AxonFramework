@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.annotation;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
@@ -55,7 +55,7 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
      * @see org.axonframework.eventhandling.annotation.EventHandler
      */
     @Override
-    protected void handle(DomainEventMessage event) {
+    protected void handle(EventMessage event) {
         ensureInspectorInitialized();
         ensureInvokerInitialized();
         eventHandlerInvoker.invokeHandlerMethod(event);
