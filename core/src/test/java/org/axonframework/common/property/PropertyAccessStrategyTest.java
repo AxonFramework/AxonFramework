@@ -2,7 +2,8 @@ package org.axonframework.common.property;
 
 import org.junit.*;
 
-import static junit.framework.Assert.assertEquals;
+import static junit.framework.TestCase.assertEquals;
+
 
 public class PropertyAccessStrategyTest {
 

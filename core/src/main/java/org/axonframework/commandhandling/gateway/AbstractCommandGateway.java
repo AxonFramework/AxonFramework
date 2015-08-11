@@ -73,7 +73,7 @@ public abstract class AbstractCommandGateway {
      * @param <R>      The type of response expected from the command
      */
     protected <C, R> void send(C command, CommandCallback<? super C, R> callback) {
-        CommandMessage commandMessage = processInterceptors(createCommandMessage(command));
+        CommandMessage<? extends C> commandMessage = processInterceptors(createCommandMessage(command));
         CommandCallback<? super C, R> commandCallback = callback;
         if (retryScheduler != null) {
             commandCallback = new RetryingCallback<>(callback, retryScheduler, commandBus);
@@ -96,8 +96,8 @@ public abstract class AbstractCommandGateway {
         }
     }
 
-    private CommandMessage createCommandMessage(Object command) {
-        CommandMessage<?> message = asCommandMessage(command);
+    private <C> CommandMessage<C> createCommandMessage(Object command) {
+        CommandMessage<C> message = asCommandMessage(command);
         return message.withMetaData(MetaData.from(CorrelationDataHolder.getCorrelationData())
                                             .mergedWith(message.getMetaData()));
     }
@@ -108,8 +108,8 @@ public abstract class AbstractCommandGateway {
      * @param commandMessage The incoming command message
      * @return The command message to dispatch
      */
-    protected CommandMessage processInterceptors(CommandMessage commandMessage) {
-        CommandMessage message = commandMessage;
+    protected <C> CommandMessage<? extends C> processInterceptors(CommandMessage<C> commandMessage) {
+        CommandMessage<? extends C> message = commandMessage;
         for (CommandDispatchInterceptor dispatchInterceptor : dispatchInterceptors) {
             message = dispatchInterceptor.handle(message);
         }

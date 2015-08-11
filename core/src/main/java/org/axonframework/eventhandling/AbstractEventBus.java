@@ -6,6 +6,8 @@ import org.axonframework.unitofwork.CurrentUnitOfWork;
 import java.util.List;
 
 /**
+ * TODO: Add documentation
+ *
  * @author Allard Buijze
  */
 public abstract class AbstractEventBus implements EventBus {

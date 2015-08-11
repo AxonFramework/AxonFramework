@@ -36,16 +36,12 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
 
     private static final String ENTITY_MANAGER_PROVIDER = "entity-manager-provider";
     private static final String EVENT_BUS = "event-bus";
-    private static final String EVENT_STORE = "event-store";
     private static final String LOCK_MANAGER = "lock-manager";
     private static final String LOCKING_STRATEGY = "locking-strategy";
     private static final String AGGREGATE_TYPE = "aggregate-type";
 
     @Override
     protected Class<?> getBeanClass(Element element) {
-        if (element.hasAttribute(EVENT_STORE)) {
-            return HybridJpaRepository.class;
-        }
         return GenericJpaRepository.class;
     }
 
@@ -61,7 +57,6 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
         }
         builder.addConstructorArgValue(element.getAttribute(AGGREGATE_TYPE));
         parseLockManager(element, builder);
-        parseEventStore(element, builder);
         parseEventBus(element, builder);
     }
 
@@ -81,12 +76,6 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
             builder.addPropertyReference("eventBus", element.getAttribute(EVENT_BUS));
         } else {
             builder.addPropertyValue("eventBus", createAutowiredBean(EventBus.class));
-        }
-    }
-
-    private void parseEventStore(Element element, BeanDefinitionBuilder builder) {
-        if (element.hasAttribute(EVENT_STORE)) {
-            builder.addPropertyReference("eventStore", element.getAttribute(EVENT_STORE));
         }
     }
 

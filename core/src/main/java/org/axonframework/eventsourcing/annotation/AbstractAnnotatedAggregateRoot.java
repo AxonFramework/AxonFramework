@@ -24,8 +24,8 @@ import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 
-import java.util.Collection;
 import javax.persistence.MappedSuperclass;
+import java.util.Collection;
 
 /**
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
@@ -92,7 +92,7 @@ public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSource
      * Creates (or returns) a ParameterResolverFactory which is used by this aggregate root to resolve the parameters
      * for @EventSourcingHandler annotated methods.
      * <p/>
-     * Unless a specific ParameterResolverFactory has ben registered using {@link #registerParameterResolverFactory(org.axonframework.common.annotation.ParameterResolverFactory)},
+     * Unless a specific ParameterResolverFactory has been registered using {@link #registerParameterResolverFactory(org.axonframework.common.annotation.ParameterResolverFactory)},
      * this implementation uses the aggregate root's class loader to find parameter resolver factory implementations
      * on the classpath.
      *

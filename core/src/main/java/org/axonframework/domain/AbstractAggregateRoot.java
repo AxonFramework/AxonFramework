@@ -19,11 +19,9 @@ package org.axonframework.domain;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
+import java.io.Serializable;
 
 /**
  * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
@@ -36,12 +34,9 @@ import javax.persistence.Transient;
 public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
-    private static final List<DomainEventMessage<?>> NO_MESSAGES = Collections.emptyList();
 
     @Transient
     private boolean deleted = false;
-
-    private static final String EVENT_BUS_KEY = EventBus.class.getName();
 
     /**
      * Registers an event to be published when the aggregate is saved, containing the given <code>payload</code> and no
@@ -74,11 +69,10 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      *
      * @param message The message to publish
      * @param <T>     The payload type carried by the message
-     * @return The event as registered by the aggregate
      */
     protected <T> void registerEventMessage(EventMessage<T> message) {
         if (CurrentUnitOfWork.isStarted()) {
-            EventBus eventBus = CurrentUnitOfWork.get().getResource(EVENT_BUS_KEY);
+            EventBus eventBus = CurrentUnitOfWork.get().getResource(EventBus.KEY);
             eventBus.publish(message);
         }
     }

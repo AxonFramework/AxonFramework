@@ -36,6 +36,11 @@ import java.util.List;
 public interface EventBus {
 
     /**
+     * The default key used to map an event bus as a resource.
+     */
+    String KEY = EventBus.class.getName();
+
+    /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
      * listeners.
      * <p/>

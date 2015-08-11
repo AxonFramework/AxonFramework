@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
+ * TODO: fix documentation
+ *
  * @author Knut-Olav Hoven
  */
 public class VolatileEventStore implements EventStore, EventStoreManagement {

@@ -58,6 +58,8 @@ public interface Repository<T> {
     T load(String aggregateIdentifier);
 
     /**
+     * TODO: documentation is out of date. New event-sourced aggregates have last event sequence number as version.
+     *
      * Adds the given <code>aggregate</code> to the repository. The version of this aggregate must be <code>null</code>,
      * indicating that it has not been previously persisted.
      * <p/>

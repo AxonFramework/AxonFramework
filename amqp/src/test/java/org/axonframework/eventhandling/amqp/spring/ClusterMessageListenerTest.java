@@ -24,8 +24,8 @@ import org.axonframework.eventhandling.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.hamcrest.Description;
-import org.junit.*;
-import org.junit.internal.matchers.*;
+import org.hamcrest.TypeSafeMatcher;
+import org.junit.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 

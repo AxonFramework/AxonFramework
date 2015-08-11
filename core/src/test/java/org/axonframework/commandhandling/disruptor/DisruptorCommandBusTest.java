@@ -18,29 +18,12 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.RollbackOnAllExceptionsConfiguration;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.domain.*;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcedEntity;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.Repository;
@@ -49,26 +32,19 @@ import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
 import org.hamcrest.Description;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.internal.stubbing.answers.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
+import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static java.util.Arrays.asList;
-import static junit.framework.Assert.*;
+import static junit.framework.TestCase.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -89,8 +65,8 @@ public class DisruptorCommandBusTest {
         stubHandler = new StubHandler();
         inMemoryEventStore = new InMemoryEventStore();
 
-        inMemoryEventStore.appendEvents(asList(new GenericDomainEventMessage<>(aggregateIdentifier, 0,
-                                                                               new StubDomainEvent())));
+        inMemoryEventStore.appendEvents(Collections.singletonList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, 0, new StubDomainEvent())));
     }
 
     @After
@@ -107,8 +83,8 @@ public class DisruptorCommandBusTest {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
-                new DisruptorConfiguration().setInvokerInterceptors(asList(mockHandlerInterceptor))
-                                            .setDispatchInterceptors(asList(mockDispatchInterceptor))
+                new DisruptorConfiguration().setInvokerInterceptors(Collections.singletonList(mockHandlerInterceptor))
+                                            .setDispatchInterceptors(Collections.singletonList(mockDispatchInterceptor))
                                             .setBufferSize(8)
                                             .setProducerType(ProducerType.SINGLE)
                                             .setWaitStrategy(new SleepingWaitStrategy())
@@ -158,28 +134,14 @@ public class DisruptorCommandBusTest {
     @Test
     public void testEventsPublishedWithoutAggregateArePassedToListener() throws Exception {
         final EventBus eventBus = mock(EventBus.class);
-        testSubject = new DisruptorCommandBus(inMemoryEventStore,
-                                              new DisruptorConfiguration()
-                                                      .setInvokerInterceptors(Collections
-                                                                                      .<CommandHandlerInterceptor>singletonList(
-                                                                                              new CommandHandlerInterceptor() {
-                                                                                                  @Override
-                                                                                                  public Object handle(
-                                                                                                          CommandMessage<?> commandMessage,
-                                                                                                          UnitOfWork unitOfWork,
-                                                                                                          InterceptorChain interceptorChain)
-                                                                                                          throws
-                                                                                                          Throwable {
-                                                                                                      return interceptorChain
-                                                                                                              .proceed();
-                                                                                                  }
-                                                                                              })));
-        testSubject.subscribe(String.class.getName(), new CommandHandler<String>() {
-            @Override
-            public Object handle(CommandMessage<String> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-                eventBus.publish(GenericEventMessage.asEventMessage("ok"));
-                return null;
-            }
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, new DisruptorConfiguration()
+                                                      .setInvokerInterceptors(
+                                                              Collections.<CommandHandlerInterceptor>singletonList(
+                                                                      (commandMessage, unitOfWork, interceptorChain)
+                                                                              -> interceptorChain.proceed())));
+        testSubject.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+            eventBus.publish(GenericEventMessage.asEventMessage("ok"));
+            return null;
         });
 
         final FutureCallback<String, Void> callback = new FutureCallback<>();
@@ -368,7 +330,6 @@ public class DisruptorCommandBusTest {
     @Test
     public void testCreateAggregate() {
         inMemoryEventStore.storedEvents.clear();
-
         testSubject = new DisruptorCommandBus(inMemoryEventStore,
                                               new DisruptorConfiguration()
                                                       .setBufferSize(8)
@@ -380,8 +341,9 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
-        stubHandler.setRepository(
-                testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+        stubHandler.setRepository(testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+
+
 
         testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier)));
 

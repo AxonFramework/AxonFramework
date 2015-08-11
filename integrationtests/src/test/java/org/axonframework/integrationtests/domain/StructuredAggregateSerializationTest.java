@@ -38,7 +38,6 @@ public class StructuredAggregateSerializationTest {
         aggregateRoot.invoke();
         assertEquals(2, aggregateRoot.getInvocations());
         assertEquals(2, aggregateRoot.getEntity().getInvocations());
-        aggregateRoot.commitEvents();
         XStreamSerializer serializer = new XStreamSerializer();
         SerializedObject<byte[]> serialized = serializer.serialize(aggregateRoot, byte[].class);
         StructuredAggregateRoot deserializedAggregate = serializer.deserialize(serialized);

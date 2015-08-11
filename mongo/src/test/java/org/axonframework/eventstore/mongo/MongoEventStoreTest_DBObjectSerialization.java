@@ -23,15 +23,12 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.mongoutils.MongoLauncher;
-
 import org.junit.*;
-import org.junit.runner.*;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +44,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -117,11 +115,11 @@ public class MongoEventStoreTest_DBObjectSerialization {
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), mongoTemplate.domainEventCollection().count());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        assertEquals((long) aggregate1.getRegisteredEventCount(), mongoTemplate.domainEventCollection().count());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents(aggregate2.getUncommittedEvents());
+        testSubject.appendEvents(aggregate2.getRegisteredEvents());
         DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> actualEvents = new ArrayList<>();
         long expectedSequenceNumber = 0L;
@@ -135,17 +133,17 @@ public class MongoEventStoreTest_DBObjectSerialization {
                          event.getSequenceNumber());
             expectedSequenceNumber++;
         }
-        assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
+        assertEquals(aggregate1.getRegisteredEventCount(), actualEvents.size());
     }
 
     @Test
     public void testLoadWithSnapshotEvent() {
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        aggregate1.reset();
         testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
         aggregate1.changeState();
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        aggregate1.reset();
 
         DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> domainEvents = new ArrayList<>();
@@ -240,41 +238,6 @@ public class MongoEventStoreTest_DBObjectSerialization {
                     aggregateIdentifier, t, new StubStateChangedEvent(), null));
         }
         return events;
-    }
-
-    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
-
-        private final UUID identifier;
-
-        private StubAggregateRoot() {
-            this.identifier = UUID.randomUUID();
-        }
-
-        public void changeState() {
-            apply(new StubStateChangedEvent());
-        }
-
-        @Override
-        public String getIdentifier() {
-            return identifier.toString();
-        }
-
-        @EventSourcingHandler
-        public void handleStateChange(StubStateChangedEvent event) {
-        }
-
-        public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<>(
-                    getIdentifier(), getVersion(), new StubStateChangedEvent(), null);
-        }
-    }
-
-    private static class StubStateChangedEvent {
-
-        private static final long serialVersionUID = 3459228620192273869L;
-
-        private StubStateChangedEvent() {
-        }
     }
 
     private void setClock(ZonedDateTime zonedDateTime) {

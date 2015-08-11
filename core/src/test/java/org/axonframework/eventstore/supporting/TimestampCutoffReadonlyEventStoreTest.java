@@ -16,10 +16,10 @@
 
 package org.axonframework.eventstore.supporting;
 
+import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.MetaData;
-
-import org.junit.*;
+import org.axonframework.domain.GenericDomainEventMessage;
+import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -111,21 +111,18 @@ public class TimestampCutoffReadonlyEventStoreTest {
 
     private TimestampCutoffReadonlyEventStore givenEventsFromBackend() {
         VolatileEventStore backend = new VolatileEventStore();
-        EventContainer ec = new EventContainer("My-1");
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        backend.appendEvents(ec.getEventStream());
-
+        backend.appendEvents(createEventMessage(0, new MyEvent(1)), createEventMessage(1, new MyEvent(2)));
         return new TimestampCutoffReadonlyEventStore(backend, backend, future());
     }
 
     private TimestampCutoffReadonlyEventStore givenCutOffBackendEvents() {
         VolatileEventStore backend = new VolatileEventStore();
-        EventContainer ecBack = new EventContainer("My-1");
-        ecBack.initializeSequenceNumber(0L);
-        ecBack.addEvent(MetaData.emptyInstance(), new MyEvent("newer, cut off"));
-        backend.appendEvents(ecBack.getEventStream());
+        backend.appendEvents(createEventMessage(1, new MyEvent("newer, cut off")));
 
         return new TimestampCutoffReadonlyEventStore(backend, backend, past());
+    }
+
+    private DomainEventMessage<?> createEventMessage(long sequenceNumber, Object event) {
+        return new GenericDomainEventMessage<>("My-1", sequenceNumber, event);
     }
 }

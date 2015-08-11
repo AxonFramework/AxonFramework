@@ -18,18 +18,20 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.testutils.MockException;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.Collection;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
@@ -69,7 +71,6 @@ public class GenericAggregateFactoryTest {
     public void testInitializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
         aggregate.doSomething();
-        aggregate.commitEvents();
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
                 aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
@@ -87,7 +88,7 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
+        protected void handle(EventMessage event) {
         }
 
         @Override
@@ -106,7 +107,7 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
+        protected void handle(EventMessage event) {
         }
 
         @Override

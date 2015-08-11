@@ -16,17 +16,17 @@
 
 package org.axonframework.integrationtests.jpa;
 
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Allard Buijze
@@ -46,7 +46,7 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
         aggregate.doSomething();
         aggregate.doSomething();
 
-        aggregate.commitEvents();
+        aggregate.reset();
         entityManager.persist(aggregate);
         entityManager.flush();
 
@@ -58,6 +58,6 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
         reloaded.doSomething();
 
         assertEquals(3, reloaded.getInvocationCount());
-        assertEquals(2L, reloaded.getUncommittedEvents().get(0).getSequenceNumber());
+        assertEquals(2L, reloaded.getRegisteredEvents().get(0).getSequenceNumber());
     }
 }

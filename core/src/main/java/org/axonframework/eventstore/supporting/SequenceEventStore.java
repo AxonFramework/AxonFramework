@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /**
+ * TODO: fix documentation
+ *
  * Joins two {@link EventStore}s together.
  * 
  * <p>

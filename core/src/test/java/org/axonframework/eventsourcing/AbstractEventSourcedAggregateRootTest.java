@@ -16,11 +16,12 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.testutils.RecordingEventBus;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 
 import java.util.ArrayList;
@@ -35,7 +36,22 @@ import static org.junit.Assert.*;
 public class AbstractEventSourcedAggregateRootTest {
 
     private CompositeAggregateRoot testSubject;
+    private RecordingEventBus eventBus;
     private String identifier = "aggregateIdentifier";
+
+    @Before
+    public void setup() {
+        eventBus = new RecordingEventBus();
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.resources().put(EventBus.KEY, eventBus);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
 
     @Test
     public void testInitializeWithEvents() {
@@ -48,7 +64,7 @@ public class AbstractEventSourcedAggregateRootTest {
         )));
 
         assertEquals(identifier, testSubject.getIdentifier());
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(0, eventBus.getPublishedEventCount());
         assertEquals(1, testSubject.getInvocationCount());
         assertEquals(1, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(new Long(243), testSubject.getVersion());
@@ -59,27 +75,23 @@ public class AbstractEventSourcedAggregateRootTest {
         testSubject = new CompositeAggregateRoot(identifier);
 
         assertNotNull(testSubject.getIdentifier());
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(0, eventBus.getPublishedEventCount());
         assertEquals(null, testSubject.getVersion());
 
         testSubject.apply(new StubDomainEvent());
 
         assertEquals(1, testSubject.getInvocationCount());
-        assertEquals(1, testSubject.getUncommittedEventCount());
+        assertEquals(1, eventBus.getPublishedEventCount());
         assertEquals(1, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(1, testSubject.getSimpleEntityList().get(0).getInvocationCount());
 
         testSubject.getSimpleEntity().applyEvent();
         assertEquals(2, testSubject.getInvocationCount());
-        assertEquals(2, testSubject.getUncommittedEventCount());
+        assertEquals(2, eventBus.getPublishedEventCount());
         assertEquals(2, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(2, testSubject.getSimpleEntityList().get(0).getInvocationCount());
 
-        assertEquals(null, testSubject.getVersion());
-
-        testSubject.commitEvents();
-        assertEquals(new Long(1), testSubject.getVersion());
-        assertEquals(0, testSubject.getUncommittedEvents().size());
+        assertEquals(new Long(eventBus.getPublishedEventCount()), testSubject.getVersion());
     }
 
     /**
@@ -100,8 +112,8 @@ public class AbstractEventSourcedAggregateRootTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            this.identifier = (String) event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            this.identifier = ((DomainEventMessage) event).getAggregateIdentifier();
             this.invocationCount++;
             if (childEntity == null) {
                 childEntity = new SimpleEntity();
@@ -143,7 +155,7 @@ public class AbstractEventSourcedAggregateRootTest {
         private int invocationCount;
 
         @Override
-        protected void handle(DomainEventMessage event) {
+        protected void handle(EventMessage event) {
             this.invocationCount++;
         }
 

@@ -44,12 +44,7 @@ import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.repository.Repository;
 import org.junit.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
@@ -75,10 +70,10 @@ public class SynchronousLoopbackTest {
         commandBus = new SimpleCommandBus();
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
-        eventStore.appendEvents(Arrays.asList(
+        eventStore.appendEvents(Collections.singletonList(
                 new GenericDomainEventMessage<>(aggregateIdentifier, 0,
-                                                new AggregateCreatedEvent(aggregateIdentifier),
-                                                null
+                        new AggregateCreatedEvent(aggregateIdentifier),
+                        null
                 )));
         reset(eventStore);
 
@@ -144,7 +139,7 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(anyList());
+        verify(eventStore, times(3)).appendEvents(anyEventList());
     }
 
     @Test
@@ -178,7 +173,7 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(anyList());
+        verify(eventStore, times(3)).appendEvents(anyEventList());
     }
 
     @Test
@@ -215,7 +210,7 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(anyList());
+        verify(eventStore, times(3)).appendEvents(anyEventList());
     }
 
     @Test
@@ -253,7 +248,12 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(anyList());
+        verify(eventStore, times(3)).appendEvents(anyEventList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<DomainEventMessage<?>> anyEventList() {
+        return anyList();
     }
 
     private static class CounterCommandHandler {
@@ -265,6 +265,7 @@ public class SynchronousLoopbackTest {
         }
 
         @CommandHandler
+        @SuppressWarnings("unchecked")
         public void changeCounter(ChangeCounterCommand command) {
             CountingAggregate aggregate = repository.load(command.getAggregateId());
             aggregate.setCounter(command.getNewValue());

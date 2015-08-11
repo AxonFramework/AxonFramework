@@ -16,10 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.domain.*;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.ConcurrencyException;
@@ -28,7 +25,7 @@ import org.axonframework.repository.OptimisticLockManager;
 import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -185,8 +182,8 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            identifier = event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
         }
 
         @Override

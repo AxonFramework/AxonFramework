@@ -92,15 +92,8 @@ public class JavaSerializationTest {
     private void validateAggregateCondition(StubAnnotatedAggregate original, StubAnnotatedAggregate unmarshalled) {
         assertNotNull(unmarshalled);
         assertEquals(original.getIdentifier(), unmarshalled.getIdentifier());
-        assertEquals(null, unmarshalled.getVersion());
-        assertEquals(1, unmarshalled.getUncommittedEventCount());
-
-        unmarshalled.commitEvents();
-
         assertEquals((Long) 0L, unmarshalled.getVersion());
-
         unmarshalled.doSomething();
-
-        assertEquals(1L, unmarshalled.getUncommittedEvents().get(0).getSequenceNumber());
+        assertEquals((Long) 1L, unmarshalled.getVersion());
     }
 }

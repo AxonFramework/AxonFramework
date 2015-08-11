@@ -19,21 +19,25 @@ package org.axonframework.auditing;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.testutils.MockException;
+import org.axonframework.testutils.RecordingEventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
 /**
@@ -72,6 +76,8 @@ public class AuditingInterceptorTest {
     public void testInterceptCommand_SuccessfulExecution() throws Throwable {
         when(mockInterceptorChain.proceed()).thenReturn("Return value");
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        RecordingEventBus eventBus = new RecordingEventBus();
+        uow.resources().put(EventBus.KEY, eventBus);
         StubAggregate aggregate = new StubAggregate();
         //TODO: Fix uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
         GenericCommandMessage<String> command = new GenericCommandMessage<>("Command!");
@@ -86,7 +92,7 @@ public class AuditingInterceptorTest {
 
         verify(mockAuditDataProvider, atLeast(1)).provideAuditDataFor(command);
         verify(mockAuditLogger, times(1)).logSuccessful(eq(command), any(Object.class), listWithTwoEventMessages());
-        DomainEventMessage eventFromAggregate = aggregate.getUncommittedEvents().get(0);
+        EventMessage<?> eventFromAggregate = eventBus.getPublishedEvents().get(0);
         assertEquals("value", eventFromAggregate.getMetaData().get("key"));
     }
 

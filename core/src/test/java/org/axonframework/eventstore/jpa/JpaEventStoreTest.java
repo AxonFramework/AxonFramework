@@ -25,22 +25,17 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
-import org.axonframework.serializer.ChainingConverterFactory;
-import org.axonframework.serializer.ConverterFactory;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.SimpleSerializedType;
-import org.axonframework.serializer.UnknownSerializedTypeException;
+import org.axonframework.serializer.*;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
-
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
@@ -52,20 +47,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.sql.SQLException;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAccessor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.sql.SQLException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAccessor;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
@@ -167,7 +160,7 @@ public class JpaEventStoreTest {
     @Transactional
     @Test(expected = UnknownSerializedTypeException.class)
     public void testUnknownSerializedTypeCausesException() {
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
         entityManager.flush();
         entityManager.clear();
         entityManager.createQuery("UPDATE DomainEventEntry e SET e.payloadType = :type")
@@ -181,9 +174,9 @@ public class JpaEventStoreTest {
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
         entityManager.flush();
-        assertEquals((long) aggregate1.getUncommittedEventCount(),
+        assertEquals((long) aggregate1.getRegisteredEventCount(),
                      entityManager.createQuery("SELECT count(e) FROM DomainEventEntry e").getSingleResult());
 
         // we store some more events to make sure only correct events are retrieved
@@ -203,7 +196,7 @@ public class JpaEventStoreTest {
             event.getMetaData();
             actualEvents.add(event);
         }
-        assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
+        assertEquals(aggregate1.getRegisteredEventCount(), actualEvents.size());
 
         /// we make sure persisted events have the same MetaData alteration logic
         DomainEventStream other = testSubject.readEvents(aggregate2.getIdentifier());
@@ -236,11 +229,11 @@ public class JpaEventStoreTest {
                     return asList(serializedObject, serializedObject);
                 });
 
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
 
         testSubject.setUpcasterChain(mockUpcasterChain);
         entityManager.flush();
-        assertEquals((long) aggregate1.getUncommittedEventCount(),
+        assertEquals((long) aggregate1.getRegisteredEventCount(),
                      entityManager.createQuery("SELECT count(e) FROM DomainEventEntry e").getSingleResult());
 
         // we store some more events to make sure only correct events are retrieved
@@ -471,16 +464,15 @@ public class JpaEventStoreTest {
     @Test
     @Transactional
     public void testLoadWithSnapshotEvent() {
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        aggregate1.getRegisteredEvents().clear();
         entityManager.flush();
         entityManager.clear();
         testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
         entityManager.flush();
         entityManager.clear();
         aggregate1.changeState();
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
 
         DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> domainEvents = new ArrayList<>();
@@ -646,8 +638,8 @@ public class JpaEventStoreTest {
         StubAggregateRoot aggregate = new StubAggregateRoot();
 
         aggregate.changeState();
-        testSubject.appendEvents(aggregate.getUncommittedEvents());
-        aggregate.commitEvents();
+        testSubject.appendEvents(aggregate.getRegisteredEvents());
+        aggregate.getRegisteredEvents().clear();
         entityManager.flush();
         entityManager.clear();
 
@@ -656,8 +648,8 @@ public class JpaEventStoreTest {
         entityManager.clear();
 
         aggregate.changeState();
-        testSubject.appendEvents(aggregate.getUncommittedEvents());
-        aggregate.commitEvents();
+        testSubject.appendEvents(aggregate.getRegisteredEvents());
+        aggregate.getRegisteredEvents().clear();
         entityManager.flush();
         entityManager.clear();
 
@@ -862,6 +854,7 @@ public class JpaEventStoreTest {
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
         private static final long serialVersionUID = -3656612830058057848L;
+        private transient List<DomainEventMessage<?>> registeredEvents;
         private final Object identifier;
 
         private StubAggregateRoot() {
@@ -874,6 +867,23 @@ public class JpaEventStoreTest {
 
         public void changeState() {
             apply(new StubStateChangedEvent());
+        }
+
+        @Override
+        protected <T> void registerEventMessage(EventMessage<T> message) {
+            super.registerEventMessage(message);
+            getRegisteredEvents().add((DomainEventMessage<?>) message);
+        }
+
+        public List<DomainEventMessage<?>> getRegisteredEvents() {
+            if (registeredEvents == null) {
+                registeredEvents = new ArrayList<>();
+            }
+            return registeredEvents;
+        }
+
+        public int getRegisteredEventCount() {
+            return registeredEvents == null ? 0 : registeredEvents.size();
         }
 
         @Override

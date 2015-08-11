@@ -28,6 +28,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * @author Allard Buijze
@@ -46,11 +47,11 @@ public class RunUpcasterWithSpring {
 
         // we append some events. Notice we append a "ToDoItemCreatedEvent".
         eventStore.appendEvents(Arrays.asList(
-                new GenericDomainEventMessage("todo1", 0, new ToDoItemCreatedEvent("todo1", "I need to do this today")),
-                new GenericDomainEventMessage("todo1", 1, new ToDoItemCompletedEvent("todo1"))
+                new GenericDomainEventMessage<Object>("todo1", 0, new ToDoItemCreatedEvent("todo1", "I need to do this today")),
+                new GenericDomainEventMessage<Object>("todo1", 1, new ToDoItemCompletedEvent("todo1"))
         ));
-        eventStore.appendEvents(Arrays.asList(
-                new GenericDomainEventMessage("todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
+        eventStore.appendEvents(Collections.singletonList(
+                new GenericDomainEventMessage<Object>("todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
         ));
 
 

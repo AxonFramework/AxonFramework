@@ -23,6 +23,7 @@ import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.testutils.RecordingEventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.junit.*;
@@ -55,7 +56,7 @@ public class CommandHandlingTest {
 
     @Test
     public void testCommandHandlerLoadsSameAggregateTwice() {
-        DefaultUnitOfWork.startAndGet(null);
+        DefaultUnitOfWork.startAndGet(null).resources().put(EventBus.KEY, new RecordingEventBus());
         StubAggregate stubAggregate = new StubAggregate(aggregateIdentifier);
         stubAggregate.doSomething();
         repository.add(stubAggregate);

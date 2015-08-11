@@ -260,7 +260,7 @@
                          aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"/>
 
     <axon:jpa-repository id="fullyDefinedJpaRepository" entity-manager-provider="customEntityManagerProvider"
-                         event-bus="eventBus" event-store="eventStore" lock-manager="nullLockManager"
+                         event-bus="eventBus" lock-manager="nullLockManager"
                          aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"/>
 
     <bean id="mockCache" class="org.axonframework.cache.JCacheAdapter">
@@ -282,9 +282,6 @@
     <axon:jpa-repository id="jpaRepository" event-bus="eventBus"
                          aggregate-type="org.axonframework.spring.config.xml.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
 
-    <axon:jpa-repository id="hybridJpaRepository" event-bus="eventBus" event-store="eventStore"
-                         entity-manager-provider="customEntityManagerProvider"
-                         aggregate-type="org.axonframework.spring.config.xml.RepositoryBeanDefinitionParserTest$EventSourcedAggregateRootMock"/>
 
     <bean id="taskExecutor"
           class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">

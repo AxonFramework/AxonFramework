@@ -17,17 +17,12 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.AbstractAggregateRoot;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.domain.*;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
 import javax.persistence.Basic;
 import javax.persistence.MappedSuperclass;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 /**
  * Abstract convenience class to be extended by all aggregate roots. The AbstractEventSourcedAggregateRoot tracks all
@@ -145,7 +140,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
                 handleRecursively(message);
                 registerEventMessage(message);
             } else {
-                // eventsToApply may heb been set to null by serialization
+                // eventsToApply may have been set to null by serialization
                 if (eventsToApply == null) {
                     eventsToApply = new ArrayDeque<>();
                 }
@@ -159,6 +154,10 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
             }
         } finally {
             applyingEvents = wasNested;
+            //resets the aggregate state in case an exception is thrown
+            if (!applyingEvents && eventsToApply != null) {
+                eventsToApply.clear();
+            }
         }
     }
 
@@ -172,6 +171,13 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         return lastEventSequenceNumber;
     }
 
+    /**
+     * Returns the sequence number for the next event message to be published by this aggregate. If no events have
+     * been published this returns <code>0</code>, otherwise this method returns the sequence number of the last
+     * event message incremented by 1.
+     *
+     * @return the sequence for the next event message
+     */
     protected long nextSequenceNumber() {
         if (lastEventSequenceNumber == null) {
             lastEventSequenceNumber = 0L;

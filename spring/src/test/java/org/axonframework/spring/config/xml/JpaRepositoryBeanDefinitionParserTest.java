@@ -78,7 +78,7 @@ public class JpaRepositoryBeanDefinitionParserTest {
         BeanDefinition beanDefinition = beanFactory.getBeanDefinition("fullyDefinedJpaRepository");
         assertEquals(3, beanDefinition.getConstructorArgumentValues().getArgumentCount());
 
-        assertEquals(HybridJpaRepository.class.getName(), beanDefinition.getBeanClassName());
+        assertEquals(GenericJpaRepository.class.getName(), beanDefinition.getBeanClassName());
 
         assertNotNull(beanDefinition.getConstructorArgumentValues().getArgumentValue(0, EntityManagerProvider.class));
         assertNotNull(beanDefinition.getConstructorArgumentValues().getArgumentValue(1, Class.class));

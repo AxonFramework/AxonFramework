@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.StubDomainEvent;
 
-import java.util.Collection;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.util.Collection;
 
 /**
  * @author Allard Buijze
@@ -49,7 +49,7 @@ public class JpaEventSourcedAggregate extends AbstractEventSourcedAggregateRoot 
     }
 
     @Override
-    protected void handle(DomainEventMessage event) {
+    protected void handle(EventMessage event) {
         counter++;
         if (MyAggregateDeletedEvent.class.isInstance(event.getPayload())) {
             markDeleted();

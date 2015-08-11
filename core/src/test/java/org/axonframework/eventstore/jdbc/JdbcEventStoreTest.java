@@ -18,7 +18,6 @@ package org.axonframework.eventstore.jdbc;
 
 
 import org.axonframework.domain.*;
-import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -108,7 +107,7 @@ public class JdbcEventStoreTest {
 
     @Test(expected = UnknownSerializedTypeException.class)
     public void testUnknownSerializedTypeCausesException() throws SQLException {
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
         final PreparedStatement preparedStatement = conn.prepareStatement(
                 "UPDATE DomainEventEntry e SET e.payloadType = ?");
         preparedStatement.setString(1, "unknown");
@@ -150,8 +149,8 @@ public class JdbcEventStoreTest {
     @Test
     public void testStoreAndLoadEvents() throws SQLException {
         assertNotNull(testSubject);
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(), queryLong());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        assertEquals((long) aggregate1.getRegisteredEventCount(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents(singletonList(
@@ -168,7 +167,7 @@ public class JdbcEventStoreTest {
             event.getMetaData();
             actualEvents.add(event);
         }
-        assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
+        assertEquals(aggregate1.getRegisteredEventCount(), actualEvents.size());
 
         /// we make sure persisted events have the same MetaData alteration logic
         DomainEventStream other = testSubject.readEvents(aggregate2.getIdentifier());
@@ -199,10 +198,10 @@ public class JdbcEventStoreTest {
                     return asList(serializedObject, serializedObject);
                 });
 
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
 
         testSubject.setUpcasterChain(mockUpcasterChain);
-        assertEquals((long) aggregate1.getUncommittedEventCount(), queryLong());
+        assertEquals((long) aggregate1.getRegisteredEventCount(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents(singletonList(
@@ -282,12 +281,11 @@ public class JdbcEventStoreTest {
 
     @Test
     public void testLoadWithSnapshotEvent() {
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
         testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
+        aggregate1.getRegisteredEvents().clear();
         aggregate1.changeState();
-        testSubject.appendEvents(aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
 
         DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
         List<DomainEventMessage> domainEvents = new ArrayList<>();
@@ -535,6 +533,7 @@ public class JdbcEventStoreTest {
     private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
         private static final long serialVersionUID = -3656612830058057848L;
+        private transient List<DomainEventMessage<?>> registeredEvents;
         private final Object identifier;
 
         private StubAggregateRoot() {
@@ -547,6 +546,23 @@ public class JdbcEventStoreTest {
 
         public void changeState() {
             apply(new StubStateChangedEvent());
+        }
+
+        @Override
+        protected <T> void registerEventMessage(EventMessage<T> message) {
+            super.registerEventMessage(message);
+            getRegisteredEvents().add((DomainEventMessage<?>) message);
+        }
+
+        public List<DomainEventMessage<?>> getRegisteredEvents() {
+            if (registeredEvents == null) {
+                registeredEvents = new ArrayList<>();
+            }
+            return registeredEvents;
+        }
+
+        public int getRegisteredEventCount() {
+            return registeredEvents == null ? 0 : registeredEvents.size();
         }
 
         @Override

@@ -84,7 +84,6 @@ public class EventSourcingRepositoryTest {
 
         TestAggregate aggregate = testSubject.load(identifier, null);
 
-        assertEquals(0, aggregate.getUncommittedEventCount());
         assertEquals(2, aggregate.getHandledEvents().size());
         assertSame(event1, aggregate.getHandledEvents().get(0));
         assertSame(event2, aggregate.getHandledEvents().get(1));
@@ -100,7 +99,6 @@ public class EventSourcingRepositoryTest {
         verify(mockEventBus, never()).publish(event1);
         verify(mockEventBus, never()).publish(event2);
         verify(mockEventStore, times(1)).appendEvents(anyList());
-        assertEquals(0, aggregate.getUncommittedEventCount());
     }
 
     @Test
@@ -302,7 +300,7 @@ public class EventSourcingRepositoryTest {
 
     private static class TestAggregate extends AbstractEventSourcedAggregateRoot {
 
-        private List<EventMessage<? extends Object>> handledEvents = new ArrayList<EventMessage<? extends Object>>();
+        private List<EventMessage<?>> handledEvents = new ArrayList<EventMessage<? extends Object>>();
         private String identifier;
 
         private TestAggregate(String identifier) {
@@ -320,12 +318,12 @@ public class EventSourcingRepositoryTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            identifier = event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
             handledEvents.add(event);
         }
 
-        public List<EventMessage<? extends Object>> getHandledEvents() {
+        public List<EventMessage<?>> getHandledEvents() {
             return handledEvents;
         }
 

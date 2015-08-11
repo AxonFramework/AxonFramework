@@ -26,13 +26,6 @@
         <property name="eventBus" ref="eventBus"/>
     </bean>
 
-    <bean id="hybridRepository" class="org.axonframework.eventsourcing.HybridJpaRepository">
-        <constructor-arg ref="entityManagerProvider"/>
-        <constructor-arg value="org.axonframework.eventsourcing.JpaEventSourcedAggregate"/>
-        <property name="eventStore" ref="mockEventStore"/>
-        <property name="eventBus" ref="eventBus"/>
-    </bean>
-
     <bean id="mockEventStore" class="org.mockito.Mockito" factory-method="mock">
         <constructor-arg value="org.axonframework.eventstore.EventStore"/>
     </bean>

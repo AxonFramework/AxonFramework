@@ -19,18 +19,17 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 
 /**
  * Implementation of the EventEntryStore that stores events in DomainEventEntry entities and snapshot events in
@@ -93,8 +92,8 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     }
 
     @Override
-    @SuppressWarnings({"unchecked"})
-    public SimpleSerializedDomainEventData loadLastSnapshotEvent(String identifier,
+    @SuppressWarnings("unchecked")
+    public SimpleSerializedDomainEventData<T> loadLastSnapshotEvent(String identifier,
                                                                  EntityManager entityManager) {
         List<SimpleSerializedDomainEventData<T>> entries = entityManager
                 .createQuery("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("

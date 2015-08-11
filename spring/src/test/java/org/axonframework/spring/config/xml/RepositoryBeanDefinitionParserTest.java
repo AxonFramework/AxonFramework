@@ -16,20 +16,13 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventRegistrationCallback;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.CachingEventSourcingRepository;
-import org.axonframework.eventsourcing.EventCountSnapshotterTrigger;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.PessimisticLockManager;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -232,36 +225,7 @@ public class RepositoryBeanDefinitionParserTest {
          * {@inheritDoc}
          */
         @Override
-        public void commitEvents() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int getUncommittedEventCount() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public List<DomainEventMessage<?>> getUncommittedEvents() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
         public boolean isDeleted() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        @Override
-        public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

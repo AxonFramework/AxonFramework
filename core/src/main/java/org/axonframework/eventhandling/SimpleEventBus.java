@@ -41,12 +41,17 @@ public class SimpleEventBus extends AbstractEventBus {
     private final PublicationStrategy publicationStrategy;
 
     /**
-     * Initializes the EmbeddedEventBus using a
+     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed clusters.
      */
     public SimpleEventBus() {
         this(new DirectTerminal());
     }
 
+    /**
+     * Initializes an event bus with given {@link PublicationStrategy}.
+     *
+     * @param publicationStrategy The strategy used by the event bus to publish events to listeners
+     */
     public SimpleEventBus(PublicationStrategy publicationStrategy) {
         this.publicationStrategy = publicationStrategy;
     }

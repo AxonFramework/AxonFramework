@@ -16,14 +16,14 @@
 
 package org.axonframework.eventstore.supporting;
 
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.MetaData;
+import org.axonframework.domain.*;
 import org.axonframework.eventstore.EventStreamNotFoundException;
-
-import org.junit.*;
+import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -186,10 +186,8 @@ public class SequenceEventStoreTest {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
 
         VolatileEventStore backend = new VolatileEventStore();
-        EventContainer ec = new EventContainer("My-1");
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        backend.appendEvents(ec.getEventStream());
+        backend.appendEvents(Arrays.asList(createEventMessage(0, new MyEvent(1)),
+                createEventMessage(1, new MyEvent(2))));
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
         return new SequenceEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
@@ -197,10 +195,8 @@ public class SequenceEventStoreTest {
 
     private SequenceEventStore givenVolatileEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
-        EventContainer ec = new EventContainer("My-1");
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        volatileEventStore.appendEvents(ec.getEventStream());
+        volatileEventStore.appendEvents(Arrays.asList(createEventMessage(0, new MyEvent(1)),
+                createEventMessage(1, new MyEvent(2))));
 
         TimestampCutoffReadonlyEventStore backend = new VolatileEventStore().cutoff(future());
 
@@ -209,15 +205,10 @@ public class SequenceEventStoreTest {
 
     private SequenceEventStore givenBackendEventsAndVolatileEvents() {
         VolatileEventStore backend = new VolatileEventStore();
-        EventContainer ecBack = new EventContainer("My-1");
-        ecBack.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        backend.appendEvents(ecBack.getEventStream());
+        backend.appendEvents(Collections.singletonList(createEventMessage(0, new MyEvent(1))));
 
         VolatileEventStore volatileEventStore = new VolatileEventStore();
-        EventContainer ecVolatile = new EventContainer("My-1");
-        ecVolatile.initializeSequenceNumber(0L);
-        ecVolatile.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        volatileEventStore.appendEvents(ecVolatile.getEventStream());
+        volatileEventStore.appendEvents(Collections.singletonList(createEventMessage(1, new MyEvent(2))));
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(future());
 
@@ -226,18 +217,17 @@ public class SequenceEventStoreTest {
 
     private SequenceEventStore givenVolatileEventsAndCutOffBackendEvents() {
         VolatileEventStore volatileEventStore = new VolatileEventStore();
-        EventContainer ecVolatile = new EventContainer("My-1");
-        ecVolatile.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        volatileEventStore.appendEvents(ecVolatile.getEventStream());
+        volatileEventStore.appendEvents(Collections.singletonList(createEventMessage(0, new MyEvent(1))));
 
         VolatileEventStore backend = new VolatileEventStore();
-        EventContainer ecBack = new EventContainer("My-1");
-        ecBack.initializeSequenceNumber(0L);
-        ecBack.addEvent(MetaData.emptyInstance(), new MyEvent("newer, cut off"));
-        backend.appendEvents(ecBack.getEventStream());
+        backend.appendEvents(Collections.singletonList(createEventMessage(1, new MyEvent("newer, cut off"))));
 
         TimestampCutoffReadonlyEventStore cutoffBackend = backend.cutoff(past());
 
         return new SequenceEventStore(volatileEventStore, volatileEventStore, cutoffBackend, cutoffBackend);
+    }
+
+    private DomainEventMessage<?> createEventMessage(long sequenceNumber, Object event) {
+        return new GenericDomainEventMessage<>("My-1", sequenceNumber, event);
     }
 }

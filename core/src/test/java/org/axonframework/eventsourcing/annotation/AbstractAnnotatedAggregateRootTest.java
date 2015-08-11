@@ -22,18 +22,23 @@ import org.axonframework.common.annotation.FixedValueParameterResolver;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.Timestamp;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.testutils.RecordingEventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import org.junit.*;
-
+import javax.persistence.Id;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -41,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import javax.persistence.Id;
 
 import static org.junit.Assert.*;
 
@@ -50,7 +54,22 @@ import static org.junit.Assert.*;
  */
 public class AbstractAnnotatedAggregateRootTest {
 
+    private RecordingEventBus eventBus;
     private SimpleAggregateRoot testSubject;
+
+    @Before
+    public void setup() {
+        eventBus = new RecordingEventBus();
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.resources().put(EventBus.KEY, eventBus);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
 
     @Test
     public void testApplyEvent() {
@@ -58,7 +77,7 @@ public class AbstractAnnotatedAggregateRootTest {
 
         assertNotNull(testSubject.getIdentifier());
         // the first applied event applies another one
-        assertEquals(2, testSubject.getUncommittedEventCount());
+        assertEquals(2, eventBus.getPublishedEventCount());
         // this proves that a newly added entity is also notified of an event
         assertEquals(2, testSubject.getEntity().invocationCount);
 
@@ -72,44 +91,38 @@ public class AbstractAnnotatedAggregateRootTest {
         assertTrue(testSubject.entity.appliedEvents.get(1).nested);
         assertFalse(testSubject.entity.appliedEvents.get(2).nested);
 
-        List<DomainEventMessage<?>> uncommittedEvents = testSubject.getUncommittedEvents();
-
-        for (int i = 0; i < uncommittedEvents.size(); i++) {
-            assertSame(testSubject.entity.appliedEvents.get(i), uncommittedEvents.get(i).getPayload());
-        }
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
+        for (int i = 0; i < eventBus.getPublishedEventCount(); i++) {
+            assertSame(testSubject.entity.appliedEvents.get(i), eventBus.getPublishedEvents().get(i).getPayload());
         }
     }
 
     @Test
     public void testInitializeWithIdentifier() {
         testSubject = new SimpleAggregateRoot(UUID.randomUUID());
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(0, eventBus.getPublishedEventCount());
     }
 
     @Test
     public void testIdentifierInitialization_LateInitialization() {
         LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
         assertEquals("lateIdentifier", aggregate.getIdentifier());
-        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().get(0).getAggregateIdentifier());
+        assertEquals("lateIdentifier", ((DomainEventMessage<?>) eventBus.getPublishedEvents().get(0))
+                .getAggregateIdentifier());
 
-        List<DomainEventMessage<?>> uncommittedEvents = aggregate.getUncommittedEvents();
+        List<? extends EventMessage<?>> uncommittedEvents = eventBus.getPublishedEvents();
         assertFalse(((StubDomainEvent) uncommittedEvents.get(0).getPayload()).nested);
         assertTrue(((StubDomainEvent) uncommittedEvents.get(1).getPayload()).nested);
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testTimestampInReconstructionIsSameAsInitialTimestamp() {
         LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
         Instant firstTimestamp = aggregate.creationTime;
 
         LateIdentifiedAggregate aggregate2 = new LateIdentifiedAggregate();
-        aggregate2.initializeState(new SimpleDomainEventStream(aggregate.getUncommittedEvents()));
+        aggregate2.initializeState(new SimpleDomainEventStream(
+                (List<? extends DomainEventMessage<?>>) eventBus.getPublishedEvents()));
 
         assertSame(aggregate2.creationTime, firstTimestamp);
     }
@@ -118,13 +131,13 @@ public class AbstractAnnotatedAggregateRootTest {
     public void testIdentifierInitialization_JavaxPersistenceId() {
         JavaxPersistenceIdIdentifiedAggregate aggregate = new JavaxPersistenceIdIdentifiedAggregate();
         assertEquals("lateIdentifier", aggregate.getIdentifier());
-        assertEquals("lateIdentifier", aggregate.getUncommittedEvents().get(0).getAggregateIdentifier());
+        assertEquals("lateIdentifier", ((DomainEventMessage<?>) eventBus.getPublishedEvents().get(0))
+                .getAggregateIdentifier());
     }
 
     @Test
     public void testSerializationSetsLiveStateToTrue() throws Exception {
         LateIdentifiedAggregate aggregate = new LateIdentifiedAggregate(new StubDomainEvent(false));
-        aggregate.commitEvents();
         final XStreamSerializer serializer = new XStreamSerializer();
         SerializedObject<String> serialized = serializer.serialize(aggregate, String.class);
 
@@ -159,7 +172,7 @@ public class AbstractAnnotatedAggregateRootTest {
                 new GenericDomainEventMessage<>(id.toString(), 0, new StubDomainEvent(false)),
                 new GenericDomainEventMessage<>(id.toString(), 1, new StubDomainEvent(true))));
 
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(0, eventBus.getPublishedEventCount());
         assertEquals((Long) 1L, testSubject.getVersion());
         assertEquals(2, testSubject.invocationCount);
 
@@ -182,11 +195,9 @@ public class AbstractAnnotatedAggregateRootTest {
             testSubject.doSomething();
             fail("Expected exception to have been propagated");
         } catch (RuntimeException e) {
-            assertEquals(1, testSubject.getUncommittedEventCount());
+            assertEquals(1, eventBus.getPublishedEventCount());
         }
         Field field = AbstractEventSourcedAggregateRoot.class.getDeclaredField("eventsToApply");
-        assertEquals(1, ((Collection) ReflectionUtils.getFieldValue(field, testSubject)).size());
-        testSubject.commitEvents();
         assertEquals(0, ((Collection) ReflectionUtils.getFieldValue(field, testSubject)).size());
     }
 

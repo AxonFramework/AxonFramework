@@ -17,6 +17,7 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.MetaData;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
@@ -51,8 +52,8 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     @Override
-    protected void handle(DomainEventMessage event) {
-        identifier = event.getAggregateIdentifier();
+    protected void handle(EventMessage event) {
+        identifier = ((DomainEventMessage) event).getAggregateIdentifier();
         invocationCount++;
     }
 

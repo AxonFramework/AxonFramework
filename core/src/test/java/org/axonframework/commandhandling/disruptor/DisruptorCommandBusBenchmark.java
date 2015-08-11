@@ -97,8 +97,8 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            identifier = event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
         }
 
         @Override
