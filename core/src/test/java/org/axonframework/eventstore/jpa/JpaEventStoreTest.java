@@ -19,10 +19,7 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.*;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.*;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.*;
@@ -465,7 +462,7 @@ public class JpaEventStoreTest {
     @Transactional
     public void testLoadWithSnapshotEvent() {
         testSubject.appendEvents(aggregate1.getRegisteredEvents());
-        aggregate1.getRegisteredEvents().clear();
+        aggregate1.reset();
         entityManager.flush();
         entityManager.clear();
         testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
@@ -632,14 +629,14 @@ public class JpaEventStoreTest {
     @DirtiesContext
     @Test
     @Transactional
-    public void testPrunesSnaphotsWhenNumberOfSnapshotsExceedsConfiguredMaxSnapshotsArchived() {
+    public void testPrunesSnapshotsWhenNumberOfSnapshotsExceedsConfiguredMaxSnapshotsArchived() {
         testSubject.setMaxSnapshotsArchived(1);
 
         StubAggregateRoot aggregate = new StubAggregateRoot();
 
         aggregate.changeState();
         testSubject.appendEvents(aggregate.getRegisteredEvents());
-        aggregate.getRegisteredEvents().clear();
+        aggregate.reset();
         entityManager.flush();
         entityManager.clear();
 
@@ -649,7 +646,7 @@ public class JpaEventStoreTest {
 
         aggregate.changeState();
         testSubject.appendEvents(aggregate.getRegisteredEvents());
-        aggregate.getRegisteredEvents().clear();
+        aggregate.reset();
         entityManager.flush();
         entityManager.clear();
 
@@ -849,96 +846,6 @@ public class JpaEventStoreTest {
             ));
         }
         return events;
-    }
-
-    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
-
-        private static final long serialVersionUID = -3656612830058057848L;
-        private transient List<DomainEventMessage<?>> registeredEvents;
-        private final Object identifier;
-
-        private StubAggregateRoot() {
-            this(UUID.randomUUID());
-        }
-
-        private StubAggregateRoot(Object identifier) {
-            this.identifier = identifier;
-        }
-
-        public void changeState() {
-            apply(new StubStateChangedEvent());
-        }
-
-        @Override
-        protected <T> void registerEventMessage(EventMessage<T> message) {
-            super.registerEventMessage(message);
-            getRegisteredEvents().add((DomainEventMessage<?>) message);
-        }
-
-        public List<DomainEventMessage<?>> getRegisteredEvents() {
-            if (registeredEvents == null) {
-                registeredEvents = new ArrayList<>();
-            }
-            return registeredEvents;
-        }
-
-        public int getRegisteredEventCount() {
-            return registeredEvents == null ? 0 : registeredEvents.size();
-        }
-
-        @Override
-        public String getIdentifier() {
-            return identifier.toString();
-        }
-
-        @EventSourcingHandler
-        public void handleStateChange(StubStateChangedEvent event) {
-        }
-
-        public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<>(getIdentifier(), getVersion(),
-                                                   new StubStateChangedEvent(),
-                                                   MetaData.emptyInstance()
-            );
-        }
-    }
-
-    private static class StubStateChangedEvent {
-
-        private StubStateChangedEvent() {
-        }
-    }
-
-    private static class BadIdentifierType {
-
-    }
-
-    private static class StubUpcaster implements Upcaster<byte[]> {
-
-        @Override
-        public boolean canUpcast(SerializedType serializedType) {
-            return "java.lang.String".equals(serializedType.getName());
-        }
-
-        @Override
-        public Class<byte[]> expectedRepresentationType() {
-            return byte[].class;
-        }
-
-        @Override
-        public List<SerializedObject<?>> upcast(SerializedObject<byte[]> intermediateRepresentation,
-                                                List<SerializedType> expectedTypes, UpcastingContext context) {
-            return Arrays.<SerializedObject<?>>asList(
-                    new SimpleSerializedObject<>("data1", String.class, expectedTypes.get(0)),
-                    new SimpleSerializedObject<>(intermediateRepresentation.getData(), byte[].class,
-                                                 expectedTypes.get(1)));
-        }
-
-        @Override
-        public List<SerializedType> upcast(SerializedType serializedType) {
-            return Arrays.<SerializedType>asList(new SimpleSerializedType("unknownType1", "2"),
-                                                 new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
-        }
     }
 
     private void setClock(ZonedDateTime zonedDateTime) {

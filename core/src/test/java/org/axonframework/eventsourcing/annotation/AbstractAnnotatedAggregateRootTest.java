@@ -58,7 +58,7 @@ public class AbstractAnnotatedAggregateRootTest {
     private SimpleAggregateRoot testSubject;
 
     @Before
-    public void setup() {
+    public void setUp() {
         eventBus = new RecordingEventBus();
         UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.resources().put(EventBus.KEY, eventBus);

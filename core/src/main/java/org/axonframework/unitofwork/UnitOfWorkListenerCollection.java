@@ -48,6 +48,7 @@ public class UnitOfWorkListenerCollection {
     private final EnumMap<UnitOfWork.Phase, Deque<Consumer<UnitOfWork>>> listeners = new EnumMap<>(UnitOfWork.Phase.class);
     private final Deque<BiConsumer<UnitOfWork, Throwable>> rollbackListeners = new ArrayDeque<>();
 
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private static final Deque<Consumer<UnitOfWork>> EMPTY = new LinkedList<>();
 
     public void invokeListeners(UnitOfWork unitOfWork, Consumer<UnitOfWork.Phase> phaseConsumer,
@@ -63,7 +64,10 @@ public class UnitOfWorkListenerCollection {
                 rollbackListeners.forEach(l -> l.accept(unitOfWork, null));
             }
 
-            listeners.getOrDefault(phase, EMPTY).forEach(i -> i.accept(unitOfWork));
+            Deque<Consumer<UnitOfWork>> l = listeners.getOrDefault(phase, EMPTY);
+            while (!l.isEmpty()) {
+                l.poll().accept(unitOfWork);
+            }
         }
     }
 

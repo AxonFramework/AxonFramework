@@ -16,10 +16,16 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.junit.*;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Allard Buijze
@@ -30,9 +36,17 @@ public class AbstractAggregateRootTest {
 
     @Before
     public void setUp() {
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.resources().put(EventBus.KEY, new SimpleEventBus());
         testSubject = new AggregateRoot();
     }
 
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
 
     @Test
     public void testRegisterEvent() {

@@ -127,7 +127,7 @@ public interface UnitOfWork {
      */
     default <T> T getResource(String name) {
         return (T) resources().get(name);
-    };
+    }
 
     enum Phase {
 

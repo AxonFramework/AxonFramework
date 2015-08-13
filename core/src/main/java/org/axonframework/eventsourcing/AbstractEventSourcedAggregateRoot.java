@@ -176,11 +176,11 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
      * been published this returns <code>0</code>, otherwise this method returns the sequence number of the last
      * event message incremented by 1.
      *
-     * @return the sequence for the next event message
+     * @return the sequence number for the next event message
      */
     protected long nextSequenceNumber() {
         if (lastEventSequenceNumber == null) {
-            lastEventSequenceNumber = 0L;
+            return 0L;
         }
         return lastEventSequenceNumber + 1L;
     }

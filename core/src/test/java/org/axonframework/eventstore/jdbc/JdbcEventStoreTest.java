@@ -18,43 +18,33 @@ package org.axonframework.eventstore.jdbc;
 
 
 import org.axonframework.domain.*;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventstore.*;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.SimpleSerializedType;
 import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.upcasting.LazyUpcasterChain;
-import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
 import org.hsqldb.jdbc.JDBCDataSource;
-
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.test.annotation.DirtiesContext;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.sql.Statement;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -528,93 +518,6 @@ public class JdbcEventStoreTest {
             ));
         }
         return events;
-    }
-
-    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
-
-        private static final long serialVersionUID = -3656612830058057848L;
-        private transient List<DomainEventMessage<?>> registeredEvents;
-        private final Object identifier;
-
-        private StubAggregateRoot() {
-            this(UUID.randomUUID());
-        }
-
-        private StubAggregateRoot(Object identifier) {
-            this.identifier = identifier;
-        }
-
-        public void changeState() {
-            apply(new StubStateChangedEvent());
-        }
-
-        @Override
-        protected <T> void registerEventMessage(EventMessage<T> message) {
-            super.registerEventMessage(message);
-            getRegisteredEvents().add((DomainEventMessage<?>) message);
-        }
-
-        public List<DomainEventMessage<?>> getRegisteredEvents() {
-            if (registeredEvents == null) {
-                registeredEvents = new ArrayList<>();
-            }
-            return registeredEvents;
-        }
-
-        public int getRegisteredEventCount() {
-            return registeredEvents == null ? 0 : registeredEvents.size();
-        }
-
-        @Override
-        public String getIdentifier() {
-            return identifier.toString();
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        @EventHandler
-        public void handleStateChange(StubStateChangedEvent event) {
-        }
-
-        public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<>(getIdentifier(), getVersion(),
-                                                   new StubStateChangedEvent(),
-                                                   MetaData.emptyInstance()
-            );
-        }
-    }
-
-    private static class StubStateChangedEvent {
-
-        private StubStateChangedEvent() {
-        }
-    }
-
-    private static class StubUpcaster implements Upcaster<byte[]> {
-
-        @Override
-        public boolean canUpcast(SerializedType serializedType) {
-            return "java.lang.String".equals(serializedType.getName());
-        }
-
-        @Override
-        public Class<byte[]> expectedRepresentationType() {
-            return byte[].class;
-        }
-
-        @Override
-        public List<SerializedObject<?>> upcast(SerializedObject<byte[]> intermediateRepresentation,
-                                                List<SerializedType> expectedTypes, UpcastingContext context) {
-            return Arrays.<SerializedObject<?>>asList(
-                    new SimpleSerializedObject<>("data1", String.class, expectedTypes.get(0)),
-                    new SimpleSerializedObject<>(intermediateRepresentation.getData(), byte[].class,
-                                                 expectedTypes.get(1)));
-        }
-
-        @Override
-        public List<SerializedType> upcast(SerializedType serializedType) {
-            return Arrays.<SerializedType>asList(new SimpleSerializedType("unknownType1", "2"),
-                    new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
-        }
     }
 
     private static class StatementAnswer implements Answer<Statement> {

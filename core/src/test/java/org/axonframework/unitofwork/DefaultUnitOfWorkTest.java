@@ -151,8 +151,9 @@ public class DefaultUnitOfWorkTest {
         outer.onPrepareCommit(u -> outer.onPrepareCommit(i -> prepareCommit.set(true)));
         outer.onCommit(u -> outer.onCommit(i -> commit.set(true)));
         outer.afterCommit(u -> outer.afterCommit(i -> afterCommit.set(true)));
-        outer.onCleanup(u -> outer.onCommit(i -> cleanup.set(true)));
+        outer.onCleanup(u -> outer.onCleanup(i -> cleanup.set(true)));
 
+        outer.start();
         outer.commit();
 
         assertTrue(prepareCommit.get());

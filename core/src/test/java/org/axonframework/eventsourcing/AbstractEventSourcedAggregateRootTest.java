@@ -40,7 +40,7 @@ public class AbstractEventSourcedAggregateRootTest {
     private String identifier = "aggregateIdentifier";
 
     @Before
-    public void setup() {
+    public void setUp() {
         eventBus = new RecordingEventBus();
         UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.resources().put(EventBus.KEY, eventBus);

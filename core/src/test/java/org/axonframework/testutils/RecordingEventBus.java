@@ -54,16 +54,10 @@ public class RecordingEventBus implements EventBus {
     }
 
     /**
-     * Clears all the events recorded by this Event Bus.
+     * Clears all the events recorded by this Event Bus as well as all subscribed clusters.
      */
-    public void clearEvents() {
+    public void reset() {
         publishedEvents.clear();
-    }
-
-    /**
-     * Clears all subscribed handlers on this Event Bus.
-     */
-    public void clearSubscriptions() {
         subscriptions.clear();
     }
 
