@@ -125,26 +125,34 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     @Override
     public void onPrepareCommit(Consumer<UnitOfWork> handler) {
-        listeners.addListener(Phase.PREPARE_COMMIT, handler);
+        addListener(Phase.PREPARE_COMMIT, handler);
     }
 
     @Override
     public void onCommit(Consumer<UnitOfWork> handler) {
-        listeners.addListener(Phase.COMMIT, handler);
+        addListener(Phase.COMMIT, handler);
     }
 
     @Override
     public void afterCommit(Consumer<UnitOfWork> handler) {
-        listeners.addListener(Phase.AFTER_COMMIT, handler);
+        addListener(Phase.AFTER_COMMIT, handler);
     }
 
     @Override
     public void onRollback(BiConsumer<UnitOfWork, Throwable> handler) {
+        Assert.isFalse(Phase.ROLLBACK.isBefore(phase),
+                "Cannot register a rollback listener. The Unit of Work is already after commit.");
         listeners.addRollbackListener(handler);
     }
 
     @Override
     public void onCleanup(Consumer<UnitOfWork> handler) {
-        listeners.addListener(Phase.CLEANUP, handler);
+        addListener(Phase.CLEANUP, handler);
+    }
+
+    protected void addListener(Phase phase, Consumer<UnitOfWork> handler) {
+        Assert.isFalse(phase.isBefore(this.phase), "Cannot register a listener for phase: " + phase
+                + " because the Unit of Work is already in a later phase: " + this.phase);
+        listeners.addListener(phase, handler);
     }
 }

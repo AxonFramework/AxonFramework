@@ -155,5 +155,15 @@ public interface UnitOfWork {
         public boolean isCallbackOrderAsc() {
             return callbackOrderAsc;
         }
+
+        /**
+         * Check if this Phase comes before given other <code>phase</code>.
+         *
+         * @param phase The other Phase
+         * @return <code>true</code> if this comes before the given <code>phase</code>, <code>false</code> otherwise.
+         */
+        public boolean isBefore(Phase phase) {
+            return ordinal() < phase.ordinal();
+        }
     }
 }

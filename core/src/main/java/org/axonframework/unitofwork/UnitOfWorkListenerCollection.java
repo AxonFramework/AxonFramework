@@ -27,6 +27,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
+ * //TODO: fix documentation
+ *
  * This class is responsible for notifying registered listeners in a specific order of precedence.
  * When {@link #onPrepareCommit(UnitOfWork, java.util.Set, java.util.List)}} and
  * {@link #onEventRegistered(UnitOfWork, org.axonframework.domain.EventMessage)} are called the listeners will be
