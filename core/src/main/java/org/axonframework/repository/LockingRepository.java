@@ -19,8 +19,6 @@ package org.axonframework.repository;
 import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +98,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
         lockManager.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
-            CurrentUnitOfWork.get().onCleanup(u -> new LockCleaningListener(aggregateIdentifier));
+            CurrentUnitOfWork.get().onCleanup(u -> lockManager.releaseLock(aggregateIdentifier));
             return aggregate;
         } catch (RuntimeException ex) {
             logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
@@ -172,21 +170,4 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
      */
     @Override
     protected abstract T doLoad(String aggregateIdentifier, Long expectedVersion);
-
-    /**
-     * UnitOfWorkListeners that cleans up remaining locks after a UnitOfWork has been committed or rolled back.
-     */
-    private class LockCleaningListener extends UnitOfWorkListenerAdapter {
-
-        private final String aggregateIdentifier;
-
-        public LockCleaningListener(String aggregateIdentifier) {
-            this.aggregateIdentifier = aggregateIdentifier;
-        }
-
-        @Override
-        public void onCleanup(UnitOfWork unitOfWork) {
-            lockManager.releaseLock(aggregateIdentifier);
-        }
-    }
 }

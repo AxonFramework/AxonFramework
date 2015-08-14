@@ -23,13 +23,17 @@ import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
-import org.mockito.*;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -49,8 +53,13 @@ public class LockingRepositoryTest {
         testSubject = new InMemoryLockingRepository(lockManager);
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
 
-        // some UoW is started somewhere, but not shutdown in the same test.
+    @After
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -58,7 +67,7 @@ public class LockingRepositoryTest {
 
     @Test
     public void testStoreNewAggregate() {
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
@@ -70,7 +79,7 @@ public class LockingRepositoryTest {
 
     @Test
     public void testLoadAndStoreAggregate() {
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
@@ -79,7 +88,7 @@ public class LockingRepositoryTest {
         verify(lockManager).releaseLock(aggregate.getIdentifier());
         reset(lockManager);
 
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
@@ -92,10 +101,9 @@ public class LockingRepositoryTest {
         inOrder.verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
     }
 
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testLoadAndStoreAggregate_LockReleasedOnException() {
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
@@ -104,11 +112,13 @@ public class LockingRepositoryTest {
         verify(lockManager).releaseLock(aggregate.getIdentifier());
         reset(lockManager);
 
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
-        CurrentUnitOfWork.get().onPrepareCommit(u -> {throw new RuntimeException("Mock Exception");});
+        CurrentUnitOfWork.get().onPrepareCommit(u -> {
+            throw new RuntimeException("Mock Exception");
+        });
         try {
             CurrentUnitOfWork.commit();
             fail("Expected exception to be thrown");
@@ -120,7 +130,6 @@ public class LockingRepositoryTest {
         verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
     }
 
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() {
         lockManager = spy(new PessimisticLockManager());
@@ -129,7 +138,7 @@ public class LockingRepositoryTest {
         testSubject = spy(testSubject);
 
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
@@ -138,7 +147,7 @@ public class LockingRepositoryTest {
         verify(lockManager).releaseLock(aggregate.getIdentifier());
         reset(lockManager);
 
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
 
@@ -165,23 +174,20 @@ public class LockingRepositoryTest {
         testSubject = spy(testSubject);
         EventBus eventBus = mock(EventBus.class);
 
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet(MESSAGE);
+        startAndGetUnitOfWork();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
 
         // this tricks the UnitOfWork to save this aggregate, without loading it.
-        DefaultUnitOfWork.startAndGet(MESSAGE);
-        // TODO: Fix
-//        CurrentUnitOfWork.get().registerAggregate(loadedAggregate,
-//                                                  eventBus,
-//                                                  testSubject::doSave);
+        startAndGetUnitOfWork();
+        CurrentUnitOfWork.get().onPrepareCommit(s -> testSubject.doSave(loadedAggregate));
         loadedAggregate.doSomething();
         try {
             CurrentUnitOfWork.commit();
@@ -189,6 +195,12 @@ public class LockingRepositoryTest {
         } catch (ConcurrencyException e) {
             // that's ok
         }
+    }
+
+    private UnitOfWork startAndGetUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(MESSAGE);
+        uow.resources().put(EventBus.KEY, mockEventBus);
+        return uow;
     }
 
     static class InMemoryLockingRepository extends LockingRepository<StubAggregate> {

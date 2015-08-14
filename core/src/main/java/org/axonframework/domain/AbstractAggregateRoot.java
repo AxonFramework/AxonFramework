@@ -16,26 +16,23 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
 import java.io.Serializable;
 
 /**
- * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
+ * Abstract implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
  * events and maintains a version number based on the number of events generated.
  *
  * @author Allard Buijze
  * @since 0.6
  */
-@MappedSuperclass
 public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
 
-    @Transient
     private boolean deleted = false;
 
     /**
@@ -59,7 +56,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
      * @return The Event holding the given <code>payload</code>
      */
     protected <T> EventMessage<T> registerEvent(MetaData metaData, T payload) {
-        final GenericEventMessage<T> message = new GenericEventMessage<>(payload, metaData);
+        final EventMessage<T> message = new GenericEventMessage<>(payload, metaData);
         registerEventMessage(message);
         return message;
     }
@@ -73,6 +70,7 @@ public abstract class AbstractAggregateRoot implements AggregateRoot, Serializab
     protected <T> void registerEventMessage(EventMessage<T> message) {
         if (CurrentUnitOfWork.isStarted()) {
             EventBus eventBus = CurrentUnitOfWork.get().getResource(EventBus.KEY);
+            Assert.state(eventBus != null, "The Unit of Work did not supply an Event Bus");
             eventBus.publish(message);
         }
     }

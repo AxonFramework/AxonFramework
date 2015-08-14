@@ -42,6 +42,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
                 listeners.invokeListeners(this, this::setPhase, Phase.PREPARE_COMMIT, Phase.COMMIT);
             } catch (Exception e) {
                 listeners.invokeRollbackListeners(this, e, this::setPhase);
+                throw e;
             }
 
             if (phase == Phase.COMMIT) {
@@ -60,6 +61,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             root.onRollback((u, e) -> listeners.invokeRollbackListeners(this, e, this::setPhase));
         } catch (Exception e) {
             listeners.invokeRollbackListeners(this, e, this::setPhase);
+            throw e;
         }
     }
 
@@ -140,7 +142,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     @Override
     public void onRollback(BiConsumer<UnitOfWork, Throwable> handler) {
-        Assert.isFalse(Phase.ROLLBACK.isBefore(phase),
+        Assert.state(!Phase.ROLLBACK.isBefore(phase),
                 "Cannot register a rollback listener. The Unit of Work is already after commit.");
         listeners.addRollbackListener(handler);
     }
@@ -151,7 +153,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     protected void addListener(Phase phase, Consumer<UnitOfWork> handler) {
-        Assert.isFalse(phase.isBefore(this.phase), "Cannot register a listener for phase: " + phase
+        Assert.state(!phase.isBefore(this.phase), "Cannot register a listener for phase: " + phase
                 + " because the Unit of Work is already in a later phase: " + this.phase);
         listeners.addListener(phase, handler);
     }

@@ -17,7 +17,6 @@
 package org.axonframework.domain;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
@@ -25,7 +24,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -33,11 +33,13 @@ import static org.junit.Assert.assertEquals;
 public class AbstractAggregateRootTest {
 
     private AggregateRoot testSubject;
+    private EventBus mockEventBus;
 
     @Before
     public void setUp() {
         UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
-        unitOfWork.resources().put(EventBus.KEY, new SimpleEventBus());
+        mockEventBus = mock(EventBus.class);
+        unitOfWork.resources().put(EventBus.KEY, mockEventBus);
         testSubject = new AggregateRoot();
     }
 
@@ -50,9 +52,9 @@ public class AbstractAggregateRootTest {
 
     @Test
     public void testRegisterEvent() {
-        assertEquals(0, (long) CurrentUnitOfWork.get().getResource("Events/" + testSubject.getIdentifier()));
+        verifyZeroInteractions(mockEventBus);
         testSubject.doSomething();
-        assertEquals(1, (long) CurrentUnitOfWork.get().getResource("Events/" + testSubject.getIdentifier()));
+        verify(mockEventBus).publish(any(EventMessage.class));
     }
 
     private static class AggregateRoot extends AbstractAggregateRoot {

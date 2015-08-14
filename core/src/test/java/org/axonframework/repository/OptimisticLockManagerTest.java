@@ -55,7 +55,7 @@ public class OptimisticLockManagerTest {
         aggregate1.doSomething();
         aggregate2.doSomething();
 
-        assertTrue("The first on to commit should contain the lock", manager.validateLock(aggregate1));
+        assertTrue("The first one to commit should contain the lock", manager.validateLock(aggregate1));
         assertFalse("Expected this lock to be invalid", manager.validateLock(aggregate2));
     }
 }

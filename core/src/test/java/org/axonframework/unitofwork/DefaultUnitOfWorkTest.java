@@ -84,9 +84,13 @@ public class DefaultUnitOfWorkTest {
             throw new MockException();
         });
         outer.start();
-        outer.commit();
+        try {
+            outer.commit();
+        } catch (MockException e) {
+            //ok
+        }
 
-        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
@@ -108,9 +112,13 @@ public class DefaultUnitOfWorkTest {
             throw new MockException();
         });
         outer.start();
-        outer.commit();
+        try {
+            outer.commit();
+        } catch (MockException e) {
+            //ok
+        }
 
-        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
@@ -130,7 +138,7 @@ public class DefaultUnitOfWorkTest {
         outer.start();
         outer.commit();
 
-        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),
@@ -172,7 +180,7 @@ public class DefaultUnitOfWorkTest {
         outer.start();
         outer.commit();
 
-        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.ROLLBACK),
                                    new PhaseTransition(outer, UnitOfWork.Phase.COMMIT),
@@ -189,12 +197,16 @@ public class DefaultUnitOfWorkTest {
             inner.onCommit(uow -> {
                 throw new MockException();
             });
-            inner.commit();
+            try {
+                inner.commit();
+            } catch (MockException e) {
+                //ok
+            }
         });
         outer.start();
         outer.commit();
 
-        assertFalse("The UnitOfWork haven't been correctly cleared", CurrentUnitOfWork.isStarted());
+        assertFalse("The UnitOfWork hasn't been correctly cleared", CurrentUnitOfWork.isStarted());
         assertEquals(Arrays.asList(new PhaseTransition(outer, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.PREPARE_COMMIT),
                                    new PhaseTransition(inner, UnitOfWork.Phase.COMMIT),

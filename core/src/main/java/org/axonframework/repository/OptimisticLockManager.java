@@ -84,13 +84,12 @@ public class OptimisticLockManager implements LockManager {
         }
 
         private synchronized boolean validate(AggregateRoot aggregate) {
-            Long lastCommittedEventSequenceNumber = aggregate.getVersion();
-            // TODO: Fix optimistic lock
-//            if (versionNumber == null || versionNumber.equals(lastCommittedEventSequenceNumber)) {
-//                long last = lastCommittedEventSequenceNumber == null ? 0 : lastCommittedEventSequenceNumber;
-//                versionNumber = last + aggregate.getUncommittedEventCount();
-//                return true;
-//            }
+            //TODO: this is not working correctly yet
+            Long aggregateVersion = aggregate.getVersion();
+            if (versionNumber == null || versionNumber.equals(aggregateVersion)) {
+                versionNumber = aggregateVersion == null ? 0 : aggregateVersion;
+                return true;
+            }
             return false;
         }
 

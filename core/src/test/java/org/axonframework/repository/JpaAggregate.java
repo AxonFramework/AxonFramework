@@ -16,7 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AbstractAggregateRoot;
+import org.axonframework.domain.AbstractJpaAggregateRoot;
 import org.axonframework.domain.IdentifierFactory;
 
 import javax.persistence.Basic;
@@ -24,7 +24,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 
 @Entity
-public class JpaAggregate extends AbstractAggregateRoot {
+public class JpaAggregate extends AbstractJpaAggregateRoot {
 
     private static final long serialVersionUID = -7075224524414732603L;
 

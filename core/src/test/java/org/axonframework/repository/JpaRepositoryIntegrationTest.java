@@ -16,12 +16,12 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
@@ -58,9 +58,9 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private List<DomainEventMessage> capturedEvents;
-
+    private List<EventMessage> capturedEvents;
     private Cluster cluster = new SimpleCluster("test");
+
 
     @Before
     public void setUp() {
@@ -69,10 +69,17 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         cluster.subscribe(this);
     }
 
+    @After
+    public void tearDown() {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
+
     @SuppressWarnings({"unchecked"})
     @Test
     public void testStoreAndLoadNewAggregate() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork uow = startAndGetUnitOfWork();
         JpaAggregate originalAggregate = new JpaAggregate("Hello");
         repository.add(originalAggregate);
         uow.commit();
@@ -84,7 +91,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         JpaAggregate aggregate = results.get(0);
         assertEquals(originalAggregate.getIdentifier(), aggregate.getIdentifier());
 
-        uow = DefaultUnitOfWork.startAndGet(null);
+        uow = startAndGetUnitOfWork();
         JpaAggregate storedAggregate = repository.load(originalAggregate.getIdentifier());
         uow.commit();
         assertEquals(storedAggregate.getIdentifier(), originalAggregate.getIdentifier());
@@ -100,7 +107,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
         assertEquals((Long) 0L, agg.getVersion());
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork uow = startAndGetUnitOfWork();
         JpaAggregate aggregate = repository.load(agg.getIdentifier());
         aggregate.setMessage("And again");
         aggregate.setMessage("And more");
@@ -108,8 +115,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
         assertEquals((Long) 1L, aggregate.getVersion());
         assertEquals(2, capturedEvents.size());
-        assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
-        assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
+        assertNotNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier()));
     }
 
     @Test
@@ -120,7 +126,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
         assertEquals((Long) 0L, agg.getVersion());
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork uow = startAndGetUnitOfWork();
         JpaAggregate aggregate = repository.load(agg.getIdentifier());
         aggregate.setMessage("And again");
         aggregate.setMessage("And more");
@@ -130,16 +136,17 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
 
         assertEquals(2, capturedEvents.size());
-        assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
-        assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
-
         assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier()));
     }
 
     @Override
     public void handle(EventMessage event) {
-        if (DomainEventMessage.class.isInstance(event)) {
-            this.capturedEvents.add((DomainEventMessage) event);
-        }
+        this.capturedEvents.add(event);
+    }
+
+    private UnitOfWork startAndGetUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        uow.resources().put(EventBus.KEY, eventBus);
+        return uow;
     }
 }

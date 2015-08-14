@@ -89,7 +89,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         super.registerEventMessage(message);
         if (message instanceof DomainEventMessage) {
             DomainEventMessage<T> domainEventMessage = (DomainEventMessage<T>) message;
-            if (domainEventMessage.getSequenceNumber() > lastEventSequenceNumber) {
+            if (lastEventSequenceNumber == null || domainEventMessage.getSequenceNumber() > lastEventSequenceNumber) {
                 lastEventSequenceNumber = domainEventMessage.getSequenceNumber();
             }
         }
@@ -184,7 +184,6 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
         }
         return lastEventSequenceNumber + 1L;
     }
-
 
     /**
      * Indicates whether this aggregate is in "live" mode. This is the case when an aggregate is fully initialized and

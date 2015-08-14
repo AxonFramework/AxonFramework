@@ -24,6 +24,9 @@ import org.axonframework.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
  * persisted. All uncommitted events on an aggregate are dispatched when the aggregate is saved.
@@ -40,6 +43,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractRepository<T extends AggregateRoot> implements Repository<T> {
 
+    final String aggregatesKey = this + "_AGGREGATES";
     private final Class<T> aggregateType;
     private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
     private EventBus eventBus;
@@ -61,11 +65,12 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     @Override
     public void add(T aggregate) {
         Assert.isTrue(aggregateType.isInstance(aggregate), "Unsuitable aggregate for this repository: wrong type");
-        if (aggregate.getVersion() != null) {
-            throw new IllegalArgumentException("Only newly created (unpersisted) aggregates may be added.");
-        }
-        // TODO: Fix
-//        CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
+        UnitOfWork uow = CurrentUnitOfWork.get();
+        Assert.state(uow != null, "Aggregate cannot be added outside the scope of a Unit of Work.");
+        Map<String, T> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
+        Assert.isTrue(aggregates.putIfAbsent(aggregate.getIdentifier(), aggregate) == null,
+                "The Unit of Work already has an Aggregate with the same identifier");
+        prepareForCommit(aggregate);
     }
 
     /**
@@ -76,26 +81,23 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      */
     @Override
     public T load(String aggregateIdentifier, Long expectedVersion) {
-        T aggregate = doLoad(aggregateIdentifier, expectedVersion);
-        validateOnLoad(aggregate, expectedVersion);
         UnitOfWork uow = CurrentUnitOfWork.get();
         if (uow != null) {
-            uow.onPrepareCommit(u -> {
-                if (aggregate.isDeleted()) {
-                    doDelete(aggregate);
-                } else {
-                    doSave(aggregate);
-                }
-                if (aggregate.isDeleted()) {
-                    postDelete(aggregate);
-                } else {
-                    postSave(aggregate);
-                }
+            Map<String, T> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
+            return aggregates.computeIfAbsent(aggregateIdentifier, s -> {
+                T aggregate = doLoad(aggregateIdentifier, expectedVersion);
+                validateOnLoad(aggregate, expectedVersion);
+                prepareForCommit(aggregate);
+                return aggregate;
             });
-        } else if (logger.isWarnEnabled()) {
-            logger.warn("Aggregate is loaded outside the scope of a Unit of Work. Changes may not be persisted");
+        } else {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Aggregate is loaded outside the scope of a Unit of Work. Changes may not be persisted");
+            }
+            T aggregate = doLoad(aggregateIdentifier, expectedVersion);
+            validateOnLoad(aggregate, expectedVersion);
+            return aggregate;
         }
-        return aggregate;
     }
 
     /**
@@ -126,6 +128,27 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
                                                            expectedVersion,
                                                            aggregate.getVersion());
         }
+    }
+
+    /**
+     * Register handlers with the current Unit of Work that save or delete the given <code>aggregate</code> when
+     * the Unit of Work is committed.
+     *
+     * @param aggregate The Aggregate to save or delete when the Unit of Work is committed
+     */
+    protected void prepareForCommit(T aggregate) {
+        CurrentUnitOfWork.get().onPrepareCommit(u -> {
+            if (aggregate.isDeleted()) {
+                doDelete(aggregate);
+            } else {
+                doSave(aggregate);
+            }
+            if (aggregate.isDeleted()) {
+                postDelete(aggregate);
+            } else {
+                postSave(aggregate);
+            }
+        });
     }
 
     /**
