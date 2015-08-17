@@ -18,9 +18,9 @@ package org.axonframework.integration.adapter;
 
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.springframework.integration.Message;
 import org.springframework.integration.MessageRejectedException;
-import org.springframework.integration.core.MessageHandler;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
 
 /**
  * Adapter class that publishes Events from a Spring Integration Message Channel on the Event Bus. All events are

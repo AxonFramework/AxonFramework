@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
-import org.springframework.integration.Message;
-import org.springframework.integration.MessageChannel;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
 
 import static org.mockito.Mockito.*;
 

@@ -18,8 +18,8 @@ package org.axonframework.integration.eventbus;
 
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventListener;
-import org.springframework.integration.Message;
-import org.springframework.integration.core.MessageHandler;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
 
 /**
  * Adapter that allows an EventListener to be registered as a Spring Integration {@link MessageHandler}.
