@@ -20,8 +20,8 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.integration.MessageChannel;
-import org.springframework.integration.message.GenericMessage;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.support.GenericMessage;
 
 /**
  * Adapter class that sends Events from an event bus to a Spring Integration Message Channel. All events are wrapped in

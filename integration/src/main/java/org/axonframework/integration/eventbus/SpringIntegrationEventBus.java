@@ -19,9 +19,9 @@ package org.axonframework.integration.eventbus;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.springframework.integration.core.MessageHandler;
-import org.springframework.integration.core.SubscribableChannel;
-import org.springframework.integration.message.GenericMessage;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.SubscribableChannel;
+import org.springframework.messaging.support.GenericMessage;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,10 +30,10 @@ import java.util.concurrent.ConcurrentMap;
  * {@link org.axonframework.eventhandling.EventBus} implementation that delegates all subscription and publishing
  * requests to a {@link SubscribableChannel Spring Integration channel}.
  * <p/>
- * Use {@link #setChannel(org.springframework.integration.core.SubscribableChannel)} to set the channel to delegate all
+ * Use {@link #setChannel(org.springframework.messaging.SubscribableChannel)} to set the channel to delegate all
  * the requests to.
  * <p/>
- * This EventBus will automatically wrap and unwrap events in {@link org.springframework.integration.Message Messages}
+ * This EventBus will automatically wrap and unwrap events in {@link org.springframework.messaging.Message Messages}
  * and {@link org.axonframework.eventhandling.EventListener EventListeners} in {@link MessageHandler MessageHandlers}.
  * <p/>
  * This implementation expects the Spring Integration to be configured to handle messages asynchronously.

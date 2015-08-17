@@ -22,7 +22,7 @@ import org.axonframework.integration.StubDomainEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.*;
-import org.springframework.integration.message.GenericMessage;
+import org.springframework.messaging.support.GenericMessage;
 
 import static org.mockito.Mockito.*;
 

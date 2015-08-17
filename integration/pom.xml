@@ -66,7 +66,7 @@
         <dependency>
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-core</artifactId>
-            <version>3.0.0.RELEASE</version>
+            <version>4.1.6.RELEASE</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-logging</groupId>

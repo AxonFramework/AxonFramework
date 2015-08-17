@@ -21,9 +21,9 @@ import org.axonframework.eventhandling.EventListener;
 import org.axonframework.integration.StubDomainEvent;
 import org.junit.*;
 import org.mockito.*;
-import org.springframework.integration.Message;
-import org.springframework.integration.core.MessageHandler;
-import org.springframework.integration.core.SubscribableChannel;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.SubscribableChannel;
 
 import static org.mockito.Mockito.*;
 
