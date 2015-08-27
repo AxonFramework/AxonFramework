@@ -92,7 +92,7 @@ public class SimpleCommandBusTest {
                                      fail("Did not expect exception");
                                  }
                              });
-        verify(spyUnitOfWorkFactory).createUnitOfWork(null);
+        verify(spyUnitOfWorkFactory).createUnitOfWork(any(GenericCommandMessage.class));
         assertFalse(CurrentUnitOfWork.isStarted());
     }
 

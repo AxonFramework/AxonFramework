@@ -29,20 +29,18 @@ import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.domain.MetaData;
 import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.repository.Repository;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
@@ -60,7 +58,13 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        commandBus = spy(new SimpleCommandBus());
+        commandBus = new SimpleCommandBus();
+        commandBus.setUnitOfWorkFactory(message -> {
+            UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
+            unitOfWork.resources().put(EventBus.KEY, mock(EventBus.class));
+            return unitOfWork;
+        });
+        commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(

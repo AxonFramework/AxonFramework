@@ -74,12 +74,11 @@ public class AggregateSnapshotterTest {
     public void testCreateSnapshot_FirstEventLoadedIsSnapshotEvent() {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
-        aggregate.doSomething();
 
         DomainEventMessage<StubAggregate> first = new GenericDomainEventMessage<>(
-                aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
-        DomainEventMessage second = new GenericDomainEventMessage<>(aggregateIdentifier.toString(), (long) 0,
-                                                                    "Mock contents", MetaData.emptyInstance());
+                aggregate.getIdentifier(), 0, aggregate);
+        DomainEventMessage second = new GenericDomainEventMessage<>(
+                aggregateIdentifier.toString(), 0, "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(first, second);
 
         when(mockAggregateFactory.createAggregate(any(), any(DomainEventMessage.class)))

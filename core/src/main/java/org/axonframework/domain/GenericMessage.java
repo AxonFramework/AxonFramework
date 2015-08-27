@@ -16,6 +16,8 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+
 import java.util.Map;
 
 /**
@@ -62,8 +64,10 @@ public class GenericMessage<T> implements Message<T> {
      * @param metaData   The meta data of the message
      */
     public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
+        MetaData correlationData = CurrentUnitOfWork.isStarted()
+                ? MetaData.from(CurrentUnitOfWork.get().getCorrelationData()) : MetaData.emptyInstance();
         this.identifier = identifier;
-        this.metaData = MetaData.from(metaData);
+        this.metaData = MetaData.from(metaData).mergedWith(correlationData);
         this.payload = payload;
         this.payloadType = payload.getClass();
     }

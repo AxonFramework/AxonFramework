@@ -102,6 +102,7 @@ public class AuditingInterceptorTest {
         RuntimeException mockException = new MockException();
         when(mockInterceptorChain.proceed()).thenThrow(mockException);
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        uow.resources().put(EventBus.KEY, mock(EventBus.class));
 
         GenericCommandMessage command = new GenericCommandMessage("Command!");
         try {

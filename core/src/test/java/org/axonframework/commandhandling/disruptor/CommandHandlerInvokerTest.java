@@ -8,6 +8,7 @@ import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.domain.DomainEventStream;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
@@ -53,6 +54,7 @@ public class CommandHandlerInvokerTest {
         commandHandlingEntry.reset(mockCommandMessage, mockCommandHandler, 0, 0, null,
                                    Collections.<CommandHandlerInterceptor>emptyList(),
                                    Collections.<CommandHandlerInterceptor>emptyList());
+        commandHandlingEntry.resources().put(EventBus.KEY, mock(EventBus.class));
         eventStreamDecorator = mock(EventStreamDecorator.class);
         when(eventStreamDecorator.decorateForAppend(any(EventSourcedAggregateRoot.class), anyList()))
                 .thenAnswer(new ReturnsArgumentAt(1));

@@ -19,24 +19,28 @@ package org.axonframework.eventsourcing;
 import net.sf.ehcache.CacheManager;
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.EhCacheAdapter;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubAggregate;
+import org.axonframework.domain.*;
+import org.axonframework.eventhandling.AbstractEventBus;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -47,7 +51,7 @@ import static org.mockito.Mockito.*;
 public class CachingEventSourcingRepositoryTest {
 
     private CachingEventSourcingRepository<StubAggregate> testSubject;
-    private EventBus mockEventBus;
+    private EventBus eventBus;
     private InMemoryEventStore mockEventStore;
     private Cache cache;
     private net.sf.ehcache.Cache ehCache;
@@ -56,8 +60,8 @@ public class CachingEventSourcingRepositoryTest {
     public void setUp() {
         mockEventStore = spy(new InMemoryEventStore());
         testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore);
-        mockEventBus = mock(EventBus.class);
-        testSubject.setEventBus(mockEventBus);
+        eventBus = mockEventStore;
+        testSubject.setEventBus(eventBus);
 
         final CacheManager cacheManager = CacheManager.getInstance();
         ehCache = cacheManager.getCache("testCache");
@@ -75,7 +79,7 @@ public class CachingEventSourcingRepositoryTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testAggregatesRetrievedFromCache() {
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         final StubAggregate aggregate1 = new StubAggregate();
         aggregate1.doSomething();
 
@@ -96,7 +100,7 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         StubAggregate reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
         assertSame(aggregate1, reloadedAggregate1);
         aggregate1.doSomething();
@@ -110,9 +114,6 @@ public class CachingEventSourcingRepositoryTest {
             eventList.add(events.next());
         }
         assertEquals(3, eventList.size());
-        verify(mockEventBus).publish(isA(EventMessage.class));
-        verify(mockEventBus).publish(isA(EventMessage.class), isA(EventMessage.class));
-        verifyNoMoreInteractions(mockEventBus);
         ehCache.removeAll();
 
         reloadedAggregate1 = testSubject.load(aggregate1.getIdentifier(), null);
@@ -128,7 +129,7 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.setConflictResolver(conflictResolver);
         StubAggregate aggregate1 = new StubAggregate();
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         aggregate1.doSomething();
         aggregate1.doSomething();
         testSubject.add(aggregate1);
@@ -136,7 +137,7 @@ public class CachingEventSourcingRepositoryTest {
 
         assertNotNull(((StubAggregate) cache.get(aggregate1.getIdentifier())).getVersion());
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         StubAggregate loadedAggregate = testSubject.load(aggregate1.getIdentifier(), 0L);
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
@@ -171,7 +172,7 @@ public class CachingEventSourcingRepositoryTest {
     public void testLoadAggregateFromCacheWithExpectedVersion_ConcurrentModificationsDetected() {
         mockEventStore = spy(new InMemoryEventStore());
         testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore);
-        testSubject.setEventBus(mockEventBus);
+        testSubject.setEventBus(eventBus);
         testSubject.setCache(cache);
 
 
@@ -179,7 +180,7 @@ public class CachingEventSourcingRepositoryTest {
         testSubject.setConflictResolver(conflictResolver);
         StubAggregate aggregate1 = new StubAggregate();
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         aggregate1.doSomething();
         aggregate1.doSomething();
         testSubject.add(aggregate1);
@@ -187,7 +188,7 @@ public class CachingEventSourcingRepositoryTest {
 
         assertNotNull(((StubAggregate) cache.get(aggregate1.getIdentifier())).getVersion());
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         StubAggregate loadedAggregate = testSubject.load(aggregate1.getIdentifier(), 0L);
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
@@ -221,18 +222,18 @@ public class CachingEventSourcingRepositoryTest {
 
     @Test
     public void testLoadDeletedAggregate() {
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         StubAggregate aggregate1 = new StubAggregate();
         testSubject.add(aggregate1);
         CurrentUnitOfWork.commit();
 
         String identifier = aggregate1.getIdentifier();
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         aggregate1.delete();
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         try {
             testSubject.load(identifier);
             fail("Expected AggregateDeletedException");
@@ -244,19 +245,26 @@ public class CachingEventSourcingRepositoryTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testCacheClearedAfterRollbackOfAddedAggregate() {
-        DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork uow = startAndGetUnitOfWork();
         StubAggregate aggregate1 = new StubAggregate("id1");
         aggregate1.doSomething();
         testSubject.add(aggregate1);
-        doThrow(new RuntimeException("Mock - simulate failure")).when(mockEventBus).publish(isA(EventMessage.class));
+        doThrow(new MockException()).when(mockEventStore).appendEvents(anyList());
         try {
-            CurrentUnitOfWork.get().commit();
-        } catch (RuntimeException e) {
+            uow.commit();
+        } catch (MockException e) {
             // whatever
         }
         String identifier = aggregate1.getIdentifier();
         assertNull(cache.get(identifier));
+    }
+
+    private UnitOfWork startAndGetUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        uow.resources().put(EventBus.KEY, eventBus);
+        return uow;
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {
@@ -272,22 +280,20 @@ public class CachingEventSourcingRepositoryTest {
         }
     }
 
-    private class InMemoryEventStore implements EventStore {
+    private class InMemoryEventStore extends AbstractEventBus implements EventStore {
 
         protected Map<String, List<DomainEventMessage>> store = new HashMap<>();
 
         @Override
         public void appendEvents(List<DomainEventMessage<?>> events) {
-            for (EventMessage event : events) {
-                if (event instanceof DomainEventMessage) {
-                    DomainEventMessage next = (DomainEventMessage) event;
-                    if (!store.containsKey(next.getAggregateIdentifier())) {
-                        store.put(next.getAggregateIdentifier(), new ArrayList<>());
-                    }
-                    List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
-                    eventList.add(next);
+            events.stream().forEach(event -> {
+                DomainEventMessage next = (DomainEventMessage) event;
+                if (!store.containsKey(next.getAggregateIdentifier())) {
+                    store.put(next.getAggregateIdentifier(), new ArrayList<>());
                 }
-            }
+                List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
+                eventList.add(next);
+            });
         }
 
         @Override
@@ -309,6 +315,21 @@ public class CachingEventSourcingRepositoryTest {
 
         public List<DomainEventMessage> readEventsAsList(String identifier) {
             return store.get(identifier);
+        }
+
+        @Override
+        protected void commit(List<EventMessage<?>> events) {
+            appendEvents(events.stream().map(event -> (DomainEventMessage<?>) event).collect(Collectors.toList()));
+        }
+
+        @Override
+        public void subscribe(Cluster cluster) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void unsubscribe(Cluster cluster) {
+            throw new UnsupportedOperationException();
         }
     }
 }

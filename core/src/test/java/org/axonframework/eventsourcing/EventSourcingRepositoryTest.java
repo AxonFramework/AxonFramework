@@ -64,6 +64,7 @@ public class EventSourcingRepositoryTest {
         testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore);
         testSubject.setEventBus(mockEventBus);
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
+        unitOfWork.resources().put(EventBus.KEY, mockEventBus);
     }
 
     @After
@@ -74,6 +75,7 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testLoadAndSaveAggregate() {
         String identifier = UUID.randomUUID().toString();
         DomainEventMessage event1 = new GenericDomainEventMessage<>(identifier, (long) 1,

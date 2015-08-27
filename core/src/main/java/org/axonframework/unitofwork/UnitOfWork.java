@@ -16,6 +16,7 @@
 
 package org.axonframework.unitofwork;
 
+import org.axonframework.correlation.CorrelationDataProvider;
 import org.axonframework.domain.Message;
 
 import java.util.Map;
@@ -115,6 +116,10 @@ public interface UnitOfWork {
     default <T> T getOrDefaultResource(String key, T defaultValue) {
         return (T) resources().getOrDefault(key, defaultValue);
     }
+
+    void registerCorrelationDataProvider(CorrelationDataProvider<Message<?>> correlationDataProvider);
+
+    Map<String, ?> getCorrelationData();
 
     /**
      * Returns the resource previously attached under given <code>name</code>, or <code>null</code> if no such resource

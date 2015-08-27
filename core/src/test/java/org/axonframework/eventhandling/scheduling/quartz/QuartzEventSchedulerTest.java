@@ -132,9 +132,7 @@ public class QuartzEventSchedulerTest {
         InOrder inOrder = inOrder(unitOfWorkFactory, unitOfWork, eventBus);
         inOrder.verify(unitOfWorkFactory).createUnitOfWork(any());
         inOrder.verify(unitOfWork).commit();
-
-        // the unit of work doesn't actually publish...
-        verify(eventBus, never()).publish(isA(EventMessage.class));
+        verify(eventBus).publish(isA(EventMessage.class));
     }
 
     @Test

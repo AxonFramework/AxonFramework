@@ -16,25 +16,25 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubAggregate;
+import org.axonframework.domain.*;
+import org.axonframework.eventhandling.AbstractEventBus;
+import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.testutils.RecordingEventBus;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  *
@@ -43,31 +43,30 @@ public class CommandHandlingTest {
 
     private EventSourcingRepository<StubAggregate> repository;
     private String aggregateIdentifier;
-    private EventStore mockEventStore;
+    private StubEventStore stubEventStore;
 
     @Before
     public void setUp() {
-        mockEventStore = new StubEventStore();
-        repository = new EventSourcingRepository<>(StubAggregate.class, mockEventStore);
-        EventBus mockEventBus = mock(EventBus.class);
-        repository.setEventBus(mockEventBus);
+        stubEventStore = new StubEventStore();
+        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore);
+        repository.setEventBus(stubEventStore);
         aggregateIdentifier = "testAggregateIdentifier";
     }
 
     @Test
     public void testCommandHandlerLoadsSameAggregateTwice() {
-        DefaultUnitOfWork.startAndGet(null).resources().put(EventBus.KEY, new RecordingEventBus());
+        startAndGetUnitOfWork();
         StubAggregate stubAggregate = new StubAggregate(aggregateIdentifier);
         stubAggregate.doSomething();
         repository.add(stubAggregate);
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet(null);
+        startAndGetUnitOfWork();
         repository.load(aggregateIdentifier).doSomething();
         repository.load(aggregateIdentifier).doSomething();
         CurrentUnitOfWork.commit();
 
-        DomainEventStream es = mockEventStore.readEvents(aggregateIdentifier);
+        DomainEventStream es = stubEventStore.readEvents(aggregateIdentifier);
         assertTrue(es.hasNext());
         assertEquals((Object) 0L, es.next().getSequenceNumber());
         assertTrue(es.hasNext());
@@ -77,10 +76,13 @@ public class CommandHandlingTest {
         assertFalse(es.hasNext());
     }
 
-    /**
-     *
-     */
-    public static class StubEventStore implements EventStore {
+    private UnitOfWork startAndGetUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        uow.resources().put(EventBus.KEY, stubEventStore);
+        return uow;
+    }
+
+    private static class StubEventStore extends AbstractEventBus implements EventStore {
 
         private List<DomainEventMessage> storedEvents = new LinkedList<>();
 
@@ -103,6 +105,21 @@ public class CommandHandlingTest {
                                 .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
                                         && m.getSequenceNumber() <= lastSequenceNumber)
                                 .collect(toList()));
+        }
+
+        @Override
+        protected void commit(List<EventMessage<?>> events) {
+            appendEvents(events.stream().map(event -> (DomainEventMessage<?>) event).collect(Collectors.toList()));
+        }
+
+        @Override
+        public void subscribe(Cluster cluster) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void unsubscribe(Cluster cluster) {
+            throw new UnsupportedOperationException();
         }
     }
 }

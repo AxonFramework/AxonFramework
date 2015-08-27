@@ -1,12 +1,12 @@
 package org.axonframework.unitofwork;
 
 import org.axonframework.common.Assert;
+import org.axonframework.correlation.CorrelationDataProvider;
+import org.axonframework.domain.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -18,6 +18,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private final Map<String, Object> resources = new HashMap<>();
+    private final Queue<CorrelationDataProvider<Message<?>>> correlationDataProviders = new ArrayDeque<>();
     private Phase phase = Phase.NOT_STARTED;
     private UnitOfWork parentUnitOfWork;
 
@@ -114,6 +115,23 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     @Override
     public Map<String, Object> resources() {
         return resources;
+    }
+
+    @Override
+    public void registerCorrelationDataProvider(CorrelationDataProvider<Message<?>> correlationDataProvider) {
+        correlationDataProviders.add(correlationDataProvider);
+    }
+
+    @Override
+    public Map<String, ?> getCorrelationData() {
+        if (correlationDataProviders.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, Object> result = new HashMap<>();
+        for (CorrelationDataProvider<Message<?>> correlationDataProvider : correlationDataProviders) {
+            result.putAll(correlationDataProvider.correlationDataFor(getMessage()));
+        }
+        return result;
     }
 
     @Override

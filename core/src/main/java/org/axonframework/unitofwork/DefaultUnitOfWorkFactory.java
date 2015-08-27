@@ -50,7 +50,7 @@ public class DefaultUnitOfWorkFactory implements UnitOfWorkFactory {
     public UnitOfWork createUnitOfWork(Message<?> message) {
         if (transactionManager != null) {
             Object transaction = transactionManager.startTransaction();
-            final DefaultUnitOfWork unitOfWork = new DefaultUnitOfWork(message);
+            UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
             unitOfWork.onCommit(u -> transactionManager.commitTransaction(transaction));
             unitOfWork.onRollback((u, e) -> transactionManager.rollbackTransaction(transaction));
             return unitOfWork;
