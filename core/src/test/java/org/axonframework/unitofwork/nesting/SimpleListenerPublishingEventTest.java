@@ -32,7 +32,11 @@ import org.mockito.Matchers;
 import java.util.Collections;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze

@@ -37,12 +37,12 @@ import static org.mockito.Mockito.*;
 public class AbstractEventBusTest {
 
     private UnitOfWork unitOfWork;
-    private StubEventBus testSubject;
+    private StubPublishingEventBus testSubject;
 
     @Before
     public void setUp() {
         (unitOfWork = spy(new DefaultUnitOfWork(null))).start();
-        testSubject = new StubEventBus();
+        testSubject = spy(new StubPublishingEventBus());
     }
 
     @After
@@ -95,11 +95,38 @@ public class AbstractEventBusTest {
     }
 
     @Test
-    public void testPublicationOrderWhenPublishingDuringCommit() {
+     public void testPublicationWithNestedUow() {
         testSubject.publish(numberedEvent(5));
         unitOfWork.commit();
         assertEquals(Arrays.asList(numberedEvent(5), numberedEvent(4), numberedEvent(3), numberedEvent(2),
                 numberedEvent(1), numberedEvent(0)), testSubject.committedEvents);
+        verify(testSubject, times(6)).prepareCommit(any());
+        verify(testSubject, times(6)).commit(any());
+        verify(testSubject, times(6)).afterCommit(any());
+
+        verify(unitOfWork, times(6)).onPrepareCommit(any());
+        verify(unitOfWork, times(6)).onCommit(any());
+    }
+
+    @Test
+    public void testPublicationWithNestedUowAfterRootUowIsCommitted() {
+        testSubject = spy(new StubPublishingEventBus(UnitOfWork.Phase.COMMIT, true));
+        testSubject.publish(numberedEvent(5));
+        unitOfWork.commit();
+        assertEquals(Arrays.asList(numberedEvent(5), numberedEvent(4), numberedEvent(3), numberedEvent(2),
+                numberedEvent(1), numberedEvent(0)), testSubject.committedEvents);
+        verify(testSubject, times(6)).prepareCommit(any());
+        verify(testSubject, times(6)).commit(any());
+        verify(testSubject, times(6)).afterCommit(any());
+
+        verify(unitOfWork, times(1)).onPrepareCommit(any());
+        verify(unitOfWork, times(6)).onCommit(any());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPublicationForbiddenDuringUowCommitPhase() {
+        new StubPublishingEventBus(UnitOfWork.Phase.COMMIT, false).publish(numberedEvent(5));
+        unitOfWork.commit();
     }
 
     private static EventMessage newEvent() {
@@ -110,23 +137,58 @@ public class AbstractEventBusTest {
         return new StubNumberedEvent(number);
     }
 
-    private static class StubEventBus extends AbstractEventBus {
+    private static class StubPublishingEventBus extends AbstractEventBus {
 
         private final List<EventMessage<?>> committedEvents = new ArrayList<>();
+        private final boolean startNewUowBeforePublishing;
+        private final UnitOfWork.Phase publicationPhase;
+
+        public StubPublishingEventBus() {
+            this(UnitOfWork.Phase.PREPARE_COMMIT, true);
+        }
+
+        public StubPublishingEventBus(UnitOfWork.Phase publicationPhase, boolean startNewUowBeforePublishing) {
+            this.startNewUowBeforePublishing = startNewUowBeforePublishing;
+            this.publicationPhase = publicationPhase;
+        }
 
         @Override
         protected void prepareCommit(List<EventMessage<?>> events) {
+            if (publicationPhase == UnitOfWork.Phase.PREPARE_COMMIT) {
+                onEvents(events);
+            }
+        }
+
+        @Override
+        protected void commit(List<EventMessage<?>> events) {
+            if (publicationPhase == UnitOfWork.Phase.COMMIT) {
+                onEvents(events);
+            }
+        }
+
+        @Override
+        protected void afterCommit(List<EventMessage<?>> events) {
+            if (publicationPhase == UnitOfWork.Phase.AFTER_COMMIT) {
+                onEvents(events);
+            }
+        }
+
+        private void onEvents(List<EventMessage<?>> events) {
             //if the event payload is a number > 0, a new number is published that is 1 smaller than the first number
             Object payload = events.get(0).getPayload();
             if (payload instanceof Integer) {
                 int number = (int) payload;
                 if (number > 0) {
                     EventMessage nextEvent = numberedEvent(number - 1);
-                    UnitOfWork nestedUnitOfWork = DefaultUnitOfWork.startAndGet(null);
-                    try {
+                    if (startNewUowBeforePublishing) {
+                        UnitOfWork nestedUnitOfWork = DefaultUnitOfWork.startAndGet(null);
+                        try {
+                            publish(nextEvent);
+                        } finally {
+                            nestedUnitOfWork.commit();
+                        }
+                    } else {
                         publish(nextEvent);
-                    } finally {
-                        nestedUnitOfWork.commit();
                     }
                 }
             }

@@ -170,5 +170,15 @@ public interface UnitOfWork {
         public boolean isBefore(Phase phase) {
             return ordinal() < phase.ordinal();
         }
+
+        /**
+         * Check if this Phase comes after given other <code>phase</code>.
+         *
+         * @param phase The other Phase
+         * @return <code>true</code> if this comes after the given <code>phase</code>, <code>false</code> otherwise.
+         */
+        public boolean isAfter(Phase phase) {
+            return ordinal() > phase.ordinal();
+        }
     }
 }
