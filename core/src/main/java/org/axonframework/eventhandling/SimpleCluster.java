@@ -16,8 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.List;
 import java.util.Set;

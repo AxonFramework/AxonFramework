@@ -26,8 +26,8 @@ import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.Message;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
+import org.axonframework.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

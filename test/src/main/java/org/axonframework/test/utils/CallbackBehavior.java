@@ -16,7 +16,7 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.MetaData;
 
 /**
  * Interface towards a mechanism that replicates the behavior of a Command Handling component. The goal of this

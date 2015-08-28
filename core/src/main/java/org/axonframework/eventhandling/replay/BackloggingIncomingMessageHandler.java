@@ -17,10 +17,9 @@
 package org.axonframework.eventhandling.replay;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
-
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.time.Duration;
 import java.time.Instant;

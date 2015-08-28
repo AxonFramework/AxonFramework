@@ -16,15 +16,20 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze

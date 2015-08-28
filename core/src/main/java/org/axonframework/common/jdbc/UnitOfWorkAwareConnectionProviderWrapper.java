@@ -16,8 +16,8 @@
 
 package org.axonframework.common.jdbc;
 
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.sql.Connection;
 import java.sql.SQLException;

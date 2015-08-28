@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 

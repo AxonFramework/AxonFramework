@@ -17,7 +17,7 @@
 package org.axonframework.serializer;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 /**
  * Wrapper around a serializer that provides {@link SerializationAware} support. This class can either be used as a

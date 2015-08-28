@@ -16,10 +16,11 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,9 +28,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
-import static org.mockito.AdditionalMatchers.*;
+import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze

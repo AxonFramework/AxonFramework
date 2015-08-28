@@ -17,15 +17,18 @@
 package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.spring.domain.SpringWiredAggregate;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze

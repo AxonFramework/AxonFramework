@@ -16,13 +16,12 @@
 
 package org.axonframework.eventhandling.io;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-
 
 import java.io.DataInputStream;
 import java.io.IOException;

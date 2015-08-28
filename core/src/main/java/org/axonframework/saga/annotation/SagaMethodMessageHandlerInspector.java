@@ -20,7 +20,7 @@ import org.axonframework.common.annotation.AbstractAnnotatedHandlerDefinition;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

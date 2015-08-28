@@ -368,7 +368,7 @@ public class GatewayProxyFactory {
     private MetaDataExtractor[] extractMetaData(Class<?>[] parameterTypes, Annotation[][] parameterAnnotations) {
         List<MetaDataExtractor> extractors = new ArrayList<>();
         for (int i = 0; i < parameterAnnotations.length; i++) {
-            if (org.axonframework.domain.MetaData.class.isAssignableFrom(parameterTypes[i])) {
+            if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameterTypes[i])) {
                 extractors.add(new MetaDataExtractor(i, null));
             } else {
                 Annotation[] annotations = parameterAnnotations[i];

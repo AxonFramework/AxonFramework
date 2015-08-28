@@ -16,9 +16,9 @@
 
 package org.axonframework.eventstore.supporting;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

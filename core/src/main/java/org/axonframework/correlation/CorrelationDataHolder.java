@@ -16,6 +16,8 @@
 
 package org.axonframework.correlation;
 
+import org.axonframework.messaging.CorrelationDataProvider;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,9 +31,10 @@ import java.util.Map;
  * @see org.axonframework.eventhandling.EventTemplate
  * @see org.axonframework.commandhandling.gateway.DefaultCommandGateway
  * @see org.axonframework.commandhandling.gateway.GatewayProxyFactory
- * @see org.axonframework.correlation.CorrelationDataProvider
+ * @see CorrelationDataProvider
  * @since 2.3
  */
+@Deprecated
 public final class CorrelationDataHolder {
 
     private static ThreadLocal<Map<String, ?>> correlationData = new ThreadLocal<>();

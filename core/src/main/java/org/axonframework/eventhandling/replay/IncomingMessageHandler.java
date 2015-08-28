@@ -16,9 +16,9 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ import java.util.List;
  * When replying is finished, the handler is asked to flush any backlog it may have gathered during the replay.
  * <p/>
  * Implementations must ensure thread safety. The {@link #prepareForReplay(org.axonframework.eventhandling.Cluster)},
- * {@link #releaseMessage(org.axonframework.eventhandling.Cluster, org.axonframework.domain.DomainEventMessage)} and
+ * {@link #releaseMessage(org.axonframework.eventhandling.Cluster, DomainEventMessage)} and
  * {@link #processBacklog(org.axonframework.eventhandling.Cluster)} methods are invoked by the thread performing the
  * replay. The {@link #onIncomingMessages(Cluster, List)} method is invoked in the thread that attempts to publish
  * events to a cluster while it is in replay mode.
@@ -53,7 +53,7 @@ public interface IncomingMessageHandler {
     /**
      * Invoked while the ReplayingCluster is in replay mode and an Event is being dispatched to the Cluster. If the
      * timestamp of the given <code>message</code> is before the timestamp of any message reported via {@link
-     * #releaseMessage(org.axonframework.eventhandling.Cluster, org.axonframework.domain.DomainEventMessage)}, consider
+     * #releaseMessage(org.axonframework.eventhandling.Cluster, DomainEventMessage)}, consider
      * discarding the incoming message.
      * <p/>
      * This method returns the list of messages that must be considered as handled. May be <code>null</code> to

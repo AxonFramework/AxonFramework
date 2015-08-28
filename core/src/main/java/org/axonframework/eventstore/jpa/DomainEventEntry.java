@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 
 import javax.persistence.Entity;
@@ -24,7 +24,7 @@ import java.time.Instant;
 
 /**
  * JPA compliant wrapper around a DomainEvent. It stores a DomainEvent by extracting some of the information needed to
- * base searches on, and stores the {@link org.axonframework.domain.DomainEventMessage} itself as a serialized object
+ * base searches on, and stores the {@link DomainEventMessage} itself as a serialized object
  * using an {@link org.axonframework.serializer.Serializer}
  *
  * @author Allard Buijze

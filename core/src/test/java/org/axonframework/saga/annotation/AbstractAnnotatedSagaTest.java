@@ -16,15 +16,16 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.domain.GenericEventMessage;
-import org.junit.*;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author Allard Buijze

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ import java.util.Map;
  * This implementation requires that the aforementioned instances are available in the current persistence context.
  * <p/>
  * <em>Note: the SerializedType of Message Meta Data is not stored in this EventEntryStore. Upon retrieval,
- * it is set to the default value (name = "org.axonframework.domain.MetaData", revision = null). See {@link
+ * it is set to the default value (name = "org.axonframework.messaging.MetaData", revision = null). See {@link
  * org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @param <T> The type of data used by this EventEntryStore.
@@ -148,7 +148,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      *
      * @see #domainEventEntryEntityName()
      * @see org.axonframework.eventstore.jpa.EventEntryFactory#createDomainEventEntry(
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
+     * DomainEventMessage, org.axonframework.serializer.SerializedObject,
      * org.axonframework.serializer.SerializedObject)
      */
     @SuppressWarnings("unchecked")
@@ -173,7 +173,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      *
      * @see #snapshotEventEntryEntityName()
      * @see org.axonframework.eventstore.jpa.EventEntryFactory#createSnapshotEventEntry(
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
+     * DomainEventMessage, org.axonframework.serializer.SerializedObject,
      * org.axonframework.serializer.SerializedObject)
      */
     @SuppressWarnings("unchecked")
@@ -188,7 +188,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      *
      * @return The entity name of the DomainEventEntry subclass to use
      *
-     * @see #createDomainEventEntry(org.axonframework.domain.DomainEventMessage,
+     * @see #createDomainEventEntry(DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)
      * @see EventEntryFactory#getDomainEventEntryEntityName()
      */
@@ -201,7 +201,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      *
      * @return The entity name of the SnapshotEventEntry subclass to use
      *
-     * @see #createSnapshotEventEntry(org.axonframework.domain.DomainEventMessage,
+     * @see #createSnapshotEventEntry(DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)
      * @see EventEntryFactory#getSnapshotEventEntryEntityName()
      */

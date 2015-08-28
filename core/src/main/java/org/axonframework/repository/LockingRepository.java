@@ -18,7 +18,7 @@ package org.axonframework.repository;
 
 import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

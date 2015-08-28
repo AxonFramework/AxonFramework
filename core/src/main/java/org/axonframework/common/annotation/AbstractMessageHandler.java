@@ -17,7 +17,7 @@
 package org.axonframework.common.annotation;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;

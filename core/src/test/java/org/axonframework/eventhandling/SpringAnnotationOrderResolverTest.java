@@ -1,7 +1,7 @@
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.core.annotation.Order;
 
 import static org.junit.Assert.assertEquals;

@@ -16,7 +16,7 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.time.ZonedDateTime;
 

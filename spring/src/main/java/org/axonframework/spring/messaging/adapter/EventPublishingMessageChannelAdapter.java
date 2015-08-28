@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.messaging.adapter;
 
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 

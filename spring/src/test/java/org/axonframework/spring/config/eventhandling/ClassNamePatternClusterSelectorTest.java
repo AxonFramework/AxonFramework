@@ -16,15 +16,15 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventListener;
-import org.junit.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.junit.Test;
 
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze

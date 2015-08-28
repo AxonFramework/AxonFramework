@@ -16,7 +16,7 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.util.Map;
 

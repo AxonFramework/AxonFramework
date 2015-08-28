@@ -16,7 +16,7 @@
 
 package org.axonframework.common.annotation;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 /**
  * Interface for a mechanism that resolves handler method parameter values from a given {@link Message}.

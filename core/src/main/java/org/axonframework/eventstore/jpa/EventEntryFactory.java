@@ -16,11 +16,10 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAccessor;
 
 
@@ -55,9 +54,9 @@ public interface EventEntryFactory<T> {
     /**
      * Returns the type used to store serialized payloads. This must correspond to the declared type of the
      * snapshot event entry and domain event entry returned by {@link
-     * #createSnapshotEventEntry(org.axonframework.domain.DomainEventMessage,
+     * #createSnapshotEventEntry(DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)} and {@link
-     * #createDomainEventEntry(org.axonframework.domain.DomainEventMessage,
+     * #createDomainEventEntry(DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)} respectively.
      *
      * @return the type used to store serialized payloads

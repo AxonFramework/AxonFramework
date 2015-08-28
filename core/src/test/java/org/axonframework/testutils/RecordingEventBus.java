@@ -16,9 +16,9 @@
 
 package org.axonframework.testutils;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.ArrayList;
 import java.util.Collection;

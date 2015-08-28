@@ -16,7 +16,7 @@
 
 package org.axonframework.test.utils;
 
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.MetaData;
 
 /**
  * Default implementation of the CallbackBehavior interface. This implementation always returns <code>null</code>,

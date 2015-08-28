@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
 import org.springframework.context.ApplicationContext;

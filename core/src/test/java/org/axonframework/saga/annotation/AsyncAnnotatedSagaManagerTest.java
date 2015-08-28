@@ -19,12 +19,16 @@ package org.axonframework.saga.annotation;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
-import org.junit.*;
-import org.mockito.internal.stubbing.answers.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.internal.stubbing.answers.CallsRealMethods;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,9 +41,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.axonframework.domain.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze

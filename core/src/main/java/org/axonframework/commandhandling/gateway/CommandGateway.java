@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.messaging.Message;
 
 import java.util.concurrent.TimeUnit;
 
@@ -38,7 +39,7 @@ public interface CommandGateway {
      * <code>callback</code>.
      * <p/>
      * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
-     * Command Bus, unless Command already implements {@link org.axonframework.domain.Message}. In that case, a
+     * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      *
      * @param command  The command to dispatch
@@ -54,7 +55,7 @@ public interface CommandGateway {
      * exception, it is wrapped in a {@link org.axonframework.commandhandling.CommandExecutionException}.
      * <p/>
      * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
-     * Command Bus, unless Command already implements {@link org.axonframework.domain.Message}. In that case, a
+     * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      * <p/>
      * Note that the interrupted flag is set back on the thread if it has been interrupted while waiting.
@@ -77,7 +78,7 @@ public interface CommandGateway {
      * org.axonframework.commandhandling.CommandExecutionException}.
      * <p/>
      * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
-     * Command Bus, unless Command already implements {@link org.axonframework.domain.Message}. In that case, a
+     * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      * <p/>
      * Note that the interrupted flag is set back on the thread if it has been interrupted while waiting.
@@ -99,7 +100,7 @@ public interface CommandGateway {
      * caller will therefore not receive any feedback on the command's execution.
      * <p/>
      * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
-     * Command Bus, unless Command already implements {@link org.axonframework.domain.Message}. In that case, a
+     * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      *
      * @param command The command to dispatch

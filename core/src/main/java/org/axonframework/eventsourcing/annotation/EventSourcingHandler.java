@@ -16,6 +16,10 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -33,12 +37,12 @@ import java.lang.annotation.Target;
  * on the annotation. If required is false (default), null is passed when the meta data value is not present. If
  * required is true, the resolver will not match and prevent the method from being invoked when the meta data value is
  * not present.</li>
- * <li>Parameters of type {@link org.axonframework.domain.MetaData} will have the entire Meta Data of an Event Message
+ * <li>Parameters of type {@link MetaData} will have the entire Meta Data of an Event Message
  * injected.</li>
  * <li>Parameters of type {@link java.time.Instant} will resolve to the timestamp of the EventMessage. This is the
  * time at which the Event was generated.</li>
- * <li>Parameters assignable to {@link org.axonframework.domain.Message} will have the entire {@link
- * org.axonframework.domain.EventMessage} injected (if the message is assignable to that parameter). If the first
+ * <li>Parameters assignable to {@link Message} will have the entire {@link
+ * EventMessage} injected (if the message is assignable to that parameter). If the first
  * parameter is of type message, it effectively matches an Event of any type, even if generic parameters would suggest
  * otherwise. Due to type erasure, Axon cannot detect what parameter is expected. In such case, it is best to declare a
  * parameter of the payload type, followed by a parameter of type Message.</li>

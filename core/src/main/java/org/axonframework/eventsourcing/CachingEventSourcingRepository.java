@@ -18,12 +18,10 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.repository.LockManager;
 import org.axonframework.repository.PessimisticLockManager;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;

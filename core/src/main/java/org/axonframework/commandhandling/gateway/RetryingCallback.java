@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.lock.DeadlockException;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;

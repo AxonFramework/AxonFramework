@@ -16,7 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
 import org.junit.Before;
 import org.junit.Test;
 

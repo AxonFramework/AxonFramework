@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-
 import java.util.List;
 
 /**

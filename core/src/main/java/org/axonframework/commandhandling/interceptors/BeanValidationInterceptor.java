@@ -20,13 +20,13 @@ import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import java.util.Set;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming commands. When validation on a command fails, a

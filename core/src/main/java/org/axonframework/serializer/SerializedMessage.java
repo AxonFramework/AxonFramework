@@ -16,9 +16,9 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.GenericMessage;
-import org.axonframework.domain.Message;
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
 

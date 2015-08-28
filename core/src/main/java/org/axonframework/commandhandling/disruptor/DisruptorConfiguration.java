@@ -20,6 +20,7 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.cache.Cache;
+import org.axonframework.cache.NoCache;
 import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandTargetResolver;
@@ -27,9 +28,8 @@ import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.commandhandling.RollbackOnUncheckedExceptionConfiguration;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.common.Assert;
-import org.axonframework.cache.NoCache;
+import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.unitofwork.TransactionManager;
 
 import java.util.ArrayList;
 import java.util.List;

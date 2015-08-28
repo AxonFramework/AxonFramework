@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,7 +75,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
      * @param eventMessage The message about to be sent
      * @param member       The member that will be invoked
      * @throws java.lang.IllegalArgumentException if the given <code>eventMessage</code> has not been {@link
-     * #prepare(org.axonframework.domain.EventMessage) prepared} yet.
+     * #prepare(EventMessage) prepared} yet.
      */
     public void prepareForInvocation(EventMessage eventMessage, EventListener member) {
         if (member instanceof EventProcessingMonitorSupport) {

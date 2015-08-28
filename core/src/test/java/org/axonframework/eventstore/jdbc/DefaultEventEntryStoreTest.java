@@ -1,7 +1,7 @@
 package org.axonframework.eventstore.jdbc;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.jdbc.criteria.JdbcCriteria;
 import org.axonframework.eventstore.jdbc.criteria.JdbcCriteriaBuilder;
 import org.axonframework.eventstore.jdbc.criteria.ParameterRegistry;
@@ -10,7 +10,9 @@ import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.SimpleSerializedType;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -20,7 +22,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Kristian Rosenvold

@@ -16,9 +16,9 @@
 
 package org.axonframework.eventhandling.amqp.spring;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.io.EventMessageWriter;
 import org.axonframework.serializer.Serializer;
@@ -33,7 +33,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.nio.charset.Charset;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze

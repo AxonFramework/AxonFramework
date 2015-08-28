@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

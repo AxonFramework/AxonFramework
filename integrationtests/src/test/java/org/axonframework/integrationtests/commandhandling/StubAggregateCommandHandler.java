@@ -17,10 +17,10 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 /**
  * @author Allard Buijze

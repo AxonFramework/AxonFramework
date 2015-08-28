@@ -17,10 +17,8 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.testutils.MockException;

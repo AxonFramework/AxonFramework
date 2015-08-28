@@ -26,10 +26,12 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.gateway.IntervalRetryScheduler;
 import org.axonframework.commandhandling.gateway.RetryScheduler;
 import org.axonframework.commandhandling.gateway.RetryingCallback;
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.repository.ConcurrencyException;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;

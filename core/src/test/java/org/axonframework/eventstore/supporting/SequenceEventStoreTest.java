@@ -16,7 +16,9 @@
 
 package org.axonframework.eventstore.supporting;
 
-import org.axonframework.domain.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.junit.Test;
 

@@ -16,15 +16,15 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
  * Abstraction of the event storage mechanism. Domain Events are stored and read as {@link
- * org.axonframework.domain.DomainEventStream streams}.
+ * DomainEventStream streams}.
  *
  * @author Allard Buijze
  * @since 0.1

@@ -17,9 +17,9 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.common.AxonNonTransientException;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

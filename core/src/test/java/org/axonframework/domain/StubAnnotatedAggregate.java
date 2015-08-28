@@ -16,6 +16,7 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
 /**

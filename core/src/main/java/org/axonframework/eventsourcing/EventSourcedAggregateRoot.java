@@ -17,10 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventStream;
 
 /**
- * Aggregate that can be initialized using a {@link org.axonframework.domain.DomainEventStream}. Aggregates that are
+ * Aggregate that can be initialized using a {@link DomainEventStream}. Aggregates that are
  * initialized using Event Sourcing should implement this interface.
  *
  * @author Allard Buijze
@@ -31,7 +30,7 @@ public interface EventSourcedAggregateRoot extends AggregateRoot {
 
     /**
      * Initialize the state of this aggregate using the events in the provided {@link
-     * org.axonframework.domain.DomainEventStream}. A call to this method on an aggregate that has already been
+     * DomainEventStream}. A call to this method on an aggregate that has already been
      * initialized will result in an {@link IllegalStateException}.
      *
      * @param domainEventStream   the event stream containing the events that describe the state changes of this

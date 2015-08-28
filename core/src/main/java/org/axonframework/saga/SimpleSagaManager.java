@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -17,7 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.EventFactory;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaCreationPolicy;

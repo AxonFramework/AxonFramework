@@ -16,13 +16,13 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
+import javax.persistence.EntityManager;
 import java.util.Iterator;
 import java.util.Map;
-import javax.persistence.EntityManager;
 
 /**
  * Interface describing the mechanism that stores Events into the backing data store.

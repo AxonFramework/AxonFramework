@@ -16,7 +16,7 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Interface describing an implementation of a Saga. Sagas are instances that handle events and may possibly produce

@@ -17,7 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.*;
+import org.axonframework.domain.AbstractAggregateRoot;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
 
 import javax.persistence.Basic;
 import javax.persistence.MappedSuperclass;
@@ -27,7 +29,7 @@ import java.util.Queue;
 /**
  * Abstract convenience class to be extended by all aggregate roots. The AbstractEventSourcedAggregateRoot tracks all
  * uncommitted events. It also provides convenience methods to initialize the state of the aggregate root based on a
- * {@link org.axonframework.domain.DomainEventStream}, which can be used for event sourcing.
+ * {@link DomainEventStream}, which can be used for event sourcing.
  *
  * @author Allard Buijze
  * @since 0.1
@@ -97,7 +99,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(org.axonframework.domain.EventMessage)} event handler method} for processing.
+     * the {@link #handle(EventMessage)} event handler method} for processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *
@@ -109,7 +111,7 @@ public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregat
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(org.axonframework.domain.EventMessage)} event handler method} for processing.
+     * the {@link #handle(EventMessage)} event handler method} for processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *

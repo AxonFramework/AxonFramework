@@ -16,10 +16,10 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.domain.Message;
-import org.axonframework.unitofwork.AbstractUnitOfWork;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.AbstractUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Optional;
 

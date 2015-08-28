@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.amqp;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Map;
 

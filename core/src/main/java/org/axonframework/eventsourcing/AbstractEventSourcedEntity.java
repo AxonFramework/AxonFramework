@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
 
 import java.util.Collection;
 

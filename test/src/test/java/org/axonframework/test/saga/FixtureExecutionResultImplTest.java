@@ -17,8 +17,8 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.AxonAssertionError;
@@ -27,14 +27,19 @@ import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
-import static org.axonframework.test.matchers.Matchers.*;
-import static org.junit.Assert.*;
+import static org.axonframework.test.matchers.Matchers.andNoMore;
+import static org.axonframework.test.matchers.Matchers.equalTo;
+import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
+import static org.axonframework.test.matchers.Matchers.payloadsMatching;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Allard Buijze

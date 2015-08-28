@@ -27,8 +27,8 @@ import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;

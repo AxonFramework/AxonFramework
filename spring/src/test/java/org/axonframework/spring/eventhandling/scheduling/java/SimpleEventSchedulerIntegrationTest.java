@@ -16,16 +16,17 @@
 
 package org.axonframework.spring.eventhandling.scheduling.java;
 
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleCluster;
-import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;
-import org.axonframework.spring.eventhandling.scheduling.StartingEvent;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;
+import org.axonframework.spring.eventhandling.scheduling.StartingEvent;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -34,13 +35,14 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze

@@ -1,11 +1,12 @@
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.MyOtherEvent;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.matchers.Matchers;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 public class EventValidatorTest {
 

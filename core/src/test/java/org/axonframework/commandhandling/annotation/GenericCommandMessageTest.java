@@ -17,13 +17,16 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.domain.MetaData;
-import org.junit.*;
+import org.axonframework.messaging.MetaData;
+import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author Allard Buijze

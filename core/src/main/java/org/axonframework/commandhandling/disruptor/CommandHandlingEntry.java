@@ -21,9 +21,9 @@ import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DefaultInterceptorChain;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;

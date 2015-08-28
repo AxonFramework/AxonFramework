@@ -19,7 +19,7 @@ package org.axonframework.eventstore.mongo;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.upcasting.UpcasterChain;

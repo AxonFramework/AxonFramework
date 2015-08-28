@@ -19,7 +19,9 @@ package org.axonframework.auditing;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 /**
  * Interceptor that keeps track of commands and the events that were dispatched as a result of handling that command.
@@ -33,8 +35,8 @@ import org.axonframework.unitofwork.UnitOfWork;
  * org.axonframework.common.AxonConfigurationException}.
  * <p/>
  * The auditing interceptor can only attach meta data to event whose {@link
- * org.axonframework.domain.EventMessage#getMetaData()} methods returns an instance of {@link
- * org.axonframework.domain.MetaData}, which is the default behavior
+ * EventMessage#getMetaData()} methods returns an instance of {@link
+ * MetaData}, which is the default behavior
  * for any event implementation provided by Axon.
  *
  * @author Allard Buijze

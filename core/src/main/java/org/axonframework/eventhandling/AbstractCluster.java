@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,7 +96,7 @@ public abstract class AbstractCluster implements Cluster {
      * created.
      * <p/>
      * When this method is invoked as part of a Unit of Work (see
-     * {@link org.axonframework.unitofwork.CurrentUnitOfWork#isStarted()}), the monitor invocation should be postponed
+     * {@link CurrentUnitOfWork#isStarted()}), the monitor invocation should be postponed
      * until the Unit of Work is committed or rolled back, to ensure any transactions are properly propagated when the
      * monitor is invoked.
      * <p/>

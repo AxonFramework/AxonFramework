@@ -18,8 +18,8 @@ package org.axonframework.eventstore.fs;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -75,7 +75,7 @@ public class FileSystemEventStore implements SnapshotEventStore, UpcasterAware {
      * serializing the payload and meta data of Event Messages.
      * <p/>
      * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
-     * (name = "org.axonframework.domain.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
+     * (name = "org.axonframework.messaging.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
      *
      * @param serializer        The serializer capable of serializing (at least) DomainEvents
      * @param eventFileResolver The EventFileResolver providing access to event files

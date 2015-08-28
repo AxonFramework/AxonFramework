@@ -18,9 +18,9 @@ package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.ArrayList;
 import java.util.List;

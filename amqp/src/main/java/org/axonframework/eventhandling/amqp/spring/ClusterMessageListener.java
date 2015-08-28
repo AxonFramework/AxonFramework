@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.amqp.spring;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.slf4j.Logger;

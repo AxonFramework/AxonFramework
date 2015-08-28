@@ -16,16 +16,13 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleCluster;
-import org.axonframework.spring.config.eventhandling.AutowiringClusterSelector;
-import org.axonframework.spring.config.eventhandling.ClassNamePatternClusterSelector;
-import org.axonframework.spring.config.eventhandling.ClassNamePrefixClusterSelector;
-import org.axonframework.spring.config.eventhandling.ClusterSelector;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -36,8 +33,13 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze

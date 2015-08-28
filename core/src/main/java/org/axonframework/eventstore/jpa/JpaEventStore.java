@@ -20,9 +20,9 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -44,6 +44,8 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -51,8 +53,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.EntityManager;
-import javax.sql.DataSource;
 
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
 
@@ -118,7 +118,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * <p/>
      * <p/>
      * <em>Note: the SerializedType of Message Meta Data is not stored in the DefaultEventEntryStore. Upon retrieval,
-     * it is set to the default value (name = "org.axonframework.domain.MetaData", revision = null). See {@link
+     * it is set to the default value (name = "org.axonframework.messaging.MetaData", revision = null). See {@link
      * org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore

@@ -16,17 +16,16 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
 
-
-import java.time.Instant;
-import java.util.Arrays;
 import javax.persistence.Basic;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
+import java.time.Instant;
+import java.util.Arrays;
 
 /**
  * Data needed by different types of event logs.

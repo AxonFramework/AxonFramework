@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.io;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 /**
  * Enumeration of supported Message Types by the {@link EventMessageWriter} and {@link EventMessageReader}.

@@ -18,8 +18,8 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.Message;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 
 import java.time.Instant;
 

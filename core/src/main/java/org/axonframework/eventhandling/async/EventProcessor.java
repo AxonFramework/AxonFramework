@@ -16,11 +16,11 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Interface describing a mechanism that decides what should happen when an asynchronously handled event raises an

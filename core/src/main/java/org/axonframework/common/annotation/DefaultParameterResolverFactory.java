@@ -18,7 +18,7 @@ package org.axonframework.common.annotation;
 
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.Priority;
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
 
@@ -44,7 +44,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
             return new AnnotatedMetaDataParameterResolver(CollectionUtils.getAnnotation(parameterAnnotations,
                                                                                         MetaData.class), parameterType);
         }
-        if (org.axonframework.domain.MetaData.class.isAssignableFrom(parameterType)) {
+        if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameterType)) {
             return MetaDataParameterResolver.INSTANCE;
         }
         return null;

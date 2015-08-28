@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.correlation.CorrelationDataHolder;
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.MetaData;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -16,8 +16,8 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.Serializer;

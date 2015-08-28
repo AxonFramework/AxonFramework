@@ -21,7 +21,7 @@ import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaCreationPolicy;
 

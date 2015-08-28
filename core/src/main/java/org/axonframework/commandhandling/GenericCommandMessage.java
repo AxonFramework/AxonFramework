@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.domain.IdentifierFactory;
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
 

@@ -21,7 +21,7 @@ import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.annotation.UnsupportedHandlerException;
 import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;

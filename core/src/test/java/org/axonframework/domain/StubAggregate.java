@@ -16,8 +16,13 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcedEntity;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.StubDomainEvent;
+import org.axonframework.messaging.MetaData;
 
 import java.util.Collection;
 import java.util.UUID;

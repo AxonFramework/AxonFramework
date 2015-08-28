@@ -16,7 +16,7 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.MetaData;
 
 /**
  * Represents the serialized form of a {@link MetaData} instance.

@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 /**
  * Marks an instance that is capable of handling commands. CommandHandlers need to be subscribed to a {@link

@@ -16,15 +16,18 @@
 
 package org.axonframework.spring.messaging.eventbus;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.*;
+import org.junit.Test;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze

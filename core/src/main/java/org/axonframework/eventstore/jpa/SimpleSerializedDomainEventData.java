@@ -45,7 +45,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
 
     /**
      * Initialize an instance using given properties. This constructor assumes the default SerializedType for meta data
-     * (name = 'org.axonframework.domain.MetaData' and revision = <em>null</em>).
+     * (name = 'org.axonframework.messaging.MetaData' and revision = <em>null</em>).
      * <p/>
      * Note that the given <code>timestamp</code> must be in a format supported by {@link} DateTime#DateTime(Object)}.
      *

@@ -17,16 +17,16 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.AbstractCluster;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerOrderComparator;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
 import org.axonframework.eventhandling.OrderResolver;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.unitofwork.TransactionManager;
-import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionManager;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Allard Buijze
  * @see SequencingPolicy
- * @see org.axonframework.unitofwork.TransactionManager
+ * @see TransactionManager
  * @since 2.0
  */
 public class AsynchronousCluster extends AbstractCluster {

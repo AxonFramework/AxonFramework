@@ -16,13 +16,18 @@
 
 package org.axonframework.spring.messaging.adapter;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.spring.messaging.StubDomainEvent;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze

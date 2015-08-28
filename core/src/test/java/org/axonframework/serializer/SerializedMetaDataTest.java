@@ -16,9 +16,12 @@
 
 package org.axonframework.serializer;
 
-import org.junit.*;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -32,7 +35,7 @@ public class SerializedMetaDataTest {
         assertEquals(stubData, serializedMetaData.getData());
         assertEquals(byte[].class, serializedMetaData.getContentType());
         assertNull(serializedMetaData.getType().getRevision());
-        assertEquals("org.axonframework.domain.MetaData", serializedMetaData.getType().getName());
+        assertEquals("org.axonframework.messaging.MetaData", serializedMetaData.getType().getName());
     }
 
     @Test

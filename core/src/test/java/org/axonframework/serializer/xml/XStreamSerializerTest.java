@@ -16,10 +16,9 @@
 
 package org.axonframework.serializer.xml;
 
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.serializer.Revision;
 import org.axonframework.serializer.SerializedObject;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,7 +28,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.Period;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze

@@ -16,8 +16,8 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
 
 /**
  * Interface describing an event store that is able to store snapshot events. Implementations must also take the stored

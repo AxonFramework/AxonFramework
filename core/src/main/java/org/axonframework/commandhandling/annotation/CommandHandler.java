@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -35,7 +37,7 @@ import java.lang.annotation.Target;
  * a non-root Entity's constructor.
  * <p/>
  * The annotated method's first parameter is the command handled by that method. Optionally, the command handler may
- * specify a second parameter of type {@link org.axonframework.unitofwork.UnitOfWork}. The active Unit of Work will be
+ * specify a second parameter of type {@link UnitOfWork}. The active Unit of Work will be
  * passed if that parameter is supplied.
  *
  * @author Allard Buijze

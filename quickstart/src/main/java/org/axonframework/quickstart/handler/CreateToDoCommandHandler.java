@@ -18,9 +18,9 @@ package org.axonframework.quickstart.handler;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 /**
  * @author Jettro Coenradie

@@ -17,7 +17,7 @@
 package org.axonframework.spring.unitofwork;
 
 import org.axonframework.common.Assert;
-import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;

@@ -18,8 +18,8 @@ package org.axonframework.quickstart;
 
 import org.apache.commons.io.FileUtils;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
@@ -35,7 +35,6 @@ import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcastingContext;
 import org.dom4j.Document;
 import org.dom4j.Element;
-
 
 import java.io.File;
 import java.io.IOException;

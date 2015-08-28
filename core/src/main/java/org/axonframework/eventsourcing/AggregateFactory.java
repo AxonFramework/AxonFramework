@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-
 /**
  * Interface describing objects capable of creating instances of aggregates to be initialized with an event stream.
  * <p/>

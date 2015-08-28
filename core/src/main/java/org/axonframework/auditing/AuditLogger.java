@@ -17,7 +17,7 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.List;
 

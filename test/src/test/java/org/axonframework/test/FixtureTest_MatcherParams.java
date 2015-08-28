@@ -18,21 +18,26 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.Message;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze

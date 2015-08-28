@@ -19,7 +19,7 @@ package org.axonframework.test;
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;

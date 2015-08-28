@@ -16,10 +16,10 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.unitofwork.TransactionManager;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.TransactionManager;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -194,7 +194,7 @@ public class SimpleCommandBus implements CommandBus {
      * {@link DefaultUnitOfWorkFactory}.
      * <p/>
      * This method should not be used in combination with
-     * {@link #setTransactionManager(org.axonframework.unitofwork.TransactionManager)}. For transaction support, ensure
+     * {@link #setTransactionManager(TransactionManager)}. For transaction support, ensure
      * the provided UnitOfWorkFactory implementation binds each UnitOfWork to a transaction.
      *
      * @param unitOfWorkFactory The UnitOfWorkFactory providing UoW instances for this Command Bus.
@@ -205,7 +205,7 @@ public class SimpleCommandBus implements CommandBus {
 
     /**
      * Sets the transaction manager that manages the transaction around command handling. This should not be used in
-     * combination with {@link #setUnitOfWorkFactory(org.axonframework.unitofwork.UnitOfWorkFactory)}.
+     * combination with {@link #setUnitOfWorkFactory(UnitOfWorkFactory)}.
      *
      * @param transactionManager the transaction manager to use
      */

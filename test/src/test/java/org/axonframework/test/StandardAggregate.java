@@ -16,8 +16,8 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;

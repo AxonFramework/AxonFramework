@@ -16,17 +16,22 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.MetaData;
-
-import org.junit.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze

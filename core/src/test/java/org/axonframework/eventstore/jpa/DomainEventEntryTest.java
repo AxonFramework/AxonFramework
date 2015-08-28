@@ -16,21 +16,23 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze

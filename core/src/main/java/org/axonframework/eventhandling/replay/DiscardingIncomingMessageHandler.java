@@ -16,9 +16,9 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

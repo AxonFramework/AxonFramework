@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing.conflictresolvers;
 
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventsourcing.ConflictResolver;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.util.List;
 

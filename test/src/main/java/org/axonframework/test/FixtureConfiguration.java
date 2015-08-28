@@ -23,6 +23,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.repository.Repository;
 import org.axonframework.test.matchers.FieldFilter;
 
@@ -178,7 +179,7 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
      * <p/>
-     * If an item in the given <code>domainEvents</code> implements {@link org.axonframework.domain.Message}, the
+     * If an item in the given <code>domainEvents</code> implements {@link Message}, the
      * payload and meta data from that message are copied into a newly created Domain Event Message. Otherwise, a
      * Domain Event Message with the item as payload and empty meta data is created.
      *
@@ -201,7 +202,7 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
      * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
      * <p/>
-     * If an item in the list implements {@link org.axonframework.domain.Message}, the payload and meta data from that
+     * If an item in the list implements {@link Message}, the payload and meta data from that
      * message are copied into a newly created Domain Event Message. Otherwise, a Domain Event Message with the item
      * as payload and empty meta data is created.
      *

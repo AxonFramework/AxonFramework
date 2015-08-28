@@ -1,8 +1,8 @@
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.List;
 

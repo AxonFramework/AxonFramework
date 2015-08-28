@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
-
 import java.util.List;
 
 /**

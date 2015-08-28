@@ -22,7 +22,7 @@ import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedMetaData;
@@ -68,7 +68,7 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  * </ul>
  * <p/>
  * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
- * (name = "org.axonframework.domain.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
+ * (name = "org.axonframework.messaging.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @author Allard Buijze
  * @since 2.0

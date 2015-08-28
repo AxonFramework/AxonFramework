@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
@@ -34,12 +35,11 @@ import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SimpleResourceInjector;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
-import static org.axonframework.domain.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
  * Simple Example that shows how to Create Saga instances, schedule deadlines and inject resources

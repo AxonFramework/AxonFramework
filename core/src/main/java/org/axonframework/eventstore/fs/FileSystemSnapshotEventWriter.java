@@ -18,7 +18,7 @@ package org.axonframework.eventstore.fs;
 
 import org.apache.commons.io.input.CountingInputStream;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.Serializer;

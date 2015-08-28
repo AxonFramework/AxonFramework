@@ -16,7 +16,7 @@
 
 package org.axonframework.quickstart.handler;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;

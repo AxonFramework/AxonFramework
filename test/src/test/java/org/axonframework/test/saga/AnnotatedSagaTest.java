@@ -16,22 +16,27 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.hamcrest.CoreMatchers;
-
-import org.junit.*;
+import org.junit.Test;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
-import static org.axonframework.test.matchers.Matchers.*;
+import static org.axonframework.test.matchers.Matchers.listWithAnyOf;
+import static org.axonframework.test.matchers.Matchers.messageWithPayload;
+import static org.axonframework.test.matchers.Matchers.noEvents;
 import static org.hamcrest.CoreMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze

@@ -19,12 +19,12 @@ package org.axonframework.commandhandling.interceptors;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkListenerAdapter;
 import org.axonframework.serializer.SerializationAwareDomainEventMessage;
 import org.axonframework.serializer.SerializationAwareEventMessage;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 /**
  * Interceptor that register a unit of work listener that wraps each EventMessage in a SerializationAware message. This

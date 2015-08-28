@@ -18,15 +18,17 @@ package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.MetaData;
 import org.axonframework.correlation.CorrelationDataHolder;
-import org.axonframework.correlation.CorrelationDataProvider;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.Message;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.StubDomainEvent;
+import org.axonframework.messaging.CorrelationDataProvider;
+import org.axonframework.messaging.Message;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -39,9 +41,16 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
-import static org.axonframework.domain.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze

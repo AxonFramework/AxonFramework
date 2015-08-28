@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config;
 
+import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.spring.unitofwork.SpringTransactionManager;
-import org.axonframework.unitofwork.TransactionManager;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 

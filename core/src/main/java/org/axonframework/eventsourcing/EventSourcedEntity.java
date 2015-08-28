@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Interface towards an Event Sourced Entity that is part of an aggregate, but not its root. Events applied to the

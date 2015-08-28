@@ -20,10 +20,10 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.AMQPMessage;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
@@ -32,8 +32,8 @@ import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
 import org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Exchange;
@@ -297,7 +297,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     /**
      * Sets the ConnectionFactory providing the Connections and Channels to send messages on. The SpringAMQPTerminal
      * does not cache or reuse connections. Providing a ConnectionFactory instance that caches connections will prevent
-     * new connections to be opened for each invocation to {@link #publish(org.axonframework.domain.EventMessage[])}
+     * new connections to be opened for each invocation to {@link #publish(EventMessage[])}
      * <p/>
      * Defaults to an autowired Connection Factory.
      *

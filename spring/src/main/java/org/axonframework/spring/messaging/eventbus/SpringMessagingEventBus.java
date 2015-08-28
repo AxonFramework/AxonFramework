@@ -16,9 +16,9 @@
 
 package org.axonframework.spring.messaging.eventbus;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.EventMessage;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;

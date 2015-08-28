@@ -16,7 +16,7 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 import java.util.HashMap;
 import java.util.Map;

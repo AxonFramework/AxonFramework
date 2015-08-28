@@ -16,16 +16,17 @@
 
 package org.axonframework.spring.eventhandling.scheduling.quartz;
 
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleCluster;
-import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;
-import org.axonframework.spring.eventhandling.scheduling.StartingEvent;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaRepository;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;
+import org.axonframework.spring.eventhandling.scheduling.StartingEvent;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobListener;
@@ -39,17 +40,19 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze

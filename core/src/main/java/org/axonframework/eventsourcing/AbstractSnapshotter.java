@@ -18,13 +18,11 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.messaging.unitofwork.NoTransactionManager;
+import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.repository.ConcurrencyException;
-import org.axonframework.unitofwork.NoTransactionManager;
-import org.axonframework.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

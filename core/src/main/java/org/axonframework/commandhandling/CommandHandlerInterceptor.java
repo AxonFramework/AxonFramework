@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 /**
  * Workflow interface that allows for customized command handler invocation chains. A CommandHandlerInterceptor can add

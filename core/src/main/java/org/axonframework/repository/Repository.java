@@ -16,6 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+
 /**
  * The repository provides an abstraction of the storage of aggregates.
  *
@@ -42,7 +44,7 @@ public interface Repository<T> {
      * @throws ConflictingModificationException
      *                                    if the <code>expectedVersion</code> did not match the aggregate's actual
      *                                    version
-     * @see org.axonframework.unitofwork.UnitOfWork
+     * @see UnitOfWork
      */
     T load(String aggregateIdentifier, Long expectedVersion);
 

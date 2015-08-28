@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

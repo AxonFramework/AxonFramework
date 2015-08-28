@@ -16,8 +16,8 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
 

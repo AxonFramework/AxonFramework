@@ -18,8 +18,8 @@ package org.axonframework.spring.eventhandling.scheduling.java;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.spring.unitofwork.SpringTransactionManager;
-import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;

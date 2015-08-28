@@ -19,11 +19,11 @@ package org.axonframework.saga;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.IdentifierBasedLock;
 import org.axonframework.correlation.CorrelationDataHolder;
-import org.axonframework.correlation.CorrelationDataProvider;
-import org.axonframework.correlation.MultiCorrelationDataProvider;
-import org.axonframework.correlation.SimpleCorrelationDataProvider;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.CorrelationDataProvider;
+import org.axonframework.messaging.MultiCorrelationDataProvider;
+import org.axonframework.messaging.SimpleCorrelationDataProvider;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

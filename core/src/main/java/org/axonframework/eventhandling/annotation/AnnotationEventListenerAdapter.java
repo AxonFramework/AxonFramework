@@ -19,8 +19,8 @@ package org.axonframework.eventhandling.annotation;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link

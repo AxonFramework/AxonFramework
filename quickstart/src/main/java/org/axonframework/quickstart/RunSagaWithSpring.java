@@ -19,13 +19,13 @@ package org.axonframework.quickstart;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import static org.axonframework.domain.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
  * Simple Example that shows how to Create Saga instances, schedule deadlines and inject resources using Spring.

@@ -16,8 +16,6 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -71,8 +69,7 @@ public interface EventBus {
      * If the given <code>cluster</code> is already subscribed, nothing happens.
      *
      * @param cluster The event listener cluster to subscribe
-     * @throws EventListenerSubscriptionFailedException
-     *          if the listener could not be subscribed
+     * @throws EventListenerSubscriptionFailedException if the listener could not be subscribed
      */
     void subscribe(Cluster cluster);
 
