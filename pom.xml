@@ -324,8 +324,10 @@
                             <goal>jar</goal>
                         </goals>
                     </execution>
-
                 </executions>
+				<configuration>
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
