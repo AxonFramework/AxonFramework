@@ -17,6 +17,7 @@
 package org.axonframework.common.annotation;
 
 import org.axonframework.common.Priority;
+import org.axonframework.domain.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -61,7 +62,7 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
                     final ConfigurableListableBeanFactory clBeanFactory = (ConfigurableListableBeanFactory) beanFactory;
                     if (clBeanFactory.containsBeanDefinition(bean.getKey())
                             && clBeanFactory.getBeanDefinition(bean.getKey()).isPrimary()) {
-                        return new FixedValueParameterResolver<Object>(bean.getValue());
+                        return new SpringBeanParameterResolver(beanFactory, bean.getKey());
                     }
                 }
             }
@@ -71,12 +72,34 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
             }
             return null;
         } else {
-            return new FixedValueParameterResolver<Object>(beansFound.values().iterator().next());
+            return new SpringBeanParameterResolver(applicationContext.getAutowireCapableBeanFactory(),
+                                                   beansFound.keySet().iterator().next());
         }
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    private static class SpringBeanParameterResolver implements ParameterResolver<Object> {
+
+        private final AutowireCapableBeanFactory beanFactory;
+        private final String beanName;
+
+        public SpringBeanParameterResolver(AutowireCapableBeanFactory beanFactory, String beanName) {
+            this.beanFactory = beanFactory;
+            this.beanName = beanName;
+        }
+
+        @Override
+        public Object resolveParameterValue(Message message) {
+            return beanFactory.getBean(beanName);
+        }
+
+        @Override
+        public boolean matches(Message message) {
+            return true;
+        }
     }
 }

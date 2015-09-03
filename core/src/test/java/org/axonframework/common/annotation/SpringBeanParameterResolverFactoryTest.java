@@ -20,16 +20,19 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Scope;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -37,7 +40,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.axonframework.domain.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -66,6 +72,14 @@ public class SpringBeanParameterResolverFactoryTest {
         ((EventListener) annotatedHandler).handle(asEventMessage("Hello"));
         // make sure the invocation actually happened
         assertEquals(1, counter.get());
+    }
+
+    @Test
+    public void testNewInstanceIsCreatedEachTimePrototypeResourceIsInjected() {
+        EventListener handler = (EventListener) applicationContext.getBean("prototypeResourceHandler");
+        handler.handle(asEventMessage("Hello1"));
+        handler.handle(asEventMessage("Hello2"));
+        assertEquals(2, counter.get());
     }
 
     @Test(expected = BeanCreationException.class)
@@ -114,6 +128,12 @@ public class SpringBeanParameterResolverFactoryTest {
             return new DuplicateResourceHandlerWithPrimary();
         }
 
+        @Lazy
+        @Bean
+        public PrototypeResourceHandler prototypeResourceHandler() {
+            return new PrototypeResourceHandler();
+        }
+
         @Bean
         public DuplicateResource duplicateResource1() {
             return new DuplicateResource() {
@@ -138,13 +158,24 @@ public class SpringBeanParameterResolverFactoryTest {
             return new DuplicateResourceWithPrimary() {
             };
         }
+
+        @Bean
+        @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+        public PrototypeResource prototypeResource() {
+            return new PrototypeResource() {
+            };
+        }
     }
 
-    public static interface DuplicateResource {
+    public interface DuplicateResource {
 
     }
 
-    public static interface DuplicateResourceWithPrimary {
+    public interface DuplicateResourceWithPrimary {
+
+    }
+
+    public interface PrototypeResource {
 
     }
 
@@ -172,6 +203,17 @@ public class SpringBeanParameterResolverFactoryTest {
         }
     }
 
+    public static class PrototypeResourceHandler {
+
+        private PrototypeResource resource;
+
+        @EventHandler
+        public void handle(String message, PrototypeResource resource) {
+            assertNotEquals(this.resource, this.resource = resource);
+            counter.incrementAndGet();
+        }
+    }
+
     public static class AnnotatedEventHandlerWithResources {
 
         @EventHandler
@@ -183,7 +225,7 @@ public class SpringBeanParameterResolverFactoryTest {
         }
     }
 
-    private static interface ThisResourceReallyDoesntExist {
+    private interface ThisResourceReallyDoesntExist {
 
     }
 }
