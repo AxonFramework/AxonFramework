@@ -194,6 +194,17 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     }
 
     /**
+     * Register a {@link HashChangeListener} with the {@link JGroupsConnector}. The listener
+     * will be notified when the consistent hash changes due to members joining or leaving the
+     * JGroup.
+     *
+     * @param hashChangeListener
+     */
+    public void setHashChangeListener(HashChangeListener hashChangeListener) {
+        this.hashChangeListener = hashChangeListener;
+    }
+
+    /**
      * Registers the JChannel monitoring bean after the channel has connected. Defaults to false.
      *
      * @param registerMBean

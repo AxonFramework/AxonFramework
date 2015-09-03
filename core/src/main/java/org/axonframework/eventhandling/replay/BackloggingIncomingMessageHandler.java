@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * IncomingMessageHandler implementation that maintains a backlog of all Events published to a cluster while it is
@@ -77,7 +78,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
      * @param backlogThresholdMargin The margin of time to take into account when backlogging events.
      */
     public BackloggingIncomingMessageHandler(Duration backlogThresholdMargin) {
-        this(backlogThresholdMargin, new LinkedList<EventMessage>());
+        this(backlogThresholdMargin, new ConcurrentLinkedQueue<EventMessage>());
     }
 
     /**
@@ -85,7 +86,8 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
      * age that an event may have to be backlogged. Older events will not be backlogged, as we may assume they will be
      * part of the replay process.
      *
-     * The given <code>backlog</code> queue is used to store backlogged events.
+     * The given <code>backlog</code> queue is used to store backlogged events. Note that the backlog queue should
+     * support concurrent modification while the BackloggingIncomingMessageHandler is iterating over the queue.
      * <p/>
      * This margin is also used to optimize the lookup of Events in the backlog. Events are only looked up in the
      * portion of the queue that contains events with a timestamp near that of the event being looked for.
@@ -93,7 +95,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
      * A good starting value for this is the maximum expected latency of incoming events.
      *
      * @param backlogThresholdMargin The margin of time to take into account when backlogging events.
-     * @param backlog The queue instance used to store backlogged events.
+     * @param backlog The concurrent queue instance used to store backlogged events.
      */
     public BackloggingIncomingMessageHandler(Duration backlogThresholdMargin, Queue<EventMessage> backlog) {
         this.timeMargin = backlogThresholdMargin;

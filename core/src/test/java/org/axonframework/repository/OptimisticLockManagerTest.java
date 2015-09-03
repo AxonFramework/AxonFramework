@@ -16,11 +16,20 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.domain.AggregateRoot;
+import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.junit.*;
 
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -55,7 +64,40 @@ public class OptimisticLockManagerTest {
         aggregate1.doSomething();
         aggregate2.doSomething();
 
-        assertTrue("The first on to commit should contain the lock", manager.validateLock(aggregate1));
+        assertTrue("The first one to commit should contain the lock", manager.validateLock(aggregate1));
         assertFalse("Expected this lock to be invalid", manager.validateLock(aggregate2));
+    }
+
+    @Test
+    public void testLockRolledBackWhenUnitOfWorkFailsToCommit() {
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet();
+        unitOfWork.registerListener(new UnitOfWorkListenerAdapter() {
+            @Override
+            public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
+                                        List<EventMessage> events) {
+                throw new MockException();
+            }
+        });
+
+        UUID identifier = UUID.randomUUID();
+        StubAggregate aggregate1 = new StubAggregate(identifier);
+        OptimisticLockManager manager = new OptimisticLockManager();
+        manager.obtainLock(aggregate1.getIdentifier());
+        aggregate1.doSomething();
+
+        assertTrue("The first one to commit should contain the lock", manager.validateLock(aggregate1));
+
+        try {
+            unitOfWork.commit();
+        } catch (MockException ignored) {
+        }
+        assertFalse(CurrentUnitOfWork.isStarted());
+
+        StubAggregate aggregate2 = new StubAggregate(identifier);
+        manager.obtainLock(aggregate2.getIdentifier());
+        aggregate2.doSomething();
+
+        assertTrue("After commit fails, the next one should contain the lock", manager.validateLock(aggregate2));
+
     }
 }

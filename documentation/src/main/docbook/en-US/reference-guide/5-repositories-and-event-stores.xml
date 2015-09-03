@@ -663,7 +663,7 @@ public class AdministrativeDetailsUpdatedUpcaster implements Upcaster&lt;Documen
         Document administrativeDetailsUpdatedEvent = intermediateRepresentation.getData();
 
         Document addressUpdatedEvent =
-                new DOMDocument(new DOMElement("org.example.InsurancePolicyUpdatedEvent"));
+                new DOMDocument(new DOMElement("org.example.AddressUpdatedEvent"));
         addressUpdatedEvent.getRootElement()
                 .add(administrativeDetailsUpdatedEvent.getRootElement().element("address").createCopy());
 
