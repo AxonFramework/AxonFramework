@@ -17,6 +17,9 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -86,8 +89,25 @@ public class OptimisticLockManager implements LockManager {
         private synchronized boolean validate(AggregateRoot aggregate) {
             Long lastCommittedEventSequenceNumber = aggregate.getVersion();
             if (versionNumber == null || versionNumber.equals(lastCommittedEventSequenceNumber)) {
+                final Long previousVersionNumber = versionNumber;
                 long last = lastCommittedEventSequenceNumber == null ? 0 : lastCommittedEventSequenceNumber;
-                versionNumber = last + aggregate.getUncommittedEventCount();
+                final long version = last + aggregate.getUncommittedEventCount();
+                versionNumber = version;
+
+                //revert to the previous version number when this aggregate fails to commit
+                if (CurrentUnitOfWork.isStarted()) {
+                    CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
+                        @Override
+                        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
+                            synchronized (OptimisticLock.this) {
+                                if (versionNumber != null && versionNumber == version) {
+                                    versionNumber = previousVersionNumber;
+                                }
+                            }
+                        }
+                    });
+                }
+
                 return true;
             }
             return false;
