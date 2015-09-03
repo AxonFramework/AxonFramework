@@ -39,7 +39,7 @@ import static java.lang.String.format;
 public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHandler> {
 
     private static final SagaMethodMessageHandler NO_HANDLER_CONFIGURATION =
-            new SagaMethodMessageHandler(SagaCreationPolicy.NONE, null, null, null);
+            new SagaMethodMessageHandler(SagaCreationPolicy.NONE, null, null, null, null);
 
     /**
      * Returns a SagaMethodMessageHandler indicating that a inspected method is *not* a SagaEventHandler.
@@ -53,6 +53,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
     private final SagaCreationPolicy creationPolicy;
     private final MethodMessageHandler handlerMethod;
     private final String associationKey;
+    private final String associationPropertyName;
     private final Property associationProperty;
 
     /**
@@ -90,7 +91,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
             sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
         }
 
-        return new SagaMethodMessageHandler(sagaCreationPolicy, methodHandler, associationKey, associationProperty);
+        return new SagaMethodMessageHandler(sagaCreationPolicy, methodHandler, associationKey, associationPropertyName, associationProperty);
     }
 
     /**
@@ -102,10 +103,12 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param associationProperty The association property configured for this handler
      */
     protected SagaMethodMessageHandler(SagaCreationPolicy creationPolicy, MethodMessageHandler handler,
-                                       String associationKey, Property associationProperty) {
+                                       String associationKey, String associationPropertyName,
+                                       Property associationProperty) {
         this.creationPolicy = creationPolicy;
         this.handlerMethod = handler;
         this.associationKey = associationKey;
+        this.associationPropertyName = associationPropertyName;
         this.associationProperty = associationProperty;
     }
 
@@ -173,10 +176,16 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         } else if (o.handlerMethod == null) {
             return 1;
         }
-        final int handlerEquality = handlerMethod.compareTo(o.handlerMethod);
+        int handlerEquality = handlerMethod.compareTo(o.handlerMethod);
         if (handlerEquality == 0) {
-            return o.handlerMethod.getMethod().getParameterTypes().length
+            handlerEquality = o.handlerMethod.getMethod().getParameterTypes().length
                     - this.handlerMethod.getMethod().getParameterTypes().length;
+        }
+        if (handlerEquality == 0) {
+            handlerEquality = associationKey.compareTo(o.associationKey);
+        }
+        if (handlerEquality == 0) {
+            handlerEquality = associationPropertyName.compareTo(o.associationPropertyName);
         }
         return handlerEquality;
     }
@@ -192,7 +201,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
 
         SagaMethodMessageHandler that = (SagaMethodMessageHandler) o;
 
-        return this.compareTo(that) != 0;
+        return this.compareTo(that) == 0;
     }
 
     @Override
