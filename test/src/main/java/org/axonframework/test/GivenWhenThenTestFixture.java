@@ -585,6 +585,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         public void onFailure(Throwable cause) {
             if (cause instanceof FixtureExecutionException) {
                 this.exception = (FixtureExecutionException) cause;
+            } else {
+                this.exception = new FixtureExecutionException("Failed to execute givenCommands", cause);
             }
         }
 
