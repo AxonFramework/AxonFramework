@@ -207,4 +207,12 @@ public interface EventSqlSchema<T> {
      * @return the type used to store serialized payloads
      */
     Class<T> getDataType();
+
+    /**
+     * Returns the Scheme configuration
+     *
+     * @return the Scheme configuration
+     * @see SchemaConfiguration
+     */
+    SchemaConfiguration getSchemaConfiguration();
 }

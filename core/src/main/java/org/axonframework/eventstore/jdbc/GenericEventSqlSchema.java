@@ -26,6 +26,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static java.lang.String.format;
+
 /**
  * @param <T> The type used when storing serialized data
  * @author Allard Buijze
@@ -37,14 +39,20 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     private static final DateTimeFormatter UTC_FORMATTER = ISODateTimeFormat.dateTime().withZoneUTC();
 
-    private static final String STD_FIELDS = "eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, "
-            + "payloadType, payloadRevision, payload, metaData";
-
     private final Class<T> dataType;
 
     private boolean forceUtc = false;
 
     protected SchemaConfiguration schemaConfiguration;
+
+    private final String sqlInsertEventEntry;
+    private final String sqlLoadLastSnapshot;
+    private final String sqlPruneSnapshots;
+    private final String sqlFindSnapshotSequenceNumbers;
+    private final String sqlFetchFromSequenceNumber;
+    private final String sqlGetFetchAll;
+    private final String sqlCreateSnapshotEventEntryTable;
+    private final String sqlCreateDomainEventEntryTable;
 
     /**
      * Initialize a GenericEventSqlSchema using default settings.
@@ -78,8 +86,16 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     public GenericEventSqlSchema(Class<T> dataType, SchemaConfiguration schemaConfiguration) {
         this.dataType = dataType;
         this.schemaConfiguration = schemaConfiguration;
-    }
 
+        sqlInsertEventEntry = buildSqlInsertEventEntryQuery(schemaConfiguration);
+        sqlLoadLastSnapshot = buildSqlLoadLastSnapshotQuery(schemaConfiguration);
+        sqlPruneSnapshots = buildSqlPruneSnapshotsQuery(schemaConfiguration);
+        sqlFindSnapshotSequenceNumbers = buildSqlFindSnapshotSequenceNumbersQuery(schemaConfiguration);
+        sqlFetchFromSequenceNumber = buildSqlFetchFromSequenceNumberQuery(schemaConfiguration);
+        sqlGetFetchAll = buildSqlFetchAllQuery(schemaConfiguration);
+        sqlCreateSnapshotEventEntryTable = buildSqlCreateSnapshotEventEntryTable(schemaConfiguration);
+        sqlCreateDomainEventEntryTable = buildSqlCreateDomainEventEntryTable(schemaConfiguration);
+    }
 
     /**
      * Control if date time in the SQL scheme
@@ -103,9 +119,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_loadLastSnapshot(Connection connection, Object identifier, String aggregateType)
             throws SQLException {
-        final String s = "SELECT " + STD_FIELDS + " FROM " + schemaConfiguration.snapshotEntryTable()
-                + " WHERE aggregateIdentifier = ? AND type = ? ORDER BY sequenceNumber DESC";
-        PreparedStatement statement = connection.prepareStatement(s);
+        PreparedStatement statement = connection.prepareStatement(sqlLoadLastSnapshot);
         statement.setString(1, identifier.toString());
         statement.setString(2, aggregateType);
         return statement;
@@ -117,8 +131,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
                                                         DateTime timestamp, String eventType, String eventRevision,
                                                         T eventPayload, T eventMetaData, String aggregateType)
             throws SQLException {
-        return doInsertEventEntry(schemaConfiguration.domainEventEntryTable(),
-                conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
+        return doInsertEventEntry(conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
                 eventType, eventRevision, eventPayload,
                 eventMetaData, aggregateType);
     }
@@ -129,8 +142,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
                                                           DateTime timestamp, String eventType, String eventRevision,
                                                           T eventPayload, T eventMetaData,
                                                           String aggregateType) throws SQLException {
-        return doInsertEventEntry(schemaConfiguration.snapshotEntryTable(),
-                conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
+        return doInsertEventEntry(conn, eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
                 eventType, eventRevision, eventPayload,
                 eventMetaData, aggregateType);
     }
@@ -142,7 +154,6 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
      * String, long, org.joda.time.DateTime, String, String, Object, Object, String)}, and provides an easier way to
      * change to types of columns used.
      *
-     * @param tableName           The name of the table to insert the entry into
      * @param connection          The connection to create the statement for
      * @param eventIdentifier     The unique identifier of the event
      * @param aggregateIdentifier The identifier of the aggregate that generated the event
@@ -156,16 +167,13 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
      * @return a prepared statement that allows inserting a domain event entry when executed
      * @throws SQLException when an exception occurs creating the PreparedStatement
      */
-    protected PreparedStatement doInsertEventEntry(String tableName, Connection connection, String eventIdentifier,
+    protected PreparedStatement doInsertEventEntry(Connection connection, String eventIdentifier,
                                                    String aggregateIdentifier,
                                                    long sequenceNumber, DateTime timestamp, String eventType,
                                                    String eventRevision,
                                                    T eventPayload, T eventMetaData, String aggregateType)
             throws SQLException {
-        final String sql = "INSERT INTO " + tableName
-                + " (eventIdentifier, type, aggregateIdentifier, sequenceNumber, timeStamp, payloadType, "
-                + "payloadRevision, payload, metaData) VALUES (?,?,?,?,?,?,?,?,?)";
-        PreparedStatement preparedStatement = connection.prepareStatement(sql); // NOSONAR
+        PreparedStatement preparedStatement = connection.prepareStatement(sqlInsertEventEntry);
         preparedStatement.setString(1, eventIdentifier);
         preparedStatement.setString(2, aggregateType);
         preparedStatement.setString(3, aggregateIdentifier);
@@ -181,10 +189,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_pruneSnapshots(Connection connection, String type, Object aggregateIdentifier,
                                                 long sequenceOfFirstSnapshotToPrune) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM " + schemaConfiguration.snapshotEntryTable()
-                + " WHERE type = ?"
-                + " AND aggregateIdentifier = ?"
-                + " AND sequenceNumber <= ?");
+        PreparedStatement preparedStatement = connection.prepareStatement(sqlPruneSnapshots);
         preparedStatement.setString(1, type);
         preparedStatement.setString(2, aggregateIdentifier.toString());
         preparedStatement.setLong(3, sequenceOfFirstSnapshotToPrune);
@@ -194,10 +199,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_findSnapshotSequenceNumbers(Connection connection, String type,
                                                              Object aggregateIdentifier) throws SQLException {
-        final String sql = "SELECT sequenceNumber FROM " + schemaConfiguration.snapshotEntryTable()
-                + " WHERE type = ? AND aggregateIdentifier = ?"
-                + " ORDER BY sequenceNumber DESC";
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        PreparedStatement preparedStatement = connection.prepareStatement(sqlFindSnapshotSequenceNumbers);
         preparedStatement.setString(1, type);
         preparedStatement.setString(2, aggregateIdentifier.toString());
         return preparedStatement;
@@ -206,11 +208,7 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_fetchFromSequenceNumber(Connection connection, String type, Object aggregateIdentifier,
                                                          long firstSequenceNumber) throws SQLException {
-        final String sql = "SELECT " + STD_FIELDS + " FROM " + schemaConfiguration.domainEventEntryTable()
-                + " WHERE aggregateIdentifier = ? AND type = ?"
-                + " AND sequenceNumber >= ?"
-                + " ORDER BY sequenceNumber ASC";
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        PreparedStatement preparedStatement = connection.prepareStatement(sqlFetchFromSequenceNumber);
         preparedStatement.setString(1, aggregateIdentifier.toString());
         preparedStatement.setString(2, type);
         preparedStatement.setLong(3, firstSequenceNumber);
@@ -220,10 +218,8 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     @Override
     public PreparedStatement sql_getFetchAll(Connection connection, String whereClause,
                                              Object[] params) throws SQLException {
-        final String sql = "select " + STD_FIELDS + " from " + schemaConfiguration.domainEventEntryTable()
-                + " e " + whereClause
-                + " ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC ";
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        String query = format(sqlGetFetchAll, whereClause);
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
         for (int i = 0; i < params.length; i++) {
             Object param = params[i];
             if (param instanceof DateTime) {
@@ -271,36 +267,12 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
 
     @Override
     public PreparedStatement sql_createSnapshotEventEntryTable(Connection connection) throws SQLException {
-        final String sql = "    create table " + schemaConfiguration.snapshotEntryTable() + " (\n" +
-                "        aggregateIdentifier varchar(255) not null,\n" +
-                "        sequenceNumber bigint not null,\n" +
-                "        type varchar(255) not null,\n" +
-                "        eventIdentifier varchar(255) not null,\n" +
-                "        metaData blob,\n" +
-                "        payload blob not null,\n" +
-                "        payloadRevision varchar(255),\n" +
-                "        payloadType varchar(255) not null,\n" +
-                "        timeStamp varchar(255) not null,\n" +
-                "        primary key (aggregateIdentifier, sequenceNumber, type)\n" +
-                "    );";
-        return connection.prepareStatement(sql);
+        return connection.prepareStatement(sqlCreateSnapshotEventEntryTable);
     }
 
     @Override
     public PreparedStatement sql_createDomainEventEntryTable(Connection connection) throws SQLException {
-        final String sql = "create table " + schemaConfiguration.domainEventEntryTable() + " (\n" +
-                "        aggregateIdentifier varchar(255) not null,\n" +
-                "        sequenceNumber bigint not null,\n" +
-                "        type varchar(255) not null,\n" +
-                "        eventIdentifier varchar(255) not null,\n" +
-                "        metaData blob,\n" +
-                "        payload blob not null,\n" +
-                "        payloadRevision varchar(255),\n" +
-                "        payloadType varchar(255) not null,\n" +
-                "        timeStamp varchar(255) not null,\n" +
-                "        primary key (aggregateIdentifier, sequenceNumber, type)\n" +
-                "    );\n";
-        return connection.prepareStatement(sql);
+        return connection.prepareStatement(sqlCreateDomainEventEntryTable);
     }
 
     @Override
@@ -325,4 +297,230 @@ public class GenericEventSqlSchema<T> implements EventSqlSchema<T> {
     public Class<T> getDataType() {
         return dataType;
     }
+
+    @Override
+    public SchemaConfiguration getSchemaConfiguration() {
+        return schemaConfiguration;
+    }
+
+    /**
+     * INSERT INTO
+     *    DomainEventEntry (
+     *        eventIdentifier, type, aggregateIdentifier,
+     *        sequenceNumber, timeStamp, payloadType,
+     *        payloadRevision, payload, metaData
+     *    ) VALUES (
+     *        ?,?,?,?,?,?,?,?,?
+     *    )
+     */
+    public String buildSqlInsertEventEntryQuery(SchemaConfiguration sc) {
+        return format("INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s, %s) VALUES (?,?,?,?,?,?,?,?,?)",
+                sc.domainEventEntryTable(),
+                sc.eventIdentifierColumn(),
+                sc.typeColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.timeStampColumn(),
+                sc.payloadTypeColumn(),
+                sc.payloadRevisionColumn(),
+                sc.payloadColumn(),
+                sc.metaDataColumn()
+        );
+    }
+
+    /**
+     * SELECT
+     *     eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, payloadType, payloadRevision, payload, metaData
+     * FROM
+     *     SnapshotEventEntry
+     * WHERE
+     *     aggregateIdentifier = ?
+     *     AND type = ?
+     * ORDER BY
+     *      sequenceNumber DESC
+     */
+    public String buildSqlLoadLastSnapshotQuery(SchemaConfiguration sc) {
+        return format("SELECT %s, %s, %s, %s, %s, %s, %s, %s FROM %s WHERE %s = ? AND %s = ? ORDER BY %s DESC",
+                sc.eventIdentifierColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.timeStampColumn(),
+                sc.payloadTypeColumn(),
+                sc.payloadRevisionColumn(),
+                sc.payloadColumn(),
+                sc.metaDataColumn(),
+                sc.snapshotEntryTable(),
+                sc.aggregateIdentifierColumn(),
+                sc.typeColumn(),
+                sc.sequenceNumberColumn()
+        );
+    }
+
+    /**
+     * DELETE FROM
+     *     SnapshotEventEntry
+     * WHERE
+     *     type = ?
+     *     AND aggregateIdentifier = ?
+     *     AND sequenceNumber <= ?
+     */
+    public String buildSqlPruneSnapshotsQuery(SchemaConfiguration sc) {
+        return format("DELETE FROM %s WHERE %s = ? AND %s = ? AND %s <= ?",
+                sc.snapshotEntryTable(),
+                sc.typeColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn()
+        );
+    }
+
+    /**
+     * SELECT
+     *     sequenceNumber
+     * FROM
+     *     SnapshotEventEntry
+     * WHERE
+     *     type = ?
+     *     AND aggregateIdentifier = ?
+     * ORDER BY
+     *     sequenceNumber DESC
+     */
+    public String buildSqlFindSnapshotSequenceNumbersQuery(SchemaConfiguration sc) {
+        return format("SELECT %s FROM %s WHERE %s = ? AND %s = ? ORDER BY %s DESC",
+                sc.sequenceNumberColumn(),
+                sc.snapshotEntryTable(),
+                sc.typeColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn()
+        );
+    }
+
+    /**
+     *  SELECT
+     *       eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, payloadType, payloadRevision, payload, metaData
+     *  FROM
+     *       DomainEventEntry
+     *  WHERE
+     *     aggregateIdentifier = ?
+     *     AND type = ?
+     *     AND sequenceNumber >= ?
+     *  ORDER BY
+     *     sequenceNumber ASC
+     */
+    public String buildSqlFetchFromSequenceNumberQuery(SchemaConfiguration sc) {
+        return format("SELECT %s, %s, %s, %s, %s, %s, %s, %s FROM %s WHERE %s = ? AND %s = ? AND %s >= ? ORDER BY %s ASC",
+                sc.eventIdentifierColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.timeStampColumn(),
+                sc.payloadTypeColumn(),
+                sc.payloadRevisionColumn(),
+                sc.payloadColumn(),
+                sc.metaDataColumn(),
+                sc.domainEventEntryTable(),
+                sc.aggregateIdentifierColumn(),
+                sc.typeColumn(),
+                sc.sequenceNumberColumn(),
+                sc.sequenceNumberColumn()
+        );
+    }
+
+    /**
+     * SELECT
+     *     eventIdentifier, aggregateIdentifier, sequenceNumber, timeStamp, payloadType, payloadRevision, payload, metaData
+     *  FROM
+     *      DomainEventEntry e
+     *  WHERE
+     *      {whereClause}
+     *  ORDER BY
+     *      e.timeStamp ASC,
+     *      e.sequenceNumber ASC,
+     *      e.aggregateIdentifier ASC
+     */
+    public String buildSqlFetchAllQuery(SchemaConfiguration sc) {
+        return format("select %s, %s, %s, %s, %s, %s, %s, %s from %s e %%s ORDER BY e.%s ASC, e.%s ASC, e.%s ASC ",
+                sc.eventIdentifierColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.timeStampColumn(),
+                sc.payloadTypeColumn(),
+                sc.payloadRevisionColumn(),
+                sc.payloadColumn(),
+                sc.metaDataColumn(),
+                sc.domainEventEntryTable(),
+                sc.timeStampColumn(),
+                sc.sequenceNumberColumn(),
+                sc.aggregateIdentifierColumn()
+        );
+    }
+
+    /**
+     * CREATE TABLE
+     *     SnapshotEventEntry (
+     *        aggregateIdentifier varchar(255) not null,
+     *        sequenceNumber bigint not null,
+     *        type varchar(255) not null,
+     *        eventIdentifier varchar(255) not null,
+     *        metaData blob,
+     *        payload blob not null,
+     *        payloadRevision varchar(255),
+     *        payloadType varchar(255) not null,
+     *        timeStamp varchar(255) not null,
+     *        primary key (aggregateIdentifier, sequenceNumber, type)
+     *     )
+     */
+    public String buildSqlCreateSnapshotEventEntryTable(SchemaConfiguration sc) {
+        return format("create table %s (%s varchar(255) not null, %s bigint not null, %s varchar(255) not null, " +
+                        "%s varchar(255) not null, %s blob, %s blob not null, %s varchar(255), %s varchar(255) not null, " +
+                        "%s varchar(255) not null, primary key (%s, %s, %s) )",
+                sc.snapshotEntryTable(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.typeColumn(),
+                sc.eventIdentifierColumn(),
+                sc.metaDataColumn(),
+                sc.payloadColumn(),
+                sc.payloadRevisionColumn(),
+                sc.payloadTypeColumn(),
+                sc.timeStampColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.typeColumn()
+        );
+    }
+
+    /**
+     * CREATE TABLE
+     *     DomainEventEntry (
+     *        aggregateIdentifier varchar(255) not null,
+     *        sequenceNumber bigint not null,
+     *        type varchar(255) not null,
+     *        eventIdentifier varchar(255) not null,
+     *        metaData blob,
+     *        payload blob not null,
+     *        payloadRevision varchar(255),
+     *        payloadType varchar(255) not null,
+     *        timeStamp varchar(255) not null,
+     *        primary key (aggregateIdentifier, sequenceNumber, type)
+     *     )
+     */
+    public String buildSqlCreateDomainEventEntryTable(SchemaConfiguration sc) {
+        return format("create table %s (%s varchar(255) not null, %s bigint not null, %s varchar(255) not null, " +
+                        "%s varchar(255) not null, %s blob, %s blob not null, %s varchar(255), %s varchar(255) not null, " +
+                        "%s varchar(255) not null, primary key (%s, %s, %s) )",
+                sc.domainEventEntryTable(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.typeColumn(),
+                sc.eventIdentifierColumn(),
+                sc.metaDataColumn(),
+                sc.payloadColumn(),
+                sc.payloadRevisionColumn(),
+                sc.payloadTypeColumn(),
+                sc.timeStampColumn(),
+                sc.aggregateIdentifierColumn(),
+                sc.sequenceNumberColumn(),
+                sc.typeColumn()
+        );
+    }
+
 }
