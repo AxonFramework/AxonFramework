@@ -25,6 +25,7 @@ import org.axonframework.correlation.MultiCorrelationDataProvider;
 import org.axonframework.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.replay.ReplayAware;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -51,7 +52,7 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractSagaManager implements SagaManager, Subscribable {
+public abstract class AbstractSagaManager implements SagaManager, Subscribable, ReplayAware {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
 
@@ -374,5 +375,20 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
     @SuppressWarnings("unchecked")
     public Set<Class<? extends Saga>> getManagedSagaTypes() {
         return new LinkedHashSet<Class<? extends Saga>>(Arrays.asList(sagaTypes));
+    }
+
+    @Override
+    public void beforeReplay() {
+        throw new IllegalStateException(
+                "SagaManager does not support replay. Attempting to replay cluster containing Saga "
+                        + "event handlers will cause data corruption!");
+    }
+
+    @Override
+    public void afterReplay() {
+    }
+
+    @Override
+    public void onReplayFailed(Throwable cause) {
     }
 }
