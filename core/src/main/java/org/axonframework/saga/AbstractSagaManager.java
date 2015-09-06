@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -373,6 +373,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable {
      */
     @SuppressWarnings("unchecked")
     public Set<Class<? extends Saga>> getManagedSagaTypes() {
-        return new HashSet<Class<? extends Saga>>(Arrays.asList(sagaTypes));
+        return new LinkedHashSet<Class<? extends Saga>>(Arrays.asList(sagaTypes));
     }
 }
