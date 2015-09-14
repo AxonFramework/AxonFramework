@@ -186,33 +186,42 @@ public class SagaManagerTest {
         verify(mockSagaRepository, never()).load("saga1");
     }
 
-    interface ReplayValidator extends ReplayAware, EventListener {
-
-    }
-
     @Test
     public void testAttemptSagaReplay() {
         ReplayValidator validator = mock(ReplayValidator.class);
-
-        EventStoreManagement eventStore = mock(EventStoreManagement.class);
         ReplayingCluster cluster = new ReplayingCluster(
-                new SimpleCluster("Cluster"), eventStore, new NoTransactionManager(), 10,
+                new SimpleCluster("Cluster"), mock(EventStoreManagement.class), new NoTransactionManager(), 10,
                 new DiscardingIncomingMessageHandler());
-
         cluster.subscribe(testSubject);
         cluster.subscribe(validator);
         try {
             cluster.startReplay();
             fail("Replay should have failed");
-        } catch (ReplayFailedException e) {
+        } catch (ReplayFailedException ignored) {
         }
-
         verify(validator).onReplayFailed(any(Throwable.class));
+    }
+
+    @Test
+    public void testSagaReplayAllowed() {
+        testSubject.setReplayable(true);
+        ReplayValidator validator = mock(ReplayValidator.class);
+        ReplayingCluster cluster = new ReplayingCluster(
+                new SimpleCluster("Cluster"), mock(EventStoreManagement.class), new NoTransactionManager(), 10,
+                new DiscardingIncomingMessageHandler());
+        cluster.subscribe(testSubject);
+        cluster.subscribe(validator);
+        cluster.startReplay();
+        verify(validator, never()).onReplayFailed(any(Throwable.class));
     }
 
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
         return ListOrderedSet.decorate(Arrays.asList(items));
+    }
+
+    private interface ReplayValidator extends ReplayAware, EventListener {
+
     }
 
     private class TestableAbstractSagaManager extends AbstractSagaManager {

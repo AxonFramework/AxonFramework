@@ -1518,6 +1518,14 @@
                             </xsd:documentation>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="replayable" use="optional" type="xsd:string">
+                        <xsd:annotation>
+                            <xsd:documentation>Indicates whether the Saga Manager should allow event replay on managed
+                                sagas or not. If false the saga manager will throw an exception before a replay is
+                                started. Defaults to false.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                     <xsd:attribute name="correlation-data-provider" use="optional" type="xsd:string">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the correlation data provider that provides the meta data

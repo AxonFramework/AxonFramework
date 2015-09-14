@@ -32,6 +32,8 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -40,8 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 import static java.lang.String.format;
 
@@ -64,6 +64,7 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable, 
     private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
+    private volatile boolean replayable;
     private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
@@ -346,6 +347,16 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable, 
     }
 
     /**
+     * Sets whether or not to allow event replay on managed Sagas. If set to <code>false</code> the saga manager will
+     * throw an {@link IllegalStateException} before a replay is started. Defaults to <code>false</code>.
+     *
+     * @param replayable whether or not to allow event replays on managed Sagas.
+     */
+    public void setReplayable(boolean replayable) {
+        this.replayable = replayable;
+    }
+
+    /**
      * Sets the correlation data provider for this SagaManager. It will provide the data to attach to messages sent by
      * Sagas managed by this manager.
      *
@@ -379,9 +390,10 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable, 
 
     @Override
     public void beforeReplay() {
-        throw new IllegalStateException(
-                "SagaManager does not support replay. Attempting to replay cluster containing Saga "
-                        + "event handlers will cause data corruption!");
+        if (!replayable) {
+            throw new IllegalStateException("This Saga Manager does not support event replays. " +
+                                            "Replaying events on managed Sagas may cause data corruption.");
+        }
     }
 
     @Override

@@ -22,5 +22,6 @@
 
 <axon:saga-manager id="autowiredManager" />
 <axon:saga-manager id="explicitManager" base-package="org.axonframework.contextsupport.spring, org.does.not.exist" event-bus="eventBus" />
+<axon:saga-manager id="replayableManager" replayable="true"/>
 
 </beans>
