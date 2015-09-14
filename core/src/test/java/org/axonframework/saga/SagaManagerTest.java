@@ -20,9 +20,17 @@ import org.apache.commons.collections.set.ListOrderedSet;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
+import org.axonframework.eventhandling.replay.ReplayAware;
+import org.axonframework.eventhandling.replay.ReplayFailedException;
+import org.axonframework.eventhandling.replay.ReplayingCluster;
+import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
+import org.axonframework.unitofwork.NoTransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.junit.*;
 import org.mockito.invocation.*;
@@ -178,10 +186,42 @@ public class SagaManagerTest {
         verify(mockSagaRepository, never()).load("saga1");
     }
 
+    @Test
+    public void testAttemptSagaReplay() {
+        ReplayValidator validator = mock(ReplayValidator.class);
+        ReplayingCluster cluster = new ReplayingCluster(
+                new SimpleCluster("Cluster"), mock(EventStoreManagement.class), new NoTransactionManager(), 10,
+                new DiscardingIncomingMessageHandler());
+        cluster.subscribe(testSubject);
+        cluster.subscribe(validator);
+        try {
+            cluster.startReplay();
+            fail("Replay should have failed");
+        } catch (ReplayFailedException ignored) {
+        }
+        verify(validator).onReplayFailed(any(Throwable.class));
+    }
+
+    @Test
+    public void testSagaReplayAllowed() {
+        testSubject.setReplayable(true);
+        ReplayValidator validator = mock(ReplayValidator.class);
+        ReplayingCluster cluster = new ReplayingCluster(
+                new SimpleCluster("Cluster"), mock(EventStoreManagement.class), new NoTransactionManager(), 10,
+                new DiscardingIncomingMessageHandler());
+        cluster.subscribe(testSubject);
+        cluster.subscribe(validator);
+        cluster.startReplay();
+        verify(validator, never()).onReplayFailed(any(Throwable.class));
+    }
 
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
         return ListOrderedSet.decorate(Arrays.asList(items));
+    }
+
+    private interface ReplayValidator extends ReplayAware, EventListener {
+
     }
 
     private class TestableAbstractSagaManager extends AbstractSagaManager {

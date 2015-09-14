@@ -50,6 +50,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
     private static final String SAGA_REPOSITORY_ATTRIBUTE = "saga-repository";
     private static final String CORRELATION_DATA_PROVIDER_ATTRIBUTE = "correlation-data-provider";
     private static final String SAGA_FACTORY_ATTRIBUTE = "saga-factory";
+    private static final String REPLAYABLE_ATTRIBUTE = "replayable";
 
     private Object resourceInjector;
 
@@ -70,6 +71,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         parseTypesElement(element, sagaManagerDefinition, parserContext.getRegistry());
         parseSuppressExceptionsAttribute(element, sagaManagerDefinition.getPropertyValues());
         parseCorrelationDataProvderAttribute(element, sagaManagerDefinition.getPropertyValues());
+        parseReplayableAttribute(element, sagaManagerDefinition.getPropertyValues());
 
         registerSpecificProperties(element, parserContext, sagaManagerDefinition);
         return sagaManagerDefinition;
@@ -146,7 +148,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
     private void parseSagaFactoryAttribute(Element element, GenericBeanDefinition sagaManagerDefinition) {
         if (element.hasAttribute(SAGA_FACTORY_ATTRIBUTE)) {
             registerSagaFactory(new RuntimeBeanReference(element.getAttribute(SAGA_FACTORY_ATTRIBUTE)),
-                                sagaManagerDefinition);
+                    sagaManagerDefinition);
         } else {
             GenericBeanDefinition defaultFactoryDefinition = new GenericBeanDefinition();
             defaultFactoryDefinition.setBeanClass(GenericSagaFactory.class);
@@ -203,6 +205,18 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
      * @param beanDefinition The bean definition of the Saga Manager
      */
     protected abstract void parseSuppressExceptionsAttribute(Element element, MutablePropertyValues beanDefinition);
+
+    /**
+     * Process the "replayable" setting on the given <code>element</code>.
+     *
+     * @param element        The element representing the saga manager's bean definition
+     * @param propertyValues The bean definition of the Saga Manager
+     */
+    protected void parseReplayableAttribute(Element element, MutablePropertyValues propertyValues) {
+        if (element.hasAttribute(REPLAYABLE_ATTRIBUTE)) {
+            propertyValues.addPropertyValue("replayable", element.getAttribute(REPLAYABLE_ATTRIBUTE));
+        }
+    }
 
     private Object getResourceInjector() {
         if (resourceInjector == null) {
