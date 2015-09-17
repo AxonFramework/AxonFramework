@@ -49,6 +49,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
     private static final String RESOURCE_INJECTOR_ATTRIBUTE = "resource-injector";
     private static final String SAGA_REPOSITORY_ATTRIBUTE = "saga-repository";
     private static final String CORRELATION_DATA_PROVIDER_ATTRIBUTE = "correlation-data-provider";
+    private static final String ALLOW_REPLAY_ATTRIBUTE = "allow-replay";
     private static final String SAGA_FACTORY_ATTRIBUTE = "saga-factory";
 
     private Object resourceInjector;
@@ -70,6 +71,7 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         parseTypesElement(element, sagaManagerDefinition, parserContext.getRegistry());
         parseSuppressExceptionsAttribute(element, sagaManagerDefinition.getPropertyValues());
         parseCorrelationDataProvderAttribute(element, sagaManagerDefinition.getPropertyValues());
+        parseAllowReplayAttribute(element, sagaManagerDefinition.getPropertyValues());
 
         registerSpecificProperties(element, parserContext, sagaManagerDefinition);
         return sagaManagerDefinition;
@@ -79,6 +81,12 @@ public abstract class AbstractSagaManagerBeanDefinitionParser {
         if (element.hasAttribute(CORRELATION_DATA_PROVIDER_ATTRIBUTE)) {
             properties.add("correlationDataProvider",
                            new RuntimeBeanReference(element.getAttribute(CORRELATION_DATA_PROVIDER_ATTRIBUTE)));
+        }
+    }
+
+    private void parseAllowReplayAttribute(Element element, MutablePropertyValues properties) {
+        if (element.hasAttribute(ALLOW_REPLAY_ATTRIBUTE)) {
+            properties.add("allowReplay", element.getAttribute(ALLOW_REPLAY_ATTRIBUTE));
         }
     }
 

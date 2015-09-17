@@ -1530,6 +1530,14 @@
                             </xsd:appinfo>
                         </xsd:annotation>
                     </xsd:attribute>
+                    <xsd:attribute name="allow-replay" use="optional" type="xsd:boolean">
+                        <xsd:annotation>
+                            <xsd:documentation>Indicate support of event replay for this saga manager.
+                                Defaults to false. When set to false, the saga manager will raise an
+                                exception before a replay starts.
+                            </xsd:documentation>
+                        </xsd:annotation>
+                    </xsd:attribute>
                 </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>

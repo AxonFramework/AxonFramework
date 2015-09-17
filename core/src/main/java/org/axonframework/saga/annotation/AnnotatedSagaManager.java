@@ -21,6 +21,7 @@ import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.AbstractSagaManager;
+import org.axonframework.saga.AbstractSynchronousSagaManager;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.Saga;
@@ -40,7 +41,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.7
  */
-public class AnnotatedSagaManager extends AbstractSagaManager {
+public class AnnotatedSagaManager extends AbstractSynchronousSagaManager {
 
     private final ParameterResolverFactory parameterResolverFactory;
 

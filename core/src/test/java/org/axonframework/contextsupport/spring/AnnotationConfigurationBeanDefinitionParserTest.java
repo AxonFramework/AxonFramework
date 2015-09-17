@@ -23,6 +23,7 @@ import org.axonframework.domain.Message;
 import org.axonframework.domain.MetaData;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.axonframework.saga.AbstractSagaManager;
+import org.axonframework.saga.AbstractSynchronousSagaManager;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManager;
@@ -154,11 +155,11 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     @DirtiesContext
     public void testSagaManagerWiring_suppressExceptionsFalse() throws NoSuchFieldException, IllegalAccessException {
         // this part should prove correct autowiring of the saga manager
-        AbstractSagaManager sagaManager = beanFactory.getBean("sagaManagerNotSuppressingExceptions",
-                                                              AbstractSagaManager.class);
+        AbstractSynchronousSagaManager sagaManager = beanFactory.getBean("sagaManagerNotSuppressingExceptions",
+                                                                         AbstractSynchronousSagaManager.class);
         assertNotNull(sagaManager);
 
-        final Field field = AbstractSagaManager.class.getDeclaredField("suppressExceptions");
+        final Field field = AbstractSynchronousSagaManager.class.getDeclaredField("suppressExceptions");
         field.setAccessible(true);
         final Boolean suppressExceptions = (Boolean) field.get(sagaManager);
         assertFalse(suppressExceptions);

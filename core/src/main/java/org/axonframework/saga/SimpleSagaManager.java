@@ -33,7 +33,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.7
  */
-public class SimpleSagaManager extends AbstractSagaManager {
+public class SimpleSagaManager extends AbstractSynchronousSagaManager {
 
     private final AssociationValueResolver associationValueResolver;
 

@@ -20,7 +20,12 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
-<axon:saga-manager id="autowiredManager" />
+<axon:saga-manager id="autowiredManager" allow-replay="true" />
 <axon:saga-manager id="explicitManager" base-package="org.axonframework.contextsupport.spring, org.does.not.exist" event-bus="eventBus" />
+
+<axon:saga-manager id="asyncSagaManager" allow-replay="true">
+    <axon:async />
+</axon:saga-manager>
+
 
 </beans>

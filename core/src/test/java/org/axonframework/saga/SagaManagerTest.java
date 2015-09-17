@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
  */
 public class SagaManagerTest {
 
-    private AbstractSagaManager testSubject;
+    private AbstractSynchronousSagaManager testSubject;
     private EventBus mockEventBus;
     private SagaRepository mockSagaRepository;
     private Saga mockSaga1;
@@ -191,7 +191,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testAttemptSagaReplay() {
+    public void testAttemptSagaReplay_Fail() {
         ReplayValidator validator = mock(ReplayValidator.class);
 
         EventStoreManagement eventStore = mock(EventStoreManagement.class);
@@ -210,12 +210,30 @@ public class SagaManagerTest {
         verify(validator).onReplayFailed(any(Throwable.class));
     }
 
+    @Test
+    public void testAttemptSagaReplay_Success() {
+        ReplayValidator validator = mock(ReplayValidator.class);
+
+        EventStoreManagement eventStore = mock(EventStoreManagement.class);
+        ReplayingCluster cluster = new ReplayingCluster(
+                new SimpleCluster("Cluster"), eventStore, new NoTransactionManager(), 10,
+                new DiscardingIncomingMessageHandler());
+
+        testSubject.setAllowReplay(true);
+
+        cluster.subscribe(testSubject);
+        cluster.subscribe(validator);
+        cluster.startReplay();
+
+        verify(validator, never()).onReplayFailed(any(Throwable.class));
+    }
+
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
         return ListOrderedSet.decorate(Arrays.asList(items));
     }
 
-    private class TestableAbstractSagaManager extends AbstractSagaManager {
+    private class TestableAbstractSagaManager extends AbstractSynchronousSagaManager {
 
         private TestableAbstractSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
                                             Class<? extends Saga>... sagaTypes) {
