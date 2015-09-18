@@ -1,10 +1,11 @@
 package org.axonframework.eventstore.jdbc.criteria;
 
- import org.junit.*;
+ import org.junit.Test;
 
- import java.util.List;
+import java.util.List;
 
- import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -153,4 +154,6 @@ public class JdbcCriteriaBuilderTest {
         assertEquals("gte", parameters.getParameters().get(0));
         assertEquals("piet", parameters.getParameters().get(1));
         assertEquals("klaas", parameters.getParameters().get(2));
-    }}
+    }
+
+}
