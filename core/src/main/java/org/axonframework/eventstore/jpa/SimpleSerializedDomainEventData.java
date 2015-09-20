@@ -87,7 +87,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
         this.eventIdentifier = eventIdentifier;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
-        this.timestamp = new DateTime(timestamp);
+        this.timestamp = timestamp instanceof String ? DateTime.parse((String) timestamp) : new DateTime(timestamp);
         this.serializedPayload = serializedPayload;
         this.serializedMetaData = serializedMetaData;
     }
