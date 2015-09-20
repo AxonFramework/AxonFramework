@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2010-2014. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.axonframework.saga;
 
 import org.axonframework.common.Assert;
@@ -25,7 +9,6 @@ import org.axonframework.correlation.MultiCorrelationDataProvider;
 import org.axonframework.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.replay.ReplayAware;
 import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
@@ -34,13 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
@@ -52,9 +29,9 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractSagaManager implements SagaManager, Subscribable, ReplayAware {
+public abstract class AbstractSagaManager extends AbstractReplayAwareSagaManager implements Subscribable {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractReplayAwareSagaManager.class);
 
     private final EventBus eventBus;
     private final SagaRepository sagaRepository;
@@ -64,7 +41,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable, 
     private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<String, Saga>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
-    private volatile boolean replayable;
     private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
@@ -276,9 +252,9 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable, 
         } catch (RuntimeException e) {
             if (suppressExceptions) {
                 logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
-                                    saga.getClass().getSimpleName(),
-                                    event.getPayloadType().getSimpleName()),
-                             e);
+                                saga.getClass().getSimpleName(),
+                                event.getPayloadType().getSimpleName()),
+                        e);
             } else {
                 throw e;
             }
@@ -347,16 +323,6 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable, 
     }
 
     /**
-     * Sets whether or not to allow event replay on managed Sagas. If set to <code>false</code> the saga manager will
-     * throw an {@link IllegalStateException} before a replay is started. Defaults to <code>false</code>.
-     *
-     * @param replayable whether or not to allow event replays on managed Sagas.
-     */
-    public void setReplayable(boolean replayable) {
-        this.replayable = replayable;
-    }
-
-    /**
      * Sets the correlation data provider for this SagaManager. It will provide the data to attach to messages sent by
      * Sagas managed by this manager.
      *
@@ -386,21 +352,5 @@ public abstract class AbstractSagaManager implements SagaManager, Subscribable, 
     @SuppressWarnings("unchecked")
     public Set<Class<? extends Saga>> getManagedSagaTypes() {
         return new LinkedHashSet<Class<? extends Saga>>(Arrays.asList(sagaTypes));
-    }
-
-    @Override
-    public void beforeReplay() {
-        if (!replayable) {
-            throw new IllegalStateException("This Saga Manager does not support event replays. " +
-                                            "Replaying events on managed Sagas may cause data corruption.");
-        }
-    }
-
-    @Override
-    public void afterReplay() {
-    }
-
-    @Override
-    public void onReplayFailed(Throwable cause) {
     }
 }

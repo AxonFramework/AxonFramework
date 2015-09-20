@@ -16,11 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.EventTranslator;
-import com.lmax.disruptor.ExceptionHandler;
-import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.common.Assert;
@@ -36,11 +32,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.eventhandling.EventProcessingMonitorCollection;
 import org.axonframework.eventhandling.EventProcessingMonitorSupport;
-import org.axonframework.saga.GenericSagaFactory;
-import org.axonframework.saga.SagaCreationPolicy;
-import org.axonframework.saga.SagaFactory;
-import org.axonframework.saga.SagaManager;
-import org.axonframework.saga.SagaRepository;
+import org.axonframework.saga.*;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.unitofwork.TransactionManager;
@@ -51,11 +43,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * A SagaManager implementation that processes Sagas asynchronously. Incoming events are placed on a queue and
@@ -69,7 +57,8 @@ import java.util.concurrent.TimeUnit;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AsyncAnnotatedSagaManager implements SagaManager, Subscribable, EventProcessingMonitorSupport {
+public class AsyncAnnotatedSagaManager extends AbstractReplayAwareSagaManager
+                                       implements EventProcessingMonitorSupport, Subscribable {
 
     private static final WaitStrategy DEFAULT_WAIT_STRATEGY = new BlockingWaitStrategy();
     private WaitStrategy waitStrategy = DEFAULT_WAIT_STRATEGY;
