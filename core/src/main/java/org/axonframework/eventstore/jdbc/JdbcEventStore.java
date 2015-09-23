@@ -47,13 +47,13 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
@@ -228,6 +228,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
                                                                                                      firstSequenceNumber,
                                                                                                      minimalBatchSize);
         if (!entries.hasNext()) {
+            IOUtils.closeQuietlyIfCloseable(entries);
             throw new EventStreamNotFoundException(type, identifier);
         }
         return new IteratorDomainEventStream(null, entries, identifier, lastSequenceNumber, false);
