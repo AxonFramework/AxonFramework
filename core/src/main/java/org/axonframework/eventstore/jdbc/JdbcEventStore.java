@@ -222,7 +222,12 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
     @Override
     public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
                                         long lastSequenceNumber) {
-        int minimalBatchSize = (int) Math.min(batchSize, (lastSequenceNumber - firstSequenceNumber) + 2);
+        int minimalBatchSize;
+        try {
+            minimalBatchSize = (int) Math.min(batchSize, Math.addExact(lastSequenceNumber - firstSequenceNumber, 2));
+        } catch (ArithmeticException e) {
+            minimalBatchSize = batchSize;
+        }
         Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(type,
                                                                                                      identifier,
                                                                                                      firstSequenceNumber,

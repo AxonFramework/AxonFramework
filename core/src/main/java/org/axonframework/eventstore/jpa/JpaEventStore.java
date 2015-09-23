@@ -45,14 +45,14 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.sql.DataSource;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import javax.persistence.EntityManager;
-import javax.sql.DataSource;
 
 import static org.axonframework.common.IdentifierValidator.validateIdentifier;
 import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
@@ -228,7 +228,12 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
                                         long lastSequenceNumber) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        int minimalBatchSize = (int) Math.min(batchSize, (lastSequenceNumber - firstSequenceNumber) + 2);
+        int minimalBatchSize;
+        try {
+            minimalBatchSize = (int) Math.min(batchSize, Math.addExact(lastSequenceNumber - firstSequenceNumber, 2));
+        } catch (ArithmeticException e) {
+            minimalBatchSize = batchSize;
+        }
         Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(type,
                                                                                                      identifier,
                                                                                                      firstSequenceNumber,
