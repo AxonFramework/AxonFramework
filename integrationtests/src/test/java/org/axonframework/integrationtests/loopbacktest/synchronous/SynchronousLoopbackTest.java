@@ -117,7 +117,7 @@ public class SynchronousLoopbackTest {
                 CountingAggregate.class, eventStore,
                 lockingStrategy);
         repository.setEventBus(eventBus);
-        AnnotationCommandHandlerAdapter.subscribe(new CounterCommandHandler(repository), commandBus);
+        new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
     @Test

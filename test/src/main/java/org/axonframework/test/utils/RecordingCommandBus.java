@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,15 +59,9 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
-        if (!subscriptions.containsKey(commandName)) {
-            subscriptions.put(commandName, handler);
-        }
-    }
-
-    @Override
-    public <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
-        return subscriptions.remove(commandName, handler);
+    public <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
+        subscriptions.putIfAbsent(commandName, handler);
+        return () -> subscriptions.remove(commandName, handler);
     }
 
     /**

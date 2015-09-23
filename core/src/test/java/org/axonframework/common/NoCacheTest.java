@@ -18,14 +18,15 @@ package org.axonframework.common;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
-import org.junit.*;
+import org.junit.Test;
 
+import javax.cache.CacheException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.cache.CacheException;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
@@ -36,13 +37,13 @@ public class NoCacheTest {
     public void testCacheDoesNothing() throws CacheException {
         // this is pretty stupid, but we're testing that it does absolutely nothing
         NoCache cache = NoCache.INSTANCE;
-        cache.registerCacheEntryListener(mock(Cache.EntryListener.class));
+        Subscription subscription = cache.registerCacheEntryListener(mock(Cache.EntryListener.class));
         assertFalse(cache.containsKey(new Object()));
         assertNull(cache.get(new Object()));
         cache.put(new Object(), new Object());
         Map<Object, Object> map = new HashMap<>();
         map.put(new Object(), new Object());
         assertFalse(cache.remove(new Object()));
-        cache.unregisterCacheEntryListener(mock(Cache.EntryListener.class));
+        subscription.stop();
     }
 }

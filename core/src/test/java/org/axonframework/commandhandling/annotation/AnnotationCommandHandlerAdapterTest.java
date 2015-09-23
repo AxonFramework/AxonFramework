@@ -113,7 +113,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test
     public void testSubscribe() {
-        AnnotationCommandHandlerAdapter.subscribe(testSubject, mockBus);
+        testSubject.subscribe(mockBus);
 
         verify(mockBus).subscribe(Long.class.getName(), testSubject);
         verify(mockBus).subscribe(String.class.getName(), testSubject);

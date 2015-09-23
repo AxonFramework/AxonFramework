@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -183,13 +184,8 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public void subscribe(Cluster cluster) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        @Override
-        public void unsubscribe(Cluster cluster) {
-            throw new UnsupportedOperationException("Not implemented yet");
+        public Subscription subscribe(Cluster cluster) {
+            throw new UnsupportedOperationException();
         }
     }
 }

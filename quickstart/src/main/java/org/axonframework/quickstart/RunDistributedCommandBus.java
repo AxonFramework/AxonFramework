@@ -72,7 +72,7 @@ public class RunDistributedCommandBus {
         DistributedCommandBus commandBus = new DistributedCommandBus(connector);
 
         // Register the Command Handlers with the command bus using the annotated methods of the object.
-        AnnotationCommandHandlerAdapter.subscribe(new ToDoLoggingCommandHandler(), commandBus);
+        new AnnotationCommandHandlerAdapter(new ToDoLoggingCommandHandler()).subscribe(commandBus);
 
         // Start the connection to the distributed command bus
         connector.connect(loadFactor);

@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Subscription;
+
 /**
  * Interface indicating that the implementing class is capable of notifying monitors when event processing completes.
  * <p/>
@@ -31,14 +33,7 @@ public interface EventProcessingMonitorSupport {
      * Subscribes the given <code>monitor</code>. If the monitor is already subscribed, nothing happens.
      *
      * @param monitor The monitor to subscribe
+     * @return a handle to unsubscribe the <code>monitor</code>. When unsubscribed it will no longer be notified.
      */
-    void subscribeEventProcessingMonitor(EventProcessingMonitor monitor);
-
-    /**
-     * Unsubscribed the given <code>monitor</code>. If the monitor was not subscribed, or was already unsubscribed,
-     * nothing happens.
-     *
-     * @param monitor The monitor to unsubscribe
-     */
-    void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor);
+    Subscription subscribeEventProcessingMonitor(EventProcessingMonitor monitor);
 }

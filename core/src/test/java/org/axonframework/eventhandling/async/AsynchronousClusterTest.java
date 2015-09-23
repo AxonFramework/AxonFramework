@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.common.DirectExecutor;
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerProxy;
 import org.axonframework.eventhandling.EventMessage;
@@ -50,6 +51,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.mock;
@@ -149,10 +151,10 @@ public class AsynchronousClusterTest {
     @Test
     public void testSubscriptions() throws Exception {
         EventListener mockEventListener = mock(EventListener.class);
-        testSubject.subscribe(mockEventListener);
+        Subscription subscription = testSubject.subscribe(mockEventListener);
         assertTrue(testSubject.getMembers().contains(mockEventListener));
 
-        testSubject.unsubscribe(mockEventListener);
+        subscription.stop();
         assertFalse(testSubject.getMembers().contains(mockEventListener));
     }
 
@@ -204,7 +206,8 @@ public class AsynchronousClusterTest {
 
         final ArgumentCaptor<EventProcessingMonitor> argumentCaptor = ArgumentCaptor
                 .forClass(EventProcessingMonitor.class);
-        doNothing().when(mockEventListener3).subscribeEventProcessingMonitor(argumentCaptor.capture());
+        doReturn(mock(Subscription.class))
+                .when(mockEventListener3).subscribeEventProcessingMonitor(argumentCaptor.capture());
 
         testSubject.subscribe(mockEventListener1);
         testSubject.subscribe(mockEventListener2);

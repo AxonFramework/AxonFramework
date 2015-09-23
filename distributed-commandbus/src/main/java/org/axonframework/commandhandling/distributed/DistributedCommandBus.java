@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
+import org.axonframework.common.Subscription;
 
 import java.util.Collection;
 import java.util.List;
@@ -111,18 +112,8 @@ public class DistributedCommandBus implements CommandBus {
      * In the DistributedCommandBus, the handler is subscribed to the local segment only.
      */
     @Override
-    public <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
-        connector.subscribe(commandName, handler);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * In the DistributedCommandBus, the handler is unsubscribed from the local segment only.
-     */
-    @Override
-    public <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
-        return connector.unsubscribe(commandName, handler);
+    public <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
+        return connector.subscribe(commandName, handler);
     }
 
     /**

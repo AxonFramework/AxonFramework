@@ -16,6 +16,7 @@
 
 package org.axonframework.testutils;
 
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -44,13 +45,9 @@ public class RecordingEventBus implements EventBus {
     }
 
     @Override
-    public void subscribe(Cluster cluster) {
+    public Subscription subscribe(Cluster cluster) {
         subscriptions.add(cluster);
-    }
-
-    @Override
-    public void unsubscribe(Cluster cluster) {
-        subscriptions.remove(cluster);
+        return () -> subscriptions.remove(cluster);
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.common.Subscription;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -131,21 +132,14 @@ public class SimpleCommandBus implements CommandBus {
      * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>. If a subscription already
      * exists for the given type, then the new handler takes over the subscription.
      *
+     * @param <T>         The Type of command
      * @param commandName The type of command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
-     * @param <T>         The Type of command
      */
     @Override
-    public <T> void subscribe(String commandName, CommandHandler<? super T> handler) {
+    public <T> Subscription subscribe(String commandName, CommandHandler<? super T> handler) {
         subscriptions.put(commandName, handler);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public <T> boolean unsubscribe(String commandName, CommandHandler<? super T> handler) {
-        return subscriptions.remove(commandName, handler);
+        return () -> subscriptions.remove(commandName, handler);
     }
 
     /**

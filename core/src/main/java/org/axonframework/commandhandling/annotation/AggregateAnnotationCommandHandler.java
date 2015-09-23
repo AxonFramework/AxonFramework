@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
 import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
+import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
@@ -31,9 +32,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.axonframework.commandhandling.annotation.CommandMessageHandlerUtils.resolveAcceptedCommandName;
 
@@ -47,8 +46,8 @@ import static org.axonframework.commandhandling.annotation.CommandMessageHandler
  * @author Allard Buijze
  * @since 1.2
  */
-public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
-        implements CommandHandler<Object>, SupportedCommandNamesAware {
+public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implements CommandHandler<Object>,
+                                                                                   SupportedCommandNamesAware {
 
     private final Repository<T> repository;
 
@@ -105,82 +104,32 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
     }
 
     /**
-     * Subscribe a handler for the given aggregate type to the given command bus.
+     * Subscribe this command handler to the given <code>commandBus</code>. The command handler will be subscribed
+     * for each of the supported commands.
      *
-     * @param aggregateType The type of aggregate
-     * @param repository    The repository providing access to aggregate instances
-     * @param commandBus    The command bus to register command handlers to
-     * @param <T>           The type of aggregate this handler handles commands for
-     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
+     * @param commandBus    The command bus instance to subscribe to
+     * @return A handle that can be used to unsubscribe
      */
-    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
-            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus) {
-        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<>(aggregateType,
-                                                                                                repository);
-        for (String supportedCommand : adapter.supportedCommands()) {
-            commandBus.subscribe(supportedCommand, adapter);
+    public Subscription subscribe(CommandBus commandBus) {
+        Collection<Subscription> subscriptions = new ArrayDeque<>();
+        for (String supportedCommand : supportedCommandNames()) {
+            subscriptions.add(commandBus.subscribe(supportedCommand, this));
         }
-
-        return adapter;
-    }
-
-    /**
-     * Subscribe a handler for the given aggregate type to the given command bus.
-     *
-     * @param aggregateType         The type of aggregate
-     * @param repository            The repository providing access to aggregate instances
-     * @param commandBus            The command bus to register command handlers to
-     * @param commandTargetResolver The target resolution strategy
-     * @param <T>                   The type of aggregate this handler handles commands for
-     * @return the Adapter created for the command handler target. Can be used to unsubscribe.
-     */
-    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
-            Class<T> aggregateType, Repository<T> repository, CommandBus commandBus,
-            CommandTargetResolver commandTargetResolver) {
-        AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<>(
-                aggregateType, repository, commandTargetResolver);
-        for (String supportedCommand : adapter.supportedCommands()) {
-            commandBus.subscribe(supportedCommand, adapter);
-        }
-        return adapter;
-    }
-
-    /**
-     * Subscribe the given <code>aggregateAnnotationCommandHandler</code> to the given <code>commandBus</code>. The
-     * command handler will be subscribed for each of the supported commands.
-     *
-     * @param aggregateAnnotationCommandHandler The fully configured AggregateAnnotationCommandHandler instance to
-     *                                          subscribe
-     * @param commandBus                        The command bus instance to subscribe to
-     */
-    public static void subscribe(AggregateAnnotationCommandHandler<?> aggregateAnnotationCommandHandler,
-                                 CommandBus commandBus) {
-        for (String supportedCommand : aggregateAnnotationCommandHandler.supportedCommands()) {
-            commandBus.subscribe(supportedCommand, aggregateAnnotationCommandHandler);
-        }
+        return () -> {
+            subscriptions.forEach(org.axonframework.common.Subscription::stop);
+            return true;
+        };
     }
 
     private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
         Map<String, CommandHandler<Object>> handlersFound = new HashMap<>();
         for (final AbstractMessageHandler commandHandler : inspector.getHandlers()) {
-            handlersFound.put(resolveAcceptedCommandName(commandHandler),
-                              new AggregateCommandHandler(commandHandler));
+            handlersFound.put(resolveAcceptedCommandName(commandHandler), new AggregateCommandHandler(commandHandler));
         }
-
         for (final ConstructorCommandMessageHandler<T> handler : inspector.getConstructorHandlers()) {
             handlersFound.put(resolveAcceptedCommandName(handler), new AggregateConstructorCommandHandler(handler));
         }
         return handlersFound;
-    }
-
-    /**
-     * Returns the set of commands supported by the annotated command handler managed by this adapter. This may be used
-     * to (un)subscribe the adapter from the command bus.
-     *
-     * @return the set of commands supported by the annotated command handler
-     */
-    public Set<String> supportedCommands() {
-        return handlers.keySet();
     }
 
     @Override

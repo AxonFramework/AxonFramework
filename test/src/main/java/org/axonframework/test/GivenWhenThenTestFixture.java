@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
+import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.AbstractEventBus;
@@ -135,9 +136,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         explicitCommandHandlersSet = true;
         AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(
                 annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(aggregateType));
-        for (String supportedCommand : adapter.supportedCommands()) {
-            commandBus.subscribe(supportedCommand, adapter);
-        }
+        adapter.subscribe(commandBus);
         return this;
     }
 
@@ -277,9 +276,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
             AggregateAnnotationCommandHandler<T> handler =
                     new AggregateAnnotationCommandHandler<>(aggregateType, repository,
                                                             new AnnotationCommandTargetResolver());
-            for (String supportedCommand : handler.supportedCommands()) {
-                commandBus.subscribe(supportedCommand, handler);
-            }
+            handler.subscribe(commandBus);
         }
     }
 
@@ -547,11 +544,8 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
 
         @Override
-        public void subscribe(Cluster eventListener) {
-        }
-
-        @Override
-        public void unsubscribe(Cluster eventListener) {
+        public Subscription subscribe(Cluster eventListener) {
+            return () -> true;
         }
     }
 

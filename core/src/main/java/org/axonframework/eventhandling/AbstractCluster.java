@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.Subscription;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.Arrays;
@@ -119,16 +120,22 @@ public abstract class AbstractCluster implements Cluster {
     }
 
     @Override
-    public void subscribe(EventListener eventListener) {
+    public Subscription subscribe(EventListener eventListener) {
         eventListeners.add(eventListener);
-        if (eventListener instanceof EventProcessingMonitorSupport) {
-            ((EventProcessingMonitorSupport) eventListener).subscribeEventProcessingMonitor(eventProcessingMonitor);
-        }
-    }
-
-    @Override
-    public void unsubscribe(EventListener eventListener) {
-        eventListeners.remove(eventListener);
+        Subscription monitorSubscription =
+                eventListener instanceof EventProcessingMonitorSupport
+                        ? ((EventProcessingMonitorSupport) eventListener)
+                          .subscribeEventProcessingMonitor(eventProcessingMonitor)
+                        : null;
+        return () -> {
+            if (eventListeners.remove(eventListener)) {
+                if (monitorSubscription != null) {
+                    monitorSubscription.stop();
+                }
+                return true;
+            }
+            return false;
+        };
     }
 
     @Override
@@ -149,12 +156,7 @@ public abstract class AbstractCluster implements Cluster {
     }
 
     @Override
-    public void subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
-        subscribedMonitors.subscribeEventProcessingMonitor(monitor);
-    }
-
-    @Override
-    public void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
-        subscribedMonitors.unsubscribeEventProcessingMonitor(monitor);
+    public Subscription subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+        return subscribedMonitors.subscribeEventProcessingMonitor(monitor);
     }
 }

@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.common.Subscription;
 import org.junit.*;
 
 import java.util.Collections;
@@ -35,6 +36,7 @@ public class DistributedCommandBusTest {
 
     private DistributedCommandBus testSubject;
     private CommandBusConnector mockConnector;
+    private Subscription mockSubscription;
     private RoutingStrategy mockRoutingStrategy;
     private CommandHandler<Object> mockHandler;
     private CommandMessage<?> message;
@@ -45,6 +47,8 @@ public class DistributedCommandBusTest {
     @Before
     public void setUp() throws Exception {
         mockConnector = mock(CommandBusConnector.class);
+        mockSubscription = mock(Subscription.class);
+        when(mockConnector.subscribe(any(), any())).thenReturn(mockSubscription);
         mockRoutingStrategy = mock(RoutingStrategy.class);
         when(mockRoutingStrategy.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
 
@@ -100,8 +104,9 @@ public class DistributedCommandBusTest {
 
     @Test
     public void testUnsubscribeIsDoneOnConnector() {
-        testSubject.unsubscribe(Object.class.getName(), mockHandler);
+        Subscription subscription = testSubject.subscribe(Object.class.getName(), mockHandler);
+        subscription.stop();
 
-        verify(mockConnector).unsubscribe(Object.class.getName(), mockHandler);
+        verify(mockSubscription).stop();
     }
 }

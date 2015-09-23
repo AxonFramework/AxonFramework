@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Subscription;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -45,12 +47,8 @@ public class EventProcessingMonitorCollection implements EventProcessingMonitor,
     }
 
     @Override
-    public void subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+    public Subscription subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
         delegates.add(monitor);
-    }
-
-    @Override
-    public void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
-        delegates.remove(monitor);
+        return () -> delegates.remove(monitor);
     }
 }

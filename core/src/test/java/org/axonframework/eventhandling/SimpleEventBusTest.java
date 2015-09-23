@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Subscription;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,21 +44,21 @@ public class SimpleEventBusTest {
     }
 
     @Test
-    public void testEventIsDispatchedToSubscribedListeners() {
+    public void testEventIsDispatchedToSubscribedListeners() throws Exception {
         testSubject.publish(newEvent());
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference
-        testSubject.subscribe(listener1);
+        Subscription subscription1 = testSubject.subscribe(listener1);
         testSubject.publish(newEvent());
-        testSubject.subscribe(listener2);
-        testSubject.subscribe(listener3);
+        Subscription subscription2 = testSubject.subscribe(listener2);
+        Subscription subscription3 = testSubject.subscribe(listener3);
         testSubject.publish(newEvent());
-        testSubject.unsubscribe(listener1);
+        subscription1.close();
         testSubject.publish(newEvent());
-        testSubject.unsubscribe(listener2);
-        testSubject.unsubscribe(listener3);
+        subscription2.close();
+        subscription3.close();
         // unsubscribe a non-subscribed listener should not fail
-        testSubject.unsubscribe(listener3);
+        subscription3.close();
         testSubject.publish(newEvent());
 
         verify(listener1, times(2)).handle(anyList());

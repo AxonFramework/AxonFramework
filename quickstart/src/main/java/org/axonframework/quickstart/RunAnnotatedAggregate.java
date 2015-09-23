@@ -61,7 +61,7 @@ public class RunAnnotatedAggregate {
         repository.setEventBus(eventBus);
 
         // Axon needs to know that our ToDoItem Aggregate can handle commands
-        AggregateAnnotationCommandHandler.subscribe(ToDoItem.class, repository, commandBus);
+        new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);
 
         // We register an event listener to see which events are created
         eventBus.subscribe(new SimpleCluster("logging", new AnnotationEventListenerAdapter(new ToDoEventHandler())));

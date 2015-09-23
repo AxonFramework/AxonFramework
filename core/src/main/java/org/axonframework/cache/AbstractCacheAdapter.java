@@ -16,6 +16,8 @@
 
 package org.axonframework.cache;
 
+import org.axonframework.common.Subscription;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -41,32 +43,27 @@ public abstract class AbstractCacheAdapter<L> implements Cache {
     protected abstract L createListenerAdapter(EntryListener cacheEntryListener);
 
     @Override
-    public void registerCacheEntryListener(EntryListener entryListener) {
-        final L adapter = createListenerAdapter(entryListener);
-        if (registeredAdapters.putIfAbsent(entryListener, adapter) == null) {
-            doRegisterListener(adapter);
-        }
+    public Subscription registerCacheEntryListener(EntryListener entryListener) {
+        L adapter = createListenerAdapter(entryListener);
+        Subscription subscription
+                = registeredAdapters.putIfAbsent(entryListener, adapter) == null ? doRegisterListener(adapter) : null;
+        return () -> {
+            L removedAdapter = registeredAdapters.remove(entryListener);
+            if (removedAdapter != null) {
+                if (subscription != null) {
+                    subscription.stop();
+                }
+                return true;
+            }
+            return false;
+        };
     }
-
-    @Override
-    public void unregisterCacheEntryListener(EntryListener entryListener) {
-        L adapter = registeredAdapters.remove(entryListener);
-        if (adapter != null) {
-            doUnregisterListener(adapter);
-        }
-    }
-
-    /**
-     * Unregisters the given <code>listener</code> with the cache
-     *
-     * @param listenerAdapter The listener to register with the cache
-     */
-    protected abstract void doUnregisterListener(L listenerAdapter);
 
     /**
      * Registers the given listener with the cache implementation
      *
      * @param listenerAdapter the listener to register
+     * @return a handle to unregister the listener
      */
-    protected abstract void doRegisterListener(L listenerAdapter);
+    protected abstract Subscription doRegisterListener(L listenerAdapter);
 }

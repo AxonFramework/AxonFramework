@@ -20,6 +20,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
@@ -183,7 +184,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     }
 
     @Override
-    public void subscribe(Cluster cluster) {
+    public Subscription subscribe(Cluster cluster) {
         ClusterMetaData clusterMetaData = cluster.getMetaData();
         AMQPConsumerConfiguration config;
         if (clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
@@ -191,12 +192,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
         } else {
             config = new DefaultAMQPConsumerConfiguration(cluster.getName());
         }
-        getListenerContainerLifecycleManager().registerCluster(cluster, config, messageConverter);
-    }
-
-    @Override
-    public void unsubscribe(Cluster cluster) {
-        getListenerContainerLifecycleManager().unregisterCluster(cluster);
+        return getListenerContainerLifecycleManager().registerCluster(cluster, config, messageConverter);
     }
 
     @Override

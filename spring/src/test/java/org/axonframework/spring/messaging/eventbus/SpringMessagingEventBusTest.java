@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.messaging.eventbus;
 
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.spring.messaging.StubDomainEvent;
@@ -30,7 +31,6 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -58,35 +58,24 @@ public class SpringMessagingEventBusTest {
     }
 
     @Test
-    public void testUnsubscribeListener() {
-        testSubject.unsubscribe(mockCluster);
-
-        verify(mockChannel, never()).unsubscribe(isA(MessageHandler.class));
-
-        testSubject.subscribe(mockCluster);
-        testSubject.unsubscribe(mockCluster);
+    public void testUnsubscribeListener() throws Exception {
+        Subscription subscription = testSubject.subscribe(mockCluster);
+        subscription.close();
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
     }
 
     @Test
-    public void testUnsubscribeListener_UnsubscribedTwice() {
-        testSubject.unsubscribe(mockCluster);
-
-        verify(mockChannel, never()).unsubscribe(isA(MessageHandler.class));
-
-        testSubject.subscribe(mockCluster);
-        testSubject.unsubscribe(mockCluster);
-        testSubject.unsubscribe(mockCluster);
+    public void testUnsubscribeListener_UnsubscribedTwice() throws Exception {
+        Subscription subscription = testSubject.subscribe(mockCluster);
+        subscription.close();
+        subscription.close();
 
         verify(mockChannel).unsubscribe(any(MessageHandler.class));
     }
 
     @Test
     public void testSubscribeListener_SubscribedTwice() {
-        testSubject.unsubscribe(mockCluster);
-
-        verify(mockChannel, never()).unsubscribe(isA(MessageHandler.class));
 
         testSubject.subscribe(mockCluster);
         testSubject.subscribe(mockCluster);

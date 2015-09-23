@@ -27,6 +27,7 @@ import org.axonframework.commandhandling.distributed.RemoteCommandHandlingExcept
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Subscription;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.Address;
@@ -243,22 +244,22 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     @Override
-    public synchronized <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
-        localSegment.subscribe(commandName, handler);
+    public synchronized <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
+        Subscription subscription = localSegment.subscribe(commandName, handler);
         if (supportedCommandNames.add(commandName)) {
             sendMembershipUpdate(null);
         }
-    }
-
-    @Override
-    public synchronized <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
-        if (localSegment.unsubscribe(commandName, handler)) {
-            if (supportedCommandNames.remove(commandName)) {
-                sendMembershipUpdate(null);
+        return () -> {
+            synchronized (this) {
+                if (subscription.stop()) {
+                    if (supportedCommandNames.remove(commandName)) {
+                        sendMembershipUpdate(null);
+                    }
+                    return true;
+                }
+                return false;
             }
-            return true;
-        }
-        return false;
+        };
     }
 
     private Address getAddress(String nodeName) {

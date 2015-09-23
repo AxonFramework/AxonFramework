@@ -94,7 +94,7 @@ public class AggregateAnnotationCommandHandlerTest {
                                                               mockRepository,
                                                               new AnnotationCommandTargetResolver(),
                                                               parameterResolverFactory);
-        AggregateAnnotationCommandHandler.subscribe(testSubject, commandBus);
+        testSubject.subscribe(commandBus);
     }
 
     @Test
@@ -134,7 +134,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
     @Test
     public void testSupportedCommands() {
-        Set<String> actual = testSubject.supportedCommands();
+        Set<String> actual = testSubject.supportedCommandNames();
         Set<String> expected = new HashSet<>(Arrays.asList(
                 CreateCommand.class.getName(),
                 UpdateCommandWithAnnotatedMethod.class.getName(),

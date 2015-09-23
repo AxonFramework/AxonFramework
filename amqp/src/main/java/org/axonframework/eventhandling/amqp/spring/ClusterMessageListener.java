@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.amqp.spring;
 
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
@@ -43,15 +44,13 @@ public class ClusterMessageListener implements MessageListener {
     private final AMQPMessageConverter messageConverter;
 
     /**
-     * Initializes a ClusterMessageListener with given <code>initialCluster</code> that uses given
-     * <code>serializer</code> to deserialize the message's contents into an EventMessage.
+     * Initializes a ClusterMessageListener with given <code>serializer</code> to deserialize the message's contents
+     * into an EventMessage.
      *
-     * @param initialCluster   The first cluster to assign to the listener
      * @param messageConverter The message converter to use to convert AMQP Messages to Event Messages
      */
-    public ClusterMessageListener(Cluster initialCluster, AMQPMessageConverter messageConverter) {
+    public ClusterMessageListener(AMQPMessageConverter messageConverter) {
         this.messageConverter = messageConverter;
-        this.clusters.add(initialCluster);
     }
 
     @Override
@@ -77,13 +76,11 @@ public class ClusterMessageListener implements MessageListener {
      * Registers an additional cluster. This cluster will receive messages once registered.
      *
      * @param cluster the cluster to add to the listener
+     * @return a handle to unsubscribe the <code>cluster</code>. When unsubscribed it will no longer receive messages.
      */
-    public void addCluster(Cluster cluster) {
+    public Subscription addCluster(Cluster cluster) {
         clusters.add(cluster);
-    }
-
-    public void removeCluster(Cluster cluster) {
-        clusters.remove(cluster);
+        return () -> clusters.remove(cluster);
     }
 
     public boolean isEmpty() {

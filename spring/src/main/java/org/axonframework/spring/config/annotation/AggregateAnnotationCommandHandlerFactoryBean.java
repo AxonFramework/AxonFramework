@@ -77,9 +77,7 @@ public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoo
         }
         handler = new AggregateAnnotationCommandHandler<>(aggregateType, repository, commandTargetResolver,
                                                            parameterResolverFactory);
-        for (String cmd : handler.supportedCommands()) {
-            commandBus.subscribe(cmd, handler);
-        }
+        handler.subscribe(commandBus);
     }
 
     /**

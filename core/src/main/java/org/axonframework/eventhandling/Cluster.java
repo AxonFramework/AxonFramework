@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Subscription;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -69,16 +71,10 @@ public interface Cluster extends EventProcessingMonitorSupport {
      * While the Event Listeners is subscribed, it will receive all messages published to the cluster.
      *
      * @param eventListener the Event Listener instance to subscribe
+     * @return a handle to unsubscribe the <code>eventListener</code>.
+     * When unsubscribed it will no longer receive events from this cluster.
      */
-    void subscribe(EventListener eventListener);
-
-    /**
-     * Unsubscribes the given {@code eventListener} from this cluster. If the listener is already unsubscribed, or was
-     * never subscribed, nothing happens.
-     *
-     * @param eventListener the Event Listener instance to unsubscribe
-     */
-    void unsubscribe(EventListener eventListener);
+    Subscription subscribe(EventListener eventListener);
 
     default ProcessingToken lastProcessedToken() {
         return null;

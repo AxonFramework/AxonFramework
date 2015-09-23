@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
@@ -63,8 +64,9 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
      * @param cluster          The cluster to forward messages to
      * @param config           The configuration object for the cluster
      * @param messageConverter The message converter to use to convert the AMQP Message to an Event Message
+     * @return a handle to unsubscribe the <code>cluster</code>. When unsubscribed it will no longer receive messages.
      */
-    public synchronized void registerCluster(Cluster cluster, AMQPConsumerConfiguration config,
+    public synchronized Subscription registerCluster(Cluster cluster, AMQPConsumerConfiguration config,
                                              AMQPMessageConverter messageConverter) {
         SpringAMQPConsumerConfiguration amqpConfig = SpringAMQPConsumerConfiguration.wrap(config);
         amqpConfig.setDefaults(defaultConfiguration);
@@ -74,10 +76,11 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
                                                          + "nor is there a default Queue Name configured in the "
                                                          + "ListenerContainerLifeCycleManager");
         }
+        Subscription subscription;
         if (containerPerQueue.containsKey(queueName)) {
             final SimpleMessageListenerContainer container = containerPerQueue.get(queueName);
             ClusterMessageListener existingListener = (ClusterMessageListener) container.getMessageListener();
-            existingListener.addCluster(cluster);
+            subscription = existingListener.addCluster(cluster);
             containerPerCluster.put(cluster, container);
             if (started && logger.isWarnEnabled()) {
                 logger.warn("A cluster was configured on queue [{}], "
@@ -88,22 +91,26 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
         } else {
             SimpleMessageListenerContainer newContainer = createContainer(amqpConfig);
             newContainer.setQueueNames(queueName);
-            newContainer.setMessageListener(new ClusterMessageListener(cluster, messageConverter));
+            ClusterMessageListener newListener = new ClusterMessageListener(messageConverter);
+            subscription = newListener.addCluster(cluster);
+            newContainer.setMessageListener(newListener);
             containerPerQueue.put(queueName, newContainer);
             containerPerCluster.put(cluster, newContainer);
             if (started) {
                 newContainer.start();
             }
         }
-    }
-
-    public void unregisterCluster(Cluster cluster) {
-        SimpleMessageListenerContainer container = containerPerCluster.get(cluster);
-        final ClusterMessageListener listener = (ClusterMessageListener) container.getMessageListener();
-        listener.removeCluster(cluster);
-        if (listener.isEmpty()) {
-            container.stop();
-        }
+        return () -> {
+            if (subscription.stop()) {
+                SimpleMessageListenerContainer container = containerPerCluster.get(cluster);
+                final ClusterMessageListener listener = (ClusterMessageListener) container.getMessageListener();
+                if (listener.isEmpty()) {
+                    container.stop();
+                }
+                return true;
+            }
+            return false;
+        };
     }
 
     @Override

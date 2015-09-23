@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing;
 import net.sf.ehcache.CacheManager;
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.EhCacheAdapter;
+import org.axonframework.common.Subscription;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
@@ -339,12 +340,7 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        public void subscribe(Cluster cluster) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void unsubscribe(Cluster cluster) {
+        public Subscription subscribe(Cluster cluster) {
             throw new UnsupportedOperationException();
         }
     }

@@ -20,6 +20,7 @@ import net.sf.ehcache.CacheException;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.event.CacheEventListener;
+import org.axonframework.common.Subscription;
 
 /**
  * Cache implementation that delegates all calls to an EhCache instance.
@@ -74,13 +75,9 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     }
 
     @Override
-    protected void doUnregisterListener(CacheEventListener listenerAdapter) {
-        ehCache.getCacheEventNotificationService().unregisterListener(listenerAdapter);
-    }
-
-    @Override
-    protected void doRegisterListener(CacheEventListener listenerAdapter) {
+    protected Subscription doRegisterListener(CacheEventListener listenerAdapter) {
         ehCache.getCacheEventNotificationService().registerListener(listenerAdapter);
+        return () -> ehCache.getCacheEventNotificationService().unregisterListener(listenerAdapter);
     }
 
     @SuppressWarnings("unchecked")

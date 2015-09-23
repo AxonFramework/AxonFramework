@@ -9,6 +9,7 @@ import java.util.function.Function;
  * component.
  *
  * @author Rene de Waele
+ * @since 3.0
  */
 public interface MessagePreprocessor {
 
@@ -24,8 +25,8 @@ public interface MessagePreprocessor {
     }
 
     /**
-     * Apply this preprocessor to the given list of <code>messages</code>. This method returns a Function that can be
-     * queried to obtain a modified version of messages at each position in the list. For instance, to obtain the
+     * Apply this preprocessor to the given list of <code>messages</code>. This method returns a function that can be
+     * invoked to obtain a modified version of messages at each position in the list. For instance, to obtain the
      * pre-processed message at index 2, use:
      * <p/>
      * Message modifiedMessage = preprocessor.on(someListOfMessages).apply(2);

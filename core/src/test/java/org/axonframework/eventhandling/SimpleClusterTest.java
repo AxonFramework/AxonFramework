@@ -62,8 +62,7 @@ public class SimpleClusterTest {
     @Test
     public void testUnsubscribeMember() {
         assertEquals(0, testSubject.getMembers().size());
-        testSubject.subscribe(eventListener);
-        testSubject.unsubscribe(eventListener);
+        testSubject.subscribe(eventListener).stop();
         assertEquals(0, testSubject.getMembers().size());
     }
 

@@ -62,7 +62,8 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
                     commandBus.subscribe(commandName, commandHandler);
                 }
             } else {
-                logger.warn("Unable to register command handler of type {}. It doesn't implement SupportedCommandNamesAware", commandHandler.getClass().getName());
+                logger.warn("Unable to register command handler of type {}. It doesn't implement {}",
+                            commandHandler.getClass().getName(), SupportedCommandNamesAware.class.getSimpleName());
             }
         }
         this.started = true;

@@ -36,7 +36,7 @@ public class VoidCallbackTest {
     @Test
     public void testCallbackCalled() {
         SimpleCommandBus scb = new SimpleCommandBus();
-        AnnotationCommandHandlerAdapter.subscribe(this, scb);
+        new AnnotationCommandHandlerAdapter(this).subscribe(scb);
 
         scb.dispatch(GenericCommandMessage.asCommandMessage("Hello"), new VoidCallback<Object>() {
             @Override

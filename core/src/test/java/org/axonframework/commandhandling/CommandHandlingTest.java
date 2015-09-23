@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.common.Subscription;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
@@ -119,12 +120,7 @@ public class CommandHandlingTest {
         }
 
         @Override
-        public void subscribe(Cluster cluster) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void unsubscribe(Cluster cluster) {
+        public Subscription subscribe(Cluster cluster) {
             throw new UnsupportedOperationException();
         }
     }

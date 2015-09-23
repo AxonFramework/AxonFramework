@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Subscription;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -82,21 +83,10 @@ public interface CommandBusConnector {
      * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
      * <code>handler</code> gets the subscription.
      *
+     * @param <C>         The Type of command
      * @param commandName The name of the command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
-     * @param <C>         The Type of command
+     * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
      */
-    <C> void subscribe(String commandName, CommandHandler<? super C> handler);
-
-    /**
-     * Unsubscribe the given <code>handler</code> to commands of type <code>commandType</code>. If the handler is not
-     * currently assigned to that type of command, no action is taken.
-     *
-     * @param commandName The name of the command the handler is subscribed to
-     * @param handler     The handler instance to unsubscribe from the CommandBus
-     * @param <C>         The Type of command
-     * @return <code>true</code> of this handler is successfully unsubscribed, <code>false</code> of the given
-     * <code>handler</code> was not the current handler for given <code>commandType</code>.
-     */
-    <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler);
+    <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler);
 }

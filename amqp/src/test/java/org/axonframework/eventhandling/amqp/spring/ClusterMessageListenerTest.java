@@ -48,9 +48,8 @@ public class ClusterMessageListenerTest {
     public void testMessageListenerInvokesAllClusters() throws Exception {
         Serializer serializer = new XStreamSerializer();
         Cluster cluster = mock(Cluster.class);
-        ClusterMessageListener testSubject = new ClusterMessageListener(cluster,
-                                                                        new DefaultAMQPMessageConverter(serializer));
-
+        ClusterMessageListener testSubject = new ClusterMessageListener(new DefaultAMQPMessageConverter(serializer));
+        testSubject.addCluster(cluster);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
         outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
@@ -73,9 +72,8 @@ public class ClusterMessageListenerTest {
     public void testMessageListenerIgnoredOnDeserializationFailure() throws Exception {
         Serializer serializer = new XStreamSerializer();
         Cluster cluster = mock(Cluster.class);
-        ClusterMessageListener testSubject = new ClusterMessageListener(cluster,
-                                                                        new DefaultAMQPMessageConverter(serializer));
-
+        ClusterMessageListener testSubject = new ClusterMessageListener(new DefaultAMQPMessageConverter(serializer));
+        testSubject.addCluster(cluster);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         EventMessageWriter outputStream = new EventMessageWriter(new DataOutputStream(baos), serializer);
         outputStream.writeEventMessage(new GenericEventMessage<>("Event"));

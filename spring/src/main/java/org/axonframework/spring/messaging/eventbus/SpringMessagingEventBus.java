@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.messaging.eventbus;
 
+import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventMessage;
@@ -57,20 +58,20 @@ public class SpringMessagingEventBus extends AbstractEventBus {
     }
 
     @Override
-    public void unsubscribe(Cluster cluster) {
-        MessageHandler messageHandler = handlers.remove(cluster);
-        if (messageHandler != null) {
-            channel.unsubscribe(messageHandler);
-        }
-    }
-
-    @Override
-    public void subscribe(Cluster cluster) {
+    public Subscription subscribe(Cluster cluster) {
         MessageHandler messagehandler = new MessageHandlerAdapter(cluster);
         MessageHandler oldHandler = handlers.putIfAbsent(cluster, messagehandler);
         if (oldHandler == null) {
             channel.subscribe(messagehandler);
         }
+        return () -> {
+            MessageHandler messageHandler = handlers.remove(cluster);
+            if (messageHandler != null) {
+                channel.unsubscribe(messageHandler);
+                return true;
+            }
+            return false;
+        };
     }
 
     /**

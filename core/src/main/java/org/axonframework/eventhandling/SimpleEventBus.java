@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,24 +60,21 @@ public class SimpleEventBus extends AbstractEventBus {
      * {@inheritDoc}
      */
     @Override
-    public void unsubscribe(Cluster cluster) {
-        if (this.clusters.remove(cluster)) {
-            logger.debug("EventListener {} unsubscribed successfully", cluster.getName());
-        } else {
-            logger.info("EventListener {} not removed. It was already unsubscribed", cluster.getName());
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void subscribe(Cluster cluster) {
+    public Subscription subscribe(Cluster cluster) {
         if (this.clusters.add(cluster)) {
             logger.debug("Cluster [{}] subscribed successfully", cluster.getName());
         } else {
             logger.info("Cluster [{}] not added. It was already subscribed", cluster.getName());
         }
+        return () -> {
+            if (clusters.remove(cluster)) {
+                logger.debug("EventListener {} unsubscribed successfully", cluster.getName());
+                return true;
+            } else {
+                logger.info("EventListener {} not removed. It was already unsubscribed", cluster.getName());
+                return false;
+            }
+        };
     }
 
     @Override

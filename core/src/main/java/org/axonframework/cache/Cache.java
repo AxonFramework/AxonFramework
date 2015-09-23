@@ -16,6 +16,8 @@
 
 package org.axonframework.cache;
 
+import org.axonframework.common.Subscription;
+
 /**
  * Abstraction for a Caching mechanism. All Axon component rely on this abstraction, so that different
  * providers can be plugged in. In future versions, this abstraction may be replaced with the <code>javax.cache</code>
@@ -82,15 +84,9 @@ public interface Cache {
      * Registers the given <code>cacheEntryListener</code> to listen for Cache changes.
      *
      * @param cacheEntryListener The listener to register
+     * @return a handle to unregister the listener
      */
-    void registerCacheEntryListener(EntryListener cacheEntryListener);
-
-    /**
-     * Unregisters the previously registered <code>cacheEntryListener</code>.
-     *
-     * @param cacheEntryListener The listener to unregister
-     */
-    void unregisterCacheEntryListener(EntryListener cacheEntryListener);
+    Subscription registerCacheEntryListener(EntryListener cacheEntryListener);
 
     /**
      * Interface describing callback methods, which are invoked when changes are made in the underlying cache.

@@ -9,6 +9,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Subscription;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -75,15 +76,16 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
     }
 
     @Override
-    public <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
-        delegate.subscribe(commandName, handler);
+    public <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
+        Subscription subscription = delegate.subscribe(commandName, handler);
         supportedCommands.add(commandName);
-    }
-
-    @Override
-    public <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
-        supportedCommands.remove(commandName);
-        return delegate.unsubscribe(commandName, handler);
+        return () -> {
+            if (subscription.stop()) {
+                supportedCommands.remove(commandName);
+                return true;
+            }
+            return false;
+        };
     }
 
     @Override

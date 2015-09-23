@@ -28,6 +28,7 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.Subscription;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.DomainEventStream;
@@ -300,13 +301,9 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
+    public <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
         commandHandlers.put(commandName, handler);
-    }
-
-    @Override
-    public <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
-        return commandHandlers.remove(commandName, handler);
+        return () -> commandHandlers.remove(commandName, handler);
     }
 
     /**

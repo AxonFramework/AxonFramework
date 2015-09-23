@@ -60,7 +60,7 @@ public class RunDisruptorCommandBus {
         Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<>(ToDoItem.class));
 
         // we use the repository to register the command handler
-        AggregateAnnotationCommandHandler.subscribe(ToDoItem.class, repository, commandBus);
+        new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);
 
         // the CommandGateway provides a friendlier API to send commands
         CommandGateway commandGateway = new DefaultCommandGateway(commandBus);

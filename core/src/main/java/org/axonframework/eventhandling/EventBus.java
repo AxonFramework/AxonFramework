@@ -16,6 +16,8 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Subscription;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -69,15 +71,9 @@ public interface EventBus {
      * If the given <code>cluster</code> is already subscribed, nothing happens.
      *
      * @param cluster The event listener cluster to subscribe
+     * @return a handle to unsubscribe the <code>cluster</code>. When unsubscribed it will no longer receive events.
      * @throws EventListenerSubscriptionFailedException if the listener could not be subscribed
      */
-    void subscribe(Cluster cluster);
+    Subscription subscribe(Cluster cluster);
 
-    /**
-     * Unsubscribe the given <code>cluster</code> to this bus. When unsubscribed, it will no longer receive
-     * events published to this bus.
-     *
-     * @param cluster The event listener cluster to unsubscribe
-     */
-    void unsubscribe(Cluster cluster);
 }
