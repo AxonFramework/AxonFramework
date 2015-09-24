@@ -125,11 +125,10 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return eventMessage.getPayloadType();
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public T getPayload() {
         return eventMessage.getPayload();

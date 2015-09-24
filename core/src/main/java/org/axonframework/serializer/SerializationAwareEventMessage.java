@@ -82,7 +82,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return eventMessage.getPayloadType();
     }
 

@@ -297,7 +297,8 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
                 return null;
             }
             T entityCollection = (T) ReflectionUtils.getFieldValue(field, parentEntity);
-            Property<Object> commandProperty = PropertyAccessStrategy.getProperty(command.getPayloadType(), commandTargetProperty);
+            Property commandProperty = PropertyAccessStrategy.getProperty(command.getPayloadType(),
+                    commandTargetProperty);
 
             if (commandProperty == null) {
                 // TODO: Log failure. It seems weird that the property is not present

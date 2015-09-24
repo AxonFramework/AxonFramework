@@ -31,7 +31,7 @@ public class LazyDeserializingObject<T> {
 
     private final Serializer serializer;
     private final SerializedObject<?> serializedObject;
-    private final Class<?> deserializedObjectType;
+    private final Class<T> deserializedObjectType;
     private volatile T deserializedObject;
 
     /**
@@ -40,12 +40,13 @@ public class LazyDeserializingObject<T> {
      *
      * @param deserializedObject The deserialized object to return on {@link #getObject()}
      */
+    @SuppressWarnings("unchecked")
     public LazyDeserializingObject(T deserializedObject) {
         Assert.notNull(deserializedObject, "The given deserialized instance may not be null");
         this.serializedObject = null;
         this.serializer = null;
         this.deserializedObject = deserializedObject;
-        this.deserializedObjectType = deserializedObject.getClass();
+        this.deserializedObjectType = (Class<T>) deserializedObject.getClass();
     }
 
     /**
@@ -53,6 +54,7 @@ public class LazyDeserializingObject<T> {
      * @param serializer       The serializer to deserialize the payload data with
      * @throws UnknownSerializedTypeException if the type of the serialized object cannot be resolved to a class
      */
+    @SuppressWarnings("unchecked")
     public LazyDeserializingObject(SerializedObject<?> serializedObject, Serializer serializer) {
         Assert.notNull(serializedObject, "The given serializedObject may not be null");
         Assert.notNull(serializer, "The given serializer may not be null");
@@ -66,7 +68,7 @@ public class LazyDeserializingObject<T> {
      *
      * @return the class of the serialized object
      */
-    public Class<?> getType() {
+    public Class<T> getType() {
         return deserializedObjectType;
     }
 

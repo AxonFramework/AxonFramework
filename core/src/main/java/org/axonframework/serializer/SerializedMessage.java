@@ -104,13 +104,14 @@ public class SerializedMessage<T> implements Message<T>, SerializationAware {
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return serializedPayload.getType();
     }
 
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     @Override
     public SerializedMessage<T> withMetaData(Map<String, ?> metaData) {
-        if (this.serializedMetaData.getObject().equals(metaData)) {
+        if (serializedMetaData.getObject().equals(metaData)) {
             return this;
         }
         return new SerializedMessage<>(this, metaData);

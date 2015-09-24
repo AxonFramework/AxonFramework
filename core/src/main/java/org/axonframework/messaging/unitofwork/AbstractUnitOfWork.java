@@ -2,10 +2,15 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.CorrelationDataProvider;
+import org.axonframework.messaging.MetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -122,9 +127,9 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public Map<String, ?> getCorrelationData() {
+    public MetaData getCorrelationData() {
         if (correlationDataProviders.isEmpty()) {
-            return Collections.emptyMap();
+            return MetaData.emptyInstance();
         }
         Map<String, Object> result = new HashMap<>();
         for (CorrelationDataProvider correlationDataProvider : correlationDataProviders) {
@@ -133,7 +138,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
                 result.putAll(extraData);
             }
         }
-        return result;
+        return MetaData.from(result);
     }
 
     @Override
@@ -141,6 +146,11 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         return phase;
     }
 
+    /**
+     * Returns the collection of listeners for this Unit of Work.
+     *
+     * @return the collection of listeners for this Unit of Work.
+     */
     protected UnitOfWorkListenerCollection listeners() {
         return listeners;
     }

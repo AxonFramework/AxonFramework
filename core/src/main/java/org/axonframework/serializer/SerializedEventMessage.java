@@ -94,10 +94,11 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return message.getPayloadType();
     }
 
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     @Override
     public SerializedEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (getMetaData().equals(newMetaData)) {

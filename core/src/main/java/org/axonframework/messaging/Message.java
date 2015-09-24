@@ -69,7 +69,7 @@ public interface Message<T> extends Serializable {
      *
      * @return the type of payload.
      */
-    Class getPayloadType();
+    Class<T> getPayloadType();
 
     /**
      * Returns a copy of this Message with the given <code>metaData</code>. The payload remains unchanged.

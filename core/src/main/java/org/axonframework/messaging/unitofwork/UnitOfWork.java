@@ -18,6 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
 import java.util.Optional;
@@ -52,8 +53,8 @@ public interface UnitOfWork {
     void commit();
 
     /**
-     * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
-     * registered {@link UnitOfWorkListener}s are notified.
+     * Initiates the rollback of this Unit of Work, invoking all registered listeners ({@link #onRollback(BiConsumer)
+     * and {@link #onCleanup(Consumer)}}.
      * <p/>
      * If the rollback is a result of an exception, consider using {@link #rollback(Throwable)} instead.
      */
@@ -62,8 +63,8 @@ public interface UnitOfWork {
     }
 
     /**
-     * Clear the UnitOfWork of any buffered changes. All buffered events and registered aggregates are discarded and
-     * registered {@link UnitOfWorkListener}s are notified.
+     * Initiates the rollback of this Unit of Work, invoking all registered listeners ({@link #onRollback(BiConsumer)
+     * and {@link #onCleanup(Consumer)}}.
      *
      * @param cause The cause of the rollback. May be <code>null</code>.
      * @throws IllegalStateException if the UnitOfWork wasn't started
@@ -119,7 +120,7 @@ public interface UnitOfWork {
 
     void registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
 
-    Map<String, ?> getCorrelationData();
+    MetaData getCorrelationData();
 
     /**
      * Returns the resource previously attached under given <code>name</code>, or <code>null</code> if no such resource

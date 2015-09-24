@@ -35,7 +35,7 @@ public class GenericMessage<T> implements Message<T> {
     private final String identifier;
     private final MetaData metaData;
     // payloadType is stored separately, because of Object.getClass() performance
-    private final Class payloadType;
+    private final Class<T> payloadType;
     private final T payload;
 
     /**
@@ -64,19 +64,18 @@ public class GenericMessage<T> implements Message<T> {
      * @param payload    The payload of the message
      * @param metaData   The meta data of the message
      */
+    @SuppressWarnings("unchecked")
     public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
-        MetaData correlationData = CurrentUnitOfWork.isStarted()
-                ? MetaData.from(CurrentUnitOfWork.get().getCorrelationData()) : MetaData.emptyInstance();
         this.identifier = identifier;
-        this.metaData = MetaData.from(metaData).mergedWith(correlationData);
+        this.metaData = CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData));
         this.payload = payload;
-        this.payloadType = payload.getClass();
+        this.payloadType = (Class<T>) payload.getClass();
     }
 
     private GenericMessage(GenericMessage<T> original, Map<String, ?> metaData) {
         this.identifier = original.getIdentifier();
         this.payload = original.getPayload();
-        this.payloadType = payload.getClass();
+        this.payloadType = original.getPayloadType();
         this.metaData = MetaData.from(metaData);
     }
 
@@ -96,10 +95,11 @@ public class GenericMessage<T> implements Message<T> {
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return payloadType;
     }
 
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     @Override
     public GenericMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (this.metaData.equals(newMetaData)) {

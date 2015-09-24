@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.messaging.MetaData;
+
 import java.util.Deque;
 import java.util.LinkedList;
 
@@ -50,7 +52,6 @@ public abstract class CurrentUnitOfWork {
      * To verify whether a UnitOfWork is already active, use {@link #isStarted()}.
      *
      * @return The UnitOfWork bound to the current thread.
-     *
      * @throws IllegalStateException if no UnitOfWork is active
      */
     public static UnitOfWork get() {
@@ -90,7 +91,7 @@ public abstract class CurrentUnitOfWork {
 
     /**
      * Clears the UnitOfWork currently bound to the current thread, if that UnitOfWork is the given
-     * <code>unitOfWork</code>. Otherwise, nothing happens.
+     * <code>unitOfWork</code>.
      *
      * @param unitOfWork The UnitOfWork expected to be bound to the current thread.
      * @throws IllegalStateException when the given UnitOfWork was not the current active UnitOfWork. This exception
@@ -105,5 +106,9 @@ public abstract class CurrentUnitOfWork {
         } else {
             throw new IllegalStateException("Could not clear this UnitOfWork. It is not the active one.");
         }
+    }
+
+    public static MetaData correlationData() {
+        return CurrentUnitOfWork.isStarted() ? CurrentUnitOfWork.get().getCorrelationData() : MetaData.emptyInstance();
     }
 }
