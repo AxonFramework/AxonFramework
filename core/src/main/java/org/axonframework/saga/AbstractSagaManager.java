@@ -27,13 +27,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
@@ -56,7 +50,7 @@ public abstract class AbstractSagaManager implements SagaManager {
     private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
-    private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
+    private CorrelationDataProvider correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
      * Initializes the SagaManager with the given <code>sagaRepository</code>.
@@ -280,7 +274,7 @@ public abstract class AbstractSagaManager implements SagaManager {
      *
      * @param correlationDataProvider the correlation data provider for this SagaManager
      */
-    public void setCorrelationDataProvider(CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
+    public void setCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
         this.correlationDataProvider = correlationDataProvider;
     }
 
@@ -292,7 +286,7 @@ public abstract class AbstractSagaManager implements SagaManager {
      * @param correlationDataProviders the correlation data providers for this SagaManager
      */
     public void setCorrelationDataProviders(
-            List<? extends CorrelationDataProvider<? super EventMessage>> correlationDataProviders) {
+            List<? extends CorrelationDataProvider> correlationDataProviders) {
         this.correlationDataProvider = new MultiCorrelationDataProvider<>(correlationDataProviders);
     }
 

@@ -1,12 +1,17 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.Subscription;
+import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Base class for the Event Bus. In case events are published while a Unit of Work is active the Unit of Work root
@@ -18,7 +23,20 @@ import java.util.function.Consumer;
  */
 public abstract class AbstractEventBus implements EventBus {
 
+    private final Collection<MessagePreprocessor> preprocessors = new CopyOnWriteArraySet<>();
     final String eventsKey = this + "_EVENTS";
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * In case a Unit of Work is active, the <code>preprocessor</code> is not invoked by this Event Bus until the
+     * Unit of Work root is committed.
+     */
+    @Override
+    public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
+        preprocessors.add(preprocessor);
+        return () -> preprocessors.remove(preprocessor);
+    }
 
     @Override
     public void publish(List<EventMessage<?>> events) {
@@ -67,7 +85,14 @@ public abstract class AbstractEventBus implements EventBus {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().resources().remove(eventsKey);
         }
-        eventsConsumer.accept(new ArrayList<>(events));
+        List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
+        for (MessagePreprocessor preprocessor : preprocessors) {
+            Function<Integer, EventMessage<?>> function = preprocessor.on(preprocessedEvents);
+            for (int i = 0; i < preprocessedEvents.size(); i++) {
+                preprocessedEvents.set(i, function.apply(i));
+            }
+        }
+        eventsConsumer.accept(preprocessedEvents);
     }
 
     /**

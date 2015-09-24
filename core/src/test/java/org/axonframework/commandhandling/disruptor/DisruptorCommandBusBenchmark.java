@@ -24,22 +24,13 @@ import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
-import org.axonframework.eventsourcing.EventSourcedEntity;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -185,6 +176,11 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         public Subscription subscribe(Cluster cluster) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
             throw new UnsupportedOperationException();
         }
     }

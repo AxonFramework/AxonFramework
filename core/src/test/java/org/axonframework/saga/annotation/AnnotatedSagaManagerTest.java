@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.messaging.CorrelationDataProvider;
-import org.axonframework.messaging.Message;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
@@ -44,13 +43,7 @@ import static java.util.Collections.singletonMap;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -185,7 +178,7 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testCorrelationDataReadFromProvider() throws Exception {
-        CorrelationDataProvider<? super EventMessage> correlationDataProvider = mock(CorrelationDataProvider.class);
+        CorrelationDataProvider correlationDataProvider = mock(CorrelationDataProvider.class);
         manager.setCorrelationDataProvider(correlationDataProvider);
 
         manager.handle(asEventMessage(new StartingEvent("12")).withMetaData(singletonMap("key", "val")));
@@ -195,8 +188,8 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testCorrelationDataReadFromProviders() throws Exception {
-        CorrelationDataProvider<Message> correlationDataProvider1 = mock(CorrelationDataProvider.class);
-        CorrelationDataProvider<Message> correlationDataProvider2 = mock(CorrelationDataProvider.class);
+        CorrelationDataProvider correlationDataProvider1 = mock(CorrelationDataProvider.class);
+        CorrelationDataProvider correlationDataProvider2 = mock(CorrelationDataProvider.class);
         manager.setCorrelationDataProviders(asList(correlationDataProvider1, correlationDataProvider2));
 
         manager.handle(asEventMessage(new StartingEvent("12")).withMetaData(singletonMap("key", "val")));

@@ -20,9 +20,11 @@ import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MessagePreprocessor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -38,6 +40,7 @@ public class RecordingEventBus implements EventBus {
 
     private Collection<Cluster> subscriptions = new CopyOnWriteArraySet<>();
     private List<EventMessage<?>> publishedEvents = new ArrayList<>();
+    private Collection<MessagePreprocessor> preprocessors = new LinkedHashSet<>();
 
     @Override
     public void publish(List<EventMessage<?>> events) {
@@ -50,12 +53,19 @@ public class RecordingEventBus implements EventBus {
         return () -> subscriptions.remove(cluster);
     }
 
+    @Override
+    public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
+        preprocessors.add(preprocessor);
+        return () -> preprocessors.remove(preprocessor);
+    }
+
     /**
      * Clears all the events recorded by this Event Bus as well as all subscribed clusters.
      */
     public void reset() {
         publishedEvents.clear();
         subscriptions.clear();
+        preprocessors.clear();
     }
 
     /**
@@ -94,4 +104,24 @@ public class RecordingEventBus implements EventBus {
     public int getPublishedEventCount() {
         return publishedEvents.size();
     }
+
+    /**
+     * Indicates whether the given <code>messagePreprocessor</code> is subscribed to this Event Bus.
+     *
+     * @param messagePreprocessor The messagePreprocessor to verify the subscription for
+     * @return <code>true</code> if the messagePreprocessor is subscribed, otherwise <code>false</code>.
+     */
+    public boolean isSubscribed(MessagePreprocessor messagePreprocessor) {
+        return preprocessors.contains(messagePreprocessor);
+    }
+
+    /**
+     * Returns a Collection of all subscribed MessagePreprocessors on this Event Bus.
+     *
+     * @return a Collection of all subscribed MessagePreprocessors
+     */
+    public Collection<MessagePreprocessor> getMessagePreprocessors() {
+        return preprocessors;
+    }
+
 }

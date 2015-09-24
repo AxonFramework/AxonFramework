@@ -17,26 +17,21 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Subscription;
+import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
@@ -136,6 +131,32 @@ public class AbstractEventBusTest {
         unitOfWork.commit();
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testMessagePreprocessor() {
+        MessagePreprocessor preprocessorMock = mock(MessagePreprocessor.class);
+        String key = "additional", value = "metaData";
+        when(preprocessorMock.on(anyList())).thenAnswer(invocation -> {
+            List<EventMessage<?>> eventMessages = (List<EventMessage<?>>) invocation.getArguments()[0];
+            return (Function<Integer, Object>) (index) -> {
+                if (eventMessages.get(index).getMetaData().containsKey(key)) {
+                    throw new AssertionError("MessageProcessor is asked to process the same event message twice");
+                }
+                return eventMessages.get(index).andMetaData(Collections.singletonMap(key, value));
+            };
+        });
+        testSubject.registerPreprocessor(preprocessorMock);
+        testSubject.publish(newEvent(), newEvent());
+        verifyZeroInteractions(preprocessorMock);
+
+        unitOfWork.commit();
+        ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(preprocessorMock, times(3)).on(argumentCaptor.capture()); //prepare commit, commit, and after commit
+        assertEquals(3, argumentCaptor.getAllValues().size());
+        assertEquals(2, argumentCaptor.getValue().size());
+        assertEquals(value, ((EventMessage<?>) argumentCaptor.getValue().get(0)).getMetaData().get(key));
+    }
+
     private static EventMessage newEvent() {
         return new GenericEventMessage<>(new Object());
     }
@@ -226,5 +247,4 @@ public class AbstractEventBusTest {
             return Objects.hash(getPayload());
         }
     }
-
 }

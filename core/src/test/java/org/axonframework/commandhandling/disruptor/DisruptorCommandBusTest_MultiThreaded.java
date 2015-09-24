@@ -18,25 +18,17 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.RollbackOnAllExceptionsConfiguration;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.common.Subscription;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
-import org.axonframework.eventsourcing.EventSourcedEntity;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkListener;
 import org.axonframework.repository.Repository;
@@ -54,14 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -315,6 +300,11 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
         @Override
         public Subscription subscribe(Cluster cluster) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
             throw new UnsupportedOperationException();
         }
     }

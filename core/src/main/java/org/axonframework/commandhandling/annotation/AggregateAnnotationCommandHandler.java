@@ -16,12 +16,8 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.SupportedCommandNamesAware;
-import org.axonframework.commandhandling.VersionedAggregateIdentifier;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.AbstractMessageHandler;
@@ -111,12 +107,15 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      * @return A handle that can be used to unsubscribe
      */
     public Subscription subscribe(CommandBus commandBus) {
-        Collection<Subscription> subscriptions = new ArrayDeque<>();
+        Collection<Subscription> subscriptions = new ArrayList<>();
         for (String supportedCommand : supportedCommandNames()) {
-            subscriptions.add(commandBus.subscribe(supportedCommand, this));
+            Subscription subscription = commandBus.subscribe(supportedCommand, this);
+            if (subscription != null) {
+                subscriptions.add(subscription);
+            }
         }
         return () -> {
-            subscriptions.forEach(org.axonframework.common.Subscription::stop);
+            subscriptions.forEach(Subscription::stop);
             return true;
         };
     }

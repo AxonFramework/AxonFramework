@@ -16,11 +16,7 @@
 
 package org.axonframework.saga.annotation;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.EventTranslator;
-import com.lmax.disruptor.ExceptionHandler;
-import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.common.Assert;
@@ -28,22 +24,14 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessingMonitor;
-import org.axonframework.eventhandling.EventProcessingMonitorCollection;
-import org.axonframework.eventhandling.EventProcessingMonitorSupport;
+import org.axonframework.eventhandling.*;
 import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.messaging.MultiCorrelationDataProvider;
 import org.axonframework.messaging.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
-import org.axonframework.saga.GenericSagaFactory;
-import org.axonframework.saga.SagaCreationPolicy;
-import org.axonframework.saga.SagaFactory;
-import org.axonframework.saga.SagaManager;
-import org.axonframework.saga.SagaRepository;
+import org.axonframework.saga.*;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +39,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * A SagaManager implementation that processes Sagas asynchronously. Incoming events are placed on a queue and
@@ -89,7 +73,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, EventProcessingMo
     private volatile SagaFactory sagaFactory = new GenericSagaFactory();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private long startTimeout = 5000;
-    private CorrelationDataProvider<? super EventMessage> correlationDataProvider = new SimpleCorrelationDataProvider();
+    private CorrelationDataProvider correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
      * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code>.
@@ -311,12 +295,12 @@ public class AsyncAnnotatedSagaManager implements SagaManager, EventProcessingMo
     }
 
     public synchronized void setCorrelationDataProvider(
-            CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
+            CorrelationDataProvider correlationDataProvider) {
         this.correlationDataProvider = correlationDataProvider;
     }
 
     public synchronized void setCorrelationDataProviders(
-            List<? extends CorrelationDataProvider<? super EventMessage>> correlationDataProviders) {
+            List<? extends CorrelationDataProvider> correlationDataProviders) {
         this.correlationDataProvider = new MultiCorrelationDataProvider<>(correlationDataProviders);
     }
 

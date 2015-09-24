@@ -117,7 +117,7 @@ public interface UnitOfWork {
         return (T) resources().getOrDefault(key, defaultValue);
     }
 
-    void registerCorrelationDataProvider(CorrelationDataProvider<Message<?>> correlationDataProvider);
+    void registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
 
     Map<String, ?> getCorrelationData();
 

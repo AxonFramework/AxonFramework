@@ -22,7 +22,6 @@ import com.lmax.disruptor.RingBuffer;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.correlation.CorrelationDataHolder;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -34,11 +33,7 @@ import org.axonframework.saga.SagaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Processes events by forwarding it to Saga instances "owned" by each processor. This processor uses a consistent
@@ -59,7 +54,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private final int processorId;
     private final RingBuffer<AsyncSagaProcessingEvent> ringBuffer;
     private final AsyncAnnotatedSagaManager.SagaManagerStatus status;
-    private final CorrelationDataProvider<? super EventMessage> correlationDataProvider;
+    private final CorrelationDataProvider correlationDataProvider;
     private UnitOfWork unitOfWork;
 
     private AsyncSagaEventProcessor(SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
@@ -67,7 +62,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                                     UnitOfWorkFactory unitOfWorkFactory,
                                     RingBuffer<AsyncSagaProcessingEvent> ringBuffer,
                                     AsyncAnnotatedSagaManager.SagaManagerStatus status,
-                                    CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
+                                    CorrelationDataProvider correlationDataProvider) {
         this.sagaRepository = sagaRepository;
         this.parameterResolverFactory = parameterResolverFactory;
         this.processorCount = processorCount;
@@ -96,7 +91,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
             SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
             UnitOfWorkFactory unitOfWorkFactory, int processorCount,
             RingBuffer<AsyncSagaProcessingEvent> ringBuffer, AsyncAnnotatedSagaManager.SagaManagerStatus status,
-            CorrelationDataProvider<? super EventMessage> correlationDataProvider) {
+            CorrelationDataProvider correlationDataProvider) {
         AsyncSagaEventProcessor[] processors = new AsyncSagaEventProcessor[processorCount];
         for (int processorId = 0; processorId < processorCount; processorId++) {
             processors[processorId] = new AsyncSagaEventProcessor(sagaRepository,

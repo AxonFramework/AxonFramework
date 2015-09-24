@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.3
  */
-public class SimpleCorrelationDataProvider implements CorrelationDataProvider<Message> {
+public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
 
     private final String[] headerNames;
 
@@ -43,7 +43,7 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider<Me
     }
 
     @Override
-    public Map<String, ?> correlationDataFor(Message message) {
+    public Map<String, ?> correlationDataFor(Message<?> message) {
         if (headerNames.length == 0) {
             return Collections.emptyMap();
         }

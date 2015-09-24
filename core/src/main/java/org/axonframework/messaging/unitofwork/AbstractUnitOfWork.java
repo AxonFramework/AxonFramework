@@ -2,16 +2,10 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.CorrelationDataProvider;
-import org.axonframework.messaging.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -23,7 +17,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
     private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
     private final Map<String, Object> resources = new HashMap<>();
-    private final Queue<CorrelationDataProvider<Message<?>>> correlationDataProviders = new ArrayDeque<>();
+    private final Queue<CorrelationDataProvider> correlationDataProviders = new ArrayDeque<>();
     private Phase phase = Phase.NOT_STARTED;
     private UnitOfWork parentUnitOfWork;
 
@@ -123,7 +117,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public void registerCorrelationDataProvider(CorrelationDataProvider<Message<?>> correlationDataProvider) {
+    public void registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
         correlationDataProviders.add(correlationDataProvider);
     }
 
@@ -133,8 +127,11 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             return Collections.emptyMap();
         }
         Map<String, Object> result = new HashMap<>();
-        for (CorrelationDataProvider<Message<?>> correlationDataProvider : correlationDataProviders) {
-            result.putAll(correlationDataProvider.correlationDataFor(getMessage()));
+        for (CorrelationDataProvider correlationDataProvider : correlationDataProviders) {
+            final Map<String, ?> extraData = correlationDataProvider.correlationDataFor(getMessage());
+            if (extraData != null) {
+                result.putAll(extraData);
+            }
         }
         return result;
     }

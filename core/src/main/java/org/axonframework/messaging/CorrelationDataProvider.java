@@ -22,11 +22,10 @@ import java.util.Map;
  * Object defining the the data from a Message that should be attached as correlation data to messages generated as
  * result of the processing of that message.
  *
- * @param <T> The type of message the provider can process
  * @author Allard Buijze
  * @since 2.3
  */
-public interface CorrelationDataProvider<T extends Message> {
+public interface CorrelationDataProvider {
 
     /**
      * Provides a map with the entries to attach as correlation data to generated messages while processing given
@@ -37,5 +36,5 @@ public interface CorrelationDataProvider<T extends Message> {
      * @param message The message to define correlation data for
      * @return the data to attach as correlation data to generated messages
      */
-    Map<String, ?> correlationDataFor(T message);
+    Map<String, ?> correlationDataFor(Message<?> message);
 }

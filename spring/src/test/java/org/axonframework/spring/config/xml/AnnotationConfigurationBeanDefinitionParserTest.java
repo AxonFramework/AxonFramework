@@ -18,7 +18,6 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.CorrelationDataProvider;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.SagaFactory;
@@ -50,17 +49,8 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
@@ -81,7 +71,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
     @Autowired
     private ThreadPoolTaskExecutor te;
     @Autowired
-    private CorrelationDataProvider<Message> correlationDataProvider;
+    private CorrelationDataProvider correlationDataProvider;
 
     @PersistenceContext
     private EntityManager entityManager;
