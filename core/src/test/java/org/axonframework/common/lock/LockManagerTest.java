@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
+package org.axonframework.common.lock;
 
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -88,9 +90,9 @@ public class LockManagerTest {
             int locksAcquired = 0;
             int locksReleased = 0;
             try {
-                lockManager.obtainLock(aggregateIdentifier);
+                Lock lock = lockManager.obtainLock(aggregateIdentifier);
                 locksAcquired++;
-                lockManager.releaseLock(aggregateIdentifier);
+                lock.release();
                 locksReleased++;
 
                 success = true;

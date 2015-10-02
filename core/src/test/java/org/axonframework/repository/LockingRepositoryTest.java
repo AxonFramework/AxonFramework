@@ -16,6 +16,10 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.common.lock.Lock;
+import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.OptimisticLockManager;
+import org.axonframework.common.lock.PessimisticLockManager;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -27,22 +31,13 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InOrder;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -52,12 +47,15 @@ public class LockingRepositoryTest {
     private LockingRepository<StubAggregate> testSubject;
     private EventBus mockEventBus;
     private LockManager lockManager;
+    private Lock lock;
     private static final Message<?> MESSAGE = new GenericMessage<Object>("test");
 
     @Before
     public void setUp() {
         mockEventBus = mock(EventBus.class);
         lockManager = spy(new OptimisticLockManager());
+        when(lockManager.obtainLock(anyString()))
+                        .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
         testSubject = new InMemoryLockingRepository(lockManager);
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
@@ -93,7 +91,7 @@ public class LockingRepositoryTest {
         testSubject.add(aggregate);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
-        verify(lockManager).releaseLock(aggregate.getIdentifier());
+        verify(lock).release();
         reset(lockManager);
 
         startAndGetUnitOfWork();
@@ -103,21 +101,21 @@ public class LockingRepositoryTest {
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
 
-        InOrder inOrder = inOrder(lockManager);
-        inOrder.verify(lockManager, atLeastOnce()).validateLock(loadedAggregate);
+        verify(lockManager, atLeastOnce()).validateLock(loadedAggregate.getIdentifier());
         verify(mockEventBus, times(2)).publish(any(DomainEventMessage.class));
-        inOrder.verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
+        verify(lock).release();
     }
 
     @Test
     public void testLoadAndStoreAggregate_LockReleasedOnException() {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
+
         aggregate.doSomething();
         testSubject.add(aggregate);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
-        verify(lockManager).releaseLock(aggregate.getIdentifier());
+        verify(lock).release();
         reset(lockManager);
 
         startAndGetUnitOfWork();
@@ -135,7 +133,7 @@ public class LockingRepositoryTest {
         }
 
         // make sure the lock is released
-        verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
+        verify(lock).release();
     }
 
     @Test
@@ -148,11 +146,13 @@ public class LockingRepositoryTest {
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
+        when(lockManager.obtainLock(aggregate.getIdentifier()))
+                        .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
         aggregate.doSomething();
         testSubject.add(aggregate);
         verify(lockManager).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
-        verify(lockManager).releaseLock(aggregate.getIdentifier());
+        verify(lock).release();
         reset(lockManager);
 
         startAndGetUnitOfWork();
@@ -171,7 +171,7 @@ public class LockingRepositoryTest {
         }
 
         // make sure the lock is released
-        verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
+        verify(lock).release();
     }
 
     @Test
@@ -180,7 +180,6 @@ public class LockingRepositoryTest {
         testSubject = new InMemoryLockingRepository(lockManager);
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
-        EventBus eventBus = mock(EventBus.class);
 
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();

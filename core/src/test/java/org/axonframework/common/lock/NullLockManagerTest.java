@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
+package org.axonframework.common.lock;
 
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -31,7 +31,7 @@ public class NullLockManagerTest {
     public void testInvocationHasNoEffect() {
         NullLockManager manager = new NullLockManager();
         assertTrue(manager.validateLock(null));
-        manager.obtainLock(UUID.randomUUID().toString());
-        manager.releaseLock(UUID.randomUUID().toString());
+        Lock lock = manager.obtainLock(UUID.randomUUID().toString());
+        lock.release();
     }
 }

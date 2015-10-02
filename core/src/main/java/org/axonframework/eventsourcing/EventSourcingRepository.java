@@ -18,10 +18,10 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
+import org.axonframework.common.lock.LockManager;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
-import org.axonframework.repository.LockManager;
 import org.axonframework.repository.LockingRepository;
 
 import java.io.Closeable;

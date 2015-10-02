@@ -18,10 +18,10 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
+import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.PessimisticLockManager;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.repository.LockManager;
-import org.axonframework.repository.PessimisticLockManager;
 
 import java.util.ArrayList;
 import java.util.List;

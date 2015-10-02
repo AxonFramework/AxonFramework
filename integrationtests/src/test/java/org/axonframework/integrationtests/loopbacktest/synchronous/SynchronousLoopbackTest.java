@@ -23,44 +23,26 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.OptimisticLockManager;
+import org.axonframework.common.lock.PessimisticLockManager;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleCluster;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.AggregateNotFoundException;
-import org.axonframework.repository.LockManager;
-import org.axonframework.repository.OptimisticLockManager;
-import org.axonframework.repository.PessimisticLockManager;
 import org.axonframework.repository.Repository;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for issue #119

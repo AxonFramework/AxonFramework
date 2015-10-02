@@ -17,7 +17,9 @@
 package org.axonframework.saga;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.lock.IdentifierBasedLock;
+import org.axonframework.common.lock.Lock;
+import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.PessimisticLockManager;
 import org.axonframework.correlation.CorrelationDataHolder;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.CorrelationDataProvider;
@@ -46,7 +48,7 @@ public abstract class AbstractSagaManager implements SagaManager {
     private final SagaRepository sagaRepository;
     private final SagaFactory sagaFactory;
     private final Class<? extends Saga>[] sagaTypes;
-    private final IdentifierBasedLock lock = new IdentifierBasedLock();
+    private final LockManager lockManager = new PessimisticLockManager();
     private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
@@ -100,7 +102,7 @@ public abstract class AbstractSagaManager implements SagaManager {
         boolean sagaOfTypeInvoked = false;
         for (final String sagaId : sagas) {
             if (synchronizeSagaAccess) {
-                lock.obtainLock(sagaId);
+                Lock lock = lockManager.obtainLock(sagaId);
                 Saga invokedSaga = null;
                 try {
                     invokedSaga = loadAndInvoke(event, sagaId, associationValues);
@@ -108,7 +110,7 @@ public abstract class AbstractSagaManager implements SagaManager {
                         sagaOfTypeInvoked = true;
                     }
                 } finally {
-                    doReleaseLock(sagaId, invokedSaga);
+                    releaseLock(lock, invokedSaga);
                 }
             } else {
                 loadAndInvoke(event, sagaId, associationValues);
@@ -133,14 +135,14 @@ public abstract class AbstractSagaManager implements SagaManager {
         sagasInCreation.put(newSaga.getSagaIdentifier(), newSaga);
         try {
             if (synchronizeSagaAccess) {
-                lock.obtainLock(newSaga.getSagaIdentifier());
+                Lock lock = lockManager.obtainLock(newSaga.getSagaIdentifier());
                 try {
                     doInvokeSaga(event, newSaga);
                 } finally {
                     try {
                         sagaRepository.add(newSaga);
                     } finally {
-                        doReleaseLock(newSaga.getSagaIdentifier(), newSaga);
+                        releaseLock(lock, newSaga);
                     }
                 }
             } else {
@@ -155,11 +157,11 @@ public abstract class AbstractSagaManager implements SagaManager {
         }
     }
 
-    private void doReleaseLock(final String sagaId, final Saga sagaInstance) {
+    private void releaseLock(Lock lock, Saga sagaInstance) {
         if (sagaInstance == null || !CurrentUnitOfWork.isStarted()) {
-            lock.releaseLock(sagaId);
+            lock.release();
         } else if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().onCleanup(u -> lock.releaseLock(sagaInstance.getSagaIdentifier()));
+            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
         }
     }
 

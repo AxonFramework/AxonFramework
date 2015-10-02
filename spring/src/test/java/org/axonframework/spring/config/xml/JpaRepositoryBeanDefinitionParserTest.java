@@ -17,11 +17,11 @@
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.OptimisticLockManager;
 import org.axonframework.repository.GenericJpaRepository;
-import org.axonframework.repository.LockManager;
-import org.axonframework.repository.OptimisticLockManager;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanReference;

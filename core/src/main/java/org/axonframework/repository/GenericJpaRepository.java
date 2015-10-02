@@ -18,6 +18,8 @@ package org.axonframework.repository;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.NullLockManager;
 import org.axonframework.domain.AggregateRoot;
 
 import javax.persistence.EntityManager;

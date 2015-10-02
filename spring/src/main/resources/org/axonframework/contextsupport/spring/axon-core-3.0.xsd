@@ -1117,7 +1117,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.repository.LockManager"/>
+                                    <tool:expected-type type="org.axonframework.common.lock.LockManager"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1247,7 +1247,7 @@
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.repository.LockManager"/>
+                                            type="org.axonframework.common.lock.LockManager"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>

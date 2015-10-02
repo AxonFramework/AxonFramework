@@ -292,7 +292,7 @@
 
     <bean id="conflictResolver" class="org.axonframework.eventsourcing.conflictresolvers.AcceptAllConflictResolver"/>
 
-    <bean id="nullLockManager" class="org.axonframework.repository.NullLockManager"/>
+    <bean id="nullLockManager" class="org.axonframework.common.lock.NullLockManager"/>
 
     <axon:snapshotter id="snapshotter" event-store="eventStore" transaction-manager="transactionManager"
                       executor="taskExecutor"/>

@@ -28,40 +28,30 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.synchronizedMap;
 
 /**
- * Locking mechanism that allows multiple threads to hold a lock, as long as the identifier of the lock they hold is
- * not equal. When released, locks entries are automatically cleaned up.
+ * Implementation of a {@link LockManager} that uses a pessimistic locking strategy. Calls to
+ * {@link #obtainLock} will block until a lock could be obtained. If a lock is obtained by a thread, that
+ * thread has guaranteed unique access.
  * <p/>
- * The lock is re-entrant, meaning each thread can hold the same lock multiple times. The lock will only be released
- * for other threads when the lock has been released as many times as it was obtained.
+ * Each thread can hold the same lock multiple times. The lock will only be released for other threads when the lock
+ * has been released as many times as it was obtained.
  * <p/>
  * This lock can be used to ensure thread safe access to a number of objects, such as Aggregates and Sagas.
  *
  * @author Allard Buijze
  * @since 1.3
  */
-public class IdentifierBasedLock {
+public class PessimisticLockManager implements LockManager {
 
-    private static final Set<IdentifierBasedLock> INSTANCES =
+    private static final Set<PessimisticLockManager> INSTANCES =
             newSetFromMap(synchronizedMap(new WeakHashMap<>()));
-
-    private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
-
-    /**
-     * Creates a new IdentifierBasedLock instance.
-     * <p/>
-     * Deadlocks are detected across instances of the IdentifierBasedLock.
-     */
-    public IdentifierBasedLock() {
-        INSTANCES.add(this);
-    }
 
     private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
         return threadsWaitingForMyLocks(owner, INSTANCES);
     }
 
-    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<IdentifierBasedLock> locksInUse) {
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockManager> locksInUse) {
         Set<Thread> waitingThreads = new HashSet<>();
-        for (IdentifierBasedLock lock : locksInUse) {
+        for (PessimisticLockManager lock : locksInUse) {
             for (DisposableLock disposableLock : lock.locks.values()) {
                 if (disposableLock.isHeldBy(owner)) {
                     final Collection<Thread> c = disposableLock.queuedThreads();
@@ -76,26 +66,29 @@ public class IdentifierBasedLock {
         return waitingThreads;
     }
 
+    private final ConcurrentHashMap<String, DisposableLock> locks = new ConcurrentHashMap<>();
+
     /**
-     * Indicates whether the current thread hold a lock for the given <code>identifier</code>.
-     *
-     * @param identifier The identifier of the lock to verify
-     * @return <code>true</code> if the current thread holds a lock, otherwise <code>false</code>
+     * Creates a new IdentifierBasedLock instance.
+     * <p/>
+     * Deadlocks are detected across instances of the IdentifierBasedLock.
      */
-    public boolean hasLock(String identifier) {
-        return isLockAvailableFor(identifier)
-                && lockFor(identifier).isHeldByCurrentThread();
+    public PessimisticLockManager() {
+        INSTANCES.add(this);
     }
 
     /**
-     * Obtain a lock on the given <code>identifier</code>. This method will block until a lock was successfully
-     * obtained.
+     * Obtain a lock for a resource identified by the given <code>identifier</code>. This method will block until a
+     * lock was successfully obtained.
      * <p/>
      * Note: when an exception occurs during the locking process, the lock may or may not have been allocated.
      *
      * @param identifier the identifier of the lock to obtain.
+     * @return a handle to release the lock. If the thread that releases the lock does not hold the lock
+     * {@link IllegalMonitorStateException} is thrown
      */
-    public AutoCloseableLock obtainLock(String identifier) {
+    @Override
+    public Lock obtainLock(String identifier) {
         boolean lockObtained = false;
         DisposableLock lock = null;
         while (!lockObtained) {
@@ -108,20 +101,9 @@ public class IdentifierBasedLock {
         return lock;
     }
 
-    /**
-     * Release the lock held on the given <code>identifier</code>. If no valid lock is held by the current thread, an
-     * exception is thrown.
-     *
-     * @param identifier the identifier to release the lock for.
-     * @throws IllegalStateException        if no lock was ever obtained for this aggregate
-     * @throws IllegalMonitorStateException if a lock was obtained, but is not currently held by the current thread
-     */
-    public void releaseLock(String identifier) {
-        if (!locks.containsKey(identifier)) {
-            throw new IllegalLockUsageException("No lock for this identifier was ever obtained");
-        }
-        DisposableLock lock = lockFor(identifier);
-        lock.unlock();
+    @Override
+    public boolean validateLock(String identifier) {
+        return isLockAvailableFor(identifier) && lockFor(identifier).isHeldByCurrentThread();
     }
 
     private boolean isLockAvailableFor(String identifier) {
@@ -137,13 +119,11 @@ public class IdentifierBasedLock {
         return lock;
     }
 
-    private final class DisposableLock implements AutoCloseableLock {
+    private class DisposableLock implements Lock {
 
+        private final String identifier;
         private final PubliclyOwnedReentrantLock lock;
-        // guarded by "lock"
         private boolean isClosed = false;
-
-        private String identifier;
 
         private DisposableLock(String identifier) {
             this.identifier = identifier;
@@ -154,16 +134,13 @@ public class IdentifierBasedLock {
             return lock.isHeldByCurrentThread();
         }
 
-        public void unlock() {
+        @Override
+        public void release() {
             try {
                 lock.unlock();
             } finally {
                 disposeIfUnused();
             }
-        }
-
-        private String getIdentifier() {
-            return identifier;
         }
 
         public boolean lock() {

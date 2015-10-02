@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
-
-import org.axonframework.domain.AggregateRoot;
+package org.axonframework.common.lock;
 
 /**
  * LockManager implementation that does nothing. Can be useful in cases where a repository extending from the {@link
@@ -31,28 +29,21 @@ public class NullLockManager implements LockManager {
     /**
      * {@inheritDoc}
      * <p/>
+     * This implementation does nothing.
+     */
+    @Override
+    public Lock obtainLock(String identifier) {
+        return () -> {};
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
      * This implementation always returns true.
      */
     @Override
-    public boolean validateLock(AggregateRoot aggregate) {
+    public boolean validateLock(String identifier) {
         return true;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
-     */
-    @Override
-    public void obtainLock(String aggregateIdentifier) {
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation does nothing.
-     */
-    @Override
-    public void releaseLock(String aggregateIdentifier) {
-    }
 }

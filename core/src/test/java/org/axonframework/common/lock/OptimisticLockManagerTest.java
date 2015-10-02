@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.repository;
+package org.axonframework.common.lock;
 
-import org.axonframework.domain.StubAggregate;
-import org.junit.*;
+import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.*;
 
@@ -34,8 +35,8 @@ public class OptimisticLockManagerTest {
     public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
         OptimisticLockManager manager = new OptimisticLockManager();
         String identifier = UUID.randomUUID().toString();
-        manager.obtainLock(identifier);
-        manager.releaseLock(identifier);
+        Lock lock = manager.obtainLock(identifier);
+        lock.release();
 
         Field locksField = manager.getClass().getDeclaredField("locks");
         locksField.setAccessible(true);
@@ -44,18 +45,15 @@ public class OptimisticLockManagerTest {
     }
 
     @Test
-    public void testLockFailsOnConcurrentModification() {
-        UUID identifier = UUID.randomUUID();
-        StubAggregate aggregate1 = new StubAggregate(identifier);
-        StubAggregate aggregate2 = new StubAggregate(identifier);
+    public void testLockValidationFailsOnSecondThread() {
+        String identifier = "id";
         OptimisticLockManager manager = new OptimisticLockManager();
-        manager.obtainLock(aggregate1.getIdentifier());
-        manager.obtainLock(aggregate2.getIdentifier());
+        manager.obtainLock(identifier);
 
-        aggregate1.doSomething();
-        aggregate2.doSomething();
+        assertTrue("The first thread should contain the lock", manager.validateLock(identifier));
+        assertTrue("The same thread should still hold the lock", manager.validateLock(identifier));
 
-        assertTrue("The first one to commit should contain the lock", manager.validateLock(aggregate1));
-        assertFalse("Expected this lock to be invalid", manager.validateLock(aggregate2));
+        ExecutorService executor = Executors.newCachedThreadPool();
+        executor.execute(() -> assertFalse("Expected this lock to be invalid", manager.validateLock(identifier)));
     }
 }

@@ -16,10 +16,10 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.repository.LockManager;
-import org.axonframework.repository.NullLockManager;
-import org.axonframework.repository.OptimisticLockManager;
-import org.axonframework.repository.PessimisticLockManager;
+import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.NullLockManager;
+import org.axonframework.common.lock.OptimisticLockManager;
+import org.axonframework.common.lock.PessimisticLockManager;
 
 /**
  * Enum indicating possible locking strategies for repositories.

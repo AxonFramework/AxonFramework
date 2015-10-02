@@ -16,10 +16,11 @@
 
 package org.axonframework.common.lock;
 
-import org.junit.*;
+import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,15 +29,30 @@ import static org.junit.Assert.*;
 /**
  * @author Allard Buijze
  */
-public class IdentifierBasedLockTest {
+public class PessimisticLockManagerTest {
 
     private String identifier = "mockId";
 
     @Test
+    public void testValidateLocks() {
+        PessimisticLockManager manager = new PessimisticLockManager();
+        String identifier = UUID.randomUUID().toString();
+        assertFalse(manager.validateLock(identifier));
+        Lock lock1 = manager.obtainLock(identifier);
+        assertTrue(manager.validateLock(identifier));
+        Lock lock2 = manager.obtainLock(identifier);
+        assertTrue(manager.validateLock(identifier));
+        lock1.release();
+        assertTrue(manager.validateLock(identifier));
+        lock2.release();
+        assertFalse(manager.validateLock(identifier));
+    }
+
+    @Test
     public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
-        IdentifierBasedLock manager = new IdentifierBasedLock();
-        manager.obtainLock(identifier);
-        manager.releaseLock(identifier);
+        PessimisticLockManager manager = new PessimisticLockManager();
+        Lock lock = manager.obtainLock(identifier);
+        lock.release();
 
         Field locksField = manager.getClass().getDeclaredField("locks");
         locksField.setAccessible(true);
@@ -46,26 +62,26 @@ public class IdentifierBasedLockTest {
 
     @Test
     public void testLockOnlyCleanedUpIfNoLocksAreHeld() {
-        IdentifierBasedLock manager = new IdentifierBasedLock();
+        PessimisticLockManager manager = new PessimisticLockManager();
 
-        assertFalse(manager.hasLock(identifier));
+        assertFalse(manager.validateLock(identifier));
 
-        manager.obtainLock(identifier);
-        assertTrue(manager.hasLock(identifier));
+        Lock lock1 = manager.obtainLock(identifier);
+        assertTrue(manager.validateLock(identifier));
 
-        manager.obtainLock(identifier);
-        assertTrue(manager.hasLock(identifier));
+        Lock lock2 = manager.obtainLock(identifier);
+        assertTrue(manager.validateLock(identifier));
 
-        manager.releaseLock(identifier);
-        assertTrue(manager.hasLock(identifier));
+        lock1.release();
+        assertTrue(manager.validateLock(identifier));
 
-        manager.releaseLock(identifier);
-        assertFalse(manager.hasLock(identifier));
+        lock2.release();
+        assertFalse(manager.validateLock(identifier));
     }
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_TwoThreadsInVector() throws InterruptedException {
-        final IdentifierBasedLock lock = new IdentifierBasedLock();
+        final PessimisticLockManager lock = new PessimisticLockManager();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -84,8 +100,8 @@ public class IdentifierBasedLockTest {
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
-        final IdentifierBasedLock lock1 = new IdentifierBasedLock();
-        final IdentifierBasedLock lock2 = new IdentifierBasedLock();
+        final PessimisticLockManager lock1 = new PessimisticLockManager();
+        final PessimisticLockManager lock2 = new PessimisticLockManager();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -104,7 +120,7 @@ public class IdentifierBasedLockTest {
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
-        final IdentifierBasedLock lock = new IdentifierBasedLock();
+        final PessimisticLockManager lock = new PessimisticLockManager();
         final CountDownLatch starter = new CountDownLatch(3);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -126,22 +142,21 @@ public class IdentifierBasedLockTest {
     }
 
     private Thread createThread(final CountDownLatch starter, final CountDownLatch cdl,
-                                final AtomicBoolean deadlockInThread, final IdentifierBasedLock lock1,
-                                final String firstLock,
-                                final IdentifierBasedLock lock2, final String secondLock) {
+                                final AtomicBoolean deadlockInThread, final PessimisticLockManager lockManager1,
+                                final String firstId, final PessimisticLockManager lockManager2, final String secondId) {
         return new Thread(() -> {
-            lock1.obtainLock(firstLock);
+            Lock lock1 = lockManager1.obtainLock(firstId);
             starter.countDown();
             try {
                 cdl.await();
-                lock2.obtainLock(secondLock);
-                lock2.releaseLock(secondLock);
+                Lock lock2 = lockManager2.obtainLock(secondId);
+                lock2.release();
             } catch (InterruptedException e) {
                 System.out.println("Thread 1 interrupted");
             } catch (DeadlockException e) {
                 deadlockInThread.set(true);
             } finally {
-                lock1.releaseLock(firstLock);
+                lock1.release();
             }
         });
     }
