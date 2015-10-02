@@ -113,7 +113,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      * @param <T>           The type of aggregate this handler handles commands for
      * @return the Adapter created for the command handler target. Can be used to unsubscribe.
      */
-    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
+    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler<T> subscribe(
             Class<T> aggregateType, Repository<T> repository, CommandBus commandBus) {
         AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<>(aggregateType,
                                                                                                 repository);
@@ -134,7 +134,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot>
      * @param <T>                   The type of aggregate this handler handles commands for
      * @return the Adapter created for the command handler target. Can be used to unsubscribe.
      */
-    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler subscribe(
+    public static <T extends AggregateRoot> AggregateAnnotationCommandHandler<T> subscribe(
             Class<T> aggregateType, Repository<T> repository, CommandBus commandBus,
             CommandTargetResolver commandTargetResolver) {
         AggregateAnnotationCommandHandler<T> adapter = new AggregateAnnotationCommandHandler<>(
