@@ -73,7 +73,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         if (entry.isRecoverEntry()) {
             recoverAggregate(entry);
         } else if (entry.getPublisherId() == segmentId) {
-            entry.unpauze();
+            entry.resume();
             entry.onPrepareCommit(u -> eventStore.appendEvents(entry.getMessagesToPublish()));
             String aggregateIdentifier = entry.getAggregateIdentifier();
             if (aggregateIdentifier != null && blackListedAggregates.contains(aggregateIdentifier)) {

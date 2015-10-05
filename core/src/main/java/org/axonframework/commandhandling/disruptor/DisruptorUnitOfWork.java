@@ -24,8 +24,8 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import java.util.Optional;
 
 /**
- * Specialized UnitOfWork instance for the DisruptorCommandBus. It expects the executing command to target a single
- * aggregate instance.
+ * Specialized UnitOfWork instance for the {@link DisruptorCommandBus}. It expects the executing command message to
+ * target a single aggregate instance.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -34,23 +34,37 @@ public class DisruptorUnitOfWork extends AbstractUnitOfWork {
 
     private Message<?> message;
 
+    /**
+     * Resets the state of this Unit of Work, by setting its phase to {@link Phase#NOT_STARTED}, replacing the message
+     * of this Unit of Work with given <code>message</code>, and clearing its collection of registered handlers.
+     *
+     * @param message the new Message that is about to be processed.
+     */
     public void reset(Message<?> message) {
-        listeners().clear();
+        handlers().clear();
         this.message = message;
         setPhase(Phase.NOT_STARTED);
+    }
+
+    /**
+     * Pause this Unit of Work by unregistering it with the {@link CurrentUnitOfWork}. This will detach it from the
+     * current thread.
+     */
+    public void pause() {
+        CurrentUnitOfWork.clear(this);
+    }
+
+    /**
+     * Resume a paused Unit of Work by registering it with the {@link CurrentUnitOfWork}. This will attach it to the
+     * current thread again.
+     */
+    public void resume() {
+        CurrentUnitOfWork.set(this);
     }
 
     @Override
     public Optional<UnitOfWork> parent() {
         return Optional.empty();
-    }
-
-    public void pause() {
-        CurrentUnitOfWork.clear(this);
-    }
-
-    public void unpauze() {
-        CurrentUnitOfWork.set(this);
     }
 
     @Override

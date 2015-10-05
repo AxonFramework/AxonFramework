@@ -27,13 +27,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * This class represents a UnitOfWork in which modifications are made to aggregates. A typical UnitOfWork scope is the
- * execution of a command. A UnitOfWork may be used to prevent individual events from being published before a number
- * of
- * aggregates has been processed. It also allows repositories to manage resources, such as locks, over an entire
- * transaction. Locks, for example, will only be released when the UnitOfWork is either committed or rolled back.
+ * This class represents a Unit of Work that monitors the processing of a {@link Message}.
  * <p/>
- * The current UnitOfWork can be obtained using {@link CurrentUnitOfWork#get()}.
+ * Before processing begins a Unit of Work is bound to the active thread by registering it with the
+ * {@link CurrentUnitOfWork}. After processing, the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
+ * <p/>
+ * Handlers can be notified about the state of the processing of the Message by registering with this Unit of Work.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -41,41 +40,46 @@ import java.util.function.Function;
 public interface UnitOfWork {
 
     /**
-     * Commits the UnitOfWork. All registered aggregates that have not been registered as stored are saved in their
-     * respective repositories, buffered events are sent to their respective event bus, and all registered
-     * UnitOfWorkListeners are notified.
+     * Starts the current unit of work. The UnitOfWork instance is registered with the CurrentUnitOfWork.
+     */
+    void start();
+
+    /**
+     * Commits the Unit of Work. This should be invoked after the Unit of Work Message has been processed. Handlers
+     * registered to the Unit of Work will be notified.
      * <p/>
-     * After the commit (successful or not), the UnitOfWork is unregistered from the CurrentUnitOfWork and has cleaned
-     * up all resources it occupied. This effectively means that a rollback is done if Unit Of Work failed to commit.
+     * After the commit (successful or not), any registered clean-up handlers ({@link #onCleanup(Consumer)}}) will
+     * be invoked and the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
+     * <p/>
+     * If the Unit of Work fails to commit, e.g. because an exception is raised by one of its handlers, the Unit of
+     * Work is rolled back.
      *
      * @throws IllegalStateException if the UnitOfWork wasn't started
      */
     void commit();
 
     /**
-     * Initiates the rollback of this Unit of Work, invoking all registered listeners ({@link #onRollback(BiConsumer)
-     * and {@link #onCleanup(Consumer)}}.
+     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(BiConsumer)
+     * and clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered
+     * from the {@link CurrentUnitOfWork}.
      * <p/>
      * If the rollback is a result of an exception, consider using {@link #rollback(Throwable)} instead.
+     *
+     * @throws IllegalStateException if the Unit of Work is not in a compatible phase.
      */
     default void rollback() {
         rollback(null);
     }
 
     /**
-     * Initiates the rollback of this Unit of Work, invoking all registered listeners ({@link #onRollback(BiConsumer)
-     * and {@link #onCleanup(Consumer)}}.
+     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(BiConsumer)
+     * and clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered
+     * from the {@link CurrentUnitOfWork}.
      *
      * @param cause The cause of the rollback. May be <code>null</code>.
-     * @throws IllegalStateException if the UnitOfWork wasn't started
+     * @throws IllegalStateException if the Unit of Work is not in a compatible phase.
      */
     void rollback(Throwable cause);
-
-    /**
-     * Starts the current unit of work, preparing it for aggregate registration. The UnitOfWork instance is registered
-     * with the CurrentUnitOfWork.
-     */
-    void start();
 
     /**
      * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called,
@@ -88,78 +92,217 @@ public interface UnitOfWork {
         return phase().isStarted();
     }
 
+    /**
+     * Returns the current phase of the Unit of Work.
+     *
+     * @return the Unit of Work phase
+     */
     Phase phase();
 
+    /**
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
+     * the Unit of Work changes to {@link Phase#PREPARE_COMMIT}.
+     *
+     * @param handler the handler to register with the Unit of Work
+     */
     void onPrepareCommit(Consumer<UnitOfWork> handler);
 
+    /**
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
+     * the Unit of Work changes to {@link Phase#COMMIT}.
+     *
+     * @param handler the handler to register with the Unit of Work
+     */
     void onCommit(Consumer<UnitOfWork> handler);
 
+    /**
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
+     * the Unit of Work changes to {@link Phase#AFTER_COMMIT}.
+     *
+     * @param handler the handler to register with the Unit of Work
+     */
     void afterCommit(Consumer<UnitOfWork> handler);
 
+    /**
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
+     * the Unit of Work changes to {@link Phase#ROLLBACK}.
+     *
+     * @param handler the handler to register with the Unit of Work
+     */
     void onRollback(BiConsumer<UnitOfWork, Throwable> handler);
 
+    /**
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
+     * the Unit of Work changes to {@link Phase#CLEANUP}.
+     *
+     * @param handler the handler to register with the Unit of Work
+     */
     void onCleanup(Consumer<UnitOfWork> handler);
 
+    /**
+     * Returns an optional for the parent of this Unit of Work. The optional holds the Unit of Work that was active
+     * when this Unit of Work was started. In case no other Unit of Work was active when this Unit of Work was started
+     * the optional is empty, indicating that this is the Unit of Work root.
+     *
+     * @return an optional parent Unit of Work
+     */
     Optional<UnitOfWork> parent();
 
+    /**
+     * Returns the root of this Unit of Work. If this Unit of Work has no parent (see {@link #parent()}) it returns
+     * itself, otherwise it returns the root of its parent.
+     *
+     * @return the root of this Unit of Work
+     */
     default UnitOfWork root() {
         return parent().map(UnitOfWork::root).orElse(this);
     }
 
+    /**
+     * Get the message that is being processed by the Unit of Work. A Unit of Work processes a single Message over its
+     * life cycle.
+     *
+     * @return the Message being processed by this Unit of Work
+     */
     Message<?> getMessage();
 
-    Map<String, Object> resources();
-
-    default <T> T getOrComputeResource(String key, Function<? super String, T> mappingFunction) {
-        return (T) resources().computeIfAbsent(key, mappingFunction);
-    }
-
-    default <T> T getOrDefaultResource(String key, T defaultValue) {
-        return (T) resources().getOrDefault(key, defaultValue);
-    }
-
-    void registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
-
+    /**
+     * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.
+     * <p/>
+     * By default this correlation data will be copied to other {@link Message messages} created in the context of
+     * this Unit of Work, so long as these messages extend from {@link org.axonframework.messaging.GenericMessage}.
+     *
+     * @return The correlation data contained in the message processed by this Unit of Work
+     */
     MetaData getCorrelationData();
 
     /**
-     * Returns the resource previously attached under given <code>name</code>, or <code>null</code> if no such resource
+     * Register given <code>correlationDataProvider</code> with this Unit of Work. Correlation data providers are used
+     * to provide meta data based on this Unit of Work's {@link #getMessage() Message} when
+     * {@link #getCorrelationData()} is invoked.
+     *
+     * @param correlationDataProvider the Correlation Data Provider to register
+     */
+    void registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
+
+    /**
+     * Returns a mutable map of resources registered with the Unit of Work.
+     *
+     * @return mapping of resources registered with this Unit of Work
+     */
+    Map<String, Object> resources();
+
+    /**
+     * Returns the resource attached under given <code>name</code>, or <code>null</code> if no such resource
      * is available.
      *
      * @param name The name under which the resource was attached
      * @param <T>  The type of resource
-     * @return The resource attached under the given <code>name</code>, or <code>null</code> if no such resource is
-     * available.
+     * @return The resource mapped to the given <code>name</code>, or <code>null</code> if no resource was found.
      */
+    @SuppressWarnings("unchecked")
     default <T> T getResource(String name) {
         return (T) resources().get(name);
     }
 
+    /**
+     * Returns the resource attached under given <code>name</code>. If there is no resource mapped to the given key
+     * yet the <code>mappingFunction</code> is invoked to provide the mapping.
+     *
+     * @param key  The name under which the resource was attached
+     * @param <T>  The type of resource
+     * @return The resource mapped to the given <code>key</code>, or the resource returned by the
+     * <code>mappingFunction</code> if no resource was found.
+     */
+    @SuppressWarnings("unchecked")
+    default <T> T getOrComputeResource(String key, Function<? super String, T> mappingFunction) {
+        return (T) resources().computeIfAbsent(key, mappingFunction);
+    }
+
+    /**
+     * Enum indicating possible phases of the Unit of Work.
+     */
     enum Phase {
 
-        NOT_STARTED(false, true),
-        STARTED(true, true),
-        PREPARE_COMMIT(true, true),
-        COMMIT(true, true),
-        ROLLBACK(true, false),
-        AFTER_COMMIT(true, false),
-        CLEANUP(false, false),
-        CLOSED(false, false);
+        /**
+         * Indicates that the unit of work has been created but has not been registered with the
+         * {@link CurrentUnitOfWork} yet.
+         */
+        NOT_STARTED(false, false),
+
+        /**
+         * Indicates that the Unit of Work has been registered with the {@link CurrentUnitOfWork} but has not been
+         * committed, because its Message has not been processed yet.
+         */
+        STARTED(true, false),
+
+        /**
+         * Indicates that the Unit of Work is preparing its commit. This means that {@link #commit()} has been invoked
+         * on the Unit of Work, indicating that the Message {@link #getMessage()} of the Unit of Work has been
+         * processed.
+         * <p/>
+         * All handlers registered to be notified before commit {@link #onPrepareCommit} will be invoked. If no
+         * exception is raised by any of the handlers the Unit of Work will go into the {@link #COMMIT} phase,
+         * otherwise it will be rolled back.
+         */
+        PREPARE_COMMIT(true, false),
+
+        /**
+         * Indicates that the Unit of Work has been committed and is passed the {@link #PREPARE_COMMIT} phase.
+         */
+        COMMIT(true, false),
+
+        /**
+         * Indicates that the Unit of Work is being rolled back. Generally this is because an exception was raised
+         * while processing the {@link #getMessage() message} or while the Unit of Work was being committed.
+         */
+        ROLLBACK(true, true),
+
+        /**
+         * Indicates that the Unit of Work is after a successful commit. In this phase the Unit of Work cannot be
+         * rolled back anymore.
+         */
+        AFTER_COMMIT(true, true),
+
+        /**
+         * Indicates that the Unit of Work is after a successful commit or after a rollback. Any resources tied to
+         * this Unit of Work should be released.
+         */
+        CLEANUP(false, true),
+
+        /**
+         * Indicates that the Unit of Work is at the end of its life cycle. This phase is final.
+         */
+        CLOSED(false, true);
 
         private final boolean started;
-        private final boolean callbackOrderAsc;
+        private final boolean reverseCallbackOrder;
 
-        Phase(boolean started, boolean callbackOrderAsc) {
+        Phase(boolean started, boolean reverseCallbackOrder) {
             this.started = started;
-            this.callbackOrderAsc = callbackOrderAsc;
+            this.reverseCallbackOrder = reverseCallbackOrder;
         }
 
+        /**
+         * Check if a Unit of Work in this phase has been started, i.e. is registered with the
+         * {@link CurrentUnitOfWork}.
+         *
+         * @return <code>true</code> if the Unit of Work is started when in this phase, <code>false</code> otherwise
+         */
         public boolean isStarted() {
             return started;
         }
 
-        public boolean isCallbackOrderAsc() {
-            return callbackOrderAsc;
+        /**
+         * Check whether registered handlers for this phase should be invoked in the order of registration (first
+         * registered handler is invoked first) or in the reverse order of registration (last registered handler is
+         * invoked first).
+         *
+         * @return <code>true</code> if the order of invoking handlers in this phase should be in the reverse order
+         * of registration, <code>false</code> otherwise.
+         */
+        public boolean isReverseCallbackOrder() {
+            return reverseCallbackOrder;
         }
 
         /**

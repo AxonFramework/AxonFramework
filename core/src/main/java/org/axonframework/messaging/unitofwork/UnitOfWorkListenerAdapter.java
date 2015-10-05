@@ -29,6 +29,7 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.6
  */
+@Deprecated
 public abstract class UnitOfWorkListenerAdapter implements UnitOfWorkListener {
 
     /**

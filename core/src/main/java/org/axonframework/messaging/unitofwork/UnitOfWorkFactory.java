@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.Subscription;
+import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.messaging.Message;
 
 /**
@@ -26,16 +28,28 @@ import org.axonframework.messaging.Message;
  * either
  * invoke commit or rollback on these instances when done.
  *
+ * @param <T> the type of {@link UnitOfWork} produced by this factory
  * @author Allard Buijze
  * @since 0.7
  */
-public interface UnitOfWorkFactory {
+public interface UnitOfWorkFactory<T extends UnitOfWork> {
+
+    /**
+     * Register given <code>correlationDataProvider</code> with the UnitOfWorkFactory. When a new UnitOfWork
+     * instance is created the factory installs all registered correlation data providers with the unit of work.
+     *
+     * @param correlationDataProvider The correlation data provider to register
+     * @return a handle to unregister the <code>correlationDataProvider</code>. When unregistered it will no longer
+     * be attached to new unit of works.
+     */
+    Subscription registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
 
     /**
      * Creates a new UnitOfWork instance. The instance's {@link UnitOfWork#isActive()} method returns
      * <code>true</code>.
      *
+     * @param message The message to be processed by the new Unit of Work
      * @return a new UnitOfWork instance, which has been started.
      */
-    UnitOfWork createUnitOfWork(Message<?> message);
+    T createUnitOfWork(Message<?> message);
 }

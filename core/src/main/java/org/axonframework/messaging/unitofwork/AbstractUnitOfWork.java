@@ -6,11 +6,7 @@ import org.axonframework.messaging.MetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -20,11 +16,24 @@ import java.util.function.Consumer;
 public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
-    private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
+    private final UnitOfWorkHandlerCollection listeners = new UnitOfWorkHandlerCollection();
     private final Map<String, Object> resources = new HashMap<>();
     private final Queue<CorrelationDataProvider> correlationDataProviders = new ArrayDeque<>();
     private Phase phase = Phase.NOT_STARTED;
     private UnitOfWork parentUnitOfWork;
+
+    @Override
+    public void start() {
+        Assert.state(Phase.NOT_STARTED.equals(phase), "UnitOfWork is already started");
+        if (CurrentUnitOfWork.isStarted()) {
+            // we're nesting.
+            this.parentUnitOfWork = CurrentUnitOfWork.get();
+            root().onCleanup(u -> listeners.invokeHandlers(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED));
+        }
+        logger.debug("Registering Unit Of Work as CurrentUnitOfWork");
+        setPhase(Phase.STARTED);
+        CurrentUnitOfWork.set(this);
+    }
 
     @Override
     public void commit() {
@@ -44,25 +53,25 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private void commitAsRoot() {
         try {
             try {
-                listeners.invokeListeners(this, this::setPhase, Phase.PREPARE_COMMIT, Phase.COMMIT);
+                listeners.invokeHandlers(this, this::setPhase, Phase.PREPARE_COMMIT, Phase.COMMIT);
             } catch (Exception e) {
                 listeners.invokeRollbackListeners(this, e, this::setPhase);
                 throw e;
             }
 
             if (phase == Phase.COMMIT) {
-                listeners.invokeListeners(this, this::setPhase, Phase.AFTER_COMMIT);
+                listeners.invokeHandlers(this, this::setPhase, Phase.AFTER_COMMIT);
             }
         } finally {
-            listeners.invokeListeners(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED);
+            listeners.invokeHandlers(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED);
         }
     }
 
     private void commitAsNested() {
         UnitOfWork root = root();
         try {
-            listeners.invokeListeners(this, p -> this.phase = p, Phase.PREPARE_COMMIT, Phase.COMMIT);
-            root.afterCommit(u -> listeners.invokeListeners(this, this::setPhase, Phase.AFTER_COMMIT));
+            listeners.invokeHandlers(this, p -> this.phase = p, Phase.PREPARE_COMMIT, Phase.COMMIT);
+            root.afterCommit(u -> listeners.invokeHandlers(this, this::setPhase, Phase.AFTER_COMMIT));
             root.onRollback((u, e) -> listeners.invokeRollbackListeners(this, e, this::setPhase));
         } catch (Exception e) {
             listeners.invokeRollbackListeners(this, e, this::setPhase);
@@ -70,18 +79,9 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         }
     }
 
-    protected void setPhase(Phase phase) {
-        this.phase = phase;
-    }
-
     @Override
     public void rollback() {
         rollback(null);
-    }
-
-    @Override
-    public Optional<UnitOfWork> parent() {
-        return Optional.ofNullable(parentUnitOfWork);
     }
 
     @Override
@@ -96,7 +96,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             listeners.invokeRollbackListeners(this, cause, this::setPhase);
             if (parentUnitOfWork == null) {
                 // rollback as root
-                listeners.invokeListeners(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED);
+                listeners.invokeHandlers(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED);
             }
         } finally {
             CurrentUnitOfWork.clear(this);
@@ -104,16 +104,8 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public void start() {
-        Assert.state(Phase.NOT_STARTED.equals(phase), "UnitOfWork is already started");
-        if (CurrentUnitOfWork.isStarted()) {
-            // we're nesting.
-            this.parentUnitOfWork = CurrentUnitOfWork.get();
-            root().onCleanup(u -> listeners.invokeListeners(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED));
-        }
-        logger.debug("Registering Unit Of Work as CurrentUnitOfWork");
-        setPhase(Phase.STARTED);
-        CurrentUnitOfWork.set(this);
+    public Optional<UnitOfWork> parent() {
+        return Optional.ofNullable(parentUnitOfWork);
     }
 
     @Override
@@ -146,15 +138,6 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         return phase;
     }
 
-    /**
-     * Returns the collection of listeners for this Unit of Work.
-     *
-     * @return the collection of listeners for this Unit of Work.
-     */
-    protected UnitOfWorkListenerCollection listeners() {
-        return listeners;
-    }
-
     @Override
     public void onPrepareCommit(Consumer<UnitOfWork> handler) {
         addListener(Phase.PREPARE_COMMIT, handler);
@@ -174,7 +157,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     public void onRollback(BiConsumer<UnitOfWork, Throwable> handler) {
         Assert.state(!Phase.ROLLBACK.isBefore(phase),
                 "Cannot register a rollback listener. The Unit of Work is already after commit.");
-        listeners.addRollbackListener(handler);
+        listeners.addRollbackHandler(handler);
     }
 
     @Override
@@ -182,9 +165,34 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         addListener(Phase.CLEANUP, handler);
     }
 
+    /**
+     * Register the given <code>handler</code> with the Unit of Work. The handler will be invoked when the
+     * Unit of Work changes its phase to the given <code>phase</code>.
+     *
+     * @param phase     the Phase of the Unit of Work at which to invoke the handler
+     * @param handler   the handler to add
+     */
     protected void addListener(Phase phase, Consumer<UnitOfWork> handler) {
         Assert.state(!phase.isBefore(this.phase), "Cannot register a listener for phase: " + phase
                 + " because the Unit of Work is already in a later phase: " + this.phase);
-        listeners.addListener(phase, handler);
+        listeners.addHandler(phase, handler);
+    }
+
+    /**
+     * Set the the phase of the Unit of Work to given <code>phase</code>.
+     *
+     * @param phase The new phase of the Unit of Work
+     */
+    protected void setPhase(Phase phase) {
+        this.phase = phase;
+    }
+
+    /**
+     * Returns the collection of handlers for this Unit of Work.
+     *
+     * @return the collection of handlers for this Unit of Work.
+     */
+    protected UnitOfWorkHandlerCollection handlers() {
+        return listeners;
     }
 }

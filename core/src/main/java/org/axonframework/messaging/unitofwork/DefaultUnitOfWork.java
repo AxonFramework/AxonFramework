@@ -47,7 +47,7 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
      *
      * @return the started UnitOfWork instance
      */
-    public static UnitOfWork startAndGet(Message<?> message) {
+    public static DefaultUnitOfWork startAndGet(Message<?> message) {
         DefaultUnitOfWork uow = new DefaultUnitOfWork(message);
         uow.start();
         return uow;

@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.FixedValueParameterResolver;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
@@ -32,34 +33,22 @@ import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.messaging.CorrelationDataProvider;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.repository.Repository;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -74,10 +63,18 @@ public class AggregateAnnotationCommandHandlerTest {
     @Before
     public void setUp() throws Exception {
         commandBus = new SimpleCommandBus();
-        commandBus.setUnitOfWorkFactory(message -> {
-            UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
-            unitOfWork.resources().put(EventBus.KEY, mock(EventBus.class));
-            return unitOfWork;
+        commandBus.setUnitOfWorkFactory(new UnitOfWorkFactory() {
+            @Override
+            public Subscription registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
+                return () -> true;
+            }
+
+            @Override
+            public UnitOfWork createUnitOfWork(Message message) {
+                UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
+                unitOfWork.resources().put(EventBus.KEY, mock(EventBus.class));
+                return unitOfWork;
+            }
         });
         commandBus = spy(commandBus);
         mockRepository = mock(Repository.class);

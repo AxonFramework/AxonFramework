@@ -24,7 +24,7 @@ import org.axonframework.messaging.Message;
  * @author Allard Buijze
  * @since 0.7
  */
-public class DefaultUnitOfWorkFactory implements UnitOfWorkFactory {
+public class DefaultUnitOfWorkFactory extends AbstractUnitOfWorkFactory<DefaultUnitOfWork> {
 
     private final TransactionManager transactionManager;
 
@@ -46,11 +46,17 @@ public class DefaultUnitOfWorkFactory implements UnitOfWorkFactory {
         this.transactionManager = transactionManager;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation creates a new {@link DefaultUnitOfWork}, ties it to the {@link TransactionManager} and then
+     * starts the Unit of Work.
+     */
     @Override
-    public UnitOfWork createUnitOfWork(Message<?> message) {
+    public DefaultUnitOfWork doCreateUnitOfWork(Message<?> message) {
         if (transactionManager != null) {
             Object transaction = transactionManager.startTransaction();
-            UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
+            DefaultUnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
             unitOfWork.onCommit(u -> transactionManager.commitTransaction(transaction));
             unitOfWork.onRollback((u, e) -> transactionManager.rollbackTransaction(transaction));
             return unitOfWork;
