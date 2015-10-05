@@ -102,9 +102,9 @@ public class UnitOfWorkHandlerCollection {
         }
         final Deque<Consumer<UnitOfWork>> consumers = handlers.computeIfAbsent(phase, p -> new ArrayDeque<>());
         if (phase.isReverseCallbackOrder()) {
-            consumers.add(handler);
-        } else {
             consumers.addFirst(handler);
+        } else {
+            consumers.add(handler);
         }
     }
 

@@ -18,34 +18,17 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.RollbackOnAllExceptionsConfiguration;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcedEntity;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkListener;
 import org.axonframework.repository.Repository;
 import org.axonframework.testutils.MockException;
 import org.hamcrest.Description;
@@ -57,32 +40,13 @@ import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static junit.framework.TestCase.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -131,16 +95,17 @@ public class DisruptorCommandBusTest {
         );
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
-                                          .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
-        final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
-        when(mockHandlerInterceptor.handle(any(CommandMessage.class),
-                                           any(UnitOfWork.class),
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+        Consumer<UnitOfWork> mockPrepareCommitConsumer = mock(Consumer.class);
+        Consumer<UnitOfWork> mockAfterCommitConsumer = mock(Consumer.class);
+        Consumer<UnitOfWork> mockCleanUpConsumer = mock(Consumer.class);
+        when(mockHandlerInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class),
                                            any(InterceptorChain.class)))
                 .thenAnswer(invocation -> {
                     final UnitOfWork unitOfWork = (UnitOfWork) invocation.getArguments()[1];
-                    unitOfWork.onPrepareCommit(u -> mockUnitOfWorkListener.onPrepareCommit(u, null, null));
-                    unitOfWork.afterCommit(mockUnitOfWorkListener::afterCommit);
-                    unitOfWork.onCleanup(mockUnitOfWorkListener::onCleanup);
+                    unitOfWork.onPrepareCommit(mockPrepareCommitConsumer);
+                    unitOfWork.afterCommit(mockAfterCommitConsumer);
+                    unitOfWork.onCleanup(mockCleanUpConsumer);
                     return ((InterceptorChain) invocation.getArguments()[2]).proceed();
                 });
         CommandMessage<StubCommand> command = new GenericCommandMessage<>(
@@ -154,15 +119,17 @@ public class DisruptorCommandBusTest {
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
         InOrder inOrder = inOrder(mockDispatchInterceptor,
                                   mockHandlerInterceptor,
-                                  mockUnitOfWorkListener,
+                                  mockPrepareCommitConsumer,
+                                  mockAfterCommitConsumer,
+                                  mockCleanUpConsumer,
                                   mockCallback);
         inOrder.verify(mockDispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(mockHandlerInterceptor).handle(any(CommandMessage.class),
                                                       any(UnitOfWork.class),
                                                       any(InterceptorChain.class));
-        inOrder.verify(mockUnitOfWorkListener).onPrepareCommit(any(UnitOfWork.class), any(Set.class), any(List.class));
-        inOrder.verify(mockUnitOfWorkListener).afterCommit(isA(UnitOfWork.class));
-        inOrder.verify(mockUnitOfWorkListener).onCleanup(isA(UnitOfWork.class));
+        inOrder.verify(mockPrepareCommitConsumer).accept(isA(UnitOfWork.class));
+        inOrder.verify(mockAfterCommitConsumer).accept(isA(UnitOfWork.class));
+        inOrder.verify(mockCleanUpConsumer).accept(isA(UnitOfWork.class));
 
         verify(mockCallback).onSuccess(eq(command), any());
     }
@@ -336,18 +303,9 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
-                                          .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
-        final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
-        when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
-                .thenAnswer(new Parameter(1));
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         when(mockInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class)))
-                .thenAnswer(invocation -> {
-                    final UnitOfWork unitOfWork = (UnitOfWork) invocation.getArguments()[1];
-                    unitOfWork.onPrepareCommit(u -> mockUnitOfWorkListener.onPrepareCommit(u, null, null));
-                    unitOfWork.afterCommit(mockUnitOfWorkListener::afterCommit);
-                    unitOfWork.onCleanup(mockUnitOfWorkListener::onCleanup);
-                    return ((InterceptorChain) invocation.getArguments()[2]).proceed();
-                });
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[2]).proceed());
         testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier)));
         CommandCallback mockCallback = mock(CommandCallback.class);
         for (int t = 0; t < 1000; t++) {

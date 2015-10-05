@@ -30,7 +30,6 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkListener;
 import org.axonframework.repository.Repository;
 import org.axonframework.testutils.MockException;
 import org.junit.After;
@@ -105,9 +104,6 @@ public class DisruptorCommandBusTest_MultiThreaded {
             garbageCollectionPrevention.put(aggregate, new Object());
             return aggregate;
         }).when(spiedRepository).load(isA(String.class));
-        final UnitOfWorkListener mockUnitOfWorkListener = mock(UnitOfWorkListener.class);
-        when(mockUnitOfWorkListener.onEventRegistered(isA(UnitOfWork.class), any(EventMessage.class)))
-                .thenAnswer(invocation -> invocation.getArguments()[0]);
 
         for (int a = 0; a < AGGREGATE_COUNT; a++) {
             testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier[a])));

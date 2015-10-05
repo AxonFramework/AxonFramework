@@ -23,7 +23,7 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Wrapper around am EventMessage that adds "Serialization Awareness" to the message it wraps. This implementation
+ * Wrapper around an EventMessage that adds "Serialization Awareness" to the message it wraps. This implementation
  * ensures that, when the payload or meta data is being serialized more than once using the same serializer, only a
  * single serialization will actually occur. Subsequent invocations will return the same <code>SerializedObject</code>
  * instance as the first.

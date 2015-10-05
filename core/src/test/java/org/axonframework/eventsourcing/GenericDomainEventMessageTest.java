@@ -23,10 +23,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -41,10 +38,8 @@ public class GenericDomainEventMessageTest {
         GenericDomainEventMessage<Object> message1 = new GenericDomainEventMessage<>(id, seqNo, payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericDomainEventMessage<Object> message2 = new GenericDomainEventMessage<>(id, seqNo,
-                                                                                           payload, metaData);
-        GenericDomainEventMessage<Object> message3 = new GenericDomainEventMessage<>(id, seqNo,
-                                                                                           payload, metaDataMap);
+        GenericDomainEventMessage<Object> message2 = new GenericDomainEventMessage<>(id, seqNo, payload, metaData);
+        GenericDomainEventMessage<Object> message3 = new GenericDomainEventMessage<>(id, seqNo, payload, metaDataMap);
 
         assertSame(id, message1.getAggregateIdentifier());
         assertEquals(seqNo, message1.getSequenceNumber());

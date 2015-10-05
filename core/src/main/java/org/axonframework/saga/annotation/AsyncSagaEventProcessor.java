@@ -21,8 +21,6 @@ import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.RingBuffer;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.correlation.CorrelationDataHolder;
-import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -45,7 +43,7 @@ import java.util.*;
 public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProcessingEvent>, LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(AsyncSagaEventProcessor.class);
-    private final UnitOfWorkFactory unitOfWorkFactory;
+    private final UnitOfWorkFactory<?> unitOfWorkFactory;
     private final SagaRepository sagaRepository;
     private final Map<String, Saga> processedSagas = new TreeMap<>();
     private final Map<String, Saga> newlyCreatedSagas = new TreeMap<>();
@@ -54,15 +52,13 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private final int processorId;
     private final RingBuffer<AsyncSagaProcessingEvent> ringBuffer;
     private final AsyncAnnotatedSagaManager.SagaManagerStatus status;
-    private final CorrelationDataProvider correlationDataProvider;
     private UnitOfWork unitOfWork;
 
     private AsyncSagaEventProcessor(SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
                                     int processorCount, int processorId,
                                     UnitOfWorkFactory unitOfWorkFactory,
                                     RingBuffer<AsyncSagaProcessingEvent> ringBuffer,
-                                    AsyncAnnotatedSagaManager.SagaManagerStatus status,
-                                    CorrelationDataProvider correlationDataProvider) {
+                                    AsyncAnnotatedSagaManager.SagaManagerStatus status) {
         this.sagaRepository = sagaRepository;
         this.parameterResolverFactory = parameterResolverFactory;
         this.processorCount = processorCount;
@@ -70,7 +66,6 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.ringBuffer = ringBuffer;
         this.status = status;
-        this.correlationDataProvider = correlationDataProvider;
     }
 
     /**
@@ -82,16 +77,13 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
      * @param unitOfWorkFactory        The factory to create Unit of Work instances with
      * @param processorCount           The number of processors to create
      * @param ringBuffer               The ringBuffer on which the Processor will operate
-     * @param status                   The object providing insight in the status of the SagaManager     @return an
-     *                                 array containing the Disruptor Event Handlers to invoke Sagas.
-     * @param correlationDataProvider
+     * @param status                   The object providing insight in the status of the SagaManager
      * @return the processor instances that will process the incoming events
      */
     static EventHandler<AsyncSagaProcessingEvent>[] createInstances(
             SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
             UnitOfWorkFactory unitOfWorkFactory, int processorCount,
-            RingBuffer<AsyncSagaProcessingEvent> ringBuffer, AsyncAnnotatedSagaManager.SagaManagerStatus status,
-            CorrelationDataProvider correlationDataProvider) {
+            RingBuffer<AsyncSagaProcessingEvent> ringBuffer, AsyncAnnotatedSagaManager.SagaManagerStatus status) {
         AsyncSagaEventProcessor[] processors = new AsyncSagaEventProcessor[processorCount];
         for (int processorId = 0; processorId < processorCount; processorId++) {
             processors[processorId] = new AsyncSagaEventProcessor(sagaRepository,
@@ -100,25 +92,13 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                                                                   processorId,
                                                                   unitOfWorkFactory,
                                                                   ringBuffer,
-                                                                  status,
-                                                                  correlationDataProvider);
+                                                                  status);
         }
         return processors;
     }
 
     @Override
     public void onEvent(AsyncSagaProcessingEvent entry, long sequence, boolean endOfBatch) throws Exception {
-        Map<String, ?> correlationData = correlationDataProvider.correlationDataFor(entry.getPublishedEvent());
-        CorrelationDataHolder.setCorrelationData(correlationData);
-        try {
-            doProcessEvent(entry, sequence, endOfBatch);
-        } finally {
-            CorrelationDataHolder.clear();
-        }
-    }
-
-    private void doProcessEvent(AsyncSagaProcessingEvent entry, long sequence, boolean endOfBatch)
-            throws Exception {
         boolean sagaInvoked = invokeExistingSagas(entry);
         AssociationValue associationValue;
         switch (entry.getCreationHandler().getCreationPolicy()) {
@@ -132,7 +112,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                 associationValue = entry.getInitialAssociationValue();
                 boolean shouldCreate = associationValue != null && entry.waitForSagaCreationVote(
                         sagaInvoked, processorCount, ownedByCurrentProcessor(entry.getNewSaga()
-                                                                                  .getSagaIdentifier()));
+                                .getSagaIdentifier()));
                 if (shouldCreate) {
                     processNewSagaInstance(entry, associationValue);
                 }
@@ -170,16 +150,15 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         for (AssociationValue associationValue : entry.getAssociationValues()) {
             sagaIds.addAll(sagaRepository.find(sagaType, associationValue));
         }
-        for (String sagaId : sagaIds) {
-            if (ownedByCurrentProcessor(sagaId) && !processedSagas.containsKey(sagaId)) {
-                ensureActiveUnitOfWork(entry.getPublishedEvent());
-                final Saga saga = sagaRepository.load(sagaId);
-                if (parameterResolverFactory != null) {
-                    ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(parameterResolverFactory);
-                }
-                processedSagas.put(sagaId, saga);
-            }
-        }
+        sagaIds.stream().filter(sagaId -> ownedByCurrentProcessor(sagaId) && !processedSagas.containsKey(sagaId))
+                        .forEach(sagaId -> {
+                            ensureActiveUnitOfWork(entry.getPublishedEvent());
+                            final Saga saga = sagaRepository.load(sagaId);
+                            if (parameterResolverFactory != null) {
+                                ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(parameterResolverFactory);
+                            }
+                            processedSagas.put(sagaId, saga);
+                        });
         for (Saga saga : processedSagas.values()) {
             if (sagaType.isInstance(saga) && saga.isActive()
                     && containsAny(saga.getAssociationValues(), entry.getAssociationValues())) {

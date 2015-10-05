@@ -49,13 +49,13 @@ public class AuditingInterceptor implements CommandHandlerInterceptor {
 
     @Override
     public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
-        AuditingUnitOfWorkListener auditListener = new AuditingUnitOfWorkListener(command,
-                                                                                  auditDataProvider,
-                                                                                  auditLogger);
-        // TODO: Fix
+//        AuditingUnitOfWorkListener auditListener = new AuditingUnitOfWorkListener(command,
+//                                                                                  auditDataProvider,
+//                                                                                  auditLogger);
+        // TODO: Seems that this whole class can be removed. We can use correlation data providers instead.
 //        unitOfWork.registerListener(auditListener);
         Object returnValue = chain.proceed();
-        auditListener.setReturnValue(returnValue);
+//        auditListener.setReturnValue(returnValue);
         return returnValue;
     }
 

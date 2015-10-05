@@ -25,9 +25,6 @@ import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.*;
-import org.axonframework.messaging.CorrelationDataProvider;
-import org.axonframework.messaging.MultiCorrelationDataProvider;
-import org.axonframework.messaging.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -73,7 +70,6 @@ public class AsyncAnnotatedSagaManager implements SagaManager, EventProcessingMo
     private volatile SagaFactory sagaFactory = new GenericSagaFactory();
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private long startTimeout = 5000;
-    private CorrelationDataProvider correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
      * Initializes an Asynchronous Saga Manager using default values for the given <code>sagaTypes</code>.
@@ -121,8 +117,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, EventProcessingMo
             disruptor.handleEventsWith(AsyncSagaEventProcessor.createInstances(sagaRepository, parameterResolverFactory,
                                                                                unitOfWorkFactory, processorCount,
                                                                                disruptor.getRingBuffer(),
-                                                                               sagaManagerStatus,
-                                                                               correlationDataProvider))
+                                                                               sagaManagerStatus))
                      .then(new MonitorNotifier(processingMonitors));
             disruptor.start();
         }
@@ -292,16 +287,6 @@ public class AsyncAnnotatedSagaManager implements SagaManager, EventProcessingMo
     public synchronized void setWaitStrategy(WaitStrategy waitStrategy) {
         Assert.state(disruptor == null, "Cannot set waitStrategy when SagaManager has started");
         this.waitStrategy = waitStrategy;
-    }
-
-    public synchronized void setCorrelationDataProvider(
-            CorrelationDataProvider correlationDataProvider) {
-        this.correlationDataProvider = correlationDataProvider;
-    }
-
-    public synchronized void setCorrelationDataProviders(
-            List<? extends CorrelationDataProvider> correlationDataProviders) {
-        this.correlationDataProvider = new MultiCorrelationDataProvider<>(correlationDataProviders);
     }
 
     private static final class SagaProcessingEventTranslator implements EventTranslator<AsyncSagaProcessingEvent> {

@@ -20,17 +20,14 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockManager;
 import org.axonframework.common.lock.PessimisticLockManager;
-import org.axonframework.correlation.CorrelationDataHolder;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.CorrelationDataProvider;
-import org.axonframework.messaging.MultiCorrelationDataProvider;
-import org.axonframework.messaging.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -52,7 +49,6 @@ public abstract class AbstractSagaManager implements SagaManager {
     private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
-    private CorrelationDataProvider correlationDataProvider = new SimpleCorrelationDataProvider();
 
     /**
      * Initializes the SagaManager with the given <code>sagaRepository</code>.
@@ -93,12 +89,10 @@ public abstract class AbstractSagaManager implements SagaManager {
         for (AssociationValue associationValue : associationValues) {
             sagas.addAll(sagaRepository.find(sagaType, associationValue));
         }
-        for (Saga sagaInCreation : sagasInCreation.values()) {
-            if (sagaType.isInstance(sagaInCreation)
-                    && containsAny(sagaInCreation.getAssociationValues(), associationValues)) {
-                sagas.add(sagaInCreation.getSagaIdentifier());
-            }
-        }
+        sagas.addAll(sagasInCreation.values().stream()
+                .filter(sagaInCreation -> sagaType.isInstance(sagaInCreation)
+                        && containsAny(sagaInCreation.getAssociationValues(), associationValues))
+                .map(Saga::getSagaIdentifier).collect(Collectors.toList()));
         boolean sagaOfTypeInvoked = false;
         for (final String sagaId : sagas) {
             if (synchronizeSagaAccess) {
@@ -225,7 +219,6 @@ public abstract class AbstractSagaManager implements SagaManager {
 
     private void doInvokeSaga(EventMessage event, Saga saga) {
         try {
-            CorrelationDataHolder.setCorrelationData(correlationDataProvider.correlationDataFor(event));
             saga.handle(event);
         } catch (RuntimeException e) {
             if (suppressExceptions) {
@@ -236,8 +229,6 @@ public abstract class AbstractSagaManager implements SagaManager {
             } else {
                 throw e;
             }
-        } finally {
-            CorrelationDataHolder.clear();
         }
     }
 
@@ -268,28 +259,6 @@ public abstract class AbstractSagaManager implements SagaManager {
      */
     public void setSynchronizeSagaAccess(boolean synchronizeSagaAccess) {
         this.synchronizeSagaAccess = synchronizeSagaAccess;
-    }
-
-    /**
-     * Sets the correlation data provider for this SagaManager. It will provide the data to attach to messages sent by
-     * Sagas managed by this manager.
-     *
-     * @param correlationDataProvider the correlation data provider for this SagaManager
-     */
-    public void setCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
-        this.correlationDataProvider = correlationDataProvider;
-    }
-
-    /**
-     * Sets the given <code>correlationDataProviders</code>. Each will provide data to attach to messages sent by Sagas
-     * managed by this manager. When multiple providers provide different values for the same key, the latter provider
-     * will overwrite any values set earlier.
-     *
-     * @param correlationDataProviders the correlation data providers for this SagaManager
-     */
-    public void setCorrelationDataProviders(
-            List<? extends CorrelationDataProvider> correlationDataProviders) {
-        this.correlationDataProvider = new MultiCorrelationDataProvider<>(correlationDataProviders);
     }
 
     /**

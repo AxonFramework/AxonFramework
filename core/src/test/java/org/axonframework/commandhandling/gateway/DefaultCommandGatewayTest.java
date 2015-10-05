@@ -16,17 +16,16 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.correlation.CorrelationDataHolder;
+import org.axonframework.commandhandling.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.CustomTypeSafeMatcher;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,17 +49,11 @@ public class DefaultCommandGatewayTest {
 
     @Before
     public void setUp() throws Exception {
-        CorrelationDataHolder.clear();
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
         mockCommandMessageTransformer = mock(CommandDispatchInterceptor.class);
         when(mockCommandMessageTransformer.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         testSubject = new DefaultCommandGateway(mockCommandBus, mockRetryScheduler, mockCommandMessageTransformer);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        CorrelationDataHolder.clear();
     }
 
     @SuppressWarnings({"unchecked", "serial"})
@@ -221,7 +214,8 @@ public class DefaultCommandGatewayTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testCorrelationDataIsAttachedToCommandAsObject() throws Exception {
-        CorrelationDataHolder.setCorrelationData(Collections.singletonMap("correlationId", "test"));
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
 
         verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>("header correlationId") {
@@ -230,6 +224,8 @@ public class DefaultCommandGatewayTest {
                 return "test".equals(item.getMetaData().get("correlationId"));
             }
         }), isA(CommandCallback.class));
+
+        CurrentUnitOfWork.clear(unitOfWork);
     }
 
     @SuppressWarnings("unchecked")
@@ -238,7 +234,8 @@ public class DefaultCommandGatewayTest {
         final Map<String, String> data = new HashMap<>();
         data.put("correlationId", "test");
         data.put("header", "someValue");
-        CorrelationDataHolder.setCorrelationData(data);
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.registerCorrelationDataProvider(message -> data);
         testSubject.send(new GenericCommandMessage<>("Hello", Collections.singletonMap("header", "value")));
 
         verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>(
@@ -249,6 +246,8 @@ public class DefaultCommandGatewayTest {
                         && "value".equals(item.getMetaData().get("header"));
             }
         }), isA(CommandCallback.class));
+
+        CurrentUnitOfWork.clear(unitOfWork);
     }
 
     private static class RescheduleCommand implements Answer<Boolean> {

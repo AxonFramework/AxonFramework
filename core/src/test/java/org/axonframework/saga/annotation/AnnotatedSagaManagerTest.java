@@ -17,15 +17,12 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.MetaData;
-import org.axonframework.correlation.CorrelationDataHolder;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.StubDomainEvent;
-import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,7 +35,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
@@ -55,14 +51,8 @@ public class AnnotatedSagaManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        CorrelationDataHolder.clear();
         sagaRepository = spy(new InMemorySagaRepository());
         manager = new AnnotatedSagaManager(sagaRepository, MyTestSaga.class);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        CorrelationDataHolder.clear();
     }
 
     @Test
@@ -174,28 +164,6 @@ public class AnnotatedSagaManagerTest {
             assertEquals("MyTestSaga missing for id" + i, 1, repositoryContents("id" + i, MyTestSaga.class).size());
             assertEquals("MyOtherTestSaga missing for id" + i, 1, repositoryContents("id" + i, MyOtherTestSaga.class).size());
         }
-    }
-
-    @Test
-    public void testCorrelationDataReadFromProvider() throws Exception {
-        CorrelationDataProvider correlationDataProvider = mock(CorrelationDataProvider.class);
-        manager.setCorrelationDataProvider(correlationDataProvider);
-
-        manager.handle(asEventMessage(new StartingEvent("12")).withMetaData(singletonMap("key", "val")));
-
-        verify(correlationDataProvider).correlationDataFor(isA(EventMessage.class));
-    }
-
-    @Test
-    public void testCorrelationDataReadFromProviders() throws Exception {
-        CorrelationDataProvider correlationDataProvider1 = mock(CorrelationDataProvider.class);
-        CorrelationDataProvider correlationDataProvider2 = mock(CorrelationDataProvider.class);
-        manager.setCorrelationDataProviders(asList(correlationDataProvider1, correlationDataProvider2));
-
-        manager.handle(asEventMessage(new StartingEvent("12")).withMetaData(singletonMap("key", "val")));
-
-        verify(correlationDataProvider1).correlationDataFor(isA(EventMessage.class));
-        verify(correlationDataProvider2).correlationDataFor(isA(EventMessage.class));
     }
 
     @Test(timeout = 5000)

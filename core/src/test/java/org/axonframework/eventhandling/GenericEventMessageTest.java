@@ -22,10 +22,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -45,7 +42,7 @@ public class GenericEventMessageTest {
         assertEquals(Object.class, message1.getPayload().getClass());
         assertEquals(Object.class, message1.getPayloadType());
 
-        assertSame(metaData, message2.getMetaData());
+        assertEquals(metaData, message2.getMetaData());
         assertEquals(Object.class, message2.getPayload().getClass());
         assertEquals(Object.class, message2.getPayloadType());
 

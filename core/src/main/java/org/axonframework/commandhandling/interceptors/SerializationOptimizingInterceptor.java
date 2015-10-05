@@ -19,12 +19,7 @@ package org.axonframework.commandhandling.interceptors;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkListenerAdapter;
-import org.axonframework.serializer.SerializationAwareDomainEventMessage;
-import org.axonframework.serializer.SerializationAwareEventMessage;
 
 /**
  * Interceptor that register a unit of work listener that wraps each EventMessage in a SerializationAware message. This
@@ -36,25 +31,26 @@ import org.axonframework.serializer.SerializationAwareEventMessage;
  */
 public class SerializationOptimizingInterceptor implements CommandHandlerInterceptor {
 
-    private final SerializationOptimizingListener listener = new SerializationOptimizingListener();
+    //todo Convert to a MessagePreprocessor that is registered with the event bus.
+
+//    private final SerializationOptimizingListener listener = new SerializationOptimizingListener();
 
     @Override
     public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
-                         InterceptorChain interceptorChain)
-            throws Throwable {
+                         InterceptorChain interceptorChain) throws Throwable {
 //        unitOfWork.registerListener(listener);
         return interceptorChain.proceed();
     }
 
-    private static final class SerializationOptimizingListener extends UnitOfWorkListenerAdapter {
-
-        @Override
-        public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
-            if (event instanceof DomainEventMessage) {
-                return SerializationAwareDomainEventMessage.wrap((DomainEventMessage<T>) event);
-            } else {
-                return SerializationAwareEventMessage.wrap(event);
-            }
-        }
-    }
+//    private static final class SerializationOptimizingListener extends UnitOfWorkListenerAdapter {
+//
+//        @Override
+//        public <T> EventMessage<T> onEventRegistered(UnitOfWork unitOfWork, EventMessage<T> event) {
+//            if (event instanceof DomainEventMessage) {
+//                return SerializationAwareDomainEventMessage.wrap((DomainEventMessage<T>) event);
+//            } else {
+//                return SerializationAwareEventMessage.wrap(event);
+//            }
+//        }
+//    }
 }

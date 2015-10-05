@@ -17,11 +17,7 @@
 package org.axonframework.messaging;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Represents MetaData that is passed along with a payload in a Message. Typically, the MetaData contains information
@@ -190,6 +186,9 @@ public class MetaData implements Map<String, Object>, Serializable {
     public MetaData mergedWith(Map<String, ?> additionalEntries) {
         if (additionalEntries.isEmpty()) {
             return this;
+        }
+        if (isEmpty()) {
+            return MetaData.from(additionalEntries);
         }
         Map<String, Object> merged = new HashMap<>(values);
         merged.putAll(additionalEntries);

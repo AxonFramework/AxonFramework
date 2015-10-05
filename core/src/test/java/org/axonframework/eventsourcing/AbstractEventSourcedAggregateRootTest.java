@@ -95,7 +95,7 @@ public class AbstractEventSourcedAggregateRootTest {
         assertEquals(2, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(2, testSubject.getSimpleEntityList().get(0).getInvocationCount());
 
-        assertEquals(new Long(eventBus.getPublishedEventCount()), testSubject.getVersion());
+        assertEquals(new Long(eventBus.getPublishedEventCount() - 1), testSubject.getVersion());
     }
 
     /**
