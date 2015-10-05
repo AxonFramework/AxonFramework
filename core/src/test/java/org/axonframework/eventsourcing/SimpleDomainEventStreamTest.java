@@ -16,16 +16,13 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Test;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze

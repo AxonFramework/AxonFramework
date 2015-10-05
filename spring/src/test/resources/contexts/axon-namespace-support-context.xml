@@ -57,7 +57,7 @@
     </axon:saga-manager>
 
     <bean id="correlationDataProvider" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.messaging.CorrelationDataProvider"/>
+        <property name="mockType" value="org.axonframework.messaging.metadata.CorrelationDataProvider"/>
     </bean>
 
     <axon:aggregate-command-handler id="aggregateCommandHandlerWithoutTargetResolver"

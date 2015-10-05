@@ -17,8 +17,8 @@
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.messaging.CorrelationDataProvider;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.CorrelationDataProvider;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.saga.AbstractSagaManager;
 import org.axonframework.saga.SagaFactory;
 import org.axonframework.saga.SagaManager;

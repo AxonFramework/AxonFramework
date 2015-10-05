@@ -16,7 +16,7 @@
 
 package org.axonframework.upcasting;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.time.Instant;
 

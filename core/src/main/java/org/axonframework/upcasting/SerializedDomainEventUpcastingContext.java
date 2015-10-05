@@ -16,7 +16,7 @@
 
 package org.axonframework.upcasting;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.serializer.LazyDeserializingObject;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.Serializer;

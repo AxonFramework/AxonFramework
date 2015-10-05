@@ -69,7 +69,7 @@ public class MongoEventStore implements SnapshotEventStore, EventStoreManagement
      * causing each event to be stored in a separate Mongo Document.
      * <p/>
      * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
-     * (name = "org.axonframework.messaging.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
+     * (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
      *
      * @param eventSerializer Your own Serializer
      * @param mongo           Mongo instance to obtain the database and the collections.

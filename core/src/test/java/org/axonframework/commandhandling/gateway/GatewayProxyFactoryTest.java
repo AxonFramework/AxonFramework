@@ -38,24 +38,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.singletonMap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.anyObject;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -111,7 +95,7 @@ public class GatewayProxyFactoryTest {
         final Object metaTest = new Object();
         GatewayProxyFactory testSubject = new GatewayProxyFactory(mockCommandBus);
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
-        gateway.fireAndForget("Command", org.axonframework.messaging.MetaData.from(singletonMap("otherKey", "otherVal")),
+        gateway.fireAndForget("Command", org.axonframework.messaging.metadata.MetaData.from(singletonMap("otherKey", "otherVal")),
                               metaTest, "value");
         // in this case, no callback is used
         verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<Object>>() {
@@ -530,7 +514,7 @@ public class GatewayProxyFactoryTest {
 
     private static interface CompleteGateway {
 
-        void fireAndForget(Object command, org.axonframework.messaging.MetaData meta, @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
+        void fireAndForget(Object command, org.axonframework.messaging.metadata.MetaData meta, @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
 
         String waitForReturnValue(Object command);
 

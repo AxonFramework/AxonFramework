@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.metadata;
+
+import org.axonframework.messaging.Message;
 
 import java.util.Map;
 

@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.Deque;
 import java.util.LinkedList;

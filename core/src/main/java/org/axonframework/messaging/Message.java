@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.io.Serializable;
 import java.util.Map;

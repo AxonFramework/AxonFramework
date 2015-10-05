@@ -118,7 +118,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
      * <p/>
      * <p/>
      * <em>Note: the SerializedType of Message Meta Data is not stored in the DefaultEventEntryStore. Upon retrieval,
-     * it is set to the default value (name = "org.axonframework.messaging.MetaData", revision = null). See {@link
+     * it is set to the default value (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link
      * org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore

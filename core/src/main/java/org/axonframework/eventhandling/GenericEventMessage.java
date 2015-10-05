@@ -21,7 +21,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.time.Clock;
 import java.time.Instant;

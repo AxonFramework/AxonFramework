@@ -38,7 +38,7 @@ import java.util.Map;
  * This implementation requires that the aforementioned instances are available in the current persistence context.
  * <p/>
  * <em>Note: the SerializedType of Message Meta Data is not stored in this EventEntryStore. Upon retrieval,
- * it is set to the default value (name = "org.axonframework.messaging.MetaData", revision = null). See {@link
+ * it is set to the default value (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link
  * org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @param <T> The type of data used by this EventEntryStore.

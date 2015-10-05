@@ -17,8 +17,8 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Subscription;
-import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.metadata.CorrelationDataProvider;
 
 /**
  * The <code>UnitOfWorkFactory</code> interface is used to obtain UnitOfWork instances to manage activity in command

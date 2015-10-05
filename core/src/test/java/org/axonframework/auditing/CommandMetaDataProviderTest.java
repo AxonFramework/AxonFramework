@@ -17,7 +17,7 @@
 package org.axonframework.auditing;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Test;
 
 import java.util.Map;

@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.metadata;
 
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
 import org.junit.Test;
 
 import java.util.HashMap;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.metadata;
 
 import java.io.Serializable;
 import java.util.*;

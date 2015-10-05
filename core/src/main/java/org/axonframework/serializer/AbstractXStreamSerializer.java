@@ -28,7 +28,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;

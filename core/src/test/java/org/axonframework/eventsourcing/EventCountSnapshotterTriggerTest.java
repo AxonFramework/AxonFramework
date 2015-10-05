@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.cache.Cache;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -31,11 +31,7 @@ import org.mockito.internal.matchers.CapturingMatcher;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze

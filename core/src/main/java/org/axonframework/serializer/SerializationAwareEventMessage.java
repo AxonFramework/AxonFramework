@@ -17,7 +17,7 @@
 package org.axonframework.serializer;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.time.Instant;
 import java.util.Map;

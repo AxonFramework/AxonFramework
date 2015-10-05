@@ -30,13 +30,7 @@ import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.axonframework.upcasting.UpcasterAware;
 import org.axonframework.upcasting.UpcasterChain;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.SequenceInputStream;
+import java.io.*;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -75,7 +69,7 @@ public class FileSystemEventStore implements SnapshotEventStore, UpcasterAware {
      * serializing the payload and meta data of Event Messages.
      * <p/>
      * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
-     * (name = "org.axonframework.messaging.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
+     * (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
      *
      * @param serializer        The serializer capable of serializing (at least) DomainEvents
      * @param eventFileResolver The EventFileResolver providing access to event files

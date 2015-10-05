@@ -1,8 +1,8 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Subscription;
-import org.axonframework.messaging.CorrelationDataProvider;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.metadata.CorrelationDataProvider;
 import org.junit.Before;
 import org.junit.Test;
 

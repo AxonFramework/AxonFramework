@@ -1,8 +1,8 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.CorrelationDataProvider;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.CorrelationDataProvider;
+import org.axonframework.messaging.metadata.MetaData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

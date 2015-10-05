@@ -1,5 +1,6 @@
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.After;

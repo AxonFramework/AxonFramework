@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,10 +27,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
