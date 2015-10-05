@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.domain.IdentifierFactory;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Map;
@@ -28,14 +29,11 @@ import java.util.Map;
  * @author Allard Buijze
  * @since 2.0
  */
-public class GenericCommandMessage<T> implements CommandMessage<T> {
+public class GenericCommandMessage<T> extends GenericMessage<T> implements CommandMessage<T> {
 
     private static final long serialVersionUID = 8754588074137370013L;
 
-    private final String identifier;
     private final String commandName;
-    private final T payload;
-    private final MetaData metaData;
 
     /**
      * Returns the given command as a CommandMessage. If <code>command</code> already implements CommandMessage, it is
@@ -81,12 +79,8 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      * @param newMetaData The meta data for this message
      */
     public GenericCommandMessage(String commandName, T payload, Map<String, ?> newMetaData) {
-        this.commandName = commandName;
-        this.payload = payload;
-        this.metaData = MetaData.from(newMetaData);
-        this.identifier = IdentifierFactory.getInstance().generateIdentifier();
+        this(IdentifierFactory.getInstance().generateIdentifier(), commandName, payload, newMetaData);
     }
-
 
     /**
      * Create a CommandMessage with the given <code>command</code> as payload and a custom chosen
@@ -99,24 +93,8 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
      * @param newMetaData The meta data for this message (<code>null</code> results in empty meta data)
      */
     public GenericCommandMessage(String identifier, String commandName, T payload, Map<String, ?> newMetaData) {
-        this.identifier = identifier;
+        super(identifier, payload, newMetaData);
         this.commandName = commandName;
-        this.payload = payload;
-        this.metaData = MetaData.from(newMetaData);
-    }
-
-    /**
-     * Copy constructor that allows creation of a new GenericCommandMessage with modified metaData. All information
-     * from the <code>original</code> is copied, except for the metaData.
-     *
-     * @param original The original message
-     * @param metaData The MetaData for the new message
-     */
-    protected GenericCommandMessage(GenericCommandMessage<T> original, Map<String, ?> metaData) {
-        this.identifier = original.getIdentifier();
-        this.commandName = original.getCommandName();
-        this.payload = original.getPayload();
-        this.metaData = MetaData.from(metaData);
     }
 
     @Override
@@ -125,38 +103,12 @@ public class GenericCommandMessage<T> implements CommandMessage<T> {
     }
 
     @Override
-    public MetaData getMetaData() {
-        return metaData;
-    }
-
-    @Override
-    public T getPayload() {
-        return payload;
-    }
-
-    @Override
-    public Class getPayloadType() {
-        return payload.getClass();
-    }
-
-    @Override
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    @Override
     public GenericCommandMessage<T> withMetaData(Map<String, ?> newMetaData) {
-        if (getMetaData().equals(newMetaData)) {
-            return this;
-        }
-        return new GenericCommandMessage<>(this, newMetaData);
+        return (GenericCommandMessage<T>) super.withMetaData(newMetaData);
     }
 
     @Override
     public GenericCommandMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
-        if (additionalMetaData.isEmpty()) {
-            return this;
-        }
-        return new GenericCommandMessage<>(this, metaData.mergedWith(additionalMetaData));
+        return (GenericCommandMessage<T>) super.andMetaData(additionalMetaData);
     }
 }
