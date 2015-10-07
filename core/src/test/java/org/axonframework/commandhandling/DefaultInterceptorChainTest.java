@@ -25,11 +25,7 @@ import org.junit.Test;
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -40,14 +36,14 @@ public class DefaultInterceptorChainTest {
     private CommandHandler<?> mockCommandHandler;
 
     @Before
-    public void setUp() throws Throwable {
+    public void setUp() throws Exception {
         mockUnitOfWork = mock(UnitOfWork.class);
         mockCommandHandler = mock(CommandHandler.class);
         when(mockCommandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Result");
     }
 
     @Test
-    public void testChainWithDifferentProceedCalls() throws Throwable {
+    public void testChainWithDifferentProceedCalls() throws Exception {
         CommandHandlerInterceptor interceptor1 = (commandMessage, unitOfWork,
                                                   interceptorChain) -> interceptorChain.proceed(GenericCommandMessage.asCommandMessage("testing"));
         CommandHandlerInterceptor interceptor2 = (commandMessage, unitOfWork,

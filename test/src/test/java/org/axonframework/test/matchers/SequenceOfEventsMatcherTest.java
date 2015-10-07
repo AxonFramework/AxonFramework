@@ -29,17 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -199,7 +190,7 @@ public class SequenceOfEventsMatcherTest {
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
+        public Object answer(InvocationOnMock invocation) throws Exception {
             Description descriptionParameter = (Description) invocation.getArguments()[0];
             descriptionParameter.appendText(this.description);
             return Void.class;

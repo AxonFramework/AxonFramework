@@ -194,7 +194,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         }
 
         @Override
-        public Object invoke(MethodInvocation invocation) throws Throwable {
+        public Object invoke(MethodInvocation invocation) throws Exception {
             try {
                 // if the method is declared on the proxy, invoke it there
                 for (Method proxyMethod : proxyMethods) {
@@ -207,7 +207,12 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
                 // otherwise, invoke it on the original object
                 return invocation.proceed();
             } catch (InvocationTargetException e) {
-                throw e.getCause();
+                throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
+            } catch (Throwable e) {
+                if (e instanceof Error) {
+                    throw (Error) e;
+                }
+                throw new InvocationTargetException(e);
             }
         }
     }
@@ -228,16 +233,21 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
         }
 
         @Override
-        public Object invoke(MethodInvocation invocation) throws Throwable {
+        public Object invoke(MethodInvocation invocation) throws Exception {
             Class<?> declaringClass = invocation.getMethod().getDeclaringClass();
-            if (declaringClass.isAssignableFrom(adapterInterface)) {
-                try {
+            try {
+                if (declaringClass.isAssignableFrom(adapterInterface)) {
                     return invocation.getMethod().invoke(adapter, invocation.getArguments());
-                } catch (InvocationTargetException e) {
-                    throw e.getCause();
                 }
+                return invocation.proceed();
+            } catch (InvocationTargetException e) {
+                throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
+            } catch (Throwable e) {
+                if (e instanceof Error) {
+                    throw (Error) e;
+                }
+                throw new InvocationTargetException(e);
             }
-            return invocation.proceed();
         }
 
         @Override

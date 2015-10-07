@@ -21,8 +21,10 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
@@ -66,7 +68,7 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInitializeProxiedInstance() throws Throwable {
+    public void testInitializeProxiedInstance() throws Exception {
         SecurityContextHolder.setContext(new SecurityContext() {
             @Override
             public Authentication getAuthentication() {

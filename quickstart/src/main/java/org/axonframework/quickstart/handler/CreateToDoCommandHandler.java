@@ -34,7 +34,7 @@ public class CreateToDoCommandHandler implements CommandHandler<CreateToDoItemCo
     }
 
     @Override
-    public Object handle(CommandMessage<CreateToDoItemCommand> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+    public Object handle(CommandMessage<CreateToDoItemCommand> commandMessage, UnitOfWork unitOfWork) throws Exception {
         CreateToDoItemCommand command = commandMessage.getPayload();
         ToDoItem toDoItem = new ToDoItem(command.getTodoId(), command.getDescription());
         repository.add(toDoItem);

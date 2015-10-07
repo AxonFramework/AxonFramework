@@ -61,7 +61,7 @@ public class LoggingInterceptor implements CommandHandlerInterceptor {
     }
 
     @Override
-    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain chain) throws Throwable {
+    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain chain) throws Exception {
         logger.info("Incoming command: [{}]", command.getPayloadType().getSimpleName());
         try {
             Object returnValue = chain.proceed();
@@ -69,7 +69,7 @@ public class LoggingInterceptor implements CommandHandlerInterceptor {
                         command.getPayloadType().getSimpleName(),
                         returnValue == null ? "null" : returnValue.getClass().getSimpleName());
             return returnValue;
-        } catch (Throwable t) {
+        } catch (Exception t) {
             logger.warn(format("[%s] execution failed:", command.getPayloadType().getSimpleName()), t);
             throw t;
         }

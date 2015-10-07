@@ -137,7 +137,7 @@ public class SynchronousLoopbackTest {
     }
 
     @Test
-    public void testLoopBackKeepsProperEventOrder_OptimisticLocking() throws Throwable {
+    public void testLoopBackKeepsProperEventOrder_OptimisticLocking() throws Exception {
         initializeRepository(new OptimisticLockManager());
         EventListener el = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
@@ -171,7 +171,7 @@ public class SynchronousLoopbackTest {
     }
 
     @Test
-    public void testLoopBackKeepsProperEventOrder_OptimisticLocking_ProcessingFails() throws Throwable {
+    public void testLoopBackKeepsProperEventOrder_OptimisticLocking_ProcessingFails() throws Exception {
         initializeRepository(new OptimisticLockManager());
         EventListener el = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;
@@ -208,7 +208,7 @@ public class SynchronousLoopbackTest {
     }
 
     @Test
-    public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() throws Throwable {
+    public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() throws Exception {
         initializeRepository(new PessimisticLockManager());
         EventListener el = event -> {
             DomainEventMessage domainEvent = (DomainEventMessage) event;

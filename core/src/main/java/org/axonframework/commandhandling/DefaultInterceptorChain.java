@@ -55,7 +55,7 @@ public class DefaultInterceptorChain implements InterceptorChain {
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public Object proceed(CommandMessage<?> commandProceedWith) throws Throwable {
+    public Object proceed(CommandMessage<?> commandProceedWith) throws Exception {
         command = commandProceedWith;
         if (chain.hasNext()) {
             return chain.next().handle(commandProceedWith, unitOfWork, this);
@@ -65,7 +65,7 @@ public class DefaultInterceptorChain implements InterceptorChain {
     }
 
     @Override
-    public Object proceed() throws Throwable {
+    public Object proceed() throws Exception {
         return proceed(command);
     }
 }

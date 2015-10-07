@@ -132,7 +132,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     }
 
     @Override
-    public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+    public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Exception {
         unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
         return handlers.get(commandMessage.getCommandName()).handle(commandMessage, unitOfWork);
     }
@@ -170,13 +170,13 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
             try {
                 final T createdAggregate = handler.invoke(null, command);
                 repository.add(createdAggregate);
                 return resolveReturnValue(command, createdAggregate);
             } catch (InvocationTargetException e) {
-                throw e.getCause();
+                throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
             }
         }
     }
@@ -190,12 +190,12 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
             T aggregate = loadAggregate(command);
             try {
                 return commandHandler.invoke(aggregate, command);
             } catch (InvocationTargetException e) {
-                throw e.getCause();
+                throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
             }
         }
     }

@@ -386,9 +386,9 @@ public class GatewayProxyFactory {
          * @param args          The arguments of the invocation
          * @return the return value of the invocation
          *
-         * @throws Throwable any exceptions that occurred while processing the invocation
+         * @throws Exception any exceptions that occurred while processing the invocation
          */
-        R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable;
+        R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
     }
 
     private static class GatewayInvocationHandler extends AbstractCommandGateway implements
@@ -404,7 +404,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        public Object invoke(Object proxy, Method method, Object[] args) throws Exception {
             if (Object.class.equals(method.getDeclaringClass())) {
                 return method.invoke(this, args);
             } else {
@@ -500,14 +500,14 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
                 for (Class<?> exception : declaredExceptions) {
                     if (exception.isInstance(cause)) {
-                        throw cause;
+                        throw cause instanceof Exception ? (Exception) cause : e;
                     }
                 }
                 throw new CommandExecutionException("Command execution resulted in a checked exception that was "
@@ -525,7 +525,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (TimeoutException timeout) {
@@ -543,7 +543,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (InterruptedException timeout) {
@@ -566,7 +566,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get(timeout, timeUnit);
         }
     }
@@ -585,7 +585,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get(toLong(args[timeoutIndex]),
                                                                    (TimeUnit) args[timeUnitIndex]);
         }
@@ -607,7 +607,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get();
         }
     }
@@ -621,7 +621,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             delegate.invoke(proxy, invokedMethod, args);
             return null;
         }

@@ -35,7 +35,7 @@ public interface CommandHandler<T> {
      * @param unitOfWork     The UnitOfWork the command is processed in
      * @return The result of the command processing, if any.
      *
-     * @throws Throwable any exception that occurs during command handling
+     * @throws Exception any exception that occurs during command handling
      */
-    Object handle(CommandMessage<T> commandMessage, UnitOfWork unitOfWork) throws Throwable;
+    Object handle(CommandMessage<T> commandMessage, UnitOfWork unitOfWork) throws Exception;
 }

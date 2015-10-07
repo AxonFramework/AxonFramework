@@ -60,22 +60,18 @@ public class FireEventJob implements Job {
         EventMessage<?> eventMessage = createMessage(event);
         try {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            UnitOfWorkFactory unitOfWorkFactory =
-                    (UnitOfWorkFactory) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
-            UnitOfWork uow = unitOfWorkFactory.createUnitOfWork(eventMessage);
-            try {
-                eventBus.publish(eventMessage);
-            } finally {
-                uow.commit();
-            }
-            if (logger.isInfoEnabled()) {
-                logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
-                            eventMessage.getPayloadType().getSimpleName());
-            }
+            UnitOfWorkFactory<?> unitOfWorkFactory =
+                    (UnitOfWorkFactory<?>) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
+            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+            unitOfWork.execute(() -> eventBus.publish(eventMessage));
         } catch (Exception e) {
-            logger.warn("Exception occurred while publishing scheduled event [{}]",
+            logger.warn("Exception occurred while publishing a scheduled event [{}]",
                         eventMessage.getPayloadType().getSimpleName());
             throw new JobExecutionException(e);
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Job successfully executed. Scheduled Event [{}] has been published.",
+                    eventMessage.getPayloadType().getSimpleName());
         }
     }
 
@@ -90,7 +86,7 @@ public class FireEventJob implements Job {
         EventMessage<?> eventMessage;
         if (event instanceof EventMessage) {
             eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
-                                                           ((EventMessage) event).getMetaData());
+                                                     ((EventMessage) event).getMetaData());
         } else {
             eventMessage = new GenericEventMessage<>(event);
         }

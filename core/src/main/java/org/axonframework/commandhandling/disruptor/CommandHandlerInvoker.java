@@ -97,7 +97,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             try {
                 Object result = entry.getInvocationInterceptorChain().proceed(entry.getCommand());
                 entry.setResult(result);
-            } catch (Throwable throwable) {
+            } catch (Exception throwable) {
                 entry.setExceptionResult(throwable);
             } finally {
                 entry.pause();

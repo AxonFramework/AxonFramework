@@ -32,12 +32,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -155,7 +151,7 @@ public class FixtureTest_MatcherParams {
     }
 
     @Test
-    public void testFixture_DispatchMetaDataInCommand() throws Throwable {
+    public void testFixture_DispatchMetaDataInCommand() throws Exception {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
         CommandHandler mockCommandHandler = mock(CommandHandler.class);

@@ -19,9 +19,11 @@ package org.axonframework.spring.config.annotation;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -37,7 +39,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testEventHandlerCallsRedirectToAdapter() throws Throwable {
+    public void testEventHandlerCallsRedirectToAdapter() throws Exception {
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 

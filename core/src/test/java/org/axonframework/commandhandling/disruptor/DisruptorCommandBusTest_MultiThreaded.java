@@ -18,7 +18,10 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.common.Subscription;
 import org.axonframework.domain.IdentifierFactory;
@@ -29,6 +32,7 @@ import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.messaging.MessagePreprocessor;
+import org.axonframework.messaging.unitofwork.RollbackOnAllExceptionsConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 import org.axonframework.testutils.MockException;
@@ -78,7 +82,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     @SuppressWarnings("unchecked")
     @Test//(timeout = 10000)
-    public void testDispatchLargeNumberCommandForDifferentAggregates() throws Throwable {
+    public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
                 new DisruptorConfiguration().setBufferSize(4)
@@ -261,7 +265,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Exception {
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {

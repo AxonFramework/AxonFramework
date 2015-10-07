@@ -151,7 +151,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Exception {
             repository.load(command.getPayload().getAggregateIdentifier().toString()).doSomething();
             return null;
         }

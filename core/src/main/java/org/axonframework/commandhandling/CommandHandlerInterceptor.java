@@ -48,8 +48,8 @@ public interface CommandHandlerInterceptor {
      * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process
      * @return the result of the command handler. May have been modified by interceptors.
      *
-     * @throws Throwable any exception that occurs while handling the command
+     * @throws Exception any exception that occurs while handling the command
      */
     Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork, InterceptorChain interceptorChain)
-            throws Throwable;
+            throws Exception;
 }

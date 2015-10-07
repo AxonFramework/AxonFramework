@@ -43,12 +43,8 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -166,7 +162,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<T> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<T> stringCommandMessage, UnitOfWork unitOfWork) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }

@@ -41,14 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -141,7 +134,7 @@ public class QuartzEventSchedulerTest {
         latch.await(1, TimeUnit.SECONDS);
         InOrder inOrder = inOrder(unitOfWorkFactory, unitOfWork, eventBus);
         inOrder.verify(unitOfWorkFactory).createUnitOfWork(any());
-        inOrder.verify(unitOfWork).commit();
+        inOrder.verify(unitOfWork).execute(any());
         verify(eventBus).publish(isA(EventMessage.class));
     }
 

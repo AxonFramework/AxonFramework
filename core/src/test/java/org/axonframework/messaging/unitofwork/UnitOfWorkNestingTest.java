@@ -26,16 +26,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class DefaultUnitOfWorkTest {
+public class UnitOfWorkNestingTest {
 
     private List<PhaseTransition> phaseTransitions = new ArrayList<>();
     private UnitOfWork outer;
@@ -152,27 +150,6 @@ public class DefaultUnitOfWorkTest {
                                    new PhaseTransition(inner, UnitOfWork.Phase.CLEANUP),
                                    new PhaseTransition(outer, UnitOfWork.Phase.CLEANUP)
         ), phaseTransitions);
-    }
-
-    @Test
-    public void testHandlersForCurrentPhaseAreExecuted() {
-        AtomicBoolean prepareCommit = new AtomicBoolean();
-        AtomicBoolean commit = new AtomicBoolean();
-        AtomicBoolean afterCommit = new AtomicBoolean();
-        AtomicBoolean cleanup = new AtomicBoolean();
-        outer.onPrepareCommit(u -> outer.onPrepareCommit(i -> prepareCommit.set(true)));
-        outer.onCommit(u -> outer.onCommit(i -> commit.set(true)));
-        outer.afterCommit(u -> outer.afterCommit(i -> afterCommit.set(true)));
-        outer.onCleanup(u -> outer.onCleanup(i -> cleanup.set(true)));
-
-        outer.start();
-        outer.commit();
-
-        assertTrue(prepareCommit.get());
-        assertTrue(commit.get());
-        assertTrue(afterCommit.get());
-        assertTrue(cleanup.get());
-
     }
 
     @Test

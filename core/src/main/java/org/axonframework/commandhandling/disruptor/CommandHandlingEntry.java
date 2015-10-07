@@ -16,11 +16,7 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.DefaultInterceptorChain;
-import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.commandhandling.*;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -41,7 +37,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
     private CommandMessage<?> command;
     private InterceptorChain invocationInterceptorChain;
     private InterceptorChain publisherInterceptorChain;
-    private Throwable exceptionResult;
+    private Exception exceptionResult;
     private Object result;
     private int publisherSegmentId;
     private BlacklistDetectingCallback callback;
@@ -94,7 +90,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
      *
      * @param exceptionResult the exception that occurred while processing the incoming command
      */
-    public void setExceptionResult(Throwable exceptionResult) {
+    public void setExceptionResult(Exception exceptionResult) {
         this.exceptionResult = exceptionResult;
     }
 
@@ -104,7 +100,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
      *
      * @return the exception that occurred while processing the incoming command, if any.
      */
-    public Throwable getExceptionResult() {
+    public Exception getExceptionResult() {
         return exceptionResult;
     }
 
@@ -242,7 +238,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
     private class RepeatingCommandHandler implements CommandHandler<Object> {
 
         @Override
-        public Object handle(CommandMessage<Object> commandMessage, UnitOfWork uow) throws Throwable {
+        public Object handle(CommandMessage<Object> commandMessage, UnitOfWork uow) throws Exception {
             if (exceptionResult != null) {
                 throw exceptionResult;
             }

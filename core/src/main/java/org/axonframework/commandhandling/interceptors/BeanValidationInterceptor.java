@@ -61,7 +61,7 @@ public class BeanValidationInterceptor implements CommandHandlerInterceptor, Com
 
     @Override
     public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain interceptorChain)
-            throws Throwable {
+            throws Exception {
         return interceptorChain.proceed(handle(command));
     }
 

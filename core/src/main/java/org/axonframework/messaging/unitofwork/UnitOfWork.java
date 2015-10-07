@@ -22,6 +22,7 @@ import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -218,6 +219,62 @@ public interface UnitOfWork {
     default <T> T getOrComputeResource(String key, Function<? super String, T> mappingFunction) {
         return (T) resources().computeIfAbsent(key, mappingFunction);
     }
+
+    /**
+     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * it will be started.
+     * <p/>
+     * If the task executes successfully the Unit of Work is committed. If any exception is raised
+     * while executing the task, the Unit of Work is rolled back and the exception is thrown.
+     *
+     * @param task the task to execute
+     */
+    default void execute(Runnable task) {
+        execute(task, new RollbackOnAllExceptionsConfiguration());
+    }
+
+    /**
+     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * it will be started.
+     * <p/>
+     * If the task executes successfully the Unit of Work is committed. If an exception is raised
+     * while executing the task, the <code>rollbackConfiguration</code> determines if the Unit of Work should be
+     * rolled back or committed, and the exception is thrown.
+     *
+     * @param task                  the task to execute
+     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when
+     *                              task execution fails
+     */
+    void execute(Runnable task, RollbackConfiguration rollbackConfiguration);
+
+    /**
+     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * it will be started.
+     * <p/>
+     * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If any
+     * exception is raised while executing the task, the Unit of Work is rolled back and the exception is thrown.
+     *
+     * @param <R>                   the type of result that is returned after successful execution
+     * @param task                  the task to execute
+     */
+    default <R> R executeWithResult(Callable<R> task) throws Exception {
+        return executeWithResult(task, new RollbackOnAllExceptionsConfiguration());
+    }
+
+    /**
+     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * it will be started.
+     * <p/>
+     * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If
+     * execution fails, the <code>rollbackConfiguration</code> determines if the Unit of Work should be rolled back
+     * or committed.
+     *
+     * @param <R>                   the type of result that is returned after successful execution
+     * @param task                  the task to execute
+     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when
+     *                              task execution fails
+     */
+    <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception;
 
     /**
      * Enum indicating possible phases of the Unit of Work.

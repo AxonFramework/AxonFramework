@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.auditing;
+package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.StubAggregate;
@@ -33,20 +32,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -55,22 +45,13 @@ import static org.mockito.Mockito.when;
 public class AuditingInterceptorTest {
 
     private AuditingInterceptor testSubject;
-    private AuditDataProvider mockAuditDataProvider;
     private AuditLogger mockAuditLogger;
     private InterceptorChain mockInterceptorChain;
 
     @Before
     public void setUp() {
-        testSubject = new AuditingInterceptor();
-        mockAuditDataProvider = mock(AuditDataProvider.class);
-        mockAuditLogger = mock(AuditLogger.class);
+        testSubject = new AuditingInterceptor(mockAuditLogger = mock(AuditLogger.class));
         mockInterceptorChain = mock(InterceptorChain.class);
-
-        testSubject.setAuditDataProvider(mockAuditDataProvider);
-        testSubject.setAuditLogger(mockAuditLogger);
-
-        when(mockAuditDataProvider.provideAuditDataFor(any(CommandMessage.class)))
-                .thenReturn(Collections.singletonMap("key", (Object) "value"));
     }
 
     @After
@@ -81,7 +62,7 @@ public class AuditingInterceptorTest {
     }
 
     @Test
-    public void testInterceptCommand_SuccessfulExecution() throws Throwable {
+    public void testInterceptCommand_SuccessfulExecution() throws Exception {
         when(mockInterceptorChain.proceed()).thenReturn("Return value");
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         RecordingEventBus eventBus = new RecordingEventBus();
@@ -90,7 +71,6 @@ public class AuditingInterceptorTest {
         //TODO: Fix uow.registerAggregate(aggregate, mock(EventBus.class), mock(SaveAggregateCallback.class));
         GenericCommandMessage<String> command = new GenericCommandMessage<>("Command!");
         Object result = testSubject.handle(command, uow, mockInterceptorChain);
-        verify(mockAuditDataProvider, never()).provideAuditDataFor(any(CommandMessage.class));
 
         aggregate.doSomething();
         aggregate.doSomething();
@@ -98,7 +78,6 @@ public class AuditingInterceptorTest {
         assertEquals("Return value", result);
         uow.commit();
 
-        verify(mockAuditDataProvider, atLeast(1)).provideAuditDataFor(command);
         verify(mockAuditLogger, times(1)).logSuccessful(eq(command), any(Object.class), listWithTwoEventMessages());
         EventMessage<?> eventFromAggregate = eventBus.getPublishedEvents().get(0);
         assertEquals("value", eventFromAggregate.getMetaData().get("key"));
@@ -106,7 +85,7 @@ public class AuditingInterceptorTest {
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     @Test
-    public void testInterceptCommand_FailedExecution() throws Throwable {
+    public void testInterceptCommand_FailedExecution() throws Exception {
         RuntimeException mockException = new MockException();
         when(mockInterceptorChain.proceed()).thenThrow(mockException);
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
@@ -127,7 +106,6 @@ public class AuditingInterceptorTest {
         RuntimeException mockFailure = new RuntimeException("mock");
         uow.rollback(mockFailure);
 
-        verify(mockAuditDataProvider, times(2)).provideAuditDataFor(any(CommandMessage.class));
         verify(mockAuditLogger, never()).logSuccessful(eq(command), any(Object.class), any(List.class));
         verify(mockAuditLogger).logFailed(eq(command), eq(mockFailure), listWithTwoEventMessages());
     }

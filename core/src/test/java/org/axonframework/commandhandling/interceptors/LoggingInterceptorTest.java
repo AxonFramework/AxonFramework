@@ -33,15 +33,7 @@ import java.lang.reflect.Field;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.AdditionalMatchers.and;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.contains;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -67,7 +59,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testIncomingLogging_NullReturnValue() throws Throwable {
+    public void testIncomingLogging_NullReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -82,7 +74,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testSuccessfulExecution_VoidReturnValue() throws Throwable {
+    public void testSuccessfulExecution_VoidReturnValue() throws Exception {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
@@ -97,7 +89,7 @@ public class LoggingInterceptorTest {
     }
 
     @Test
-    public void testSuccessfulExecution_CustomReturnValue() throws Throwable {
+    public void testSuccessfulExecution_CustomReturnValue() throws Exception {
         when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
@@ -111,7 +103,7 @@ public class LoggingInterceptorTest {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
-    public void testFailedExecution() throws Throwable {
+    public void testFailedExecution() throws Exception {
         RuntimeException exception = new RuntimeException();
         when(interceptorChain.proceed()).thenThrow(exception);
         when(mockLogger.isInfoEnabled()).thenReturn(true);

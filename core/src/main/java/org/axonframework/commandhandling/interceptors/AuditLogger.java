@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.auditing;
+package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;

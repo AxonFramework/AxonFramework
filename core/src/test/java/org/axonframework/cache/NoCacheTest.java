@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.cache;
 
-import org.axonframework.cache.Cache;
-import org.axonframework.cache.NoCache;
+import org.axonframework.common.Subscription;
 import org.junit.Test;
 
 import javax.cache.CacheException;

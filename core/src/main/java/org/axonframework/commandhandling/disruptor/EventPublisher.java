@@ -19,8 +19,8 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.RollbackConfiguration;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +122,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private void invokeInterceptorChain(CommandHandlingEntry entry) {
         try {
             entry.setResult(entry.getPublisherInterceptorChain().proceed(entry.getCommand()));
-        } catch (Throwable throwable) {
+        } catch (Exception throwable) {
             entry.setExceptionResult(throwable);
         }
     }

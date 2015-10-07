@@ -17,10 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Subscription;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.TransactionManager;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +49,7 @@ public class SimpleCommandBus implements CommandBus {
             new ConcurrentHashMap<>();
     private volatile Iterable<? extends CommandHandlerInterceptor> handlerInterceptors = Collections.emptyList();
     private volatile Iterable<? extends CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
-    private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
+    private UnitOfWorkFactory<?> unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private RollbackConfiguration rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
 
     /**
@@ -93,7 +90,7 @@ public class SimpleCommandBus implements CommandBus {
             CommandHandler handler = findCommandHandlerFor(command);
             Object result = doDispatch(command, handler);
             callback.onSuccess(command, (R) result);
-        } catch (Throwable throwable) {
+        } catch (Exception throwable) {
             callback.onFailure(command, throwable);
         }
     }
@@ -107,25 +104,13 @@ public class SimpleCommandBus implements CommandBus {
         return handler;
     }
 
-    private <C> Object doDispatch(CommandMessage<C> command, CommandHandler<? super C> commandHandler) throws Throwable {
-        logger.debug("Dispatching command [{}]", command.getCommandName());
-        UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(command);
-        InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, handlerInterceptors);
-
-        Object returnValue;
-        try {
-            returnValue = chain.proceed();
-        } catch (Throwable throwable) {
-            if (rollbackConfiguration.rollBackOn(throwable)) {
-                unitOfWork.rollback(throwable);
-            } else {
-                unitOfWork.commit();
-            }
-            throw throwable;
+    private <C> Object doDispatch(CommandMessage<C> command, CommandHandler<? super C> handler) throws Exception {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Dispatching command [{}]", command.getCommandName());
         }
-
-        unitOfWork.commit();
-        return returnValue;
+        UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(command);
+        InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, handler, handlerInterceptors);
+        return unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
     }
 
     /**

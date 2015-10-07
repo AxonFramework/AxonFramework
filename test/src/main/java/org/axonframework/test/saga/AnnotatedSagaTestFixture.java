@@ -40,11 +40,7 @@ import java.lang.reflect.Method;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -269,7 +265,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
         @SuppressWarnings("unchecked")
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             Future<R> future = dispatcher.invoke(proxy, invokedMethod, args);
             if (stubGateway != null) {
                 return (R) invokedMethod.invoke(stubGateway, args);

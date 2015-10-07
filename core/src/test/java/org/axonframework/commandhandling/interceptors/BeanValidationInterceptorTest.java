@@ -30,12 +30,7 @@ import javax.validation.constraints.Pattern;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.same;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -54,14 +49,14 @@ public class BeanValidationInterceptorTest {
     }
 
     @Test
-    public void testValidateSimpleObject() throws Throwable {
+    public void testValidateSimpleObject() throws Exception {
         final GenericCommandMessage<Object> command = new GenericCommandMessage<>("Simple instance");
         testSubject.handle(command, uow, mockInterceptorChain);
         verify(mockInterceptorChain).proceed(same(command));
     }
 
     @Test
-    public void testValidateAnnotatedObject_IllegalNullValue() throws Throwable {
+    public void testValidateAnnotatedObject_IllegalNullValue() throws Exception {
         try {
             testSubject.handle(new GenericCommandMessage<Object>(new JSR303AnnotatedInstance(null)),
                                uow, mockInterceptorChain);
@@ -74,7 +69,7 @@ public class BeanValidationInterceptorTest {
     }
 
     @Test
-    public void testValidateAnnotatedObject_LegalValue() throws Throwable {
+    public void testValidateAnnotatedObject_LegalValue() throws Exception {
         final GenericCommandMessage<Object> commandMessage =
                 new GenericCommandMessage<>(new JSR303AnnotatedInstance("abc"));
         testSubject.handle(commandMessage, uow, mockInterceptorChain);
@@ -83,7 +78,7 @@ public class BeanValidationInterceptorTest {
     }
 
     @Test
-    public void testValidateAnnotatedObject_IllegalValue() throws Throwable {
+    public void testValidateAnnotatedObject_IllegalValue() throws Exception {
         try {
             testSubject.handle(new GenericCommandMessage<Object>(new JSR303AnnotatedInstance("bea")),
                                uow, mockInterceptorChain);
@@ -96,7 +91,7 @@ public class BeanValidationInterceptorTest {
     }
 
     @Test
-    public void testCustomValidatorFactory() throws Throwable {
+    public void testCustomValidatorFactory() throws Exception {
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor(mockValidatorFactory);
 

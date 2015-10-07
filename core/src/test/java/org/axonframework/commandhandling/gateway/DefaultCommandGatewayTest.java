@@ -253,7 +253,7 @@ public class DefaultCommandGatewayTest {
     private static class RescheduleCommand implements Answer<Boolean> {
 
         @Override
-        public Boolean answer(InvocationOnMock invocation) throws Throwable {
+        public Boolean answer(InvocationOnMock invocation) throws Exception {
             ((Runnable) invocation.getArguments()[3]).run();
             return true;
         }

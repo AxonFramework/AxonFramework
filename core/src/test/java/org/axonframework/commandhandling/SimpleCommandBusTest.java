@@ -17,10 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Subscription;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,22 +26,8 @@ import org.mockito.InOrder;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -136,9 +119,9 @@ public class SimpleCommandBusTest {
 
 
     @Test
-    public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() {
+    public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() throws Exception {
         UnitOfWorkFactory mockUnitOfWorkFactory = mock(DefaultUnitOfWorkFactory.class);
-        UnitOfWork mockUnitOfWork = mock(UnitOfWork.class);
+        UnitOfWork mockUnitOfWork = spy(new DefaultUnitOfWork(null));
         when(mockUnitOfWorkFactory.createUnitOfWork(any())).thenReturn(mockUnitOfWork);
 
         testSubject.setUnitOfWorkFactory(mockUnitOfWorkFactory);
@@ -152,7 +135,6 @@ public class SimpleCommandBusTest {
             public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 fail("Expected exception");
             }
-
 
             @Override
             public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
@@ -189,7 +171,7 @@ public class SimpleCommandBusTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testInterceptorChain_CommandHandledSuccessfully() throws Throwable {
+    public void testInterceptorChain_CommandHandledSuccessfully() throws Exception {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
         final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
         final CommandHandler<String> commandHandler = mock(CommandHandler.class);
@@ -227,7 +209,7 @@ public class SimpleCommandBusTest {
 
     @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
     @Test
-    public void testInterceptorChain_CommandHandlerThrowsException() throws Throwable {
+    public void testInterceptorChain_CommandHandlerThrowsException() throws Exception {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
         final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
         final CommandHandler<String> commandHandler = mock(CommandHandler.class);
@@ -267,7 +249,7 @@ public class SimpleCommandBusTest {
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown", "unchecked"})
     @Test
-    public void testInterceptorChain_InterceptorThrowsException() throws Throwable {
+    public void testInterceptorChain_InterceptorThrowsException() throws Exception {
         CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
         final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
         when(mockInterceptor1.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))

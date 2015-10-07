@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.messaging.unitofwork;
 
 /**
- * The RollbackConfiguration defines when a UnitOfWork should be rolled back when the command handler or any
- * interceptors
- * reported a failure. This decision will only impact the UnitOfWork (and potentially any transactions attached to it),
- * the {@link CommandCallback#onFailure(CommandMessage, Throwable)} will always be called.
+ * The RollbackConfiguration defines if a Unit of Work should be rolled back when an exception is raised during the
+ * processing of a Message.
+ * <p/>
+ * Note that the Unit of Work will always throw any exceptions raised during processing, regardless of whether or not
+ * the Unit of Work is rolled back.
  *
  * @author Martin Tilma
  * @since 1.1
@@ -31,7 +32,7 @@ public interface RollbackConfiguration {
      * Decides whether the given <code>throwable</code> should trigger a rollback.
      *
      * @param throwable the Throwable to evaluate
-     * @return <code>true</code> if the UnitOfWork should be rolled back, otherwise <code>false</code>
+     * @return <code>true</code> if the UnitOfWork should be rolled back, <code>false</code> otherwise
      */
     boolean rollBackOn(Throwable throwable);
 }

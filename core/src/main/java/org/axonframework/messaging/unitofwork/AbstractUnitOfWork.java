@@ -7,11 +7,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
+ * Abstract implementation of the Unit of Work. It provides default implementations of all methods related to the
+ * processing of a Message.
+ *
  * @author Allard Buijze
+ * @since 3.0
  */
 public abstract class AbstractUnitOfWork implements UnitOfWork {
 
@@ -24,21 +29,25 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     @Override
     public void start() {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Starting Unit Of Work");
+        }
         Assert.state(Phase.NOT_STARTED.equals(phase), "UnitOfWork is already started");
         if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
             this.parentUnitOfWork = CurrentUnitOfWork.get();
             root().onCleanup(u -> listeners.invokeHandlers(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED));
         }
-        logger.debug("Registering Unit Of Work as CurrentUnitOfWork");
         setPhase(Phase.STARTED);
         CurrentUnitOfWork.set(this);
     }
 
     @Override
     public void commit() {
-        logger.debug("Committing Unit Of Work");
-        Assert.state(phase.isStarted(), "UnitOfWork is not started");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Committing Unit Of Work");
+        }
+        Assert.state(phase == Phase.STARTED, String.format("The UnitOfWork is in an incompatible phase: %s", phase));
         try {
             if (parentUnitOfWork != null) {
                 commitAsNested();
@@ -86,12 +95,11 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     @Override
     public void rollback(Throwable cause) {
-        if (cause != null && logger.isInfoEnabled()) {
-            logger.debug("Rollback requested for Unit Of Work due to exception. ", cause);
-        } else if (logger.isInfoEnabled()) {
-            logger.debug("Rollback requested for Unit Of Work for unknown reason.");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Rolling back Unit Of Work.", cause);
         }
-
+        Assert.state(isActive() && phase.isBefore(Phase.ROLLBACK),
+                String.format("The UnitOfWork is in an incompatible phase: %s", phase));
         try {
             listeners.invokeRollbackListeners(this, cause, this::setPhase);
             if (parentUnitOfWork == null) {
@@ -156,13 +164,46 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     @Override
     public void onRollback(BiConsumer<UnitOfWork, Throwable> handler) {
         Assert.state(!Phase.ROLLBACK.isBefore(phase),
-                "Cannot register a rollback listener. The Unit of Work is already after commit.");
+                     "Cannot register a rollback listener. The Unit of Work is already after commit.");
         listeners.addRollbackHandler(handler);
     }
 
     @Override
     public void onCleanup(Consumer<UnitOfWork> handler) {
         addListener(Phase.CLEANUP, handler);
+    }
+
+    @Override
+    public void execute(Runnable task, RollbackConfiguration rollbackConfiguration) {
+        try {
+            executeWithResult(() -> {
+                task.run();
+                return null;
+            }, rollbackConfiguration);
+        } catch (Exception e) {
+            throw (RuntimeException) e;
+        }
+    }
+
+    @Override
+    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+        if (phase() == Phase.NOT_STARTED) {
+            start();
+        }
+        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        R result;
+        try {
+            result = task.call();
+        } catch (Exception e) {
+            if (rollbackConfiguration.rollBackOn(e)) {
+                rollback(e);
+            } else {
+                commit();
+            }
+            throw e;
+        }
+        commit();
+        return result;
     }
 
     /**

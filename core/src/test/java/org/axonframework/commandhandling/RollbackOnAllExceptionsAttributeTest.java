@@ -16,9 +16,10 @@
 
 package org.axonframework.commandhandling;
 
-import org.junit.*;
+import org.axonframework.messaging.unitofwork.RollbackOnAllExceptionsConfiguration;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze

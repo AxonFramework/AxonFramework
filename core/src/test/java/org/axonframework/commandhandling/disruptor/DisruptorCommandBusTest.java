@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.messaging.unitofwork.RollbackOnAllExceptionsConfiguration;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
@@ -77,7 +78,7 @@ public class DisruptorCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testCallbackInvokedBeforeUnitOfWorkCleanup() throws Throwable {
+    public void testCallbackInvokedBeforeUnitOfWorkCleanup() throws Exception {
         CommandHandlerInterceptor mockHandlerInterceptor = mock(CommandHandlerInterceptor.class);
         CommandDispatchInterceptor mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
         when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Parameter(0));
@@ -229,7 +230,7 @@ public class DisruptorCommandBusTest {
     }
 
     @Test
-    public void testEventPublicationExecutedWithinTransaction() throws Throwable {
+    public void testEventPublicationExecutedWithinTransaction() throws Exception {
         CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         mockTransactionManager = mock(TransactionManager.class);
@@ -249,7 +250,7 @@ public class DisruptorCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test(timeout = 10000)
-    public void testAggregatesBlacklistedAndRecoveredOnError_WithAutoReschedule() throws Throwable {
+    public void testAggregatesBlacklistedAndRecoveredOnError_WithAutoReschedule() throws Exception {
         CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         CommandCallback mockCallback = dispatchCommands(mockInterceptor,
@@ -266,7 +267,7 @@ public class DisruptorCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test(timeout = 10000)
-    public void testAggregatesBlacklistedAndRecoveredOnError_WithoutReschedule() throws Throwable {
+    public void testAggregatesBlacklistedAndRecoveredOnError_WithoutReschedule() throws Exception {
         CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
 
@@ -285,7 +286,7 @@ public class DisruptorCommandBusTest {
 
     private CommandCallback dispatchCommands(CommandHandlerInterceptor mockInterceptor, ExecutorService customExecutor,
                                              GenericCommandMessage<ErrorCommand> errorCommand)
-            throws Throwable {
+            throws Exception {
         inMemoryEventStore.storedEvents.clear();
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
@@ -503,7 +504,7 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Exception {
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
@@ -547,7 +548,7 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public Object answer(InvocationOnMock invocation) throws Throwable {
+        public Object answer(InvocationOnMock invocation) throws Exception {
             return invocation.getArguments()[index];
         }
     }

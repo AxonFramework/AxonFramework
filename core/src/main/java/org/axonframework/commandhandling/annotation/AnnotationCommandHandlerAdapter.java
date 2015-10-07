@@ -102,10 +102,10 @@ public class AnnotationCommandHandlerAdapter implements org.axonframework.comman
      * <code>void</code> return value.
      *
      * @throws NoHandlerForCommandException when no handler is found for given <code>command</code>.
-     * @throws Throwable any exception occurring while handling the command
+     * @throws Exception any exception occurring while handling the command
      */
     @Override
-    public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Throwable {
+    public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
         try {
             final MethodMessageHandler handler = handlers.get(command.getCommandName());
             if (handler == null) {
@@ -116,7 +116,7 @@ public class AnnotationCommandHandlerAdapter implements org.axonframework.comman
             }
             return handler.invoke(target, command);
         } catch (InvocationTargetException e) {
-            throw e.getCause();
+            throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
         }
     }
 

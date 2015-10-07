@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
@@ -31,7 +31,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests to verify that Spring-generated proxy beans are also neatly proxied. Relates to issue #111 and #172
@@ -50,7 +51,7 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotatedJavaP
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testInitializeProxiedInstance() throws Throwable {
+    public void testInitializeProxiedInstance() throws Exception {
         SecurityContextHolder.setContext(new SecurityContext() {
             @Override
             public Authentication getAuthentication() {

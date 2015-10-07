@@ -530,7 +530,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         @Override
         public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
                              InterceptorChain interceptorChain)
-                throws Throwable {
+                throws Exception {
             // TODO: Fix
 //            unitOfWork.onPrepareCommit(new UnitOfWorkListenerAdapter() {
 //                @Override

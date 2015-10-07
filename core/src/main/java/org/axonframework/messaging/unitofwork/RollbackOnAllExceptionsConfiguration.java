@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.messaging.unitofwork;
 
 /**
- * The default implementation of the RollbackConfiguration interface. It will return true on every throwable because
- * that was the behaviour unit now.
+ * The default implementation of the RollbackConfiguration interface. It will advise a rollback of the Unit of Work
+ * on every exception raised while processing a Message.
  *
  * @author Martin Tilma
  * @since 1.1

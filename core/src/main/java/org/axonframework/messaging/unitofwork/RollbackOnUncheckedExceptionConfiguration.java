@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.messaging.unitofwork;
 
 /**
  * RollbackConfiguration that indicates a rollback should be triggered for all but checked exceptions. Therefore,

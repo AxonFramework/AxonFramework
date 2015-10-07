@@ -32,10 +32,10 @@ public interface InterceptorChain {
      *
      * @return The return value of the command execution, if any
      *
-     * @throws Throwable any exceptions thrown by interceptors or the command handler
+     * @throws Exception any exceptions thrown by interceptors or the command handler
      * @since 0.7
      */
-    Object proceed() throws Throwable;
+    Object proceed() throws Exception;
 
     /**
      * Signals the Interceptor Chain to continue processing the given command.
@@ -43,7 +43,7 @@ public interface InterceptorChain {
      * @param command The command being executed
      * @return The return value of the command execution, if any
      *
-     * @throws Throwable any exceptions thrown by interceptors or the command handler
+     * @throws Exception any exceptions thrown by interceptors or the command handler
      */
-    Object proceed(CommandMessage<?> command) throws Throwable;
+    Object proceed(CommandMessage<?> command) throws Exception;
 }

@@ -34,7 +34,7 @@ public class MarkCompletedCommandHandler implements CommandHandler<MarkCompleted
     }
 
     @Override
-    public Object handle(CommandMessage<MarkCompletedCommand> commandMessage, UnitOfWork unitOfWork) throws Throwable {
+    public Object handle(CommandMessage<MarkCompletedCommand> commandMessage, UnitOfWork unitOfWork) throws Exception {
         MarkCompletedCommand command = commandMessage.getPayload();
         ToDoItem toDoItem = repository.load(command.getTodoId());
         toDoItem.markCompleted();

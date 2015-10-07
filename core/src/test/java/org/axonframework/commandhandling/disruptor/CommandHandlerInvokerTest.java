@@ -5,13 +5,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
@@ -26,15 +20,7 @@ import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import java.util.Collections;
 
 import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.anyObject;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -71,7 +57,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Throwable {
+    public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject.createRepository(
                 new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
@@ -86,7 +72,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testLoadFromRepositoryLoadsFromCache() throws Throwable {
+    public void testLoadFromRepositoryLoadsFromCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject.createRepository(
                 new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
@@ -98,7 +84,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
-    public void testAddToRepositoryAddsInCache() throws Throwable {
+    public void testAddToRepositoryAddsInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject.createRepository(
                 new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> {

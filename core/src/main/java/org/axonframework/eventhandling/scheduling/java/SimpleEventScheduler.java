@@ -32,11 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * An {@link EventScheduler} implementation that uses Java's ScheduledExecutorService as scheduling and triggering
@@ -130,13 +126,12 @@ public class SimpleEventScheduler implements EventScheduler {
         @Override
         public void run() {
             EventMessage<?> eventMessage = createMessage();
-            if (logger.isInfoEnabled()) {
-                logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
-            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
             try {
-                eventBus.publish(eventMessage);
-                unitOfWork.commit();
+                UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+                unitOfWork.execute(() -> eventBus.publish(eventMessage));
             } finally {
                 tokens.remove(tokenId);
             }

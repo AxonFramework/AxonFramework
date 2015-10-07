@@ -26,16 +26,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -49,7 +40,7 @@ public class AsynchronousCommandBusTest {
     private AsynchronousCommandBus testSubject;
 
     @Before
-    public void setUp() throws Throwable {
+    public void setUp() throws Exception {
         commandHandler = mock(CommandHandler.class);
         executorService = mock(ExecutorService.class);
         dispatchInterceptor = mock(CommandDispatchInterceptor.class);
@@ -68,7 +59,7 @@ public class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testDispatchWithCallback() throws Throwable {
+    public void testDispatchWithCallback() throws Exception {
         testSubject.subscribe(Object.class.getName(), commandHandler);
         CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
         final CommandMessage<Object> command = asCommandMessage(new Object());
@@ -87,7 +78,7 @@ public class AsynchronousCommandBusTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testDispatchWithoutCallback() throws Throwable {
+    public void testDispatchWithoutCallback() throws Exception {
         CommandHandler commandHandler = mock(CommandHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
         testSubject.dispatch(asCommandMessage(new Object()));

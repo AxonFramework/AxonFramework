@@ -146,7 +146,7 @@ public class AnnotatedSagaTest {
 
 
     @Test
-    public void testFixtureApi_WhenTimeElapses_UsingMockGateway() throws Throwable {
+    public void testFixtureApi_WhenTimeElapses_UsingMockGateway() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
@@ -169,7 +169,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_WhenTimeElapses_UsingDefaults() throws Throwable {
+    public void testFixtureApi_WhenTimeElapses_UsingDefaults() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
@@ -188,7 +188,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_WhenTimeElapses_UsingCallbackBehavior() throws Throwable {
+    public void testFixtureApi_WhenTimeElapses_UsingCallbackBehavior() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);

@@ -29,7 +29,7 @@ import org.axonframework.messaging.metadata.MetaData;
 public class DefaultCallbackBehavior implements CallbackBehavior {
 
     @Override
-    public Object handle(Object commandPayload, MetaData commandMetaData) throws Throwable {
+    public Object handle(Object commandPayload, MetaData commandMetaData) throws Exception {
         return null;
     }
 }
