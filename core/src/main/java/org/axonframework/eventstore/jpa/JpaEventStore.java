@@ -228,16 +228,10 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
     public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
                                         long lastSequenceNumber) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        int minimalBatchSize;
-        try {
-            minimalBatchSize = (int) Math.min(batchSize, Math.addExact(lastSequenceNumber - firstSequenceNumber, 2));
-        } catch (ArithmeticException e) {
-            minimalBatchSize = batchSize;
-        }
         Iterator<? extends SerializedDomainEventData> entries = eventEntryStore.fetchAggregateStream(type,
                                                                                                      identifier,
                                                                                                      firstSequenceNumber,
-                                                                                                     minimalBatchSize,
+                                                                                                     batchSize,
                                                                                                      entityManager);
         if (!entries.hasNext()) {
             throw new EventStreamNotFoundException(type, identifier);

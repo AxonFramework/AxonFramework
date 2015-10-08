@@ -43,10 +43,13 @@ import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeUtils;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
@@ -58,6 +61,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -65,8 +70,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -298,6 +301,30 @@ public class JdbcEventStore_JpaBackedTest {
             t++;
         }
         assertEquals(110L, t);
+    }
+
+    @Test
+    @Transactional
+    public void testLoadPartialStream_LargeAmountOfEvents() {
+        List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
+        String aggregateIdentifier = "id";
+        for (int t = 0; t < 110; t++) {
+            domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
+                                                                   "Mock contents", MetaData.emptyInstance()));
+        }
+        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        entityManager.flush();
+        entityManager.clear();
+
+        int startSeq = 4;
+        DomainEventStream events = testSubject.readEvents("test", aggregateIdentifier, startSeq, 109);
+        long t = startSeq - 1;
+        while (events.hasNext()) {
+            t++;
+            DomainEventMessage event = events.next();
+            assertEquals(t, event.getSequenceNumber());
+        }
+        assertEquals(109L, t);
     }
 
     @DirtiesContext
