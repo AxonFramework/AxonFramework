@@ -13,6 +13,7 @@ import org.axonframework.unitofwork.SaveAggregateCallback;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkListener;
+import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -20,15 +21,10 @@ import org.mockito.ArgumentCaptor;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
@@ -70,6 +66,7 @@ public class EventPublisherTest {
         verify(rollbackConfiguration).rollBackOn(mockException);
         ArgumentCaptor<Throwable> exceptionCaptor = ArgumentCaptor.forClass(Throwable.class);
         verify(unitOfWorkListener, atLeastOnce()).onRollback(any(UnitOfWork.class), exceptionCaptor.capture());
-        assertThat(exceptionCaptor.getAllValues(), hasItem(isA(AggregateBlacklistedException.class)));
+        //noinspection RedundantTypeArguments
+        assertThat(exceptionCaptor.getAllValues(), CoreMatchers.<AggregateBlacklistedException>hasItem(isA(AggregateBlacklistedException.class)));
     }
 }
