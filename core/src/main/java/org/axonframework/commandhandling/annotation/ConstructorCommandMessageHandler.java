@@ -16,10 +16,7 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.common.annotation.AbstractMessageHandler;
-import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.annotation.UnsupportedHandlerException;
+import org.axonframework.common.annotation.*;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.messaging.Message;
 
@@ -96,7 +93,7 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
     }
 
     @Override
-    public T invoke(Object target, Message message) throws InvocationTargetException, IllegalAccessException {
+    public T invoke(Object target, Message message) {
         Object[] parameterValues = new Object[getParameterValueResolvers().length];
         for (int i = 0; i < parameterValues.length; i++) {
             parameterValues[i] = getParameterValueResolvers()[i].resolveParameterValue(message);
@@ -104,7 +101,14 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
         try {
             return constructor.newInstance(parameterValues);
         } catch (InstantiationException e) {
-            throw new InvocationTargetException(e.getCause()); // NOSONAR
+            throw new MessageHandlerInvocationException("Unable to create an instance of the command handler.", e);
+        } catch (IllegalAccessException e) {
+            throw new MessageHandlerInvocationException("Access to the message handler method was denied.", e);
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.", e);
         }
     }
 

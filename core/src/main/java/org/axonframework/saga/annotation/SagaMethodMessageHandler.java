@@ -17,7 +17,6 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
@@ -25,7 +24,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaCreationPolicy;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static java.lang.String.format;
@@ -210,16 +208,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
         if (!isHandlerAvailable()) {
             return;
         }
-        try {
-            handlerMethod.invoke(target, message);
-        } catch (IllegalAccessException e) {
-            throw new MessageHandlerInvocationException("Access to the message handler method was denied.", e);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            }
-            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.", e);
-        }
+        handlerMethod.invoke(target, message);
     }
 
     /**

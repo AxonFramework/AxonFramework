@@ -28,7 +28,6 @@ import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -106,18 +105,14 @@ public class AnnotationCommandHandlerAdapter implements org.axonframework.comman
      */
     @Override
     public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
-        try {
-            final MethodMessageHandler handler = handlers.get(command.getCommandName());
-            if (handler == null) {
-                throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());
-            }
-            if (unitOfWork != null) {
-                unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
-            }
-            return handler.invoke(target, command);
-        } catch (InvocationTargetException e) {
-            throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
+        final MethodMessageHandler handler = handlers.get(command.getCommandName());
+        if (handler == null) {
+            throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());
         }
+        if (unitOfWork != null) {
+            unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+        }
+        return handler.invoke(target, command);
     }
 
     @Override

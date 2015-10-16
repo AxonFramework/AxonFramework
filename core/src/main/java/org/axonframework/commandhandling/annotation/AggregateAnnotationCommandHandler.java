@@ -27,7 +27,6 @@ import org.axonframework.domain.AggregateRoot;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 import static org.axonframework.commandhandling.annotation.CommandMessageHandlerUtils.resolveAcceptedCommandName;
@@ -171,13 +170,9 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
 
         @Override
         public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
-            try {
-                final T createdAggregate = handler.invoke(null, command);
-                repository.add(createdAggregate);
-                return resolveReturnValue(command, createdAggregate);
-            } catch (InvocationTargetException e) {
-                throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
-            }
+            final T createdAggregate = handler.invoke(null, command);
+            repository.add(createdAggregate);
+            return resolveReturnValue(command, createdAggregate);
         }
     }
 
@@ -190,13 +185,9 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) {
             T aggregate = loadAggregate(command);
-            try {
-                return commandHandler.invoke(aggregate, command);
-            } catch (InvocationTargetException e) {
-                throw e.getCause() instanceof Exception ? (Exception) e.getCause() : e;
-            }
+            return commandHandler.invoke(aggregate, command);
         }
     }
 }

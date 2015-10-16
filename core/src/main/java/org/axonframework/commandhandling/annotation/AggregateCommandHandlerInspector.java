@@ -19,10 +19,7 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AbstractMessageHandler;
-import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.annotation.MethodMessageHandlerInspector;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.annotation.*;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.domain.AggregateRoot;
@@ -34,14 +31,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.axonframework.common.ReflectionUtils.fieldsOf;
 
@@ -215,11 +207,16 @@ public class AggregateCommandHandlerInspector<T extends AggregateRoot> {
         }
 
         @Override
-        public Object invoke(Object target, Message message) throws InvocationTargetException, IllegalAccessException {
-            Object entity = entityAccessor.getInstance(target, (CommandMessage<?>) message);
+        public Object invoke(Object target, Message message) {
+            Object entity;
+            try {
+                entity = entityAccessor.getInstance(target, (CommandMessage<?>) message);
+            } catch (IllegalAccessException e) {
+                throw new MessageHandlerInvocationException("Access to the entity field was denied.", e);
+            }
             if (entity == null) {
                 throw new IllegalStateException("No appropriate entity available in the aggregate. "
-                                                        + "The command cannot be handled.");
+                        + "The command cannot be handled.");
             }
             return handler.invoke(entity, message);
         }
