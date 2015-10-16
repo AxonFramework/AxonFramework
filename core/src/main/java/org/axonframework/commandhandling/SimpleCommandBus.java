@@ -50,7 +50,7 @@ public class SimpleCommandBus implements CommandBus {
     private volatile Iterable<? extends CommandHandlerInterceptor> handlerInterceptors = Collections.emptyList();
     private volatile Iterable<? extends CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
     private UnitOfWorkFactory<?> unitOfWorkFactory = new DefaultUnitOfWorkFactory();
-    private RollbackConfiguration rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
+    private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
     /**
      * Initializes the SimpleCommandBus.

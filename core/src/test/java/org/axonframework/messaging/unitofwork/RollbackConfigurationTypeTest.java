@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.messaging.unitofwork.RollbackOnUncheckedExceptionConfiguration;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
@@ -25,11 +24,19 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Allard Buijze
  */
-public class CommitOnCheckedExceptionAttributeTest {
+public class RollbackConfigurationTypeTest {
 
     @Test
-    public void testIndicatesRollbackOnRuntimeAndError() {
-        RollbackOnUncheckedExceptionConfiguration testSubject = new RollbackOnUncheckedExceptionConfiguration();
+    public void testAnyExceptionsRollback() {
+        RollbackConfiguration testSubject = RollbackConfigurationType.ANY_THROWABLE;
+        assertTrue(testSubject.rollBackOn(new RuntimeException()));
+        assertTrue(testSubject.rollBackOn(new Exception()));
+        assertTrue(testSubject.rollBackOn(new AssertionError()));
+    }
+
+    @Test
+    public void testUncheckedExceptionsRollback() {
+        RollbackConfiguration testSubject = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
         assertTrue(testSubject.rollBackOn(new RuntimeException()));
         assertFalse(testSubject.rollBackOn(new Exception()));
         assertTrue(testSubject.rollBackOn(new AssertionError()));

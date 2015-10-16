@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.messaging.unitofwork.RollbackOnAllExceptionsConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
@@ -295,7 +295,7 @@ public class DisruptorCommandBusTest {
                                             .setProducerType(ProducerType.MULTI)
                                             .setWaitStrategy(new SleepingWaitStrategy())
                                             .setExecutor(customExecutor)
-                                            .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
+                                            .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                             .setInvokerThreadCount(2)
                                             .setPublisherThreadCount(3)
                                             .setTransactionManager(mockTransactionManager)

@@ -230,7 +230,7 @@ public interface UnitOfWork {
      * @param task the task to execute
      */
     default void execute(Runnable task) {
-        execute(task, new RollbackOnAllExceptionsConfiguration());
+        execute(task, RollbackConfigurationType.ANY_THROWABLE);
     }
 
     /**
@@ -258,7 +258,7 @@ public interface UnitOfWork {
      * @param task                  the task to execute
      */
     default <R> R executeWithResult(Callable<R> task) throws Exception {
-        return executeWithResult(task, new RollbackOnAllExceptionsConfiguration());
+        return executeWithResult(task, RollbackConfigurationType.ANY_THROWABLE);
     }
 
     /**

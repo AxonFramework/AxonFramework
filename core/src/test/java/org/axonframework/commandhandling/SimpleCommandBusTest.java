@@ -128,7 +128,7 @@ public class SimpleCommandBusTest {
         testSubject.subscribe(String.class.getName(), (command, unitOfWork) -> {
             throw new Exception();
         });
-        testSubject.setRollbackConfiguration(new RollbackOnUncheckedExceptionConfiguration());
+        testSubject.setRollbackConfiguration(RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
 
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"), new CommandCallback<Object, Object>() {
             @Override

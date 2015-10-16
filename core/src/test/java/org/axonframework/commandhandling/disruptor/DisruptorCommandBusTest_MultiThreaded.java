@@ -32,7 +32,7 @@ import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.messaging.MessagePreprocessor;
-import org.axonframework.messaging.unitofwork.RollbackOnAllExceptionsConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 import org.axonframework.testutils.MockException;
@@ -88,7 +88,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
                 new DisruptorConfiguration().setBufferSize(4)
                                             .setProducerType(ProducerType.MULTI)
                                             .setWaitStrategy(new SleepingWaitStrategy())
-                                            .setRollbackConfiguration(new RollbackOnAllExceptionsConfiguration())
+                                            .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
                                             .setInvokerThreadCount(2)
                                             .setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);

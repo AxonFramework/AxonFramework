@@ -27,7 +27,7 @@ import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackOnUncheckedExceptionConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.serializer.Serializer;
 
@@ -79,7 +79,7 @@ public class DisruptorConfiguration {
         coolingDownPeriod = 1000;
         cache = NoCache.INSTANCE;
         rescheduleCommandsOnCorruptState = true;
-        rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
+        rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
         commandTargetResolver = new AnnotationCommandTargetResolver();
     }
 
