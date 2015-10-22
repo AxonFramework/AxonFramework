@@ -16,10 +16,10 @@
 
 package org.axonframework.test;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -151,10 +151,11 @@ public class FixtureTest_MatcherParams {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testFixture_DispatchMetaDataInCommand() throws Exception {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
-        CommandHandler mockCommandHandler = mock(CommandHandler.class);
+        MessageHandler<CommandMessage<?>> mockCommandHandler = mock(MessageHandler.class);
         fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
         fixture
                 .given(givenEvents)

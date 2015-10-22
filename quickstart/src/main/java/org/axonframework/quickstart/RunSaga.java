@@ -63,9 +63,9 @@ public class RunSaga {
 
         // let's register a Command Handler that writes to System Out so we can see what happens
         commandBus.subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                             (CommandMessage<MarkToDoItemOverdueCommand> commandMessage, UnitOfWork unitOfWork) -> {
+                             (CommandMessage<?> commandMessage, UnitOfWork unitOfWork) -> {
                                  System.out.println(String.format("Got command to mark [%s] overdue!",
-                                         commandMessage.getPayload().getTodoId()));
+                                         ((MarkToDoItemOverdueCommand) commandMessage.getPayload()).getTodoId()));
                                  return null;
                              });
 

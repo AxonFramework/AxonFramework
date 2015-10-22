@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
@@ -33,39 +33,40 @@ import static org.mockito.Mockito.*;
 public class DefaultInterceptorChainTest {
 
     private UnitOfWork mockUnitOfWork;
-    private CommandHandler<?> mockCommandHandler;
+    private MessageHandler<Message<?>> mockHandler;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
         mockUnitOfWork = mock(UnitOfWork.class);
-        mockCommandHandler = mock(CommandHandler.class);
-        when(mockCommandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Result");
+        mockHandler = mock(MessageHandler.class);
+        when(mockHandler.handle(isA(Message.class), isA(UnitOfWork.class))).thenReturn("Result");
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testChainWithDifferentProceedCalls() throws Exception {
-        CommandHandlerInterceptor interceptor1 = (commandMessage, unitOfWork,
-                                                  interceptorChain) -> interceptorChain.proceed(GenericCommandMessage.asCommandMessage("testing"));
-        CommandHandlerInterceptor interceptor2 = (commandMessage, unitOfWork,
-                                                  interceptorChain) -> interceptorChain.proceed();
+        MessageHandlerInterceptor interceptor1 = (message, unitOfWork, interceptorChain)
+                -> interceptorChain.proceed(new GenericMessage<>("testing"));
+        MessageHandlerInterceptor interceptor2 = (message, unitOfWork, interceptorChain)
+                -> interceptorChain.proceed();
 
         DefaultInterceptorChain testSubject = new DefaultInterceptorChain(asCommandMessage("original"),
-                                                                          mockUnitOfWork,
-                                                                          mockCommandHandler,
+                                                                          mockUnitOfWork,mockHandler,
                                                                           asList(interceptor1, interceptor2));
 
         String actual = (String) testSubject.proceed();
 
         assertSame("Result", actual);
-        verify(mockCommandHandler).handle(argThat(new BaseMatcher<CommandMessage>() {
+        verify(mockHandler).handle(argThat(new BaseMatcher<Message<?>>() {
             @Override
             public boolean matches(Object o) {
-                return (o instanceof CommandMessage) && ((CommandMessage) o).getPayload().equals("testing");
+                return (o instanceof Message<?>) && ((Message<?>) o).getPayload().equals("testing");
             }
 
             @Override
             public void describeTo(Description description) {
-                description.appendText("Command with 'testing' payload");
+                description.appendText("Message with 'testing' payload");
             }
         }), isA(UnitOfWork.class));
     }

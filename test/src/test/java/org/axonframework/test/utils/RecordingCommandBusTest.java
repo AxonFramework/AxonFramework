@@ -17,10 +17,11 @@
 package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.junit.*;
+import org.axonframework.messaging.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 
@@ -83,7 +84,7 @@ public class RecordingCommandBusTest {
 
     @Test
     public void testRegisterHandler() {
-        CommandHandler<String> handler = (command, unitOfWork) -> {
+        MessageHandler<? super CommandMessage<?>> handler = (command, unitOfWork) -> {
             fail("Did not expect handler to be invoked");
             return null;
         };

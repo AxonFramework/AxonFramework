@@ -17,9 +17,9 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Subscription;
+import org.axonframework.messaging.MessageHandler;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -83,10 +83,9 @@ public interface CommandBusConnector {
      * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
      * <code>handler</code> gets the subscription.
      *
-     * @param <C>         The Type of command
      * @param commandName The name of the command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
      * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
      */
-    <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler);
+    Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 }

@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
@@ -26,6 +25,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
@@ -143,7 +143,7 @@ public class DisruptorCommandBusBenchmark {
         }
     }
 
-    private static class StubHandler implements CommandHandler<StubCommand> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
 
         private Repository<StubAggregate> repository;
 
@@ -151,8 +151,9 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Exception {
-            repository.load(command.getPayload().getAggregateIdentifier().toString()).doSomething();
+        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
+            StubCommand payload = (StubCommand) message.getPayload();
+            repository.load(payload.getAggregateIdentifier().toString()).doSomething();
             return null;
         }
 

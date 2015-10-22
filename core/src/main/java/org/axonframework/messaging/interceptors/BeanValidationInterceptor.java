@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.interceptors;
+package org.axonframework.messaging.interceptors;
 
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import javax.validation.ConstraintViolation;
@@ -29,16 +29,17 @@ import javax.validation.ValidatorFactory;
 import java.util.Set;
 
 /**
- * Interceptor that applies JSR303 bean validation on incoming commands. When validation on a command fails, a
+ * Interceptor that applies JSR303 bean validation on incoming messages. When validation on a message fails, a
  * JSR303ViolationException is thrown, holding the constraint violations.
  * <p/>
- * This interceptor can either be used as a {@link CommandHandlerInterceptor} or as a {@link
- * CommandDispatchInterceptor}.
+ * This interceptor can either be used as a {@link MessageHandlerInterceptor} or as a {@link
+ * MessageDispatchInterceptor}.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class BeanValidationInterceptor implements CommandHandlerInterceptor, CommandDispatchInterceptor {
+public class BeanValidationInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T>,
+                                                                        MessageDispatchInterceptor<T> {
 
     private final ValidatorFactory validatorFactory;
 
@@ -60,34 +61,34 @@ public class BeanValidationInterceptor implements CommandHandlerInterceptor, Com
     }
 
     @Override
-    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain interceptorChain)
+    public Object handle(T message, UnitOfWork unitOfWork, InterceptorChain<T> interceptorChain)
             throws Exception {
-        return interceptorChain.proceed(handle(command));
+        return interceptorChain.proceed(handle(message));
     }
 
     @Override
-    public <C> CommandMessage<? extends C> handle(CommandMessage<C> command) {
+    public T handle(T message) {
         Validator validator = validatorFactory.getValidator();
-        Set<ConstraintViolation<Object>> violations = validateCommand(command.getPayload(), validator);
+        Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);
         if (violations != null && !violations.isEmpty()) {
             throw new JSR303ViolationException("One or more JSR303 constraints were violated.", violations);
         }
-        return command;
+        return message;
     }
 
     /**
-     * Validate the given <code>command</code> using the given <code>validator</code>. The default implementation
-     * merely calls <code>validator.validate(command)</code>.
+     * Validate the given <code>message</code> using the given <code>validator</code>. The default implementation
+     * merely calls <code>validator.validate(message)</code>.
      * <p/>
      * Subclasses may override this method to alter the validation behavior in specific cases. Although the
      * <code>null</code> is accepted as return value to indicate that there are no constraint violations,
      * implementations are encouraged to return an empty Set instead.
      *
-     * @param command   The command to validate
+     * @param message   The message to validate
      * @param validator The validator provided by the validator factory
      * @return a set of Constraint Violations. May also return <code>null</code>.
      */
-    protected Set<ConstraintViolation<Object>> validateCommand(Object command, Validator validator) {
-        return validator.validate(command);
+    protected Set<ConstraintViolation<Object>> validateMessage(Object message, Validator validator) {
+        return validator.validate(message);
     }
 }

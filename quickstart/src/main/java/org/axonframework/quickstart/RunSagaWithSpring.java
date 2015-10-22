@@ -42,10 +42,10 @@ public class RunSagaWithSpring {
         // let's register a Command Handler that writes to System Out so we can see what happens
         applicationContext.getBean(CommandBus.class)
                           .subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                                     (CommandMessage<MarkToDoItemOverdueCommand> commandMessage,
+                                     (CommandMessage<?> commandMessage,
                                       UnitOfWork unitOfWork) -> {
                                          System.out.println(String.format("Got command to mark [%s] overdue!",
-                                                                          commandMessage.getPayload().getTodoId()));
+                                                 ((MarkToDoItemOverdueCommand) commandMessage.getPayload()).getTodoId()));
                                          return null;
                                      });
 

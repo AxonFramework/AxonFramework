@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.interceptors;
+package org.axonframework.messaging.interceptors;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,14 +42,15 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 public class LoggingInterceptorTest {
 
-    private LoggingInterceptor testSubject;
+    private LoggingInterceptor<Message<?>> testSubject;
     private org.apache.log4j.Logger mockLogger;
-    private InterceptorChain interceptorChain;
+    private InterceptorChain<Message<?>> interceptorChain;
     private UnitOfWork unitOfWork;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
-        testSubject = new LoggingInterceptor();
+        testSubject = new LoggingInterceptor<>();
         Log4jLoggerAdapter logger = (Log4jLoggerAdapter) LoggerFactory.getLogger(LoggingInterceptor.class);
         Field loggerField = logger.getClass().getDeclaredField("logger");
         ReflectionUtils.makeAccessible(loggerField);
@@ -63,12 +65,12 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
-        testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
+        testSubject.handle(new GenericMessage<Object>(new StubMessage()), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
-        verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
+        verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubMessage]"),
                                          any(Throwable.class));
-        verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubCommand]"),
+        verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubMessage]"),
                                                                            contains("[null]")), any(Throwable.class));
         verifyNoMoreInteractions(mockLogger);
     }
@@ -78,12 +80,12 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
         when(interceptorChain.proceed()).thenReturn(null);
 
-        testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
+        testSubject.handle(new GenericMessage<Object>(new StubMessage()), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
-        verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubCommand]"),
+        verify(mockLogger, times(2)).log(any(String.class), any(Priority.class), contains("[StubMessage]"),
                                          any(Throwable.class));
-        verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubCommand]"),
+        verify(mockLogger).log(any(String.class), any(Priority.class), and(contains("[StubMessage]"),
                                                                            contains("[null]")), any(Throwable.class));
         verifyNoMoreInteractions(mockLogger);
     }
@@ -93,11 +95,11 @@ public class LoggingInterceptorTest {
         when(interceptorChain.proceed()).thenReturn(new StubResponse());
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
+        testSubject.handle(new GenericMessage<Object>(new StubMessage()), unitOfWork, interceptorChain);
 
         verify(mockLogger, atLeast(1)).isInfoEnabled();
         verify(mockLogger).log(any(String.class), eq(Level.INFO),
-                               and(contains("[StubCommand]"), contains("[StubResponse]")),
+                               and(contains("[StubMessage]"), contains("[StubResponse]")),
                                any(Throwable.class));
     }
 
@@ -109,26 +111,26 @@ public class LoggingInterceptorTest {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
         try {
-            testSubject.handle(new GenericCommandMessage<Object>(new StubCommand()), unitOfWork, interceptorChain);
+            testSubject.handle(new GenericMessage<Object>(new StubMessage()), unitOfWork, interceptorChain);
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             // expected
         }
 
-        verify(mockLogger).log(any(String.class), eq(Level.WARN), and(contains("[StubCommand]"),
+        verify(mockLogger).log(any(String.class), eq(Level.WARN), and(contains("[StubMessage]"),
                                                                       contains("failed")), eq(exception));
     }
 
     @Test
     public void testConstructorWithCustomLogger() throws Exception {
-        testSubject = new LoggingInterceptor("my.custom.logger");
+        testSubject = new LoggingInterceptor<>("my.custom.logger");
         Field field = testSubject.getClass().getDeclaredField("logger");
         field.setAccessible(true);
         Log4jLoggerAdapter logger = (Log4jLoggerAdapter) field.get(testSubject);
         assertEquals("my.custom.logger", logger.getName());
     }
 
-    private static class StubCommand {
+    private static class StubMessage {
 
     }
 

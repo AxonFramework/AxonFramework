@@ -16,16 +16,17 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 /**
  * @author Allard Buijze
  */
-public class StubDispatchInterceptor implements CommandDispatchInterceptor {
+public class StubDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
     @Override
-    public <C> CommandMessage<? extends C> handle(CommandMessage<C> commandMessage) {
-        return commandMessage;
+    public CommandMessage<?> handle(CommandMessage<?> message) {
+        return message;
     }
+
 }

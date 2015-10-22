@@ -34,6 +34,7 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -153,9 +154,9 @@ public class AggregateAnnotationCommandHandlerTest {
     @Test
     public void testCommandHandlerSubscribesToCommands() {
         verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
-                                     any(org.axonframework.commandhandling.CommandHandler.class));
+                                     any(MessageHandler.class));
         verify(commandBus).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
-                                     any(org.axonframework.commandhandling.CommandHandler.class));
+                                     any(MessageHandler.class));
     }
 
     @Test

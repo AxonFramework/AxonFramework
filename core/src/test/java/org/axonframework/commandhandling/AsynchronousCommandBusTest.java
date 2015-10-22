@@ -16,6 +16,10 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,25 +37,25 @@ import static org.mockito.Mockito.*;
  */
 public class AsynchronousCommandBusTest {
 
-    private CommandHandlerInterceptor handlerInterceptor;
-    private CommandDispatchInterceptor dispatchInterceptor;
-    private CommandHandler commandHandler;
+    private MessageHandlerInterceptor handlerInterceptor;
+    private MessageDispatchInterceptor dispatchInterceptor;
+    private MessageHandler<CommandMessage<?>> commandHandler;
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
 
     @Before
     public void setUp() throws Exception {
-        commandHandler = mock(CommandHandler.class);
+        commandHandler = mock(MessageHandler.class);
         executorService = mock(ExecutorService.class);
-        dispatchInterceptor = mock(CommandDispatchInterceptor.class);
-        handlerInterceptor = mock(CommandHandlerInterceptor.class);
+        dispatchInterceptor = mock(MessageDispatchInterceptor.class);
+        handlerInterceptor = mock(MessageHandlerInterceptor.class);
         doAnswer(invocation -> {
             ((Runnable) invocation.getArguments()[0]).run();
             return null;
         }).when(executorService).execute(isA(Runnable.class));
         testSubject = new AsynchronousCommandBus(executorService);
-        testSubject.setDispatchInterceptors(Arrays.asList(dispatchInterceptor));
-        testSubject.setHandlerInterceptors(Arrays.asList(handlerInterceptor));
+        testSubject.setDispatchInterceptors(Arrays.<MessageDispatchInterceptor<CommandMessage<?>>>asList(dispatchInterceptor));
+        testSubject.setHandlerInterceptors(Arrays.<MessageHandlerInterceptor<CommandMessage<?>>>asList(handlerInterceptor));
         when(dispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         when(handlerInterceptor.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[2]).proceed());
@@ -79,7 +83,7 @@ public class AsynchronousCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testDispatchWithoutCallback() throws Exception {
-        CommandHandler commandHandler = mock(CommandHandler.class);
+        MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
         testSubject.dispatch(asCommandMessage(new Object()));
 

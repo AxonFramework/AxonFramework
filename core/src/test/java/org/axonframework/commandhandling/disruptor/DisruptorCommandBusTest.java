@@ -18,7 +18,10 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.eventhandling.EventBus;
@@ -27,6 +30,10 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -79,8 +86,8 @@ public class DisruptorCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testCallbackInvokedBeforeUnitOfWorkCleanup() throws Exception {
-        CommandHandlerInterceptor mockHandlerInterceptor = mock(CommandHandlerInterceptor.class);
-        CommandDispatchInterceptor mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
+        MessageHandlerInterceptor mockHandlerInterceptor = mock(MessageHandlerInterceptor.class);
+        MessageDispatchInterceptor mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
         when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Parameter(0));
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(
@@ -141,7 +148,7 @@ public class DisruptorCommandBusTest {
         final EventBus eventBus = mock(EventBus.class);
         testSubject = new DisruptorCommandBus(inMemoryEventStore, new DisruptorConfiguration()
                                                       .setInvokerInterceptors(
-                                                              Collections.<CommandHandlerInterceptor>singletonList(
+                                                              Collections.<MessageHandlerInterceptor<CommandMessage<?>>>singletonList(
                                                                       (commandMessage, unitOfWork, interceptorChain)
                                                                               -> interceptorChain.proceed())));
         testSubject.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
@@ -231,7 +238,7 @@ public class DisruptorCommandBusTest {
 
     @Test
     public void testEventPublicationExecutedWithinTransaction() throws Exception {
-        CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
+        MessageHandlerInterceptor mockInterceptor = mock(MessageHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         mockTransactionManager = mock(TransactionManager.class);
         when(mockTransactionManager.startTransaction()).thenReturn(new Object());
@@ -251,7 +258,7 @@ public class DisruptorCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test(timeout = 10000)
     public void testAggregatesBlacklistedAndRecoveredOnError_WithAutoReschedule() throws Exception {
-        CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
+        MessageHandlerInterceptor mockInterceptor = mock(MessageHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         CommandCallback mockCallback = dispatchCommands(mockInterceptor,
                                                         customExecutor,
@@ -268,7 +275,7 @@ public class DisruptorCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test(timeout = 10000)
     public void testAggregatesBlacklistedAndRecoveredOnError_WithoutReschedule() throws Exception {
-        CommandHandlerInterceptor mockInterceptor = mock(CommandHandlerInterceptor.class);
+        MessageHandlerInterceptor mockInterceptor = mock(MessageHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
 
         CommandCallback mockCallback = dispatchCommands(mockInterceptor,
@@ -284,7 +291,7 @@ public class DisruptorCommandBusTest {
         verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
     }
 
-    private CommandCallback dispatchCommands(CommandHandlerInterceptor mockInterceptor, ExecutorService customExecutor,
+    private CommandCallback dispatchCommands(MessageHandlerInterceptor mockInterceptor, ExecutorService customExecutor,
                                              GenericCommandMessage<ErrorCommand> errorCommand)
             throws Exception {
         inMemoryEventStore.storedEvents.clear();
@@ -496,7 +503,7 @@ public class DisruptorCommandBusTest {
         }
     }
 
-    private static class StubHandler implements CommandHandler<StubCommand> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
 
         private Repository<StubAggregate> repository;
 
@@ -504,15 +511,16 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+            StubCommand payload = (StubCommand) command.getPayload();
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
-                StubAggregate aggregate = new StubAggregate(command.getPayload().getAggregateIdentifier());
+                StubAggregate aggregate = new StubAggregate(payload.getAggregateIdentifier());
                 repository.add(aggregate);
                 aggregate.doSomething();
             } else {
-                StubAggregate aggregate = repository.load(command.getPayload().getAggregateIdentifier());
+                StubAggregate aggregate = repository.load(payload.getAggregateIdentifier());
                 if (ErrorCommand.class.isAssignableFrom(command.getPayloadType())) {
                     aggregate.createFailingEvent();
                 } else {

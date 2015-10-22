@@ -23,9 +23,10 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.spring.config.annotation.AnnotationDriven;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -33,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -53,7 +54,7 @@ public class AnnotationDrivenConfigurationTest_DefaultValues {
 
 
         assertTrue(eventHandler instanceof EventListener);
-        assertTrue(commandHandler instanceof org.axonframework.commandhandling.CommandHandler);
+        assertTrue(commandHandler instanceof MessageHandler<?>);
     }
 
     @AnnotationDriven

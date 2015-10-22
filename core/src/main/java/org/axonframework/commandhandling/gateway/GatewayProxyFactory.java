@@ -16,12 +16,16 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.MetaData;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -88,7 +92,7 @@ public class GatewayProxyFactory {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<CommandDispatchInterceptor> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
     private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
@@ -101,7 +105,9 @@ public class GatewayProxyFactory {
      * @param commandBus           The CommandBus on which to dispatch the Command Messages
      * @param dispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
-    public GatewayProxyFactory(CommandBus commandBus, CommandDispatchInterceptor... dispatchInterceptors) {
+    @SafeVarargs
+    public GatewayProxyFactory(CommandBus commandBus,
+                               MessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
         this(commandBus, null, dispatchInterceptors);
     }
 
@@ -116,11 +122,12 @@ public class GatewayProxyFactory {
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
      *                                    <code>null</code> to report failures without rescheduling
-     * @param commandDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
+    @SafeVarargs
     public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                               CommandDispatchInterceptor... commandDispatchInterceptors) {
-        this(commandBus, retryScheduler, asList(commandDispatchInterceptors));
+                               MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+        this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
     }
 
     /**
@@ -134,15 +141,15 @@ public class GatewayProxyFactory {
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
      *                                    <code>null</code> to report failures without rescheduling
-     * @param commandDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                               List<CommandDispatchInterceptor> commandDispatchInterceptors) {
+                               List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
         Assert.notNull(commandBus, "commandBus may not be null");
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
-        if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new CopyOnWriteArrayList<>(commandDispatchInterceptors);
+        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new CopyOnWriteArrayList<>(messageDispatchInterceptors);
         } else {
             this.dispatchInterceptors = new CopyOnWriteArrayList<>();
         }
@@ -348,7 +355,8 @@ public class GatewayProxyFactory {
      * @param dispatchInterceptor The interceptor to register.
      * @return this instance for further configuration
      */
-    public GatewayProxyFactory registerDispatchInterceptor(CommandDispatchInterceptor dispatchInterceptor) {
+    public GatewayProxyFactory registerDispatchInterceptor(
+            MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor) {
         this.dispatchInterceptors.add(dispatchInterceptor);
         return this;
     }
@@ -398,7 +406,7 @@ public class GatewayProxyFactory {
 
         public GatewayInvocationHandler(Map<Method, InvocationHandler> dispatchers, CommandBus commandBus,
                                         RetryScheduler retryScheduler,
-                                        List<CommandDispatchInterceptor> dispatchInterceptors) {
+                                        List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
             super(commandBus, retryScheduler, dispatchInterceptors);
             this.dispatchers = new HashMap<>(dispatchers);
         }
@@ -422,11 +430,11 @@ public class GatewayProxyFactory {
         private final boolean forceCallbacks;
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
-                                              List<CommandDispatchInterceptor> commandDispatchInterceptors,
+                                              List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors,
                                               MetaDataExtractor[] metaDataExtractors, // NOSONAR
                                               List<CommandCallback<? super C, ? super R>> commandCallbacks,
                                               boolean forceCallbacks) {
-            super(commandBus, retryScheduler, commandDispatchInterceptors);
+            super(commandBus, retryScheduler, messageDispatchInterceptors);
             this.metaDataExtractors = metaDataExtractors; // NOSONAR
             this.commandCallbacks = commandCallbacks;
             this.forceCallbacks = forceCallbacks;

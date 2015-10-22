@@ -1,8 +1,6 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.cache.Cache;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.*;
@@ -10,6 +8,8 @@ import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 import org.junit.Before;
@@ -33,7 +33,7 @@ public class CommandHandlerInvokerTest {
     private CommandHandlingEntry commandHandlingEntry;
     private String aggregateIdentifier;
     private CommandMessage<?> mockCommandMessage;
-    private CommandHandler mockCommandHandler;
+    private MessageHandler<CommandMessage<?>> mockCommandHandler;
     private EventStreamDecorator eventStreamDecorator;
 
     @Before
@@ -43,11 +43,11 @@ public class CommandHandlerInvokerTest {
         testSubject = new CommandHandlerInvoker(mockEventStore, mockCache, 0);
         aggregateIdentifier = "mockAggregate";
         mockCommandMessage = mock(CommandMessage.class);
-        mockCommandHandler = mock(CommandHandler.class);
+        mockCommandHandler = mock(MessageHandler.class);
         commandHandlingEntry = new CommandHandlingEntry();
         commandHandlingEntry.reset(mockCommandMessage, mockCommandHandler, 0, 0, null,
-                                   Collections.<CommandHandlerInterceptor>emptyList(),
-                                   Collections.<CommandHandlerInterceptor>emptyList());
+                                   Collections.<MessageHandlerInterceptor<CommandMessage<?>>>emptyList(),
+                                   Collections.<MessageHandlerInterceptor<CommandMessage<?>>>emptyList());
         commandHandlingEntry.resources().put(EventBus.KEY, mock(EventBus.class));
         eventStreamDecorator = mock(EventStreamDecorator.class);
         when(eventStreamDecorator.decorateForAppend(any(EventSourcedAggregateRoot.class), anyList()))

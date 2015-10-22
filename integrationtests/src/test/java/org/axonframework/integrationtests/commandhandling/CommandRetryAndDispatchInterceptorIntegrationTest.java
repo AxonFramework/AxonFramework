@@ -17,10 +17,10 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.*;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.repository.ConcurrencyException;
@@ -87,9 +87,9 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         // say we have a dispatch interceptor that expects to get the user's session from a ThreadLocal...
         // yes, this should be configured on the gateway instead of the command bus, but still...
         final Thread testThread = Thread.currentThread();
-        commandBus.setDispatchInterceptors(Collections.singletonList(new CommandDispatchInterceptor() {
+        commandBus.setDispatchInterceptors(Collections.singletonList(new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Override
-            public <C> CommandMessage<? extends C> handle(CommandMessage<C> commandMessage) {
+            public CommandMessage<?> handle(CommandMessage<?> commandMessage) {
                 if (Thread.currentThread() == testThread) {
                     return commandMessage; // ok
                 } else {
@@ -118,9 +118,9 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
     @Test(timeout = 10000)
     public void testCommandGatewayDispatchInterceptorMetaDataIsPreservedOnRetry() {
         final Thread testThread = Thread.currentThread();
-        commandGateway = new DefaultCommandGateway(commandBus, retryScheduler, new CommandDispatchInterceptor() {
+        commandGateway = new DefaultCommandGateway(commandBus, retryScheduler, new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Override
-            public <C> CommandMessage<? extends C> handle(CommandMessage<C> commandMessage) {
+            public CommandMessage<?> handle(CommandMessage<?> commandMessage) {
                 if (Thread.currentThread() == testThread) {
                     return commandMessage.andMetaData(Collections.singletonMap("gatewayMetaData", "myUserSession"));
                 } else {
@@ -166,20 +166,16 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         });
 
         commandBus.setDispatchInterceptors(Collections.singletonList(
-                new CommandDispatchInterceptor() {
-                    @Override
-                    public <C> CommandMessage<? extends C> handle(
-                            CommandMessage<C> commandMessage) {
-                        if (Thread.currentThread() == testThread) {
-                            return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData",
-                                                                                       "myUserSession"));
-                        } else {
-                            // say the security interceptor example
-                            // from #testCommandDipatchInterceptorExceptionOnRetryThreadIsThrownToCaller
-                            // has been "fixed" -- on the retry thread, there's no security context
-                            return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData",
-                                                                                       "noUserSession"));
-                        }
+                commandMessage -> {
+                    if (Thread.currentThread() == testThread) {
+                        return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData",
+                                                                                   "myUserSession"));
+                    } else {
+                        // say the security interceptor example
+                        // from #testCommandDipatchInterceptorExceptionOnRetryThreadIsThrownToCaller
+                        // has been "fixed" -- on the retry thread, there's no security context
+                        return commandMessage.andMetaData(Collections.singletonMap("commandBusMetaData",
+                                                                                   "noUserSession"));
                     }
                 }
         ));

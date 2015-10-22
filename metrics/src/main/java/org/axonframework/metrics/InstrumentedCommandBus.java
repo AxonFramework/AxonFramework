@@ -1,15 +1,11 @@
 package org.axonframework.metrics;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.MetricSet;
-import com.codahale.metrics.Timer;
+import com.codahale.metrics.*;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Subscription;
+import org.axonframework.messaging.MessageHandler;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -76,7 +72,7 @@ public class InstrumentedCommandBus implements CommandBus, MetricSupport {
     }
 
     @Override
-    public <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
+    public Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         Subscription subscription = delegate.subscribe(commandName, handler);
         supportedCommands.add(commandName);
         return () -> {

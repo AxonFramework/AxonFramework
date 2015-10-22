@@ -26,21 +26,21 @@ import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.*;
 
 /**
  * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link
- * org.axonframework.commandhandling.CommandHandler CommandHandler} implementation. Each annotated method is subscribed
+ * MessageHandler} implementation. Each annotated method is subscribed
  * as a CommandHandler at the {@link CommandBus} for the command type specified by the parameter of that method.
  *
  * @author Allard Buijze
  * @see CommandHandler
  * @since 0.5
  */
-public class AnnotationCommandHandlerAdapter implements org.axonframework.commandhandling.CommandHandler<Object>,
-                                                        SupportedCommandNamesAware {
+public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMessage<?>>, SupportedCommandNamesAware {
 
     private final Map<String, MethodMessageHandler> handlers = new HashMap<>();
     private final Object target;
@@ -104,7 +104,7 @@ public class AnnotationCommandHandlerAdapter implements org.axonframework.comman
      * @throws Exception any exception occurring while handling the command
      */
     @Override
-    public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
         final MethodMessageHandler handler = handlers.get(command.getCommandName());
         if (handler == null) {
             throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());

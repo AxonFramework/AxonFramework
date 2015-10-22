@@ -16,10 +16,14 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 
@@ -106,7 +110,7 @@ public class CommandHandlingBenchmark {
 
     }
 
-    private static class MyCommandHandler implements CommandHandler<String> {
+    private static class MyCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final Repository<MyAggregate> repository;
 
@@ -115,7 +119,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
             repository.load(aggregateIdentifier.toString()).doSomething();
             return null;
         }

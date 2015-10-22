@@ -17,6 +17,9 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Subscription;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.*;
 import org.junit.After;
 import org.junit.Before;
@@ -24,7 +27,6 @@ import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.util.Arrays;
-import java.util.HashMap;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -50,9 +52,7 @@ public class SimpleCommandBusTest {
 
     @Test
     public void testDispatchCommand_HandlerSubscribed() {
-        HashMap<String, MyStringCommandHandler> subscriptions = new HashMap<>();
-        subscriptions.put(String.class.getName(), new MyStringCommandHandler());
-        testSubject.setSubscriptions(subscriptions);
+        testSubject.subscribe(String.class.getName(), new MyStringCommandHandler());
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"),
                              new CommandCallback<Object, CommandMessage<?>>() {
                                  @Override
@@ -69,6 +69,7 @@ public class SimpleCommandBusTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testDispatchCommand_ImplicitUnitOfWorkIsCommittedOnReturnValue() {
         UnitOfWorkFactory spyUnitOfWorkFactory = spy(new DefaultUnitOfWorkFactory());
         testSubject.setUnitOfWorkFactory(spyUnitOfWorkFactory);
@@ -119,6 +120,7 @@ public class SimpleCommandBusTest {
 
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() throws Exception {
         UnitOfWorkFactory mockUnitOfWorkFactory = mock(DefaultUnitOfWorkFactory.class);
         UnitOfWork mockUnitOfWork = spy(new DefaultUnitOfWork(null));
@@ -172,9 +174,9 @@ public class SimpleCommandBusTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testInterceptorChain_CommandHandledSuccessfully() throws Exception {
-        CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
-        final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
-        final CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
+        final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
+        final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         when(mockInterceptor1.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle((CommandMessage) invocation.getArguments()[0],
                                                                   (UnitOfWork) invocation.getArguments()[1],
@@ -210,9 +212,9 @@ public class SimpleCommandBusTest {
     @SuppressWarnings({"unchecked", "ThrowableInstanceNeverThrown"})
     @Test
     public void testInterceptorChain_CommandHandlerThrowsException() throws Exception {
-        CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
-        final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
-        final CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
+        final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
+        final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         when(mockInterceptor1.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle((CommandMessage) invocation.getArguments()[0],
                                                                   (UnitOfWork) invocation.getArguments()[1],
@@ -250,14 +252,14 @@ public class SimpleCommandBusTest {
     @SuppressWarnings({"ThrowableInstanceNeverThrown", "unchecked"})
     @Test
     public void testInterceptorChain_InterceptorThrowsException() throws Exception {
-        CommandHandlerInterceptor mockInterceptor1 = mock(CommandHandlerInterceptor.class);
-        final CommandHandlerInterceptor mockInterceptor2 = mock(CommandHandlerInterceptor.class);
+        MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
+        final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
         when(mockInterceptor1.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
                 .thenAnswer(invocation -> mockInterceptor2.handle((CommandMessage) invocation.getArguments()[0],
                                                                   (UnitOfWork) invocation.getArguments()[1],
                                                                   (InterceptorChain) invocation.getArguments()[2]));
         testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
-        CommandHandler<String> commandHandler = mock(CommandHandler.class);
+        MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
@@ -284,11 +286,10 @@ public class SimpleCommandBusTest {
         inOrder.verify(commandHandler, never()).handle(isA(CommandMessage.class), isA(UnitOfWork.class));
     }
 
-    private static class MyStringCommandHandler implements CommandHandler<String> {
-
+    private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
         @Override
-        public Object handle(CommandMessage<String> command, UnitOfWork uow) {
-            return command;
+        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
+            return message;
         }
     }
 }

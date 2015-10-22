@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Subscription;
+import org.axonframework.messaging.MessageHandler;
 
 /**
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
@@ -35,6 +36,7 @@ public interface CommandBus {
      * feedback is given about the status of the dispatching process. Implementations may return immediately after
      * asserting a valid handler is registered for the given command.
      *
+     * @param <C>     The type of command to dispatch
      * @param command The Command to dispatch
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
      * @see GenericCommandMessage#asCommandMessage(Object)
@@ -56,6 +58,7 @@ public interface CommandBus {
      *
      * @param command  The Command to dispatch
      * @param callback The callback to invoke when command processing is complete
+     * @param <C>      The type of command to dispatch
      * @param <R>      The type of the expected result
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
      * @see GenericCommandMessage#asCommandMessage(Object)
@@ -69,11 +72,10 @@ public interface CommandBus {
      * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
      * <code>handler</code> gets the subscription.
      *
-     * @param <C>         The Type of command
      * @param commandName The name of the command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
      * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
      */
-    <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler);
+    Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 
 }

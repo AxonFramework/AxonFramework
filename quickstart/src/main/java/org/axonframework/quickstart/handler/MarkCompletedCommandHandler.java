@@ -16,8 +16,8 @@
 
 package org.axonframework.quickstart.handler;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.repository.Repository;
@@ -25,7 +25,7 @@ import org.axonframework.repository.Repository;
 /**
  * @author Jettro Coenradie
  */
-public class MarkCompletedCommandHandler implements CommandHandler<MarkCompletedCommand> {
+public class MarkCompletedCommandHandler implements MessageHandler<CommandMessage<?>> {
 
     private Repository<ToDoItem> repository;
 
@@ -34,8 +34,8 @@ public class MarkCompletedCommandHandler implements CommandHandler<MarkCompleted
     }
 
     @Override
-    public Object handle(CommandMessage<MarkCompletedCommand> commandMessage, UnitOfWork unitOfWork) throws Exception {
-        MarkCompletedCommand command = commandMessage.getPayload();
+    public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork) throws Exception {
+        MarkCompletedCommand command = (MarkCompletedCommand) commandMessage.getPayload();
         ToDoItem toDoItem = repository.load(command.getTodoId());
         toDoItem.markCompleted();
         return toDoItem;

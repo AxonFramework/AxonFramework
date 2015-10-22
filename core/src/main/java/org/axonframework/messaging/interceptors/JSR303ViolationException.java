@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.interceptors;
+package org.axonframework.messaging.interceptors;
 
-import org.axonframework.commandhandling.StructuralCommandValidationFailedException;
+import org.axonframework.common.AxonNonTransientException;
 
-import java.util.Set;
 import javax.validation.ConstraintViolation;
+import java.util.Set;
 
 /**
- * Specialized version of the StructuralCommandValidationFailedException that provides a set of JSR303 constraint
- * violations that provide details about the exact failure of the command.
+ * Exception indicating that a Message has been refused due to a structural validation failure. Typically, resending
+ * the same message will result in the exact same exception.
+ * <p/>
+ * Provides a set of JSR303 constraint violations that provide details about the exact failure of the message.
  *
  * @author Allard Buijze
  * @since 1.1
  */
-public class JSR303ViolationException extends StructuralCommandValidationFailedException {
+public class JSR303ViolationException extends AxonNonTransientException {
 
     private static final long serialVersionUID = -1585918243998401966L;
     private final Set<ConstraintViolation<Object>> violations;

@@ -18,11 +18,11 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscription;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
 
 import java.util.Collection;
 import java.util.List;
@@ -45,7 +45,7 @@ public class DistributedCommandBus implements CommandBus {
 
     private final RoutingStrategy routingStrategy;
     private final CommandBusConnector connector;
-    private final List<CommandDispatchInterceptor> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
 
     /**
      * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingStrategy}.
@@ -98,10 +98,11 @@ public class DistributedCommandBus implements CommandBus {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private <C> CommandMessage<? extends C> intercept(CommandMessage<C> command) {
         CommandMessage<? extends C> interceptedCommand = command;
-        for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
-            interceptedCommand = interceptor.handle(interceptedCommand);
+        for (MessageDispatchInterceptor<CommandMessage<?>> interceptor : dispatchInterceptors) {
+            interceptedCommand = (CommandMessage<? extends C>) interceptor.handle(interceptedCommand);
         }
         return command;
     }
@@ -112,7 +113,7 @@ public class DistributedCommandBus implements CommandBus {
      * In the DistributedCommandBus, the handler is subscribed to the local segment only.
      */
     @Override
-    public <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
+    public Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         return connector.subscribe(commandName, handler);
     }
 
@@ -125,7 +126,7 @@ public class DistributedCommandBus implements CommandBus {
      *
      * @param newDispatchInterceptors The interceptors to intercepts commands with
      */
-    public void setCommandDispatchInterceptors(Collection<CommandDispatchInterceptor> newDispatchInterceptors) {
+    public void setCommandDispatchInterceptors(Collection<MessageDispatchInterceptor<CommandMessage<?>>> newDispatchInterceptors) {
         this.dispatchInterceptors.clear();
         this.dispatchInterceptors.addAll(newDispatchInterceptors);
     }

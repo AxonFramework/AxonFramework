@@ -16,7 +16,11 @@
 
 package org.axonframework.commandhandling.gateway;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -45,13 +49,13 @@ public class DefaultCommandGatewayTest {
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
     private RetryScheduler mockRetryScheduler;
-    private CommandDispatchInterceptor mockCommandMessageTransformer;
+    private MessageDispatchInterceptor mockCommandMessageTransformer;
 
     @Before
     public void setUp() throws Exception {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
-        mockCommandMessageTransformer = mock(CommandDispatchInterceptor.class);
+        mockCommandMessageTransformer = mock(MessageDispatchInterceptor.class);
         when(mockCommandMessageTransformer.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         testSubject = new DefaultCommandGateway(mockCommandBus, mockRetryScheduler, mockCommandMessageTransformer);
     }

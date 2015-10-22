@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.interceptors;
+package org.axonframework.messaging.interceptors;
 
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,16 +26,16 @@ import org.slf4j.LoggerFactory;
 import static java.lang.String.format;
 
 /**
- * Command Handler Interceptor that logs incoming commands and their result to a SLF4J logger. Allow configuration of
+ * Message Handler Interceptor that logs incoming messages and their result to a SLF4J logger. Allow configuration of
  * the name under which the logger should log the statements.
  * <p/>
- * Incoming commands and successful executions are logged at the <code>INFO</code> level. Processing errors are logged
+ * Incoming messages and successful executions are logged at the <code>INFO</code> level. Processing errors are logged
  * using the <code>WARN</code> level.
  *
  * @author Allard Buijze
  * @since 0.6
  */
-public class LoggingInterceptor implements CommandHandlerInterceptor {
+public class LoggingInterceptor<T extends Message<?>> implements MessageHandlerInterceptor<T> {
 
     private final Logger logger;
 
@@ -61,16 +61,17 @@ public class LoggingInterceptor implements CommandHandlerInterceptor {
     }
 
     @Override
-    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain chain) throws Exception {
-        logger.info("Incoming command: [{}]", command.getPayloadType().getSimpleName());
+    public Object handle(T message, UnitOfWork unitOfWork, InterceptorChain<T> interceptorChain)
+            throws Exception {
+        logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());
         try {
-            Object returnValue = chain.proceed();
+            Object returnValue = interceptorChain.proceed();
             logger.info("[{}] executed successfully with a [{}] return value",
-                        command.getPayloadType().getSimpleName(),
-                        returnValue == null ? "null" : returnValue.getClass().getSimpleName());
+                    message.getPayloadType().getSimpleName(),
+                    returnValue == null ? "null" : returnValue.getClass().getSimpleName());
             return returnValue;
         } catch (Exception t) {
-            logger.warn(format("[%s] execution failed:", command.getPayloadType().getSimpleName()), t);
+            logger.warn(format("[%s] execution failed:", message.getPayloadType().getSimpleName()), t);
             throw t;
         }
     }

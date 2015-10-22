@@ -16,9 +16,9 @@
 
 package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 /**
@@ -30,7 +30,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
  * @author Allard Buijze
  * @since 0.7
  */
-public class AuditingInterceptor implements CommandHandlerInterceptor {
+public class AuditingInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
     private final AuditLogger auditLogger;
 
@@ -39,7 +39,12 @@ public class AuditingInterceptor implements CommandHandlerInterceptor {
     }
 
     @Override
-    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork, InterceptorChain chain) throws Exception {
+    public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork, InterceptorChain<CommandMessage<?>> chain)
+            throws Exception {
+//        Object executionResult = unitOfWork.getExecutionResult();
+        //todo detect whether or not execution failed
+        //auditLogger.logSuccessful(command, );
+
 //        AuditingUnitOfWorkListener auditListener = new AuditingUnitOfWorkListener(command,
 //                                                                                  auditDataProvider,
 //                                                                                  auditLogger);
@@ -49,5 +54,4 @@ public class AuditingInterceptor implements CommandHandlerInterceptor {
 //        auditListener.setReturnValue(returnValue);
         return returnValue;
     }
-
 }

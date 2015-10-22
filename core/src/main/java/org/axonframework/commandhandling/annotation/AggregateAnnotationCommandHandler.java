@@ -17,13 +17,13 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 
@@ -41,13 +41,13 @@ import static org.axonframework.commandhandling.annotation.CommandMessageHandler
  * @author Allard Buijze
  * @since 1.2
  */
-public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implements CommandHandler<Object>,
+public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implements MessageHandler<CommandMessage<?>>,
                                                                                    SupportedCommandNamesAware {
 
     private final Repository<T> repository;
 
     private final CommandTargetResolver commandTargetResolver;
-    private final Map<String, CommandHandler<Object>> handlers;
+    private final Map<String, MessageHandler<CommandMessage<?>>> handlers;
     private final ParameterResolverFactory parameterResolverFactory;
 
     /**
@@ -119,8 +119,8 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         };
     }
 
-    private Map<String, CommandHandler<Object>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
-        Map<String, CommandHandler<Object>> handlersFound = new HashMap<>();
+    private Map<String, MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
+        Map<String, MessageHandler<CommandMessage<?>>> handlersFound = new HashMap<>();
         for (final AbstractMessageHandler commandHandler : inspector.getHandlers()) {
             handlersFound.put(resolveAcceptedCommandName(commandHandler), new AggregateCommandHandler(commandHandler));
         }
@@ -131,7 +131,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     }
 
     @Override
-    public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork) throws Exception {
         unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
         return handlers.get(commandMessage.getCommandName()).handle(commandMessage, unitOfWork);
     }
@@ -160,7 +160,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         return handlers.keySet();
     }
 
-    private class AggregateConstructorCommandHandler implements CommandHandler<Object> {
+    private class AggregateConstructorCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final ConstructorCommandMessageHandler<T> handler;
 
@@ -169,14 +169,14 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
             final T createdAggregate = handler.invoke(null, command);
             repository.add(createdAggregate);
             return resolveReturnValue(command, createdAggregate);
         }
     }
 
-    private class AggregateCommandHandler implements CommandHandler<Object> {
+    private class AggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final AbstractMessageHandler commandHandler;
 
@@ -185,7 +185,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(CommandMessage<Object> command, UnitOfWork unitOfWork) {
+        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) {
             T aggregate = loadAggregate(command);
             return commandHandler.invoke(aggregate, command);
         }

@@ -17,10 +17,10 @@
 package org.axonframework.commandhandling.interceptors;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;

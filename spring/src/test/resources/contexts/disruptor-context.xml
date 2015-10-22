@@ -33,26 +33,26 @@
                                 serialized-representation="org.dom4j.Document" wait-strategy="${def:sleep}">
         <axon:dispatcher-interceptors>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.commandhandling.CommandDispatchInterceptor"/>
+                <property name="mockType" value="org.axonframework.messaging.MessageDispatchInterceptor"/>
             </bean>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.commandhandling.CommandDispatchInterceptor"/>
+                <property name="mockType" value="org.axonframework.messaging.MessageDispatchInterceptor"/>
             </bean>
         </axon:dispatcher-interceptors>
         <axon:invoker-interceptors>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+                <property name="mockType" value="org.axonframework.messaging.MessageHandlerInterceptor"/>
             </bean>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+                <property name="mockType" value="org.axonframework.messaging.MessageHandlerInterceptor"/>
             </bean>
         </axon:invoker-interceptors>
         <axon:publisher-interceptors>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+                <property name="mockType" value="org.axonframework.messaging.MessageHandlerInterceptor"/>
             </bean>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.commandhandling.CommandHandlerInterceptor"/>
+                <property name="mockType" value="org.axonframework.messaging.MessageHandlerInterceptor"/>
             </bean>
         </axon:publisher-interceptors>
         <axon:repositories>

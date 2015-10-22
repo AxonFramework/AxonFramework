@@ -18,10 +18,10 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +40,7 @@ public abstract class AbstractCommandGateway {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<CommandDispatchInterceptor> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
 
     /**
      * Initialize the AbstractCommandGateway with given <code>commandBus</code>, <code>retryScheduler</code> and
@@ -49,14 +49,14 @@ public abstract class AbstractCommandGateway {
      * @param commandBus                  The command bus on which to dispatch events
      * @param retryScheduler              The scheduler capable of performing retries of failed commands. May be
      *                                    <code>null</code> when to prevent retries.
-     * @param commandDispatchInterceptors The interceptors to invoke when dispatching a command
+     * @param messageDispatchInterceptors The interceptors to invoke when dispatching a command
      */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                     List<CommandDispatchInterceptor> commandDispatchInterceptors) {
+                                     List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
         Assert.notNull(commandBus, "commandBus may not be null");
         this.commandBus = commandBus;
-        if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new ArrayList<>(commandDispatchInterceptors);
+        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new ArrayList<>(messageDispatchInterceptors);
         } else {
             this.dispatchInterceptors = Collections.emptyList();
         }
@@ -100,10 +100,11 @@ public abstract class AbstractCommandGateway {
      * @param commandMessage The incoming command message
      * @return The command message to dispatch
      */
+    @SuppressWarnings("unchecked")
     protected <C> CommandMessage<? extends C> processInterceptors(CommandMessage<C> commandMessage) {
         CommandMessage<? extends C> message = commandMessage;
-        for (CommandDispatchInterceptor dispatchInterceptor : dispatchInterceptors) {
-            message = dispatchInterceptor.handle(message);
+        for (MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor : dispatchInterceptors) {
+            message = (CommandMessage) dispatchInterceptor.handle(message);
         }
         return message;
     }

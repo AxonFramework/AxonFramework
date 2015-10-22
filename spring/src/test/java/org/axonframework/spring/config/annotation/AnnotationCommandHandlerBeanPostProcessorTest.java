@@ -16,9 +16,10 @@
 
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,10 +44,10 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 
-        assertTrue(postProcessedBean instanceof CommandHandler);
+        assertTrue(postProcessedBean instanceof MessageHandler<?>);
         assertTrue(postProcessedBean instanceof AnnotatedCommandHandler);
 
-        CommandHandler<MyCommand> commandHandler = (CommandHandler<MyCommand>) postProcessedBean;
+        MessageHandler<CommandMessage<?>> commandHandler = (MessageHandler<CommandMessage<?>>) postProcessedBean;
         AnnotatedCommandHandler annotatedCommandHandler = (AnnotatedCommandHandler) postProcessedBean;
         CommandMessage<MyCommand> myCommand = GenericCommandMessage.asCommandMessage(new MyCommand());
         commandHandler.handle(myCommand, null);
@@ -59,7 +60,7 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
         private int invocationCount;
 
         @SuppressWarnings({"UnusedDeclaration"})
-        @org.axonframework.commandhandling.annotation.CommandHandler
+        @CommandHandler
         public void handleCommand(MyCommand command) {
             invocationCount++;
         }

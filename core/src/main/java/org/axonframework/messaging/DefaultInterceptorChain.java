@@ -14,58 +14,55 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Iterator;
 
 /**
- * Mechanism that takes care of interceptor and event handler execution.
+ * Mechanism that takes care of interceptor and handler execution.
  *
+ * @param <T> The message type this interceptor chain can process
  * @author Allard Buijze
  * @since 0.5
  */
-public class DefaultInterceptorChain implements InterceptorChain {
+public class DefaultInterceptorChain<T extends Message<?>> implements InterceptorChain<T> {
 
-    private CommandMessage<?> command;
-    private final CommandHandler handler;
-    private final Iterator<? extends CommandHandlerInterceptor> chain;
+    private final MessageHandler<? super T> handler;
+    private final Iterator<? extends MessageHandlerInterceptor<T>> chain;
     private final UnitOfWork unitOfWork;
+    private T message;
 
     /**
      * Initialize the default interceptor chain to dispatch the given <code>command</code>, through the
      * <code>chain</code>, to the <code>handler</code>.
      *
-     * @param command    The command to dispatch through the interceptor chain
+     * @param message    The command to dispatch through the interceptor chain
      * @param unitOfWork The UnitOfWork the command is executed in
      * @param handler    The handler for the command
      * @param chain      The interceptor composing the chain
      */
-    public DefaultInterceptorChain(CommandMessage<?> command, UnitOfWork unitOfWork, CommandHandler<?> handler,
-                                   Iterable<? extends CommandHandlerInterceptor> chain) {
-        this.command = command;
+    public DefaultInterceptorChain(T message, UnitOfWork unitOfWork, MessageHandler<? super T> handler,
+                                   Iterable<? extends MessageHandlerInterceptor<T>> chain) {
+        this.message = message;
         this.handler = handler;
         this.chain = chain.iterator();
         this.unitOfWork = unitOfWork;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @SuppressWarnings({"unchecked"})
     @Override
-    public Object proceed(CommandMessage<?> commandProceedWith) throws Exception {
-        command = commandProceedWith;
+    public Object proceed(T messageToProceedWith) throws Exception {
+        message = messageToProceedWith;
         if (chain.hasNext()) {
-            return chain.next().handle(commandProceedWith, unitOfWork, this);
+            return chain.next().handle(messageToProceedWith, unitOfWork, this);
         } else {
-            return handler.handle(commandProceedWith, unitOfWork);
+            return handler.handle(messageToProceedWith, unitOfWork);
         }
     }
 
     @Override
     public Object proceed() throws Exception {
-        return proceed(command);
+        return proceed(message);
     }
 }

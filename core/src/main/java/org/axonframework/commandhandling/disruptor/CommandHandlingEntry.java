@@ -16,9 +16,13 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayList;
@@ -33,10 +37,10 @@ import java.util.List;
  */
 public class CommandHandlingEntry extends DisruptorUnitOfWork {
 
-    private final CommandHandler<Object> repeatingCommandHandler;
+    private final MessageHandler<CommandMessage<?>> repeatingCommandHandler;
     private CommandMessage<?> command;
-    private InterceptorChain invocationInterceptorChain;
-    private InterceptorChain publisherInterceptorChain;
+    private InterceptorChain<CommandMessage<?>> invocationInterceptorChain;
+    private InterceptorChain<CommandMessage<?>> publisherInterceptorChain;
     private Exception exceptionResult;
     private Object result;
     private int publisherSegmentId;
@@ -194,10 +198,10 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
      * @param invokerInterceptors    The interceptors to invoke during the command handler invocation phase
      * @param publisherInterceptors  The interceptors to invoke during the publication phase
      */
-    public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler, // NOSONAR - Not important
-                      int newInvokerSegmentId, int newPublisherSegmentId,
-                      BlacklistDetectingCallback newCallback, List<CommandHandlerInterceptor> invokerInterceptors,
-                      List<CommandHandlerInterceptor> publisherInterceptors) {
+    public void reset(CommandMessage<?> newCommand, MessageHandler<? super CommandMessage<?>> newCommandHandler, // NOSONAR - Not important
+                      int newInvokerSegmentId, int newPublisherSegmentId, BlacklistDetectingCallback newCallback,
+                      List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors,
+                      List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
         this.command = newCommand;
         this.invokerSegmentId = newInvokerSegmentId;
         this.publisherSegmentId = newPublisherSegmentId;
@@ -207,14 +211,14 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
         this.result = null;
         this.exceptionResult = null;
         this.aggregateIdentifier = null;
-        this.invocationInterceptorChain = new DefaultInterceptorChain(newCommand,
-                                                                      this,
-                                                                      newCommandHandler,
-                                                                      invokerInterceptors);
-        this.publisherInterceptorChain = new DefaultInterceptorChain(newCommand,
-                                                                     this,
-                                                                     repeatingCommandHandler,
-                                                                     publisherInterceptors);
+        this.invocationInterceptorChain = new DefaultInterceptorChain<>(newCommand,
+                                                                        this,
+                                                                        newCommandHandler,
+                                                                        invokerInterceptors);
+        this.publisherInterceptorChain = new DefaultInterceptorChain<>(newCommand,
+                                                                       this,
+                                                                       repeatingCommandHandler,
+                                                                       publisherInterceptors);
         reset(newCommand);
     }
 
@@ -235,10 +239,10 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
         this.messagesToPublish.clear();
     }
 
-    private class RepeatingCommandHandler implements CommandHandler<Object> {
+    private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         @Override
-        public Object handle(CommandMessage<Object> commandMessage, UnitOfWork uow) throws Exception {
+        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
             if (exceptionResult != null) {
                 throw exceptionResult;
             }

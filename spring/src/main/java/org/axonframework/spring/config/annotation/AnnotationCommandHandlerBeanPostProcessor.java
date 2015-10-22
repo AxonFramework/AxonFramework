@@ -16,44 +16,41 @@
 
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.AggregateRoot;
+import org.axonframework.messaging.MessageHandler;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Spring Bean post processor that automatically generates an adapter for each bean containing {@link
- * org.axonframework.commandhandling.annotation.CommandHandler} annotated methods.
+ * Spring Bean post processor that automatically generates an adapter for each bean containing {@link CommandHandler}
+ * annotated methods.
  *
  * @author Allard Buijze
  * @since 0.5
  */
 public class AnnotationCommandHandlerBeanPostProcessor
-        extends AbstractAnnotationHandlerBeanPostProcessor<CommandHandler, AnnotationCommandHandlerAdapter> {
+        extends AbstractAnnotationHandlerBeanPostProcessor<MessageHandler<CommandMessage<?>>, AnnotationCommandHandlerAdapter> {
 
     @Override
     protected Class<?>[] getAdapterInterfaces() {
-        return new Class[]{CommandHandler.class, SupportedCommandNamesAware.class};
+        return new Class[]{MessageHandler.class, SupportedCommandNamesAware.class};
     }
 
     @Override
     protected boolean isPostProcessingCandidate(Class<?> targetClass) {
-        return isNotCommandHandlerSubclass(targetClass) && hasCommandHandlerMethod(targetClass);
+        return hasCommandHandlerMethod(targetClass);
     }
 
     @Override
     protected AnnotationCommandHandlerAdapter initializeAdapterFor(Object bean,
                                                                    ParameterResolverFactory parameterResolverFactory) {
         return new AnnotationCommandHandlerAdapter(bean, parameterResolverFactory);
-    }
-
-    private boolean isNotCommandHandlerSubclass(Class<?> beanClass) {
-        return !CommandHandler.class.isAssignableFrom(beanClass) && !AggregateRoot.class.isAssignableFrom(beanClass);
     }
 
     private boolean hasCommandHandlerMethod(Class<?> beanClass) {
@@ -75,7 +72,7 @@ public class AnnotationCommandHandlerBeanPostProcessor
          */
         @Override
         public void doWith(Method method) throws IllegalArgumentException, IllegalAccessException {
-            if (method.isAnnotationPresent(org.axonframework.commandhandling.annotation.CommandHandler.class)) {
+            if (method.isAnnotationPresent(CommandHandler.class)) {
                 result.set(true);
             }
         }

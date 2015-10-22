@@ -17,10 +17,10 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
+import org.axonframework.messaging.MessageHandler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,9 +87,8 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
         verify(mockTransactionManager).commit(isA(TransactionStatus.class));
         Assert.assertEquals(1, transactionalHandler.getInvocations());
 
-        assertTrue("Bean doesn't implement EventListener",
-                   org.axonframework.commandhandling.CommandHandler.class.isInstance(transactionalHandler));
-        ((CommandHandler<Integer>) transactionalHandler).handle(GenericCommandMessage.asCommandMessage(12), null);
+        assertTrue("Bean doesn't implement MessageHandler", MessageHandler.class.isInstance(transactionalHandler));
+        ((MessageHandler<CommandMessage<?>>) transactionalHandler).handle(GenericCommandMessage.asCommandMessage(12), null);
         Assert.assertEquals(2, transactionalHandler.getInvocations());
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), new VoidCallback<Object>() {

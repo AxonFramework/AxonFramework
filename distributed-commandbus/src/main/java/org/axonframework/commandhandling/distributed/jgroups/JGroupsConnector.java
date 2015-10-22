@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
@@ -28,13 +27,10 @@ import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.R
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Subscription;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.Serializer;
-import org.jgroups.Address;
-import org.jgroups.JChannel;
-import org.jgroups.Message;
-import org.jgroups.ReceiverAdapter;
-import org.jgroups.View;
+import org.jgroups.*;
 import org.jgroups.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,16 +39,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -244,7 +232,7 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     @Override
-    public synchronized <C> Subscription subscribe(String commandName, CommandHandler<? super C> handler) {
+    public synchronized Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         Subscription subscription = localSegment.subscribe(commandName, handler);
         if (supportedCommandNames.add(commandName)) {
             sendMembershipUpdate(null);

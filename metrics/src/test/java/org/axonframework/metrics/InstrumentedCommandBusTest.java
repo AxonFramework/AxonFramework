@@ -5,11 +5,12 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Timer;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.Subscription;
-import org.junit.*;
+import org.axonframework.messaging.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -18,7 +19,8 @@ import java.util.Set;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 public class InstrumentedCommandBusTest {
 
@@ -43,7 +45,7 @@ public class InstrumentedCommandBusTest {
         assertEquals(1, supportedCommandsValue.size());
         assertEquals(String.class.getName(), supportedCommandsValue.iterator().next());
 
-        final CommandHandler<Object> handler = (m, u) -> null;
+        final MessageHandler<CommandMessage<?>> handler = (m, u) -> null;
         Subscription subscription = testSubject.subscribe(Long.class.getName(), handler);
 
         assertEquals(1, supportedCommandsValue.size());

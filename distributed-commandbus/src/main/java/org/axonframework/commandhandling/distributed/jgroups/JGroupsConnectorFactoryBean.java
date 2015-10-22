@@ -17,8 +17,9 @@
 package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.JChannel;
 import org.jgroups.util.Util;
@@ -54,7 +55,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private int phase = Integer.MAX_VALUE;
     private String beanName;
     private ApplicationContext applicationContext;
-    private List<CommandHandlerInterceptor> interceptors;
+    private List<MessageHandlerInterceptor<CommandMessage<?>>> interceptors;
     private long joinTimeout = -1;
     private boolean registerMBean = false;
     private HashChangeListener hashChangeListener;
@@ -179,7 +180,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
      *
      * @param interceptors the list of interceptors (in order) for the local segment
      */
-    public void setInterceptors(List<CommandHandlerInterceptor> interceptors) {
+    public void setInterceptors(List<MessageHandlerInterceptor<CommandMessage<?>>> interceptors) {
         this.interceptors = interceptors;
     }
 

@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
@@ -31,6 +30,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -257,7 +257,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
     }
 
-    private static class StubHandler implements CommandHandler<StubCommand> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
 
         private Repository<StubAggregate> repository;
 
@@ -265,15 +265,16 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+            StubCommand payload = (StubCommand) command.getPayload();
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
-                StubAggregate aggregate = new StubAggregate(command.getPayload().getAggregateIdentifier().toString());
+                StubAggregate aggregate = new StubAggregate(payload.getAggregateIdentifier().toString());
                 repository.add(aggregate);
                 aggregate.doSomething();
             } else {
-                StubAggregate aggregate = repository.load(command.getPayload().getAggregateIdentifier().toString());
+                StubAggregate aggregate = repository.load(payload.getAggregateIdentifier().toString());
                 if (ErrorCommand.class.isAssignableFrom(command.getPayloadType())) {
                     aggregate.createFailingEvent();
                 } else {

@@ -17,12 +17,13 @@
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.messaging.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
@@ -73,9 +74,9 @@ public class AggregateCommandHandlerBeanDefinitionParserTest {
     @Test
     public void testBothCommandHandlersRegisterWithTheCommandBus() {
         verify(mockCommandBus1).subscribe(eq(SimpleAnnotatedAggregate.CreateSimpleAggregateCommand.class.getName()),
-                                          any(CommandHandler.class));
+                                          any(MessageHandler.class));
         verify(mockCommandBus2).subscribe(eq(SimpleAnnotatedAggregate.CreateSimpleAggregateCommand.class.getName()),
-                                          any(CommandHandler.class));
+                                          any(MessageHandler.class));
     }
 
     @Test

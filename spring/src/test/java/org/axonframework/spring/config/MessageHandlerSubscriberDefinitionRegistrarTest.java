@@ -1,14 +1,14 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.spring.config.annotation.AnnotationDriven;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
@@ -16,7 +16,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.inject.Inject;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -37,7 +37,7 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
     @Inject
     private CommandBus commandBus;
     @Inject
-    private CommandHandler annotationCommandHandler;
+    private MessageHandler<CommandMessage<?>> annotationCommandHandler;
 
     @Test
     public void testHandlersRegisteredToEventBus() throws Exception {
@@ -79,8 +79,9 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
         }
 
         @Bean
-        public CommandHandler simpleCommandHandler() {
-            return mock(CommandHandler.class);
+        @SuppressWarnings("unchecked")
+        public MessageHandler<CommandMessage<?>> simpleCommandHandler() {
+            return mock(MessageHandler.class);
         }
 
         @Bean

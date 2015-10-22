@@ -16,9 +16,9 @@
 
 package org.axonframework.commandhandling.interceptors;
 
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.InterceptorChain;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 /**
@@ -29,16 +29,18 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SerializationOptimizingInterceptor implements CommandHandlerInterceptor {
+public class SerializationOptimizingInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
 
     //todo Convert to a MessagePreprocessor that is registered with the event bus.
 
 //    private final SerializationOptimizingListener listener = new SerializationOptimizingListener();
 
+
     @Override
-    public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
-                         InterceptorChain interceptorChain) throws Exception {
-//        unitOfWork.registerListener(listener);
+    public Object handle(EventMessage<?> message, UnitOfWork unitOfWork,
+                         InterceptorChain<EventMessage<?>> interceptorChain)
+            throws Exception {
+        //        unitOfWork.registerListener(listener);
         return interceptorChain.proceed();
     }
 

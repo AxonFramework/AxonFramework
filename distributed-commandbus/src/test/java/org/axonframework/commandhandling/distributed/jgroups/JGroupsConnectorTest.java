@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.jgroups.JChannel;
@@ -340,7 +341,7 @@ public class JGroupsConnectorTest {
         return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_static.xml");
     }
 
-    private static class CountingCommandHandler<T> implements CommandHandler<T> {
+    private static class CountingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final AtomicInteger counter;
 
@@ -349,7 +350,7 @@ public class JGroupsConnectorTest {
         }
 
         @Override
-        public Object handle(CommandMessage<T> stringCommandMessage, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork unitOfWork) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }

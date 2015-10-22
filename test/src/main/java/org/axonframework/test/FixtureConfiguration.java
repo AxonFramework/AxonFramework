@@ -17,13 +17,14 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.repository.Repository;
 import org.axonframework.test.matchers.FieldFilter;
 
@@ -36,7 +37,7 @@ import java.util.List;
  * The fixture is initialized using a Command Handler that expects an <code>@CommandHandler</code> aggregate. If you
  * have implemented your own command handler (either using annotations, or by implementing the {@link CommandHandler}
  * interace), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
- * #registerCommandHandler(Class, org.axonframework.commandhandling.CommandHandler)}, respectively. A typical command
+ * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
  * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
  * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
  * #registerRepository(org.axonframework.eventsourcing.EventSourcingRepository)} method. Registering the repository
@@ -125,7 +126,7 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, CommandHandler commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage<?>> commandHandler);
 
     /**
      * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the
@@ -135,7 +136,7 @@ public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
      * @param commandHandler The handler to register
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler);
+    FixtureConfiguration<T> registerCommandHandler(String commandName, MessageHandler<CommandMessage<?>> commandHandler);
 
     /**
      * Registers a resource that is eligible for injection in handler method (e.g. methods annotated with {@link

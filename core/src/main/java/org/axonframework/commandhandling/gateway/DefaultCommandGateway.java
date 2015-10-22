@@ -18,9 +18,10 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.callbacks.NoOpCallback;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,7 @@ import static java.util.Arrays.asList;
 
 /**
  * Default implementation of the CommandGateway interface. It allow configuration of a {@link RetryScheduler} and
- * {@link CommandDispatchInterceptor CommandDispatchInterceptors}. The Retry Scheduler allows for Command to be
+ * {@link MessageDispatchInterceptor CommandDispatchInterceptors}. The Retry Scheduler allows for Command to be
  * automatically retried when a non-transient exception occurs. The Command Dispatch Interceptors can intercept and
  * alter command dispatched on this specific gateway. Typically, this would be used to add gateway specific meta data
  * to the Command.
@@ -45,10 +46,12 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * execution fails.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
-     * @param commandDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
-    public DefaultCommandGateway(CommandBus commandBus, CommandDispatchInterceptor... commandDispatchInterceptors) {
-        this(commandBus, null, commandDispatchInterceptors);
+    @SafeVarargs
+    public DefaultCommandGateway(CommandBus commandBus,
+                                 MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+        this(commandBus, null, messageDispatchInterceptors);
     }
 
     /**
@@ -59,11 +62,12 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands
-     * @param commandDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
+    @SafeVarargs
     public DefaultCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                 CommandDispatchInterceptor... commandDispatchInterceptors) {
-        this(commandBus, retryScheduler, asList(commandDispatchInterceptors));
+                                 MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+        this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
     }
 
     /**
@@ -74,11 +78,11 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands
-     * @param commandDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     public DefaultCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                 List<CommandDispatchInterceptor> commandDispatchInterceptors) {
-        super(commandBus, retryScheduler, commandDispatchInterceptors);
+                                 List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
+        super(commandBus, retryScheduler, messageDispatchInterceptors);
     }
 
     @Override

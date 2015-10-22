@@ -30,7 +30,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -117,13 +120,13 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     }
 
     @Override
-    public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, CommandHandler commandHandler) {
+    public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage<?>> commandHandler) {
         return registerCommandHandler(payloadType.getName(), commandHandler);
     }
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public FixtureConfiguration<T> registerCommandHandler(String commandName, CommandHandler commandHandler) {
+    public FixtureConfiguration<T> registerCommandHandler(String commandName, MessageHandler<CommandMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(commandName, commandHandler);
@@ -525,11 +528,10 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
     }
 
-    private class AggregateRegisteringInterceptor implements CommandHandlerInterceptor {
+    private class AggregateRegisteringInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
         @Override
-        public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork,
-                             InterceptorChain interceptorChain)
+        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork, InterceptorChain<CommandMessage<?>> interceptorChain)
                 throws Exception {
             // TODO: Fix
 //            unitOfWork.onPrepareCommit(new UnitOfWorkListenerAdapter() {
