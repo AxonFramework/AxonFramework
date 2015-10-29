@@ -55,7 +55,8 @@ public interface UnitOfWork {
      * If the Unit of Work fails to commit, e.g. because an exception is raised by one of its handlers, the Unit of
      * Work is rolled back.
      *
-     * @throws IllegalStateException if the UnitOfWork wasn't started
+     * @throws IllegalStateException if the UnitOfWork wasn't started or if the Unit of Work is not the 'current'
+     * Unit of Work returned by {@link CurrentUnitOfWork#get()}.
      */
     void commit();
 

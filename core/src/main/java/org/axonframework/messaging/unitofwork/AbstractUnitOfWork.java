@@ -49,6 +49,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             logger.debug("Committing Unit Of Work");
         }
         Assert.state(phase == Phase.STARTED, String.format("The UnitOfWork is in an incompatible phase: %s", phase));
+        Assert.state(isCurrent(), "The UnitOfWork is not the current Unit of Work");
         try {
             if (parentUnitOfWork != null) {
                 commitAsNested();
@@ -77,6 +78,10 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         }
     }
 
+    private boolean isCurrent() {
+        return CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get() == this;
+    }
+
     private void commitAsNested() {
         UnitOfWork root = root();
         try {
@@ -90,17 +95,13 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public void rollback() {
-        rollback(null);
-    }
-
-    @Override
     public void rollback(Throwable cause) {
         if (logger.isDebugEnabled()) {
             logger.debug("Rolling back Unit Of Work.", cause);
         }
         Assert.state(isActive() && phase.isBefore(Phase.ROLLBACK),
                 String.format("The UnitOfWork is in an incompatible phase: %s", phase));
+        Assert.state(isCurrent(), "The UnitOfWork is not the current Unit of Work");
         try {
             listeners.invokeRollbackListeners(this, cause, this::setPhase);
             if (parentUnitOfWork == null) {

@@ -116,6 +116,7 @@ public class GenericEventMessage<T> extends GenericMessage<T> implements EventMe
     }
 
     @Override
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     public GenericEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (getMetaData().equals(newMetaData)) {
             return this;

@@ -36,14 +36,16 @@ import java.util.function.Function;
 public class SerializationOptimizingInterceptor implements MessageDispatchInterceptor<EventMessage<?>> {
 
     @Override
+    public EventMessage<?> handle(EventMessage<?> message) {
+        if (message instanceof DomainEventMessage) {
+            return SerializationAwareDomainEventMessage.wrap((DomainEventMessage<?>) message);
+        } else {
+            return SerializationAwareEventMessage.wrap(message);
+        }
+    }
+
+    @Override
     public Function<Integer, EventMessage<?>> handle(List<EventMessage<?>> messages) {
-        return (index) -> {
-            EventMessage<?> event = messages.get(index);
-            if (event instanceof DomainEventMessage) {
-                return SerializationAwareDomainEventMessage.wrap((DomainEventMessage<?>) event);
-            } else {
-                return SerializationAwareEventMessage.wrap(event);
-            }
-        };
+        return (index) -> handle(messages.get(index));
     }
 }

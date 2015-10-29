@@ -110,24 +110,16 @@ public class AbstractEventBusTest {
         verify(unitOfWork, times(6)).onCommit(any());
     }
 
-    @Test
-    public void testPublicationWithNestedUowAfterRootUowIsCommitted() {
-        testSubject = spy(new StubPublishingEventBus(UnitOfWork.Phase.COMMIT, true));
-        testSubject.publish(numberedEvent(5));
-        unitOfWork.commit();
-        assertEquals(Arrays.asList(numberedEvent(5), numberedEvent(4), numberedEvent(3), numberedEvent(2),
-                numberedEvent(1), numberedEvent(0)), testSubject.committedEvents);
-        verify(testSubject, times(6)).prepareCommit(any());
-        verify(testSubject, times(6)).commit(any());
-        verify(testSubject, times(6)).afterCommit(any());
-
-        verify(unitOfWork, times(1)).onPrepareCommit(any());
-        verify(unitOfWork, times(6)).onCommit(any());
-    }
-
     @Test(expected = IllegalStateException.class)
     public void testPublicationForbiddenDuringUowCommitPhase() {
         new StubPublishingEventBus(UnitOfWork.Phase.COMMIT, false).publish(numberedEvent(5));
+        unitOfWork.commit();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPublicationForbiddenDuringRootUowCommitPhase() {
+        testSubject = spy(new StubPublishingEventBus(UnitOfWork.Phase.COMMIT, true));
+        testSubject.publish(numberedEvent(1));
         unitOfWork.commit();
     }
 
@@ -151,8 +143,8 @@ public class AbstractEventBusTest {
 
         unitOfWork.commit();
         ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
-        verify(dispatchInterceptorMock, times(3)).handle(argumentCaptor.capture()); //prepare commit, commit, and after commit
-        assertEquals(3, argumentCaptor.getAllValues().size());
+        verify(dispatchInterceptorMock).handle(argumentCaptor.capture()); //prepare commit, commit, and after commit
+        assertEquals(1, argumentCaptor.getAllValues().size());
         assertEquals(2, argumentCaptor.getValue().size());
         assertEquals(value, ((EventMessage<?>) argumentCaptor.getValue().get(0)).getMetaData().get(key));
     }

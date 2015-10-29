@@ -97,18 +97,35 @@ public class GenericCommandMessage<T> extends GenericMessage<T> implements Comma
         this.commandName = commandName;
     }
 
+    private GenericCommandMessage(GenericCommandMessage<T> original, Map<String, ?> metaData) {
+        this(original.getIdentifier(), original.getCommandName(), original.getPayload(), metaData);
+    }
+
     @Override
     public String getCommandName() {
         return commandName;
     }
 
     @Override
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     public GenericCommandMessage<T> withMetaData(Map<String, ?> newMetaData) {
-        return (GenericCommandMessage<T>) super.withMetaData(newMetaData);
+        if (getMetaData().equals(newMetaData)) {
+            return this;
+        }
+        return new GenericCommandMessage<>(this, newMetaData);
     }
 
     @Override
     public GenericCommandMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
-        return (GenericCommandMessage<T>) super.andMetaData(additionalMetaData);
+        if (additionalMetaData.isEmpty()) {
+            return this;
+        }
+        return new GenericCommandMessage<>(this, getMetaData().mergedWith(additionalMetaData));
+    }
+
+
+    @Override
+    public String toString() {
+        return String.format("GenericCommandMessage[%s]", getPayload().toString());
     }
 }

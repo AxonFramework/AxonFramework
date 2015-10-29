@@ -90,7 +90,8 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
             }
-            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.", e);
+            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.",
+                    e.getCause());
         }
     }
 

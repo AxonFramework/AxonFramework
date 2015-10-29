@@ -22,7 +22,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -67,8 +66,9 @@ public class CurrentUnitOfWorkTest {
         try {
             outerUoW.commit();
         } catch (IllegalStateException e) {
-            assertTrue("Wrong type of message: " + e.getMessage(), e.getMessage().contains("not the active"));
+            return;
         }
+        throw new AssertionError("The unit of work is not the current");
     }
 
 }

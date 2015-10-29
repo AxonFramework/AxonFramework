@@ -118,6 +118,10 @@ public class QuartzEventSchedulerTest {
     public void testScheduleJob_CustomUnitOfWork() throws InterruptedException, SchedulerException {
         final UnitOfWorkFactory unitOfWorkFactory = mock(UnitOfWorkFactory.class);
         UnitOfWork unitOfWork = mock(UnitOfWork.class);
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArguments()[0]).run();
+            return null;
+        }).when(unitOfWork).execute(any());
         when(unitOfWorkFactory.createUnitOfWork(any())).thenReturn(unitOfWork);
         testSubject.setUnitOfWorkFactory(unitOfWorkFactory);
         testSubject.initialize();
@@ -135,7 +139,7 @@ public class QuartzEventSchedulerTest {
         InOrder inOrder = inOrder(unitOfWorkFactory, unitOfWork, eventBus);
         inOrder.verify(unitOfWorkFactory).createUnitOfWork(any());
         inOrder.verify(unitOfWork).execute(any());
-        verify(eventBus).publish(isA(EventMessage.class));
+        inOrder.verify(eventBus).publish(isA(EventMessage.class));
     }
 
     @Test

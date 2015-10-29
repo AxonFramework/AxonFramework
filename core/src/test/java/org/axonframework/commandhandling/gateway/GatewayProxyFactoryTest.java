@@ -512,9 +512,10 @@ public class GatewayProxyFactoryTest {
         assertNotNull(gateway2.hashCode());
     }
 
-    private static interface CompleteGateway {
+    private interface CompleteGateway {
 
-        void fireAndForget(Object command, org.axonframework.messaging.metadata.MetaData meta, @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
+        void fireAndForget(Object command, org.axonframework.messaging.metadata.MetaData meta,
+                           @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
 
         String waitForReturnValue(Object command);
 

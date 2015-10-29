@@ -108,7 +108,8 @@ public final class ConstructorCommandMessageHandler<T extends AggregateRoot> ext
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
             }
-            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.", e);
+            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.",
+                    e.getCause());
         }
     }
 

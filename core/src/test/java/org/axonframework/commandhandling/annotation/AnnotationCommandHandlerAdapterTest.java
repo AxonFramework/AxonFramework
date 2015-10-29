@@ -19,8 +19,11 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.Subscription;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.After;
@@ -54,6 +57,8 @@ public class AnnotationCommandHandlerAdapterTest {
         testSubject = new AnnotationCommandHandlerAdapter(mockTarget, parameterResolverFactory);
         mockUnitOfWork = mock(UnitOfWork.class);
         when(mockUnitOfWork.resources()).thenReturn(mock(Map.class));
+        when(mockUnitOfWork.getCorrelationData()).thenReturn(MetaData.emptyInstance());
+        when(mockBus.subscribe(any(), any())).thenReturn(mock(Subscription.class));
         CurrentUnitOfWork.set(mockUnitOfWork);
     }
 
@@ -84,7 +89,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test
     public void testHandlerDispatching_WithCustomCommandName() throws Exception {
-        Object actualReturnValue = testSubject.handle(new GenericCommandMessage("almostLong", 1L, null),
+        Object actualReturnValue = testSubject.handle(new GenericCommandMessage("almostLong", 1L, MetaData.emptyInstance()),
                                                       mockUnitOfWork);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
@@ -99,10 +104,12 @@ public class AnnotationCommandHandlerAdapterTest {
         try {
             testSubject.handle(GenericCommandMessage.asCommandMessage(new HashSet()), mockUnitOfWork);
             fail("Expected exception");
-        } catch (Exception ex) {
-            assertEquals(Exception.class, ex.getClass());
+        } catch (MessageHandlerInvocationException ex) {
+            assertEquals(Exception.class, ex.getCause().getClass());
+            verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+            return;
         }
-        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
+        fail("Shouldn't make it till here");
     }
 
     @Test

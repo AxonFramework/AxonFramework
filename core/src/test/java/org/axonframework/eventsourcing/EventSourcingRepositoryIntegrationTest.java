@@ -88,6 +88,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         repository.setEventBus(mockEventBus);
 
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        uow.resources().put(EventBus.KEY, mockEventBus);
         SimpleAggregateRoot aggregate = new SimpleAggregateRoot();
         repository.add(aggregate);
         uow.commit();
