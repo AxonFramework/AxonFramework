@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+
 /**
  * Interceptor that allows messages to be intercepted and modified before they are dispatched. This interceptor
  * provides a very early means to alter or reject Messages, even before any Unit of Work is created.
@@ -33,6 +37,20 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
      * @param message The message intended to be dispatched
      * @return the message to dispatch
      */
-    T handle(T message);
+    default T handle(T message) {
+        return handle(Collections.singletonList(message)).apply(0);
+    }
+
+    /**
+     * Apply this interceptor to the given list of <code>messages</code>. This method returns a function that can be
+     * invoked to obtain a modified version of messages at each position in the list. For instance, to obtain the
+     * processed message at index 2, use:
+     * <p/>
+     * Message processedMessage = interceptor.on(someListOfMessages).apply(2);
+     *
+     * @param messages  The Messages to pre-process
+     * @return a function that processes messages based on their position in the list
+     */
+    Function<Integer, T> handle(List<T> messages);
 
 }

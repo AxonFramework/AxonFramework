@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Subscription;
-import org.axonframework.messaging.MessagePreprocessor;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
@@ -78,15 +78,15 @@ public interface EventBus {
     Subscription subscribe(Cluster cluster);
 
     /**
-     * Register the given <code>preprocessor</code> with this bus. When subscribed it will be asked to preprocess any
-     * event messages published on this bus.
+     * Register the given <code>interceptor</code> with this bus. When subscribed it will intercept any event messages
+     * published on this bus.
      * <p/>
-     * If the given <code>preprocessor</code> is already registered, nothing happens.
+     * If the given <code>interceptor</code> is already registered, nothing happens.
      *
-     * @param preprocessor The event message preprocessor to register
-     * @return a handle to unregister the <code>preprocessor</code>. When unregistered it will no longer be asked to
-     *         preprocess event messages published on this bus.
+     * @param dispatchInterceptor The event message dispatch interceptor to register
+     * @return a handle to unregister the <code>dispatchInterceptor</code>. When unregistered it will no longer be
+     * given event messages published on this bus.
      */
-    Subscription registerPreprocessor(MessagePreprocessor preprocessor);
+    Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor);
 
 }

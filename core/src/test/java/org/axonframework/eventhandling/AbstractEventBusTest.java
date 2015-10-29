@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Subscription;
-import org.axonframework.messaging.MessagePreprocessor;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -133,10 +133,10 @@ public class AbstractEventBusTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testMessagePreprocessor() {
-        MessagePreprocessor preprocessorMock = mock(MessagePreprocessor.class);
+    public void testDispatchInterceptor() {
+        MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptorMock = mock(MessageDispatchInterceptor.class);
         String key = "additional", value = "metaData";
-        when(preprocessorMock.on(anyList())).thenAnswer(invocation -> {
+        when(dispatchInterceptorMock.handle(anyList())).thenAnswer(invocation -> {
             List<EventMessage<?>> eventMessages = (List<EventMessage<?>>) invocation.getArguments()[0];
             return (Function<Integer, Object>) (index) -> {
                 if (eventMessages.get(index).getMetaData().containsKey(key)) {
@@ -145,13 +145,13 @@ public class AbstractEventBusTest {
                 return eventMessages.get(index).andMetaData(Collections.singletonMap(key, value));
             };
         });
-        testSubject.registerPreprocessor(preprocessorMock);
+        testSubject.registerDispatchInterceptor(dispatchInterceptorMock);
         testSubject.publish(newEvent(), newEvent());
-        verifyZeroInteractions(preprocessorMock);
+        verifyZeroInteractions(dispatchInterceptorMock);
 
         unitOfWork.commit();
         ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
-        verify(preprocessorMock, times(3)).on(argumentCaptor.capture()); //prepare commit, commit, and after commit
+        verify(dispatchInterceptorMock, times(3)).handle(argumentCaptor.capture()); //prepare commit, commit, and after commit
         assertEquals(3, argumentCaptor.getAllValues().size());
         assertEquals(2, argumentCaptor.getValue().size());
         assertEquals(value, ((EventMessage<?>) argumentCaptor.getValue().get(0)).getMetaData().get(key));

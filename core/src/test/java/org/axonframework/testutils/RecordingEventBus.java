@@ -20,7 +20,7 @@ import org.axonframework.common.Subscription;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessagePreprocessor;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -40,7 +40,7 @@ public class RecordingEventBus implements EventBus {
 
     private Collection<Cluster> subscriptions = new CopyOnWriteArraySet<>();
     private List<EventMessage<?>> publishedEvents = new ArrayList<>();
-    private Collection<MessagePreprocessor> preprocessors = new LinkedHashSet<>();
+    private Collection<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptor = new LinkedHashSet<>();
 
     @Override
     public void publish(List<EventMessage<?>> events) {
@@ -54,9 +54,9 @@ public class RecordingEventBus implements EventBus {
     }
 
     @Override
-    public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
-        preprocessors.add(preprocessor);
-        return () -> preprocessors.remove(preprocessor);
+    public Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+        this.dispatchInterceptor.add(dispatchInterceptor);
+        return () -> this.dispatchInterceptor.remove(dispatchInterceptor);
     }
 
     /**
@@ -65,7 +65,7 @@ public class RecordingEventBus implements EventBus {
     public void reset() {
         publishedEvents.clear();
         subscriptions.clear();
-        preprocessors.clear();
+        dispatchInterceptor.clear();
     }
 
     /**
@@ -108,11 +108,11 @@ public class RecordingEventBus implements EventBus {
     /**
      * Indicates whether the given <code>messagePreprocessor</code> is subscribed to this Event Bus.
      *
-     * @param messagePreprocessor The messagePreprocessor to verify the subscription for
+     * @param dispatchInterceptor The messagePreprocessor to verify the subscription for
      * @return <code>true</code> if the messagePreprocessor is subscribed, otherwise <code>false</code>.
      */
-    public boolean isSubscribed(MessagePreprocessor messagePreprocessor) {
-        return preprocessors.contains(messagePreprocessor);
+    public boolean isSubscribed(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+        return this.dispatchInterceptor.contains(dispatchInterceptor);
     }
 
     /**
@@ -120,8 +120,8 @@ public class RecordingEventBus implements EventBus {
      *
      * @return a Collection of all subscribed MessagePreprocessors
      */
-    public Collection<MessagePreprocessor> getMessagePreprocessors() {
-        return preprocessors;
+    public Collection<MessageDispatchInterceptor<EventMessage<?>>> getDispatchInterceptors() {
+        return dispatchInterceptor;
     }
 
 }

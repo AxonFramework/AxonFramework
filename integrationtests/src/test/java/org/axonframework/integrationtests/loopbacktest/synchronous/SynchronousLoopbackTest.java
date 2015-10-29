@@ -39,6 +39,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
@@ -365,13 +366,9 @@ public class SynchronousLoopbackTest {
                 throw new AggregateNotFoundException(identifier, "Aggregate not found");
             }
             final List<DomainEventMessage> events = store.get(identifier);
-            List<DomainEventMessage> filteredEvents = new ArrayList<>();
-            for (DomainEventMessage message : events) {
-                if (message.getSequenceNumber() >= firstSequenceNumber
-                        && message.getSequenceNumber() <= lastSequenceNumber) {
-                    filteredEvents.add(message);
-                }
-            }
+            List<DomainEventMessage> filteredEvents = events.stream().filter(
+                    message -> message.getSequenceNumber() >= firstSequenceNumber
+                            && message.getSequenceNumber() <= lastSequenceNumber).collect(Collectors.toList());
             return new SimpleDomainEventStream(filteredEvents);
         }
     }

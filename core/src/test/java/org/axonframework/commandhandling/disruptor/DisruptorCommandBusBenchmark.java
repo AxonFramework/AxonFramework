@@ -25,8 +25,8 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
 
@@ -181,7 +181,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
+        public Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
     }

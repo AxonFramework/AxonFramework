@@ -26,7 +26,9 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming messages. When validation on a message fails, a
@@ -67,13 +69,16 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
     }
 
     @Override
-    public T handle(T message) {
-        Validator validator = validatorFactory.getValidator();
-        Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);
-        if (violations != null && !violations.isEmpty()) {
-            throw new JSR303ViolationException("One or more JSR303 constraints were violated.", violations);
-        }
-        return message;
+    public Function<Integer, T> handle(List<T> messages) {
+        return index -> {
+            T message = messages.get(index);
+            Validator validator = validatorFactory.getValidator();
+            Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);
+            if (violations != null && !violations.isEmpty()) {
+                throw new JSR303ViolationException("One or more JSR303 constraints were violated.", violations);
+            }
+            return message;
+        };
     }
 
     /**

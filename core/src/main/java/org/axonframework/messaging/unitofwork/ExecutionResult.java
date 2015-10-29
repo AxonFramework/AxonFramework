@@ -15,6 +15,8 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.messaging.ExecutionException;
 
+import java.util.Objects;
+
 /**
  * Class of objects that contain the result of an executed task.
  *
@@ -36,7 +38,7 @@ public class ExecutionResult {
      *
      * @return The result of the execution if the operation was executed without raising an exception.
      */
-    Object getResult() {
+    public Object getResult() {
         if (isExceptionResult()) {
             if (result instanceof RuntimeException) {
                 throw (RuntimeException) result;
@@ -55,7 +57,7 @@ public class ExecutionResult {
      *
      * @return The exception raised during execution of the task if any, <code>null</code> otherwise.
      */
-    Throwable getExceptionResult() {
+    public Throwable getExceptionResult() {
         return isExceptionResult() ? (Throwable) result : null;
     }
 
@@ -64,8 +66,20 @@ public class ExecutionResult {
      *
      * @return <code>true</code> if execution of the task gave rise to an exception, <code>false</code> otherwise.
      */
-    boolean isExceptionResult() {
+    public boolean isExceptionResult() {
         return result instanceof Throwable;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExecutionResult that = (ExecutionResult) o;
+        return Objects.equals(result, that.result);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(result);
+    }
 }

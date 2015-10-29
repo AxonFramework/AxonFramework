@@ -30,8 +30,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessagePreprocessor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
@@ -305,7 +305,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
+        public Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
     }

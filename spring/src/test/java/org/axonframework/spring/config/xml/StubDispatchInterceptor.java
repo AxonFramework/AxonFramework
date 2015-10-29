@@ -19,14 +19,16 @@ package org.axonframework.spring.config.xml;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
+import java.util.List;
+import java.util.function.Function;
+
 /**
  * @author Allard Buijze
  */
 public class StubDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
     @Override
-    public CommandMessage<?> handle(CommandMessage<?> message) {
-        return message;
+    public Function<Integer, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+        return messages::get;
     }
-
 }

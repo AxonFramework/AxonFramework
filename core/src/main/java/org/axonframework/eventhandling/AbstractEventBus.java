@@ -2,13 +2,13 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.Subscription;
-import org.axonframework.messaging.MessagePreprocessor;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -23,7 +23,7 @@ import java.util.function.Function;
  */
 public abstract class AbstractEventBus implements EventBus {
 
-    private final Collection<MessagePreprocessor> preprocessors = new CopyOnWriteArraySet<>();
+    private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
     final String eventsKey = this + "_EVENTS";
 
     /**
@@ -31,11 +31,12 @@ public abstract class AbstractEventBus implements EventBus {
      * <p/>
      * In case a Unit of Work is active, the <code>preprocessor</code> is not invoked by this Event Bus until the
      * Unit of Work root is committed.
+     * @param dispatchInterceptor
      */
     @Override
-    public Subscription registerPreprocessor(MessagePreprocessor preprocessor) {
-        preprocessors.add(preprocessor);
-        return () -> preprocessors.remove(preprocessor);
+    public Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+        dispatchInterceptors.add(dispatchInterceptor);
+        return () -> dispatchInterceptors.remove(dispatchInterceptor);
     }
 
     @Override
@@ -86,8 +87,8 @@ public abstract class AbstractEventBus implements EventBus {
             CurrentUnitOfWork.get().resources().remove(eventsKey);
         }
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
-        for (MessagePreprocessor preprocessor : preprocessors) {
-            Function<Integer, EventMessage<?>> function = preprocessor.on(preprocessedEvents);
+        for (MessageDispatchInterceptor<EventMessage<?>> preprocessor : dispatchInterceptors) {
+            Function<Integer, EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
             for (int i = 0; i < preprocessedEvents.size(); i++) {
                 preprocessedEvents.set(i, function.apply(i));
             }
