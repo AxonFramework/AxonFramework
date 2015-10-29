@@ -277,6 +277,15 @@ public interface UnitOfWork {
     <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception;
 
     /**
+     * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task
+     * to execute this method returns <code>null</code>.
+     *
+     * @return The result of the task executed by this Unit of Work, or <code>null</code> if the Unit of Work has not
+     * been given a task to execute.
+     */
+    ExecutionResult getExecutionResult();
+
+    /**
      * Enum indicating possible phases of the Unit of Work.
      */
     enum Phase {

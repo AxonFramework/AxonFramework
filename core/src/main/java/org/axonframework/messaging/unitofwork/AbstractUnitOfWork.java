@@ -26,6 +26,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private final Queue<CorrelationDataProvider> correlationDataProviders = new ArrayDeque<>();
     private Phase phase = Phase.NOT_STARTED;
     private UnitOfWork parentUnitOfWork;
+    private ExecutionResult executionResult;
 
     @Override
     public void start() {
@@ -195,6 +196,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         try {
             result = task.call();
         } catch (Exception e) {
+            executionResult = new ExecutionResult(e);
             if (rollbackConfiguration.rollBackOn(e)) {
                 rollback(e);
             } else {
@@ -202,8 +204,14 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
             }
             throw e;
         }
+        executionResult = new ExecutionResult(result);
         commit();
         return result;
+    }
+
+    @Override
+    public ExecutionResult getExecutionResult() {
+        return executionResult;
     }
 
     /**

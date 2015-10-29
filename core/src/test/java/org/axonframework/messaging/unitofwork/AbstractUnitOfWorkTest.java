@@ -104,7 +104,8 @@ public class AbstractUnitOfWorkTest {
     @Test
     public void testExecuteFailingTask() {
         Runnable task = mock(Runnable.class);
-        doThrow(MockException.class).when(task).run();
+        MockException mockException = new MockException();
+        doThrow(mockException).when(task).run();
         try {
             subject.execute(task);
         } catch (MockException e) {
@@ -112,6 +113,8 @@ public class AbstractUnitOfWorkTest {
             inOrder.verify(subject).start();
             inOrder.verify(task).run();
             inOrder.verify(subject).rollback(e);
+            assertNotNull(subject.getExecutionResult());
+            assertSame(mockException, subject.getExecutionResult().getExceptionResult());
             return;
         }
         throw new AssertionError();
@@ -129,6 +132,8 @@ public class AbstractUnitOfWorkTest {
         inOrder.verify(subject).commit();
         assertFalse(subject.isActive());
         assertSame(taskResult, result);
+        assertNotNull(subject.getExecutionResult());
+        assertSame(taskResult, subject.getExecutionResult().getResult());
     }
 
     private static class PhaseTransition {
