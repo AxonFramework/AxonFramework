@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
@@ -58,7 +58,7 @@ public class AnnotationCommandHandlerAdapterTest {
         mockUnitOfWork = mock(UnitOfWork.class);
         when(mockUnitOfWork.resources()).thenReturn(mock(Map.class));
         when(mockUnitOfWork.getCorrelationData()).thenReturn(MetaData.emptyInstance());
-        when(mockBus.subscribe(any(), any())).thenReturn(mock(Subscription.class));
+        when(mockBus.subscribe(any(), any())).thenReturn(mock(Registration.class));
         CurrentUnitOfWork.set(mockUnitOfWork);
     }
 

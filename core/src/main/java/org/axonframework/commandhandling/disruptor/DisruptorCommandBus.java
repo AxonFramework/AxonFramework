@@ -21,7 +21,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.*;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -290,7 +290,7 @@ public class DisruptorCommandBus implements CommandBus {
     }
 
     @Override
-    public Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         commandHandlers.put(commandName, handler);
         return () -> commandHandlers.remove(commandName, handler);
     }

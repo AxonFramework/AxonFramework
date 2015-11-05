@@ -26,7 +26,7 @@ import org.axonframework.commandhandling.distributed.RemoteCommandHandlingExcept
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.Serializer;
@@ -232,14 +232,14 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     @Override
-    public synchronized Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        Subscription subscription = localSegment.subscribe(commandName, handler);
+    public synchronized Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        Registration subscription = localSegment.subscribe(commandName, handler);
         if (supportedCommandNames.add(commandName)) {
             sendMembershipUpdate(null);
         }
         return () -> {
             synchronized (this) {
-                if (subscription.stop()) {
+                if (subscription.cancel()) {
                     if (supportedCommandNames.remove(commandName)) {
                         sendMembershipUpdate(null);
                     }

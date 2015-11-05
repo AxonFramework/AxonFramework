@@ -21,7 +21,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.*;
@@ -170,7 +170,7 @@ public class AsyncAnnotatedSagaManager implements SagaManager, EventProcessingMo
     }
 
     @Override
-    public Subscription subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+    public Registration subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
         return processingMonitors.subscribeEventProcessingMonitor(monitor);
     }
 

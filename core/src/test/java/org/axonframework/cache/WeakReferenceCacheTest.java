@@ -16,8 +16,9 @@
 
 package org.axonframework.cache;
 
-import org.axonframework.common.Subscription;
-import org.junit.*;
+import org.axonframework.common.Registration;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -30,19 +31,19 @@ public class WeakReferenceCacheTest {
 
     private WeakReferenceCache testSubject;
     private Cache.EntryListener mockListener;
-    private Subscription subscription;
+    private Registration registration;
 
     @Before
     public void setUp() throws Exception {
         mockListener = mock(Cache.EntryListener.class);
         testSubject = new WeakReferenceCache();
-        subscription = testSubject.registerCacheEntryListener(mockListener);
+        registration = testSubject.registerCacheEntryListener(mockListener);
     }
 
     @Test
     public void testItemPurgedWhenNoLongerReferenced() throws Exception {
         // Mockito holds a reference to all parameters, preventing GC
-        subscription.stop();
+        registration.cancel();
         final Set<String> expiredEntries = new CopyOnWriteArraySet<>();
         testSubject.registerCacheEntryListener(new Cache.EntryListenerAdapter() {
             @Override

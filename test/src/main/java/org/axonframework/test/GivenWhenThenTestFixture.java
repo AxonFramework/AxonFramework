@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.AbstractEventBus;
@@ -523,7 +523,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
 
         @Override
-        public Subscription subscribe(Cluster eventListener) {
+        public Registration subscribe(Cluster eventListener) {
             return () -> true;
         }
     }

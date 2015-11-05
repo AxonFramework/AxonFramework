@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.messaging.eventbus;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.spring.messaging.StubDomainEvent;
@@ -27,11 +27,7 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -59,7 +55,7 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testUnsubscribeListener() throws Exception {
-        Subscription subscription = testSubject.subscribe(mockCluster);
+        Registration subscription = testSubject.subscribe(mockCluster);
         subscription.close();
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
@@ -67,7 +63,7 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testUnsubscribeListener_UnsubscribedTwice() throws Exception {
-        Subscription subscription = testSubject.subscribe(mockCluster);
+        Registration subscription = testSubject.subscribe(mockCluster);
         subscription.close();
         subscription.close();
 

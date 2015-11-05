@@ -1,6 +1,6 @@
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
 import org.junit.Before;
@@ -24,10 +24,10 @@ public class AbstractUnitOfWorkFactoryTest {
     @Test
     public void testCorrelationDataProviderRegistration() {
         CorrelationDataProvider mockCorrelationDataProvider = mock(CorrelationDataProvider.class);
-        Subscription subscription = subject.registerCorrelationDataProvider(mockCorrelationDataProvider);
+        Registration registration = subject.registerCorrelationDataProvider(mockCorrelationDataProvider);
         UnitOfWork mockUnitOfWork = subject.createUnitOfWork(null);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockCorrelationDataProvider);
-        subscription.stop();
+        registration.cancel();
         mockUnitOfWork = subject.createUnitOfWork(null);
         verify(mockUnitOfWork, never()).registerCorrelationDataProvider(any());
     }

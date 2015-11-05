@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.*;
 import org.axonframework.common.Assert;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
@@ -105,16 +105,16 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
      * @param commandBus    The command bus instance to subscribe to
      * @return A handle that can be used to unsubscribe
      */
-    public Subscription subscribe(CommandBus commandBus) {
-        Collection<Subscription> subscriptions = new ArrayList<>();
+    public Registration subscribe(CommandBus commandBus) {
+        Collection<Registration> subscriptions = new ArrayList<>();
         for (String supportedCommand : supportedCommandNames()) {
-            Subscription subscription = commandBus.subscribe(supportedCommand, this);
+            Registration subscription = commandBus.subscribe(supportedCommand, this);
             if (subscription != null) {
                 subscriptions.add(subscription);
             }
         }
         return () -> {
-            subscriptions.forEach(Subscription::stop);
+            subscriptions.forEach(Registration::cancel);
             return true;
         };
     }

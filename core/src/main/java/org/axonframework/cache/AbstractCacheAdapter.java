@@ -16,7 +16,7 @@
 
 package org.axonframework.cache;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,15 +43,15 @@ public abstract class AbstractCacheAdapter<L> implements Cache {
     protected abstract L createListenerAdapter(EntryListener cacheEntryListener);
 
     @Override
-    public Subscription registerCacheEntryListener(EntryListener entryListener) {
+    public Registration registerCacheEntryListener(EntryListener entryListener) {
         L adapter = createListenerAdapter(entryListener);
-        Subscription subscription
+        Registration registration
                 = registeredAdapters.putIfAbsent(entryListener, adapter) == null ? doRegisterListener(adapter) : null;
         return () -> {
             L removedAdapter = registeredAdapters.remove(entryListener);
             if (removedAdapter != null) {
-                if (subscription != null) {
-                    subscription.stop();
+                if (registration != null) {
+                    registration.cancel();
                 }
                 return true;
             }
@@ -65,5 +65,5 @@ public abstract class AbstractCacheAdapter<L> implements Cache {
      * @param listenerAdapter the listener to register
      * @return a handle to unregister the listener
      */
-    protected abstract Subscription doRegisterListener(L listenerAdapter);
+    protected abstract Registration doRegisterListener(L listenerAdapter);
 }

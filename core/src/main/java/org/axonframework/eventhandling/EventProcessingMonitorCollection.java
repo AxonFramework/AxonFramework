@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 
 import java.util.List;
 import java.util.Set;
@@ -47,7 +47,7 @@ public class EventProcessingMonitorCollection implements EventProcessingMonitor,
     }
 
     @Override
-    public Subscription subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+    public Registration subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
         delegates.add(monitor);
         return () -> delegates.remove(monitor);
     }

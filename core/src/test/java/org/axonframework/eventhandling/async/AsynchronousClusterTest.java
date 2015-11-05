@@ -17,20 +17,11 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.common.Subscription;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventListenerProxy;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessingMonitor;
-import org.axonframework.eventhandling.EventProcessingMonitorSupport;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.messaging.unitofwork.TransactionManager;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.*;
 import org.axonframework.testutils.MockException;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,20 +36,8 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -151,10 +130,10 @@ public class AsynchronousClusterTest {
     @Test
     public void testSubscriptions() throws Exception {
         EventListener mockEventListener = mock(EventListener.class);
-        Subscription subscription = testSubject.subscribe(mockEventListener);
+        Registration subscription = testSubject.subscribe(mockEventListener);
         assertTrue(testSubject.getMembers().contains(mockEventListener));
 
-        subscription.stop();
+        subscription.cancel();
         assertFalse(testSubject.getMembers().contains(mockEventListener));
     }
 
@@ -206,7 +185,7 @@ public class AsynchronousClusterTest {
 
         final ArgumentCaptor<EventProcessingMonitor> argumentCaptor = ArgumentCaptor
                 .forClass(EventProcessingMonitor.class);
-        doReturn(mock(Subscription.class))
+        doReturn(mock(Registration.class))
                 .when(mockEventListener3).subscribeEventProcessingMonitor(argumentCaptor.capture());
 
         testSubject.subscribe(mockEventListener1);

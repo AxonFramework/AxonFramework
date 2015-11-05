@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.*;
 import org.slf4j.Logger;
@@ -125,7 +125,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param handler     The handler instance that handles the given type of command
      */
     @Override
-    public Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         subscriptions.put(commandName, handler);
         return () -> subscriptions.remove(commandName, handler);
     }

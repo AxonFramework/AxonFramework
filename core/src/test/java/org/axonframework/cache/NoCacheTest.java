@@ -16,7 +16,7 @@
 
 package org.axonframework.cache;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.junit.Test;
 
 import javax.cache.CacheException;
@@ -36,13 +36,13 @@ public class NoCacheTest {
     public void testCacheDoesNothing() throws CacheException {
         // this is pretty stupid, but we're testing that it does absolutely nothing
         NoCache cache = NoCache.INSTANCE;
-        Subscription subscription = cache.registerCacheEntryListener(mock(Cache.EntryListener.class));
+        Registration registration = cache.registerCacheEntryListener(mock(Cache.EntryListener.class));
         assertFalse(cache.containsKey(new Object()));
         assertNull(cache.get(new Object()));
         cache.put(new Object(), new Object());
         Map<Object, Object> map = new HashMap<>();
         map.put(new Object(), new Object());
         assertFalse(cache.remove(new Object()));
-        subscription.stop();
+        registration.cancel();
     }
 }

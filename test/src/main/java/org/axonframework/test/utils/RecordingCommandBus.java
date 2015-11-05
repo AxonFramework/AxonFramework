@@ -19,7 +19,7 @@ package org.axonframework.test.utils;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 
 import java.util.ArrayList;
@@ -59,7 +59,7 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         subscriptions.putIfAbsent(commandName, handler);
         return () -> subscriptions.remove(commandName, handler);
     }

@@ -17,14 +17,10 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -120,9 +116,9 @@ public abstract class AbstractCluster implements Cluster {
     }
 
     @Override
-    public Subscription subscribe(EventListener eventListener) {
+    public Registration subscribe(EventListener eventListener) {
         eventListeners.add(eventListener);
-        Subscription monitorSubscription =
+        Registration monitorSubscription =
                 eventListener instanceof EventProcessingMonitorSupport
                         ? ((EventProcessingMonitorSupport) eventListener)
                           .subscribeEventProcessingMonitor(eventProcessingMonitor)
@@ -130,7 +126,7 @@ public abstract class AbstractCluster implements Cluster {
         return () -> {
             if (eventListeners.remove(eventListener)) {
                 if (monitorSubscription != null) {
-                    monitorSubscription.stop();
+                    monitorSubscription.cancel();
                 }
                 return true;
             }
@@ -156,7 +152,7 @@ public abstract class AbstractCluster implements Cluster {
     }
 
     @Override
-    public Subscription subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+    public Registration subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
         return subscribedMonitors.subscribeEventProcessingMonitor(monitor);
     }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -216,7 +216,7 @@ public class AbstractEventBusTest {
         }
 
         @Override
-        public Subscription subscribe(Cluster cluster) {
+        public Registration subscribe(Cluster cluster) {
             throw new UnsupportedOperationException();
         }
     }

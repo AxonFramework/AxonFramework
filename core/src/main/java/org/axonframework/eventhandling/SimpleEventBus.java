@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class SimpleEventBus extends AbstractEventBus {
      * {@inheritDoc}
      */
     @Override
-    public Subscription subscribe(Cluster cluster) {
+    public Registration subscribe(Cluster cluster) {
         if (this.clusters.add(cluster)) {
             logger.debug("Cluster [{}] subscribed successfully", cluster.getName());
         } else {

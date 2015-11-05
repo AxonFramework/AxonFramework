@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
 import org.axonframework.common.Assert;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MethodMessageHandler;
 import org.axonframework.common.annotation.MethodMessageHandlerInspector;
@@ -81,13 +81,13 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      * @param commandBus    The command bus instance to subscribe to
      * @return A handle that can be used to unsubscribe
      */
-    public Subscription subscribe(CommandBus commandBus) {
-        Collection<Subscription> subscriptions = new ArrayDeque<>();
+    public Registration subscribe(CommandBus commandBus) {
+        Collection<Registration> subscriptions = new ArrayDeque<>();
         for (String supportedCommand : supportedCommandNames()) {
             subscriptions.add(commandBus.subscribe(supportedCommand, this));
         }
         return () -> {
-            subscriptions.forEach(org.axonframework.common.Subscription::stop);
+            subscriptions.forEach(Registration::cancel);
             return true;
         };
     }

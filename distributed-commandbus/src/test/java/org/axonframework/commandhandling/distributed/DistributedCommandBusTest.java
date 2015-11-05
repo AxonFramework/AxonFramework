@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;
@@ -37,7 +37,7 @@ public class DistributedCommandBusTest {
 
     private DistributedCommandBus testSubject;
     private CommandBusConnector mockConnector;
-    private Subscription mockSubscription;
+    private Registration mockSubscription;
     private RoutingStrategy mockRoutingStrategy;
     private MessageHandler<? super CommandMessage<?>> mockHandler;
     private CommandMessage<?> message;
@@ -48,7 +48,7 @@ public class DistributedCommandBusTest {
     @Before
     public void setUp() throws Exception {
         mockConnector = mock(CommandBusConnector.class);
-        mockSubscription = mock(Subscription.class);
+        mockSubscription = mock(Registration.class);
         when(mockConnector.subscribe(any(), any())).thenReturn(mockSubscription);
         mockRoutingStrategy = mock(RoutingStrategy.class);
         when(mockRoutingStrategy.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
@@ -108,9 +108,9 @@ public class DistributedCommandBusTest {
 
     @Test
     public void testUnsubscribeIsDoneOnConnector() {
-        Subscription subscription = testSubject.subscribe(Object.class.getName(), mockHandler);
-        subscription.stop();
+        Registration subscription = testSubject.subscribe(Object.class.getName(), mockHandler);
+        subscription.cancel();
 
-        verify(mockSubscription).stop();
+        verify(mockSubscription).cancel();
     }
 }

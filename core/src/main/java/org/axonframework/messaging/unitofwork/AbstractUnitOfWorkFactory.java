@@ -1,6 +1,6 @@
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
 
@@ -18,7 +18,7 @@ public abstract class AbstractUnitOfWorkFactory<T extends UnitOfWork> implements
     private final Collection<CorrelationDataProvider> correlationDataProviders = new CopyOnWriteArraySet<>();
 
     @Override
-    public Subscription registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
+    public Registration registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
         correlationDataProviders.add(correlationDataProvider);
         return () -> correlationDataProviders.remove(correlationDataProvider);
     }

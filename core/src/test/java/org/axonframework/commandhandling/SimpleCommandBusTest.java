@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -163,7 +163,7 @@ public class SimpleCommandBusTest {
     public void testDispatchCommand_HandlerUnsubscribed() throws Exception {
         final CommandCallback<Object, Object> callback = mock(CommandCallback.class);
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
-        Subscription subscription = testSubject.subscribe(String.class.getName(), commandHandler);
+        Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
         subscription.close();
         final CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("Say hi!");
         testSubject.dispatch(command, callback);

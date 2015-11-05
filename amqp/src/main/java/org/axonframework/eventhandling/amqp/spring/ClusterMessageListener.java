@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.amqp.spring;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
@@ -78,7 +78,7 @@ public class ClusterMessageListener implements MessageListener {
      * @param cluster the cluster to add to the listener
      * @return a handle to unsubscribe the <code>cluster</code>. When unsubscribed it will no longer receive messages.
      */
-    public Subscription addCluster(Cluster cluster) {
+    public Registration addCluster(Cluster cluster) {
         clusters.add(cluster);
         return () -> clusters.remove(cluster);
     }

@@ -16,7 +16,7 @@
 
 package org.axonframework.testutils;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -48,13 +48,13 @@ public class RecordingEventBus implements EventBus {
     }
 
     @Override
-    public Subscription subscribe(Cluster cluster) {
+    public Registration subscribe(Cluster cluster) {
         subscriptions.add(cluster);
         return () -> subscriptions.remove(cluster);
     }
 
     @Override
-    public Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+    public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
         this.dispatchInterceptor.add(dispatchInterceptor);
         return () -> this.dispatchInterceptor.remove(dispatchInterceptor);
     }

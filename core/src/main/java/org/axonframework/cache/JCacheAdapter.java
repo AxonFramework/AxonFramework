@@ -16,7 +16,7 @@
 
 package org.axonframework.cache;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -74,7 +74,7 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
     }
 
     @Override
-    protected Subscription doRegisterListener(CacheEntryListenerConfiguration listenerAdapter) {
+    protected Registration doRegisterListener(CacheEntryListenerConfiguration listenerAdapter) {
         jCache.registerCacheEntryListener(listenerAdapter);
         return () -> {
             jCache.deregisterCacheEntryListener(listenerAdapter);

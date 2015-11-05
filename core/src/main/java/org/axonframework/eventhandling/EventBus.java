@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.Arrays;
@@ -75,7 +75,7 @@ public interface EventBus {
      * @return a handle to unsubscribe the <code>cluster</code>. When unsubscribed it will no longer receive events.
      * @throws EventListenerSubscriptionFailedException if the listener could not be subscribed
      */
-    Subscription subscribe(Cluster cluster);
+    Registration subscribe(Cluster cluster);
 
     /**
      * Register the given <code>interceptor</code> with this bus. When subscribed it will intercept any event messages
@@ -87,6 +87,6 @@ public interface EventBus {
      * @return a handle to unregister the <code>dispatchInterceptor</code>. When unregistered it will no longer be
      * given event messages published on this bus.
      */
-    Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor);
+    Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor);
 
 }

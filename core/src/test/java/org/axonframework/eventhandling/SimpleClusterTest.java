@@ -21,9 +21,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -62,7 +60,7 @@ public class SimpleClusterTest {
     @Test
     public void testUnsubscribeMember() {
         assertEquals(0, testSubject.getMembers().size());
-        testSubject.subscribe(eventListener).stop();
+        testSubject.subscribe(eventListener).cancel();
         assertEquals(0, testSubject.getMembers().size());
     }
 

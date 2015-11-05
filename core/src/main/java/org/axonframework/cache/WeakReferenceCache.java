@@ -16,7 +16,7 @@
 
 package org.axonframework.cache;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -48,7 +48,7 @@ public class WeakReferenceCache implements Cache {
     private final Set<EntryListener> adapters = new CopyOnWriteArraySet<>();
 
     @Override
-    public Subscription registerCacheEntryListener(EntryListener entryListener) {
+    public Registration registerCacheEntryListener(EntryListener entryListener) {
         adapters.add(entryListener);
         return () -> adapters.remove(entryListener);
     }

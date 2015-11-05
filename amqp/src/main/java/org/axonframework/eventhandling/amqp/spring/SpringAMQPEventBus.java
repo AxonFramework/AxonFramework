@@ -20,19 +20,12 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
-import org.axonframework.eventhandling.amqp.AMQPMessage;
-import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
-import org.axonframework.eventhandling.amqp.DefaultAMQPConsumerConfiguration;
-import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
-import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
-import org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver;
-import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
+import org.axonframework.eventhandling.amqp.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serializer.Serializer;
 import org.slf4j.Logger;
@@ -184,7 +177,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     }
 
     @Override
-    public Subscription subscribe(Cluster cluster) {
+    public Registration subscribe(Cluster cluster) {
         ClusterMetaData clusterMetaData = cluster.getMetaData();
         AMQPConsumerConfiguration config;
         if (clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {

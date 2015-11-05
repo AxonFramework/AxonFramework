@@ -16,14 +16,11 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -48,10 +45,10 @@ public class SimpleEventBusTest {
         testSubject.publish(newEvent());
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference
-        Subscription subscription1 = testSubject.subscribe(listener1);
+        Registration subscription1 = testSubject.subscribe(listener1);
         testSubject.publish(newEvent());
-        Subscription subscription2 = testSubject.subscribe(listener2);
-        Subscription subscription3 = testSubject.subscribe(listener3);
+        Registration subscription2 = testSubject.subscribe(listener2);
+        Registration subscription3 = testSubject.subscribe(listener3);
         testSubject.publish(newEvent());
         subscription1.close();
         testSubject.publish(newEvent());

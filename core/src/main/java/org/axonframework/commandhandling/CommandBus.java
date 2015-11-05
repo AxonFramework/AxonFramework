@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 
 /**
@@ -76,6 +76,6 @@ public interface CommandBus {
      * @param handler     The handler instance that handles the given type of command
      * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
      */
-    Subscription subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
+    Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 
 }

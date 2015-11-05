@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.metadata.MetaData;
@@ -62,7 +62,7 @@ public class EventCountSnapshotterTriggerTest {
         //noinspection unchecked
         mockCache = mock(Cache.class);
         listenerConfiguration = new CapturingMatcher<>();
-        when(mockCache.registerCacheEntryListener(argThat(listenerConfiguration))).thenReturn(mock(Subscription.class));
+        when(mockCache.registerCacheEntryListener(argThat(listenerConfiguration))).thenReturn(mock(Registration.class));
 
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }

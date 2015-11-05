@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -176,12 +176,12 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Subscription subscribe(Cluster cluster) {
+        public Registration subscribe(Cluster cluster) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Subscription registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+        public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
         }
     }

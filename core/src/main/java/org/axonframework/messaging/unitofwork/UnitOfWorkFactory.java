@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
 
@@ -42,7 +42,7 @@ public interface UnitOfWorkFactory<T extends UnitOfWork> {
      * @return a handle to unregister the <code>correlationDataProvider</code>. When unregistered it will no longer
      * be attached to new unit of works.
      */
-    Subscription registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
+    Registration registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
 
     /**
      * Creates a new UnitOfWork instance. The instance's {@link UnitOfWork#isActive()} method returns

@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.FixedValueParameterResolver;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
@@ -66,7 +66,7 @@ public class AggregateAnnotationCommandHandlerTest {
         commandBus = new SimpleCommandBus();
         commandBus.setUnitOfWorkFactory(new UnitOfWorkFactory() {
             @Override
-            public Subscription registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
+            public Registration registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
                 return () -> true;
             }
 

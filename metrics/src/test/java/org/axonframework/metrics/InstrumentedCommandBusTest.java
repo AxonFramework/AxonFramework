@@ -7,7 +7,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.common.Subscription;
+import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class InstrumentedCommandBusTest {
         assertEquals(String.class.getName(), supportedCommandsValue.iterator().next());
 
         final MessageHandler<CommandMessage<?>> handler = (m, u) -> null;
-        Subscription subscription = testSubject.subscribe(Long.class.getName(), handler);
+        Registration subscription = testSubject.subscribe(Long.class.getName(), handler);
 
         assertEquals(1, supportedCommandsValue.size());
         assertEquals(2, supportedCommands.getValue().size());
