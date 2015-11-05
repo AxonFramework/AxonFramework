@@ -19,7 +19,7 @@ package org.axonframework.saga.repository;
 import org.axonframework.cache.Cache;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
-import org.axonframework.common.lock.PessimisticLockManager;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
@@ -41,7 +41,7 @@ import java.util.Set;
 public class CachingSagaRepository implements SagaRepository {
 
     private final SagaRepository delegate;
-    private final PessimisticLockManager associationsCacheLock = new PessimisticLockManager();
+    private final PessimisticLockFactory associationsCacheLock = new PessimisticLockFactory();
     // guarded by "associationsCacheLock"
     private final Cache associationsCache;
     private final Cache sagaCache;

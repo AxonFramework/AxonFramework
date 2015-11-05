@@ -1098,26 +1098,25 @@
                     <xsd:attribute name="locking-strategy" use="optional">
                         <xsd:annotation>
                             <xsd:documentation>The locking strategy used by this repository (default: PESSIMISTIC). This
-                                value is ignored if a lock-manager is provided.
+                                value is ignored if a lock-factory is provided.
                             </xsd:documentation>
                         </xsd:annotation>
                         <xsd:simpleType>
                             <xsd:restriction base="xsd:string">
-                                <xsd:enumeration value="OPTIMISTIC"/>
                                 <xsd:enumeration value="PESSIMISTIC"/>
                                 <xsd:enumeration value="NO_LOCKING"/>
                             </xsd:restriction>
                         </xsd:simpleType>
                     </xsd:attribute>
-                    <xsd:attribute name="lock-manager" use="optional">
+                    <xsd:attribute name="lock-factory" use="optional">
                         <xsd:annotation>
-                            <xsd:documentation>The lock manager used by this repository (defaults to a
-                                PessimisticLockManager instance). Setting a value for this attribute will cause any
+                            <xsd:documentation>The lock factory used by this repository (defaults to a
+                                PessimisticLockFactory instance). Setting a value for this attribute will cause any
                                 value submitted in locking-strategy to be ignored.
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.common.lock.LockManager"/>
+                                    <tool:expected-type type="org.axonframework.common.lock.LockFactory"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1227,27 +1226,26 @@
                     <xsd:attribute name="locking-strategy" use="optional">
                         <xsd:annotation>
                             <xsd:documentation>The locking strategy used by this repository (default: PESSIMISTIC). This
-                                value is ignored if a lock-manager is provided.
+                                value is ignored if a lock-factory is provided.
                             </xsd:documentation>
                         </xsd:annotation>
                         <xsd:simpleType>
                             <xsd:restriction base="xsd:string">
-                                <xsd:enumeration value="OPTIMISTIC"/>
                                 <xsd:enumeration value="PESSIMISTIC"/>
                                 <xsd:enumeration value="NO_LOCKING"/>
                             </xsd:restriction>
                         </xsd:simpleType>
                     </xsd:attribute>
-                    <xsd:attribute name="lock-manager" use="optional">
+                    <xsd:attribute name="lock-factory" use="optional">
                         <xsd:annotation>
-                            <xsd:documentation>The lock manager used by this repository (defaults to a
-                                PessimisticLockManager instance). Setting a value for this attribute will cause any
+                            <xsd:documentation>The lock factory used by this repository (defaults to a
+                                PessimisticLockFactory instance). Setting a value for this attribute will cause any
                                 value submitted in locking-strategy to be ignored.
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.common.lock.LockManager"/>
+                                            type="org.axonframework.common.lock.LockFactory"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>

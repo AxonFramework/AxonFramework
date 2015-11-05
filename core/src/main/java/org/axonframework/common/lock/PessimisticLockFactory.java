@@ -28,7 +28,7 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.Collections.synchronizedMap;
 
 /**
- * Implementation of a {@link LockManager} that uses a pessimistic locking strategy. Calls to
+ * Implementation of a {@link LockFactory} that uses a pessimistic locking strategy. Calls to
  * {@link #obtainLock} will block until a lock could be obtained. If a lock is obtained by a thread, that
  * thread has guaranteed unique access.
  * <p/>
@@ -40,28 +40,23 @@ import static java.util.Collections.synchronizedMap;
  * @author Allard Buijze
  * @since 1.3
  */
-public class PessimisticLockManager implements LockManager {
+public class PessimisticLockFactory implements LockFactory {
 
-    private static final Set<PessimisticLockManager> INSTANCES =
+    private static final Set<PessimisticLockFactory> INSTANCES =
             newSetFromMap(synchronizedMap(new WeakHashMap<>()));
 
     private static Set<Thread> threadsWaitingForMyLocks(Thread owner) {
         return threadsWaitingForMyLocks(owner, INSTANCES);
     }
 
-    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockManager> locksInUse) {
+    private static Set<Thread> threadsWaitingForMyLocks(Thread owner, Set<PessimisticLockFactory> locksInUse) {
         Set<Thread> waitingThreads = new HashSet<>();
-        for (PessimisticLockManager lock : locksInUse) {
-            for (DisposableLock disposableLock : lock.locks.values()) {
-                if (disposableLock.isHeldBy(owner)) {
-                    final Collection<Thread> c = disposableLock.queuedThreads();
-                    for (Thread thread : c) {
-                        if (waitingThreads.add(thread)) {
-                            waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse));
-                        }
-                    }
-                }
-            }
+        for (PessimisticLockFactory lock : locksInUse) {
+            lock.locks.values().stream()
+                    .filter(disposableLock -> disposableLock.isHeldBy(owner))
+                    .forEach(disposableLock -> disposableLock.queuedThreads().stream()
+                            .filter(waitingThreads::add)
+                            .forEach(thread -> waitingThreads.addAll(threadsWaitingForMyLocks(thread, locksInUse))));
         }
         return waitingThreads;
     }
@@ -73,7 +68,7 @@ public class PessimisticLockManager implements LockManager {
      * <p/>
      * Deadlocks are detected across instances of the IdentifierBasedLock.
      */
-    public PessimisticLockManager() {
+    public PessimisticLockFactory() {
         INSTANCES.add(this);
     }
 
@@ -101,15 +96,6 @@ public class PessimisticLockManager implements LockManager {
         return lock;
     }
 
-    @Override
-    public boolean validateLock(String identifier) {
-        return isLockAvailableFor(identifier) && lockFor(identifier).isHeldByCurrentThread();
-    }
-
-    private boolean isLockAvailableFor(String identifier) {
-        return locks.containsKey(identifier);
-    }
-
     private DisposableLock lockFor(String identifier) {
         DisposableLock lock = locks.get(identifier);
         while (lock == null) {
@@ -128,10 +114,6 @@ public class PessimisticLockManager implements LockManager {
         private DisposableLock(String identifier) {
             this.identifier = identifier;
             this.lock = new PubliclyOwnedReentrantLock();
-        }
-
-        private boolean isHeldByCurrentThread() {
-            return lock.isHeldByCurrentThread();
         }
 
         @Override

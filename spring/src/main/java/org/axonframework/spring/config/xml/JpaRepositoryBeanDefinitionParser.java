@@ -36,7 +36,7 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
 
     private static final String ENTITY_MANAGER_PROVIDER = "entity-manager-provider";
     private static final String EVENT_BUS = "event-bus";
-    private static final String LOCK_MANAGER = "lock-manager";
+    private static final String LOCK_FACTORY = "lock-factory";
     private static final String LOCKING_STRATEGY = "locking-strategy";
     private static final String AGGREGATE_TYPE = "aggregate-type";
 
@@ -56,18 +56,18 @@ public class JpaRepositoryBeanDefinitionParser extends AbstractSingleBeanDefinit
             );
         }
         builder.addConstructorArgValue(element.getAttribute(AGGREGATE_TYPE));
-        parseLockManager(element, builder);
+        parseLockFactory(element, builder);
         parseEventBus(element, builder);
     }
 
-    private void parseLockManager(Element element, BeanDefinitionBuilder builder) {
-        if (element.hasAttribute(LOCK_MANAGER)) {
-            builder.addConstructorArgReference(element.getAttribute(LOCK_MANAGER));
+    private void parseLockFactory(Element element, BeanDefinitionBuilder builder) {
+        if (element.hasAttribute(LOCK_FACTORY)) {
+            builder.addConstructorArgReference(element.getAttribute(LOCK_FACTORY));
         } else if (element.hasAttribute(LOCKING_STRATEGY)) {
             LockingStrategy strategy = LockingStrategy.valueOf(element.getAttribute(LOCKING_STRATEGY));
-            GenericBeanDefinition lockManager = new GenericBeanDefinition();
-            lockManager.setBeanClass(strategy.getLockManagerType());
-            builder.addConstructorArgValue(lockManager);
+            GenericBeanDefinition LockFactory = new GenericBeanDefinition();
+            LockFactory.setBeanClass(strategy.getLockFactoryType());
+            builder.addConstructorArgValue(LockFactory);
         }
     }
 

@@ -18,8 +18,8 @@ package org.axonframework.repository;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
-import org.axonframework.common.lock.LockManager;
-import org.axonframework.common.lock.PessimisticLockManager;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -30,16 +30,10 @@ import org.slf4j.LoggerFactory;
  * modifications of persisted aggregates. Unless there is a locking mechanism present in the underlying persistence
  * environment, it is recommended to use a LockingRepository (or one of its subclasses).
  * <p/>
- * The LockingRepository can be initialized with two strategies: <ul><li><em>Optimistic Locking</em> strategy: This
- * strategy performs better than the pessimistic one, but you will only discover a concurrency issue at the time a
- * thread tries to save an aggregate. If another thread has saved the same aggregate earlier (but after the first
- * thread
- * loaded its copy), an exception is thrown. The only way to recover from this exception is to load the aggregate from
- * the repository again, replay all actions on it and save it. <li><em>Pessimistic Locking</em> strategy (default):
- * Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before the aggregate is
- * handed over. This means that, once an aggregate is loaded, it has full exclusive access to it, until it saves the
- * aggregate. With this strategy, it is important that -no matter what- the aggregate is saved to the repository. Any
- * failure to do so will result in threads blocking endlessly, waiting for a lock that might never be released. </ul>
+ * The LockingRepository can be initialized with a locking strategy. <em>Pessimistic Locking</em> is the default
+ * strategy. Pessimistic Locking requires an exclusive lock to be handed to a thread loading an aggregate before
+ * the aggregate is handed over. This means that, once an aggregate is loaded, it has full exclusive access to it,
+ * until it saves the aggregate.
  * <p/>
  * Important: If an exception is thrown during the saving process, any locks held are released. The calling thread may
  * reattempt saving the aggregate again. If the lock is available, the thread automatically takes back the lock. If,
@@ -53,32 +47,32 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
-    private final LockManager lockManager;
+    private final LockFactory lockFactory;
 
     /**
      * Initialize a repository with a pessimistic locking strategy.
      * @param aggregateType The type of aggregate stored in this repository
      */
     protected LockingRepository(Class<T> aggregateType) {
-        this(aggregateType, new PessimisticLockManager());
+        this(aggregateType, new PessimisticLockFactory());
     }
 
     /**
-     * Initialize the repository with the given <code>lockManager</code>.
+     * Initialize the repository with the given <code>LockFactory</code>.
      *
      * @param aggregateType The type of aggregate stored in this repository
-     * @param lockManager the lock manager to use
+     * @param lockFactory the lock factory to use
      */
-    protected LockingRepository(Class<T> aggregateType, LockManager lockManager) {
+    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory) {
         super(aggregateType);
-        Assert.notNull(lockManager, "lockManager may not be null");
-        this.lockManager = lockManager;
+        Assert.notNull(lockFactory, "LockFactory may not be null");
+        this.lockFactory = lockFactory;
     }
 
     @Override
     public void add(T aggregate) {
         final String aggregateIdentifier = aggregate.getIdentifier();
-        Lock lock = lockManager.obtainLock(aggregateIdentifier);
+        Lock lock = lockFactory.obtainLock(aggregateIdentifier);
         try {
             super.add(aggregate);
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
@@ -98,7 +92,7 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
     @SuppressWarnings({"unchecked"})
     @Override
     public T load(String aggregateIdentifier, Long expectedVersion) {
-        Lock lock = lockManager.obtainLock(aggregateIdentifier);
+        Lock lock = lockFactory.obtainLock(aggregateIdentifier);
         try {
             final T aggregate = super.load(aggregateIdentifier, expectedVersion);
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
@@ -109,68 +103,4 @@ public abstract class LockingRepository<T extends AggregateRoot> extends Abstrac
             throw ex;
         }
     }
-
-    /**
-     * Verifies whether all locks are valid and delegates to
-     * {@link #doSaveWithLock(org.axonframework.domain.AggregateRoot)} to perform actual storage.
-     *
-     * @param aggregate the aggregate to store
-     */
-    @Override
-    protected final void doSave(T aggregate) {
-        if (aggregate.getVersion() != null && !lockManager.validateLock(aggregate.getIdentifier())) {
-            throw new ConcurrencyException(String.format(
-                    "The aggregate of type [%s] with identifier [%s] could not be "
-                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                            + "the current thread had released its lock earlier on.",
-                    aggregate.getClass().getSimpleName(),
-                    aggregate.getIdentifier()));
-        }
-        doSaveWithLock(aggregate);
-    }
-
-    /**
-     * Verifies whether all locks are valid and delegates to
-     * {@link #doDeleteWithLock(org.axonframework.domain.AggregateRoot)} to perform actual deleting.
-     *
-     * @param aggregate the aggregate to delete
-     */
-    @Override
-    protected final void doDelete(T aggregate) {
-        if (aggregate.getVersion() != null && !lockManager.validateLock(aggregate.getIdentifier())) {
-            throw new ConcurrencyException(String.format(
-                    "The aggregate of type [%s] with identifier [%s] could not be "
-                            + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
-                            + "the current thread had released its lock earlier on.",
-                    aggregate.getClass().getSimpleName(),
-                    aggregate.getIdentifier()));
-        }
-        doDeleteWithLock(aggregate);
-    }
-
-    /**
-     * Perform the actual saving of the aggregate. All necessary locks have been verified.
-     *
-     * @param aggregate the aggregate to store
-     */
-    protected abstract void doSaveWithLock(T aggregate);
-
-    /**
-     * Perform the actual deleting of the aggregate. All necessary locks have been verified.
-     *
-     * @param aggregate the aggregate to delete
-     */
-    protected abstract void doDeleteWithLock(T aggregate);
-
-    /**
-     * Perform the actual loading of an aggregate. The necessary locks have been obtained.
-     *
-     * @param aggregateIdentifier the identifier of the aggregate to load
-     * @param expectedVersion     The expected version of the aggregate
-     * @return the fully initialized aggregate
-     *
-     * @throws AggregateNotFoundException if aggregate with given id cannot be found
-     */
-    @Override
-    protected abstract T doLoad(String aggregateIdentifier, Long expectedVersion);
 }

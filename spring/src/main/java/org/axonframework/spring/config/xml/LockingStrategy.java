@@ -16,10 +16,9 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.common.lock.LockManager;
-import org.axonframework.common.lock.NullLockManager;
-import org.axonframework.common.lock.OptimisticLockManager;
-import org.axonframework.common.lock.PessimisticLockManager;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.NullLockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 
 /**
  * Enum indicating possible locking strategies for repositories.
@@ -30,30 +29,26 @@ import org.axonframework.common.lock.PessimisticLockManager;
 public enum LockingStrategy {
 
     /**
-     * Represents the Optimistic Lock Manager
+     * Represents the Pessimistic Lock factory
      */
-    OPTIMISTIC(OptimisticLockManager.class),
+    PESSIMISTIC(PessimisticLockFactory.class),
     /**
-     * Represents the Pessimistic Lock Manager
+     * Represents the Null Lock factory (no locking)
      */
-    PESSIMISTIC(PessimisticLockManager.class),
-    /**
-     * Represents the Null Lock Manager (no locking)
-     */
-    NO_LOCKING(NullLockManager.class);
+    NO_LOCKING(NullLockFactory.class);
 
-    private final Class<? extends LockManager> lockManagerType;
+    private final Class<? extends LockFactory> LockFactoryType;
 
-    private LockingStrategy(Class<? extends LockManager> lockManagerType) {
-        this.lockManagerType = lockManagerType;
+    LockingStrategy(Class<? extends LockFactory> LockFactoryType) {
+        this.LockFactoryType = LockFactoryType;
     }
 
     /**
-     * Returns the type of LockManager that belongs to this strategy.
+     * Returns the type of LockFactory that belongs to this strategy.
      *
-     * @return the type of LockManager that belongs to this strategy
+     * @return the type of LockFactory that belongs to this strategy
      */
-    public Class<? extends LockManager> getLockManagerType() {
-        return lockManagerType;
+    public Class<? extends LockFactory> getLockFactoryType() {
+        return LockFactoryType;
     }
 }

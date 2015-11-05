@@ -20,37 +20,22 @@ import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
  */
-public class PessimisticLockManagerTest {
+public class PessimisticLockFactoryTest {
 
     private String identifier = "mockId";
 
     @Test
-    public void testValidateLocks() {
-        PessimisticLockManager manager = new PessimisticLockManager();
-        String identifier = UUID.randomUUID().toString();
-        assertFalse(manager.validateLock(identifier));
-        Lock lock1 = manager.obtainLock(identifier);
-        assertTrue(manager.validateLock(identifier));
-        Lock lock2 = manager.obtainLock(identifier);
-        assertTrue(manager.validateLock(identifier));
-        lock1.release();
-        assertTrue(manager.validateLock(identifier));
-        lock2.release();
-        assertFalse(manager.validateLock(identifier));
-    }
-
-    @Test
     public void testLockReferenceCleanedUpAtUnlock() throws NoSuchFieldException, IllegalAccessException {
-        PessimisticLockManager manager = new PessimisticLockManager();
+        PessimisticLockFactory manager = new PessimisticLockFactory();
         Lock lock = manager.obtainLock(identifier);
         lock.release();
 
@@ -61,27 +46,25 @@ public class PessimisticLockManagerTest {
     }
 
     @Test
-    public void testLockOnlyCleanedUpIfNoLocksAreHeld() {
-        PessimisticLockManager manager = new PessimisticLockManager();
-
-        assertFalse(manager.validateLock(identifier));
-
+    public void testLockOnlyCleanedUpIfNoLocksAreHeld() throws NoSuchFieldException, IllegalAccessException {
+        PessimisticLockFactory manager = new PessimisticLockFactory();
         Lock lock1 = manager.obtainLock(identifier);
-        assertTrue(manager.validateLock(identifier));
-
         Lock lock2 = manager.obtainLock(identifier);
-        assertTrue(manager.validateLock(identifier));
-
         lock1.release();
-        assertTrue(manager.validateLock(identifier));
+
+        Field locksField = manager.getClass().getDeclaredField("locks");
+        locksField.setAccessible(true);
+        Map locks = (Map) locksField.get(manager);
+        assertEquals("Expected lock not to be cleaned up", 1, locks.size());
 
         lock2.release();
-        assertFalse(manager.validateLock(identifier));
+        locks = (Map) locksField.get(manager);
+        assertEquals("Expected locks to be cleaned up", 0, locks.size());
     }
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_TwoThreadsInVector() throws InterruptedException {
-        final PessimisticLockManager lock = new PessimisticLockManager();
+        final PessimisticLockFactory lock = new PessimisticLockFactory();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -100,8 +83,8 @@ public class PessimisticLockManagerTest {
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_TwoDifferentLockInstances() throws InterruptedException {
-        final PessimisticLockManager lock1 = new PessimisticLockManager();
-        final PessimisticLockManager lock2 = new PessimisticLockManager();
+        final PessimisticLockFactory lock1 = new PessimisticLockFactory();
+        final PessimisticLockFactory lock2 = new PessimisticLockFactory();
         final CountDownLatch starter = new CountDownLatch(1);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -120,7 +103,7 @@ public class PessimisticLockManagerTest {
 
     @Test(timeout = 5000)
     public void testDeadlockDetected_ThreeThreadsInVector() throws InterruptedException {
-        final PessimisticLockManager lock = new PessimisticLockManager();
+        final PessimisticLockFactory lock = new PessimisticLockFactory();
         final CountDownLatch starter = new CountDownLatch(3);
         final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicBoolean deadlockInThread = new AtomicBoolean(false);
@@ -142,14 +125,14 @@ public class PessimisticLockManagerTest {
     }
 
     private Thread createThread(final CountDownLatch starter, final CountDownLatch cdl,
-                                final AtomicBoolean deadlockInThread, final PessimisticLockManager lockManager1,
-                                final String firstId, final PessimisticLockManager lockManager2, final String secondId) {
+                                final AtomicBoolean deadlockInThread, final PessimisticLockFactory LockFactory1,
+                                final String firstId, final PessimisticLockFactory LockFactory2, final String secondId) {
         return new Thread(() -> {
-            Lock lock1 = lockManager1.obtainLock(firstId);
+            Lock lock1 = LockFactory1.obtainLock(firstId);
             starter.countDown();
             try {
                 cdl.await();
-                Lock lock2 = lockManager2.obtainLock(secondId);
+                Lock lock2 = LockFactory2.obtainLock(secondId);
                 lock2.release();
             } catch (InterruptedException e) {
                 System.out.println("Thread 1 interrupted");

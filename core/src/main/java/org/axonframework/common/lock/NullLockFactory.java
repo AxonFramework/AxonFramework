@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2014. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,24 @@
 
 package org.axonframework.common.lock;
 
-import org.junit.Test;
-
-import java.util.UUID;
-
-import static org.junit.Assert.assertTrue;
-
 /**
+ * LockFactory implementation that does nothing. Can be useful in cases where a repository extending from the {@link
+ * org.axonframework.repository.LockingRepository} needs to be configured to ignore locks, for example in scenario's
+ * where an underlying storage mechanism already performs the necessary locking.
+ *
  * @author Allard Buijze
+ * @since 0.6
  */
-public class NullLockManagerTest {
+public class NullLockFactory implements LockFactory {
 
-    @Test
-    public void testInvocationHasNoEffect() {
-        NullLockManager manager = new NullLockManager();
-        assertTrue(manager.validateLock(null));
-        Lock lock = manager.obtainLock(UUID.randomUUID().toString());
-        lock.release();
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This implementation does nothing.
+     */
+    @Override
+    public Lock obtainLock(String identifier) {
+        return () -> {};
     }
+
 }

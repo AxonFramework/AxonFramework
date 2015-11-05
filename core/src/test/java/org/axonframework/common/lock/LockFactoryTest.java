@@ -30,17 +30,17 @@ import java.util.concurrent.TimeUnit;
 /**
  * Test that discovers <a href="https://github.com/AxonFramework/AxonFramework/issues/32">issue #32</a>.
  */
-public class LockManagerTest {
+public class LockFactoryTest {
 
     private static final int THREAD_COUNT = 4;
     private static final int ATTEMPTS = 3000;
 
-    private LockManager lockManager;
+    private LockFactory lockFactory;
     private String aggregateIdentifier;
 
     @Before
     public void setup() {
-        lockManager = new PessimisticLockManager();
+        lockFactory = new PessimisticLockFactory();
         aggregateIdentifier = UUID.randomUUID().toString();
     }
 
@@ -90,7 +90,7 @@ public class LockManagerTest {
             int locksAcquired = 0;
             int locksReleased = 0;
             try {
-                Lock lock = lockManager.obtainLock(aggregateIdentifier);
+                Lock lock = lockFactory.obtainLock(aggregateIdentifier);
                 locksAcquired++;
                 lock.release();
                 locksReleased++;

@@ -18,8 +18,8 @@ package org.axonframework.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.Lock;
-import org.axonframework.common.lock.LockManager;
-import org.axonframework.common.lock.PessimisticLockManager;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public abstract class AbstractSagaManager implements SagaManager {
     private final SagaRepository sagaRepository;
     private final SagaFactory sagaFactory;
     private final Class<? extends Saga>[] sagaTypes;
-    private final LockManager lockManager = new PessimisticLockManager();
+    private final LockFactory lockFactory = new PessimisticLockFactory();
     private final Map<String, Saga> sagasInCreation = new ConcurrentHashMap<>();
     private volatile boolean suppressExceptions = true;
     private volatile boolean synchronizeSagaAccess = true;
@@ -96,7 +96,7 @@ public abstract class AbstractSagaManager implements SagaManager {
         boolean sagaOfTypeInvoked = false;
         for (final String sagaId : sagas) {
             if (synchronizeSagaAccess) {
-                Lock lock = lockManager.obtainLock(sagaId);
+                Lock lock = lockFactory.obtainLock(sagaId);
                 Saga invokedSaga = null;
                 try {
                     invokedSaga = loadAndInvoke(event, sagaId, associationValues);
@@ -129,7 +129,7 @@ public abstract class AbstractSagaManager implements SagaManager {
         sagasInCreation.put(newSaga.getSagaIdentifier(), newSaga);
         try {
             if (synchronizeSagaAccess) {
-                Lock lock = lockManager.obtainLock(newSaga.getSagaIdentifier());
+                Lock lock = lockFactory.obtainLock(newSaga.getSagaIdentifier());
                 try {
                     doInvokeSaga(event, newSaga);
                 } finally {

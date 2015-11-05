@@ -242,7 +242,7 @@
         </axon:event-processors>
     </axon:event-sourcing-repository>
 
-    <axon:event-sourcing-repository id="testCacheRepository" cache-ref="mockCache" lock-manager="nullLockManager"
+    <axon:event-sourcing-repository id="testCacheRepository" cache-ref="mockCache" lock-factory="nullLockFactory"
                                     aggregate-factory="mockFactory"
                                     event-bus="eventBus" event-store="eventStore" conflict-resolver="conflictResolver">
         <axon:snapshotter-trigger event-count-threshold="50" snapshotter-ref="snapshotter"/>
@@ -256,11 +256,11 @@
     <axon:jpa-repository id="simpleJpaRepository"
                          aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"/>
 
-    <axon:jpa-repository id="optimisticJpaRepository" locking-strategy="OPTIMISTIC"
+    <axon:jpa-repository id="pessimisticJpaRepository" locking-strategy="PESSIMISTIC"
                          aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"/>
 
     <axon:jpa-repository id="fullyDefinedJpaRepository" entity-manager-provider="customEntityManagerProvider"
-                         event-bus="eventBus" lock-manager="nullLockManager"
+                         event-bus="eventBus" lock-factory="nullLockFactory"
                          aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"/>
 
     <bean id="mockCache" class="org.axonframework.cache.JCacheAdapter">
@@ -292,7 +292,7 @@
 
     <bean id="conflictResolver" class="org.axonframework.eventsourcing.conflictresolvers.AcceptAllConflictResolver"/>
 
-    <bean id="nullLockManager" class="org.axonframework.common.lock.NullLockManager"/>
+    <bean id="nullLockFactory" class="org.axonframework.common.lock.NullLockFactory"/>
 
     <axon:snapshotter id="snapshotter" event-store="eventStore" transaction-manager="transactionManager"
                       executor="taskExecutor"/>

@@ -33,14 +33,7 @@ public interface AggregateRoot {
     String getIdentifier();
 
     /**
-     * TODO: Fix documentation
-     * Returns the current version number of the aggregate, or <code>null</code> if the aggregate is newly created.
-     * This
-     * version must reflect the version number of the aggregate on which changes are applied.
-     * <p/>
-     * Each time the aggregate is <em>modified and stored</em> in a repository, the version number must be increased by
-     * at least 1. This version number can be used by optimistic locking strategies and detection of conflicting
-     * concurrent modification.
+     * Returns the current version number of the aggregate.
      * <p/>
      * Typically the sequence number of the last committed event on this aggregate is used as version number.
      *

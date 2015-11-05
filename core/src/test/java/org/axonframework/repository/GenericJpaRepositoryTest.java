@@ -27,16 +27,11 @@ import org.junit.Test;
 import javax.persistence.EntityManager;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
- *
+ * @author Allard Buijze
  */
 public class GenericJpaRepositoryTest {
 
@@ -93,7 +88,7 @@ public class GenericJpaRepositoryTest {
 
     @Test
     public void testPersistAggregate_DefaultFlushMode() {
-        testSubject.doSaveWithLock(aggregate);
+        testSubject.doSave(aggregate);
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
@@ -101,7 +96,7 @@ public class GenericJpaRepositoryTest {
     @Test
     public void testPersistAggregate_ExplicitFlushModeOn() {
         testSubject.setForceFlushOnSave(true);
-        testSubject.doSaveWithLock(aggregate);
+        testSubject.doSave(aggregate);
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
@@ -109,7 +104,7 @@ public class GenericJpaRepositoryTest {
     @Test
     public void testPersistAggregate_ExplicitFlushModeOff() {
         testSubject.setForceFlushOnSave(false);
-        testSubject.doSaveWithLock(aggregate);
+        testSubject.doSave(aggregate);
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager, never()).flush();
     }

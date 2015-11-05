@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.common.lock.LockManager;
+import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
@@ -83,11 +83,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
-     * @param lockManager      the locking strategy to apply to this repository
+     * @param lockFactory      the locking strategy to apply to this repository
      */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   LockManager lockManager) {
-        super(aggregateFactory.getAggregateType(), lockManager);
+                                   LockFactory lockFactory) {
+        super(aggregateFactory.getAggregateType(), lockFactory);
         Assert.notNull(eventStore, "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
@@ -99,29 +99,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      *
      * @param aggregateType The type of aggregate to store in this repository
      * @param eventStore    The event store that holds the event streams for this repository
-     * @param lockManager   the locking strategy to apply to this
+     * @param lockFactory   the locking strategy to apply to this
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
-                                   final LockManager lockManager) {
-        this(new GenericAggregateFactory<>(aggregateType), eventStore, lockManager);
-    }
-
-    @Override
-    protected void doSaveWithLock(T aggregate) {
-        // No action required
-    }
-
-    /**
-     * Delegates to {@link #doSaveWithLock(EventSourcedAggregateRoot)}, as Event Sourcing generally doesn't delete
-     * aggregates (not their events).
-     * <p/>
-     * This method may be safely overridden for special cases that do require deleting an Aggregate's Events.
-     *
-     * @param aggregate the aggregate to delete
-     */
-    @Override
-    protected void doDeleteWithLock(T aggregate) {
-        // No action required
+                                   final LockFactory lockFactory) {
+        this(new GenericAggregateFactory<>(aggregateType), eventStore, lockFactory);
     }
 
     /**
@@ -162,6 +144,16 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
             // if a decorator doesn't implement closeable, we still want to be sure we close the original stream
             IOUtils.closeQuietlyIfCloseable(originalStream);
         }
+    }
+
+    @Override
+    protected void doSave(T aggregate) {
+        // No action required
+    }
+
+    @Override
+    protected void doDelete(T aggregate) {
+        // No action required
     }
 
     /**
@@ -207,8 +199,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * {@inheritDoc}
      * <p/>
      * This implementation will do nothing if a conflict resolver (See {@link #setConflictResolver(ConflictResolver)}
-     * is
-     * set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
+     * is set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
      */
     @Override
     protected void validateOnLoad(T aggregate, Long expectedVersion) {

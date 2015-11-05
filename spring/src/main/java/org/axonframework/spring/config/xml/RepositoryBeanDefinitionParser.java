@@ -70,9 +70,9 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
     private static final String LOCKING_STRATEGY_ATTRIBUTE = "locking-strategy";
 
     /**
-     * The lock manager attribute name
+     * The lock factory attribute name
      */
-    private static final String LOCK_MANAGER_ATTRIBUTE = "lock-manager";
+    private static final String LOCK_FACTORY_ATTRIBUTE = "lock-factory";
     /**
      * The aggregate root type attribute name.
      */
@@ -174,14 +174,14 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
      *                construct the {@link org.springframework.beans.factory.config.BeanDefinition}.
      */
     private void parseLockingStrategy(Element element, GenericBeanDefinition builder) {
-        if (element.hasAttribute(LOCK_MANAGER_ATTRIBUTE)) {
-            String lockManager = element.getAttribute(LOCK_MANAGER_ATTRIBUTE);
-            builder.getConstructorArgumentValues().addIndexedArgumentValue(2, new RuntimeBeanReference(lockManager));
+        if (element.hasAttribute(LOCK_FACTORY_ATTRIBUTE)) {
+            String LockFactory = element.getAttribute(LOCK_FACTORY_ATTRIBUTE);
+            builder.getConstructorArgumentValues().addIndexedArgumentValue(2, new RuntimeBeanReference(LockFactory));
         } else if (element.hasAttribute(LOCKING_STRATEGY_ATTRIBUTE)) {
             LockingStrategy strategy = LockingStrategy.valueOf(element.getAttribute(LOCKING_STRATEGY_ATTRIBUTE));
-            GenericBeanDefinition lockManager = new GenericBeanDefinition();
-            lockManager.setBeanClass(strategy.getLockManagerType());
-            builder.getConstructorArgumentValues().addIndexedArgumentValue(2, lockManager);
+            GenericBeanDefinition LockFactory = new GenericBeanDefinition();
+            LockFactory.setBeanClass(strategy.getLockFactoryType());
+            builder.getConstructorArgumentValues().addIndexedArgumentValue(2, LockFactory);
         }
     }
 

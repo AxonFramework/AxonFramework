@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.common.lock.PessimisticLockManager;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
@@ -68,7 +68,7 @@ public class RepositoryBeanDefinitionParserTest {
         assertNotNull("Third argument is wrong", thirdArgument);
         assertTrue("Third argument is wrong", thirdArgument.getValue() instanceof BeanDefinition);
         assertEquals("Third argument is wrong",
-                     PessimisticLockManager.class.getName(),
+                     PessimisticLockFactory.class.getName(),
                      ((BeanDefinition) thirdArgument.getValue()).getBeanClassName());
 
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
@@ -117,8 +117,8 @@ public class RepositoryBeanDefinitionParserTest {
 
         ValueHolder thirdArgument = beanDefinition.getConstructorArgumentValues()
                                                    .getArgumentValue(2, BeanReference.class);
-        assertNotNull("Lock Manager reference is not resolved correctly", thirdArgument);
-        assertEquals("nullLockManager", ((BeanReference) thirdArgument.getValue()).getBeanName());
+        assertNotNull("Lock factory reference is not resolved correctly", thirdArgument);
+        assertEquals("nullLockFactory", ((BeanReference) thirdArgument.getValue()).getBeanName());
 
         PropertyValue eventBusPropertyValue = beanDefinition.getPropertyValues().getPropertyValue("eventBus");
         assertNotNull("Property missing", eventBusPropertyValue);

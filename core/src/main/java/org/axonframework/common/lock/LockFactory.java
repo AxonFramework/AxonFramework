@@ -17,12 +17,12 @@
 package org.axonframework.common.lock;
 
 /**
- * Interface to the lock manager. A lock manager will maintain and validate locks on resources.
+ * Interface to the lock factory. A lock factory produces locks on resources that are shared between threads.
  *
  * @author Allard Buijze
  * @since 0.3
  */
-public interface LockManager {
+public interface LockFactory {
 
     /**
      * Obtain a lock for a resource identified by given <code>identifier</code>. Depending on the strategy, this
@@ -32,13 +32,4 @@ public interface LockManager {
      * @return a handle to release the lock.
      */
     Lock obtainLock(String identifier);
-
-    /**
-     * Indicates whether the current thread holds a valid lock for a resource identified by the given
-     * <code>identifier</code>.
-     *
-     * @param identifier the identifier of the resource to validate the lock for.
-     * @return true if a valid lock is held, false otherwise.
-     */
-    boolean validateLock(String identifier);
 }

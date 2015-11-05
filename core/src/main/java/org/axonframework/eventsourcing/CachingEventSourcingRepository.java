@@ -18,8 +18,8 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
-import org.axonframework.common.lock.LockManager;
-import org.axonframework.common.lock.PessimisticLockManager;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -29,8 +29,7 @@ import java.util.List;
 
 /**
  * Implementation of the event sourcing repository that uses a cache to improve loading performance. The cache removes
- * the need to read all events from disk, at the cost of memory usage. Since caching is not compatible with the
- * optimistic locking strategy, only pessimistic locking is available for this type of repository.
+ * the need to read all events from disk, at the cost of memory usage.
  * <p/>
  * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that
  * aggregate. This is done to prevent the cache from returning aggregates that may not have fully persisted to disk.
@@ -46,14 +45,13 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
-     * Optimistic locking is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore) {
-        this(aggregateFactory, eventStore, new PessimisticLockManager());
+        this(aggregateFactory, eventStore, new PessimisticLockFactory());
     }
 
     /**
@@ -63,12 +61,12 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
-     * @param lockManager      The lock manager restricting concurrent access to aggregate instances
+     * @param lockFactory      The lock factory restricting concurrent access to aggregate instances
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                          LockManager lockManager) {
-        super(aggregateFactory, eventStore, lockManager);
+                                          LockFactory lockFactory) {
+        super(aggregateFactory, eventStore, lockFactory);
         this.eventStore = eventStore;
     }
 

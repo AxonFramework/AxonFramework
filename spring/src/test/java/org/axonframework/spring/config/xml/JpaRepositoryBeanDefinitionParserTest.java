@@ -17,8 +17,8 @@
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.lock.LockManager;
-import org.axonframework.common.lock.OptimisticLockManager;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.repository.GenericJpaRepository;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,7 +58,7 @@ public class JpaRepositoryBeanDefinitionParserTest {
 
     @Test
     public void testRepositoryWithLockingStrategy() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("optimisticJpaRepository");
+        BeanDefinition beanDefinition = beanFactory.getBeanDefinition("pessimisticJpaRepository");
         assertEquals(3, beanDefinition.getConstructorArgumentValues().getArgumentCount());
         assertEquals(GenericJpaRepository.class.getName(), beanDefinition.getBeanClassName());
 
@@ -69,8 +69,8 @@ public class JpaRepositoryBeanDefinitionParserTest {
         assertNotNull(argumentValue);
         assertTrue("Expected a BeanDefinition", argumentValue.getValue() instanceof BeanDefinition);
 
-        final BeanDefinition lockManagerBeanDefinition = (BeanDefinition) argumentValue.getValue();
-        assertEquals(OptimisticLockManager.class.getName(), lockManagerBeanDefinition.getBeanClassName());
+        final BeanDefinition LockFactoryBeanDefinition = (BeanDefinition) argumentValue.getValue();
+        assertEquals(PessimisticLockFactory.class.getName(), LockFactoryBeanDefinition.getBeanClassName());
     }
 
     @Test
@@ -82,7 +82,7 @@ public class JpaRepositoryBeanDefinitionParserTest {
 
         assertNotNull(beanDefinition.getConstructorArgumentValues().getArgumentValue(0, EntityManagerProvider.class));
         assertNotNull(beanDefinition.getConstructorArgumentValues().getArgumentValue(1, Class.class));
-        assertNotNull(beanDefinition.getConstructorArgumentValues().getArgumentValue(2, LockManager.class));
+        assertNotNull(beanDefinition.getConstructorArgumentValues().getArgumentValue(2, LockFactory.class));
 
         assertTrue(beanDefinition.getPropertyValues().getPropertyValue("eventBus")
                                  .getValue() instanceof BeanReference);

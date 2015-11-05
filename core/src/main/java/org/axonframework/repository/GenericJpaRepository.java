@@ -18,8 +18,8 @@ package org.axonframework.repository;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.lock.LockManager;
-import org.axonframework.common.lock.NullLockManager;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.domain.AggregateRoot;
 
 import javax.persistence.EntityManager;
@@ -54,40 +54,22 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      * @param aggregateType         the aggregate type this repository manages
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType) {
-        this(entityManagerProvider, aggregateType, new NullLockManager());
+        this(entityManagerProvider, aggregateType, new NullLockFactory());
     }
 
     /**
      * Initialize a repository  for storing aggregates of the given <code>aggregateType</code> with an additional
-     * <code> lockManager</code>.
+     * <code> LockFactory</code>.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      * @param aggregateType         the aggregate type this repository manages
-     * @param lockManager           the additional locking strategy for this repository
+     * @param lockFactory           the additional locking strategy for this repository
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                LockManager lockManager) {
-        super(aggregateType, lockManager);
+                                LockFactory lockFactory) {
+        super(aggregateType, lockFactory);
         Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
-    }
-
-    @Override
-    protected void doSaveWithLock(T aggregate) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        entityManager.persist(aggregate);
-        if (forceFlushOnSave) {
-            entityManager.flush();
-        }
-    }
-
-    @Override
-    protected void doDeleteWithLock(T aggregate) {
-        EntityManager entityManager = entityManagerProvider.getEntityManager();
-        entityManager.remove(aggregate);
-        if (forceFlushOnSave) {
-            entityManager.flush();
-        }
     }
 
     @Override
@@ -101,10 +83,28 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
         } else if (expectedVersion != null && aggregate.getVersion() != null
                 && !expectedVersion.equals(aggregate.getVersion())) {
             throw new ConflictingAggregateVersionException(aggregateIdentifier,
-                                                           expectedVersion,
-                                                           aggregate.getVersion());
+                    expectedVersion,
+                    aggregate.getVersion());
         }
         return aggregate;
+    }
+
+    @Override
+    protected void doSave(T aggregate) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        entityManager.persist(aggregate);
+        if (forceFlushOnSave) {
+            entityManager.flush();
+        }
+    }
+
+    @Override
+    protected void doDelete(T aggregate) {
+        EntityManager entityManager = entityManagerProvider.getEntityManager();
+        entityManager.remove(aggregate);
+        if (forceFlushOnSave) {
+            entityManager.flush();
+        }
     }
 
     /**
