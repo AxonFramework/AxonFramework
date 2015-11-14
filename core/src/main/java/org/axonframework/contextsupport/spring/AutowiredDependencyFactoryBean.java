@@ -29,7 +29,7 @@ import java.util.Arrays;
 import static java.lang.String.format;
 
 /**
- * Convenience factory bean that locates a bean of a number of given types. This factory is used to explicitly defined
+ * Convenience factory bean that locates a bean of a number of given types. This factory is used to explicitly define
  * autowired dependencies on a per-property basis.
  * <p/>
  * This factory does not create beans. It merely returns references to beans already existing.

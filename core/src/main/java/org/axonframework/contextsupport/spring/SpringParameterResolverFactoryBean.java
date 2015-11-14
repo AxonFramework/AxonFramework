@@ -70,7 +70,7 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
     }
 
     /**
-     * Defines any additional parameter resovler factories that need to be use to resolve parameters. By default,
+     * Defines any additional parameter resolver factories that need to be used to resolve parameters. By default,
      * the ParameterResolverFactories found on the classpath, as well as a SpringBeanParameterResolverFactory are
      * registered.
      *
