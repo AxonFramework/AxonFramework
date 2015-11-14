@@ -28,7 +28,7 @@ import org.axonframework.domain.DomainEventMessage;
  * @see org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot#getChildEntities()
  * @since 2.0
  */
-public interface EventSourcedEntity {
+public interface EventSourcedEntity<T extends AbstractEventSourcedAggregateRoot>{
 
     /**
      * Register the aggregate root with this entity. The entity must use this aggregate root to apply Domain Events.
@@ -39,7 +39,7 @@ public interface EventSourcedEntity {
      *
      * @param aggregateRootToRegister the root of the aggregate this entity is part of.
      */
-    void registerAggregateRoot(AbstractEventSourcedAggregateRoot aggregateRootToRegister);
+    void registerAggregateRoot(T aggregateRootToRegister);
 
     /**
      * Report the given <code>event</code> for handling in the current instance (<code>this</code>), as well as all the

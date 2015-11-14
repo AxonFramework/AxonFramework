@@ -30,12 +30,12 @@ import java.util.Collection;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
+public abstract class AbstractEventSourcedEntity<T extends AbstractEventSourcedAggregateRoot> implements EventSourcedEntity<T> {
 
-    private volatile AbstractEventSourcedAggregateRoot aggregateRoot;
+    private volatile T aggregateRoot;
 
     @Override
-    public void registerAggregateRoot(AbstractEventSourcedAggregateRoot aggregateRootToRegister) {
+    public void registerAggregateRoot(T aggregateRootToRegister) {
         if (this.aggregateRoot != null && this.aggregateRoot != aggregateRootToRegister) {
             throw new IllegalStateException("Cannot register new aggregate. "
                                                     + "This entity is already part of another aggregate");
@@ -107,7 +107,7 @@ public abstract class AbstractEventSourcedEntity implements EventSourcedEntity {
      *
      * @return the reference to the root of the aggregate this entity is a member of
      */
-    protected AbstractEventSourcedAggregateRoot getAggregateRoot() {
+    protected T getAggregateRoot() {
         return aggregateRoot;
     }
 }
