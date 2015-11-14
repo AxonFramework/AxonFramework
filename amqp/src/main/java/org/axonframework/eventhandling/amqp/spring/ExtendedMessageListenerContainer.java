@@ -472,7 +472,6 @@ public class ExtendedMessageListenerContainer extends SimpleMessageListenerConta
             return delegate.basicRecover(requeue);
         }
 
-        @SuppressWarnings("deprecation")
         @Override
         @Deprecated
         public void basicRecoverAsync(boolean requeue) throws IOException {

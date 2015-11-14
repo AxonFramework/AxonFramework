@@ -86,7 +86,6 @@ public class AutowiredDependencyFactoryBean implements FactoryBean, ApplicationC
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void afterPropertiesSet() throws Exception {
         for (int i = 0; i < beanTypes.length && actualBean == null; i++) {
