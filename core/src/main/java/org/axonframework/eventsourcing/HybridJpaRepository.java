@@ -29,7 +29,7 @@ import org.axonframework.repository.NullLockManager;
  * aggregate state.
  * <p/>
  * As events are not used for reconstructing the aggregate state, there is no need for snapshots or upcasters. In some
- * scenario's that could be a sensible choice.
+ * scenarios that could be a sensible choice.
  *
  * @param <T> The type of aggregate stored in this repository. Must implement {@link EventSourcedAggregateRoot}.
  * @author Allard Buijze

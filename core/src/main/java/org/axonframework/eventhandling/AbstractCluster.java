@@ -89,7 +89,7 @@ public abstract class AbstractCluster implements Cluster {
      * until the Unit of Work is committed or rolled back, to ensure any transactions are properly propagated when the
      * monitor is invoked.
      * <p/>
-     * It is the implementation's responsibility to ensure that &ndash;eventually&ndash; the each of the given
+     * It is the implementation's responsibility to ensure that &ndash;eventually&ndash; each of the given
      * <code>events</code> is provided to the <code>eventProcessingMonitor</code>, either to the {@link
      * org.axonframework.eventhandling.EventProcessingMonitor#onEventProcessingCompleted(java.util.List)} or the {@link
      * org.axonframework.eventhandling.EventProcessingMonitor#onEventProcessingFailed(java.util.List, Throwable)}
