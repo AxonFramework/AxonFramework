@@ -16,11 +16,7 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -39,10 +35,7 @@ import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -64,14 +57,14 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     private EntityManager entityManager;
 
     private List<EventMessage> capturedEvents;
-    private Cluster cluster = new SimpleCluster("test");
+    private EventProcessor eventProcessor = new SimpleEventProcessor("test");
 
 
     @Before
     public void setUp() {
         capturedEvents = new ArrayList<>();
-        eventBus.subscribe(cluster);
-        cluster.subscribe(this);
+        eventBus.subscribe(eventProcessor);
+        eventProcessor.subscribe(this);
     }
 
     @After

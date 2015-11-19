@@ -216,7 +216,7 @@ public class AbstractEventBusTest {
         }
 
         @Override
-        public Registration subscribe(Cluster cluster) {
+        public Registration subscribe(EventProcessor eventProcessor) {
             throw new UnsupportedOperationException();
         }
     }

@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleCluster;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
@@ -51,7 +51,7 @@ public class RunDisruptorCommandBus {
 
         // TODO: Listeners should subscribe to Event Store instead of Event Bus
         // we register the event handlers
-        eventBus.subscribe(new SimpleCluster("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
+        eventBus.subscribe(new SimpleEventProcessor("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // we use default settings for the disruptor command bus
         DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);

@@ -27,33 +27,33 @@
     <context:annotation-config/>
     <tx:annotation-driven transaction-manager="mockTransactionManager"/>
 
-    <axon:cluster id="replayingCluster">
+    <axon:event-processor id="replayingEventProcessor">
         <axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
         <axon:selectors>
             <axon:package prefix="does.not.exist"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
-    <axon:cluster id="replayingClusterWithDefaults">
+    <axon:event-processor id="replayingEventProcessorWithDefaults">
         <axon:replay-config />
         <axon:selectors>
             <axon:package prefix="does.not.exist"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
-    <axon:cluster id="replayingClusterWithCustomIncomingMessageHandler">
+    <axon:event-processor id="replayingEventProcessorWithCustomIncomingMessageHandler">
         <axon:replay-config incoming-message-handler-ref="messageHandler" />
         <axon:selectors>
             <axon:package prefix="does.not.exist"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
-    <axon:cluster id="replayingClusterWithDiscardMessagePolicy">
+    <axon:event-processor id="replayingEventProcessorWithDiscardMessagePolicy">
         <axon:replay-config incoming-messages="discard" />
         <axon:selectors>
             <axon:package prefix="does.not.exist"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
     <bean id="mockTransactionManager" class="org.axonframework.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.springframework.transaction.PlatformTransactionManager"/>

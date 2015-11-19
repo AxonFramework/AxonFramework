@@ -16,18 +16,15 @@
 
 package org.axonframework.spring.messaging.eventbus;
 
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Test;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -37,14 +34,14 @@ public class MessageHandlerAdapterTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testMessageForwarded() {
-        Cluster mockCluster = mock(Cluster.class);
-        MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockCluster);
+        EventProcessor mockEventProcessor = mock(EventProcessor.class);
+        MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockEventProcessor);
 
         final StubDomainEvent payload = new StubDomainEvent();
         adapter.handleMessage(new GenericMessage<>(payload));
         adapter.handleMessage(new GenericMessage<>(new StubDomainEvent()));
 
-        verify(mockCluster, times(1)).handle(argThat(new BaseMatcher<EventMessage>() {
+        verify(mockEventProcessor, times(1)).handle(argThat(new BaseMatcher<EventMessage>() {
             @Override
             public boolean matches(Object o) {
                 return ((o instanceof EventMessage) && ((EventMessage) o).getPayload().equals(payload));

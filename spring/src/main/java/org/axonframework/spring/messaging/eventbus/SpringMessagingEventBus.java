@@ -18,8 +18,8 @@ package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SpringMessagingEventBus extends AbstractEventBus {
 
-    private final ConcurrentMap<Cluster, MessageHandler> handlers =
+    private final ConcurrentMap<EventProcessor, MessageHandler> handlers =
             new ConcurrentHashMap<>();
     private SubscribableChannel channel;
 
@@ -58,14 +58,14 @@ public class SpringMessagingEventBus extends AbstractEventBus {
     }
 
     @Override
-    public Registration subscribe(Cluster cluster) {
-        MessageHandler messagehandler = new MessageHandlerAdapter(cluster);
-        MessageHandler oldHandler = handlers.putIfAbsent(cluster, messagehandler);
+    public Registration subscribe(EventProcessor eventProcessor) {
+        MessageHandler messagehandler = new MessageHandlerAdapter(eventProcessor);
+        MessageHandler oldHandler = handlers.putIfAbsent(eventProcessor, messagehandler);
         if (oldHandler == null) {
             channel.subscribe(messagehandler);
         }
         return () -> {
-            MessageHandler messageHandler = handlers.remove(cluster);
+            MessageHandler messageHandler = handlers.remove(eventProcessor);
             if (messageHandler != null) {
                 channel.unsubscribe(messageHandler);
                 return true;

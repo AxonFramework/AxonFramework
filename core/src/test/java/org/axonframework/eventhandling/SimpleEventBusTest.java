@@ -27,16 +27,16 @@ import static org.mockito.Mockito.*;
  */
 public class SimpleEventBusTest {
 
-    private Cluster listener1;
-    private Cluster listener2;
+    private EventProcessor listener1;
+    private EventProcessor listener2;
     private EventBus testSubject;
-    private Cluster listener3;
+    private EventProcessor listener3;
 
     @Before
     public void setUp() {
-        listener1 = mock(Cluster.class);
-        listener2 = mock(Cluster.class);
-        listener3 = mock(Cluster.class);
+        listener1 = mock(EventProcessor.class);
+        listener2 = mock(EventProcessor.class);
+        listener3 = mock(EventProcessor.class);
         testSubject = new SimpleEventBus();
     }
 

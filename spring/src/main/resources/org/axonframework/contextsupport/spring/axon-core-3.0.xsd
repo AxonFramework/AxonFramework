@@ -47,9 +47,9 @@
                     <xsd:attribute name="terminal" type="xsd:string" use="optional">
                         <xsd:annotation>
                             <xsd:documentation>Reference to the EventBusTerminal implementation that publishes all
-                                EventMessages to all the Clusters, either in this VM or across VMs. Defaults to
-                                an instance that dispatches directly to all known local clusters (i.e. SimpleEventBus
-                                behavior).
+                                EventMessages to all the Event Processors, either in this VM or across VMs. Defaults to
+                                an instance that dispatches directly to all known local event processors
+                                (i.e. SimpleEventBus behavior).
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
@@ -63,16 +63,16 @@
         </xsd:complexType>
     </xsd:element>
 
-    <xsd:element name="cluster">
+    <xsd:element name="event-processor">
         <xsd:annotation>
             <xsd:documentation>
-                Defines a Cluster to use with the Event Bus. The selectors define which Event Listeners will be selected
-                to join this cluster.
+                Defines an Event Processor to use with the Event Bus. The selectors define which Event Listeners will
+                be selected to join this event processor.
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.eventhandling.Cluster"/>
-                    <tool:exports type="org.axonframework.spring.config.eventhandling.ClusterSelector"/>
+                    <tool:exports type="org.axonframework.eventhandling.EventProcessor"/>
+                    <tool:exports type="org.axonframework.spring.config.eventhandling.EventProcessorSelector"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -100,7 +100,7 @@
                         </xsd:documentation>
                         <xsd:appinfo>
                             <tool:annotation>
-                                <tool:exports type="org.axonframework.spring.config.eventhandling.ClusterSelector"/>
+                                <tool:exports type="org.axonframework.spring.config.eventhandling.EventProcessorSelector"/>
                             </tool:annotation>
                         </xsd:appinfo>
                     </xsd:annotation>
@@ -108,8 +108,8 @@
                 <xsd:element name="replay-config" minOccurs="0">
                     <xsd:annotation>
                         <xsd:documentation>
-                            Indicates this cluster is capable of replaying events from an Event Store. This
-                            means a ReplayingCluster will be created.
+                            Indicates this event processor is capable of replaying events from an Event Store. This
+                            means a ReplayingEventProcessor will be created.
                         </xsd:documentation>
                     </xsd:annotation>
                     <xsd:complexType>
@@ -192,7 +192,7 @@
             <xsd:attribute name="id" type="xsd:string">
                 <xsd:annotation>
                     <xsd:documentation><![CDATA[
-	The unique identifier of this cluster. It serves as the bean ID as well as the Cluster's name
+	The unique identifier of this event processor. It serves as the bean ID as well as the Event Processor's name
 				]]></xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
@@ -200,18 +200,18 @@
             <xsd:attribute name="order" type="xsd:string" default="0">
                 <xsd:annotation>
                     <xsd:documentation>
-                        Defines the relative order in which this cluster should be evaluated, compared to other
-                        clusters. When the order is identical to that of another cluster, the ordering happens
-                        based on the alphabetical order of their bean name.
+                        Defines the relative order in which this event processor should be evaluated, compared to other
+                        event processors. When the order is identical to that of another event processor,
+                        the ordering happens based on the alphabetical order of their bean name.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
             <xsd:attribute name="default" type="xsd:string" default="false">
                 <xsd:annotation>
                     <xsd:documentation>
-                        Indicates whether this cluster should be selected as the default cluster. Only one
-                        cluster should have this set to true. If multiple clusters are configured as "default",
-                        the one with the lowest "order" will selected.
+                        Indicates whether this event processor should be selected as the default event processor.
+                        Only one event processor should have this set to true. If multiple event processor are
+                        configured as "default", the one with the lowest "order" will selected.
                     </xsd:documentation>
                 </xsd:annotation>
             </xsd:attribute>
@@ -231,7 +231,7 @@
         <xsd:attribute name="type" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation>The type of class that the EventListener must implement (or extend) in order to be
-                    selected for this cluster.
+                    selected for this event processor.
                 </xsd:documentation>
                 <xsd:appinfo>
                     <tool:annotation>

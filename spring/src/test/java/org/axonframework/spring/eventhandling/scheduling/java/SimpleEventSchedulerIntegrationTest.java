@@ -18,7 +18,7 @@ package org.axonframework.spring.eventhandling.scheduling.java;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaManager;
 import org.axonframework.saga.SagaRepository;
@@ -71,9 +71,9 @@ public class SimpleEventSchedulerIntegrationTest {
 
     @Before
     public void setUp() throws Exception {
-        final SimpleCluster cluster = new SimpleCluster("default");
-        cluster.subscribe(sagaManager);
-        eventBus.subscribe(cluster);
+        final SimpleEventProcessor eventProcessor = new SimpleEventProcessor("default");
+        eventProcessor.subscribe(sagaManager);
+        eventBus.subscribe(eventProcessor);
         // the serialized form of the Saga exceeds the default length of a blob.
         // So we must alter the table to prevent data truncation
         new TransactionTemplate(transactionManager)

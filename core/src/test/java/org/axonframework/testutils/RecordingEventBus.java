@@ -17,9 +17,9 @@
 package org.axonframework.testutils;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class RecordingEventBus implements EventBus {
 
-    private Collection<Cluster> subscriptions = new CopyOnWriteArraySet<>();
+    private Collection<EventProcessor> subscriptions = new CopyOnWriteArraySet<>();
     private List<EventMessage<?>> publishedEvents = new ArrayList<>();
     private Collection<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptor = new LinkedHashSet<>();
 
@@ -48,9 +48,9 @@ public class RecordingEventBus implements EventBus {
     }
 
     @Override
-    public Registration subscribe(Cluster cluster) {
-        subscriptions.add(cluster);
-        return () -> subscriptions.remove(cluster);
+    public Registration subscribe(EventProcessor eventProcessor) {
+        subscriptions.add(eventProcessor);
+        return () -> subscriptions.remove(eventProcessor);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class RecordingEventBus implements EventBus {
     }
 
     /**
-     * Clears all the events recorded by this Event Bus as well as all subscribed clusters.
+     * Clears all the events recorded by this Event Bus as well as all subscribed event processors.
      */
     public void reset() {
         publishedEvents.clear();
@@ -69,21 +69,21 @@ public class RecordingEventBus implements EventBus {
     }
 
     /**
-     * Indicates whether the given <code>cluster</code> is subscribed to this Event Bus.
+     * Indicates whether the given <code>eventProcessor</code> is subscribed to this Event Bus.
      *
-     * @param cluster The cluster to verify the subscription for
-     * @return <code>true</code> if the cluster is subscribed, otherwise <code>false</code>.
+     * @param eventProcessor The eventProcessor to verify the subscription for
+     * @return <code>true</code> if the event processor is subscribed, otherwise <code>false</code>.
      */
-    public boolean isSubscribed(Cluster cluster) {
-        return subscriptions.contains(cluster);
+    public boolean isSubscribed(EventProcessor eventProcessor) {
+        return subscriptions.contains(eventProcessor);
     }
 
     /**
-     * Returns a Collection of all subscribed Clusters on this Event Bus.
+     * Returns a Collection of all subscribed EventProcessors on this Event Bus.
      *
-     * @return a Collection of all subscribed Clusters
+     * @return a Collection of all subscribed EventProcessors
      */
-    public Collection<Cluster> getSubscriptions() {
+    public Collection<EventProcessor> getSubscriptions() {
         return subscriptions;
     }
 

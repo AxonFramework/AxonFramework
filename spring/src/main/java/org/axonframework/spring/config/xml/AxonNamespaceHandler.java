@@ -51,6 +51,6 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("jpa-saga-repository", new JpaSagaRepositoryBeanDefinitionParser());
         registerBeanDefinitionParser("jdbc-saga-repository", new JdbcSagaRepositoryBeanDefinitionParser());
         registerBeanDefinitionParser("aggregate-command-handler", new AggregateCommandHandlerBeanDefinitionParser());
-        registerBeanDefinitionParser("cluster", new ClusterBeanDefinitionParser());
+        registerBeanDefinitionParser("event-processor", new EventProcessorBeanDefinitionParser());
     }
 }

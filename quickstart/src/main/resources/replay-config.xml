@@ -26,12 +26,12 @@
     <!-- Enable annotation support to automatically register @EventHandler annotated beans -->
     <axon:annotation-config/>
 
-    <!-- Create a cluster -->
-    <axon:cluster id="cluster" default="true">
-        <!-- Enable replaying on this cluster by adding replay configuration -->
+    <!-- Create an event processor -->
+    <axon:event-processor id="eventProcessor" default="true">
+        <!-- Enable replaying on this event processor by adding replay configuration -->
         <axon:replay-config incoming-messages="backlog" event-store="eventStore" />
-        <!-- Here, we define which handlers we want to be part of this cluster -->
-    </axon:cluster>
+        <!-- Here, we define which handlers we want to be part of this event processor -->
+    </axon:event-processor>
 
     <!-- We need a thread pool to execute the replay asynchronously-->
     <bean id="asyncExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean">

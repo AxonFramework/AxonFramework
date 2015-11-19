@@ -17,9 +17,9 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import com.rabbitmq.client.Channel;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,8 +58,8 @@ public class SpringAMQPEventBusIntegrationTest {
     private SpringAMQPEventBus terminal;
 
     @Autowired
-    @Qualifier("cluster1")
-    private Cluster cluster;
+    @Qualifier("eventProcessor1")
+    private EventProcessor eventProcessor;
 
     @Before
     public void setUp() throws Exception {
@@ -71,7 +71,7 @@ public class SpringAMQPEventBusIntegrationTest {
         } catch (Exception e) {
             assumeNoException(e);
         }
-        eventBus.subscribe(cluster);
+        eventBus.subscribe(eventProcessor);
 
     }
 
@@ -81,7 +81,7 @@ public class SpringAMQPEventBusIntegrationTest {
         final EventMessage<String> sentEvent = GenericEventMessage.asEventMessage("Hello world");
         final CountDownLatch cdl = new CountDownLatch(EVENT_COUNT * THREAD_COUNT);
 
-        cluster.subscribe(event -> {
+        eventProcessor.subscribe(event -> {
             assertEquals(sentEvent.getPayload(), event.getPayload());
             assertEquals(sentEvent.getIdentifier(), event.getIdentifier());
             cdl.countDown();

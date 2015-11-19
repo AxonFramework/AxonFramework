@@ -119,7 +119,7 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
     }
 
     /**
-     * Sets the connection factory to use for the cluster
+     * Sets the connection factory to use for the event processor
      *
      * @param connectionFactory the connection factory to set
      * @see SimpleMessageListenerContainer#setConnectionFactory(org.springframework.amqp.rabbit.connection.ConnectionFactory)

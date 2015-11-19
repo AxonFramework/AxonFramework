@@ -20,8 +20,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Interface describing a mechanism that connects Event Bus clusters. The terminal is responsible for delivering
- * published Events with all of the clusters available in the Event Bus (either locally, or remotely).
+ * Interface describing a mechanism that connects {@link EventProcessor EventProcessors}. The terminal is
+ * responsible for delivering published Events with all of the event processors available in the Event Bus
+ * (either locally, or remotely).
  * <p/>
  * Terminals are typically bound to a single Event Bus instance, but may be aware that multiple instances exist in
  * order to form a bridge between these Event Buses.
@@ -32,10 +33,10 @@ import java.util.Set;
 public interface PublicationStrategy {
 
     /**
-     * Publishes the given <code>events</code> to all clusters on the Event Bus. The terminal is responsible for the
-     * delivery process, albeit local or remote.
+     * Publishes the given <code>events</code> to all event processors on the Event Bus. The terminal is responsible
+     * for the delivery process, albeit local or remote.
      *
      * @param events the collections of events to publish
      */
-    void publish(List<EventMessage<?>> events, Set<Cluster> clusters);
+    void publish(List<EventMessage<?>> events, Set<EventProcessor> eventProcessors);
 }

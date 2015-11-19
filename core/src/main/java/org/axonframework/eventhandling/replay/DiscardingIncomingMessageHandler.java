@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.replay;
 
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +26,8 @@ import java.util.List;
 
 /**
  * IncomingMessageHandler implementation that simply discards all messages dispatch during a replay process. This
- * handler is typically useful when not expecting to perform a replay while the cluster is actively listening to events
- * on a command bus, for example when performing an offline replay.
+ * handler is typically useful when not expecting to perform a replay while the event processor is actively listening
+ * to events on a command bus, for example when performing an offline replay.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -37,15 +37,15 @@ public class DiscardingIncomingMessageHandler implements IncomingMessageHandler 
     private static final Logger logger = LoggerFactory.getLogger(DiscardingIncomingMessageHandler.class);
 
     @Override
-    public void prepareForReplay(Cluster destination) {
+    public void prepareForReplay(EventProcessor destination) {
     }
 
     @Override
-    public List<EventMessage<?>> onIncomingMessages(Cluster destination, List<EventMessage<?>> messages) {
+    public List<EventMessage<?>> onIncomingMessages(EventProcessor destination, List<EventMessage<?>> messages) {
         if (messages != null && !messages.isEmpty() && logger.isInfoEnabled()) {
             final StringBuilder msg = new StringBuilder("Discarding ")
                     .append(messages.size())
-                    .append(" messages on cluster [")
+                    .append(" messages on event processor [")
                     .append(destination.getName())
                     .append("] during an event replay: [");
             boolean firstClass = true;
@@ -63,18 +63,18 @@ public class DiscardingIncomingMessageHandler implements IncomingMessageHandler 
     }
 
     @Override
-    public List<EventMessage> releaseMessage(Cluster destination, DomainEventMessage message) {
+    public List<EventMessage> releaseMessage(EventProcessor destination, DomainEventMessage message) {
         // do nothing
         return null;
     }
 
     @Override
-    public void processBacklog(Cluster destination) {
+    public void processBacklog(EventProcessor destination) {
         // do nothing
     }
 
     @Override
-    public void onReplayFailed(Cluster destination, Throwable cause) {
+    public void onReplayFailed(EventProcessor destination, Throwable cause) {
         // do nothing
     }
 }

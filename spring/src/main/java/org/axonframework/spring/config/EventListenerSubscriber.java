@@ -1,11 +1,11 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.SimpleCluster;
-import org.axonframework.spring.config.eventhandling.ClusterSelector;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.spring.config.eventhandling.EventProcessorSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -25,19 +25,19 @@ public class EventListenerSubscriber implements ApplicationContextAware, SmartLi
 
     private ApplicationContext applicationContext;
     private boolean started;
-    private Cluster defaultCluster = new SimpleCluster("defaultCluster");
+    private EventProcessor defaultEventProcessor = new SimpleEventProcessor("defaultEventProcessor");
     private Collection<EventListener> eventListeners;
     private EventBus eventBus;
-    private boolean subscribeListenersToCluster = true;
-    private boolean subscribeClustersToEventBus = true;
+    private boolean subscribeListenersToEventProcessor = true;
+    private boolean subscribeEventProcessorsToEventBus = true;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
     }
 
-    public void setDefaultCluster(Cluster defaultCluster) {
-        this.defaultCluster = defaultCluster;
+    public void setDefaultEventProcessor(EventProcessor defaultEventProcessor) {
+        this.defaultEventProcessor = defaultEventProcessor;
     }
 
     public void setEventListeners(Collection<EventListener> eventListeners) {
@@ -48,12 +48,12 @@ public class EventListenerSubscriber implements ApplicationContextAware, SmartLi
         this.eventBus = eventBus;
     }
 
-    public void setSubscribeListenersToCluster(boolean subscribeListenersToCluster) {
-        this.subscribeListenersToCluster = subscribeListenersToCluster;
+    public void setSubscribeListenersToEventProcessor(boolean subscribeListenersToEventProcessor) {
+        this.subscribeListenersToEventProcessor = subscribeListenersToEventProcessor;
     }
 
-    public void setSubscribeClustersToEventBus(boolean subscribeClustersToEventBus) {
-        this.subscribeClustersToEventBus = subscribeClustersToEventBus;
+    public void setSubscribeEventProcessorsToEventBus(boolean subscribeEventProcessorsToEventBus) {
+        this.subscribeEventProcessorsToEventBus = subscribeEventProcessorsToEventBus;
     }
 
     @Override
@@ -77,43 +77,43 @@ public class EventListenerSubscriber implements ApplicationContextAware, SmartLi
             eventBus = applicationContext.getBean(EventBus.class);
         }
 
-        if (subscribeListenersToCluster) {
+        if (subscribeListenersToEventProcessor) {
             if (eventListeners == null) {
                 eventListeners = applicationContext.getBeansOfType(EventListener.class).values();
             }
-            eventListeners.forEach(listener -> selectCluster(listener).subscribe(listener));
+            eventListeners.forEach(listener -> selectEventProcessor(listener).subscribe(listener));
         }
 
-        if (subscribeClustersToEventBus) {
-            applicationContext.getBeansOfType(Cluster.class).values().forEach(eventBus::subscribe);
+        if (subscribeEventProcessorsToEventBus) {
+            applicationContext.getBeansOfType(EventProcessor.class).values().forEach(eventBus::subscribe);
         }
         this.started = true;
     }
 
-    private Cluster selectCluster(EventListener bean) {
-        Map<String, ClusterSelector> clusterSelectors = applicationContext.getBeansOfType(ClusterSelector.class);
-        if (clusterSelectors.isEmpty()) {
-            Map<String, Cluster> clusters = applicationContext.getBeansOfType(Cluster.class);
-            if (clusters.isEmpty()) {
-                eventBus.subscribe(defaultCluster);
-                return defaultCluster;
-            } else if (clusters.size() == 1) {
-                return clusters.values().iterator().next();
+    private EventProcessor selectEventProcessor(EventListener bean) {
+        Map<String, EventProcessorSelector> eventProcessorSelectors = applicationContext.getBeansOfType(EventProcessorSelector.class);
+        if (eventProcessorSelectors.isEmpty()) {
+            Map<String, EventProcessor> eventProcessors = applicationContext.getBeansOfType(EventProcessor.class);
+            if (eventProcessors.isEmpty()) {
+                eventBus.subscribe(defaultEventProcessor);
+                return defaultEventProcessor;
+            } else if (eventProcessors.size() == 1) {
+                return eventProcessors.values().iterator().next();
             } else {
                 throw new AxonConfigurationException(
-                        "More than one cluster has been defined, but no selectors have been provided based on "
-                                + "which Event Handler can be assigned to a cluster");
+                        "More than one event processor has been defined, but no selectors have been provided based on "
+                                + "which Event Handler can be assigned to an event processor");
             }
         } else {
             // TODO: Order the selectors
-            for (ClusterSelector selector : clusterSelectors.values()) {
-                Cluster cluster = selector.selectCluster(bean);
-                if (cluster != null) {
-                    return cluster;
+            for (EventProcessorSelector selector : eventProcessorSelectors.values()) {
+                EventProcessor eventProcessor = selector.selectEventProcessor(bean);
+                if (eventProcessor != null) {
+                    return eventProcessor;
                 }
             }
         }
-        throw new AxonConfigurationException("No cluster could be selected for bean: " + bean.getClass().getName());
+        throw new AxonConfigurationException("No event processor could be selected for bean: " + bean.getClass().getName());
     }
 
 

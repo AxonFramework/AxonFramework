@@ -24,9 +24,9 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
@@ -523,7 +523,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
 
         @Override
-        public Registration subscribe(Cluster eventListener) {
+        public Registration subscribe(EventProcessor eventListener) {
             return () -> true;
         }
     }

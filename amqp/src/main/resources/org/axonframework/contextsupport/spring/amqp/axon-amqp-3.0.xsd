@@ -152,7 +152,7 @@
         <xsd:annotation>
             <xsd:documentation>
                 Defines the configuration of an AMQP Message Listener. This can be used to provide configuration for
-                Clusters that will be connected to an AMQP Queue by the AMQP Terminal.
+                EventProcessors that will be connected to an AMQP Queue by the AMQP Terminal.
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>

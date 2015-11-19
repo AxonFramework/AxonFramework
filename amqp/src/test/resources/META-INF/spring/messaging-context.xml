@@ -32,7 +32,7 @@
 
     <rabbit:connection-factory id="connectionFactory"/>
 
-    <axon:cluster id="cluster1" default="true">
+    <axon:event-processor id="eventProcessor1" default="true">
         <axon:meta-data>
             <entry key="AMQP.Config">
                 <bean class="org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration">
@@ -40,7 +40,7 @@
                 </bean>
             </entry>
         </axon:meta-data>
-    </axon:cluster>
+    </axon:event-processor>
 
     <axon-amqp:eventBus id="terminal" exchange-name="Axon.EventBus" transactional="true">
         <axon-amqp:default-configuration prefetch="100"/>

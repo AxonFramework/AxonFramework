@@ -36,12 +36,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class SimpleEventBus extends AbstractEventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
-    private final Set<Cluster> clusters = new CopyOnWriteArraySet<>();
+    private final Set<EventProcessor> eventProcessors = new CopyOnWriteArraySet<>();
 
     private final PublicationStrategy publicationStrategy;
 
     /**
-     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed clusters.
+     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
+     * processors.
      */
     public SimpleEventBus() {
         this(new DirectTerminal());
@@ -60,18 +61,18 @@ public class SimpleEventBus extends AbstractEventBus {
      * {@inheritDoc}
      */
     @Override
-    public Registration subscribe(Cluster cluster) {
-        if (this.clusters.add(cluster)) {
-            logger.debug("Cluster [{}] subscribed successfully", cluster.getName());
+    public Registration subscribe(EventProcessor eventProcessor) {
+        if (this.eventProcessors.add(eventProcessor)) {
+            logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor.getName());
         } else {
-            logger.info("Cluster [{}] not added. It was already subscribed", cluster.getName());
+            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor.getName());
         }
         return () -> {
-            if (clusters.remove(cluster)) {
-                logger.debug("EventListener {} unsubscribed successfully", cluster.getName());
+            if (eventProcessors.remove(eventProcessor)) {
+                logger.debug("EventListener {} unsubscribed successfully", eventProcessor.getName());
                 return true;
             } else {
-                logger.info("EventListener {} not removed. It was already unsubscribed", cluster.getName());
+                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor.getName());
                 return false;
             }
         };
@@ -79,15 +80,15 @@ public class SimpleEventBus extends AbstractEventBus {
 
     @Override
     protected void prepareCommit(List<EventMessage<?>> events) {
-        publicationStrategy.publish(events, clusters);
+        publicationStrategy.publish(events, eventProcessors);
     }
 
     private static class DirectTerminal implements PublicationStrategy {
 
         @Override
-        public void publish(List<EventMessage<?>> events, Set<Cluster> clusters) {
-            for (Cluster cluster : clusters) {
-                cluster.handle(events);
+        public void publish(List<EventMessage<?>> events, Set<EventProcessor> eventProcessors) {
+            for (EventProcessor eventProcessor : eventProcessors) {
+                eventProcessor.handle(events);
             }
         }
     }

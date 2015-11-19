@@ -24,9 +24,9 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.common.Registration;
 import org.axonframework.domain.IdentifierFactory;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
@@ -303,7 +303,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Registration subscribe(Cluster cluster) {
+        public Registration subscribe(EventProcessor eventProcessor) {
             throw new UnsupportedOperationException();
         }
 

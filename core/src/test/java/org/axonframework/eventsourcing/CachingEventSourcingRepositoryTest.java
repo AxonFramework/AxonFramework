@@ -22,9 +22,9 @@ import org.axonframework.cache.EhCacheAdapter;
 import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -327,7 +327,7 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        public Registration subscribe(Cluster cluster) {
+        public Registration subscribe(EventProcessor eventProcessor) {
             throw new UnsupportedOperationException();
         }
     }

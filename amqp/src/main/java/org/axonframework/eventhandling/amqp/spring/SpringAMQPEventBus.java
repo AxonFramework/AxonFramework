@@ -22,9 +22,9 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.Cluster;
-import org.axonframework.eventhandling.ClusterMetaData;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventProcessorMetaData;
 import org.axonframework.eventhandling.amqp.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serializer.Serializer;
@@ -48,7 +48,7 @@ import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQ
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
  * outgoing messages are sent to a configured Exchange, which defaults to {@value #DEFAULT_EXCHANGE_NAME}.
  * <p/>
- * This terminal does not dispatch Events internally, as it relies on each cluster to listen to it's own AMQP Queue.
+ * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP Queue.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -177,15 +177,15 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     }
 
     @Override
-    public Registration subscribe(Cluster cluster) {
-        ClusterMetaData clusterMetaData = cluster.getMetaData();
+    public Registration subscribe(EventProcessor eventProcessor) {
+        EventProcessorMetaData processorMetaData = eventProcessor.getMetaData();
         AMQPConsumerConfiguration config;
-        if (clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
-            config = (AMQPConsumerConfiguration) clusterMetaData.getProperty(AMQP_CONFIG_PROPERTY);
+        if (processorMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
+            config = (AMQPConsumerConfiguration) processorMetaData.getProperty(AMQP_CONFIG_PROPERTY);
         } else {
-            config = new DefaultAMQPConsumerConfiguration(cluster.getName());
+            config = new DefaultAMQPConsumerConfiguration(eventProcessor.getName());
         }
-        return getListenerContainerLifecycleManager().registerCluster(cluster, config, messageConverter);
+        return getListenerContainerLifecycleManager().registerEventProcessor(eventProcessor, config, messageConverter);
     }
 
     @Override
@@ -224,7 +224,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
 
     /**
      * Sets the ListenerContainerLifecycleManager that creates and manages the lifecycle of Listener Containers for the
-     * clusters that are connected to this terminal.
+     * event processors that are connected to this terminal.
      * <p/>
      * Defaults to an autowired ListenerContainerLifecycleManager
      *

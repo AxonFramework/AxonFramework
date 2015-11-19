@@ -19,7 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
@@ -29,9 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
-import static org.axonframework.test.matchers.Matchers.equalTo;
-import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
-import static org.axonframework.test.matchers.Matchers.payloadsMatching;
+import static org.axonframework.test.matchers.Matchers.*;
 import static org.axonframework.test.saga.DescriptionUtils.describe;
 
 /**
@@ -98,7 +96,7 @@ public class EventValidator implements EventListener {
      * Starts recording event published by the event bus.
      */
     public void startRecording() {
-        eventBus.subscribe(new SimpleCluster("recorder", this));
+        eventBus.subscribe(new SimpleEventProcessor("recorder", this));
     }
 
     @SuppressWarnings({"unchecked"})

@@ -19,7 +19,7 @@ package org.axonframework.spring.eventhandling.scheduling.quartz;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;
@@ -27,11 +27,7 @@ import org.axonframework.spring.eventhandling.scheduling.StartingEvent;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.JobListener;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
+import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -48,10 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -118,7 +111,7 @@ public class QuartzSagaTimerIntegrationTest {
         assertNotNull(eventBus);
         final String randomAssociationValue = UUID.randomUUID().toString();
         EventListener listener = mock(EventListener.class);
-        eventBus.subscribe(new SimpleCluster("quartz", listener));
+        eventBus.subscribe(new SimpleEventProcessor("quartz", listener));
 
         new TransactionTemplate(transactionManager)
                 .execute(new TransactionCallbackWithoutResult() {

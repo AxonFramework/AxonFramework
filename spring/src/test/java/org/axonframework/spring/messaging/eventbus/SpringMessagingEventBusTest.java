@@ -17,7 +17,7 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.Cluster;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.Before;
@@ -35,27 +35,27 @@ import static org.mockito.Mockito.*;
 public class SpringMessagingEventBusTest {
 
     private SpringMessagingEventBus testSubject;
-    private Cluster mockCluster;
+    private EventProcessor mockEventProcessor;
     private SubscribableChannel mockChannel;
 
     @Before
     public void setUp() {
         testSubject = new SpringMessagingEventBus();
-        mockCluster = mock(Cluster.class);
+        mockEventProcessor = mock(EventProcessor.class);
         mockChannel = mock(SubscribableChannel.class);
         testSubject.setChannel(mockChannel);
     }
 
     @Test
     public void testSubscribeListener() {
-        testSubject.subscribe(mockCluster);
+        testSubject.subscribe(mockEventProcessor);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }
 
     @Test
     public void testUnsubscribeListener() throws Exception {
-        Registration subscription = testSubject.subscribe(mockCluster);
+        Registration subscription = testSubject.subscribe(mockEventProcessor);
         subscription.close();
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
@@ -63,7 +63,7 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testUnsubscribeListener_UnsubscribedTwice() throws Exception {
-        Registration subscription = testSubject.subscribe(mockCluster);
+        Registration subscription = testSubject.subscribe(mockEventProcessor);
         subscription.close();
         subscription.close();
 
@@ -73,8 +73,8 @@ public class SpringMessagingEventBusTest {
     @Test
     public void testSubscribeListener_SubscribedTwice() {
 
-        testSubject.subscribe(mockCluster);
-        testSubject.subscribe(mockCluster);
+        testSubject.subscribe(mockEventProcessor);
+        testSubject.subscribe(mockEventProcessor);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }

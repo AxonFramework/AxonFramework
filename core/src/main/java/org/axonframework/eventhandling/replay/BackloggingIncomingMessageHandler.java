@@ -17,29 +17,24 @@
 package org.axonframework.eventhandling.replay;
 
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
 /**
- * IncomingMessageHandler implementation that maintains a backlog of all Events published to a cluster while it is
+ * IncomingMessageHandler implementation that maintains a backlog of all Events published to an event processor while it is
  * in replay mode. When the replay finishes, events in the backlog are processed. Events that have been replayed will
  * be removed from the backlog, to prevent duplicate publication of events.
  * <p/>
- * When a replay fails, the backlog is cleared. This means backlogged items will not be forwarded to the cluster for
+ * When a replay fails, the backlog is cleared. This means backlogged items will not be forwarded to the event processor for
  * handling.
  * <p/>
- * Note that a single BackloggingIncomingMessageHandler should *not* be used for multiple Clusters. Each cluster must
- * have its own instance of BackloggingIncomingMessageHandler.
+ * Note that a single BackloggingIncomingMessageHandler should *not* be used for multiple event processors. Each
+ * event processor must have its own instance of BackloggingIncomingMessageHandler.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -56,7 +51,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     /**
      * Creates a new BackloggingIncomingMessageHandler. Event Messages that have been generated more than 5 seconds
      * before the start of the replay are not placed in the backlog, as they are assumed to be processed by the replay
-     * process. If the latency of the replayed cluster is expected to be more than 5 seconds, use the {@link
+     * process. If the latency of the replayed event processor is expected to be more than 5 seconds, use the {@link
      * #BackloggingIncomingMessageHandler(Duration)} constructor to provide a margin that better suits
      * the latency.
      */
@@ -101,15 +96,15 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     }
 
     @Override
-    public synchronized void prepareForReplay(Cluster destination) {
+    public synchronized void prepareForReplay(EventProcessor destination) {
         Assert.isFalse(inReplay, "This message handler is already performing a replay. "
-                + "Are you using the same instances on multiple clusters?");
+                + "Are you using the same instances on multiple eventProcessors?");
         inReplay = true;
         backlogThreshold = Instant.now().minus(timeMargin); // NOSONAR - Partially synchronization variable
     }
 
     @Override
-    public synchronized List<EventMessage<?>> onIncomingMessages(Cluster destination, List<EventMessage<?>> messages) {
+    public synchronized List<EventMessage<?>> onIncomingMessages(EventProcessor destination, List<EventMessage<?>> messages) {
         if (!inReplay) {
             destination.handle(messages);
             return null;
@@ -131,7 +126,7 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     }
 
     @Override
-    public List<EventMessage> releaseMessage(Cluster destination, DomainEventMessage message) {
+    public List<EventMessage> releaseMessage(EventProcessor destination, DomainEventMessage message) {
         List<EventMessage> processedMessages = new LinkedList<>();
         if (message.getTimestamp().isAfter(backlogThreshold)) { // NOSONAR - Synchronization not needed here
             replayedMessages.add(message.getIdentifier());
@@ -159,14 +154,14 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     }
 
     @Override
-    public synchronized void onReplayFailed(Cluster destination, Throwable cause) {
+    public synchronized void onReplayFailed(EventProcessor destination, Throwable cause) {
         inReplay = false;
         replayedMessages.clear();
         backlog.clear();
     }
 
     @Override
-    public synchronized void processBacklog(Cluster destination) {
+    public synchronized void processBacklog(EventProcessor destination) {
         inReplay = false;
         while (!backlog.isEmpty()) {
             EventMessage message = backlog.poll();

@@ -83,25 +83,25 @@
         <axon:cache-config/>
     </axon:jpa-saga-repository>
 
-    <axon:cluster id="defaultOrderedCluster">
+    <axon:event-processor id="defaultOrderedEventProcessor">
         <axon:ordered/>
         <axon:selectors>
             <axon:package prefix="com.doesnotexist"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
-    <axon:cluster id="customOrderedCluster">
+    <axon:event-processor id="customOrderedEventProcessor">
         <axon:ordered order-resolver-ref="orderResolver"/>
         <axon:selectors>
             <axon:package prefix="com.does.not.exist"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
     <bean id="orderResolver" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.eventhandling.OrderResolver"/>
     </bean>
 
-    <axon:cluster id="firstCluster" order="2">
+    <axon:event-processor id="firstEventProcessor" order="2">
         <axon:meta-data>
             <entry key="meta" value="value"/>
         </axon:meta-data>
@@ -109,16 +109,16 @@
             <axon:package prefix="org.axonframework"/>
             <axon:annotation type="java.lang.annotation.Inherited"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
-    <axon:cluster id="defaultCluster" default="true"/>
+    <axon:event-processor id="defaultEventProcessor" default="true"/>
 
-    <axon:cluster id="replayingCluster">
+    <axon:event-processor id="replayingEventProcessor">
         <axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
         <axon:selectors>
             <axon:package prefix="does.not.exist"/>
         </axon:selectors>
-    </axon:cluster>
+    </axon:event-processor>
 
     <bean id="sagaSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
 

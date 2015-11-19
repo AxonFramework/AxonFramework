@@ -327,62 +327,62 @@
 
 <axon:event-bus id="eventBus"/>]]></programlisting></para>
         <sect2>
-            <title>Configuration of Clusters</title>
+            <title>Configuration of Event Processors</title>
             <para>Using a Clustering Event Bus in Spring is very simple. In the Spring context, you
-                just need to define the clusters you wish to use and tell them which Event Listeners
-                you would like to be part of that Cluster. Axon will create the necessary
-                infrastructure to assign listeners to the clusters.</para>
-            <programlisting language="xml"><![CDATA[<axon:cluster id="myFirstCluster">
+                just need to define the event processors you wish to use and tell them which Event Listeners
+                you would like to be part of that Event Processor. Axon will create the necessary
+                infrastructure to assign listeners to the event processors.</para>
+            <programlisting language="xml"><![CDATA[<axon:event-processor id="myFirstEventProcessor">
     <axon:selectors>
         <axon:package prefix="com.mycompany.mypackage"/>
     </axon:selectors>
-</axon:cluster>
+</axon:event-processor>
 
-<axon:cluster id="defaultCluster" default="true"/>]]></programlisting>
-            <para>The example above will create two clusters. Event Listeners in the package
+<axon:event-processor id="defaultEventProcessor" default="true"/>]]></programlisting>
+            <para>The example above will create two event processors. Event Listeners in the package
                     <code>com.mycompany.mypackage</code> will be assigned to
-                    <code>myFirstCluster</code>, while all others are assigned to
-                    <code>defaultCluster</code>. Note that the latter does not have any selectors.
-                Selectors are optional if the cluster is a default.</para>
+                    <code>myFirstEventProcessor</code>, while all others are assigned to
+                    <code>defaultEventProcessor</code>. Note that the latter does not have any selectors.
+                Selectors are optional if the event processor is a default.</para>
             <para>If there are conflicting selectors, and you would like to influence the order in
-                which they are evaluated, you can add the <code>order</code> attribute to a cluster.
-                Clusters with a lower value are evaluated before those with a higher value. Only if
-                there are no matching selectors at all, Axon will assign a Listener to the Cluster
-                with <code>default="true"</code>. If no suitable cluster for any listener is found,
+                which they are evaluated, you can add the <code>order</code> attribute to an event processor.
+                Event processors with a lower value are evaluated before those with a higher value. Only if
+                there are no matching selectors at all, Axon will assign a Listener to the Event Processor
+                with <code>default="true"</code>. If no suitable event processor for any listener is found,
                 Axon throws an exception.</para>
             <tip>
-                <title>Organizing Cluster definitions in context files</title>
+                <title>Organizing Event Processor definitions in context files</title>
                 <para>When you have an application that consists of a number of modules (represented
                     in separate config files), it is possible to define the
-                        <code>&lt;axon:cluster></code> in the Context where the listeners are also
+                        <code>&lt;axon:event-processor></code> in the Context where the listeners are also
                     defined. This makes the application more modular and less dependent on a
                     centralized configuration.</para>
             </tip>
         </sect2>
         <sect2>
-            <title>Replayable Clusters</title>
-            <para>To make a cluster replayable, simply add the <code>&lt;axon:replay-config></code>
-                element to a <code>&lt;axon:cluster></code>, as in the example below:</para>
-            <programlisting language="xml"><![CDATA[<axon:cluster id="replayingCluster">
+            <title>Replayable Event Processors</title>
+            <para>To make an event processor replayable, simply add the <code>&lt;axon:replay-config></code>
+                element to a <code>&lt;axon:event-processor></code>, as in the example below:</para>
+            <programlisting language="xml"><![CDATA[<axon:event-processor id="replayingEventProcessor">
     <axon:replay-config event-store="eventStore" transaction-manager="mockTransactionManager"/>
     <axon:selectors>
         <axon:package prefix="com.mycompany.mypackage"/>
     </axon:selectors>
-</axon:cluster>]]></programlisting>
+</axon:event-processor>]]></programlisting>
             <para>The <code>&lt;axon:replay-config></code> element provides the necessary
-                configuration to execute replays on a Cluster. The resulting Cluster bean will be of
-                type <code>ReplayingCluster</code>. </para>
+                configuration to execute replays on an Event Processor. The resulting Event Processor bean will be of
+                type <code>ReplayingEventProcessor</code>. </para>
         </sect2>
         <sect2>
-            <title>Custom Cluster implementation</title>
-            <para>It is also possible to use the <code>&lt;cluster></code> element while using a custom Cluster
+            <title>Custom Event Processor implementation</title>
+            <para>It is also possible to use the <code>&lt;event-processor></code> element while using a custom Event Processor
                 implementation:</para>
-            <programlisting language="xml"><![CDATA[<axon:cluster id="custoCluster">
-    <bean class="com.mycompany.MyPersonalClusterImplementation"/>
+            <programlisting language="xml"><![CDATA[<axon:event-processor id="customEventProcessor">
+    <bean class="com.mycompany.MyPersonalEventProcessorImplementation"/>
     <axon:selectors>
         <axon:package prefix="com.mycompany.mypackage"/>
     </axon:selectors>
-</axon:cluster>]]></programlisting>
+</axon:event-processor>]]></programlisting>
         </sect2>
 
     </sect1>

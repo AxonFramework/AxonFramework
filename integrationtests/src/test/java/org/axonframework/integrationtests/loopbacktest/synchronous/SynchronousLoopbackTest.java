@@ -119,7 +119,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(new SimpleCluster("test", el));
+        eventBus.subscribe(new SimpleEventProcessor("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
@@ -157,7 +157,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(new SimpleCluster("test", el));
+        eventBus.subscribe(new SimpleEventProcessor("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 

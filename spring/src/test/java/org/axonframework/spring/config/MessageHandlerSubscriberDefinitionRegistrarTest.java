@@ -2,9 +2,9 @@ package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.spring.config.annotation.AnnotationDriven;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
     @Inject
     private EventBus eventBus2;
     @Inject
-    private Cluster cluster;
+    private EventProcessor eventProcessor;
     @Inject
     private EventListener eventListener;
     @Inject
@@ -42,9 +42,9 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
     @Test
     public void testHandlersRegisteredToEventBus() throws Exception {
         assertNotNull(eventBus);
-        verify(eventBus).subscribe(cluster);
+        verify(eventBus).subscribe(eventProcessor);
         verify(eventBus2, never()).subscribe(any());
-        verify(cluster).subscribe(eventListener);
+        verify(eventProcessor).subscribe(eventListener);
         verify(commandBus).subscribe(eq(String.class.getName()), eq(annotationCommandHandler));
     }
 
@@ -64,8 +64,8 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
         }
 
         @Bean
-        public Cluster cluster() {
-            return mock(Cluster.class);
+        public EventProcessor eventProcessor() {
+            return mock(EventProcessor.class);
         }
 
         @Bean

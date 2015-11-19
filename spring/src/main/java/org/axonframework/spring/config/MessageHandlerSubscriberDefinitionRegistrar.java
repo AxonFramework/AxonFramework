@@ -17,7 +17,7 @@ public class MessageHandlerSubscriberDefinitionRegistrar implements ImportBeanDe
         MultiValueMap<String, Object> attributes = metadata
                 .getAllAnnotationAttributes(EnableHandlerSubscription.class.getName());
 
-        if (Boolean.TRUE.equals(attributes.getFirst("subscribeClusters"))
+        if (Boolean.TRUE.equals(attributes.getFirst("subscribeEventProcessors"))
                 || Boolean.TRUE.equals(attributes.getFirst("subscribeEventListeners"))) {
             final GenericBeanDefinition definition = new GenericBeanDefinition();
             definition.setBeanClass(EventListenerSubscriber.class);

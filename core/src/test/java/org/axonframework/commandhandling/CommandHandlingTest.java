@@ -19,9 +19,9 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.Cluster;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -118,7 +118,7 @@ public class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(Cluster cluster) {
+        public Registration subscribe(EventProcessor eventProcessor) {
             throw new UnsupportedOperationException();
         }
     }

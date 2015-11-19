@@ -66,16 +66,16 @@ public interface EventBus {
     void publish(List<EventMessage<?>> events);
 
     /**
-     * Subscribe the given <code>cluster</code> to this bus. When subscribed, it will receive all events
+     * Subscribe the given <code>eventProcessor</code> to this bus. When subscribed, it will receive all events
      * published to this bus.
      * <p/>
-     * If the given <code>cluster</code> is already subscribed, nothing happens.
+     * If the given <code>eventProcessor</code> is already subscribed, nothing happens.
      *
-     * @param cluster The event listener cluster to subscribe
-     * @return a handle to unsubscribe the <code>cluster</code>. When unsubscribed it will no longer receive events.
+     * @param eventProcessor The event processor to subscribe
+     * @return a handle to unsubscribe the <code>eventProcessor</code>. When unsubscribed it will no longer receive events.
      * @throws EventListenerSubscriptionFailedException if the listener could not be subscribed
      */
-    Registration subscribe(Cluster cluster);
+    Registration subscribe(EventProcessor eventProcessor);
 
     /**
      * Register the given <code>interceptor</code> with this bus. When subscribed it will intercept any event messages

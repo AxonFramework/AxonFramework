@@ -39,7 +39,7 @@ public abstract class RetryPolicy {
 
     /**
      * Tells the scheduler to ignore the failure continue processing. The Event is processed by the remaining Event
-     * Listeners in the Cluster.
+     * Listeners in the EventProcessor.
      *
      * @return A RetryPolicy instance requesting the scheduler to proceed with dispatching
      */
@@ -50,7 +50,7 @@ public abstract class RetryPolicy {
     /**
      * This policy will roll back the Unit of Work (and the transaction) and skip the event altogether. When all
      * listeners support the type of transaction backed by the Unit of Work, this effectively means that the Event can
-     * be regarded as not processed. The Event will not be handled by any remaining Event Listeners in the Cluster.
+     * be regarded as not processed. The Event will not be handled by any remaining Event Listeners in the EventProcessor.
      *
      * @return A RetryPolicy instance requesting the scheduler to rollback the Unit of Work and continue processing the
      *         next Event.
@@ -61,7 +61,7 @@ public abstract class RetryPolicy {
 
     /**
      * This policy will roll back the Unit of Work (and the transaction), if any) and reschedule the event for
-     * processing. The Event will not be handled by any remaining Event Listeners in the Cluster.
+     * processing. The Event will not be handled by any remaining Event Listeners in the EventProcessor.
      *
      * @param timeout The amount of time to wait before retrying
      * @param unit    The unit of time for the timeout

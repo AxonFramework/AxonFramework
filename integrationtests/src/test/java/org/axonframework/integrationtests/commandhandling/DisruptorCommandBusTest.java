@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,9 +75,9 @@ public class DisruptorCommandBusTest {
             return "ok";
         });
         final RuntimeException failure = new RuntimeException("Test");
-        SimpleCluster cluster = new SimpleCluster("test");
-        cluster.subscribe(e -> { throw failure; });
-        eventBus.subscribe(cluster);
+        SimpleEventProcessor eventProcessor = new SimpleEventProcessor("test");
+        eventProcessor.subscribe(e -> { throw failure; });
+        eventBus.subscribe(eventProcessor);
 
         final FutureCallback<String, String> callback = new FutureCallback<>();
         commandBus.dispatch(new GenericCommandMessage<>("test"), callback);
