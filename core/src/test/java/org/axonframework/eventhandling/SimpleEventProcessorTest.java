@@ -16,10 +16,14 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
@@ -40,7 +44,9 @@ public class SimpleEventProcessorTest {
     @Test
     public void testSubscribeMember() {
         testSubject.subscribe(eventListener);
-        assertEquals(1, testSubject.getMembers().size());
+        EventMessage<?> eventMessage = new GenericEventMessage<>("Some event");
+        testSubject.handle(eventMessage);
+        verify(eventListener).handle(eventMessage);
     }
 
     @Test
@@ -52,16 +58,19 @@ public class SimpleEventProcessorTest {
         testSubject = new SimpleEventProcessor("eventProcessor", mockOrderResolver);
         testSubject.subscribe(eventListener2);
         testSubject.subscribe(eventListener);
-        assertEquals(2, testSubject.getMembers().size());
+        EventMessage<?> eventMessage = new GenericEventMessage<>("Some event");
+        testSubject.handle(eventMessage);
         // the eventListener instance must come first
-        assertEquals(eventListener, testSubject.getMembers().iterator().next());
+        InOrder inOrder = inOrder(eventListener, eventListener2);
+        inOrder.verify(eventListener).handle(eventMessage);
+        inOrder.verify(eventListener2).handle(eventMessage);
     }
 
     @Test
     public void testUnsubscribeMember() {
-        assertEquals(0, testSubject.getMembers().size());
         testSubject.subscribe(eventListener).cancel();
-        assertEquals(0, testSubject.getMembers().size());
+        testSubject.handle(new GenericEventMessage<>("Some event"));
+        verifyZeroInteractions(eventListener);
     }
 
     @Test
@@ -76,5 +85,27 @@ public class SimpleEventProcessorTest {
         testSubject.handle(event);
 
         verify(eventListener).handle(event);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testRegisterInterceptor() throws Exception {
+        testSubject.subscribe(eventListener);
+        MessageHandlerInterceptor<EventMessage<?>> interceptor = mock(MessageHandlerInterceptor.class);
+        Registration registration = testSubject.registerInterceptor(interceptor);
+        EventMessage event = new GenericEventMessage<>(new Object());
+        when(interceptor.handle(same(event), any(), any())).then(invocation -> {
+            ((InterceptorChain<EventMessage<?>>) invocation.getArguments()[2]).proceed();
+            return null;
+        });
+        testSubject.handle(event, event);
+
+        verify(eventListener, times(2)).handle(event);
+        verify(interceptor, times(2)).handle(eq(event), any(UnitOfWork.class), any(InterceptorChain.class));
+
+        registration.cancel();
+        testSubject.handle(event);
+
+        verifyNoMoreInteractions(interceptor);
     }
 }

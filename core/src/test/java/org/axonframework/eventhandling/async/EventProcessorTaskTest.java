@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.StubDomainEvent;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.testutils.MockException;
@@ -28,6 +29,7 @@ import org.mockito.InOrder;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,6 +45,8 @@ import static org.mockito.Mockito.*;
  */
 @SuppressWarnings("unchecked")
 public class EventProcessorTaskTest {
+
+    private static final Set<MessageHandlerInterceptor<EventMessage<?>>> NO_INTERCEPTORS = Collections.emptySet();
 
     private EventProcessorTask testSubject;
     private TransactionManager mockTransactionManager;
@@ -86,7 +90,8 @@ public class EventProcessorTaskTest {
         testSubject = new EventProcessorTask(mockExecutorService, new NullShutdownCallback(),
                                          new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
-                                         Collections.singleton(listener), multiplexingEventProcessingMonitor);
+                                         Collections.singleton(listener), multiplexingEventProcessingMonitor,
+                                         NO_INTERCEPTORS);
 
         doThrow(new MockException()).doNothing().when(listener).handle(event1);
 
@@ -117,7 +122,8 @@ public class EventProcessorTaskTest {
         testSubject = new EventProcessorTask(mockExecutorService, new NullShutdownCallback(),
                                          new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
-                                         Collections.singleton(listener), multiplexingEventProcessingMonitor);
+                                         Collections.singleton(listener), multiplexingEventProcessingMonitor,
+                                         NO_INTERCEPTORS);
         doThrow(new MockException()).doNothing().when(listener).handle(event1);
         testSubject.scheduleEvent(event1);
         testSubject.scheduleEvent(event2);
@@ -154,7 +160,8 @@ public class EventProcessorTaskTest {
         testSubject = new EventProcessorTask(mockExecutorService, new NullShutdownCallback(),
                                          new DefaultErrorHandler(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS)),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
-                                         Collections.singleton(listener), multiplexingEventProcessingMonitor);
+                                         Collections.singleton(listener), multiplexingEventProcessingMonitor,
+                                         NO_INTERCEPTORS);
 
         doThrow(new MockException()).doReturn(new Object()).when(mockTransactionManager).startTransaction();
         testSubject.scheduleEvent(event1);
@@ -181,7 +188,8 @@ public class EventProcessorTaskTest {
                                          new DefaultErrorHandler(policy),
                                          new DefaultUnitOfWorkFactory(mockTransactionManager),
                                          Collections.<EventListener>singleton(listener),
-                                         multiplexingEventProcessingMonitor);
+                                         multiplexingEventProcessingMonitor,
+                                         NO_INTERCEPTORS);
         doNothing().doThrow(new RejectedExecutionException()).when(mockExecutorService).execute(isA(Runnable.class));
         testSubject.scheduleEvent(new GenericEventMessage<>(new StubDomainEvent()));
         listener.failOnEvent = 2;

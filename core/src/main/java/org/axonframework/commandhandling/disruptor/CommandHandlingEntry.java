@@ -213,12 +213,12 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
         this.aggregateIdentifier = null;
         this.invocationInterceptorChain = new DefaultInterceptorChain<>(newCommand,
                                                                         this,
-                                                                        newCommandHandler,
-                                                                        invokerInterceptors);
+                invokerInterceptors, newCommandHandler
+        );
         this.publisherInterceptorChain = new DefaultInterceptorChain<>(newCommand,
                                                                        this,
-                                                                       repeatingCommandHandler,
-                                                                       publisherInterceptors);
+                publisherInterceptors, repeatingCommandHandler
+        );
         reset(newCommand);
     }
 

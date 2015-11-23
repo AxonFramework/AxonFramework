@@ -85,8 +85,7 @@ public interface UnitOfWork {
 
     /**
      * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called,
-     * and
-     * if the UnitOfWork has not been committed or rolled back.
+     * and if the UnitOfWork has not been committed or rolled back.
      *
      * @return <code>true</code> if this UnitOfWork is started, <code>false</code> otherwise.
      */

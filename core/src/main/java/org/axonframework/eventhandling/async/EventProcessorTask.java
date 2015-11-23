@@ -16,9 +16,13 @@
 
 package org.axonframework.eventhandling.async;
 
+import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
@@ -43,6 +47,7 @@ public class EventProcessorTask implements Runnable {
     private final ShutdownCallback shutDownCallback;
     private final UnitOfWorkFactory unitOfWorkFactory;
     private final MultiplexingEventProcessingMonitor eventProcessingMonitor;
+    private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors;
     private final Executor executor;
     private final ErrorHandler errorHandler;
     // guarded by "this"
@@ -59,19 +64,21 @@ public class EventProcessorTask implements Runnable {
     /**
      * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule
      * events.
-     *
      * @param executor               The executor service that will process the events
      * @param shutDownCallback       The callback to notify when the scheduler finishes processing events
      * @param errorHandler           The error handler to invoke when an error occurs while committing a Unit of Work
      * @param unitOfWorkFactory      The factory providing instances of the Unit of Work
      * @param eventListeners         The event listeners that should handle incoming events
      * @param eventProcessingMonitor The listener to notify when processing completed
+     * @param interceptors           Registered interceptors that need to intercept each event before it's handled
      */
     public EventProcessorTask(Executor executor, ShutdownCallback shutDownCallback, ErrorHandler errorHandler,
                               UnitOfWorkFactory unitOfWorkFactory, Set<EventListener> eventListeners,
-                              MultiplexingEventProcessingMonitor eventProcessingMonitor) {
+                              MultiplexingEventProcessingMonitor eventProcessingMonitor,
+                              Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors) {
         this.unitOfWorkFactory = unitOfWorkFactory;
         this.eventProcessingMonitor = eventProcessingMonitor;
+        this.interceptors = interceptors;
         this.eventQueue = new LinkedList<>();
         this.shutDownCallback = shutDownCallback;
         this.executor = executor;
@@ -216,7 +223,7 @@ public class EventProcessorTask implements Runnable {
             UnitOfWork uow = null;
             try {
                 uow = unitOfWorkFactory.createUnitOfWork(event);
-                processingResult = doHandle(event);
+                processingResult = doHandle(event, uow);
                 if (processingResult.requiresRollback()) {
                     uow.rollback();
                 } else {
@@ -258,25 +265,35 @@ public class EventProcessorTask implements Runnable {
      * Does the actual processing of the event. This method is invoked if the scheduler has decided this event is up
      * next for execution. Implementation should not pass this scheduling to an asynchronous executor
      *
-     * @param event The event to handle
+     * @param event         The event to handle
+     * @param unitOfWork    The unit of work that is processing the event
      * @return the policy for retrying/proceeding with this event
      */
-    protected ProcessingResult doHandle(EventMessage<?> event) {
-        RuntimeException failure = null;
-        eventProcessingMonitor.prepare(event);
-        for (EventListener member : listeners) {
-            try {
-                eventProcessingMonitor.prepareForInvocation(event, member);
-                member.handle(event);
-            } catch (RuntimeException e) {
-                RetryPolicy policy = errorHandler.handleError(e, event, member);
-                if (policy.requiresRescheduleEvent() || policy.requiresRollback()) {
-                    return new ProcessingResult(policy, e);
+    protected ProcessingResult doHandle(EventMessage<?> event, UnitOfWork unitOfWork) {
+        InterceptorChain<EventMessage<?>> interceptorChain = new DefaultInterceptorChain<>(event, unitOfWork,
+                interceptors, (eventMessage, uow) -> {
+            eventProcessingMonitor.prepare(event);
+            RuntimeException failure = null;
+            for (EventListener member : listeners) {
+                try {
+                    eventProcessingMonitor.prepareForInvocation(event, member);
+                    member.handle(event);
+                } catch (RuntimeException e) {
+                    RetryPolicy policy = errorHandler.handleError(e, event, member);
+                    if (policy.requiresRescheduleEvent() || policy.requiresRollback()) {
+                        return new ProcessingResult(policy, e);
+                    }
+                    failure = e;
                 }
-                failure = e;
             }
+            return new ProcessingResult(RetryPolicy.proceed(), failure);
+        });
+        try {
+            return (ProcessingResult) interceptorChain.proceed();
+        } catch (Exception e) {
+            throw new MessageHandlerInvocationException(String.format(
+                    "An exception occurred while trying to process an event message [%s]", event), e);
         }
-        return new ProcessingResult(RetryPolicy.proceed(), failure);
     }
 
     private synchronized void cleanUp() {

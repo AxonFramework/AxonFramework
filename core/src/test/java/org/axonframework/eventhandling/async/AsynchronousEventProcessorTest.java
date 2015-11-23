@@ -21,6 +21,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.*;
 import org.axonframework.testutils.MockException;
 import org.junit.Before;
@@ -36,7 +38,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -131,10 +133,12 @@ public class AsynchronousEventProcessorTest {
     public void testSubscriptions() throws Exception {
         EventListener mockEventListener = mock(EventListener.class);
         Registration subscription = testSubject.subscribe(mockEventListener);
-        assertTrue(testSubject.getMembers().contains(mockEventListener));
-
+        EventMessage<?> eventMessage = new GenericEventMessage<>("some event");
+        testSubject.handle(eventMessage);
+        verify(mockEventListener).handle(eventMessage);
         subscription.cancel();
-        assertFalse(testSubject.getMembers().contains(mockEventListener));
+        testSubject.handle(eventMessage);
+        verifyNoMoreInteractions(mockEventListener);
     }
 
     @Test
@@ -214,7 +218,7 @@ public class AsynchronousEventProcessorTest {
         assertEquals(message, failedMessages.get(0));
     }
 
-    private static interface AsyncHandler extends EventListener, EventProcessingMonitorSupport {
+    private interface AsyncHandler extends EventListener, EventProcessingMonitorSupport {
 
     }
 
@@ -256,5 +260,28 @@ public class AsynchronousEventProcessorTest {
             return null;
         }).when(monitor).onEventProcessingFailed(isA(List.class), isA(Throwable.class));
         return failedMessages;
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testRegisterInterceptor() throws Exception {
+        EventListener eventListener = mock(EventListener.class);
+        testSubject.subscribe(eventListener);
+        MessageHandlerInterceptor<EventMessage<?>> interceptor = mock(MessageHandlerInterceptor.class);
+        Registration registration = testSubject.registerInterceptor(interceptor);
+        EventMessage event = new GenericEventMessage<>(new Object());
+        when(interceptor.handle(same(event), any(), any())).then(invocation -> {
+            ((InterceptorChain<EventMessage<?>>) invocation.getArguments()[2]).proceed();
+            return null;
+        });
+        testSubject.handle(event, event);
+
+        verify(eventListener, times(2)).handle(event);
+        verify(interceptor, times(2)).handle(eq(event), any(UnitOfWork.class), any(InterceptorChain.class));
+
+        registration.cancel();
+        testSubject.handle(event);
+
+        verifyNoMoreInteractions(interceptor);
     }
 }

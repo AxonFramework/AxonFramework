@@ -52,8 +52,8 @@ public class DefaultInterceptorChainTest {
                 -> interceptorChain.proceed();
 
         DefaultInterceptorChain testSubject = new DefaultInterceptorChain(asCommandMessage("original"),
-                                                                          mockUnitOfWork,mockHandler,
-                                                                          asList(interceptor1, interceptor2));
+                                                                          mockUnitOfWork, asList(interceptor1, interceptor2), mockHandler
+        );
 
         String actual = (String) testSubject.proceed();
 

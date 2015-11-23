@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.*;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.TransactionManager;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * EventProcessor implementation that publishes events to the subscribed Event Listeners asynchronously from the publishing
- * thread. This implementation can be configured to retry event when processing fails. Furthermore, a SequencingPolicy
+ * thread. This implementation can be configured to retry event publication when processing fails. Furthermore, a SequencingPolicy
  * will tell the event processor which Events need to be processed sequentially, and which may be processed in parallel from
  * others.
  *
@@ -48,8 +49,7 @@ public class AsynchronousEventProcessor extends AbstractEventProcessor {
     private static final Logger logger = LoggerFactory.getLogger(AsynchronousEventProcessor.class);
     private final Executor executor;
     private final ErrorHandler errorHandler;
-    private final ConcurrentMap<Object, EventProcessorTask> currentSchedulers =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<Object, EventProcessorTask> currentTasks = new ConcurrentHashMap<>();
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private final UnitOfWorkFactory unitOfWorkFactory;
 
@@ -168,58 +168,63 @@ public class AsynchronousEventProcessor extends AbstractEventProcessor {
 
     @Override
     protected void doPublish(final List<EventMessage<?>> events, Set<EventListener> eventListeners,
+                             Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
                              final MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(u -> {
                 for (EventMessage event : events) {
-                    schedule(event, eventProcessingMonitor);
+                    schedule(event, eventProcessingMonitor, eventListeners, interceptors);
                 }
             });
         } else {
             for (EventMessage event : events) {
-                schedule(event, eventProcessingMonitor);
+                schedule(event, eventProcessingMonitor, eventListeners, interceptors);
             }
         }
     }
 
     /**
      * Schedules this task for execution when all pre-conditions have been met.
-     *
-     * @param task                   The task to schedule for processing.
-     * @param eventProcessingMonitor The monitor to invoke after completion
+     * @param event                 The message to schedule for processing.
+     * @param eventProcessingMonitor  The monitor to invoke after completion
+     * @param eventListeners          Immutable real-time view on subscribed event listeners
+     * @param interceptors            Registered interceptors that need to intercept each event before it's handled
      */
-    protected void schedule(EventMessage<?> task, MultiplexingEventProcessingMonitor eventProcessingMonitor) {
-        final Object sequenceIdentifier = sequencingPolicy.getSequenceIdentifierFor(task);
+    protected void schedule(EventMessage<?> event, MultiplexingEventProcessingMonitor eventProcessingMonitor,
+                            Set<EventListener> eventListeners,
+                            Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors) {
+        final Object sequenceIdentifier = sequencingPolicy.getSequenceIdentifierFor(event);
         if (sequenceIdentifier == null) {
             logger.debug("Scheduling Event for full concurrent processing {}",
-                         task.getClass().getSimpleName());
-            EventProcessorTask scheduler = newProcessingScheduler(new NoActionCallback(),
-                                                              getMembers(),
-                                                              eventProcessingMonitor);
-            scheduler.scheduleEvent(task);
+                         event.getClass().getSimpleName());
+            EventProcessorTask scheduler = newProcessingScheduler(new NoActionCallback(), eventListeners,
+                                                                  eventProcessingMonitor, interceptors);
+            scheduler.scheduleEvent(event);
         } else {
             logger.debug("Scheduling task of type [{}] for sequential processing in group [{}]",
-                         task.getClass().getSimpleName(),
+                         event.getClass().getSimpleName(),
                          sequenceIdentifier.toString());
-            assignEventToScheduler(task, sequenceIdentifier, eventProcessingMonitor);
+            assignEventToScheduler(event, sequenceIdentifier, eventProcessingMonitor, eventListeners, interceptors);
         }
     }
 
     private void assignEventToScheduler(EventMessage<?> task, Object sequenceIdentifier,
-                                        MultiplexingEventProcessingMonitor eventProcessingMonitor) {
+                                        MultiplexingEventProcessingMonitor eventProcessingMonitor,
+                                        Set<EventListener> eventListeners,
+                                        Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors) {
         boolean taskScheduled = false;
         while (!taskScheduled) {
-            EventProcessorTask currentScheduler = currentSchedulers.get(sequenceIdentifier);
+            EventProcessorTask currentScheduler = currentTasks.get(sequenceIdentifier);
             if (currentScheduler == null) {
-                currentSchedulers.putIfAbsent(sequenceIdentifier,
+                currentTasks.putIfAbsent(sequenceIdentifier,
                                               newProcessingScheduler(new SchedulerCleanUp(sequenceIdentifier),
-                                                                     getMembers(),
-                                                                     eventProcessingMonitor));
+                                                                     eventListeners, eventProcessingMonitor,
+                                                                     interceptors));
             } else {
                 taskScheduled = currentScheduler.scheduleEvent(task);
                 if (!taskScheduled) {
                     // we know it can be cleaned up.
-                    currentSchedulers.remove(sequenceIdentifier, currentScheduler);
+                    currentTasks.remove(sequenceIdentifier, currentScheduler);
                 }
             }
         }
@@ -230,19 +235,22 @@ public class AsynchronousEventProcessor extends AbstractEventProcessor {
      *
      * @param shutDownCallback       The callback that needs to be notified when the scheduler stops processing.
      * @param eventListeners         The listeners to process the event with
-     * @param eventProcessingMonitor @return a new scheduler instance
-     * @return The processing scheduler created
+     * @param eventProcessingMonitor The monitor to invoke after completion
+     * @param interceptors           Registered interceptors that need to intercept each event before it's handled
+     * @return a new scheduler instance
      */
     protected EventProcessorTask newProcessingScheduler(
             EventProcessorTask.ShutdownCallback shutDownCallback, Set<EventListener> eventListeners,
-            MultiplexingEventProcessingMonitor eventProcessingMonitor) {
+            MultiplexingEventProcessingMonitor eventProcessingMonitor,
+            Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors) {
         logger.debug("Initializing new processing scheduler.");
         return new EventProcessorTask(executor,
                                   shutDownCallback,
                                   errorHandler,
                                   unitOfWorkFactory,
                                   eventListeners,
-                                  eventProcessingMonitor);
+                                  eventProcessingMonitor,
+                                  interceptors);
     }
 
     private static class NoActionCallback implements EventProcessorTask.ShutdownCallback {
@@ -263,7 +271,7 @@ public class AsynchronousEventProcessor extends AbstractEventProcessor {
         @Override
         public void afterShutdown(EventProcessorTask scheduler) {
             logger.debug("Cleaning up processing scheduler for sequence [{}]", sequenceIdentifier.toString());
-            currentSchedulers.remove(sequenceIdentifier, scheduler);
+            currentTasks.remove(sequenceIdentifier, scheduler);
         }
     }
 }

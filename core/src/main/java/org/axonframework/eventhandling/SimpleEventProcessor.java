@@ -16,7 +16,13 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.common.annotation.MessageHandlerInvocationException;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.List;
 import java.util.Set;
@@ -41,8 +47,8 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
     }
 
     /**
-     * Initializes the event processor with given <code>name</code>, using given <code>orderResolver</code> to define the
-     * order in which listeners need to be invoked.
+     * Initializes the event processor with given <code>name</code>, using given <code>orderResolver</code> to define
+     * the order in which listeners need to be invoked.
      * <p/>
      * Listeners are invoked with the lowest order first.
      *
@@ -58,13 +64,28 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
     }
 
     @Override
-    public void doPublish(final List<EventMessage<?>> events, final Set<EventListener> eventListeners,
-                          final MultiplexingEventProcessingMonitor monitor) {
+    public void doPublish(List<EventMessage<?>> events, Set<EventListener> eventListeners,
+                          Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
+                          MultiplexingEventProcessingMonitor monitor) {
         try {
             for (EventMessage event : events) {
-                for (EventListener eventListener : eventListeners) {
-                    eventListener.handle(event);
-                }
+                UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(event);
+                InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(event, unitOfWork,
+                        interceptors, (message, uow) -> {
+                            eventListeners.forEach(eventListener -> eventListener.handle(event));
+                            return null;
+                });
+                unitOfWork.execute(() -> {
+                    try {
+                        interceptorChain.proceed();
+                    } catch (Exception e) {
+                        if (e instanceof RuntimeException) {
+                            throw (RuntimeException) e;
+                        }
+                        throw new MessageHandlerInvocationException(String.format(
+                                "An exception occurred while trying to process an event message [%s]", event), e);
+                    }
+                });
             }
             notifyMonitors(events, monitor, null);
         } catch (RuntimeException e) {
@@ -73,8 +94,8 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
         }
     }
 
-    private void notifyMonitors(final List<EventMessage<?>> events, final EventProcessingMonitor monitor,
-                                     final RuntimeException exception) {
+    private void notifyMonitors(List<EventMessage<?>> events, EventProcessingMonitor monitor,
+                                RuntimeException exception) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(u -> monitor.onEventProcessingCompleted(events));
             CurrentUnitOfWork.get().onRollback((u, e) -> monitor.onEventProcessingFailed(events, exception == null ? e : exception));

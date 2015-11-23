@@ -17,14 +17,19 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * A event processor represents a group of Event Listeners that are treated as a single group by the {@link
- * ClusteringEventBus}. This allows attributes and behavior (e.g. transaction management, asynchronous processing,
- * distribution) to be applied over a whole group at once.
+ * An Event Processor processes event messages from an event queue or event bus.
+ * <p/>
+ * Typically, an Event Processor is in charge of publishing the events to a group of registered listeners. This allows
+ * attributes and behavior (e.g. transaction management, asynchronous processing, distribution) to be applied over
+ * a whole group at once.
+ * <p/>
+ * Another use for Event Processors is to dispatch events to an exchange for remote processing.
  *
  * @author Allard Buijze
  * @since 1.2
@@ -65,20 +70,16 @@ public interface EventProcessor extends EventProcessingMonitorSupport {
     void handle(List<EventMessage<?>> events);
 
     /**
-     * Subscribe the given {@code eventListener} to this cluster. If the listener is already subscribed, nothing
+     * Subscribe the given {@code eventListener} to this event processor. If the listener is already subscribed, nothing
      * happens.
      * <p/>
      * While the Event Listeners is subscribed, it will receive all messages published to the event processor.
      *
      * @param eventListener the Event Listener instance to subscribe
      * @return a handle to unsubscribe the <code>eventListener</code>.
-     * When unsubscribed it will no longer receive events from this cluster.
+     * When unsubscribed it will no longer receive events from this event processor.
      */
     Registration subscribe(EventListener eventListener);
-
-    default ProcessingToken lastProcessedToken() {
-        return null;
-    }
 
     /**
      * Returns the MetaData of this event processor.
@@ -86,4 +87,21 @@ public interface EventProcessor extends EventProcessingMonitorSupport {
      * @return the MetaData of this event processor
      */
     EventProcessorMetaData getMetaData();
+
+    /**
+     * Registers the given <code>interceptor</code> to this event processor. The <code>interceptor</code> will
+     * receive each event message that is about to be published but before it has reached its event handlers.
+     * Interceptors are free to modify the event message or stop publication altogether. In
+     * addition, interceptors are able to interact with the {@link org.axonframework.messaging.unitofwork.UnitOfWork}
+     * that is created to process the message.
+     * <p/>
+     * For example, if a {@link org.axonframework.messaging.interceptors.CorrelationDataInterceptor} is registered,
+     * each command or event message triggered in response to an intercepted event will get correlation metadata
+     * from the intercepted event.
+     *
+     * @param interceptor The interceptor to register.
+     * @return a handle to unregister the <code>interceptor</code>. When unregistered the <code>interceptor</code> will
+     * no longer receive events from this event processor.
+     */
+    Registration registerInterceptor(MessageHandlerInterceptor<EventMessage<?>> interceptor);
 }
