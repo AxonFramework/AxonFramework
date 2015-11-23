@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -93,7 +94,9 @@ public class QuartzEventSchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testScheduleJob_TransactionalUnitOfWork() throws InterruptedException, SchedulerException {
+        Transaction mockTransaction = mock(Transaction.class);
         final TransactionManager transactionManager = mock(TransactionManager.class);
+        when(transactionManager.startTransaction()).thenReturn(mockTransaction);
         testSubject.setTransactionManager(transactionManager);
         testSubject.initialize();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -107,10 +110,10 @@ public class QuartzEventSchedulerTest {
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
-        InOrder inOrder = inOrder(transactionManager, eventBus);
+        InOrder inOrder = inOrder(transactionManager, eventBus, mockTransaction);
         inOrder.verify(transactionManager).startTransaction();
         inOrder.verify(eventBus).publish(isA(EventMessage.class));
-        inOrder.verify(transactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
     }
 
     @SuppressWarnings("unchecked")

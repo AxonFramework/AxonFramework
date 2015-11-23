@@ -19,6 +19,8 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.messaging.Message;
 
 /**
+ * TODO: fix documentation
+ *
  * Implementation of the UnitOfWork that buffers all published events until it is committed. Aggregates that have not
  * been explicitly save in their aggregates will be saved when the UnitOfWork commits.
  * <p/>

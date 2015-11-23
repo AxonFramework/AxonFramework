@@ -46,13 +46,16 @@ import static org.mockito.Mockito.*;
  */
 public class AsynchronousEventProcessorTest {
 
+    private Transaction mockTransaction;
     private TransactionManager mockTransactionManager;
     private Executor executor;
     private AsynchronousEventProcessor testSubject;
 
     @Before
     public void setUp() throws Exception {
+        mockTransaction = mock(Transaction.class);
         mockTransactionManager = mock(TransactionManager.class);
+        when(mockTransactionManager.startTransaction()).thenReturn(mockTransaction);
         executor = mock(Executor.class);
         doAnswer(invocation -> {
             // since we need to pretend we run in another thread, we clear the Unit of Work first
@@ -150,7 +153,7 @@ public class AsynchronousEventProcessorTest {
 
         verify(executor, times(2)).execute(isA(Runnable.class));
         verify(mockTransactionManager, times(2)).startTransaction();
-        verify(mockTransactionManager, times(2)).commitTransaction(any());
+        verify(mockTransaction, times(2)).commit();
     }
 
     @Test
@@ -162,20 +165,20 @@ public class AsynchronousEventProcessorTest {
         uow.onPrepareCommit(u -> {
             verify(executor, never()).execute(isA(Runnable.class));
             verify(mockTransactionManager, never()).startTransaction();
-            verify(mockTransactionManager, never()).commitTransaction(any());
+            verify(mockTransaction, never()).commit();
         });
 
         testSubject.handle(message1, message2);
 
         verify(executor, never()).execute(isA(Runnable.class));
         verify(mockTransactionManager, never()).startTransaction();
-        verify(mockTransactionManager, never()).commitTransaction(any());
+        verify(mockTransaction, never()).commit();
 
         uow.commit();
 
         verify(executor, times(2)).execute(isA(Runnable.class));
         verify(mockTransactionManager, times(2)).startTransaction();
-        verify(mockTransactionManager, times(2)).commitTransaction(any());
+        verify(mockTransaction, times(2)).commit();
     }
 
     @Test
@@ -200,7 +203,7 @@ public class AsynchronousEventProcessorTest {
         doThrow(new MockException()).when(mockEventListener2).handle(isA(EventMessage.class));
         doNothing().when(mockEventListener3).handle(isA(EventMessage.class));
 
-        final GenericEventMessage message = new GenericEventMessage("test");
+        final GenericEventMessage message = new GenericEventMessage<>("test");
         testSubject.handle(message);
 
         verify(mockEventListener1).handle(message);
@@ -245,7 +248,7 @@ public class AsynchronousEventProcessorTest {
         testSubject.subscribeEventProcessingMonitor(monitor);
         final List<EventMessage> ackedMessages = new ArrayList<>();
         doAnswer(invocationOnMock -> {
-            ackedMessages.addAll((List<EventMessage>) invocationOnMock.getArguments()[0]);
+            ackedMessages.addAll((List<EventMessage<?>>) invocationOnMock.getArguments()[0]);
             return null;
         }).when(monitor).onEventProcessingCompleted(isA(List.class));
         return ackedMessages;
@@ -256,7 +259,7 @@ public class AsynchronousEventProcessorTest {
         testSubject.subscribeEventProcessingMonitor(monitor);
         final List<EventMessage> failedMessages = new ArrayList<>();
         doAnswer(invocationOnMock -> {
-            failedMessages.addAll((List<EventMessage>) invocationOnMock.getArguments()[0]);
+            failedMessages.addAll((List<EventMessage<?>>) invocationOnMock.getArguments()[0]);
             return null;
         }).when(monitor).onEventProcessingFailed(isA(List.class), isA(Throwable.class));
         return failedMessages;

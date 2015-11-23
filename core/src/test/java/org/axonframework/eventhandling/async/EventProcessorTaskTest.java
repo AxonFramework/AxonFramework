@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.testutils.MockException;
 import org.junit.Before;
@@ -49,6 +50,7 @@ public class EventProcessorTaskTest {
     private static final Set<MessageHandlerInterceptor<EventMessage<?>>> NO_INTERCEPTORS = Collections.emptySet();
 
     private EventProcessorTask testSubject;
+    private Transaction mockTransaction;
     private TransactionManager mockTransactionManager;
     private EventProcessingMonitor eventProcessingMonitor;
     private MultiplexingEventProcessingMonitor multiplexingEventProcessingMonitor;
@@ -56,7 +58,8 @@ public class EventProcessorTaskTest {
     @Before
     public void setUp() throws Exception {
         mockTransactionManager = mock(TransactionManager.class);
-        when(mockTransactionManager.startTransaction()).thenReturn(new Object());
+        mockTransaction = mock(Transaction.class);
+        when(mockTransactionManager.startTransaction()).thenReturn(mockTransaction);
         eventProcessingMonitor = mock(EventProcessingMonitor.class);
         multiplexingEventProcessingMonitor = new MultiplexingEventProcessingMonitor(eventProcessingMonitor);
     }
@@ -66,8 +69,8 @@ public class EventProcessorTaskTest {
         MockEventListener listener = executeEventProcessing(RetryPolicy.retryAfter(500, TimeUnit.MILLISECONDS));
 
         verify(mockTransactionManager, times(4)).startTransaction();
-        verify(mockTransactionManager, times(3)).commitTransaction(any());
-        verify(mockTransactionManager, times(1)).rollbackTransaction(any());
+        verify(mockTransaction, times(3)).commit();
+        verify(mockTransaction, times(1)).rollback();
         assertEquals(4, listener.handledEvents.size());
     }
 
@@ -78,7 +81,7 @@ public class EventProcessorTaskTest {
         // each event is handled twice, since we retry the entire batch
         assertEquals(3, listener.handledEvents.size());
         verify(mockTransactionManager, times(3)).startTransaction();
-        verify(mockTransactionManager, times(3)).commitTransaction(any());
+        verify(mockTransaction, times(3)).commit();
     }
 
     @Test
@@ -101,16 +104,16 @@ public class EventProcessorTaskTest {
         verify(mockExecutorService).schedule(eq(testSubject), gt(400L), eq(TimeUnit.MILLISECONDS));
         // since the scheduler is a mock, we simulate the execution:
         testSubject.run();
-        InOrder inOrder = inOrder(listener, mockTransactionManager);
+        InOrder inOrder = inOrder(listener, mockTransactionManager, mockTransaction);
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event1);
-        inOrder.verify(mockTransactionManager).rollbackTransaction(any());
+        inOrder.verify(mockTransaction).rollback();
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event1);
-        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event2);
-        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
     }
 
     @Test
@@ -136,16 +139,16 @@ public class EventProcessorTaskTest {
         long waitTime = t2 - t1;
         assertTrue("Wait time was too short: " + waitTime, waitTime > 480);
 
-        InOrder inOrder = inOrder(listener, mockTransactionManager);
+        InOrder inOrder = inOrder(listener, mockTransactionManager, mockTransaction);
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event1);
-        inOrder.verify(mockTransactionManager).rollbackTransaction(any());
+        inOrder.verify(mockTransaction).rollback();
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event1);
-        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event2);
-        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
     }
 
     /**
@@ -163,7 +166,7 @@ public class EventProcessorTaskTest {
                                          Collections.singleton(listener), multiplexingEventProcessingMonitor,
                                          NO_INTERCEPTORS);
 
-        doThrow(new MockException()).doReturn(new Object()).when(mockTransactionManager).startTransaction();
+        doThrow(new MockException()).doReturn(mockTransaction).when(mockTransactionManager).startTransaction();
         testSubject.scheduleEvent(event1);
         testSubject.scheduleEvent(event2);
         testSubject.run();
@@ -171,14 +174,14 @@ public class EventProcessorTaskTest {
         verify(listener, never()).handle(event1);
         // since the scheduler is a mock, we simulate the execution:
         testSubject.run();
-        InOrder inOrder = inOrder(listener, mockTransactionManager);
+        InOrder inOrder = inOrder(listener, mockTransactionManager, mockTransaction);
         inOrder.verify(mockTransactionManager, times(2)).startTransaction();
         // make sure the first event is not skipped by verifying that event1 is handled
         inOrder.verify(listener).handle(event1);
-        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
         inOrder.verify(mockTransactionManager).startTransaction();
         inOrder.verify(listener).handle(event2);
-        inOrder.verify(mockTransactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
     }
 
     private MockEventListener executeEventProcessing(RetryPolicy policy) {

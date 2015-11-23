@@ -21,6 +21,7 @@ import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.messaging.unitofwork.NoTransactionManager;
+import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.repository.ConcurrencyException;
 import org.slf4j.Logger;
@@ -85,7 +86,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @param transactionManager the transactionManager to create transactions with
      */
-    public void setTxManager(TransactionManager<?> transactionManager) {
+    public void setTxManager(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
     }
 
@@ -139,12 +140,12 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            Object transaction = transactionManager.startTransaction();
+            Transaction transaction = transactionManager.startTransaction();
             try {
                 command.run();
-                transactionManager.commitTransaction(transaction);
+                transaction.commit();
             } catch (RuntimeException e) {
-                transactionManager.rollbackTransaction(transaction);
+                transaction.rollback();
                 throw e;
             }
         }

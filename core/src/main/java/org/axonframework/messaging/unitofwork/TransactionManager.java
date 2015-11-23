@@ -21,33 +21,15 @@ package org.axonframework.messaging.unitofwork;
  * <p/>
  * Typically, this will involve opening database transactions or connecting to external systems.
  *
- * @param <T> The type of object used to represent the transaction
  * @author Allard Buijze
  * @since 2.0
  */
-public interface TransactionManager<T> {
+public interface TransactionManager {
 
     /**
-     * Starts a transaction. The return value is an object representing the transaction status and must be passed as an
-     * argument when invoking {@link #commitTransaction(Object)} or {@link #rollbackTransaction(Object)}.
-     * <p/>
-     * The returned object must never be <code>null</code> if a transaction was successfully created.
+     * Starts a transaction. The return value is the started transaction that can be committed or rolled back.
      *
-     * @return The object representing the transaction status
+     * @return The object representing the transaction
      */
-    T startTransaction();
-
-    /**
-     * Commits the transaction identifier by given <code>transactionStatus</code>.
-     *
-     * @param transactionStatus The status object provided by {@link #startTransaction()}.
-     */
-    void commitTransaction(T transactionStatus);
-
-    /**
-     * Rolls back the transaction identifier by given <code>transactionStatus</code>.
-     *
-     * @param transactionStatus The status object provided by {@link #startTransaction()}.
-     */
-    void rollbackTransaction(T transactionStatus);
+    Transaction startTransaction();
 }

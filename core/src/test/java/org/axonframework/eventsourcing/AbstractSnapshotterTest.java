@@ -20,6 +20,7 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.repository.ConcurrencyException;
 import org.hamcrest.Matcher;
@@ -133,6 +134,8 @@ public class AbstractSnapshotterTest {
     @Test
     public void testScheduleSnapshot_WithTransaction() {
         final TransactionManager txManager = mock(TransactionManager.class);
+        Transaction mockTransaction = mock(Transaction.class);
+        when(txManager.startTransaction()).thenReturn(mockTransaction);
         testSubject.setTxManager(txManager);
 
         testScheduleSnapshot();
@@ -141,7 +144,7 @@ public class AbstractSnapshotterTest {
         inOrder.verify(txManager).startTransaction();
         inOrder.verify(mockEventStore).readEvents(anyString());
         inOrder.verify(mockEventStore).appendSnapshotEvent(isA(DomainEventMessage.class));
-        inOrder.verify(txManager).commitTransaction(anyObject());
+        inOrder.verify(mockTransaction).commit();
     }
 
     private Matcher<DomainEventMessage> event(final Object aggregateIdentifier, final long i) {

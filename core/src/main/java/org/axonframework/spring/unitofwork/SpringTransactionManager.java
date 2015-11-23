@@ -17,6 +17,7 @@
 package org.axonframework.spring.unitofwork;
 
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -30,7 +31,7 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SpringTransactionManager implements TransactionManager<TransactionStatus> {
+public class SpringTransactionManager implements TransactionManager {
 
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition;
@@ -64,21 +65,40 @@ public class SpringTransactionManager implements TransactionManager<TransactionS
     }
 
     @Override
-    public TransactionStatus startTransaction() {
-        return transactionManager.getTransaction(transactionDefinition);
+    public Transaction startTransaction() {
+        TransactionStatus status = transactionManager.getTransaction(transactionDefinition);
+        return new Transaction() {
+            @Override
+            public void commit() {
+                commitTransaction(status);
+            }
+
+            @Override
+            public void rollback() {
+                rollbackTransaction(status);
+            }
+        };
     }
 
-    @Override
-    public void commitTransaction(TransactionStatus tx) {
-        if (tx.isNewTransaction() && !tx.isCompleted()) {
-            transactionManager.commit(tx);
+    /**
+     * Commits the transaction with given <code>status</code> if the transaction is new and not completed.
+     *
+     * @param status The status of the transaction to commit
+     */
+    protected void commitTransaction(TransactionStatus status) {
+        if (status.isNewTransaction() && !status.isCompleted()) {
+            transactionManager.commit(status);
         }
     }
 
-    @Override
-    public void rollbackTransaction(TransactionStatus tx) {
-        if (tx.isNewTransaction() && !tx.isCompleted()) {
-            transactionManager.rollback(tx);
+    /**
+     * Rolls back the transaction with given <code>status</code> if the transaction is new and not completed.
+     *
+     * @param status The status of the transaction to roll back
+     */
+    protected void rollbackTransaction(TransactionStatus status) {
+        if (status.isNewTransaction() && !status.isCompleted()) {
+            transactionManager.rollback(status);
         }
     }
 

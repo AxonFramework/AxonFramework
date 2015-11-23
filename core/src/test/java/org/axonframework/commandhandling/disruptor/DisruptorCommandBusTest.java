@@ -35,6 +35,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
@@ -243,8 +244,9 @@ public class DisruptorCommandBusTest {
     public void testEventPublicationExecutedWithinTransaction() throws Exception {
         MessageHandlerInterceptor mockInterceptor = mock(MessageHandlerInterceptor.class);
         ExecutorService customExecutor = Executors.newCachedThreadPool();
+        Transaction mockTransaction = mock(Transaction.class);
         mockTransactionManager = mock(TransactionManager.class);
-        when(mockTransactionManager.startTransaction()).thenReturn(new Object());
+        when(mockTransactionManager.startTransaction()).thenReturn(mockTransaction);
 
         dispatchCommands(mockInterceptor, customExecutor, new GenericCommandMessage<>(
                 new ErrorCommand(aggregateIdentifier)));
@@ -254,8 +256,8 @@ public class DisruptorCommandBusTest {
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
 
         verify(mockTransactionManager, times(1001)).startTransaction();
-        verify(mockTransactionManager, times(991)).commitTransaction(any());
-        verify(mockTransactionManager, times(10)).rollbackTransaction(any());
+        verify(mockTransaction, times(991)).commit();
+        verify(mockTransaction, times(10)).rollback();
     }
 
     @SuppressWarnings("unchecked")
