@@ -48,11 +48,28 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      * Initialize a repository for storing aggregates of the given <code>aggregateType</code>. No additional locking
      * will be used.
      *
-     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      * @param aggregateType         the aggregate type this repository manages
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType) {
         this(entityManagerProvider, aggregateType, new NullLockManager());
+    }
+
+
+    /**
+     * Initialize a repository for storing aggregates of the given <code>aggregateType</code>. No additional locking
+     * will be used.
+     *
+     * @param entityManager The EntityManager instance for this repository
+     * @param aggregateType         the aggregate type this repository manages
+     */
+    public GenericJpaRepository(final EntityManager entityManager, Class<T> aggregateType) {
+        this(new EntityManagerProvider() {
+            @Override
+            public EntityManager getEntityManager() {
+                return entityManager;
+            }
+        }, aggregateType, new NullLockManager());
     }
 
     /**
@@ -66,6 +83,29 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
                                 LockManager lockManager) {
         super(aggregateType, lockManager);
+        Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
+        this.entityManagerProvider = entityManagerProvider;
+    }
+
+    /**
+     * Initialize a repository  for storing aggregates of the given <code>aggregateType</code> with an additional
+     * <code> lockManager</code>.
+     *
+     * @param entityManager The EntityManager instance for this repository
+     * @param aggregateType         the aggregate type this repository manages
+     * @param lockManager           the additional locking strategy for this repository
+     */
+    public GenericJpaRepository(final EntityManager entityManager, Class<T> aggregateType,
+                                LockManager lockManager) {
+        super(aggregateType, lockManager);
+
+        EntityManagerProvider entityManagerProvider = new EntityManagerProvider() {
+            @Override
+            public EntityManager getEntityManager() {
+                return entityManager;
+            }
+        };
+
         Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
     }
