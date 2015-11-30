@@ -18,6 +18,7 @@ package org.axonframework.repository;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.AggregateRoot;
 
 import javax.persistence.EntityManager;
@@ -63,13 +64,8 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      * @param entityManager The EntityManager instance for this repository
      * @param aggregateType         the aggregate type this repository manages
      */
-    public GenericJpaRepository(final EntityManager entityManager, Class<T> aggregateType) {
-        this(new EntityManagerProvider() {
-            @Override
-            public EntityManager getEntityManager() {
-                return entityManager;
-            }
-        }, aggregateType, new NullLockManager());
+    public GenericJpaRepository(EntityManager entityManager, Class<T> aggregateType) {
+        this(new SimpleEntityManagerProvider(entityManager), aggregateType, new NullLockManager());
     }
 
     /**
@@ -95,19 +91,10 @@ public class GenericJpaRepository<T extends AggregateRoot> extends LockingReposi
      * @param aggregateType         the aggregate type this repository manages
      * @param lockManager           the additional locking strategy for this repository
      */
-    public GenericJpaRepository(final EntityManager entityManager, Class<T> aggregateType,
+    public GenericJpaRepository(EntityManager entityManager, Class<T> aggregateType,
                                 LockManager lockManager) {
         super(aggregateType, lockManager);
-
-        EntityManagerProvider entityManagerProvider = new EntityManagerProvider() {
-            @Override
-            public EntityManager getEntityManager() {
-                return entityManager;
-            }
-        };
-
-        Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
-        this.entityManagerProvider = entityManagerProvider;
+        this.entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
     }
 
     @Override

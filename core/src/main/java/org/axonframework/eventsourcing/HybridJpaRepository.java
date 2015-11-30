@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.repository.GenericJpaRepository;
@@ -89,14 +90,9 @@ public class HybridJpaRepository<T extends AggregateRoot> extends GenericJpaRepo
      * @param aggregateType         The type of aggregate stored in this repository.
      * @param lockManager       The locking strategy to use when loading and storing aggregates
      */
-    public HybridJpaRepository(final EntityManager entityManager,
+    public HybridJpaRepository(EntityManager entityManager,
                                Class<T> aggregateType, LockManager lockManager) {
-        this(new EntityManagerProvider() {
-            @Override
-            public EntityManager getEntityManager() {
-                return entityManager;
-            }
-        }, aggregateType, aggregateType.getSimpleName(), lockManager);
+        this(new SimpleEntityManagerProvider(entityManager), aggregateType, aggregateType.getSimpleName(), lockManager);
     }
 
     /**
@@ -126,15 +122,10 @@ public class HybridJpaRepository<T extends AggregateRoot> extends GenericJpaRepo
      * @param aggregateTypeIdentifier The type identifier to store events with
      * @param lockManager         The locking strategy to use when loading and storing aggregates
      */
-    public HybridJpaRepository(final EntityManager entityManager,
+    public HybridJpaRepository(EntityManager entityManager,
                                Class<T> aggregateType, String aggregateTypeIdentifier,
                                LockManager lockManager) {
-        super(new EntityManagerProvider() {
-            @Override
-            public EntityManager getEntityManager() {
-                return entityManager;
-            }
-        }, aggregateType, lockManager);
+        super(new SimpleEntityManagerProvider(entityManager), aggregateType, lockManager);
         this.aggregateTypeIdentifier = aggregateTypeIdentifier;
     }
 
