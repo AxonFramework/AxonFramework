@@ -18,7 +18,6 @@ package org.axonframework.integrationtests.jpa;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import javax.persistence.Basic;
@@ -28,11 +27,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+
 /**
  * @author Allard Buijze
  */
 @Entity
-public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRoot {
+public class SimpleJpaEventSourcedAggregate {
 
     private transient List<DomainEventMessage<?>> registeredEvents;
 
@@ -40,6 +41,8 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
     private long counter;
     @Id
     private final String identifier;
+
+    private long version;
 
     public SimpleJpaEventSourcedAggregate() {
         identifier = UUID.randomUUID().toString();
@@ -53,10 +56,10 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
         apply(new SomeEvent());
     }
 
-    @Override
+    @EventSourcingHandler
     protected <T> void registerEventMessage(EventMessage<T> message) {
-        super.registerEventMessage(message);
         getRegisteredEvents().add((DomainEventMessage<?>) message);
+        version = ((DomainEventMessage<?>) message).getSequenceNumber();
     }
 
     public List<DomainEventMessage<?>> getRegisteredEvents() {
@@ -64,10 +67,6 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
             registeredEvents = new ArrayList<>();
         }
         return registeredEvents;
-    }
-
-    public int getRegisteredEventCount() {
-        return registeredEvents == null ? 0 : registeredEvents.size();
     }
 
     public void reset() {
@@ -83,9 +82,12 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
         return counter;
     }
 
-    @Override
     public String getIdentifier() {
         return identifier;
+    }
+
+    public long getVersion() {
+        return version;
     }
 }
 

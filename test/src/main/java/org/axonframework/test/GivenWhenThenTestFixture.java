@@ -20,9 +20,11 @@ import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -37,8 +39,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.AggregateNotFoundException;
-import org.axonframework.repository.Repository;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -61,7 +62,7 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @author Allard Buijze
  * @since 0.6
  */
-public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
+public class GivenWhenThenTestFixture<T>
         implements FixtureConfiguration<T>, TestExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(GivenWhenThenTestFixture.class);
@@ -75,7 +76,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private Deque<DomainEventMessage> storedEvents;
     private List<EventMessage> publishedEvents;
     private long sequenceNumber = 0;
-    private AggregateRoot workingAggregate;
+    private Aggregate workingAggregate;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
@@ -99,14 +100,13 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     @Override
     public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
-        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository);
-        eventSourcingRepository.setEventBus(eventBus);
+        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository, eventBus);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(new EventSourcingRepository<>(aggregateFactory, eventStore));
+        return registerRepository(new EventSourcingRepository<>(aggregateFactory, eventStore, eventBus));
     }
 
     @Override
@@ -240,7 +240,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(aggregateType, eventStore));
+            registerRepository(new EventSourcingRepository<>(aggregateType, eventStore, eventBus));
         }
     }
 
@@ -263,7 +263,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
             UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
             try {
-                EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
+                Aggregate<T> aggregate2 = repository.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was considered deleted, "
                                                          + "but the Repository still contains a non-deleted copy of "
@@ -288,19 +288,19 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
     }
 
-    private void assertValidWorkingAggregateState(EventSourcedAggregateRoot eventSourcedAggregate,
+    private void assertValidWorkingAggregateState(Aggregate<T> eventSourcedAggregate,
                                                   MatchAllFieldFilter fieldFilter) {
         HashSet<ComparationEntry> comparedEntries = new HashSet<>();
-        if (!workingAggregate.getClass().equals(eventSourcedAggregate.getClass())) {
+        if (!workingAggregate.rootType().equals(eventSourcedAggregate.rootType())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
                                                                + "be of another type than the original.\n"
                                                                + "Working type: <%s>\nEvent Sourced type: <%s>",
-                                                       workingAggregate.getClass().getName(),
-                                                       eventSourcedAggregate.getClass().getName()));
+                                                       workingAggregate.rootType().getName(),
+                                                       eventSourcedAggregate.rootType().getName()));
         }
         ensureValuesEqual(workingAggregate,
                           eventSourcedAggregate,
-                          eventSourcedAggregate.getClass().getName(),
+                          eventSourcedAggregate.rootType().getName(),
                           comparedEntries, fieldFilter);
     }
 
@@ -407,41 +407,43 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
         }
     }
 
-    private static class IdentifierValidatingRepository<T extends AggregateRoot> implements Repository<T> {
+    private static class IdentifierValidatingRepository<T> implements Repository<T> {
 
         private final Repository<T> delegate;
+        private final EventBus eventBus;
 
-        public IdentifierValidatingRepository(Repository<T> delegate) {
+        public IdentifierValidatingRepository(Repository<T> delegate, EventBus eventBus) {
             this.delegate = delegate;
+            this.eventBus = eventBus;
         }
 
         @Override
-        public T load(String aggregateIdentifier, Long expectedVersion) {
-            T aggregate = delegate.load(aggregateIdentifier, expectedVersion);
+        public Aggregate<T> newInstance(Supplier<T> factoryMethod) {
+            return delegate.newInstance(factoryMethod);
+        }
+
+        @Override
+        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+            Aggregate<T> aggregate = delegate.load(aggregateIdentifier, expectedVersion);
             validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
 
         @Override
-        public T load(String aggregateIdentifier) {
-            T aggregate = delegate.load(aggregateIdentifier, null);
+        public Aggregate<T> load(String aggregateIdentifier) {
+            Aggregate<T> aggregate = delegate.load(aggregateIdentifier, null);
             validateIdentifier(aggregateIdentifier, aggregate);
             return aggregate;
         }
 
-        private void validateIdentifier(String aggregateIdentifier, T aggregate) {
-            if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.getIdentifier())) {
+        private void validateIdentifier(String aggregateIdentifier, Aggregate<T> aggregate) {
+            if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.identifier())) {
                 throw new AssertionError(String.format(
                         "The aggregate used in this fixture was initialized with an identifier different than "
                                 + "the one used to load it. Loaded [%s], but actual identifier is [%s].\n"
                                 + "Make sure the identifier passed in the Command matches that of the given Events.",
-                        aggregateIdentifier, aggregate.getIdentifier()));
+                        aggregateIdentifier, aggregate.identifier()));
             }
-        }
-
-        @Override
-        public void add(T aggregate) {
-            delegate.add(aggregate);
         }
     }
 

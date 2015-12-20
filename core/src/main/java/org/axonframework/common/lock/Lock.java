@@ -26,4 +26,11 @@ public interface Lock extends AutoCloseable {
      * undefined.
      */
     void release();
+
+    /**
+     * Indicates whether the lock is still owned {@code true}, or whether it has been released {@code false}.
+     *
+     * @return true if the lock is still valid, or false if it has been released
+     */
+    boolean isHeld();
 }

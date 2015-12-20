@@ -1,20 +1,24 @@
 package org.axonframework.eventstore.mongo;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+
 /**
  * @author Rene de Waele
  */
-class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
+class StubAggregateRoot {
 
+    @AggregateIdentifier
     private final String identifier;
     private transient List<DomainEventMessage<?>> registeredEvents;
 
@@ -30,9 +34,8 @@ class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
         apply(new StubStateChangedEvent());
     }
 
-    @Override
+    @EventHandler
     protected <T> void registerEventMessage(EventMessage<T> message) {
-        super.registerEventMessage(message);
         getRegisteredEvents().add((DomainEventMessage<?>) message);
     }
 
@@ -51,17 +54,16 @@ class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
         registeredEvents.clear();
     }
 
-    @Override
-    public String getIdentifier() {
-        return identifier;
-    }
-
     @EventSourcingHandler
     public void handleStateChange(StubStateChangedEvent event) {
     }
 
     public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
         return new GenericDomainEventMessage<>(
-                getIdentifier(), getVersion(), new StubStateChangedEvent(), null);
+                identifier, getRegisteredEventCount() - 1, new StubStateChangedEvent(), null);
+    }
+
+    public String getIdentifier() {
+        return identifier;
     }
 }

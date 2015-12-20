@@ -89,7 +89,7 @@ public final class MethodMessageHandlerInspector {
     public static MethodMessageHandlerInspector getInstance(Class<?> handlerClass,
                                                             ParameterResolverFactory parameterResolverFactory,
                                                             boolean allowDuplicates,
-                                                            HandlerDefinition<? super Method> handlerDefinition) {
+                                                            LegacyHandlerDefinition<? super Method> handlerDefinition) {
         String key = handlerDefinition.toString() + "@" + handlerClass.getName();
         MethodMessageHandlerInspector inspector = INSPECTORS.get(key);
         while (inspector == null
@@ -129,7 +129,7 @@ public final class MethodMessageHandlerInspector {
      */
     private MethodMessageHandlerInspector(ParameterResolverFactory parameterResolverFactory,
                                           Class<?> targetType, boolean allowDuplicates,
-                                          HandlerDefinition<? super Method> handlerDefinition) {
+                                          LegacyHandlerDefinition<? super Method> handlerDefinition) {
         this.parameterResolver = parameterResolverFactory;
         this.targetType = targetType;
         Iterable<Method> methods = methodsOf(targetType);

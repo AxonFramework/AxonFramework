@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.MetaData;
 
@@ -64,6 +65,7 @@ import java.lang.annotation.*;
  * @author Allard Buijze
  * @since 2.1
  */
+@EventHandler
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

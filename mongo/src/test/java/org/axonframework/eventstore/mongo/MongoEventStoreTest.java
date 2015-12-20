@@ -28,7 +28,7 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.mongoutils.MongoLauncher;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;

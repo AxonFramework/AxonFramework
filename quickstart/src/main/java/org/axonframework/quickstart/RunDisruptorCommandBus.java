@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHa
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventProcessor;
@@ -30,7 +31,6 @@ import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
 import org.axonframework.quickstart.annotated.ToDoEventHandler;
 import org.axonframework.quickstart.annotated.ToDoItem;
-import org.axonframework.repository.Repository;
 
 import java.io.File;
 
@@ -54,7 +54,7 @@ public class RunDisruptorCommandBus {
         eventBus.subscribe(new SimpleEventProcessor("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // we use default settings for the disruptor command bus
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
 
         // now, we obtain a repository from the command bus
         Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<>(ToDoItem.class));

@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.model.Aggregate;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -33,7 +35,7 @@ public class CompositeEventStreamDecorator implements EventStreamDecorator {
      * Initialize the decorator, delegating to the given <code>eventStreamDecorators</code>. The decorators are
      * invoked in the iterator's order on
      * {@link #decorateForRead(String, DomainEventStream)},
-     * and in reverse order on {@link #decorateForAppend(EventSourcedAggregateRoot, java.util.List)}.
+     * and in reverse order on {@link #decorateForAppend(Aggregate, List)}.
      *
      * @param eventStreamDecorators The decorators to decorate Event Streams with
      */
@@ -52,7 +54,7 @@ public class CompositeEventStreamDecorator implements EventStreamDecorator {
     }
 
     @Override
-    public List<DomainEventMessage<?>> decorateForAppend(EventSourcedAggregateRoot aggregate,
+    public List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
                                                          List<DomainEventMessage<?>> eventStream) {
         List<DomainEventMessage<?>> events = eventStream;
         for (int i = eventStreamDecorators.length - 1; i >= 0; i--) {

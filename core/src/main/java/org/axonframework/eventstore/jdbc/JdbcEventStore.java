@@ -34,7 +34,7 @@ import org.axonframework.eventstore.jdbc.criteria.ParameterRegistry;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;

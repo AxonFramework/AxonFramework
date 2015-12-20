@@ -20,10 +20,10 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="entityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
-    <bean id="simpleRepository" class="org.axonframework.repository.GenericJpaRepository">
+    <bean id="simpleRepository" class="org.axonframework.commandhandling.model.GenericJpaRepository">
         <constructor-arg ref="entityManagerProvider"/>
-        <constructor-arg value="org.axonframework.repository.JpaAggregate"/>
-        <property name="eventBus" ref="eventBus"/>
+        <constructor-arg value="org.axonframework.commandhandling.model.JpaAggregate"/>
+        <constructor-arg ref="eventBus"/>
     </bean>
 
     <bean id="mockEventStore" class="org.mockito.Mockito" factory-method="mock">

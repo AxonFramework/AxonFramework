@@ -19,13 +19,14 @@ package org.axonframework.integrationtests.cache;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * @author Allard Buijze
  */
-public class TestAggregateRoot extends AbstractAnnotatedAggregateRoot {
+public class TestAggregateRoot {
 
     @AggregateIdentifier
     private String id;

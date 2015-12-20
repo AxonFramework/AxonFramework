@@ -1,0 +1,3 @@
+org.axonframework.commandhandling.model.definitions.MethodCommandHandlerDefinition
+org.axonframework.commandhandling.model.definitions.MethodEventHandlerDefinition
+#org.axonframework.saga.annotation.SagaMethodMessageHandlerDefinition

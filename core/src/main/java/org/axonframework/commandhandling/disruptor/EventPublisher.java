@@ -110,7 +110,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         invokeInterceptorChain(entry);
         Throwable exceptionResult = entry.getExceptionResult();
         if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
-            exceptionResult = performRollback(unitOfWork, entry.getAggregateIdentifier(), exceptionResult);
+            exceptionResult = performRollback(unitOfWork, aggregateIdentifier, exceptionResult);
         } else {
             exceptionResult = performCommit(unitOfWork, exceptionResult, aggregateIdentifier);
         }

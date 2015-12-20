@@ -28,7 +28,7 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.mongoutils.MongoLauncher;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.UpcasterChain;
@@ -224,17 +224,9 @@ public class MongoEventStoreTest_DocPerCommit {
     @Test
     public void testAppendEventsFromConcurrentProcessing() {
         testSubject.appendEvents(aggregate2.getRegisteredEvents());
-        StubAggregateRoot loaded1 = new StubAggregateRoot();
-        loaded1.initializeState(testSubject.readEvents(aggregate2.getIdentifier()));
-        StubAggregateRoot loaded2 = new StubAggregateRoot();
-        loaded2.initializeState(testSubject.readEvents(aggregate2.getIdentifier()));
-
-        loaded1.changeState();
-        loaded2.changeState();
-
-        testSubject.appendEvents(loaded1.getRegisteredEvents());
+        testSubject.appendEvents(new GenericDomainEventMessage<Object>("id2", 0, "test"));
         try {
-            testSubject.appendEvents(loaded2.getRegisteredEvents());
+            testSubject.appendEvents(new GenericDomainEventMessage<Object>("id2", 0, "test"));
             fail("Expected ConcurrencyException");
         } catch (final ConcurrencyException e) {
             assertNotNull(e);

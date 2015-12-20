@@ -16,6 +16,9 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -46,9 +49,9 @@ public class CompositeEventStreamDecoratorTest {
                 .thenAnswer(new ReturnsArgumentAt(1));
         when(decorator2.decorateForRead(any(), any(DomainEventStream.class)))
                 .thenAnswer(new ReturnsArgumentAt(1));
-        when(decorator1.decorateForAppend(any(EventSourcedAggregateRoot.class), anyList()))
+        when(decorator1.decorateForAppend(any(), anyList()))
                 .thenAnswer(new ReturnsArgumentAt(1));
-        when(decorator2.decorateForAppend(any(EventSourcedAggregateRoot.class), anyList()))
+        when(decorator2.decorateForAppend(any(), anyList()))
                 .thenAnswer(new ReturnsArgumentAt(1));
         testSubject  = new CompositeEventStreamDecorator(asList(decorator1, decorator2));
     }
@@ -66,7 +69,7 @@ public class CompositeEventStreamDecoratorTest {
 
     @Test
     public void testDecorateForAppend() throws Exception {
-        final EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);
+        Aggregate aggregate = mock(Aggregate.class);
         List<DomainEventMessage<?>> eventStream = new ArrayList<>();
         testSubject.decorateForAppend(aggregate, eventStream);
 

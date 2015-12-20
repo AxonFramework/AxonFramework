@@ -16,8 +16,9 @@
 
 package org.axonframework.eventhandling.annotation;
 
+import org.axonframework.common.annotation.AnnotatedHandlerInspector;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MessageHandlerInvoker;
+import org.axonframework.common.annotation.MessageHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.EventListenerProxy;
 import org.axonframework.eventhandling.EventMessage;
@@ -32,8 +33,9 @@ import org.axonframework.eventhandling.EventMessage;
  */
 public class AnnotationEventListenerAdapter implements EventListenerProxy {
 
-    private final MessageHandlerInvoker invoker;
+    private final AnnotatedHandlerInspector<Object> inspector;
     private final Class<?> listenerType;
+    private final Object annotatedEventListener;
 
     /**
      * Wraps the given <code>annotatedEventListener</code>, allowing it to be subscribed to an Event Bus.
@@ -51,11 +53,13 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
      */
+    @SuppressWarnings("unchecked")
     public AnnotationEventListenerAdapter(Object annotatedEventListener,
                                           ParameterResolverFactory parameterResolverFactory) {
-        this.invoker = new MessageHandlerInvoker(annotatedEventListener, parameterResolverFactory, false,
-                                                 AnnotatedEventHandlerDefinition.INSTANCE);
+        this.annotatedEventListener = annotatedEventListener;
         this.listenerType = annotatedEventListener.getClass();
+        this.inspector = AnnotatedHandlerInspector.inspectType((Class<Object>)annotatedEventListener.getClass(),
+                                                               parameterResolverFactory);
     }
 
     /**
@@ -63,7 +67,12 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
      */
     @Override
     public void handle(EventMessage event) {
-        invoker.invokeHandlerMethod(event);
+        for (MessageHandler<? super Object> handler : inspector.getHandlers()) {
+            if (handler.canHandle(event)) {
+                handler.handle(event, annotatedEventListener);
+                break;
+            }
+        }
     }
 
     @Override

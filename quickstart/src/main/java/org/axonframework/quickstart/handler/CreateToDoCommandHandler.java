@@ -17,10 +17,12 @@
 package org.axonframework.quickstart.handler;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
-import org.axonframework.repository.Repository;
+
+import java.util.function.Function;
 
 /**
  * @author Jettro Coenradie
@@ -36,8 +38,7 @@ public class CreateToDoCommandHandler implements MessageHandler<CommandMessage<?
     @Override
     public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork) throws Exception {
         CreateToDoItemCommand command = (CreateToDoItemCommand) commandMessage.getPayload();
-        ToDoItem toDoItem = new ToDoItem(command.getTodoId(), command.getDescription());
-        repository.add(toDoItem);
-        return toDoItem;
+        return repository.newInstance(() ->new ToDoItem(command.getTodoId(), command.getDescription()))
+                .map(Function.identity());
     }
 }

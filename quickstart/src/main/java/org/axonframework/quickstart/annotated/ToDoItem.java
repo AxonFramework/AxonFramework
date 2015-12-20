@@ -17,7 +17,6 @@
 package org.axonframework.quickstart.annotated;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
@@ -25,10 +24,12 @@ import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+
 /**
  * @author Jettro Coenradie
  */
-public class ToDoItem extends AbstractAnnotatedAggregateRoot {
+public class ToDoItem {
 
     @AggregateIdentifier
     private String id;

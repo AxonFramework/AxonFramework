@@ -125,6 +125,11 @@ public class PessimisticLockFactory implements LockFactory {
             }
         }
 
+        @Override
+        public boolean isHeld() {
+            return lock.isHeldByCurrentThread();
+        }
+
         public boolean lock() {
             try {
                 if (!lock.tryLock(0, TimeUnit.NANOSECONDS)) {

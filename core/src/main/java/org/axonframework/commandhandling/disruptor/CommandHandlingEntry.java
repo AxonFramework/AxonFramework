@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
@@ -162,11 +161,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
      * @return the identifier of the aggregate to recover
      */
     public String getAggregateIdentifier() {
-        if (aggregateIdentifier != null) {
-            return aggregateIdentifier;
-        }
-        final EventSourcedAggregateRoot aggregateRoot = (EventSourcedAggregateRoot) resources().get("AggregateRoot");
-        return aggregateRoot == null ? null : aggregateRoot.getIdentifier();
+        return aggregateIdentifier;
     }
 
     /**
@@ -237,6 +232,15 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
         invokerSegmentId = -1;
         this.aggregateIdentifier = newAggregateIdentifier;
         this.messagesToPublish.clear();
+    }
+
+    public void registerAggregateIdentifier(String aggregateIdentifier) {
+        if (this.aggregateIdentifier != null && !this.aggregateIdentifier.equals(aggregateIdentifier)) {
+            throw new IllegalStateException("Cannot load multiple aggregates in the same unit of work when using" +
+                                                    "DisruptorCommandBus! Already loaded " + this.aggregateIdentifier +
+                                                    ", attempted to load " + aggregateIdentifier);
+        }
+        this.aggregateIdentifier = aggregateIdentifier;
     }
 
     private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>> {

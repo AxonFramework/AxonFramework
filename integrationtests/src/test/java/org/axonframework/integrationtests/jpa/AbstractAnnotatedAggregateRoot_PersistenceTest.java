@@ -53,7 +53,7 @@ public class AbstractAnnotatedAggregateRoot_PersistenceTest {
         SimpleJpaEventSourcedAggregate reloaded = entityManager.find(SimpleJpaEventSourcedAggregate.class, id);
         assertEquals(id, reloaded.getIdentifier());
         assertEquals(2, reloaded.getInvocationCount());
-        assertEquals((Long) 1L, reloaded.getVersion());
+        assertEquals(1L, reloaded.getVersion());
 
         reloaded.doSomething();
 

@@ -20,15 +20,13 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.messaging.metadata.MetaData;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.*;
 import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.upcasting.LazyUpcasterChain;
@@ -713,40 +711,6 @@ public class JdbcEventStore_JpaBackedTest {
             ));
         }
         return events;
-    }
-
-    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
-
-        private static final long serialVersionUID = -3656612830058057848L;
-        private final Object identifier;
-
-        private StubAggregateRoot() {
-            this(UUID.randomUUID());
-        }
-
-        private StubAggregateRoot(Object identifier) {
-            this.identifier = identifier;
-        }
-
-        public void changeState() {
-            apply(new StubStateChangedEvent());
-        }
-
-        @Override
-        public String getIdentifier() {
-            return identifier.toString();
-        }
-
-        @EventSourcingHandler
-        public void handleStateChange(StubStateChangedEvent event) {
-        }
-
-        public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<>(getIdentifier(), getVersion(),
-                                                   new StubStateChangedEvent(),
-                                                   MetaData.emptyInstance()
-            );
-        }
     }
 
     private static class StubStateChangedEvent {

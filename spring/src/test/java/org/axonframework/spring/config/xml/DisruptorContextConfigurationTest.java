@@ -26,11 +26,10 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.SimpleDomainEventStream;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +43,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * @author Allard Buijze
@@ -89,7 +90,7 @@ public class DisruptorContextConfigurationTest {
         Mockito.verify(mockSnaphotter).scheduleSnapshot(MyAggregate.class, "snapshottest");
     }
 
-    public static class MyAggregate extends AbstractAnnotatedAggregateRoot {
+    public static class MyAggregate {
 
         @AggregateIdentifier
         private String id;

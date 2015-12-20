@@ -18,16 +18,18 @@ package org.axonframework.test;
 
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.markDeleted;
+
 /**
  * @author Allard Buijze
  */
-class StandardAggregate extends AbstractAnnotatedAggregateRoot {
+class StandardAggregate {
 
     @SuppressWarnings("UnusedDeclaration")
     private transient int counter;
@@ -83,11 +85,6 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @Override
-    public String getIdentifier() {
-        return identifier == null ? null : identifier.toString();
-    }
-
-    @Override
     public int hashCode() {
         // This hashCode implementation is EVIL! But it's on purpose, because it shouldn't matter for Axon.
         int result = counter;
@@ -99,14 +96,13 @@ class StandardAggregate extends AbstractAnnotatedAggregateRoot {
 
     static class Factory extends AbstractAggregateFactory<StandardAggregate> {
 
-        @Override
-        protected StandardAggregate doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
-            return new StandardAggregate(aggregateIdentifier);
+        public Factory() {
+            super(StandardAggregate.class);
         }
 
         @Override
-        public Class<StandardAggregate> getAggregateType() {
-            return StandardAggregate.class;
+        protected StandardAggregate doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
+            return new StandardAggregate(aggregateIdentifier);
         }
     }
 }

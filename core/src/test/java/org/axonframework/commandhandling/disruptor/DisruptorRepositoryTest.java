@@ -4,17 +4,19 @@ import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHa
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.Repository;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -22,17 +24,16 @@ import static org.mockito.Mockito.mock;
 public class DisruptorRepositoryTest {
 
     private final EventStore eventStore = mock(EventStore.class);
+    private final EventBus eventBus = mock(EventBus.class);
 
-    //todo fix test
-    @Ignore
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
-        Repository<Aggregate> repository = commandBus
-                .createRepository(new GenericAggregateFactory<>(Aggregate.class));
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        Repository<TestAggregate> repository = commandBus
+                .createRepository(new GenericAggregateFactory<>(TestAggregate.class));
 
-        AggregateAnnotationCommandHandler<Aggregate> handler
-                = new AggregateAnnotationCommandHandler<>(Aggregate.class, repository);
+        AggregateAnnotationCommandHandler<TestAggregate> handler
+                = new AggregateAnnotationCommandHandler<>(TestAggregate.class, repository);
         handler.subscribe(commandBus);
         DefaultCommandGateway gateway = new DefaultCommandGateway(commandBus);
 
@@ -43,7 +44,7 @@ public class DisruptorRepositoryTest {
         // Load the aggregate from the repository -- from "worker" thread
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         try {
-            Aggregate aggregate = repository.load(aggregateId);
+            Aggregate<TestAggregate> aggregate = repository.load(aggregateId);
             fail("Expected IllegalStateException");
         } catch (IllegalStateException e) {
             assertTrue(e.getMessage().contains("DisruptorCommandBus"));
@@ -67,17 +68,17 @@ public class DisruptorRepositoryTest {
     }
 
     @SuppressWarnings("serial")
-    public static class Aggregate extends AbstractAnnotatedAggregateRoot {
+    public static class TestAggregate {
 
         @AggregateIdentifier
         private String id;
 
         @SuppressWarnings("unused")
-        private Aggregate() {
+        private TestAggregate() {
         }
 
         @CommandHandler
-        public Aggregate(CreateCommandAndEvent command) {
+        public TestAggregate(CreateCommandAndEvent command) {
             apply(command);
         }
 

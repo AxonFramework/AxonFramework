@@ -17,19 +17,19 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.CommandMessageHandler;
+import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
-import org.axonframework.common.annotation.AbstractMessageHandler;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.AggregateRoot;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.Repository;
 
 import java.util.*;
-
-import static org.axonframework.commandhandling.annotation.CommandMessageHandlerUtils.resolveAcceptedCommandName;
 
 /**
  * Command handler that handles commands based on {@link org.axonframework.commandhandling.annotation.CommandHandler}
@@ -41,14 +41,13 @@ import static org.axonframework.commandhandling.annotation.CommandMessageHandler
  * @author Allard Buijze
  * @since 1.2
  */
-public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implements MessageHandler<CommandMessage<?>>,
+public class AggregateAnnotationCommandHandler<T> implements MessageHandler<CommandMessage<?>>,
                                                                                    SupportedCommandNamesAware {
 
     private final Repository<T> repository;
 
     private final CommandTargetResolver commandTargetResolver;
     private final Map<String, MessageHandler<CommandMessage<?>>> handlers;
-    private final ParameterResolverFactory parameterResolverFactory;
 
     /**
      * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
@@ -88,21 +87,35 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver,
                                              ParameterResolverFactory parameterResolverFactory) {
-        this.parameterResolverFactory = parameterResolverFactory;
-        Assert.notNull(aggregateType, "aggregateType may not be null");
+        this(repository, commandTargetResolver,
+             ModelInspector.inspectAggregate(aggregateType, parameterResolverFactory));
+    }
+
+    /**
+     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
+     * given <code>repository</code> to add and load aggregate instances and the given
+     * <code>parameterResolverFactory</code>.
+     *
+     * @param repository            The repository providing access to aggregate instances
+     * @param commandTargetResolver The target resolution strategy
+     * @param aggregateModel        The description of the command handling model
+     */
+    public AggregateAnnotationCommandHandler(Repository<T> repository,
+                                             CommandTargetResolver commandTargetResolver,
+                                             AggregateModel<T> aggregateModel) {
+        Assert.notNull(aggregateModel, "aggregateModel may not be null");
         Assert.notNull(repository, "repository may not be null");
         Assert.notNull(commandTargetResolver, "commandTargetResolver may not be null");
         this.repository = repository;
         this.commandTargetResolver = commandTargetResolver;
-        this.handlers = initializeHandlers(new AggregateCommandHandlerInspector<>(aggregateType,
-                                                                                   parameterResolverFactory));
+        this.handlers = initializeHandlers(aggregateModel);
     }
 
     /**
      * Subscribe this command handler to the given <code>commandBus</code>. The command handler will be subscribed
      * for each of the supported commands.
      *
-     * @param commandBus    The command bus instance to subscribe to
+     * @param commandBus The command bus instance to subscribe to
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
@@ -119,40 +132,36 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         };
     }
 
-    private Map<String, MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateCommandHandlerInspector<T> inspector) {
+    private Map<String, MessageHandler<CommandMessage<?>>> initializeHandlers(AggregateModel<T> aggregateModel) {
         Map<String, MessageHandler<CommandMessage<?>>> handlersFound = new HashMap<>();
-        for (final AbstractMessageHandler commandHandler : inspector.getHandlers()) {
-            handlersFound.put(resolveAcceptedCommandName(commandHandler), new AggregateCommandHandler(commandHandler));
-        }
-        for (final ConstructorCommandMessageHandler<T> handler : inspector.getConstructorHandlers()) {
-            handlersFound.put(resolveAcceptedCommandName(handler), new AggregateConstructorCommandHandler(handler));
-        }
+        AggregateCommandHandler aggregateCommandHandler = new AggregateCommandHandler();
+        aggregateModel.commandHandlers().forEach((k, v) -> {
+            if (v instanceof CommandMessageHandler && ((CommandMessageHandler) v).isFactoryHandler()) {
+                handlersFound.put(k, new AggregateConstructorCommandHandler(v));
+            } else {
+                handlersFound.put(k, aggregateCommandHandler);
+            }
+        });
         return handlersFound;
     }
 
     @Override
     public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork) throws Exception {
-        unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
         return handlers.get(commandMessage.getCommandName()).handle(commandMessage, unitOfWork);
-    }
-
-    private T loadAggregate(CommandMessage<?> command) {
-        VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
-        return repository.load(iv.getIdentifier(), iv.getVersion());
     }
 
     /**
      * Resolves the value to return when the given <code>command</code> has created the given <code>aggregate</code>.
      * This implementation returns the identifier of the created aggregate.
-     * <p/>
+     * <p>
      * This method may be overridden to change the return value of this Command Handler
      *
      * @param command          The command being executed
      * @param createdAggregate The aggregate that has been created as a result of the command
      * @return The value to report as result of the command
      */
-    protected Object resolveReturnValue(CommandMessage<?> command, T createdAggregate) {
-        return createdAggregate.getIdentifier();
+    protected Object resolveReturnValue(CommandMessage<?> command, Aggregate<T> createdAggregate) {
+        return createdAggregate.identifier();
     }
 
     @Override
@@ -162,32 +171,29 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
 
     private class AggregateConstructorCommandHandler implements MessageHandler<CommandMessage<?>> {
 
-        private final ConstructorCommandMessageHandler<T> handler;
+        private final org.axonframework.common.annotation.MessageHandler<?> handler;
 
-        public AggregateConstructorCommandHandler(ConstructorCommandMessageHandler<T> handler) {
+        public AggregateConstructorCommandHandler(org.axonframework.common.annotation.MessageHandler<?> handler) {
             this.handler = handler;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
-            final T createdAggregate = handler.invoke(null, command);
-            repository.add(createdAggregate);
-            return resolveReturnValue(command, createdAggregate);
+            Aggregate<T> aggregate = repository.newInstance(
+                    () -> (T) handler.handle(command, null)
+            );
+            return resolveReturnValue(command, aggregate);
         }
     }
 
     private class AggregateCommandHandler implements MessageHandler<CommandMessage<?>> {
 
-        private final AbstractMessageHandler commandHandler;
-
-        public AggregateCommandHandler(AbstractMessageHandler commandHandler) {
-            this.commandHandler = commandHandler;
-        }
-
+        @SuppressWarnings("unchecked")
         @Override
         public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) {
-            T aggregate = loadAggregate(command);
-            return commandHandler.invoke(aggregate, command);
+            VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
+            return repository.load(iv.getIdentifier(), iv.getVersion()).handle(command);
         }
     }
 }

@@ -17,21 +17,25 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.messaging.metadata.MetaData;
 
-import java.util.Collection;
 import java.util.UUID;
+
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.markDeleted;
 
 /**
  * @author Allard Buijze
  */
-public class StubAggregate extends AbstractEventSourcedAggregateRoot {
+public class StubAggregate {
 
     private int invocationCount;
+
+    @AggregateIdentifier
     private Object identifier;
 
     public StubAggregate() {
@@ -46,12 +50,7 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
         apply(new StubDomainEvent());
     }
 
-    @Override
-    public String getIdentifier() {
-        return identifier.toString();
-    }
-
-    @Override
+    @EventSourcingHandler
     protected void handle(EventMessage event) {
         identifier = ((DomainEventMessage) event).getAggregateIdentifier();
         invocationCount++;
@@ -62,17 +61,12 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<>(getIdentifier(), (long) 5,
+        return new GenericDomainEventMessage<>(identifier.toString(), (long) 5,
                                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 
     public void delete() {
         apply(new StubDomainEvent());
         markDeleted();
-    }
-
-    @Override
-    protected Collection<EventSourcedEntity> getChildEntities() {
-        return null;
     }
 }

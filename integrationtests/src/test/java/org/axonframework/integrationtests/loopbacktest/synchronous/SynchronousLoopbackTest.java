@@ -23,17 +23,16 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.*;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.AggregateNotFoundException;
-import org.axonframework.repository.Repository;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,6 +40,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -97,8 +97,7 @@ public class SynchronousLoopbackTest {
     protected void initializeRepository(LockFactory lockingStrategy) {
         EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<>(
                 CountingAggregate.class, eventStore,
-                lockingStrategy);
-        repository.setEventBus(eventBus);
+                lockingStrategy, eventBus);
         new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
@@ -190,8 +189,7 @@ public class SynchronousLoopbackTest {
         @CommandHandler
         @SuppressWarnings("unchecked")
         public void changeCounter(ChangeCounterCommand command) {
-            CountingAggregate aggregate = repository.load(command.getAggregateId());
-            aggregate.setCounter(command.getNewValue());
+            repository.load(command.getAggregateId()).execute(r -> r.setCounter(command.getNewValue()));
         }
     }
 
@@ -227,7 +225,7 @@ public class SynchronousLoopbackTest {
         }
     }
 
-    private static class CountingAggregate extends AbstractAnnotatedAggregateRoot {
+    private static class CountingAggregate {
 
         private static final long serialVersionUID = -2927751585905120260L;
 

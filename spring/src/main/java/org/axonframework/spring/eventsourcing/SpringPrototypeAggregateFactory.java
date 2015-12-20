@@ -16,15 +16,10 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
+import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Required;
@@ -41,37 +36,27 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 1.2
  */
-public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot> extends AbstractAggregateFactory<T>
-        implements InitializingBean, ApplicationContextAware, BeanNameAware {
+public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, InitializingBean,
+                                                           ApplicationContextAware, BeanNameAware {
 
     private String prototypeBeanName;
     private ApplicationContext applicationContext;
     private String beanName;
-    private Class<?> aggregateType;
-    private ParameterResolverFactory parameterResolverFactory;
-
-    @SuppressWarnings({"unchecked"})
-    @Override
-    public T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
-        return (T) applicationContext.getBean(prototypeBeanName);
-    }
+    private Class<T> aggregateType;
+    private AggregateFactory<T> delegate;
 
     @Override
-    protected T postProcessInstance(T aggregate) {
-        applicationContext.getAutowireCapableBeanFactory().configureBean(aggregate, prototypeBeanName);
-        if (aggregate instanceof AbstractAnnotatedAggregateRoot) {
-            ((AbstractAnnotatedAggregateRoot) aggregate).registerParameterResolverFactory(parameterResolverFactory);
-        }
-        return aggregate;
+    public T createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+        return delegate.createAggregate(aggregateIdentifier, firstEvent);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Class<T> getAggregateType() {
         if (aggregateType == null) {
-            aggregateType = applicationContext.getType(prototypeBeanName);
+            aggregateType = (Class<T>) applicationContext.getType(prototypeBeanName);
         }
-        return (Class<T>) aggregateType;
+        return aggregateType;
     }
 
     /**
@@ -85,15 +70,6 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
         this.prototypeBeanName = prototypeBeanName;
     }
 
-    /**
-     * Sets the parameter resolver with which parameters of annotated event handlers in the aggregae are resolved.
-     *
-     * @param parameterResolverFactory the factory that provides resolver for parameters.
-     */
-    public void setParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
-        this.parameterResolverFactory = parameterResolverFactory;
-    }
-
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
@@ -104,6 +80,7 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
         this.beanName = beanName;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void afterPropertiesSet() throws Exception {
         if (!applicationContext.isPrototype(prototypeBeanName)) {
@@ -112,19 +89,17 @@ public class SpringPrototypeAggregateFactory<T extends EventSourcedAggregateRoot
                                    + "The bean with name '%s' does not have the 'prototype' scope.",
                            beanName, prototypeBeanName));
         }
-        aggregateType = applicationContext.getType(prototypeBeanName);
-        if (!EventSourcedAggregateRoot.class.isAssignableFrom(aggregateType)) {
-            throw new IncompatibleAggregateException(
-                    format("Cannot initialize repository '%s'. "
-                                   + "The bean with name '%s' does not extend from EventSourcingAggregateRoot.",
-                           beanName, prototypeBeanName));
-        }
-        if (parameterResolverFactory == null) {
-            final SpringBeanParameterResolverFactory springBeanParameterResolverFactory = new SpringBeanParameterResolverFactory();
-            springBeanParameterResolverFactory.setApplicationContext(applicationContext);
-            this.parameterResolverFactory = MultiParameterResolverFactory.ordered(
-                    ClasspathParameterResolverFactory.forClass(aggregateType),
-                    springBeanParameterResolverFactory);
-        }
+        this.delegate = new AbstractAggregateFactory<T>(getAggregateType()) {
+            @Override
+            protected T doCreateAggregate(String aggregateIdentifier, DomainEventMessage firstEvent) {
+                return (T) applicationContext.getBean(prototypeBeanName);
+            }
+
+            @Override
+            protected T postProcessInstance(T aggregate) {
+                applicationContext.getAutowireCapableBeanFactory().configureBean(aggregate, prototypeBeanName);
+                return aggregate;
+            }
+        };
     }
 }

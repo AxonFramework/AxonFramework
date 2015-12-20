@@ -16,9 +16,19 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.model.ApplyMore;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
+import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.metadata.MetaData;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * Implementation of a snapshotter that uses the actual aggregate and its state to create a snapshot event. The
@@ -30,20 +40,33 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AggregateSnapshotter extends AbstractSnapshotter {
 
-    private final Map<Class<? extends EventSourcedAggregateRoot>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
+    private final Map<Class<?>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
+    private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
+    private final ParameterResolverFactory parameterResolverFactory;
 
+    public AggregateSnapshotter() {
+        this(ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
+    }
+
+    public AggregateSnapshotter(ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
-    protected DomainEventMessage createSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType,
+    protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                 String aggregateIdentifier,
                                                 DomainEventStream eventStream) {
 
         DomainEventMessage firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(aggregateType);
-        EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
+        aggregateModels.computeIfAbsent(aggregateType, k -> ModelInspector.inspectAggregate(k, parameterResolverFactory));
+        Object aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
+        SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot, aggregateModels.get(aggregateType));
         aggregate.initializeState(eventStream);
-
         return new GenericDomainEventMessage<>(
-                aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
+                aggregate.identifier(), aggregate.version(), aggregate.getAggregateRoot());
+
     }
 
     /**
@@ -58,6 +81,27 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     public void setAggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
         for (AggregateFactory<?> factory : aggregateFactories) {
             this.aggregateFactories.put(factory.getAggregateType(), factory);
+        }
+    }
+
+    private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {
+        public SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel) {
+            super(aggregateRoot, aggregateModel, null, null);
+        }
+
+        @Override
+        public Object handle(CommandMessage<?> msg) {
+            throw new UnsupportedOperationException("Aggregate instance is read-only");
+        }
+
+        @Override
+        public <P> ApplyMore doApply(P payload, MetaData metaData) {
+            return this;
+        }
+
+        @Override
+        public ApplyMore andThenApply(Supplier<?> payloadOrMessageSupplier) {
+            return this;
         }
     }
 }

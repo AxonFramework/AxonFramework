@@ -16,20 +16,26 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.StubDomainEvent;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.messaging.metadata.MetaData;
 
-import java.util.Collection;
 import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
-public class StubAggregate extends AbstractEventSourcedAggregateRoot {
+public class StubAggregate {
+
+    @AggregateIdentifier
+    private Object identifier;
 
     private int invocationCount;
-    private Object identifier;
 
     public StubAggregate() {
         identifier = UUID.randomUUID();
@@ -40,17 +46,16 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     public void doSomething() {
-        apply(new StubDomainEvent());
+        AggregateLifecycle.apply(new StubDomainEvent());
     }
 
-    @Override
     public String getIdentifier() {
         return identifier.toString();
     }
 
-    @Override
+    @EventSourcingHandler
     protected void handle(EventMessage event) {
-        identifier = ((DomainEventMessage)event).getAggregateIdentifier();
+        identifier = ((DomainEventMessage) event).getAggregateIdentifier();
         invocationCount++;
     }
 
@@ -59,17 +64,12 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<>(getIdentifier(), (long) 5,
-                                                              new StubDomainEvent(), MetaData.emptyInstance());
+        return new GenericDomainEventMessage<>(identifier.toString(), (long) 5,
+                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 
     public void delete() {
-        apply(new StubDomainEvent());
-        markDeleted();
-    }
-
-    @Override
-    protected Collection<EventSourcedEntity> getChildEntities() {
-        return null;
+        AggregateLifecycle.apply(new StubDomainEvent());
+        AggregateLifecycle.markDeleted();
     }
 }

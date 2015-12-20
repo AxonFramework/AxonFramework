@@ -16,15 +16,16 @@
 
 package org.axonframework.integrationtests.loopbacktest;
 
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 
 import java.util.UUID;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+
 /**
  * @author Allard Buijze
  */
-public class Message extends AbstractAnnotatedAggregateRoot {
+public class Message {
 
     @AggregateIdentifier
     private UUID identifier;

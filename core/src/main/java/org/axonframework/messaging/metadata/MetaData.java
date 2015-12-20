@@ -17,7 +17,11 @@
 package org.axonframework.messaging.metadata;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents MetaData that is passed along with a payload in a Message. Typically, the MetaData contains information
@@ -34,15 +38,6 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     private final Map<String, Object> values;
 
-    /**
-     * Returns an empty MetaData instance.
-     *
-     * @return an empty MetaData instance
-     */
-    public static MetaData emptyInstance() {
-        return EMPTY_META_DATA;
-    }
-
     private MetaData() {
         values = Collections.emptyMap();
     }
@@ -56,6 +51,15 @@ public class MetaData implements Map<String, Object>, Serializable {
      */
     public MetaData(Map<String, ?> items) {
         values = Collections.unmodifiableMap(new HashMap<>(items));
+    }
+
+    /**
+     * Returns an empty MetaData instance.
+     *
+     * @return an empty MetaData instance
+     */
+    public static MetaData emptyInstance() {
+        return EMPTY_META_DATA;
     }
 
     /**
@@ -75,6 +79,18 @@ public class MetaData implements Map<String, Object>, Serializable {
         return new MetaData(metaDataEntries);
     }
 
+    /**
+     * Creates a MetaData instances with a single entry, with the given <code>key</code> and
+     * given <code>value</code>.
+     *
+     * @param key   The key for the entry
+     * @param value The value of the entry
+     * @return a MetaData instance with a single entry
+     */
+    public static MetaData with(String key, Object value) {
+        return MetaData.from(Collections.singletonMap(key, value));
+    }
+
     @Override
     public Object get(Object key) {
         return values.get(key);
@@ -82,7 +98,7 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     /**
      * <strong>This operation is not supported.</strong>
-     * <p/>
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -92,7 +108,7 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     /**
      * <strong>This operation is not supported.</strong>
-     * <p/>
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -102,7 +118,7 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     /**
      * <strong>This operation is not supported.</strong>
-     * <p/>
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -112,7 +128,7 @@ public class MetaData implements Map<String, Object>, Serializable {
 
     /**
      * <strong>This operation is not supported.</strong>
-     * <p/>
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -181,7 +197,7 @@ public class MetaData implements Map<String, Object>, Serializable {
      *
      * @param additionalEntries The additional entries for the new MetaData
      * @return a MetaData instance containing values of <code>this</code>, combined with the given
-     *         <code>additionalEntries</code>
+     * <code>additionalEntries</code>
      */
     public MetaData mergedWith(Map<String, ?> additionalEntries) {
         if (additionalEntries.isEmpty()) {

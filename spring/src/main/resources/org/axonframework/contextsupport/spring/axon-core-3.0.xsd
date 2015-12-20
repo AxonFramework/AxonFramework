@@ -1081,7 +1081,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.repository.GenericJpaRepository"/>
+                    <tool:exports type="org.axonframework.commandhandling.model.GenericJpaRepository"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>

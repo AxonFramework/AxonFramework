@@ -16,15 +16,28 @@
 
 package org.axonframework.common.lock;
 
+import org.axonframework.commandhandling.model.LockingRepository;
+
 /**
  * LockFactory implementation that does nothing. Can be useful in cases where a repository extending from the {@link
- * org.axonframework.repository.LockingRepository} needs to be configured to ignore locks, for example in scenario's
+ * LockingRepository} needs to be configured to ignore locks, for example in scenario's
  * where an underlying storage mechanism already performs the necessary locking.
  *
  * @author Allard Buijze
  * @since 0.6
  */
 public class NullLockFactory implements LockFactory {
+
+    public static final Lock NO_LOCK = new Lock() {
+        @Override
+        public void release() {
+        }
+
+        @Override
+        public boolean isHeld() {
+            return true;
+        }
+    };
 
     /**
      * {@inheritDoc}
@@ -33,7 +46,7 @@ public class NullLockFactory implements LockFactory {
      */
     @Override
     public Lock obtainLock(String identifier) {
-        return () -> {};
+        return NO_LOCK;
     }
 
 }

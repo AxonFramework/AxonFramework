@@ -20,11 +20,11 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MethodMessageHandler;
-import org.axonframework.common.annotation.MethodMessageHandlerInspector;
+import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -42,9 +42,8 @@ import java.util.*;
  */
 public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMessage<?>>, SupportedCommandNamesAware {
 
-    private final Map<String, MethodMessageHandler> handlers = new HashMap<>();
     private final Object target;
-    private final ParameterResolverFactory parameterResolverFactory;
+    private final AggregateModel<Object> modelInspector;
 
     /**
      * Wraps the given <code>annotatedCommandHandler</code>, allowing it to be subscribed to a Command Bus.
@@ -61,16 +60,13 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
      * @param parameterResolverFactory The strategy for resolving handler method parameter values
      */
+    @SuppressWarnings("unchecked")
     public AnnotationCommandHandlerAdapter(Object annotatedCommandHandler,
                                            ParameterResolverFactory parameterResolverFactory) {
         Assert.notNull(annotatedCommandHandler, "annotatedCommandHandler may not be null");
-        MethodMessageHandlerInspector inspector = MethodMessageHandlerInspector.getInstance(
-                annotatedCommandHandler.getClass(), CommandHandler.class, parameterResolverFactory, true);
-        for (MethodMessageHandler handler : inspector.getHandlers()) {
-            String commandName = CommandMessageHandlerUtils.resolveAcceptedCommandName(handler);
-            handlers.put(commandName, handler);
-        }
-        this.parameterResolverFactory = parameterResolverFactory;
+        this.modelInspector = ModelInspector.inspectAggregate((Class<Object>)annotatedCommandHandler.getClass(),
+                                                              parameterResolverFactory);
+
         this.target = annotatedCommandHandler;
     }
 
@@ -86,10 +82,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
         for (String supportedCommand : supportedCommandNames()) {
             subscriptions.add(commandBus.subscribe(supportedCommand, this));
         }
-        return () -> {
-            subscriptions.forEach(Registration::cancel);
-            return true;
-        };
+        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
     /**
@@ -105,18 +98,11 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      */
     @Override
     public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
-        final MethodMessageHandler handler = handlers.get(command.getCommandName());
-        if (handler == null) {
-            throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());
-        }
-        if (unitOfWork != null) {
-            unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
-        }
-        return handler.invoke(target, command);
+        return modelInspector.commandHandler(command.getCommandName()).handle(command, target);
     }
 
     @Override
     public Set<String> supportedCommandNames() {
-        return handlers.keySet();
+        return modelInspector.commandHandlers().keySet();
     }
 }

@@ -16,13 +16,12 @@
 
 package org.axonframework.integrationtests.domain;
 
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 /**
  * @author Allard Buijze
  */
-public class StructuredEntity extends AbstractAnnotatedEntity {
+public class StructuredEntity {
 
     private int invocations;
 

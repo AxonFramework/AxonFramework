@@ -16,28 +16,31 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.model.ConflictingModificationException;
+
 import java.util.List;
 
 /**
  * Interface describing an object that is capable of detecting conflicts between changes applied to an aggregate, and
  * unseen changes made to the aggregate. If any such conflicts are detected, an instance of {@link
- * org.axonframework.repository.ConflictingModificationException} (or subtype) is thrown.
+ * ConflictingModificationException} (or subtype) is thrown.
  *
  * @author Allard Buijze
  * @since 0.6
  */
+@Deprecated // TODO Remove in Axon 3.
 public interface ConflictResolver {
 
     /**
      * Checks the given list of <code>appliedChanges</code> and <code>committedChanges</code> for any conflicting
      * changes. If any such conflicts are detected, an instance of
-     * {@link org.axonframework.repository.ConflictingModificationException} (or subtype) is thrown. If no conflicts
+     * {@link ConflictingModificationException} (or subtype) is thrown. If no conflicts
      * are detected, nothing happens.
      *
      * @param appliedChanges   The list of the changes applied to the aggregate
      * @param committedChanges The list of events that have been previously applied, but were unexpected by the command
      *                         handler
-     * @throws org.axonframework.repository.ConflictingModificationException
+     * @throws ConflictingModificationException
      *          if any conflicting changes are detected
      */
     void resolveConflicts(List<DomainEventMessage<?>> appliedChanges, List<DomainEventMessage<?>> committedChanges);

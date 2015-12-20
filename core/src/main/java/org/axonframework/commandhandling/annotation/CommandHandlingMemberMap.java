@@ -16,8 +16,6 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -56,5 +54,5 @@ public @interface CommandHandlingMemberMap {
      * The type of entity contained in the annotated map. By default, Axon attempts to identify the type by the
      * generic parameters on the field declaration.
      */
-    Class<? extends AbstractAnnotatedEntity> entityType() default AbstractAnnotatedEntity.class;
+    Class<?> entityType() default Void.class;
 }

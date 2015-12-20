@@ -16,18 +16,17 @@
 
 package org.axonframework.common;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
 import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -40,11 +39,7 @@ public abstract class ReflectionUtils {
     /**
      * A map of Primitive types to their respective wrapper types.
      */
-    private static final Map<Class<?>,Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
-
-    private ReflectionUtils() {
-        // utility class
-    }
+    private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
 
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
@@ -57,6 +52,10 @@ public abstract class ReflectionUtils {
         primitiveWrapperTypeMap.put(short.class, Short.class);
     }
 
+    private ReflectionUtils() {
+        // utility class
+    }
+
     /**
      * Returns the value of the given <code>field</code> in the given <code>object</code>. If necessary, the field is
      * made accessible, assuming the security manager allows it.
@@ -64,9 +63,8 @@ public abstract class ReflectionUtils {
      * @param field  The field containing the value
      * @param object The object to retrieve the field's value from
      * @return the value of the <code>field</code> in the <code>object</code>
-     *
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
-     * made accessible
+     *                               made accessible
      */
     public static Object getFieldValue(Field field, Object object) {
         ensureAccessible(field);
@@ -137,9 +135,8 @@ public abstract class ReflectionUtils {
      * @param member The member (field, method, constructor, etc) to make accessible
      * @param <T>    The type of member to make accessible
      * @return the given <code>member</code>, for easier method chaining
-     *
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
-     * made accessible
+     *                               made accessible
      */
     public static <T extends AccessibleObject> T ensureAccessible(T member) {
         if (!isAccessible(member)) {
@@ -165,7 +162,6 @@ public abstract class ReflectionUtils {
      *
      * @param member The member to check
      * @return <code>true</code> if the member is public and non-final, otherwise <code>false</code>.
-     *
      * @see #isAccessible(java.lang.reflect.AccessibleObject)
      * @see #ensureAccessible(java.lang.reflect.AccessibleObject)
      */
@@ -211,11 +207,93 @@ public abstract class ReflectionUtils {
     }
 
     /**
+     * Find an annotation of given <code>annotationType</code> on the given <code>element</code>, considering that the
+     * given <code>annotationType</code> may be present as a meta annotation on any other annotation on that element.
+     *
+     * @param element        The element to inspect
+     * @param annotationType The type of annotation to find
+     * @param <T>            The generic type of the annotation
+     * @return the annotation, or <code>null</code> if no such annotation is present.
+     */
+    public static <T extends Annotation> T findAnnotation(AnnotatedElement element, Class<T> annotationType) {
+        T ann = element.getAnnotation(annotationType);
+        if (ann == null) {
+            HashSet<Class<? extends Annotation>> visited = new HashSet<>();
+            for (Annotation metaAnn : element.getAnnotations()) {
+                ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
+                if (ann != null) {
+                    break;
+                }
+            }
+        }
+        return ann;
+    }
+
+    public static <T extends Annotation> Map<String, Object> findAnnotationAttributes(AnnotatedElement element, Class<T> annotationType) {
+        Map<String, Object> attributes = new HashMap<>();
+        T ann = element.getAnnotation(annotationType);
+        if (ann != null) {
+            collectAttributes(ann, attributes);
+        } else {
+            HashSet<Class<? extends Annotation>> visited = new HashSet<>();
+            for (Annotation metaAnn : element.getAnnotations()) {
+                if (collectAnnotationAttributes(metaAnn.annotationType(), annotationType, visited, attributes)) {
+                    collectAttributes(metaAnn, attributes);
+                }
+            }
+        }
+        return attributes;
+    }
+
+    private static <T extends Annotation> boolean collectAnnotationAttributes(Class<? extends Annotation> target, Class<T> annotationType, HashSet<Class<? extends Annotation>> visited, Map<String, Object> attributes) {
+        T ann = target.getAnnotation(annotationType);
+        if (ann == null && visited.add(target)) {
+            for (Annotation metaAnn : target.getAnnotations()) {
+                if(collectAnnotationAttributes(metaAnn.annotationType(), annotationType, visited, attributes)) {
+                    collectAttributes(metaAnn, attributes);
+                    return true;
+                }
+            }
+        } else if (ann != null) {
+            collectAttributes(ann, attributes);
+            return true;
+        }
+        return false;
+    }
+
+    private static <T extends Annotation> void collectAttributes(T ann, Map<String, Object> attributes) {
+        Method[] methods = ann.annotationType().getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getParameterTypes().length == 0 && method.getReturnType() != void.class) {
+                try {
+                    Object value = method.invoke(ann);
+                    attributes.put(method.getName(), value);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new AxonConfigurationException("Error while inspecting annotation values", e);
+                }
+            }
+        }
+    }
+
+    private static <T extends Annotation> T getAnnotation(Class<? extends Annotation> target, Class<T> annotationType,
+                                                          Set<Class<? extends Annotation>> visited) {
+        T ann = target.getAnnotation(annotationType);
+        if (ann == null && visited.add(target)) {
+            for (Annotation metaAnn : target.getAnnotations()) {
+                ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
+                if (ann != null) {
+                    break;
+                }
+            }
+        }
+        return ann;
+    }
+
+    /**
      * Returns the boxed wrapper type for the given <code>primitiveType</code>.
      *
      * @param primitiveType The primitive type to return boxed wrapper type for
      * @return the boxed wrapper type for the given <code>primitiveType</code>
-     *
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
     public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {

@@ -24,10 +24,14 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.messaging.InterceptorChain;
@@ -38,7 +42,6 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.Repository;
 import org.axonframework.testutils.MockException;
 import org.hamcrest.Description;
 import org.junit.After;
@@ -50,12 +53,16 @@ import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.*;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.mockito.Mockito.*;
 
 /**
@@ -71,12 +78,14 @@ public class DisruptorCommandBusTest {
     private DisruptorCommandBus testSubject;
     private String aggregateIdentifier;
     private TransactionManager mockTransactionManager;
+    private EventBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         aggregateIdentifier = UUID.randomUUID().toString();
         stubHandler = new StubHandler();
         inMemoryEventStore = new InMemoryEventStore();
+        eventBus = mock(EventBus.class);
 
         inMemoryEventStore.appendEvents(Collections.singletonList(
                 new GenericDomainEventMessage<>(aggregateIdentifier, 0, new StubDomainEvent())));
@@ -96,18 +105,19 @@ public class DisruptorCommandBusTest {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
+                eventBus,
                 new DisruptorConfiguration().setInvokerInterceptors(Collections.singletonList(mockHandlerInterceptor))
-                                            .setDispatchInterceptors(Collections.singletonList(mockDispatchInterceptor))
-                                            .setBufferSize(8)
-                                            .setProducerType(ProducerType.SINGLE)
-                                            .setWaitStrategy(new SleepingWaitStrategy())
-                                            .setExecutor(customExecutor)
-                                            .setInvokerThreadCount(2)
-                                            .setPublisherThreadCount(3)
+                        .setDispatchInterceptors(Collections.singletonList(mockDispatchInterceptor))
+                        .setBufferSize(8)
+                        .setProducerType(ProducerType.SINGLE)
+                        .setWaitStrategy(new SleepingWaitStrategy())
+                        .setExecutor(customExecutor)
+                        .setInvokerThreadCount(2)
+                        .setPublisherThreadCount(3)
         );
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
-        stubHandler.setRepository(testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+        GenericAggregateFactory<StubAggregate> aggregateFactory = new GenericAggregateFactory<>(StubAggregate.class);
+        stubHandler.setRepository(testSubject.createRepository(aggregateFactory));
         Consumer<UnitOfWork> mockPrepareCommitConsumer = mock(Consumer.class);
         Consumer<UnitOfWork> mockAfterCommitConsumer = mock(Consumer.class);
         Consumer<UnitOfWork> mockCleanUpConsumer = mock(Consumer.class);
@@ -150,7 +160,8 @@ public class DisruptorCommandBusTest {
     @Test
     public void testEventsPublishedWithoutAggregateArePassedToListener() throws Exception {
         final EventBus eventBus = mock(EventBus.class);
-        testSubject = new DisruptorCommandBus(inMemoryEventStore, new DisruptorConfiguration()
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus,
+                                              new DisruptorConfiguration()
                                                       .setInvokerInterceptors(
                                                               Collections.<MessageHandlerInterceptor<CommandMessage<?>>>singletonList(
                                                                       (commandMessage, unitOfWork, interceptorChain)
@@ -183,6 +194,7 @@ public class DisruptorCommandBusTest {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
+                eventBus,
                 new DisruptorConfiguration()
                         .setBufferSize(8)
                         .setProducerType(ProducerType.SINGLE)
@@ -206,12 +218,13 @@ public class DisruptorCommandBusTest {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
+                eventBus,
                 new DisruptorConfiguration().setBufferSize(8)
-                                            .setProducerType(ProducerType.SINGLE)
-                                            .setWaitStrategy(new SleepingWaitStrategy())
-                                            .setExecutor(customExecutor)
-                                            .setInvokerThreadCount(2)
-                                            .setPublisherThreadCount(3)
+                        .setProducerType(ProducerType.SINGLE)
+                        .setWaitStrategy(new SleepingWaitStrategy())
+                        .setExecutor(customExecutor)
+                        .setInvokerThreadCount(2)
+                        .setPublisherThreadCount(3)
         );
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         final EventStreamDecorator mockDecorator = mock(EventStreamDecorator.class);
@@ -236,7 +249,7 @@ public class DisruptorCommandBusTest {
         // invoked only once, because the second time, the aggregate comes from the 1st level cache
         verify(mockDecorator).decorateForRead(eq(aggregateIdentifier),
                                               isA(DomainEventStream.class));
-        verify(mockDecorator, times(2)).decorateForAppend(isA(EventSourcedAggregateRoot.class),
+        verify(mockDecorator, times(2)).decorateForAppend(isA(Aggregate.class),
                                                           isA(List.class));
     }
 
@@ -302,21 +315,22 @@ public class DisruptorCommandBusTest {
         inMemoryEventStore.storedEvents.clear();
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
+                eventBus,
                 new DisruptorConfiguration().setInvokerInterceptors(asList(mockInterceptor))
-                                            .setBufferSize(8)
-                                            .setProducerType(ProducerType.MULTI)
-                                            .setWaitStrategy(new SleepingWaitStrategy())
-                                            .setExecutor(customExecutor)
-                                            .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                                            .setInvokerThreadCount(2)
-                                            .setPublisherThreadCount(3)
-                                            .setTransactionManager(mockTransactionManager)
+                        .setBufferSize(8)
+                        .setProducerType(ProducerType.MULTI)
+                        .setWaitStrategy(new SleepingWaitStrategy())
+                        .setExecutor(customExecutor)
+                        .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
+                        .setInvokerThreadCount(2)
+                        .setPublisherThreadCount(3)
+                        .setTransactionManager(mockTransactionManager)
         );
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+                                          .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         when(mockInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class)))
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[2]).proceed());
         testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier)));
@@ -338,7 +352,7 @@ public class DisruptorCommandBusTest {
     @Test
     public void testCreateAggregate() {
         inMemoryEventStore.storedEvents.clear();
-        testSubject = new DisruptorCommandBus(inMemoryEventStore,
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus,
                                               new DisruptorConfiguration()
                                                       .setBufferSize(8)
                                                       .setProducerType(ProducerType.SINGLE)
@@ -350,7 +364,6 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
-
 
 
         testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier)));
@@ -366,7 +379,7 @@ public class DisruptorCommandBusTest {
 
     @Test(expected = IllegalStateException.class)
     public void testCommandRejectedAfterShutdown() throws InterruptedException {
-        testSubject = new DisruptorCommandBus(inMemoryEventStore);
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus);
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
@@ -377,7 +390,7 @@ public class DisruptorCommandBusTest {
 
     @Test(timeout = 10000)
     public void testCommandProcessedAndEventsStored() throws InterruptedException {
-        testSubject = new DisruptorCommandBus(inMemoryEventStore);
+        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus);
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(testSubject
                                           .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
@@ -392,10 +405,11 @@ public class DisruptorCommandBusTest {
         assertEquals("Seems that some events are not stored", 0, inMemoryEventStore.countDownLatch.getCount());
     }
 
-    private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
+    private static class StubAggregate {
 
         private static final long serialVersionUID = 8192033940704210095L;
 
+        @AggregateIdentifier
         private String identifier;
 
         private StubAggregate(String identifier) {
@@ -407,7 +421,6 @@ public class DisruptorCommandBusTest {
         public StubAggregate() {
         }
 
-        @Override
         public String getIdentifier() {
             return identifier;
         }
@@ -420,14 +433,9 @@ public class DisruptorCommandBusTest {
             apply(new FailingEvent());
         }
 
-        @Override
+        @EventSourcingHandler
         protected void handle(EventMessage event) {
             identifier = ((DomainEventMessage) event).getAggregateIdentifier();
-        }
-
-        @Override
-        protected Collection<EventSourcedEntity> getChildEntities() {
-            return Collections.emptyList();
         }
     }
 
@@ -521,15 +529,14 @@ public class DisruptorCommandBusTest {
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
-                StubAggregate aggregate = new StubAggregate(payload.getAggregateIdentifier());
-                repository.add(aggregate);
-                aggregate.doSomething();
+                repository.newInstance(() -> new StubAggregate(payload.getAggregateIdentifier()))
+                        .execute(StubAggregate::doSomething);
             } else {
-                StubAggregate aggregate = repository.load(payload.getAggregateIdentifier());
+                Aggregate<StubAggregate> aggregate = repository.load(payload.getAggregateIdentifier());
                 if (ErrorCommand.class.isAssignableFrom(command.getPayloadType())) {
-                    aggregate.createFailingEvent();
+                    aggregate.execute(StubAggregate::createFailingEvent);
                 } else {
-                    aggregate.doSomething();
+                    aggregate.execute(StubAggregate::doSomething);
                 }
             }
 

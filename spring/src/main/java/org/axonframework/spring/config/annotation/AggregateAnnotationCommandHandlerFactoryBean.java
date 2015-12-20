@@ -20,11 +20,10 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.AggregateRoot;
-import org.axonframework.repository.Repository;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -39,7 +38,7 @@ import org.springframework.context.ApplicationContextAware;
  * @author Allard Buijze
  * @since 2.1
  */
-public class AggregateAnnotationCommandHandlerFactoryBean<T extends AggregateRoot>
+public class AggregateAnnotationCommandHandlerFactoryBean<T>
         implements FactoryBean<AggregateAnnotationCommandHandler<T>>, InitializingBean, ApplicationContextAware {
 
     private CommandBus commandBus;

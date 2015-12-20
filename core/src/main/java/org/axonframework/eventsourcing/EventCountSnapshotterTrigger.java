@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
+import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -54,20 +55,20 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     }
 
     @Override
-    public List<DomainEventMessage<?>> decorateForAppend(EventSourcedAggregateRoot aggregate,
+    public List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
                                                          List<DomainEventMessage<?>> eventStream) {
-        String aggregateIdentifier = aggregate.getIdentifier();
+        String aggregateIdentifier = aggregate.identifier();
         counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
         AtomicInteger counter = counters.get(aggregateIdentifier);
         counter.addAndGet(eventStream.size());
         if (counter.get() > trigger) {
-            CurrentUnitOfWork.get().onCleanup(u -> triggerSnapshotIfRequired(aggregate.getClass(),
+            CurrentUnitOfWork.get().onCleanup(u -> triggerSnapshotIfRequired(aggregate.rootType(),
                                                                              aggregateIdentifier, counter));
         }
         return eventStream;
     }
 
-    private void triggerSnapshotIfRequired(Class<? extends EventSourcedAggregateRoot> aggregateType,
+    private void triggerSnapshotIfRequired(Class<?> aggregateType,
                                            String aggregateIdentifier, final AtomicInteger eventCount) {
         if (eventCount.get() > trigger) {
             snapshotter.scheduleSnapshot(aggregateType, aggregateIdentifier);

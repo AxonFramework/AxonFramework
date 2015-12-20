@@ -27,7 +27,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -55,8 +54,6 @@ public class SpringPrototypeAggregateFactoryTest {
         assertTrue("Aggregate's init method not invoked", aggregate.isInitialized());
         assertNotNull("ContextAware method not invoked", aggregate.getContext());
         Assert.assertEquals("it's here", aggregate.getSpringConfiguredName());
-
-        assertSame(parameterResolverFactory, aggregate.getParameterResolverFactory());
     }
 
     @Test

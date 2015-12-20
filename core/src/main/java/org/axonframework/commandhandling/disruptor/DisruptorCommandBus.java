@@ -19,22 +19,25 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.TransactionManager;
-import org.axonframework.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
@@ -121,8 +124,8 @@ public class DisruptorCommandBus implements CommandBus {
      *
      * @param eventStore The EventStore where generated events must be stored
      */
-    public DisruptorCommandBus(EventStore eventStore) {
-        this(eventStore, new DisruptorConfiguration());
+    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus) {
+        this(eventStore, eventBus, new DisruptorConfiguration());
     }
 
     /**
@@ -133,7 +136,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param configuration The configuration for the command bus
      */
     @SuppressWarnings("unchecked")
-    public DisruptorCommandBus(EventStore eventStore, DisruptorConfiguration configuration) {
+    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus, DisruptorConfiguration configuration) {
         Assert.notNull(eventStore, "eventStore may not be null");
         Assert.notNull(configuration, "configuration may not be null");
         Executor executor = configuration.getExecutor();
@@ -157,7 +160,7 @@ public class DisruptorCommandBus implements CommandBus {
         commandTargetResolver = configuration.getCommandTargetResolver();
 
         // configure invoker Threads
-        commandHandlerInvokers = initializeInvokerThreads(eventStore, configuration);
+        commandHandlerInvokers = initializeInvokerThreads(eventStore, eventBus, configuration);
         // configure publisher Threads
         EventPublisher[] publishers = initializePublisherThreads(eventStore, configuration, executor,
                                                                  transactionManager);
@@ -181,12 +184,12 @@ public class DisruptorCommandBus implements CommandBus {
         return publishers;
     }
 
-    private CommandHandlerInvoker[] initializeInvokerThreads(EventStore eventStore,
+    private CommandHandlerInvoker[] initializeInvokerThreads(EventStore eventStore, EventBus eventBus,
                                                              DisruptorConfiguration configuration) {
         CommandHandlerInvoker[] invokers;
         invokers = new CommandHandlerInvoker[configuration.getInvokerThreadCount()];
         for (int t = 0; t < invokers.length; t++) {
-            invokers[t] = new CommandHandlerInvoker(eventStore, configuration.getCache(), t);
+            invokers[t] = new CommandHandlerInvoker(eventStore, eventBus, configuration.getCache(), t);
         }
         return invokers;
     }
@@ -262,7 +265,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>              The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
+    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
         return createRepository(aggregateFactory, NoOpEventStreamDecorator.INSTANCE);
     }
 
@@ -281,7 +284,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>              The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
+    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
                                                                                 EventStreamDecorator decorator) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
             invoker.createRepository(aggregateFactory, decorator);
@@ -337,7 +340,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
     }
 
-    private static class DisruptorRepository<T extends EventSourcedAggregateRoot> implements Repository<T> {
+    private static class DisruptorRepository<T> implements Repository<T> {
 
         private final Class<T> type;
 
@@ -347,19 +350,19 @@ public class DisruptorCommandBus implements CommandBus {
 
         @SuppressWarnings("unchecked")
         @Override
-        public T load(String aggregateIdentifier, Long expectedVersion) {
-            return (T) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier, expectedVersion);
+        public Aggregate<T> load(String aggregateIdentifier, Long expectedVersion) {
+            return (Aggregate<T>) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier, expectedVersion);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public T load(String aggregateIdentifier) {
-            return (T) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier);
+        public Aggregate<T> load(String aggregateIdentifier) {
+            return (Aggregate<T>) CommandHandlerInvoker.getRepository(type).load(aggregateIdentifier);
         }
 
         @Override
-        public void add(T aggregate) {
-            CommandHandlerInvoker.getRepository(type).add(aggregate);
+        public Aggregate<T> newInstance(Supplier<T> factoryMethod) {
+            return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
         }
     }
 
@@ -373,7 +376,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public List<DomainEventMessage<?>> decorateForAppend(EventSourcedAggregateRoot aggregate,
+        public List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
                                                              List<DomainEventMessage<?>> events) {
             return events;
         }

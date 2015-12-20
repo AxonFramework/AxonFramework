@@ -20,8 +20,12 @@ import net.sf.ehcache.CacheManager;
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.EhCacheAdapter;
 import org.axonframework.cache.NoCache;
+import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.eventhandling.*;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
@@ -42,8 +46,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static java.util.Arrays.asList;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 
 /**
@@ -102,14 +108,12 @@ import static org.junit.Assert.*;
  *
  * @author patrickh
  */
-//todo fix test
-@Ignore
 public class CachingRepositoryWithNestedUnitOfWorkTest {
 
-    CachingEventSourcingRepository<Aggregate> repository;
-    UnitOfWorkFactory uowFactory;
-    EventBus eventBus;
-    Cache cache;
+    private CachingEventSourcingRepository<TestAggregate> repository;
+    private UnitOfWorkFactory uowFactory;
+    private EventBus eventBus;
+    private Cache realCache;
 
     final List<String> events = new ArrayList<>();
 
@@ -117,11 +121,13 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
+    private AggregateFactory<TestAggregate> aggregateFactory;
+    private EventStore eventStore;
 
     @Before
     public void setUp() throws Exception {
         final CacheManager cacheManager = CacheManager.getInstance();
-        cache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
+        realCache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
 
         eventBus = new SimpleEventBus();
         eventProcessor = new SimpleEventProcessor("logging");
@@ -129,35 +135,33 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         eventBus.subscribe(eventProcessor);
         events.clear();
 
-        EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(tempFolder.newFolder()));
-        AggregateFactory<Aggregate> aggregateFactory = new GenericAggregateFactory<>(Aggregate.class);
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore);
-        repository.setEventBus(eventBus);
+        eventStore = new FileSystemEventStore(new SimpleEventFileResolver(tempFolder.newFolder()));
+        aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
 
         uowFactory = new DefaultUnitOfWorkFactory();
     }
 
     @Test
     public void testWithoutCache() {
-        repository.setCache(NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     public void testWithCache() {
-        repository.setCache(cache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     public void testMinimalScenarioWithoutCache() {
-        repository.setCache(NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     public void testMinimalScenarioWithCache() {
-        repository.setCache(cache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
@@ -168,10 +172,10 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         eventProcessor.subscribe(new CommandExecutingEventListener("2", null, true));
 
         UnitOfWork uow = uowFactory.createUnitOfWork(null);
-        repository.add(new Aggregate(id));
+        repository.newInstance(() -> new TestAggregate(id));
         uow.commit();
 
-        Aggregate verify = loadAggregate(id);
+        TestAggregate verify = loadAggregate(id);
         assertEquals(2, verify.tokens.size());
         assertTrue(verify.tokens.containsAll(asList("1", "2")));
     }
@@ -202,31 +206,30 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         eventProcessor.subscribe(new CommandExecutingEventListener("UOW9", "UOW4", true));
         eventProcessor.subscribe(new CommandExecutingEventListener("UOW8", "UOW4", true));
 
-        Aggregate a = new Aggregate(id);
 
         // First command: Create Aggregate
         UnitOfWork uow1 = uowFactory.createUnitOfWork(null);
-        repository.add(a);
+        repository.newInstance(() -> new TestAggregate(id));
         uow1.commit();
 
-        Aggregate verify = loadAggregate(id);
+        TestAggregate verify = loadAggregate(id);
 
         assertEquals(id, verify.id);
-        assertEquals(7, verify.tokens.size());
         assertTrue(verify.tokens.containsAll(asList(//
                                                     "UOW3", "UOW4", "UOW5", "UOW6", "UOW7", "UOW8", "UOW9")));
         assertFalse(verify.tokens.contains("UOW10"));
+        assertEquals(7, verify.tokens.size());
         for (int i = 0; i < verify.tokens.size(); i++) {
             assertTrue("Expected event with sequence number " + i + " but got :" + events.get(i),
                        events.get(i).startsWith(i + " "));
         }
     }
 
-    private Aggregate loadAggregate(String id) {
+    private TestAggregate loadAggregate(String id) {
         UnitOfWork uow = uowFactory.createUnitOfWork(null);
-        Aggregate verify = repository.load(id);
+        Aggregate<TestAggregate> verify = repository.load(id);
         uow.rollback();
-        return verify;
+        return verify.map(Function.identity());
     }
 
     /**
@@ -277,8 +280,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;
 
                 UnitOfWork nested = uowFactory.createUnitOfWork(event);
-                Aggregate aggregate = repository.load(created.id);
-                aggregate.update(token);
+                Aggregate<TestAggregate> aggregate = repository.load(created.id);
+                aggregate.execute(r -> r.update(token));
                 nested.commit();
             }
 
@@ -286,8 +289,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                 AggregateUpdatedEvent updated = (AggregateUpdatedEvent) payload;
                 if (updated.token.equals(previousToken)) {
                     UnitOfWork nested = uowFactory.createUnitOfWork(event);
-                    Aggregate aggregate = repository.load(updated.id);
-                    aggregate.update(token);
+                    Aggregate<TestAggregate> aggregate = repository.load(updated.id);
+                    aggregate.execute(r -> r.update(token));
                     if (commit) {
                         nested.commit();
                     } else {
@@ -334,8 +337,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
-    @SuppressWarnings("serial")
-    public static class Aggregate extends AbstractAnnotatedAggregateRoot {
+    public static class TestAggregate implements Serializable {
 
         @AggregateIdentifier
         public String id;
@@ -343,10 +345,10 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         public Set<String> tokens = new HashSet<>();
 
         @SuppressWarnings("unused")
-        private Aggregate() {
+        private TestAggregate() {
         }
 
-        public Aggregate(String id) {
+        public TestAggregate(String id) {
             apply(new AggregateCreatedEvent(id));
         }
 

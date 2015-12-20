@@ -18,19 +18,24 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
+import org.axonframework.commandhandling.model.LockAwareAggregate;
+import org.axonframework.commandhandling.model.LockingRepository;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.Serializable;
+import java.util.function.Supplier;
 
 
 /**
  * Implementation of the event sourcing repository that uses a cache to improve loading performance. The cache removes
  * the need to read all events from disk, at the cost of memory usage.
- * <p/>
+ * <p>
  * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that
  * aggregate. This is done to prevent the cache from returning aggregates that may not have fully persisted to disk.
  *
@@ -38,104 +43,117 @@ import java.util.List;
  * @author Allard Buijze
  * @since 0.3
  */
-public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot> extends EventSourcingRepository<T> {
+public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T> {
 
-    private final EventStore eventStore;
     private Cache cache = NoCache.INSTANCE;
+    private final EventStore eventStore;
+    private final EventBus eventBus;
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
-     * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
+     * @see LockingRepository#LockingRepository(Class)
      */
-    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore) {
-        this(aggregateFactory, eventStore, new PessimisticLockFactory());
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
+                                          EventBus eventBus, Cache cache) {
+        this(aggregateFactory, eventStore, new PessimisticLockFactory(), eventBus, cache);
     }
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
-     * <p/>
+     * <p>
      * Note that an optimistic locking strategy is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
      * @param lockFactory      The lock factory restricting concurrent access to aggregate instances
-     * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
+     * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                          LockFactory lockFactory) {
-        super(aggregateFactory, eventStore, lockFactory);
+                                          LockFactory lockFactory, EventBus eventBus, Cache cache) {
+        super(aggregateFactory, eventStore, lockFactory, eventBus);
+        this.cache = cache;
         this.eventStore = eventStore;
+        this.eventBus = eventBus;
     }
 
     @Override
-    public void add(T aggregate) {
-        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregate.getIdentifier()));
-        super.add(aggregate);
+    protected void prepareForCommit(LockAwareAggregate<T, EventSourcedAggregate<T>> aggregate) {
+        super.prepareForCommit(aggregate);
+        CurrentUnitOfWork.get().onRollback(
+                (u, e) -> cache.remove(aggregate.identifier())
+        );
+
     }
 
     @Override
-    protected void postSave(T aggregate) {
-        super.postSave(aggregate);
-        cache.put(aggregate.getIdentifier(), aggregate);
+    protected EventSourcedAggregate<T> doCreateNewForLock(Supplier<T> factoryMethod) {
+        EventSourcedAggregate<T> aggregate = super.doCreateNewForLock(factoryMethod);
+        String aggregateIdentifier = aggregate.identifier();
+        // TODO: Add an entry in the cache which is serializable
+        cache.put(aggregateIdentifier, new CacheEntry<>(aggregate));
+        return aggregate;
     }
 
     @Override
-    protected void postDelete(T aggregate) {
-        super.postDelete(aggregate);
-        cache.put(aggregate.getIdentifier(), aggregate);
+    protected void doSaveWithLock(EventSourcedAggregate<T> aggregate) {
+        super.doSaveWithLock(aggregate);
+        cache.put(aggregate.identifier(), new CacheEntry<>(aggregate));
+    }
+
+    @Override
+    protected void doDeleteWithLock(EventSourcedAggregate<T> aggregate) {
+        super.doDeleteWithLock(aggregate);
+        cache.put(aggregate.identifier(), new CacheEntry<>(aggregate));
     }
 
     /**
      * Perform the actual loading of an aggregate. The necessary locks have been obtained. If the aggregate is
-     * available
-     * in the cache, it is returned from there. Otherwise the underlying persistence logic is called to retrieve the
-     * aggregate.
+     * available in the cache, it is returned from there. Otherwise the underlying persistence logic is called to
+     * retrieve the aggregate.
      *
      * @param aggregateIdentifier the identifier of the aggregate to load
      * @param expectedVersion     The expected version of the aggregate
      * @return the fully initialized aggregate
      */
-    @SuppressWarnings({"unchecked"})
     @Override
-    public T doLoad(String aggregateIdentifier, Long expectedVersion) {
-        T aggregate = cache.get(aggregateIdentifier);
+    protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
+        EventSourcedAggregate<T> aggregate = null;
+        CacheEntry<T> cacheEntry = cache.get(aggregateIdentifier);
+        if (cacheEntry != null) {
+            aggregate = cacheEntry.recreateAggregate(aggregateModel(), eventBus, eventStore);
+        }
         if (aggregate == null) {
-            // if the event store doesn't support partial stream loading, we need to load the aggregate from the event store entirely
-            aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
-        } else if (!hasExpectedVersion(expectedVersion, aggregate.getVersion())) {
-            // the event store support partial stream reading, so let's read the unseen events
-            resolveConflicts(aggregate,
-                             readToList(eventStore.readEvents(aggregateIdentifier,
-                                                              expectedVersion + 1, aggregate.getVersion())));
+            aggregate = super.doLoadWithLock(aggregateIdentifier, expectedVersion);
         } else if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
-        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregateIdentifier));
         return aggregate;
     }
 
-    private List<DomainEventMessage<?>> readToList(DomainEventStream domainEventStream) {
-        List<DomainEventMessage<?>> unseenEvents = new ArrayList<>();
-        while (domainEventStream.hasNext()) {
-            unseenEvents.add(domainEventStream.next());
+    private static class CacheEntry<T>  implements Serializable {
+
+        private final T aggregateRoot;
+        private final Long version;
+        private final boolean deleted;
+
+        private final transient EventSourcedAggregate<T> aggregate;
+
+        public CacheEntry(EventSourcedAggregate<T> aggregate) {
+            this.aggregate = aggregate;
+            this.aggregateRoot = aggregate.getAggregateRoot();
+            this.version = aggregate.version();
+            this.deleted = aggregate.isDeleted();
         }
-        return unseenEvents;
-    }
 
-
-    private boolean hasExpectedVersion(Long expectedVersion, Long actualVersion) {
-        return expectedVersion == null || (actualVersion != null && actualVersion.equals(expectedVersion));
-    }
-
-    /**
-     * Set the cache to use for this repository. If a cache is not set, caching is disabled for this implementation.
-     *
-     * @param cache the cache to use
-     */
-    public void setCache(Cache cache) {
-        this.cache = cache;
+        public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model,
+                                                          EventBus eventBus, EventStore eventStore) {
+            if (aggregate != null) {
+                return aggregate;
+            }
+            return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventBus, eventStore);
+        }
     }
 }

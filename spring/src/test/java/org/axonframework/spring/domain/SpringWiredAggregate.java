@@ -16,8 +16,6 @@
 
 package org.axonframework.spring.domain;
 
-import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -25,7 +23,7 @@ import org.springframework.context.ApplicationContextAware;
 /**
  * @author Allard Buijze
  */
-public class SpringWiredAggregate extends AbstractAnnotatedAggregateRoot implements ApplicationContextAware {
+public class SpringWiredAggregate implements ApplicationContextAware {
 
     private transient ApplicationContext context;
     private transient String springConfiguredName;
@@ -59,7 +57,4 @@ public class SpringWiredAggregate extends AbstractAnnotatedAggregateRoot impleme
         this.initialized = true;
     }
 
-    public ParameterResolverFactory getParameterResolverFactory() {
-        return createParameterResolverFactory();
-    }
 }

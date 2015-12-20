@@ -33,5 +33,5 @@ public interface Snapshotter {
      * @param aggregateType      the type of the aggregate to take the snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
-    void scheduleSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType, String aggregateIdentifier);
+    void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier);
 }
