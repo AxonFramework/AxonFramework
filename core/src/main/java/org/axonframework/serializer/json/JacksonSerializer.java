@@ -46,6 +46,7 @@ import org.joda.time.ReadableInstant;
 import org.joda.time.YearMonth;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Serializer implementation that uses Jackson to serialize objects into a JSON format. Although the Jackson serializer
@@ -61,6 +62,7 @@ public class JacksonSerializer implements Serializer {
     private final ConverterFactory converterFactory;
     private final ObjectMapper objectMapper;
     private final ClassLoader classLoader;
+    private final ConcurrentHashMap<String, Class> classCache = new ConcurrentHashMap<String, Class>();
 
     /**
      * Initialize the serializer with a default ObjectMapper instance. Revisions are resolved using {@link
@@ -241,13 +243,22 @@ public class JacksonSerializer implements Serializer {
 
     @Override
     public Class classForType(SerializedType type) throws UnknownSerializedTypeException {
+        final String cn = resolveClassName(type);
+        Class result = classCache.get(cn);
+        if (result == null){
+            result = loadClassForType( type);
+            classCache.putIfAbsent( cn, result);
+        }
+        return result;
+    }
+
+    private Class loadClassForType(SerializedType type) throws UnknownSerializedTypeException {
         try {
             return classLoader.loadClass(resolveClassName(type));
         } catch (ClassNotFoundException e) {
             throw new UnknownSerializedTypeException(type, e);
         }
     }
-
     /**
      * Resolve the class name from the given <code>serializedType</code>. This method may be overridden to customize
      * the names used to denote certain classes, for example, by leaving out a certain base package for brevity.
