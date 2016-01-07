@@ -17,6 +17,7 @@
 package org.axonframework.common.annotation;
 
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -30,7 +31,7 @@ public final class HandlerComparator {
     }
 
     private static int compareHierarchy(Class<?> o1, Class<?> o2) {
-        if (o1.equals(o2)) {
+        if (Objects.equals(o1, o2)) {
             return 0;
         } else if (o1.isAssignableFrom(o2)) {
             return 1;
