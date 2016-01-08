@@ -16,9 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventStream;
-
 import java.util.Collection;
+import java.util.List;
 
 /**
  * EventStreamDecorator implementation that delegates to several other decorator instances.
@@ -32,33 +31,32 @@ public class CompositeEventStreamDecorator implements EventStreamDecorator {
 
     /**
      * Initialize the decorator, delegating to the given <code>eventStreamDecorators</code>. The decorators are
-     * invoked in the iterator's order on {@link #decorateForRead(String, Object, org.axonframework.domain.DomainEventStream)},
-     * and in revese order on {@link #decorateForAppend(String, EventSourcedAggregateRoot,
-     * org.axonframework.domain.DomainEventStream)}.
+     * invoked in the iterator's order on
+     * {@link #decorateForRead(String, DomainEventStream)},
+     * and in reverse order on {@link #decorateForAppend(EventSourcedAggregateRoot, java.util.List)}.
      *
      * @param eventStreamDecorators The decorators to decorate Event Streams with
      */
     public CompositeEventStreamDecorator(Collection<EventStreamDecorator> eventStreamDecorators) {
-        this.eventStreamDecorators = eventStreamDecorators.toArray(new EventStreamDecorator[eventStreamDecorators
-                .size()]);
+        this.eventStreamDecorators = eventStreamDecorators.toArray(
+                new EventStreamDecorator[eventStreamDecorators.size()]);
     }
 
     @Override
-    public DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
-                                             DomainEventStream eventStream) {
+    public DomainEventStream decorateForRead(String aggregateIdentifier, DomainEventStream eventStream) {
         DomainEventStream events = eventStream;
         for (EventStreamDecorator decorator : eventStreamDecorators) {
-            events = decorator.decorateForRead(aggregateType, aggregateIdentifier, events);
+            events = decorator.decorateForRead(aggregateIdentifier, events);
         }
         return events;
     }
 
     @Override
-    public DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
-                                               DomainEventStream eventStream) {
-        DomainEventStream events = eventStream;
+    public List<DomainEventMessage<?>> decorateForAppend(EventSourcedAggregateRoot aggregate,
+                                                         List<DomainEventMessage<?>> eventStream) {
+        List<DomainEventMessage<?>> events = eventStream;
         for (int i = eventStreamDecorators.length - 1; i >= 0; i--) {
-            events = eventStreamDecorators[i].decorateForAppend(aggregateType, aggregate, events);
+            events = eventStreamDecorators[i].decorateForAppend(aggregate, events);
         }
         return events;
     }

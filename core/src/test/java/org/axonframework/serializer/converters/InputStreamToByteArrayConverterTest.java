@@ -45,7 +45,7 @@ public class InputStreamToByteArrayConverterTest {
         byte[] bytes = "Hello, world!".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         SerializedObject<byte[]> actual = testSubject
-                .convert(new SimpleSerializedObject<InputStream>(inputStream, InputStream.class, type));
+                .convert(new SimpleSerializedObject<>(inputStream, InputStream.class, type));
 
         assertEquals(type, actual.getType());
         assertArrayEquals(bytes, actual.getData());

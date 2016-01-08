@@ -208,7 +208,7 @@ public class JdbcSagaRepository extends AbstractSagaRepository {
             statement = sqldef.sql_findAssocSagaIdentifiers(conn, associationValue.getKey(),
                                                             associationValue.getValue(), typeOf(type));
             resultSet = statement.executeQuery();
-            Set<String> result = new TreeSet<String>();
+            Set<String> result = new TreeSet<>();
             while (resultSet.next()) {
                 result.add(resultSet.getString(1));
             }

@@ -17,15 +17,16 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
@@ -34,12 +35,11 @@ import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.SimpleResourceInjector;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
-import static org.axonframework.domain.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
  * Simple Example that shows how to Create Saga instances, schedule deadlines and inject resources
@@ -63,15 +63,11 @@ public class RunSaga {
 
         // let's register a Command Handler that writes to System Out so we can see what happens
         commandBus.subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                new CommandHandler<MarkToDoItemOverdueCommand>() {
-                    @Override
-                    public Object handle(CommandMessage<MarkToDoItemOverdueCommand> commandMessage,
-                                         UnitOfWork unitOfWork) throws Throwable {
-                        System.out.println(String.format("Got command to mark [%s] overdue!",
-                                commandMessage.getPayload().getTodoId()));
-                        return null;
-                    }
-                });
+                             (CommandMessage<?> commandMessage, UnitOfWork unitOfWork) -> {
+                                 System.out.println(String.format("Got command to mark [%s] overdue!",
+                                         ((MarkToDoItemOverdueCommand) commandMessage.getPayload()).getTodoId()));
+                                 return null;
+                             });
 
         // The Saga will schedule some deadlines in our sample
         final ScheduledExecutorService executorService = newSingleThreadScheduledExecutor();
@@ -86,11 +82,10 @@ public class RunSaga {
         sagaFactory.setResourceInjector(new SimpleResourceInjector(eventScheduler, commandGateway));
 
         // Sagas instances are managed and tracked by a SagaManager.
-        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(sagaRepository, sagaFactory,
-                eventBus, ToDoSaga.class);
+        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(sagaRepository, sagaFactory, ToDoSaga.class);
 
         // and we need to subscribe the Saga Manager to the Event Bus
-        sagaManager.subscribe();
+        eventBus.subscribe(new SimpleEventProcessor("saga", sagaManager));
 
         // That's the infrastructure we need...
         // Let's pretend a few things are happening

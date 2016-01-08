@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 /**
  * Interface describing an instance of a visitor that receives events for processing.

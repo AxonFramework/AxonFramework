@@ -80,7 +80,7 @@ public class AssociationValueMapTest {
 
     @Test
     public void testFindAssociations() {
-        List<AssociationValue> usedAssociations = new ArrayList<AssociationValue>(1000);
+        List<AssociationValue> usedAssociations = new ArrayList<>(1000);
         for (int t = 0; t < 1000; t++) {
             String key = UUID.randomUUID().toString();
             for (int i = 0; i < 10; i++) {

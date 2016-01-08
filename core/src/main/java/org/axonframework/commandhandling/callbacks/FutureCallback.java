@@ -18,10 +18,10 @@ package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -30,63 +30,20 @@ import java.util.concurrent.TimeoutException;
  * mechanism. This callback allows the caller to synchronize calls when an asynchronous command bus is being used.
  *
  * @param <R> the type of result of the command handling
+ * @param <C> The type of payload of the dispatched command
  * @author Allard Buijze
  * @since 0.6
  */
-public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
-
-    private volatile R result;
-    private volatile Throwable failure;
-
-    private final CountDownLatch latch = new CountDownLatch(1);
+public class FutureCallback<C, R> extends CompletableFuture<R> implements CommandCallback<C, R> {
 
     @Override
-    public void onSuccess(R executionResult) {
-        this.result = executionResult;
-        latch.countDown();
+    public void onSuccess(CommandMessage<? extends C> commandMessage, R executionResult) {
+        super.complete(executionResult);
     }
 
     @Override
-    public void onFailure(Throwable cause) {
-        this.failure = cause;
-        latch.countDown();
-    }
-
-    /**
-     * Waits if necessary for the command handling to complete, and then returns its result.
-     *
-     * @return the result of the command handler execution.
-     *
-     * @throws InterruptedException if the current thread is interrupted while waiting
-     * @throws ExecutionException   if the command handler threw an exception
-     */
-    @Override
-    public R get() throws InterruptedException, ExecutionException {
-        if (!isDone()) {
-            latch.await();
-        }
-        return getFutureResult();
-    }
-
-    /**
-     * Waits if necessary for at most the given time for the command handling to complete, and then retrieves its
-     * result, if available.
-     *
-     * @param timeout the maximum time to wait
-     * @param unit    the time unit of the timeout argument
-     * @return the result of the command handler execution.
-     *
-     * @throws InterruptedException if the current thread is interrupted while waiting
-     * @throws TimeoutException     if the wait timed out
-     * @throws ExecutionException   if the command handler threw an exception
-     * @see #getResult(long, java.util.concurrent.TimeUnit)
-     */
-    @Override
-    public R get(long timeout, TimeUnit unit) throws TimeoutException, InterruptedException, ExecutionException {
-        if (!isDone() && !latch.await(timeout, unit)) {
-            throw new TimeoutException("A Timeout occurred while waiting for a Command Callback");
-        }
-        return getFutureResult();
+    public void onFailure(CommandMessage commandMessage, Throwable cause) {
+        super.completeExceptionally(cause);
     }
 
     /**
@@ -104,15 +61,14 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      * @see #get()
      */
     public R getResult() {
-        if (!isDone()) {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return null;
-            }
+        try {
+            return get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            throw asRuntime(e);
         }
-        return doGetResult();
     }
 
     /**
@@ -124,18 +80,34 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      * <p/>
      * If the timeout expired or the thread is interrupted before completion, <code>null</code> is returned. In case of
      * an interrupt, the interrupt flag will have been set back on the thread. To distinguish between an interrupt and
-     * a
-     * <code>null</code> result, use the {@link #isDone()}
+     * a <code>null</code> result, use the {@link #isDone()}
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the timeout argument
      * @return the result of the command handler execution.
      */
     public R getResult(long timeout, TimeUnit unit) {
-        if (!awaitCompletion(timeout, unit)) {
+        try {
+            return get(timeout, unit);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return null;
+        } catch (TimeoutException e) {
+            return null;
+        } catch (ExecutionException e) {
+            throw asRuntime(e);
         }
-        return doGetResult();
+    }
+
+    private RuntimeException asRuntime(Exception e) {
+        Throwable failure = e.getCause();
+        if (failure instanceof Error) {
+            throw (Error) failure;
+        } else if (failure instanceof RuntimeException) {
+            return (RuntimeException) failure;
+        } else {
+            return new CommandExecutionException("An exception occurred while executing a command", failure);
+        }
     }
 
     /**
@@ -144,68 +116,19 @@ public class FutureCallback<R> implements CommandCallback<R>, Future<R> {
      * @param timeout The amount of time to wait for command processing to complete
      * @param unit    The unit in which the timeout is expressed
      * @return <code>true</code> if command processing completed before the timeout expired, otherwise
-     *         <code>false</code>.
+     * <code>false</code>.
      */
     public boolean awaitCompletion(long timeout, TimeUnit unit) {
         try {
-            return isDone() || latch.await(timeout, unit);
+            get(timeout, unit);
+            return true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return false;
-        }
-    }
-
-    /**
-     * Always returns <code>false</code>, since command execution cannot be cancelled.
-     *
-     * @param mayInterruptIfRunning <tt>true</tt> if the thread executing the command should be interrupted; otherwise,
-     *                              in-progress tasks are allowed to complete
-     * @return <code>false</code>
-     */
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
-    }
-
-    /**
-     * Always returns false, since command execution cannot be cancelled.
-     *
-     * @return false
-     */
-    @Override
-    public boolean isCancelled() {
-        return false;
-    }
-
-    /**
-     * Indicates whether command handler execution has finished.
-     *
-     * @return <code>true</code> if command handler execution has finished, otherwise <code>false</code>.
-     */
-    @Override
-    public boolean isDone() {
-        return latch.getCount() == 0L;
-    }
-
-    private R doGetResult() {
-        if (failure != null) {
-            if (failure instanceof Error) {
-                throw (Error) failure;
-            } else if (failure instanceof RuntimeException) {
-                throw (RuntimeException) failure;
-            } else {
-                throw new CommandExecutionException("An exception occurred while executing a command", failure);
-            }
-        } else {
-            return result;
-        }
-    }
-
-    private R getFutureResult() throws ExecutionException {
-        if (failure != null) {
-            throw new ExecutionException(failure);
-        } else {
-            return result;
+        } catch (ExecutionException e) {
+            return true;
+        } catch (TimeoutException e) {
+            return false;
         }
     }
 }

@@ -16,25 +16,26 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.common.lock.Lock;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.SaveAggregateCallback;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
-import org.junit.*;
-import org.mockito.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static org.junit.Assert.*;
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -44,17 +45,26 @@ public class LockingRepositoryTest {
 
     private LockingRepository<StubAggregate> testSubject;
     private EventBus mockEventBus;
-    private LockManager lockManager;
+    private LockFactory lockFactory;
+    private Lock lock;
+    private static final Message<?> MESSAGE = new GenericMessage<Object>("test");
 
     @Before
     public void setUp() {
         mockEventBus = mock(EventBus.class);
-        lockManager = spy(new OptimisticLockManager());
-        testSubject = new InMemoryLockingRepository(lockManager);
+        lockFactory = spy(new PessimisticLockFactory());
+        when(lockFactory.obtainLock(anyString()))
+                        .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
+        testSubject = new InMemoryLockingRepository(lockFactory);
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
 
-        // some UoW is started somewhere, but not shutdown in the same test.
+    @After
+    public void tearDown() {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
@@ -62,62 +72,56 @@ public class LockingRepositoryTest {
 
     @Test
     public void testStoreNewAggregate() {
-        DefaultUnitOfWork.startAndGet();
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
         CurrentUnitOfWork.commit();
 
-        verify(lockManager).obtainLock(aggregate.getIdentifier());
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
         verify(mockEventBus).publish(isA(DomainEventMessage.class));
     }
 
     @Test
     public void testLoadAndStoreAggregate() {
-        DefaultUnitOfWork.startAndGet();
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         aggregate.doSomething();
         testSubject.add(aggregate);
-        verify(lockManager).obtainLock(aggregate.getIdentifier());
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
-        verify(lockManager).releaseLock(aggregate.getIdentifier());
-        reset(lockManager);
+        verify(lock).release();
+        reset(lockFactory);
 
-        DefaultUnitOfWork.startAndGet();
+        startAndGetUnitOfWork();
         StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
-        verify(lockManager).obtainLock(aggregate.getIdentifier());
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
         loadedAggregate.doSomething();
         CurrentUnitOfWork.commit();
 
-        InOrder inOrder = inOrder(lockManager);
-        inOrder.verify(lockManager, atLeastOnce()).validateLock(loadedAggregate);
         verify(mockEventBus, times(2)).publish(any(DomainEventMessage.class));
-        inOrder.verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
+        verify(lock).release();
     }
 
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testLoadAndStoreAggregate_LockReleasedOnException() {
-        DefaultUnitOfWork.startAndGet();
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
+
         aggregate.doSomething();
         testSubject.add(aggregate);
-        verify(lockManager).obtainLock(aggregate.getIdentifier());
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
-        verify(lockManager).releaseLock(aggregate.getIdentifier());
-        reset(lockManager);
+        verify(lock).release();
+        reset(lockFactory);
 
-        DefaultUnitOfWork.startAndGet();
-        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
-        verify(lockManager).obtainLock(aggregate.getIdentifier());
+        startAndGetUnitOfWork();
+        testSubject.load(aggregate.getIdentifier(), 0L);
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
-        CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
-            @Override
-            public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-                                        List<EventMessage> events) {
-                throw new RuntimeException("Mock Exception");
-            }
+        CurrentUnitOfWork.get().onPrepareCommit(u -> {
+            throw new RuntimeException("Mock Exception");
         });
         try {
             CurrentUnitOfWork.commit();
@@ -127,37 +131,34 @@ public class LockingRepositoryTest {
         }
 
         // make sure the lock is released
-        verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
+        verify(lock).release();
     }
 
-    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() {
-        lockManager = spy(new PessimisticLockManager());
-        testSubject = new InMemoryLockingRepository(lockManager);
+        lockFactory = spy(new PessimisticLockFactory());
+        testSubject = new InMemoryLockingRepository(lockFactory);
         testSubject.setEventBus(mockEventBus);
         testSubject = spy(testSubject);
 
         // we do the same test, but with a pessimistic lock, which has a different way of "re-acquiring" a lost lock
-        DefaultUnitOfWork.startAndGet();
+        startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
+        when(lockFactory.obtainLock(aggregate.getIdentifier()))
+                        .thenAnswer(invocation -> lock = spy((Lock) invocation.callRealMethod()));
         aggregate.doSomething();
         testSubject.add(aggregate);
-        verify(lockManager).obtainLock(aggregate.getIdentifier());
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
         CurrentUnitOfWork.commit();
-        verify(lockManager).releaseLock(aggregate.getIdentifier());
-        reset(lockManager);
+        verify(lock).release();
+        reset(lockFactory);
 
-        DefaultUnitOfWork.startAndGet();
-        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
-        verify(lockManager).obtainLock(aggregate.getIdentifier());
+        startAndGetUnitOfWork();
+        testSubject.load(aggregate.getIdentifier(), 0L);
+        verify(lockFactory).obtainLock(aggregate.getIdentifier());
 
-        CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
-            @Override
-            public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-                                        List<EventMessage> events) {
-                throw new RuntimeException("Mock Exception");
-            }
+        CurrentUnitOfWork.get().onPrepareCommit(u -> {
+            throw new RuntimeException("Mock Exception");
         });
 
         try {
@@ -168,79 +169,36 @@ public class LockingRepositoryTest {
         }
 
         // make sure the lock is released
-        verify(lockManager).releaseLock(loadedAggregate.getIdentifier());
+        verify(lock).release();
     }
 
-    @Test
-    public void testSaveAggregate_RefusedDueToLackingLock() {
-        lockManager = spy(new PessimisticLockManager());
-        testSubject = new InMemoryLockingRepository(lockManager);
-        testSubject.setEventBus(mockEventBus);
-        testSubject = spy(testSubject);
-        EventBus eventBus = mock(EventBus.class);
-
-        DefaultUnitOfWork.startAndGet();
-        StubAggregate aggregate = new StubAggregate();
-        aggregate.doSomething();
-        testSubject.add(aggregate);
-        CurrentUnitOfWork.commit();
-
-        DefaultUnitOfWork.startAndGet();
-        StubAggregate loadedAggregate = testSubject.load(aggregate.getIdentifier(), 0L);
-        loadedAggregate.doSomething();
-        CurrentUnitOfWork.commit();
-
-        // this tricks the UnitOfWork to save this aggregate, without loading it.
-        DefaultUnitOfWork.startAndGet();
-        CurrentUnitOfWork.get().registerAggregate(loadedAggregate,
-                                                  eventBus,
-                                                  new SaveAggregateCallback<StubAggregate>() {
-                                                      @Override
-                                                      public void save(StubAggregate aggregate) {
-                                                          testSubject.doSave(aggregate);
-                                                      }
-                                                  });
-        loadedAggregate.doSomething();
-        try {
-            CurrentUnitOfWork.commit();
-            fail("This should have failed due to lacking lock");
-        } catch (ConcurrencyException e) {
-            // that's ok
-        }
+    private UnitOfWork startAndGetUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(MESSAGE);
+        uow.resources().put(EventBus.KEY, mockEventBus);
+        return uow;
     }
 
-    static class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
+    private static class InMemoryLockingRepository extends LockingRepository<StubAggregate> {
 
-        private Map<Object, StubAggregate> store = new HashMap<Object, StubAggregate>();
-        private int saveCount;
+        private Map<Object, StubAggregate> store = new HashMap<>();
 
-        public InMemoryLockingRepository(LockManager lockManager) {
-            super(StubAggregate.class, lockManager);
+        public InMemoryLockingRepository(LockFactory lockFactory) {
+            super(StubAggregate.class, lockFactory);
         }
 
         @Override
-        protected void doSaveWithLock(StubAggregate aggregate) {
+        protected void doSave(StubAggregate aggregate) {
             store.put(aggregate.getIdentifier(), aggregate);
-            saveCount++;
         }
 
         @Override
-        protected void doDeleteWithLock(StubAggregate aggregate) {
+        protected void doDelete(StubAggregate aggregate) {
             store.remove(aggregate.getIdentifier());
-            saveCount++;
         }
 
         @Override
-        protected StubAggregate doLoad(Object aggregateIdentifier, Long expectedVersion) {
+        protected StubAggregate doLoad(String aggregateIdentifier, Long expectedVersion) {
             return store.get(aggregateIdentifier);
-        }
-
-        public int getSaveCount() {
-            return saveCount;
-        }
-
-        public void resetSaveCount() {
-            saveCount = 0;
         }
     }
 }

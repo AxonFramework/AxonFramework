@@ -75,7 +75,7 @@ public class MongoSagaRepository extends AbstractSagaRepository {
         final BasicDBObject value = associationValueQuery(type, associationValue);
 
         DBCursor dbCursor = mongoTemplate.sagaCollection().find(value, new BasicDBObject("sagaIdentifier", 1));
-        Set<String> found = new TreeSet<String>();
+        Set<String> found = new TreeSet<>();
         while (dbCursor.hasNext()) {
             found.add((String) dbCursor.next().get("sagaIdentifier"));
         }

@@ -17,10 +17,9 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 
 /**
  * @author Allard Buijze
@@ -45,29 +44,28 @@ class MyCommandHandler {
 
     @CommandHandler
     public void handleTestCommand(TestCommand testCommand) {
-        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
+        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier().toString(), null);
         aggregate.doSomething();
     }
 
     @CommandHandler
     public void handleStrangeCommand(StrangeCommand testCommand) {
-        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier(), null);
+        StandardAggregate aggregate = repository.load(testCommand.getAggregateIdentifier().toString(), null);
         aggregate.doSomething();
-        eventBus.publish(new GenericEventMessage<MyApplicationEvent>(new MyApplicationEvent()));
-        CurrentUnitOfWork.get().publishEvent(new GenericEventMessage<MyApplicationEvent>(new MyApplicationEvent()),
-                                             eventBus);
+        eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
+        eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
         throw new StrangeCommandReceivedException("Strange command received");
     }
 
     @CommandHandler
     public void handleIllegalStateChange(IllegalStateChangeCommand command) {
-        StandardAggregate aggregate = repository.load(command.getAggregateIdentifier());
+        StandardAggregate aggregate = repository.load(command.getAggregateIdentifier().toString());
         aggregate.doSomethingIllegal(command.getNewIllegalValue());
     }
 
     @CommandHandler
     public void handleDeleteAggregate(DeleteCommand command) {
-        repository.load(command.getAggregateIdentifier()).delete(command.isAsIllegalChange());
+        repository.load(command.getAggregateIdentifier().toString()).delete(command.isAsIllegalChange());
     }
 
     public void setRepository(Repository<StandardAggregate> repository) {

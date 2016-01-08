@@ -1,12 +1,12 @@
 package org.axonframework.saga.annotation;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.StubSaga;
 import org.axonframework.testutils.MockException;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 

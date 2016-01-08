@@ -33,12 +33,12 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class InMemorySagaRepository implements SagaRepository {
 
-    private final ConcurrentMap<String, Saga> managedSagas = new ConcurrentHashMap<String, Saga>();
+    private final ConcurrentMap<String, Saga> managedSagas = new ConcurrentHashMap<>();
 
     @SuppressWarnings("unchecked")
     @Override
     public Set<String> find(Class<? extends Saga> type, AssociationValue associationValue) {
-        Set<String> result = new TreeSet<String>();
+        Set<String> result = new TreeSet<>();
         for (Saga saga : managedSagas.values()) {
             if (saga.getAssociationValues().contains(associationValue) && type.isInstance(saga)) {
                 result.add(saga.getSagaIdentifier());

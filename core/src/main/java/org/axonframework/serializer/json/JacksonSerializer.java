@@ -22,28 +22,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import org.axonframework.domain.MetaData;
-import org.axonframework.serializer.AnnotationRevisionResolver;
-import org.axonframework.serializer.ChainingConverterFactory;
-import org.axonframework.serializer.ConverterFactory;
-import org.axonframework.serializer.RevisionResolver;
-import org.axonframework.serializer.SerializationException;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.SimpleSerializedType;
-import org.axonframework.serializer.UnknownSerializedTypeException;
-import org.joda.time.DateTime;
-import org.joda.time.Instant;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.joda.time.LocalTime;
-import org.joda.time.MonthDay;
-import org.joda.time.MutableDateTime;
-import org.joda.time.ReadableInstant;
-import org.joda.time.YearMonth;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.serializer.*;
 
 import java.io.IOException;
 
@@ -138,18 +119,8 @@ public class JacksonSerializer implements Serializer {
         this.classLoader = classLoader == null ? getClass().getClassLoader() : classLoader;
         this.objectMapper.registerModule(
                 new SimpleModule("Axon-Jackson Module")
-                        .addSerializer(ReadableInstant.class, new ToStringSerializer())
-                        .addDeserializer(MetaData.class, new MetaDataDeserializer())
-                        .addDeserializer(DateTime.class, new JodaDeserializer<DateTime>(DateTime.class))
-                        .addDeserializer(Instant.class, new JodaDeserializer<Instant>(Instant.class))
-                        .addDeserializer(MutableDateTime.class,
-                                         new JodaDeserializer<MutableDateTime>(MutableDateTime.class))
-                        .addDeserializer(YearMonth.class, new JodaDeserializer<YearMonth>(YearMonth.class))
-                        .addDeserializer(MonthDay.class, new JodaDeserializer<MonthDay>(MonthDay.class))
-                        .addDeserializer(LocalDate.class, new JodaDeserializer<LocalDate>(LocalDate.class))
-                        .addDeserializer(LocalTime.class, new JodaDeserializer<LocalTime>(LocalTime.class))
-                        .addDeserializer(LocalDateTime.class, new JodaDeserializer<LocalDateTime>(LocalDateTime.class))
-        );
+                        .addDeserializer(MetaData.class, new MetaDataDeserializer()));
+        this.objectMapper.registerModule(new JSR310Module());
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
         }
@@ -172,14 +143,14 @@ public class JacksonSerializer implements Serializer {
         try {
             if (String.class.equals(expectedRepresentation)) {
                 //noinspection unchecked
-                return new SimpleSerializedObject<T>((T) getWriter().writeValueAsString(object),
+                return new SimpleSerializedObject<>((T) getWriter().writeValueAsString(object),
                                                      expectedRepresentation, typeForClass(object.getClass()));
             }
 
             byte[] serializedBytes = getWriter().writeValueAsBytes(object);
             T serializedContent = converterFactory.getConverter(byte[].class, expectedRepresentation)
                                                   .convert(serializedBytes);
-            return new SimpleSerializedObject<T>(serializedContent, expectedRepresentation,
+            return new SimpleSerializedObject<>(serializedContent, expectedRepresentation,
                                                  typeForClass(object.getClass()));
         } catch (JsonProcessingException e) {
             throw new SerializationException("Unable to serialize object", e);

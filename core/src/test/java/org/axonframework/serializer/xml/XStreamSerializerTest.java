@@ -16,19 +16,23 @@
 
 package org.axonframework.serializer.xml;
 
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.serializer.Revision;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateMidnight;
-import org.joda.time.DateTime;
-import org.joda.time.Period;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Period;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -72,15 +76,15 @@ public class XStreamSerializerTest {
 
     @Test
     public void testPackageAlias() throws UnsupportedEncodingException {
-        testSubject.addPackageAlias("axondomain", "org.axonframework.domain");
+        testSubject.addPackageAlias("axones", "org.axonframework.eventsourcing");
         testSubject.addPackageAlias("axon", "org.axonframework");
 
         SerializedObject<byte[]> serialized = testSubject.serialize(new StubDomainEvent(), byte[].class);
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse("Package name found in:" +  asString, asString.contains("org.axonframework.domain"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
-        assertTrue(asString.contains("axondomain"));
+        assertTrue(asString.contains("axones"));
     }
 
     @Test
@@ -91,7 +95,7 @@ public class XStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("org.axonframework.domain"));
         assertTrue(asString.contains("<stub"));
-        StubDomainEvent deserialized = (StubDomainEvent) testSubject.deserialize(serialized);
+        StubDomainEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(StubDomainEvent.class, deserialized.getClass());
     }
 
@@ -103,7 +107,7 @@ public class XStreamSerializerTest {
         String asString = new String(serialized.getData(), "UTF-8");
         assertFalse(asString.contains("period"));
         assertTrue(asString.contains("<relevantPeriod"));
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertNotNull(deserialized);
     }
 
@@ -131,7 +135,7 @@ public class XStreamSerializerTest {
     @Test
     public void testSerializeWithSpecialCharacters_WithDom4JUpcasters() {
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertArrayEquals(SPECIAL__CHAR__STRING.getBytes(), deserialized.getName().getBytes());
     }
 
@@ -142,7 +146,7 @@ public class XStreamSerializerTest {
     @Test
     public void testSerializeWithSpecialCharacters_WithoutUpcasters() {
         SerializedObject<byte[]> serialized = testSubject.serialize(new TestEvent(SPECIAL__CHAR__STRING), byte[].class);
-        TestEvent deserialized = (TestEvent) testSubject.deserialize(serialized);
+        TestEvent deserialized = testSubject.deserialize(serialized);
         assertEquals(SPECIAL__CHAR__STRING, deserialized.getName());
     }
 
@@ -154,15 +158,15 @@ public class XStreamSerializerTest {
 
         private static final long serialVersionUID = 1L;
         private String name;
-        private DateMidnight date;
-        private DateTime dateTime;
+        private LocalDate date;
+        private Instant dateTime;
         private Period period;
 
         public TestEvent(String name) {
             this.name = name;
-            this.date = new DateMidnight();
-            this.dateTime = new DateTime();
-            this.period = new Period(100);
+            this.date = LocalDate.now();
+            this.dateTime = Instant.now();
+            this.period = Period.ofDays(100);
         }
 
         public String getName() {

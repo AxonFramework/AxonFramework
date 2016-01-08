@@ -16,30 +16,32 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.unitofwork.Transaction;
+import org.axonframework.messaging.unitofwork.TransactionManager;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.saga.Saga;
-import org.axonframework.unitofwork.TransactionManager;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkFactory;
-import org.joda.time.Duration;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
 
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -76,16 +78,13 @@ public class QuartzEventSchedulerTest {
     @Test
     public void testScheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent());
+        ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), new StubEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
@@ -95,27 +94,26 @@ public class QuartzEventSchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testScheduleJob_TransactionalUnitOfWork() throws InterruptedException, SchedulerException {
+        Transaction mockTransaction = mock(Transaction.class);
         final TransactionManager transactionManager = mock(TransactionManager.class);
+        when(transactionManager.startTransaction()).thenReturn(mockTransaction);
         testSubject.setTransactionManager(transactionManager);
         testSubject.initialize();
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent());
+        ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), new StubEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
-        InOrder inOrder = inOrder(transactionManager, eventBus);
+        InOrder inOrder = inOrder(transactionManager, eventBus, mockTransaction);
         inOrder.verify(transactionManager).startTransaction();
         inOrder.verify(eventBus).publish(isA(EventMessage.class));
-        inOrder.verify(transactionManager).commitTransaction(any());
+        inOrder.verify(mockTransaction).commit();
     }
 
     @SuppressWarnings("unchecked")
@@ -123,36 +121,35 @@ public class QuartzEventSchedulerTest {
     public void testScheduleJob_CustomUnitOfWork() throws InterruptedException, SchedulerException {
         final UnitOfWorkFactory unitOfWorkFactory = mock(UnitOfWorkFactory.class);
         UnitOfWork unitOfWork = mock(UnitOfWork.class);
-        when(unitOfWorkFactory.createUnitOfWork()).thenReturn(unitOfWork);
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArguments()[0]).run();
+            return null;
+        }).when(unitOfWork).execute(any());
+        when(unitOfWorkFactory.createUnitOfWork(any())).thenReturn(unitOfWork);
         testSubject.setUnitOfWorkFactory(unitOfWorkFactory);
         testSubject.initialize();
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(30), new StubEvent());
+        ScheduleToken token = testSubject.schedule(Duration.ofMillis(30), new StubEvent());
         assertTrue(token.toString().contains("Quartz"));
         assertTrue(token.toString().contains(GROUP_ID));
         latch.await(1, TimeUnit.SECONDS);
         InOrder inOrder = inOrder(unitOfWorkFactory, unitOfWork, eventBus);
-        inOrder.verify(unitOfWorkFactory).createUnitOfWork();
-        inOrder.verify(unitOfWork).commit();
-
-        // the unit of work doesn't actually publish...
-        verify(eventBus, never()).publish(isA(EventMessage.class));
+        inOrder.verify(unitOfWorkFactory).createUnitOfWork(any());
+        inOrder.verify(unitOfWork).execute(any());
+        inOrder.verify(eventBus).publish(isA(EventMessage.class));
     }
 
     @Test
     public void testCancelJob() throws SchedulerException, InterruptedException {
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        ScheduleToken token = testSubject.schedule(new Duration(1000), new StubEvent());
+        ScheduleToken token = testSubject.schedule(Duration.ofMillis(1000), new StubEvent());
         assertEquals(1, scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(GROUP_ID)).size());
         testSubject.cancelSchedule(token);
         assertEquals(0, scheduler.getJobKeys(GroupMatcher.<JobKey>groupEquals(GROUP_ID)).size());
@@ -161,7 +158,7 @@ public class QuartzEventSchedulerTest {
     }
 
     private EventMessage newStubEvent() {
-        return new GenericEventMessage<StubEvent>(new StubEvent());
+        return new GenericEventMessage<>(new StubEvent());
     }
 
     private class StubEvent {

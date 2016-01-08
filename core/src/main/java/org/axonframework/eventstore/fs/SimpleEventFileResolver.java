@@ -29,9 +29,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 /**
- * Very straightforward implementation of the EventFileResolver that stores files in a directory structure underneath a
- * given base directory. Events of a single aggregate are appended to a pair of files, one for regular events and one
- * for snapshot events. Directories are used to separate files for different aggregate types.
+ * Very straightforward implementation of the EventFileResolver that stores files in a given base directory. Events of
+ * a single aggregate are appended to a pair of files, one for regular events and one for snapshot events.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -61,57 +60,55 @@ public class SimpleEventFileResolver implements EventFileResolver {
         this.baseDir = baseDir;
     }
 
-    @Override
-    public OutputStream openEventFileForWriting(String type, Object aggregateIdentifier)
-            throws IOException {
-        File eventFile = getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_EVENTS);
-        return new BufferedOutputStream(new FileOutputStream(eventFile, true));
-    }
-
-    @Override
-    public OutputStream openSnapshotFileForWriting(String type, Object aggregateIdentifier)
-            throws IOException {
-        return new FileOutputStream(getEventsFile(type, aggregateIdentifier, FILE_EXTENSION_SNAPSHOTS), true);
-    }
-
-    @Override
-    public InputStream openEventFileForReading(String type, Object identifier) throws IOException {
-        return new FileInputStream(getEventsFile(type, identifier, FILE_EXTENSION_EVENTS));
-    }
-
-    @Override
-    public InputStream openSnapshotFileForReading(String type, Object identifier) throws IOException {
-        return new FileInputStream(getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS));
-    }
-
-    @Override
-    public boolean eventFileExists(String type, Object identifier) throws IOException {
-        return getEventsFile(type, identifier, FILE_EXTENSION_EVENTS).exists();
-    }
-
-    @Override
-    public boolean snapshotFileExists(String type, Object identifier) throws IOException {
-        return getEventsFile(type, identifier, FILE_EXTENSION_SNAPSHOTS).exists();
-    }
-
-    private File getEventsFile(String type, Object identifier, String extension) throws IOException {
-        return new File(getBaseDirForType(type), fsSafeIdentifier(identifier) + "." + extension);
-    }
-
     private static String fsSafeIdentifier(Object id) {
         try {
             return URLEncoder.encode(id.toString(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException("System doesn't support UTF-8?", e);
-		}
-	}
+        }
+    }
 
-    private File getBaseDirForType(String type) {
+    @Override
+    public OutputStream openEventFileForWriting(String aggregateIdentifier)
+            throws IOException {
+        File eventFile = getEventsFile(aggregateIdentifier, FILE_EXTENSION_EVENTS);
+        return new BufferedOutputStream(new FileOutputStream(eventFile, true));
+    }
 
-        File typeSpecificDir = new File(baseDir, type);
-        if (!typeSpecificDir.exists() && !typeSpecificDir.mkdirs() && !typeSpecificDir.exists()) {
+    @Override
+    public OutputStream openSnapshotFileForWriting(String aggregateIdentifier)
+            throws IOException {
+        return new FileOutputStream(getEventsFile(aggregateIdentifier, FILE_EXTENSION_SNAPSHOTS), true);
+    }
+
+    @Override
+    public InputStream openEventFileForReading(String identifier) throws IOException {
+        return new FileInputStream(getEventsFile(identifier, FILE_EXTENSION_EVENTS));
+    }
+
+    @Override
+    public InputStream openSnapshotFileForReading(String identifier) throws IOException {
+        return new FileInputStream(getEventsFile(identifier, FILE_EXTENSION_SNAPSHOTS));
+    }
+
+    @Override
+    public boolean eventFileExists(String identifier) throws IOException {
+        return getEventsFile(identifier, FILE_EXTENSION_EVENTS).exists();
+    }
+
+    @Override
+    public boolean snapshotFileExists(String identifier) throws IOException {
+        return getEventsFile(identifier, FILE_EXTENSION_SNAPSHOTS).exists();
+    }
+
+    private File getEventsFile(String identifier, String extension) {
+        return new File(getBaseDir(), fsSafeIdentifier(identifier) + "." + extension);
+    }
+
+    private File getBaseDir() {
+        if (!baseDir.exists() && !baseDir.mkdirs() && !baseDir.exists()) {
             throw new EventStoreException("The given event store directory doesn't exist and could not be created");
         }
-        return typeSpecificDir;
+        return baseDir;
     }
 }

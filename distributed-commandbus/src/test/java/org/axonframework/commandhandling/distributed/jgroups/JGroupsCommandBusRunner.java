@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -24,7 +23,6 @@ import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,12 +60,9 @@ public class JGroupsCommandBusRunner {
                 return command.getPayload().toString();
             }
         });
-        dcb.subscribe(String.class.getName(), new CommandHandler<String>() {
-            @Override
-            public Object handle(CommandMessage<String> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
-                logger.error("Received message: " + stringCommandMessage.getPayload());
-                return null;
-            }
+        dcb.subscribe(String.class.getName(), (stringCommandMessage, unitOfWork) -> {
+            logger.error("Received message: " + stringCommandMessage.getPayload());
+            return null;
         });
         System.out.println("Subscribed to group. Ready to join.");
         Scanner scanner = new Scanner(System.in);
@@ -81,12 +76,9 @@ public class JGroupsCommandBusRunner {
                 System.out.println("This is not a number.");
             }
         }
-        dcb.subscribe(String.class.getName(), new CommandHandler<String>() {
-            @Override
-            public Object handle(CommandMessage<String> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
-                System.out.println("Received message: " + stringCommandMessage.getPayload());
-                return null;
-            }
+        dcb.subscribe(String.class.getName(), (stringCommandMessage, unitOfWork) -> {
+            System.out.println("Received message: " + stringCommandMessage.getPayload());
+            return null;
         });
         connector.connect(loadFactor);
         System.out.println("Waiting for Joining to complete");
@@ -112,7 +104,7 @@ public class JGroupsCommandBusRunner {
                 int factor = Integer.parseInt(line.split(" ")[1]);
                 connector.connect(factor);
             } else if (!"quit".equals(line)) {
-                dcb.dispatch(new GenericCommandMessage<String>(line));
+                dcb.dispatch(new GenericCommandMessage<>(line));
             }
         }
         channel.close();
@@ -121,14 +113,14 @@ public class JGroupsCommandBusRunner {
     private static void readAndSendMessages() throws Exception {
         String messageBase = UUID.randomUUID().toString();
         for (int t = 0; t < MESSAGE_COUNT; t++) {
-            dcb.dispatch(new GenericCommandMessage<String>(messageBase + " #" + t), new VoidCallback() {
+            dcb.dispatch(new GenericCommandMessage<>(messageBase + " #" + t), new VoidCallback<Object>() {
                 @Override
-                protected void onSuccess() {
+                protected void onSuccess(CommandMessage<?> commandMessage) {
                     System.out.println("Successfully receive response");
                 }
 
                 @Override
-                public void onFailure(Throwable cause) {
+                public void onFailure(CommandMessage commandMessage, Throwable cause) {
                     cause.printStackTrace();
                 }
             });

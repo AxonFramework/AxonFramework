@@ -16,9 +16,9 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.junit.*;
+import org.axonframework.common.Registration;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -27,43 +27,43 @@ import static org.mockito.Mockito.*;
  */
 public class SimpleEventBusTest {
 
-    private EventListener listener1;
-    private EventListener listener2;
+    private EventProcessor listener1;
+    private EventProcessor listener2;
     private EventBus testSubject;
-    private EventListener listener3;
+    private EventProcessor listener3;
 
     @Before
     public void setUp() {
-        listener1 = mock(EventListener.class);
-        listener2 = mock(EventListener.class);
-        listener3 = mock(EventListener.class);
+        listener1 = mock(EventProcessor.class);
+        listener2 = mock(EventProcessor.class);
+        listener3 = mock(EventProcessor.class);
         testSubject = new SimpleEventBus();
     }
 
     @Test
-    public void testEventIsDispatchedToSubscribedListeners() {
+    public void testEventIsDispatchedToSubscribedListeners() throws Exception {
         testSubject.publish(newEvent());
         testSubject.subscribe(listener1);
         // subscribing twice should not make a difference
-        testSubject.subscribe(listener1);
+        Registration subscription1 = testSubject.subscribe(listener1);
         testSubject.publish(newEvent());
-        testSubject.subscribe(listener2);
-        testSubject.subscribe(listener3);
+        Registration subscription2 = testSubject.subscribe(listener2);
+        Registration subscription3 = testSubject.subscribe(listener3);
         testSubject.publish(newEvent());
-        testSubject.unsubscribe(listener1);
+        subscription1.close();
         testSubject.publish(newEvent());
-        testSubject.unsubscribe(listener2);
-        testSubject.unsubscribe(listener3);
+        subscription2.close();
+        subscription3.close();
         // unsubscribe a non-subscribed listener should not fail
-        testSubject.unsubscribe(listener3);
+        subscription3.close();
         testSubject.publish(newEvent());
 
-        verify(listener1, times(2)).handle(isA(EventMessage.class));
-        verify(listener2, times(2)).handle(isA(EventMessage.class));
-        verify(listener3, times(2)).handle(isA(EventMessage.class));
+        verify(listener1, times(2)).handle(anyList());
+        verify(listener2, times(2)).handle(anyList());
+        verify(listener3, times(2)).handle(anyList());
     }
 
     private EventMessage newEvent() {
-        return new GenericEventMessage<Object>(new Object());
+        return new GenericEventMessage<>(new Object());
     }
 }

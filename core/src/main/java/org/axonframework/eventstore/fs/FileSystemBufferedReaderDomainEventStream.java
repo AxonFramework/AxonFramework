@@ -16,8 +16,8 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.Serializer;
@@ -74,7 +74,7 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
                 new DataInputStream(new BufferedInputStream(inputStream)));
         this.upcasterChain = upcasterChain;
         this.serializer = serializer;
-        this.next = new LinkedList<DomainEventMessage>();
+        this.next = new LinkedList<>();
         next.addAll(doReadNext());
     }
 
@@ -107,7 +107,7 @@ public class FileSystemBufferedReaderDomainEventStream implements DomainEventStr
             List<DomainEventMessage> upcastEvents;
             do {
                 SerializedDomainEventData eventFromFile = eventMessageReader.readEventMessage();
-                upcastEvents = upcastAndDeserialize(eventFromFile, null, serializer, upcasterChain, false);
+                upcastEvents = upcastAndDeserialize(eventFromFile, serializer, upcasterChain, false);
             } while (upcastEvents.isEmpty());
             return upcastEvents;
         } catch (EOFException e) {

@@ -22,32 +22,32 @@ package org.axonframework.eventhandling.amqp;
 public interface AMQPConsumerConfiguration {
 
     /**
-     * The key of the property in the Cluster Meta Data that reflects the AMQPConsumerConfiguration instance for that
-     * cluster
+     * The key of the property in the Event Processor Meta Data that reflects the AMQPConsumerConfiguration instance for that
+     * event processor
      */
     String AMQP_CONFIG_PROPERTY = "AMQP.Config";
 
     /**
-     * Returns the Queue Name the Cluster should be connected to, or <code>null</code> if no explicit cluster is
-     * configured.
+     * Returns the Queue Name the EventProcessor should be connected to, or <code>null</code> if no explicit
+     * EventProcessor is configured.
      *
-     * @return the Queue the cluster should be connected to, or <code>null</code> to revert to a default
+     * @return the Queue the event processor should be connected to, or <code>null</code> to revert to a default
      */
     String getQueueName();
 
     /**
-     * Indicates whether this Cluster wishes to be an exclusive consumer on a Queue. <code>null</code> indicated that
-     * no explicit preference is provided, and a default should be used.
+     * Indicates whether this EventProcessor wishes to be an exclusive consumer on a Queue. <code>null</code>
+     * indicated that no explicit preference is provided, and a default should be used.
      *
-     * @return the exclusivity indicator for this cluster
+     * @return the exclusivity indicator for this event processor
      */
     Boolean getExclusive();
 
     /**
-     * Indicates how many messages this Cluster's connector may read read from the Queue before expecting messages to
+     * Indicates how many messages this EventProcessor's connector may read read from the Queue before expecting messages to
      * be acknowledged. <code>null</code> means no specific value is provided and a default should be used.
      *
-     * @return the number of messages a Cluster's connector may read ahead before waiting for acknowledgements.
+     * @return the number of messages a EventProcessor's connector may read ahead before waiting for acknowledgements.
      */
     Integer getPrefetchCount();
 }

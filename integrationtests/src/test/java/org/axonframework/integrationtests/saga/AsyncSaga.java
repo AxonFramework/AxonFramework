@@ -34,7 +34,7 @@ public class AsyncSaga extends AbstractAnnotatedSaga {
     private Deque<String> receivedMessages;
 
     public AsyncSaga() {
-        this.receivedMessages = new LinkedBlockingDeque<String>();
+        this.receivedMessages = new LinkedBlockingDeque<>();
     }
 
     @StartSaga

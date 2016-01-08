@@ -28,8 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.*;
 import static org.ops4j.pax.exam.CoreOptions.*;
 
@@ -76,7 +74,7 @@ public class OSGiBundleTest {
 
     @Test
     public void checkBundles() throws ClassNotFoundException {
-        Map<String, Bundle> axonBundles = new HashMap<String, Bundle>();
+        Map<String, Bundle> axonBundles = new HashMap<>();
 
         for (Bundle bundle : context.getBundles()) {
             if (bundle != null) {

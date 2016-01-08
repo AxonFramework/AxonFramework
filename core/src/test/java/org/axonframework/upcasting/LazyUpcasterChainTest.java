@@ -51,7 +51,7 @@ public class LazyUpcasterChainTest extends UpcasterChainTest {
                                                                                       secondUpcaster));
 
         List<SerializedObject> actualResult = testSubject.upcast(
-                new SimpleSerializedObject<String>("object", String.class, "type", "1"), null);
+                new SimpleSerializedObject<>("object", String.class, "type", "1"), null);
         verify(firstUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
         verify(secondUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
         verify(thirdUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
@@ -83,7 +83,7 @@ public class LazyUpcasterChainTest extends UpcasterChainTest {
                                                                                       secondUpcaster));
 
         List<SerializedObject> actualResult = testSubject.upcast(
-                new SimpleSerializedObject<String>("object", String.class, "type", "1"), null);
+                new SimpleSerializedObject<>("object", String.class, "type", "1"), null);
         // the second upcaster accessed the serialized object, so we expect a call here
         verify(firstUpcaster).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
         verify(secondUpcaster, never()).upcast(isA(SerializedObject.class), isA(List.class), any(UpcastingContext.class));
@@ -128,9 +128,9 @@ public class LazyUpcasterChainTest extends UpcasterChainTest {
         @Override
         public List<SerializedObject<?>> upcast(SerializedObject<String> intermediateRepresentation,
                                                 List<SerializedType> expectedTypes, UpcastingContext context) {
-            List<SerializedObject<?>> upcastObjects = new ArrayList<SerializedObject<?>>(expectedTypes.size());
+            List<SerializedObject<?>> upcastObjects = new ArrayList<>(expectedTypes.size());
             for (SerializedType expectedType : expectedTypes) {
-                SerializedObject<String> upcastObject = new SimpleSerializedObject<String>(
+                SerializedObject<String> upcastObject = new SimpleSerializedObject<>(
                         "upcast " + intermediateRepresentation.getData(), String.class, expectedType);
                 upcastObjects.add(upcastObject);
             }
@@ -167,9 +167,9 @@ public class LazyUpcasterChainTest extends UpcasterChainTest {
         @Override
         public List<SerializedObject<?>> upcast(SerializedObject<String> intermediateRepresentation,
                                                 List<SerializedType> expectedTypes, UpcastingContext context) {
-            List<SerializedObject<?>> upcastObjects = new ArrayList<SerializedObject<?>>(expectedTypes.size());
+            List<SerializedObject<?>> upcastObjects = new ArrayList<>(expectedTypes.size());
             for (SerializedType expectedType : expectedTypes) {
-                SerializedObject<String> upcastObject = new SimpleSerializedObject<String>(
+                SerializedObject<String> upcastObject = new SimpleSerializedObject<>(
                         "upcast " + intermediateRepresentation.getData(), String.class, expectedType);
                 upcastObjects.add(upcastObject);
             }

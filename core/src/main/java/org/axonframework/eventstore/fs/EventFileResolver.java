@@ -32,85 +32,75 @@ public interface EventFileResolver {
 
     /**
      * Provides an output stream to the (regular) events file for the aggregate with the given
-     * <code>aggregateIdentifier</code> and of given <code>type</code>. Written bytes are appended to already existing
-     * information.
+     * <code>aggregateIdentifier</code>. Written bytes are appended to already existing information.
      * <p/>
      * The caller of this method is responsible for closing the output stream when all data has been written to it.
      *
-     * @param type                The type of aggregate to open the stream for
      * @param aggregateIdentifier the identifier of the aggregate
      * @return an OutputStream that appends to the event log of of the given aggregate
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    OutputStream openEventFileForWriting(String type, Object aggregateIdentifier) throws IOException;
+    OutputStream openEventFileForWriting(String aggregateIdentifier) throws IOException;
 
     /**
      * Provides an output stream to the snapshot events file for the aggregate with the given
-     * <code>aggregateIdentifier</code> and of given <code>type</code>. Written bytes are appended to already existing
-     * information.
+     * <code>aggregateIdentifier</code>. Written bytes are appended to already existing information.
      * <p/>
      * The caller of this method is responsible for closing the output stream when all data has been written to it.
      *
-     * @param type                The type of aggregate to open the stream for
      * @param aggregateIdentifier the identifier of the aggregate
      * @return an OutputStream that appends to the snapshot event log of of the given aggregate
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    OutputStream openSnapshotFileForWriting(String type, Object aggregateIdentifier) throws IOException;
+    OutputStream openSnapshotFileForWriting(String aggregateIdentifier) throws IOException;
 
     /**
      * Provides an input stream to the (regular) events file for the aggregate with the given
-     * <code>aggregateIdentifier</code> and of given <code>type</code>.
+     * <code>aggregateIdentifier</code>.
      * <p/>
      * The caller of this method is responsible for closing the input stream when done reading from it.
      *
-     * @param type                The type of aggregate to open the stream for
      * @param aggregateIdentifier the identifier of the aggregate
      * @return an InputStream that reads from the event log of of the given aggregate
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    InputStream openEventFileForReading(String type, Object aggregateIdentifier) throws IOException;
+    InputStream openEventFileForReading(String aggregateIdentifier) throws IOException;
 
     /**
      * Provides an input stream to the snapshot events file for the aggregate with the given
-     * <code>aggregateIdentifier</code> and of given <code>type</code>.
+     * <code>aggregateIdentifier</code>.
      * <p/>
      * The caller of this method is responsible for closing the input stream when done reading from it.
      *
-     * @param type                The type of aggregate to open the stream for
      * @param aggregateIdentifier the identifier of the aggregate
      * @return an InputStream that reads from the snapshot event log of of the given aggregate
      *
      * @throws java.io.IOException when an error occurs while opening a file
      */
-    InputStream openSnapshotFileForReading(String type, Object aggregateIdentifier) throws IOException;
+    InputStream openSnapshotFileForReading(String aggregateIdentifier) throws IOException;
 
     /**
-     * Indicates whether there is a file containing (regular) events for the given <code>aggregateIdentifier</code> of
-     * given <code>type</code>.
+     * Indicates whether there is a file containing (regular) events for the given <code>aggregateIdentifier</code>.
      *
-     * @param type                The type of aggregate
      * @param aggregateIdentifier the identifier of the aggregate
      * @return <code>true</code> if an event log exists for the aggregate, <code>false</code> otherwise.
      *
      * @throws IOException when an error occurs while reading from the FileSystem. The existence of the event file is
      *                     undetermined.
      */
-    boolean eventFileExists(String type, Object aggregateIdentifier) throws IOException;
+    boolean eventFileExists(String aggregateIdentifier) throws IOException;
 
     /**
-     * Indicates whether there is a file containing snapshot events for the given <code>aggregateIdentifier</code> of
-     * given <code>type</code>.
+     * Indicates whether there is a file containing snapshot events for the given <code>aggregateIdentifier</code>.
      *
-     * @param type                The type of aggregate
      * @param aggregateIdentifier the identifier of the aggregate
      * @return <code>true</code> if a snapshot event log exists for the aggregate, <code>false</code> otherwise.
      *
      * @throws IOException when an error occurs while reading from the FileSystem. The existence of the event file is
      *                     undetermined.
      */
-    boolean snapshotFileExists(String type, Object aggregateIdentifier) throws IOException;
+    boolean snapshotFileExists(String aggregateIdentifier) throws IOException;
 }

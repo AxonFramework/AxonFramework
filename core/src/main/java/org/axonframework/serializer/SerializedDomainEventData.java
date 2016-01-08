@@ -16,7 +16,7 @@
 
 package org.axonframework.serializer;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
@@ -41,7 +41,7 @@ public interface SerializedDomainEventData<T> {
      *
      * @return the Identifier of the Aggregate to which the Event was applied
      */
-    Object getAggregateIdentifier();
+    String getAggregateIdentifier();
 
     /**
      * Returns the sequence number of the event in the aggregate.
@@ -55,7 +55,7 @@ public interface SerializedDomainEventData<T> {
      *
      * @return the timestamp at which the event was first created
      */
-    DateTime getTimestamp();
+    Instant getTimestamp();
 
     /**
      * Returns the serialized data of the MetaData of the serialized Event.

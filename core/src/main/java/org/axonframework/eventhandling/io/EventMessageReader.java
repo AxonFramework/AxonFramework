@@ -16,16 +16,16 @@
 
 package org.axonframework.eventhandling.io;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
 
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.time.Instant;
 
 /**
  * Reader that reads EventMessage instances written to the underlying input. Typically, these messages have been
@@ -87,17 +87,17 @@ public class EventMessageReader {
         int metaDataSize = in.readInt();
         byte[] metaData = new byte[metaDataSize];
         in.readFully(metaData);
-        SimpleSerializedObject<byte[]> serializedPayload = new SimpleSerializedObject<byte[]>(payload,
+        SimpleSerializedObject<byte[]> serializedPayload = new SimpleSerializedObject<>(payload,
                                                                                               byte[].class,
                                                                                               payloadType,
                                                                                               payloadRevision);
-        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<byte[]>(metaData, byte[].class);
+        SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(metaData, byte[].class);
 
-        SerializedEventMessage<T> message = new SerializedEventMessage<T>(identifier, new DateTime(timestamp),
+        SerializedEventMessage<T> message = new SerializedEventMessage<>(identifier, Instant.parse(timestamp),
                                                                           serializedPayload, serializedMetaData,
                                                                           serializer);
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
-            return new SerializedDomainEventMessage<T>(message, aggregateIdentifier, sequenceNumber);
+            return new SerializedDomainEventMessage<>(message, aggregateIdentifier, sequenceNumber);
         }
         return message;
     }

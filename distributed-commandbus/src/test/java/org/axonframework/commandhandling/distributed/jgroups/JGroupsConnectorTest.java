@@ -16,17 +16,13 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.stack.IpAddress;
@@ -84,10 +80,10 @@ public class JGroupsConnectorTest {
     @Test
     public void testSetupOfReplyingCallback() throws InterruptedException {
         final String mockPayload = "DummyString";
-        final CommandMessage commandMessage = new GenericCommandMessage<String>(mockPayload);
+        final CommandMessage<String> commandMessage = new GenericCommandMessage<>(mockPayload);
 
-        final DispatchMessage dispatchMessage = new DispatchMessage(commandMessage,serializer,true);
-        final Message message = new Message(channel1.getAddress(),dispatchMessage);
+        final DispatchMessage dispatchMessage = new DispatchMessage(commandMessage, serializer, true);
+        final Message message = new Message(channel1.getAddress(), dispatchMessage);
 
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
@@ -95,7 +91,7 @@ public class JGroupsConnectorTest {
         channel1.getReceiver().receive(message);
 
         //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
-        verify(mockCommandBus1).dispatch(refEq(commandMessage),any(ReplyingCallback.class));
+        verify(mockCommandBus1).dispatch(refEq(commandMessage), any(ReplyingCallback.class));
 
     }
 
@@ -119,15 +115,15 @@ public class JGroupsConnectorTest {
         // wait for both connectors to have the same view
         waitForConnectorSync();
 
-        List<FutureCallback> callbacks = new ArrayList<FutureCallback>();
+        List<FutureCallback> callbacks = new ArrayList<>();
 
         for (int t = 0; t < 100; t++) {
-            FutureCallback<Object> callback = new FutureCallback<Object>();
+            FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t & 1) == 0) {
-                connector1.send(message, new GenericCommandMessage<Object>(message), callback);
+                connector1.send(message, new GenericCommandMessage<>(message), callback);
             } else {
-                connector2.send(message, new GenericCommandMessage<Object>(message), callback);
+                connector2.send(message, new GenericCommandMessage<>(message), callback);
             }
             callbacks.add(callback);
         }
@@ -169,15 +165,15 @@ public class JGroupsConnectorTest {
 
         waitForConnectorSync();
 
-        FutureCallback<Object> callback1 = new FutureCallback<Object>();
-        connector1.send("1", new GenericCommandMessage<Object>("Hello"), callback1);
-        FutureCallback<?> callback2 = new FutureCallback();
-        connector1.send("1", new GenericCommandMessage<Object>(1L), callback2);
+        FutureCallback<Object, Object> callback1 = new FutureCallback<>();
+        connector1.send("1", new GenericCommandMessage<>("Hello"), callback1);
+        FutureCallback<Object, Object> callback2 = new FutureCallback<>();
+        connector1.send("1", new GenericCommandMessage<>(1L), callback2);
 
-        FutureCallback<Object> callback3 = new FutureCallback<Object>();
-        connector2.send("1", new GenericCommandMessage<String>("Hello"), callback3);
-        FutureCallback<?> callback4 = new FutureCallback();
-        connector2.send("1", new GenericCommandMessage<Long>(1L), callback4);
+        FutureCallback<Object, Object> callback3 = new FutureCallback<>();
+        connector2.send("1", new GenericCommandMessage<>("Hello"), callback3);
+        FutureCallback<Object, Object> callback4 = new FutureCallback<>();
+        connector2.send("1", new GenericCommandMessage<>(1L), callback4);
 
         assertEquals("The Reply!", callback1.get());
         assertEquals("The Reply!", callback2.get());
@@ -242,15 +238,15 @@ public class JGroupsConnectorTest {
         // wait for both connectors to have the same view
         waitForConnectorSync();
 
-        List<FutureCallback> callbacks = new ArrayList<FutureCallback>();
+        List<FutureCallback> callbacks = new ArrayList<>();
 
         for (int t = 0; t < 100; t++) {
-            FutureCallback<Object> callback = new FutureCallback<Object>();
+            FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t & 1) == 0) {
-                connector1.send(message, new GenericCommandMessage<Object>(message), callback);
+                connector1.send(message, new GenericCommandMessage<>(message), callback);
             } else {
-                connector2.send(message, new GenericCommandMessage<Object>(message), callback);
+                connector2.send(message, new GenericCommandMessage<>(message), callback);
             }
             callbacks.add(callback);
         }
@@ -281,20 +277,20 @@ public class JGroupsConnectorTest {
         // wait for both connectors to have the same view
         waitForConnectorSync();
 
-        List<FutureCallback> callbacks = new ArrayList<FutureCallback>();
+        List<FutureCallback> callbacks = new ArrayList<>();
 
         for (int t = 0; t < 100; t++) {
-            FutureCallback<Object> callback = new FutureCallback<Object>();
+            FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t % 3) == 0) {
                 connector1.send(message,
-                                new GenericCommandMessage<Object>("myCommand1", message,
-                                                                  Collections.<String, Object>emptyMap()),
+                                new GenericCommandMessage<>("myCommand1", message,
+                                                            Collections.<String, Object>emptyMap()),
                                 callback);
             } else {
                 connector2.send(message,
-                                new GenericCommandMessage<Object>("myCommand2", message,
-                                                                  Collections.<String, Object>emptyMap()),
+                                new GenericCommandMessage<>("myCommand2", message,
+                                                            Collections.<String, Object>emptyMap()),
                                 callback);
             }
             callbacks.add(callback);
@@ -345,7 +341,7 @@ public class JGroupsConnectorTest {
         return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_static.xml");
     }
 
-    private static class CountingCommandHandler<T> implements CommandHandler<T> {
+    private static class CountingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final AtomicInteger counter;
 
@@ -354,7 +350,7 @@ public class JGroupsConnectorTest {
         }
 
         @Override
-        public Object handle(CommandMessage<T> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork unitOfWork) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }
@@ -362,7 +358,7 @@ public class JGroupsConnectorTest {
 
     private static class RecordingHashChangeListener implements HashChangeListener {
 
-        public final BlockingQueue<ConsistentHash> notifications = new LinkedBlockingQueue<ConsistentHash>();
+        public final BlockingQueue<ConsistentHash> notifications = new LinkedBlockingQueue<>();
 
         @Override
         public void hashChanged(ConsistentHash newHash) {

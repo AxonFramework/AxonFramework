@@ -49,7 +49,7 @@ public class ChainedConverterTest {
     @Before
     public void setUp() throws Exception {
         mockType = new SimpleSerializedType("mock", "0");
-        candidates = new ArrayList<ContentTypeConverter<?, ?>>();
+        candidates = new ArrayList<>();
         numberToStringConverter = mockConverter(Number.class, String.class, "hello");
         stringToByteConverter = mockConverter(String.class, byte[].class, "hello".getBytes());
         stringToReaderConverter = mockConverter(String.class, Reader.class, new StringReader("hello"));
@@ -80,7 +80,7 @@ public class ChainedConverterTest {
     @Test
     public void testComplexRoute() throws Exception {
         target = InputStream.class;
-        source = new SimpleSerializedObject<Number>(1L, Number.class, mockType);
+        source = new SimpleSerializedObject<>(1L, Number.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
         assertNotNull(testSubject);
         verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
@@ -103,7 +103,7 @@ public class ChainedConverterTest {
     @Test
     public void testSimpleRoute() {
         target = String.class;
-        source = new SimpleSerializedObject<Number>(1L, Number.class, mockType);
+        source = new SimpleSerializedObject<>(1L, Number.class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
         assertNotNull(testSubject);
         verify(numberToStringConverter, never()).convert(any(SerializedObject.class));
@@ -131,7 +131,7 @@ public class ChainedConverterTest {
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testAnotherInexistentRoute() throws Exception {
         target = Number.class;
-        source = new SimpleSerializedObject<String>("hello", String.class, mockType);
+        source = new SimpleSerializedObject<>("hello", String.class, mockType);
         assertFalse(ChainedConverter.canConvert(String.class, target, candidates));
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
     }
@@ -139,7 +139,7 @@ public class ChainedConverterTest {
     @Test(expected = CannotConvertBetweenTypesException.class)
     public void testAThirdInexistentRoute() throws Exception {
         target = Documented.class;
-        source = new SimpleSerializedObject<byte[]>("hello".getBytes(), byte[].class, mockType);
+        source = new SimpleSerializedObject<>("hello".getBytes(), byte[].class, mockType);
         testSubject = ChainedConverter.calculateChain(source.getContentType(), target, candidates);
     }
 

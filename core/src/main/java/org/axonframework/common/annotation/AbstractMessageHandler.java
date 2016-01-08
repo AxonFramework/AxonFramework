@@ -17,10 +17,9 @@
 package org.axonframework.common.annotation;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 /**
@@ -92,12 +91,8 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * @param target  The target instance to invoke the Handler on.
      * @param message The message providing parameter values
      * @return The result of the handler invocation
-     *
-     * @throws InvocationTargetException when the handler throws a checked exception
-     * @throws IllegalAccessException if the SecurityManager refuses the handler invocation
      */
-    public abstract Object invoke(Object target, Message message)
-            throws InvocationTargetException, IllegalAccessException;
+    public abstract Object invoke(Object target, Message message);
 
     /**
      * Returns the type of payload this handler expects.

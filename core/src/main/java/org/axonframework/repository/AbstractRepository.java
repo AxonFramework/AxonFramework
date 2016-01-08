@@ -19,8 +19,13 @@ package org.axonframework.repository;
 import org.axonframework.common.Assert;
 import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.SaveAggregateCallback;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
@@ -38,8 +43,9 @@ import org.axonframework.unitofwork.SaveAggregateCallback;
  */
 public abstract class AbstractRepository<T extends AggregateRoot> implements Repository<T> {
 
+    final String aggregatesKey = this + "_AGGREGATES";
     private final Class<T> aggregateType;
-    private final SimpleSaveAggregateCallback saveAggregateCallback = new SimpleSaveAggregateCallback();
+    private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
     private EventBus eventBus;
 
     /**
@@ -59,30 +65,46 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     @Override
     public void add(T aggregate) {
         Assert.isTrue(aggregateType.isInstance(aggregate), "Unsuitable aggregate for this repository: wrong type");
-        if (aggregate.getVersion() != null) {
-            throw new IllegalArgumentException("Only newly created (unpersisted) aggregates may be added.");
-        }
-        CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
+        UnitOfWork uow = CurrentUnitOfWork.get();
+        Assert.state(uow != null, "Aggregate cannot be added outside the scope of a Unit of Work.");
+        Map<String, T> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
+        Assert.isTrue(aggregates.putIfAbsent(aggregate.getIdentifier(), aggregate) == null,
+                "The Unit of Work already has an Aggregate with the same identifier");
+        prepareForCommit(aggregate);
     }
 
     /**
      * {@inheritDoc}
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
-     * @throws RuntimeException           any exception thrown by implementing classes
+     * @throws RuntimeException any exception thrown by implementing classes
      */
     @Override
-    public T load(Object aggregateIdentifier, Long expectedVersion) {
-        T aggregate = doLoad(aggregateIdentifier, expectedVersion);
-        validateOnLoad(aggregate, expectedVersion);
-        return CurrentUnitOfWork.get().registerAggregate(aggregate, eventBus, saveAggregateCallback);
+    public T load(String aggregateIdentifier, Long expectedVersion) {
+        UnitOfWork uow = CurrentUnitOfWork.get();
+        if (uow != null) {
+            Map<String, T> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
+            return aggregates.computeIfAbsent(aggregateIdentifier, s -> {
+                T aggregate = doLoad(aggregateIdentifier, expectedVersion);
+                validateOnLoad(aggregate, expectedVersion);
+                prepareForCommit(aggregate);
+                return aggregate;
+            });
+        } else {
+            if (logger.isWarnEnabled()) {
+                logger.warn("Aggregate is loaded outside the scope of a Unit of Work. Changes may not be persisted");
+            }
+            T aggregate = doLoad(aggregateIdentifier, expectedVersion);
+            validateOnLoad(aggregate, expectedVersion);
+            return aggregate;
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public T load(Object aggregateIdentifier) {
+    public T load(String aggregateIdentifier) {
         return load(aggregateIdentifier, null);
     }
 
@@ -97,9 +119,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param aggregate       The loaded aggregate
      * @param expectedVersion The expected version of the aggregate
      * @throws ConflictingModificationException
-     *
      * @throws ConflictingAggregateVersionException
-     *
      */
     protected void validateOnLoad(T aggregate, Long expectedVersion) {
         if (expectedVersion != null && aggregate.getVersion() != null &&
@@ -108,6 +128,27 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
                                                            expectedVersion,
                                                            aggregate.getVersion());
         }
+    }
+
+    /**
+     * Register handlers with the current Unit of Work that save or delete the given <code>aggregate</code> when
+     * the Unit of Work is committed.
+     *
+     * @param aggregate The Aggregate to save or delete when the Unit of Work is committed
+     */
+    protected void prepareForCommit(T aggregate) {
+        CurrentUnitOfWork.get().onPrepareCommit(u -> {
+            if (aggregate.isDeleted()) {
+                doDelete(aggregate);
+            } else {
+                doSave(aggregate);
+            }
+            if (aggregate.isDeleted()) {
+                postDelete(aggregate);
+            } else {
+                postSave(aggregate);
+            }
+        });
     }
 
     /**
@@ -135,11 +176,11 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      *
      * @throws AggregateNotFoundException if the aggregate with given identifier does not exist
      */
-    protected abstract T doLoad(Object aggregateIdentifier, Long expectedVersion);
+    protected abstract T doLoad(String aggregateIdentifier, Long expectedVersion);
 
     /**
      * Removes the aggregate from the repository. Typically, the repository should ensure that any calls to {@link
-     * #doLoad(Object, Long)} throw a {@link AggregateNotFoundException} when
+     * #doLoad(String, Long)} throw a {@link AggregateNotFoundException} when
      * loading a deleted aggregate.
      *
      * @param aggregate the aggregate to delete
@@ -152,6 +193,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param eventBus the event bus to publish events to
      */
     public void setEventBus(EventBus eventBus) {
+        // TODO: Change to constructor parameter
         this.eventBus = eventBus;
     }
 
@@ -171,23 +213,5 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      * @param aggregate The aggregate instance being saved
      */
     protected void postDelete(T aggregate) {
-    }
-
-    private class SimpleSaveAggregateCallback implements SaveAggregateCallback<T> {
-
-        @Override
-        public void save(final T aggregate) {
-            if (aggregate.isDeleted()) {
-                doDelete(aggregate);
-            } else {
-                doSave(aggregate);
-            }
-            aggregate.commitEvents();
-            if (aggregate.isDeleted()) {
-                postDelete(aggregate);
-            } else {
-                postSave(aggregate);
-            }
-        }
     }
 }

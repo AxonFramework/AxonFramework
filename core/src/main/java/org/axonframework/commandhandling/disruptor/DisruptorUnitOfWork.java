@@ -16,273 +16,59 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.EventRegistrationCallback;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.SaveAggregateCallback;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListener;
-import org.axonframework.unitofwork.UnitOfWorkListenerCollection;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.AbstractUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 /**
- * Specialized UnitOfWork instance for the DisruptorCommandBus. It expects the executing command to target a single
- * aggregate instance.
+ * Specialized UnitOfWork instance for the {@link DisruptorCommandBus}. It expects the executing command message to
+ * target a single aggregate instance.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public class DisruptorUnitOfWork implements UnitOfWork, EventRegistrationCallback {
+public class DisruptorUnitOfWork extends AbstractUnitOfWork {
 
-    private static final DomainEventStream EMPTY_DOMAIN_EVENT_STREAM = new SimpleDomainEventStream();
-    private DomainEventStream eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
-    private final List<EventMessage> eventsToPublish = new ArrayList<EventMessage>();
-    private final UnitOfWorkListenerCollection listeners = new UnitOfWorkListenerCollection();
-    private final boolean transactional;
-    private final Map<String, Object> resources = new HashMap<String, Object>();
-    private final Map<String, Object> inheritedResources = new HashMap<String, Object>();
-    private boolean committed;
-    private Throwable rollbackReason;
-    private EventSourcedAggregateRoot aggregate;
-    private String aggregateType;
-    private EventStreamDecorator eventStreamDecorator;
+    private Message<?> message;
 
     /**
-     * Creates a new Unit of Work for use in the DisruptorCommandBus.
+     * Resets the state of this Unit of Work, by setting its phase to {@link Phase#NOT_STARTED}, replacing the message
+     * of this Unit of Work with given <code>message</code>, and clearing its collection of registered handlers.
      *
-     * @param transactional Whether this Unit of Work is bound to a transaction
+     * @param message the new Message that is about to be processed.
      */
-    public DisruptorUnitOfWork(boolean transactional) {
-        this.transactional = transactional;
+    public void reset(Message<?> message) {
+        handlers().clear();
+        this.message = message;
+        setPhase(Phase.NOT_STARTED);
     }
 
-    @Override
-    public void commit() {
-        committed = true;
-        if (aggregate != null) {
-            eventsToStore = aggregate.getUncommittedEvents();
-            aggregate.commitEvents();
-        }
+    /**
+     * Pause this Unit of Work by unregistering it with the {@link CurrentUnitOfWork}. This will detach it from the
+     * current thread.
+     */
+    public void pause() {
         CurrentUnitOfWork.clear(this);
     }
 
     /**
-     * Invokes this UnitOfWork's on-prepare-commit cycle. Typically, this is run after the actual aggregates have been
-     * committed, but before any of the changes are made public.
+     * Resume a paused Unit of Work by registering it with the {@link CurrentUnitOfWork}. This will attach it to the
+     * current thread again.
      */
-    public void onPrepareCommit() {
-        listeners.onPrepareCommit(this,
-                                  aggregate != null
-                                          ? Collections.<AggregateRoot>singleton(aggregate)
-                                          : Collections.<AggregateRoot>emptySet(),
-                                  eventsToPublish);
-    }
-
-    /**
-     * Invokes this UnitOfWork's on-prepare-transaction-commit cycle.
-     *
-     * @param transaction The object representing the transaction to about to be committed
-     */
-    public void onPrepareTransactionCommit(Object transaction) {
-        listeners.onPrepareTransactionCommit(this, transaction);
-    }
-
-    /**
-     * Invokes this UnitOfWork's on-after-commit cycle. Typically, this is run after all the events have been stored
-     * and published.
-     */
-    public void onAfterCommit() {
-        listeners.afterCommit(this);
-    }
-
-    /**
-     * Invokes this UnitOfWork's on-cleanup cycle. Typically, this is run after all the events have been stored and
-     * published and the after-commit cycle has been executed.
-     */
-    public void onCleanup() {
-        listeners.onCleanup(this);
-
-        // clear the lists of events to make them garbage-collectible
-        eventsToStore = EMPTY_DOMAIN_EVENT_STREAM;
-        eventsToPublish.clear();
-        eventStreamDecorator = null;
-        this.resources.clear();
-        this.inheritedResources.clear();
-    }
-
-    /**
-     * Invokes this UnitOfWork's on-rollback cycle. Typically, this is run after all the events have been stored and
-     * published and the after-commit cycle has been executed.
-     *
-     * @param cause The cause of the rollback
-     */
-    public void onRollback(Throwable cause) {
-        listeners.onRollback(this, cause);
-    }
-
-    @Override
-    public void rollback() {
-        rollback(null);
-    }
-
-    @Override
-    public void rollback(Throwable cause) {
-        rollbackReason = cause;
-        if (aggregate != null) {
-            aggregate.commitEvents();
-        }
-        CurrentUnitOfWork.clear(this);
-    }
-
-    @Override
-    public void start() {
+    public void resume() {
         CurrentUnitOfWork.set(this);
     }
 
     @Override
-    public boolean isStarted() {
-        return !committed && rollbackReason == null;
+    public Optional<UnitOfWork> parent() {
+        return Optional.empty();
     }
 
     @Override
-    public boolean isTransactional() {
-        return transactional;
-    }
-
-    @Override
-    public void registerListener(UnitOfWorkListener listener) {
-        listeners.add(listener);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T extends AggregateRoot> T registerAggregate(T aggregateRoot, EventBus eventBus,
-                                                         SaveAggregateCallback<T> saveAggregateCallback) {
-        if (aggregateType == null) {
-            throw new IllegalStateException(
-                    "Cannot register an aggregate if the aggregate type of this Unit of Work hasn't been set.");
-        }
-        if (aggregate != null && aggregateRoot != aggregate) { // NOSONAR - Intentional equality check
-            throw new IllegalArgumentException(
-                    "Cannot register more than one aggregate in this Unit Of Work. Either ensure each command "
-                            + "executes against at most one aggregate, or use another Command Bus implementation."
-            );
-        }
-        aggregate = (EventSourcedAggregateRoot) aggregateRoot;
-
-        // listen for new events registered in the aggregate
-        aggregate.addEventRegistrationCallback(this);
-
-        return (T) aggregate;
-    }
-
-    @Override
-    public void attachResource(String name, Object resource) {
-        this.resources.put(name, resource);
-        this.inheritedResources.remove(name);
-    }
-
-    @Override
-    public void attachResource(String name, Object resource, boolean inherited) {
-        this.resources.put(name, resource);
-        if (inherited) {
-            inheritedResources.put(name, resource);
-        } else {
-            inheritedResources.remove(name);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T getResource(String name) {
-        return (T) resources.get(name);
-    }
-
-    @Override
-    public void attachInheritedResources(UnitOfWork inheritingUnitOfWork) {
-        for (Map.Entry<String, Object> entry : inheritedResources.entrySet()) {
-            inheritingUnitOfWork.attachResource(entry.getKey(), entry.getValue(), true);
-        }
-    }
-
-    @Override
-    public void publishEvent(EventMessage event, EventBus eventBus) {
-        eventsToPublish.add(listeners.onEventRegistered(this, event));
-    }
-
-    /**
-     * Returns the events that need to be stored as part of this Unit of Work.
-     *
-     * @return the events that need to be stored as part of this Unit of Work
-     */
-    public DomainEventStream getEventsToStore() {
-        if (eventStreamDecorator == null) {
-            return eventsToStore;
-        }
-        return eventStreamDecorator.decorateForAppend(aggregateType, aggregate, eventsToStore);
-    }
-
-    /**
-     * Returns the events that need to be published as part of this Unit of Work.
-     *
-     * @return the events that need to be published as part of this Unit of Work
-     */
-    public List<EventMessage> getEventsToPublish() {
-        return eventsToPublish;
-    }
-
-    /**
-     * Returns the identifier of the aggregate modified in this UnitOfWork.
-     *
-     * @return the identifier of the aggregate modified in this UnitOfWork
-     */
-    public EventSourcedAggregateRoot getAggregate() {
-        return aggregate;
-    }
-
-    @Override
-    public <T> DomainEventMessage<T> onRegisteredEvent(DomainEventMessage<T> event) {
-        DomainEventMessage<T> message = (DomainEventMessage<T>) listeners.onEventRegistered(this, event);
-        eventsToPublish.add(message);
+    public Message<?> getMessage() {
         return message;
-    }
-
-    /**
-     * Returns the type identifier of the aggregate handled in this unit of work.
-     *
-     * @return the type identifier of the aggregate handled in this unit of work
-     */
-    public String getAggregateType() {
-        return aggregateType;
-    }
-
-    /**
-     * Sets the type identifier of the aggregate handled in this unit of work
-     *
-     * @param aggregateType the type identifier of the aggregate handled in this unit of work
-     */
-    public void setAggregateType(String aggregateType) {
-        this.aggregateType = aggregateType;
-    }
-
-    /**
-     * Registers the EventStreamDecorator for events as part of this unit of work
-     *
-     * @param eventStreamDecorator The EventStreamDecorator to use for the event streams part of this unit of work
-     */
-    public void setEventStreamDecorator(EventStreamDecorator eventStreamDecorator) {
-        this.eventStreamDecorator = eventStreamDecorator;
     }
 }

@@ -18,8 +18,8 @@ package org.axonframework.saga.annotation;
 
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.IdentifierFactory;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;

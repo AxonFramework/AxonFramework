@@ -16,43 +16,57 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubDomainEvent;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.repository.ConflictingModificationException;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.junit.*;
-import org.junit.rules.*;
-import org.mockito.*;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.mockito.Matchers;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
  */
 public class FileSystemEventStoreTest {
 
-    private Object aggregateIdentifier;
-    private File eventFileBaseDir;
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
+    private String aggregateIdentifier;
+    private File eventFileBaseDir;
 
     @Before
     public void setUp() {
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = UUID.randomUUID().toString();
         eventFileBaseDir = tempFolder.getRoot();
     }
 
@@ -60,23 +74,22 @@ public class FileSystemEventStoreTest {
     public void testSaveStreamAndReadBackIn() {
         FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
 
-        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 0,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 1,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 2,
                 new StubDomainEvent());
-        DomainEventStream stream = new SimpleDomainEventStream(event1, event2, event3);
-        eventStore.appendEvents("test", stream);
+        eventStore.appendEvents(Arrays.asList(event1, event2, event3));
 
-        DomainEventStream eventStream = eventStore.readEvents("test", aggregateIdentifier);
-        List<DomainEventMessage<?>> domainEvents = new ArrayList<DomainEventMessage<?>>();
+        DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
+        List<DomainEventMessage<?>> domainEvents = new ArrayList<>();
         while (eventStream.hasNext()) {
             domainEvents.add(eventStream.next());
         }
@@ -90,23 +103,21 @@ public class FileSystemEventStoreTest {
     public void testShouldThrowExceptionUponDuplicateAggregateId() {
         FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
 
-        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 0,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 1,
                 new StubDomainEvent());
-        DomainEventStream stream = new SimpleDomainEventStream(event1, event2);
-        eventStore.appendEvents("test", stream);
+        eventStore.appendEvents(Arrays.asList(event1, event2));
 
-        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 0,
                 new StubDomainEvent());
-        DomainEventStream stream2 = new SimpleDomainEventStream(event3);
-        eventStore.appendEvents("test", stream2);
+        eventStore.appendEvents(Arrays.asList(event3));
     }
 
     @Test
@@ -115,22 +126,21 @@ public class FileSystemEventStoreTest {
         FileSystemEventStore eventStore = new FileSystemEventStore(serializer,
                                                                    new SimpleEventFileResolver(eventFileBaseDir));
 
-        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 0,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 1,
                 new StubDomainEvent());
-        DomainEventStream stream = new SimpleDomainEventStream(event1, event2);
-        eventStore.appendEvents("test", stream);
+        eventStore.appendEvents(Arrays.asList(event1, event2));
 
-        doReturn(new SimpleSerializedObject<byte[]>("error".getBytes(), byte[].class, String.class.getName(), "old"))
+        doReturn(new SimpleSerializedObject<>("error".getBytes(), byte[].class, String.class.getName(), "old"))
                 .when(serializer).serialize(anyObject(), eq(byte[].class));
-        eventStore.appendSnapshotEvent("test", event2);
+        eventStore.appendSnapshotEvent(event2);
 
-        DomainEventStream actual = eventStore.readEvents("test", aggregateIdentifier);
+        DomainEventStream actual = eventStore.readEvents(aggregateIdentifier);
         assertTrue(actual.hasNext());
         assertEquals(0, actual.next().getSequenceNumber());
         assertEquals(1, actual.next().getSequenceNumber());
@@ -149,20 +159,19 @@ public class FileSystemEventStoreTest {
                     "Some more text to make this event really long. It should not be a problem for the event serializer.");
         }
         description = stringBuilder.toString();
-        GenericDomainEventMessage<MyStubDomainEvent> event1 = new GenericDomainEventMessage<MyStubDomainEvent>(
+        GenericDomainEventMessage<MyStubDomainEvent> event1 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 0,
                 new MyStubDomainEvent(description));
-        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 1,
                 new StubDomainEvent());
 
-        DomainEventStream stream = new SimpleDomainEventStream(event1, event2);
-        eventStore.appendEvents("test", stream);
+        eventStore.appendEvents(Arrays.asList(event1, event2));
 
-        DomainEventStream eventStream = eventStore.readEvents("test", aggregateIdentifier);
-        List<DomainEventMessage<? extends Object>> domainEvents = new ArrayList<DomainEventMessage<? extends Object>>();
+        DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
+        List<DomainEventMessage<?>> domainEvents = new ArrayList<>();
         while (eventStream.hasNext()) {
             domainEvents.add(eventStream.next());
         }
@@ -176,8 +185,8 @@ public class FileSystemEventStoreTest {
     public void testRead_FileNotReadable() throws IOException {
         EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
         InputStream mockInputStream = mock(InputStream.class);
-        when(mockEventFileResolver.eventFileExists(isA(String.class), any())).thenReturn(true);
-        when(mockEventFileResolver.openEventFileForReading(isA(String.class), any()))
+        when(mockEventFileResolver.eventFileExists(any())).thenReturn(true);
+        when(mockEventFileResolver.openEventFileForReading(any()))
                 .thenReturn(mockInputStream);
         IOException exception = new IOException("Mock Exception");
         when(mockInputStream.read()).thenThrow(exception);
@@ -186,7 +195,7 @@ public class FileSystemEventStoreTest {
         FileSystemEventStore eventStore = new FileSystemEventStore(mockEventFileResolver);
 
         try {
-            eventStore.readEvents("test", UUID.randomUUID());
+            eventStore.readEvents(UUID.randomUUID().toString());
             fail("Expected an exception");
         } catch (EventStoreException e) {
             assertSame(exception, e.getCause());
@@ -195,29 +204,28 @@ public class FileSystemEventStoreTest {
 
     @Test
     public void testWrite_FileDoesNotExist() throws IOException {
-        Object aggregateIdentifier = "aggregateIdentifier";
+        String aggregateIdentifier = "aggregateIdentifier";
         IOException exception = new IOException("Mock");
         EventFileResolver mockEventFileResolver = mock(EventFileResolver.class);
-        when(mockEventFileResolver.openEventFileForWriting(isA(String.class), isA(Object.class)))
+        when(mockEventFileResolver.openEventFileForWriting(isA(String.class)))
                 .thenThrow(exception);
         FileSystemEventStore eventStore = new FileSystemEventStore(mockEventFileResolver);
 
-        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event1 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 0,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event2 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 1,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> event3 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 2,
                 new StubDomainEvent());
-        DomainEventStream stream = new SimpleDomainEventStream(event1, event2, event3);
 
         try {
-            eventStore.appendEvents("test", stream);
+            eventStore.appendEvents(Arrays.asList(event1, event2, event3));
             fail("Expected an exception");
         } catch (EventStoreException e) {
             assertEquals(exception, e.getCause());
@@ -230,29 +238,29 @@ public class FileSystemEventStoreTest {
 
         AtomicInteger counter = new AtomicInteger(0);
 
-        GenericDomainEventMessage<StubDomainEvent> snapshot1 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> snapshot1 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 4,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> snapshot2 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> snapshot2 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 9,
                 new StubDomainEvent());
-        GenericDomainEventMessage<StubDomainEvent> snapshot3 = new GenericDomainEventMessage<StubDomainEvent>(
+        GenericDomainEventMessage<StubDomainEvent> snapshot3 = new GenericDomainEventMessage<>(
                 aggregateIdentifier,
                 14,
                 new StubDomainEvent());
 
         writeEvents(counter, 5);
-        eventStore.appendSnapshotEvent("snapshotting", snapshot1);
+        eventStore.appendSnapshotEvent(snapshot1);
         writeEvents(counter, 5);
-        eventStore.appendSnapshotEvent("snapshotting", snapshot2);
+        eventStore.appendSnapshotEvent(snapshot2);
         writeEvents(counter, 5);
-        eventStore.appendSnapshotEvent("snapshotting", snapshot3);
+        eventStore.appendSnapshotEvent(snapshot3);
         writeEvents(counter, 2);
 
-        DomainEventStream eventStream = eventStore.readEvents("snapshotting", aggregateIdentifier);
-        List<DomainEventMessage<? extends Object>> actualEvents = new ArrayList<DomainEventMessage<? extends Object>>();
+        DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
+        List<DomainEventMessage<?>> actualEvents = new ArrayList<>();
         while (eventStream.hasNext()) {
             actualEvents.add(eventStream.next());
         }
@@ -263,15 +271,12 @@ public class FileSystemEventStoreTest {
     private void writeEvents(AtomicInteger counter, int numberOfEvents) {
         FileSystemEventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(eventFileBaseDir));
 
-        List<DomainEventMessage> events = new ArrayList<DomainEventMessage>();
+        DomainEventMessage[] events = new DomainEventMessage[numberOfEvents];
         for (int t = 0; t < numberOfEvents; t++) {
-            GenericDomainEventMessage<StubDomainEvent> event = new GenericDomainEventMessage<StubDomainEvent>(
-                    aggregateIdentifier,
-                    counter.getAndIncrement(),
-                    new StubDomainEvent());
-            events.add(event);
+            events[t] = new GenericDomainEventMessage<>(aggregateIdentifier, counter.getAndIncrement(),
+                                                        new StubDomainEvent());
         }
-        eventStore.appendEvents("snapshotting", new SimpleDomainEventStream(events));
+        eventStore.appendEvents(Arrays.asList(events));
     }
 
     public static class MyStubDomainEvent extends StubDomainEvent {

@@ -22,7 +22,7 @@ import org.junit.*;
 
 import java.io.UnsupportedEncodingException;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test that reproduces a problem where a structured aggregate (containing multiple entities) is not serialized
@@ -38,10 +38,9 @@ public class StructuredAggregateSerializationTest {
         aggregateRoot.invoke();
         assertEquals(2, aggregateRoot.getInvocations());
         assertEquals(2, aggregateRoot.getEntity().getInvocations());
-        aggregateRoot.commitEvents();
         XStreamSerializer serializer = new XStreamSerializer();
         SerializedObject<byte[]> serialized = serializer.serialize(aggregateRoot, byte[].class);
-        StructuredAggregateRoot deserializedAggregate = (StructuredAggregateRoot) serializer.deserialize(serialized);
+        StructuredAggregateRoot deserializedAggregate = serializer.deserialize(serialized);
 
         deserializedAggregate.invoke();
         assertEquals(3, deserializedAggregate.getInvocations());

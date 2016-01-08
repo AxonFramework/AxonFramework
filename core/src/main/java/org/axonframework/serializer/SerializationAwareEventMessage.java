@@ -16,14 +16,14 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 
+import java.time.Instant;
 import java.util.Map;
 
 /**
- * Wrapper around am EventMessage that adds "Serialization Awareness" to the message it wraps. This implementation
+ * Wrapper around an EventMessage that adds "Serialization Awareness" to the message it wraps. This implementation
  * ensures that, when the payload or meta data is being serialized more than once using the same serializer, only a
  * single serialization will actually occur. Subsequent invocations will return the same <code>SerializedObject</code>
  * instance as the first.
@@ -53,7 +53,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
         if (message instanceof SerializationAware) {
             return message;
         }
-        return new SerializationAwareEventMessage<T>(message);
+        return new SerializationAwareEventMessage<>(message);
     }
 
     /**
@@ -82,12 +82,12 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return eventMessage.getPayloadType();
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return eventMessage.getTimestamp();
     }
 
@@ -97,7 +97,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
         if (eventMessage == newMessage) { // NOSONAR - Equal instance check on purpose
             return this;
         }
-        return new SerializationAwareEventMessage<T>(newMessage);
+        return new SerializationAwareEventMessage<>(newMessage);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class SerializationAwareEventMessage<T> implements SerializationAware, Ev
         if (eventMessage == newMessage) { // NOSONAR - Equal instance check on purpose
             return this;
         }
-        return new SerializationAwareEventMessage<T>(newMessage);
+        return new SerializationAwareEventMessage<>(newMessage);
     }
 
     @Override

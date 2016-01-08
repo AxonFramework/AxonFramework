@@ -17,26 +17,22 @@
 package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkFactory;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * An {@link EventScheduler} implementation that uses Java's ScheduledExecutorService as scheduling and triggering
@@ -57,7 +53,7 @@ public class SimpleEventScheduler implements EventScheduler {
     private final ScheduledExecutorService executorService;
     private final EventBus eventBus;
     private final UnitOfWorkFactory unitOfWorkFactory;
-    private final Map<String, Future<?>> tokens = new ConcurrentHashMap<String, Future<?>>();
+    private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
 
     /**
      * Initialize the SimpleEventScheduler using the given <code>executorService</code> as trigger and execution
@@ -91,15 +87,15 @@ public class SimpleEventScheduler implements EventScheduler {
     }
 
     @Override
-    public ScheduleToken schedule(DateTime triggerDateTime, Object event) {
-        return schedule(new Duration(null, triggerDateTime), event);
+    public ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event) {
+        return schedule(Duration.between(ZonedDateTime.now(), triggerDateTime), event);
     }
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
         String tokenId = IdentifierFactory.getInstance().generateIdentifier();
         ScheduledFuture<?> future = executorService.schedule(new PublishEventTask(event, tokenId),
-                                                             triggerDuration.getMillis(),
+                                                             triggerDuration.toMillis(),
                                                              TimeUnit.MILLISECONDS);
         tokens.put(tokenId, future);
         return new SimpleScheduleToken(tokenId);
@@ -130,13 +126,12 @@ public class SimpleEventScheduler implements EventScheduler {
         @Override
         public void run() {
             EventMessage<?> eventMessage = createMessage();
-            if (logger.isInfoEnabled()) {
-                logger.info("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
-            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
             try {
-                unitOfWork.publishEvent(eventMessage, eventBus);
-                unitOfWork.commit();
+                UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+                unitOfWork.execute(() -> eventBus.publish(eventMessage));
             } finally {
                 tokens.remove(tokenId);
             }
@@ -151,10 +146,10 @@ public class SimpleEventScheduler implements EventScheduler {
         private EventMessage<?> createMessage() {
             EventMessage<?> eventMessage;
             if (event instanceof EventMessage) {
-                eventMessage = new GenericEventMessage<Object>(((EventMessage) event).getPayload(),
+                eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
                                                                ((EventMessage) event).getMetaData());
             } else {
-                eventMessage = new GenericEventMessage<Object>(event);
+                eventMessage = new GenericEventMessage<>(event);
             }
             return eventMessage;
         }

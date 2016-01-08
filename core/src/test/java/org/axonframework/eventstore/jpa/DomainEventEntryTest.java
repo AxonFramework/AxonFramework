@@ -16,19 +16,20 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -37,9 +38,9 @@ import static org.mockito.Mockito.*;
 public class DomainEventEntryTest {
 
     private DomainEventMessage mockDomainEvent;
-    private SerializedObject<byte[]> mockPayload = new SimpleSerializedObject<byte[]>("PayloadBytes".getBytes(),
+    private SerializedObject<byte[]> mockPayload = new SimpleSerializedObject<>("PayloadBytes".getBytes(),
                                                                                       byte[].class, "Mock", "0");
-    private SerializedObject<byte[]> mockMetaData = new SerializedMetaData<byte[]>("MetaDataBytes".getBytes(),
+    private SerializedObject<byte[]> mockMetaData = new SerializedMetaData<>("MetaDataBytes".getBytes(),
                                                                                    byte[].class);
 
     @Before
@@ -54,7 +55,7 @@ public class DomainEventEntryTest {
     @Test
     public void testDomainEventEntry_WrapEventsCorrectly() {
         String aggregateIdentifier = UUID.randomUUID().toString();
-        DateTime timestamp = new DateTime();
+        Instant timestamp = Instant.now();
         UUID eventIdentifier = UUID.randomUUID();
 
         when(mockDomainEvent.getAggregateIdentifier()).thenReturn(aggregateIdentifier);
@@ -63,11 +64,10 @@ public class DomainEventEntryTest {
         when(mockDomainEvent.getIdentifier()).thenReturn(eventIdentifier.toString());
         when(mockDomainEvent.getPayloadType()).thenReturn(String.class);
 
-        DomainEventEntry actualResult = new DomainEventEntry("test", mockDomainEvent, mockPayload, mockMetaData);
+        DomainEventEntry actualResult = new DomainEventEntry(mockDomainEvent, mockPayload, mockMetaData);
 
         assertEquals(aggregateIdentifier, actualResult.getAggregateIdentifier());
         assertEquals(2L, actualResult.getSequenceNumber());
         assertEquals(timestamp, actualResult.getTimestamp());
-        assertEquals("test", actualResult.getType());
     }
 }

@@ -48,7 +48,7 @@ public abstract class CollectionUtils {
      */
 
     public static <T> List<T> filterByType(Iterable<?> collection, Class<T> expectedType) {
-        List<T> filtered = new LinkedList<T>();
+        List<T> filtered = new LinkedList<>();
         if (collection != null) {
             for (Object item : collection) {
                 if (item != null && expectedType.isInstance(item)) {

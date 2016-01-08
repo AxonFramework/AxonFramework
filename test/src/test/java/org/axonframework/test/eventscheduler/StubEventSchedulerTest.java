@@ -16,13 +16,15 @@
 
 package org.axonframework.test.eventscheduler;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.junit.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Allard Buijze
@@ -38,12 +40,12 @@ public class StubEventSchedulerTest {
 
     @Test
     public void testScheduleEvent() {
-        testSubject.schedule(new DateTime().plus(Duration.standardDays(1)), event(new MockEvent()));
+        testSubject.schedule(ZonedDateTime.now().plus(Duration.ofDays(1)), event(new MockEvent()));
         assertEquals(1, testSubject.getScheduledItems().size());
     }
 
     private EventMessage<MockEvent> event(MockEvent mockEvent) {
-        return new GenericEventMessage<MockEvent>(mockEvent);
+        return new GenericEventMessage<>(mockEvent);
     }
 
     private static class MockEvent {

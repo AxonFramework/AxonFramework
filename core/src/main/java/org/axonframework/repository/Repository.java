@@ -16,6 +16,8 @@
 
 package org.axonframework.repository;
 
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+
 /**
  * The repository provides an abstraction of the storage of aggregates.
  *
@@ -42,9 +44,9 @@ public interface Repository<T> {
      * @throws ConflictingModificationException
      *                                    if the <code>expectedVersion</code> did not match the aggregate's actual
      *                                    version
-     * @see org.axonframework.unitofwork.UnitOfWork
+     * @see UnitOfWork
      */
-    T load(Object aggregateIdentifier, Long expectedVersion);
+    T load(String aggregateIdentifier, Long expectedVersion);
 
     /**
      * Load the aggregate with the given unique identifier. No version checks are done when loading an aggregate,
@@ -55,9 +57,11 @@ public interface Repository<T> {
      *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
-    T load(Object aggregateIdentifier);
+    T load(String aggregateIdentifier);
 
     /**
+     * TODO: documentation is out of date. New event-sourced aggregates have last event sequence number as version.
+     *
      * Adds the given <code>aggregate</code> to the repository. The version of this aggregate must be <code>null</code>,
      * indicating that it has not been previously persisted.
      * <p/>

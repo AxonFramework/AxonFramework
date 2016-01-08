@@ -16,13 +16,10 @@
 
 package org.axonframework.eventstore.supporting;
 
-import java.io.Closeable;
-import java.io.IOException;
-
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
@@ -30,7 +27,14 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.List;
+import java.util.function.Supplier;
+
 /**
+ * TODO: fix documentation
+ *
  * Joins two {@link EventStore}s together.
  * 
  * <p>
@@ -79,20 +83,35 @@ public class SequenceEventStore implements EventStore, EventStoreManagement {
     }
 
     @Override
-    public synchronized void appendEvents(String type, DomainEventStream events) {
-        second.appendEvents(type, events);
+    public void appendEvents(List<DomainEventMessage<?>> events) {
+        second.appendEvents(events);
     }
 
     @Override
-    public synchronized DomainEventStream readEvents(String type, Object identifier) {
+    public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
+                                        long lastSequenceNumber) {
         return new JoinedDomainEventStream(
-                firstReadEventsIgnoreMissing(type, identifier),
-                second.readEvents(type, identifier));
+                ignoreMissing(() -> first.readEvents(identifier, firstSequenceNumber, lastSequenceNumber)),
+                second.readEvents(identifier, firstSequenceNumber, lastSequenceNumber));
     }
 
-    private DomainEventStream firstReadEventsIgnoreMissing(String type, Object identifier) {
+    @Override
+    public DomainEventStream readEvents(String identifier, long firstSequenceNumber) {
+        return new JoinedDomainEventStream(
+                ignoreMissing(() -> first.readEvents(identifier, firstSequenceNumber)),
+                second.readEvents(identifier, firstSequenceNumber));
+    }
+
+    @Override
+    public synchronized DomainEventStream readEvents(String identifier) {
+        return new JoinedDomainEventStream(
+                ignoreMissing(() -> first.readEvents(identifier)),
+                second.readEvents(identifier));
+    }
+
+    private DomainEventStream ignoreMissing(Supplier<DomainEventStream> readEventsFunction) {
         try {
-            return first.readEvents(type, identifier);
+            return readEventsFunction.get();
         } catch (EventStreamNotFoundException e) {
             // ignore when first eventstore have no events for requested aggregate
             return new SimpleDomainEventStream();

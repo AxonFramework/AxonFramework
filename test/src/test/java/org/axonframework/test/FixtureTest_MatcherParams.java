@@ -16,15 +16,16 @@
 
 package org.axonframework.test;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.Message;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.*;
-import org.mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,7 +33,6 @@ import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -151,10 +151,11 @@ public class FixtureTest_MatcherParams {
     }
 
     @Test
-    public void testFixture_DispatchMetaDataInCommand() throws Throwable {
+    @SuppressWarnings("unchecked")
+    public void testFixture_DispatchMetaDataInCommand() throws Exception {
         List<?> givenEvents = Arrays.asList(new MyEvent("aggregateId", 1), new MyEvent("aggregateId", 2),
                                             new MyEvent("aggregateId", 3));
-        CommandHandler mockCommandHandler = mock(CommandHandler.class);
+        MessageHandler<CommandMessage<?>> mockCommandHandler = mock(MessageHandler.class);
         fixture.registerCommandHandler(StrangeCommand.class, mockCommandHandler);
         fixture
                 .given(givenEvents)

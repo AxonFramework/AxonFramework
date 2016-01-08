@@ -16,17 +16,17 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.EndSaga;
 import org.axonframework.saga.annotation.SagaEventHandler;
 import org.axonframework.saga.annotation.StartSaga;
-import org.joda.time.Duration;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,29 +39,29 @@ public class StubSaga extends AbstractAnnotatedSaga {
     private transient StubGateway stubGateway;
     private transient EventBus eventBus;
     private transient EventScheduler scheduler;
-    private List<Object> handledEvents = new ArrayList<Object>();
+    private List<Object> handledEvents = new ArrayList<>();
     private ScheduleToken timer;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "identifier")
     public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message) {
         handledEvents.add(event);
-        timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
+        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
+                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @StartSaga(forceNew = true)
     @SagaEventHandler(associationProperty = "identifier")
     public void handleForcedSagaStart(ForceTriggerSagaStartEvent event) {
         handledEvents.add(event);
-        timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
+        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
+                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event) {
         handledEvents.add(event);
-        eventBus.publish(new GenericEventMessage<SagaWasTriggeredEvent>(new SagaWasTriggeredEvent(this)));
+        eventBus.publish(new GenericEventMessage<>(new SagaWasTriggeredEvent(this)));
     }
 
     @EndSaga
@@ -89,8 +89,8 @@ public class StubSaga extends AbstractAnnotatedSaga {
     public void handleResetTriggerEvent(ResetTriggerEvent event) {
         handledEvents.add(event);
         scheduler.cancelSchedule(timer);
-        timer = scheduler.schedule(Duration.standardMinutes(TRIGGER_DURATION_MINUTES),
-                                   new GenericEventMessage<TimerTriggeredEvent>(new TimerTriggeredEvent(event.getIdentifier())));
+        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
+                                   new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     public EventBus getEventBus() {

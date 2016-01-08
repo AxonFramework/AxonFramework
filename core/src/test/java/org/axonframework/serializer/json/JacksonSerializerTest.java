@@ -20,16 +20,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.axonframework.domain.MetaData;
-import org.axonframework.serializer.AnnotationRevisionResolver;
-import org.axonframework.serializer.ChainingConverterFactory;
-import org.axonframework.serializer.ContentTypeConverter;
-import org.axonframework.serializer.RevisionResolver;
-import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
-import org.junit.*;
+import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.serializer.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.InputStream;
+import java.time.Instant;
 
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.*;
@@ -41,12 +38,12 @@ import static org.mockito.Mockito.*;
 public class JacksonSerializerTest {
 
     private JacksonSerializer testSubject;
-    private DateTime time;
+    private Instant time;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new JacksonSerializer();
-        time = new DateTime();
+        time = Instant.now();
     }
 
     @Test
@@ -164,16 +161,16 @@ public class JacksonSerializerTest {
     public static class SimpleSerializableType {
 
         private final String value;
-        private final DateTime time;
+        private final Instant time;
         private final SimpleSerializableType nested;
 
         public SimpleSerializableType(String value) {
-            this(value, new DateTime(), null);
+            this(value, Instant.now(), null);
         }
 
         @JsonCreator
         public SimpleSerializableType(@JsonProperty("value") String value,
-                                      @JsonProperty("time") DateTime time,
+                                      @JsonProperty("time") Instant time,
                                       @JsonProperty("nested") SimpleSerializableType nested) {
             this.value = value;
             this.time = time;
@@ -188,7 +185,7 @@ public class JacksonSerializerTest {
             return value;
         }
 
-        public DateTime getTime() {
+        public Instant getTime() {
             return time;
         }
     }

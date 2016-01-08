@@ -16,18 +16,16 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.junit.*;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.mockito.Mockito.*;
 
 /**
@@ -39,8 +37,8 @@ public class SerializationAwareDomainEventMessageTest {
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new SerializationAwareDomainEventMessage<String>(
-                new GenericDomainEventMessage<String>("aggregate", 1, "payload", Collections.singletonMap("key", "value")));
+        testSubject = new SerializationAwareDomainEventMessage<>(
+                new GenericDomainEventMessage<>("aggregate", 1, "payload", Collections.singletonMap("key", "value")));
     }
 
     @Test
@@ -58,7 +56,7 @@ public class SerializationAwareDomainEventMessageTest {
     public void testSerializePayloadTwice() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize("payload", byte[].class)).thenReturn(serializedObject);
         testSubject.serializePayload(serializer, byte[].class);
         testSubject.serializePayload(serializer, byte[].class);
@@ -70,7 +68,7 @@ public class SerializationAwareDomainEventMessageTest {
     public void testSerializeMetaDataTwice() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
         testSubject.serializeMetaData(serializer, byte[].class);
         testSubject.serializeMetaData(serializer, byte[].class);
@@ -82,7 +80,7 @@ public class SerializationAwareDomainEventMessageTest {
     public void testSerializePayloadTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize("payload", byte[].class)).thenReturn(serializedObject);
         SerializedObject<byte[]> actual1 = testSubject.serializePayload(serializer, byte[].class);
         SerializedObject<String> actual2 = testSubject.serializePayload(serializer, String.class);
@@ -97,7 +95,7 @@ public class SerializationAwareDomainEventMessageTest {
     public void testSerializeMetaDataTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
         SerializedObject<byte[]> actual1 = testSubject.serializeMetaData(serializer, byte[].class);
         SerializedObject<String> actual2 = testSubject.serializeMetaData(serializer, String.class);

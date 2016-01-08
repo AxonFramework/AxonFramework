@@ -20,7 +20,10 @@ import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
+
 
 /**
  * Simple implementation of the {@link SerializedDomainEventData} class, used to reduce memory consumptions by queries
@@ -36,13 +39,13 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
     private final String eventIdentifier;
     private final String aggregateIdentifier;
     private final long sequenceNumber;
-    private final DateTime timestamp;
+    private final Instant timestamp;
     private final SerializedObject<T> serializedPayload;
     private final SerializedObject<T> serializedMetaData;
 
     /**
      * Initialize an instance using given properties. This constructor assumes the default SerializedType for meta data
-     * (name = 'org.axonframework.domain.MetaData' and revision = <em>null</em>).
+     * (name = 'org.axonframework.messaging.metadata.MetaData' and revision = <em>null</em>).
      * <p/>
      * Note that the given <code>timestamp</code> must be in a format supported by {@link} DateTime#DateTime(Object)}.
      *
@@ -50,7 +53,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
      * @param aggregateIdentifier The identifier of the aggregate
      * @param sequenceNumber      The sequence number of the event
      * @param timestamp           The timestamp of the event (format must be supported by {@link
-     *                            DateTime#DateTime(Object)})
+     *                            Instant#from(TemporalAccessor)} or {@link Instant#parse(CharSequence)})
      * @param payloadType         The type identifier of the serialized payload
      * @param payloadRevision     The revision of the serialized payload
      * @param payload             The serialized representation of the event
@@ -61,9 +64,9 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
                                            long sequenceNumber, Object timestamp, String payloadType,
                                            String payloadRevision, T payload, T metaData) { // NOSONAR
         this(eventIdentifier, aggregateIdentifier, sequenceNumber, timestamp,
-             new SimpleSerializedObject<T>(payload, (Class<T>) payload.getClass(),
+             new SimpleSerializedObject<>(payload, (Class<T>) payload.getClass(),
                                            payloadType, payloadRevision),
-             new SerializedMetaData<T>(metaData, (Class<T>) metaData.getClass()));
+             new SerializedMetaData<>(metaData, (Class<T>) metaData.getClass()));
     }
 
     /**
@@ -76,7 +79,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
      * @param aggregateIdentifier The identifier of the aggregate
      * @param sequenceNumber      The sequence number of the event
      * @param timestamp           The timestamp of the event (format must be supported by {@link
-     *                            DateTime#DateTime(Object)})
+     *                            Instant#from(TemporalAccessor)} or {@link Instant#parse(CharSequence)})
      * @param serializedPayload   The serialized representation of the event
      * @param serializedMetaData  The serialized representation of the meta data
      */
@@ -87,7 +90,15 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
         this.eventIdentifier = eventIdentifier;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
-        this.timestamp = new DateTime(timestamp);
+        if(timestamp instanceof TemporalAccessor) {
+            this.timestamp = Instant.from((TemporalAccessor) timestamp);
+        } else if(timestamp instanceof String && ((String)timestamp).matches("\\d*")) {
+            this.timestamp = Instant.ofEpochMilli(Long.parseLong((String)timestamp));
+        } else if(timestamp instanceof CharSequence) {
+            this.timestamp = Instant.parse((CharSequence) timestamp);
+        } else {
+            this.timestamp = Instant.ofEpochMilli((Long) timestamp);
+        }
         this.serializedPayload = serializedPayload;
         this.serializedMetaData = serializedMetaData;
     }
@@ -98,7 +109,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
@@ -108,7 +119,7 @@ public class SimpleSerializedDomainEventData<T> implements SerializedDomainEvent
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 

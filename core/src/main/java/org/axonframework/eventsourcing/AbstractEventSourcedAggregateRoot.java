@@ -18,33 +18,34 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
 import org.axonframework.domain.AbstractAggregateRoot;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 
+import javax.persistence.Basic;
+import javax.persistence.MappedSuperclass;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import javax.persistence.MappedSuperclass;
 
 /**
  * Abstract convenience class to be extended by all aggregate roots. The AbstractEventSourcedAggregateRoot tracks all
  * uncommitted events. It also provides convenience methods to initialize the state of the aggregate root based on a
- * {@link org.axonframework.domain.DomainEventStream}, which can be used for event sourcing.
+ * {@link DomainEventStream}, which can be used for event sourcing.
  *
- * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @since 0.1
  */
 @MappedSuperclass
-public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggregateRoot<I>
-        implements EventSourcedAggregateRoot<I> {
+public abstract class AbstractEventSourcedAggregateRoot extends AbstractAggregateRoot
+        implements EventSourcedAggregateRoot {
 
     private static final long serialVersionUID = 5868786029296883724L;
     private transient boolean inReplay = false;
 
     private transient boolean applyingEvents = false;
-    private transient Queue<PayloadAndMetaData> eventsToApply = new ArrayDeque<PayloadAndMetaData>();
+    private transient Queue<PayloadAndMetaData> eventsToApply = new ArrayDeque<>();
+
+    @Basic(optional = true)
+    private Long lastEventSequenceNumber;
 
     /**
      * {@inheritDoc}
@@ -59,7 +60,7 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
      */
     @Override
     public void initializeState(DomainEventStream domainEventStream) {
-        Assert.state(getUncommittedEventCount() == 0, "Aggregate is already initialized");
+        Assert.state(getLastEventSequenceNumber() == null, "Aggregate is already initialized");
         inReplay = true;
         long lastSequenceNumber = -1;
         while (domainEventStream.hasNext()) {
@@ -67,13 +68,38 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
             lastSequenceNumber = event.getSequenceNumber();
             handleRecursively(event);
         }
-        initializeEventStream(lastSequenceNumber);
+        lastEventSequenceNumber = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
         inReplay = false;
+    }
+
+    @Override
+    protected <T> EventMessage<T> registerEvent(T payload) {
+        return registerEvent(MetaData.emptyInstance(), payload);
+    }
+
+    @Override
+    protected <T> EventMessage<T> registerEvent(MetaData metaData, T payload) {
+        final GenericDomainEventMessage<T> message = new GenericDomainEventMessage<T>(getIdentifier(),
+                                                                                      nextSequenceNumber(),
+                                                                                      payload, metaData);
+        registerEventMessage(message);
+        return message;
+    }
+
+    @Override
+    protected <T> void registerEventMessage(EventMessage<T> message) {
+        super.registerEventMessage(message);
+        if (message instanceof DomainEventMessage) {
+            DomainEventMessage<T> domainEventMessage = (DomainEventMessage<T>) message;
+            if (lastEventSequenceNumber == null || domainEventMessage.getSequenceNumber() > lastEventSequenceNumber) {
+                lastEventSequenceNumber = domainEventMessage.getSequenceNumber();
+            }
+        }
     }
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(org.axonframework.domain.DomainEventMessage)} event handler method} for processing.
+     * the {@link #handle(EventMessage)} event handler method} for processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *
@@ -85,7 +111,7 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(org.axonframework.domain.DomainEventMessage)} event handler method} for processing.
+     * the {@link #handle(EventMessage)} event handler method} for processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *
@@ -105,41 +131,60 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
                              "Applying an event in an @EventSourcingHandler is allowed, but only *after* the "
                                      + "aggregate identifier has been set");
                 // workaround for aggregates that set the aggregate identifier in an Event Handler
-                if (getUncommittedEventCount() > 0 || getVersion() != null) {
+                if (getVersion() != null) {
                     throw new IncompatibleAggregateException("The Aggregate Identifier has not been initialized. "
                                                                      + "It must be initialized at the latest when the "
                                                                      + "first event is applied.");
                 }
-                final GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<Object>(null,
-                                                                                                        0,
-                                                                                                        eventPayload,
-                                                                                                        metaData);
+                final GenericDomainEventMessage<Object> message = new GenericDomainEventMessage<>(null, 0,
+                                                                                                  eventPayload,
+                                                                                                  metaData);
                 handleRecursively(message);
                 registerEventMessage(message);
             } else {
-                // eventsToApply may heb been set to null by serialization
+                // eventsToApply may have been set to null by serialization
                 if (eventsToApply == null) {
-                    eventsToApply = new ArrayDeque<PayloadAndMetaData>();
+                    eventsToApply = new ArrayDeque<>();
                 }
                 eventsToApply.add(new PayloadAndMetaData(eventPayload, metaData));
             }
 
             while (!wasNested && eventsToApply != null && !eventsToApply.isEmpty()) {
                 final PayloadAndMetaData payloadAndMetaData = eventsToApply.poll();
-                handleRecursively(registerEvent(payloadAndMetaData.metaData, payloadAndMetaData.payload));
+                handleRecursively(registerEvent(payloadAndMetaData.metaData,
+                                                payloadAndMetaData.payload));
             }
         } finally {
             applyingEvents = wasNested;
+            //resets the aggregate state in case an exception is thrown
+            if (!applyingEvents && eventsToApply != null) {
+                eventsToApply.clear();
+            }
         }
     }
 
-    @Override
-    public void commitEvents() {
-        applyingEvents = false;
-        if (eventsToApply != null) {
-            eventsToApply.clear();
+    /**
+     * Returns the sequence number of the last committed event, or <code>null</code> if no events have been committed
+     * before.
+     *
+     * @return the sequence number of the last committed event
+     */
+    protected Long getLastEventSequenceNumber() {
+        return lastEventSequenceNumber;
+    }
+
+    /**
+     * Returns the sequence number for the next event message to be published by this aggregate. If no events have
+     * been published this returns <code>0</code>, otherwise this method returns the sequence number of the last
+     * event message incremented by 1.
+     *
+     * @return the sequence number for the next event message
+     */
+    protected long nextSequenceNumber() {
+        if (lastEventSequenceNumber == null) {
+            return 0L;
         }
-        super.commitEvents();
+        return lastEventSequenceNumber + 1L;
     }
 
     /**
@@ -160,7 +205,7 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
         return !inReplay;
     }
 
-    private void handleRecursively(DomainEventMessage event) {
+    private void handleRecursively(EventMessage<?> event) {
         handle(event);
         Iterable<? extends EventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
@@ -190,11 +235,11 @@ public abstract class AbstractEventSourcedAggregateRoot<I> extends AbstractAggre
      *
      * @param event The event to handle
      */
-    protected abstract void handle(DomainEventMessage event);
+    protected abstract void handle(EventMessage event);
 
     @Override
     public Long getVersion() {
-        return getLastCommittedEventSequenceNumber();
+        return getLastEventSequenceNumber();
     }
 
     private static class PayloadAndMetaData {

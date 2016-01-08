@@ -17,18 +17,20 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.internal.matchers.*;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.matchers.CapturingMatcher;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.mockito.Mockito.*;
 
@@ -39,7 +41,7 @@ public class EventCountSnapshotterTriggerTest {
 
     private EventCountSnapshotterTrigger testSubject;
     private Snapshotter mockSnapshotter;
-    private Object aggregateIdentifier;
+    private String aggregateIdentifier;
     private Cache mockCache;
     private CapturingMatcher<Cache.EntryListener> listenerConfiguration;
     private EventSourcedAggregateRoot aggregate;
@@ -59,16 +61,16 @@ public class EventCountSnapshotterTriggerTest {
         aggregate = new StubAggregate(aggregateIdentifier);
         //noinspection unchecked
         mockCache = mock(Cache.class);
-        listenerConfiguration = new CapturingMatcher<Cache.EntryListener>();
-        doNothing().when(mockCache).registerCacheEntryListener(argThat(listenerConfiguration));
+        listenerConfiguration = new CapturingMatcher<>();
+        when(mockCache.registerCacheEntryListener(argThat(listenerConfiguration))).thenReturn(mock(Registration.class));
 
-        unitOfWork = DefaultUnitOfWork.startAndGet();
+        unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
 
     @After
     public void tearDown() {
         try {
-            if (unitOfWork.isStarted()) {
+            if (unitOfWork.isActive()) {
                 unitOfWork.rollback();
             }
         } finally {
@@ -82,143 +84,139 @@ public class EventCountSnapshotterTriggerTest {
 
     @Test
     public void testSnapshotterTriggered() {
-        readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                                                      "Mock contents", MetaData.emptyInstance())
+        readAllFrom(testSubject.decorateForRead(aggregateIdentifier, new SimpleDomainEventStream(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                                                "Mock contents", MetaData.emptyInstance())
         )));
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
+                                                "Mock contents",
+                                                MetaData.emptyInstance())));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
     }
 
     @Test
     public void testSnapshotterNotTriggeredOnRead() {
-        readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                                                      "Mock contents", MetaData.emptyInstance())
+        readAllFrom(testSubject.decorateForRead(aggregateIdentifier, new SimpleDomainEventStream(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
+                                                "Mock contents", MetaData.emptyInstance())
         )));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
     }
 
     @Test
     public void testSnapshotterNotTriggeredOnSave() {
-        readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                      "Mock contents", MetaData.emptyInstance())
+        readAllFrom(testSubject.decorateForRead(aggregateIdentifier, new SimpleDomainEventStream(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance())
         )));
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                                                "Mock contents", MetaData.emptyInstance())));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
     }
 
     @Test
     public void testCounterDoesNotResetWhenUsingCache() {
         testSubject.setAggregateCache(mockCache);
-        readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                      "Mock contents", MetaData.emptyInstance())
+        readAllFrom(testSubject.decorateForRead(aggregateIdentifier, new SimpleDomainEventStream(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance())
         )));
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                        "Mock contents", MetaData.emptyInstance()
+                )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
+                                                "Mock contents", MetaData.emptyInstance()
+                )));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
     }
 
     @Test
     public void testCounterResetWhenCacheEvictsEntry() {
         testSubject.setAggregateCaches(Arrays.<Cache>asList(mockCache));
-        readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                      "Mock contents", MetaData.emptyInstance())
+        readAllFrom(testSubject.decorateForRead(aggregateIdentifier, new SimpleDomainEventStream(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance())
         )));
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                                                "Mock contents", MetaData.emptyInstance())));
 
         final Cache.EntryListener listener = listenerConfiguration.getLastValue();
         listener.onEntryExpired(aggregateIdentifier);
 
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
+                                                "Mock contents", MetaData.emptyInstance())));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
     }
 
     @Test
     public void testCounterResetWhenCacheRemovesEntry() {
         testSubject.setAggregateCaches(Arrays.<Cache>asList(mockCache));
-        readAllFrom(testSubject.decorateForRead("some", aggregateIdentifier, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                      "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                                                      "Mock contents", MetaData.emptyInstance())
+        readAllFrom(testSubject.decorateForRead(aggregateIdentifier, new SimpleDomainEventStream(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance())
         )));
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                                                "Mock contents", MetaData.emptyInstance())));
 
         final Cache.EntryListener listener = listenerConfiguration.getLastValue();
         listener.onEntryRemoved(aggregateIdentifier);
 
-        readAllFrom(testSubject.decorateForAppend("some", aggregate, new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                                                      "Mock contents", MetaData.emptyInstance())
-        )));
+        testSubject.decorateForAppend(aggregate, Arrays.asList(new GenericDomainEventMessage<>(aggregateIdentifier,
+                                                                                               (long) 3,
+                                                                                               "Mock contents",
+                                                                                               MetaData.emptyInstance())));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter, never()).scheduleSnapshot("test", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
     }
 
     @Test
     public void testStoringAggregateWithoutChanges() {
-        SimpleDomainEventStream emptyEventStream = new SimpleDomainEventStream();
-        testSubject.decorateForAppend("test", aggregate, emptyEventStream);
+        testSubject.decorateForAppend(aggregate, Collections.emptyList());
 
-        verify(mockSnapshotter, never()).scheduleSnapshot("some", aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
     }
 

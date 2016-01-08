@@ -40,7 +40,7 @@ public abstract class ReflectionUtils {
     /**
      * A map of Primitive types to their respective wrapper types.
      */
-    private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new HashMap<Class<?>, Class<?>>(8);
+    private static final Map<Class<?>,Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
 
     private ReflectionUtils() {
         // utility class
@@ -66,8 +66,7 @@ public abstract class ReflectionUtils {
      * @return the value of the <code>field</code> in the <code>object</code>
      *
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
-     * made
-     * accessible
+     * made accessible
      */
     public static Object getFieldValue(Field field, Object object) {
         ensureAccessible(field);
@@ -184,7 +183,7 @@ public abstract class ReflectionUtils {
      * @return an <code>Iterable</code> providing access to all declared fields in the class hierarchy
      */
     public static Iterable<Field> fieldsOf(Class<?> clazz) {
-        List<Field> fields = new LinkedList<Field>();
+        List<Field> fields = new LinkedList<>();
         Class<?> currentClazz = clazz;
         do {
             fields.addAll(Arrays.asList(currentClazz.getDeclaredFields()));
@@ -201,7 +200,7 @@ public abstract class ReflectionUtils {
      * @return an <code>Iterable</code> providing access to all declared methods in the class hierarchy
      */
     public static Iterable<Method> methodsOf(Class<?> clazz) {
-        List<Method> methods = new LinkedList<Method>();
+        List<Method> methods = new LinkedList<>();
         Class<?> currentClazz = clazz;
         do {
             methods.addAll(Arrays.asList(currentClazz.getDeclaredMethods()));

@@ -18,28 +18,21 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandExecutionException;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.MetaData;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -99,8 +92,8 @@ public class GatewayProxyFactory {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<CommandDispatchInterceptor> dispatchInterceptors;
-    private final List<CommandCallback<?>> commandCallbacks;
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
+    private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
      * Initialize the factory sending Commands to the given <code>commandBus</code>, optionally intercepting them with
@@ -112,7 +105,9 @@ public class GatewayProxyFactory {
      * @param commandBus           The CommandBus on which to dispatch the Command Messages
      * @param dispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
-    public GatewayProxyFactory(CommandBus commandBus, CommandDispatchInterceptor... dispatchInterceptors) {
+    @SafeVarargs
+    public GatewayProxyFactory(CommandBus commandBus,
+                               MessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
         this(commandBus, null, dispatchInterceptors);
     }
 
@@ -127,11 +122,12 @@ public class GatewayProxyFactory {
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
      *                                    <code>null</code> to report failures without rescheduling
-     * @param commandDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
+    @SafeVarargs
     public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                               CommandDispatchInterceptor... commandDispatchInterceptors) {
-        this(commandBus, retryScheduler, asList(commandDispatchInterceptors));
+                               MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+        this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
     }
 
     /**
@@ -145,19 +141,19 @@ public class GatewayProxyFactory {
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
      *                                    <code>null</code> to report failures without rescheduling
-     * @param commandDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
+     * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                               List<CommandDispatchInterceptor> commandDispatchInterceptors) {
+                               List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
         Assert.notNull(commandBus, "commandBus may not be null");
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
-        if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new CopyOnWriteArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new CopyOnWriteArrayList<>(messageDispatchInterceptors);
         } else {
-            this.dispatchInterceptors = new CopyOnWriteArrayList<CommandDispatchInterceptor>();
+            this.dispatchInterceptors = new CopyOnWriteArrayList<>();
         }
-        this.commandCallbacks = new CopyOnWriteArrayList<CommandCallback<?>>();
+        this.commandCallbacks = new CopyOnWriteArrayList<>();
     }
 
     /**
@@ -170,7 +166,7 @@ public class GatewayProxyFactory {
      */
     @SuppressWarnings("unchecked")
     public <T> T createGateway(Class<T> gatewayInterface) {
-        Map<Method, InvocationHandler> dispatchers = new HashMap<Method, InvocationHandler>();
+        Map<Method, InvocationHandler> dispatchers = new HashMap<>();
         for (Method gatewayMethod : gatewayInterface.getMethods()) {
             MetaDataExtractor[] extractors = extractMetaData(gatewayMethod.getParameterTypes(),
                                                              gatewayMethod.getParameterAnnotations());
@@ -244,7 +240,7 @@ public class GatewayProxyFactory {
      */
     protected <R> InvocationHandler<R> wrapUndeclaredExceptions(final InvocationHandler<R> delegate,
                                                                 final Class<?>[] declaredExceptions) {
-        return new WrapNonDeclaredCheckedExceptions<R>(delegate, declaredExceptions);
+        return new WrapNonDeclaredCheckedExceptions<>(delegate, declaredExceptions);
     }
 
     /**
@@ -257,7 +253,7 @@ public class GatewayProxyFactory {
      * @return an InvocationHandler that wraps returns null when an InterruptedException is thrown
      */
     protected <R> InvocationHandler<R> wrapToReturnNullOnInterrupted(final InvocationHandler<R> delegate) {
-        return new NullOnInterrupted<R>(delegate);
+        return new NullOnInterrupted<>(delegate);
     }
 
     /**
@@ -269,7 +265,7 @@ public class GatewayProxyFactory {
      * @return an InvocationHandler that wraps returns null when a TimeoutException is thrown
      */
     protected <R> InvocationHandler<R> wrapToReturnNullOnTimeout(final InvocationHandler<R> delegate) {
-        return new NullOnTimeout<R>(delegate);
+        return new NullOnTimeout<>(delegate);
     }
 
     /**
@@ -281,7 +277,7 @@ public class GatewayProxyFactory {
      * @return an InvocationHandler that wraps returns immediately after invoking the delegate
      */
     protected <R> InvocationHandler<R> wrapToFireAndForget(final InvocationHandler<Future<R>> delegate) {
-        return new FireAndForget<R>(delegate);
+        return new FireAndForget<>(delegate);
     }
 
     /**
@@ -293,7 +289,7 @@ public class GatewayProxyFactory {
      * @return the result of the Future, either a return value or an exception
      */
     protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<Future<R>> delegate) {
-        return new WaitForResult<R>(delegate);
+        return new WaitForResult<>(delegate);
     }
 
     /**
@@ -308,7 +304,7 @@ public class GatewayProxyFactory {
      */
     protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<Future<R>> delegate,
                                                                     long timeout, TimeUnit timeUnit) {
-        return new WaitForResultWithFixedTimeout<R>(delegate, timeout, timeUnit);
+        return new WaitForResultWithFixedTimeout<>(delegate, timeout, timeUnit);
     }
 
     /**
@@ -323,7 +319,7 @@ public class GatewayProxyFactory {
      */
     protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
             final InvocationHandler<Future<R>> delegate, int timeoutIndex, int timeUnitIndex) {
-        return new WaitForResultWithTimeoutInArguments<R>(delegate, timeoutIndex, timeUnitIndex);
+        return new WaitForResultWithTimeoutInArguments<>(delegate, timeoutIndex, timeUnitIndex);
     }
 
     private boolean contains(Class<?>[] declaredExceptions, Class<?> exceptionClass) {
@@ -347,8 +343,8 @@ public class GatewayProxyFactory {
      * @param <R>      The type of return value the callback is interested in
      * @return this instance for further configuration
      */
-    public <R> GatewayProxyFactory registerCommandCallback(CommandCallback<R> callback) {
-        this.commandCallbacks.add(new TypeSafeCallbackWrapper<R>(callback));
+    public <C, R> GatewayProxyFactory registerCommandCallback(CommandCallback<C, R> callback) {
+        this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback));
         return this;
     }
 
@@ -359,15 +355,16 @@ public class GatewayProxyFactory {
      * @param dispatchInterceptor The interceptor to register.
      * @return this instance for further configuration
      */
-    public GatewayProxyFactory registerDispatchInterceptor(CommandDispatchInterceptor dispatchInterceptor) {
+    public GatewayProxyFactory registerDispatchInterceptor(
+            MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor) {
         this.dispatchInterceptors.add(dispatchInterceptor);
         return this;
     }
 
     private MetaDataExtractor[] extractMetaData(Class<?>[] parameterTypes, Annotation[][] parameterAnnotations) {
-        List<MetaDataExtractor> extractors = new ArrayList<MetaDataExtractor>();
+        List<MetaDataExtractor> extractors = new ArrayList<>();
         for (int i = 0; i < parameterAnnotations.length; i++) {
-            if (org.axonframework.domain.MetaData.class.isAssignableFrom(parameterTypes[i])) {
+            if (org.axonframework.messaging.metadata.MetaData.class.isAssignableFrom(parameterTypes[i])) {
                 extractors.add(new MetaDataExtractor(i, null));
             } else {
                 Annotation[] annotations = parameterAnnotations[i];
@@ -397,9 +394,9 @@ public class GatewayProxyFactory {
          * @param args          The arguments of the invocation
          * @return the return value of the invocation
          *
-         * @throws Throwable any exceptions that occurred while processing the invocation
+         * @throws Exception any exceptions that occurred while processing the invocation
          */
-        R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable;
+        R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
     }
 
     private static class GatewayInvocationHandler extends AbstractCommandGateway implements
@@ -409,13 +406,13 @@ public class GatewayProxyFactory {
 
         public GatewayInvocationHandler(Map<Method, InvocationHandler> dispatchers, CommandBus commandBus,
                                         RetryScheduler retryScheduler,
-                                        List<CommandDispatchInterceptor> dispatchInterceptors) {
+                                        List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
             super(commandBus, retryScheduler, dispatchInterceptors);
-            this.dispatchers = new HashMap<Method, InvocationHandler>(dispatchers);
+            this.dispatchers = new HashMap<>(dispatchers);
         }
 
         @Override
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        public Object invoke(Object proxy, Method method, Object[] args) throws Exception {
             if (Object.class.equals(method.getDeclaringClass())) {
                 return method.invoke(this, args);
             } else {
@@ -425,19 +422,19 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class DispatchOnInvocationHandler<R> extends AbstractCommandGateway
+    private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway
             implements InvocationHandler<Future<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
-        private final List<CommandCallback<? super R>> commandCallbacks;
+        private final List<CommandCallback<? super C, ? super R>> commandCallbacks;
         private final boolean forceCallbacks;
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
-                                              List<CommandDispatchInterceptor> commandDispatchInterceptors,
+                                              List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors,
                                               MetaDataExtractor[] metaDataExtractors, // NOSONAR
-                                              List<CommandCallback<? super R>> commandCallbacks,
+                                              List<CommandCallback<? super C, ? super R>> commandCallbacks,
                                               boolean forceCallbacks) {
-            super(commandBus, retryScheduler, commandDispatchInterceptors);
+            super(commandBus, retryScheduler, messageDispatchInterceptors);
             this.metaDataExtractors = metaDataExtractors; // NOSONAR
             this.commandCallbacks = commandCallbacks;
             this.forceCallbacks = forceCallbacks;
@@ -448,7 +445,7 @@ public class GatewayProxyFactory {
         public Future<R> invoke(Object proxy, Method invokedMethod, Object[] args) {
             Object command = args[0];
             if (metaDataExtractors.length != 0) {
-                Map<String, Object> metaDataValues = new HashMap<String, Object>();
+                Map<String, Object> metaDataValues = new HashMap<>();
                 for (MetaDataExtractor extractor : metaDataExtractors) {
                     extractor.addMetaData(args, metaDataValues);
                 }
@@ -457,12 +454,12 @@ public class GatewayProxyFactory {
                 }
             }
             if (forceCallbacks || !commandCallbacks.isEmpty()) {
-                List<CommandCallback<? super R>> callbacks = new LinkedList<CommandCallback<? super R>>();
-                FutureCallback<R> future = new FutureCallback<R>();
+                List<CommandCallback<? super C, ? super R>> callbacks = new LinkedList<>();
+                FutureCallback<C, R> future = new FutureCallback<>();
                 callbacks.add(future);
                 for (Object arg : args) {
                     if (arg instanceof CommandCallback) {
-                        final CommandCallback<R> callback = (CommandCallback<R>) arg;
+                        final CommandCallback<C, R> callback = (CommandCallback<C, R>) arg;
                         callbacks.add(callback);
                     }
                 }
@@ -476,26 +473,26 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class CompositeCallback<R> implements CommandCallback<R> {
+    private static class CompositeCallback<C, R> implements CommandCallback<C, R> {
 
-        private final List<CommandCallback<? super R>> callbacks;
+        private final List<CommandCallback<? super C, ? super R>> callbacks;
 
         @SuppressWarnings("unchecked")
-        public CompositeCallback(List<CommandCallback<? super R>> callbacks) {
-            this.callbacks = new ArrayList<CommandCallback<? super R>>(callbacks);
+        public CompositeCallback(List<CommandCallback<? super C, ? super R>> callbacks) {
+            this.callbacks = new ArrayList<>(callbacks);
         }
 
         @Override
-        public void onSuccess(R result) {
-            for (CommandCallback<? super R> callback : callbacks) {
-                callback.onSuccess(result);
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+            for (CommandCallback<? super C, ? super R> callback : callbacks) {
+                callback.onSuccess(commandMessage, result);
             }
         }
 
         @Override
-        public void onFailure(Throwable cause) {
-            for (CommandCallback callback : callbacks) {
-                callback.onFailure(cause);
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+            for (CommandCallback<? super C, ? super R> callback : callbacks) {
+                callback.onFailure(commandMessage, cause);
             }
         }
     }
@@ -511,14 +508,14 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
                 for (Class<?> exception : declaredExceptions) {
                     if (exception.isInstance(cause)) {
-                        throw cause;
+                        throw cause instanceof Exception ? (Exception) cause : e;
                     }
                 }
                 throw new CommandExecutionException("Command execution resulted in a checked exception that was "
@@ -536,7 +533,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (TimeoutException timeout) {
@@ -554,7 +551,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             try {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (InterruptedException timeout) {
@@ -577,7 +574,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get(timeout, timeUnit);
         }
     }
@@ -596,7 +593,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get(toLong(args[timeoutIndex]),
                                                                    (TimeUnit) args[timeUnitIndex]);
         }
@@ -618,7 +615,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             return delegate.invoke(proxy, invokedMethod, args).get();
         }
     }
@@ -632,7 +629,7 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Throwable {
+        public R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception {
             delegate.invoke(proxy, invokedMethod, args);
             return null;
         }
@@ -661,21 +658,21 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class TypeSafeCallbackWrapper<R> implements CommandCallback<Object> {
+    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, R> {
 
-        private final CommandCallback<R> delegate;
+        private final CommandCallback<C, R> delegate;
         private final Class<R> parameterType;
 
         @SuppressWarnings("unchecked")
-        public TypeSafeCallbackWrapper(CommandCallback<R> delegate) {
+        public TypeSafeCallbackWrapper(CommandCallback<C, R> delegate) {
             this.delegate = delegate;
             Class discoveredParameterType = Object.class;
             for (Method m : ReflectionUtils.methodsOf(delegate.getClass())) {
-                if (m.getGenericParameterTypes().length == 1
-                        && m.getGenericParameterTypes()[0] != Object.class
+                if (m.getGenericParameterTypes().length == 2
+                        && m.getGenericParameterTypes()[1] != Object.class
                         && "onSuccess".equals(m.getName())
                         && Modifier.isPublic(m.getModifiers())) {
-                    discoveredParameterType = m.getParameterTypes()[0];
+                    discoveredParameterType = m.getParameterTypes()[1];
                     if (discoveredParameterType != Object.class) {
                         break;
                     }
@@ -685,15 +682,15 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
             if (parameterType.isInstance(result)) {
-                delegate.onSuccess(parameterType.cast(result));
+                delegate.onSuccess(commandMessage, parameterType.cast(result));
             }
         }
 
         @Override
-        public void onFailure(Throwable cause) {
-            delegate.onFailure(cause);
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+            delegate.onFailure(commandMessage, cause);
         }
     }
 }

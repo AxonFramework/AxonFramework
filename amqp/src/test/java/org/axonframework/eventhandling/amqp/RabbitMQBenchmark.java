@@ -52,28 +52,25 @@ public class RabbitMQBenchmark {
 
     private static List<Thread> createChannelCreatingThreads(final Connection connection, final String queueName,
                                                              final boolean transactional) {
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < THREAD_COUNT; i++) {
-            threads.add(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        for (int t = 0; t < COMMIT_COUNT; t++) {
-                            final Channel localChannel = connection.createChannel();
-                            if (transactional) {
-                                localChannel.txSelect();
-                            }
-                            for (int j = 0; j < COMMIT_SIZE; j++) {
-                                localChannel.basicPublish("", queueName, null, ("message" + t).getBytes("UTF-8"));
-                            }
-                            if (transactional) {
-                                localChannel.txCommit();
-                            }
-                            localChannel.close();
+            threads.add(new Thread(() -> {
+                try {
+                    for (int t = 0; t < COMMIT_COUNT; t++) {
+                        final Channel localChannel = connection.createChannel();
+                        if (transactional) {
+                            localChannel.txSelect();
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        for (int j = 0; j < COMMIT_SIZE; j++) {
+                            localChannel.basicPublish("", queueName, null, ("message" + t).getBytes("UTF-8"));
+                        }
+                        if (transactional) {
+                            localChannel.txCommit();
+                        }
+                        localChannel.close();
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }));
         }
@@ -82,21 +79,18 @@ public class RabbitMQBenchmark {
 
     private static List<Thread> createChannelSharingThreads(final Connection connection, final String queueName)
             throws IOException {
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         final Channel localChannel = connection.createChannel();
         for (int i = 0; i < THREAD_COUNT; i++) {
-            threads.add(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        for (int t = 0; t < COMMIT_COUNT; t++) {
-                            for (int j = 0; j < COMMIT_SIZE; j++) {
-                                localChannel.basicPublish("", queueName, null, ("message" + t).getBytes("UTF-8"));
-                            }
+            threads.add(new Thread(() -> {
+                try {
+                    for (int t = 0; t < COMMIT_COUNT; t++) {
+                        for (int j = 0; j < COMMIT_SIZE; j++) {
+                            localChannel.basicPublish("", queueName, null, ("message" + t).getBytes("UTF-8"));
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }));
         }
@@ -104,30 +98,27 @@ public class RabbitMQBenchmark {
     }
 
     private static List<Thread> createChannelPoolSharingThreads(final Connection connection, final String queueName) {
-        List<Thread> threads = new ArrayList<Thread>();
-        final Queue<Channel> channels = new ArrayBlockingQueue<Channel>(15);
+        List<Thread> threads = new ArrayList<>();
+        final Queue<Channel> channels = new ArrayBlockingQueue<>(15);
         for (int i = 0; i < THREAD_COUNT; i++) {
-            threads.add(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        for (int t = 0; t < COMMIT_COUNT; t++) {
-                            Channel localChannel = channels.poll();
-                            if (localChannel == null) {
-                                localChannel = connection.createChannel();
-                            }
-                            localChannel.txSelect();
-                            for (int j = 0; j < COMMIT_SIZE; j++) {
-                                localChannel.basicPublish("", queueName, null, ("message" + t).getBytes("UTF-8"));
-                            }
-                            localChannel.txCommit();
-                            if (!channels.offer(localChannel)) {
-                                localChannel.close();
-                            }
+            threads.add(new Thread(() -> {
+                try {
+                    for (int t = 0; t < COMMIT_COUNT; t++) {
+                        Channel localChannel = channels.poll();
+                        if (localChannel == null) {
+                            localChannel = connection.createChannel();
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        localChannel.txSelect();
+                        for (int j = 0; j < COMMIT_SIZE; j++) {
+                            localChannel.basicPublish("", queueName, null, ("message" + t).getBytes("UTF-8"));
+                        }
+                        localChannel.txCommit();
+                        if (!channels.offer(localChannel)) {
+                            localChannel.close();
+                        }
                     }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }));
         }

@@ -16,11 +16,14 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InOrder;
 
 import java.util.Arrays;
 import java.util.concurrent.Executor;
@@ -34,49 +37,37 @@ import static org.mockito.Mockito.*;
  */
 public class AsynchronousCommandBusTest {
 
-    private CommandHandlerInterceptor handlerInterceptor;
-    private CommandDispatchInterceptor dispatchInterceptor;
-    private CommandHandler commandHandler;
+    private MessageHandlerInterceptor handlerInterceptor;
+    private MessageDispatchInterceptor dispatchInterceptor;
+    private MessageHandler<CommandMessage<?>> commandHandler;
     private ExecutorService executorService;
     private AsynchronousCommandBus testSubject;
 
     @Before
-    public void setUp() throws Throwable {
-        commandHandler = mock(CommandHandler.class);
+    public void setUp() throws Exception {
+        commandHandler = mock(MessageHandler.class);
         executorService = mock(ExecutorService.class);
-        dispatchInterceptor = mock(CommandDispatchInterceptor.class);
-        handlerInterceptor = mock(CommandHandlerInterceptor.class);
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((Runnable) invocation.getArguments()[0]).run();
-                return null;
-            }
+        dispatchInterceptor = mock(MessageDispatchInterceptor.class);
+        handlerInterceptor = mock(MessageHandlerInterceptor.class);
+        doAnswer(invocation -> {
+            ((Runnable) invocation.getArguments()[0]).run();
+            return null;
         }).when(executorService).execute(isA(Runnable.class));
         testSubject = new AsynchronousCommandBus(executorService);
-        testSubject.setDispatchInterceptors(Arrays.asList(dispatchInterceptor));
-        testSubject.setHandlerInterceptors(Arrays.asList(handlerInterceptor));
-        when(dispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        testSubject.setDispatchInterceptors(Arrays.<MessageDispatchInterceptor<CommandMessage<?>>>asList(dispatchInterceptor));
+        testSubject.setHandlerInterceptors(Arrays.<MessageHandlerInterceptor<CommandMessage<?>>>asList(handlerInterceptor));
+        when(dispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         when(handlerInterceptor.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return ((InterceptorChain) invocation.getArguments()[2]).proceed();
-                    }
-                });
+                .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[2]).proceed());
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testDispatchWithCallback() throws Throwable {
+    public void testDispatchWithCallback() throws Exception {
         testSubject.subscribe(Object.class.getName(), commandHandler);
-        CommandCallback<Object> mockCallback = mock(CommandCallback.class);
-        testSubject.dispatch(asCommandMessage(new Object()), mockCallback);
+        CommandCallback<Object, Object> mockCallback = mock(CommandCallback.class);
+        final CommandMessage<Object> command = asCommandMessage(new Object());
+        testSubject.dispatch(command, mockCallback);
 
         InOrder inOrder = inOrder(mockCallback, executorService, commandHandler, dispatchInterceptor,
                                   handlerInterceptor);
@@ -86,13 +77,13 @@ public class AsynchronousCommandBusTest {
                                                   isA(UnitOfWork.class),
                                                   isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle(isA(CommandMessage.class), isA(UnitOfWork.class));
-        inOrder.verify(mockCallback).onSuccess(isNull());
+        inOrder.verify(mockCallback).onSuccess(eq(command), isNull());
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testDispatchWithoutCallback() throws Throwable {
-        CommandHandler commandHandler = mock(CommandHandler.class);
+    public void testDispatchWithoutCallback() throws Exception {
+        MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         testSubject.subscribe(Object.class.getName(), commandHandler);
         testSubject.dispatch(asCommandMessage(new Object()));
 
@@ -112,12 +103,14 @@ public class AsynchronousCommandBusTest {
         verify(executorService).shutdown();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testCallbackIsInvokedWhenNoHandlerIsRegistered() {
         final CommandCallback callback = mock(CommandCallback.class);
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        final CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("test");
+        testSubject.dispatch(command, callback);
 
-        verify(callback).onFailure(isA(NoHandlerForCommandException.class));
+        verify(callback).onFailure(eq(command), isA(NoHandlerForCommandException.class));
     }
 
     @Test

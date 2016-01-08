@@ -18,7 +18,8 @@ package org.axonframework.saga.repository;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.common.Assert;
-import org.axonframework.common.lock.IdentifierBasedLock;
+import org.axonframework.common.lock.Lock;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaRepository;
@@ -40,7 +41,7 @@ import java.util.Set;
 public class CachingSagaRepository implements SagaRepository {
 
     private final SagaRepository delegate;
-    private final IdentifierBasedLock associationsCacheLock = new IdentifierBasedLock();
+    private final PessimisticLockFactory associationsCacheLock = new PessimisticLockFactory();
     // guarded by "associationsCacheLock"
     private final Cache associationsCache;
     private final Cache sagaCache;
@@ -72,21 +73,18 @@ public class CachingSagaRepository implements SagaRepository {
             associations = feedCache(type, associationValue, key);
         }
 
-        return new HashSet<String>(associations);
+        return new HashSet<>(associations);
     }
 
     @SuppressWarnings("unchecked")
     private Set<String> feedCache(Class<? extends Saga> type, AssociationValue associationValue, String key) {
-        associationsCacheLock.obtainLock(key);
-        try {
+        try (Lock ignored = associationsCacheLock.obtainLock(key)) {
             Set<String> associations = associationsCache.get(key);
             if (associations == null) {
                 associations = delegate.find(type, associationValue);
                 associationsCache.put(key, associations);
             }
             return associations;
-        } finally {
-            associationsCacheLock.releaseLock(key);
         }
     }
 
@@ -131,14 +129,11 @@ public class CachingSagaRepository implements SagaRepository {
                                        String sagaIdentifier, String sagaType) {
         for (AssociationValue associationValue : associationValues) {
             String key = cacheKey(associationValue, sagaType);
-            associationsCacheLock.obtainLock(key);
-            try {
+            try (Lock ignored = associationsCacheLock.obtainLock(key)) {
                 Set<String> identifiers = associationsCache.get(key);
                 if (identifiers != null && identifiers.add(sagaIdentifier)) {
                     associationsCache.put(key, identifiers);
                 }
-            } finally {
-                associationsCacheLock.releaseLock(key);
             }
         }
     }
@@ -148,14 +143,11 @@ public class CachingSagaRepository implements SagaRepository {
                                           String sagaIdentifier, String sagaType) {
         for (AssociationValue associationValue : associationValues) {
             String key = cacheKey(associationValue, sagaType);
-            associationsCacheLock.obtainLock(key);
-            try {
+            try (Lock ignored = associationsCacheLock.obtainLock(key)) {
                 Set<String> identifiers = associationsCache.get(key);
                 if (identifiers != null && identifiers.remove(sagaIdentifier)) {
                     associationsCache.put(key, identifiers);
                 }
-            } finally {
-                associationsCacheLock.releaseLock(key);
             }
         }
     }

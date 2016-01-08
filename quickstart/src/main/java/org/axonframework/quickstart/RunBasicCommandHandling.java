@@ -22,15 +22,17 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
+import org.axonframework.quickstart.annotated.ToDoEventHandler;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.handler.CreateToDoCommandHandler;
 import org.axonframework.quickstart.handler.MarkCompletedCommandHandler;
-import org.axonframework.quickstart.handler.ToDoEventListener;
 import org.axonframework.quickstart.handler.ToDoItem;
 
 import java.io.File;
@@ -57,7 +59,7 @@ public class RunBasicCommandHandling {
         EventBus eventBus = new SimpleEventBus();
 
         // we need to configure the repository
-        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<ToDoItem>(ToDoItem.class, eventStore);
+        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class, eventStore);
         repository.setEventBus(eventBus);
 
         // Register the Command Handlers with the command bus by subscribing to the name of the command
@@ -67,7 +69,7 @@ public class RunBasicCommandHandling {
                 new MarkCompletedCommandHandler(repository));
 
         // We register an event listener to see which events are created
-        eventBus.subscribe(new ToDoEventListener());
+        eventBus.subscribe(new SimpleEventProcessor("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // and let's send some Commands on the CommandBus using the special runner configured with our CommandGateway.
         CommandGenerator.sendCommands(commandGateway);

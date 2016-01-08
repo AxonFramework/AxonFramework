@@ -22,9 +22,10 @@ import org.axonframework.serializer.ConverterFactory;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
+
 import org.junit.*;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
@@ -44,12 +45,12 @@ public class SimpleUpcasterChainTest extends UpcasterChainTest {
     @Test
     public void testEmptyUpcasterChain() {
         UpcasterChain chain = new SimpleUpcasterChain(Collections.<Upcaster>emptyList());
-        final SimpleSerializedObject serializedObject = new SimpleSerializedObject<String>("Data", String.class,
+        final SimpleSerializedObject serializedObject = new SimpleSerializedObject<>("Data", String.class,
                                                                                            "test", "0");
         List<SerializedObject> result = chain.upcast(serializedObject,
                                                      new SerializedDomainEventUpcastingContext(
                                                              new SimpleSerializedDomainEventData(
-                                                             "eventId", "aggregateId", 0, DateTime.now(), "test", "0",
+                                                             "eventId", "aggregateId", 0, Instant.now(), "test", "0",
                                                              "Data".getBytes(IOUtils.UTF8),
                                                              "meta".getBytes(IOUtils.UTF8)
                                                              ), mock(Serializer.class))

@@ -16,6 +16,8 @@
 
 package org.axonframework.cache;
 
+import org.axonframework.common.Registration;
+
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -41,18 +43,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class WeakReferenceCache implements Cache {
 
-    private final ConcurrentMap<Object, Entry> cache = new ConcurrentHashMap<Object, Entry>();
-    private final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<Object>();
-    private final Set<EntryListener> adapters = new CopyOnWriteArraySet<EntryListener>();
+    private final ConcurrentMap<Object, Entry> cache = new ConcurrentHashMap<>();
+    private final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
+    private final Set<EntryListener> adapters = new CopyOnWriteArraySet<>();
 
     @Override
-    public void registerCacheEntryListener(EntryListener entryListener) {
-        this.adapters.add(entryListener);
-    }
-
-    @Override
-    public void unregisterCacheEntryListener(EntryListener entryListener) {
-        this.adapters.remove(entryListener);
+    public Registration registerCacheEntryListener(EntryListener entryListener) {
+        adapters.add(entryListener);
+        return () -> adapters.remove(entryListener);
     }
 
     @Override

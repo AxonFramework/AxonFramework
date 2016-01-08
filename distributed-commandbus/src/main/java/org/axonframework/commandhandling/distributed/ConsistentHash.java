@@ -48,7 +48,7 @@ public class ConsistentHash implements Externalizable {
 
     private static final long serialVersionUID = 799974496899291960L;
 
-    private static final ConsistentHash EMPTY = new ConsistentHash(new TreeMap<String, Member>());
+    private static final ConsistentHash EMPTY = new ConsistentHash(new TreeMap<>());
     private final SortedMap<String, Member> hashToMember;
 
     /**
@@ -68,7 +68,7 @@ public class ConsistentHash implements Externalizable {
      */
     @SuppressWarnings("UnusedDeclaration")
     public ConsistentHash() {
-        this(new TreeMap<String, Member>());
+        this(new TreeMap<>());
     }
 
     private ConsistentHash(SortedMap<String, Member> hashed) {
@@ -86,7 +86,7 @@ public class ConsistentHash implements Externalizable {
      * @return a ConsistentHash with the given additional node
      */
     public ConsistentHash withAdditionalNode(String nodeName, int segmentCount, Set<String> supportedCommandTypes) {
-        TreeMap<String, Member> newHashes = new TreeMap<String, Member>(hashToMember);
+        TreeMap<String, Member> newHashes = new TreeMap<>(hashToMember);
         Iterator<Map.Entry<String, Member>> iterator = newHashes.entrySet().iterator();
         while (iterator.hasNext()) {
             if (nodeName.equals(iterator.next().getValue().name())) {
@@ -109,8 +109,8 @@ public class ConsistentHash implements Externalizable {
      * @return a ConsistentHash instance where only segments leading to the given <code>nodes</code> are available
      */
     public ConsistentHash withExclusively(Collection<String> nodes) {
-        Set<String> activeMembers = new HashSet<String>(nodes);
-        SortedMap<String, Member> newHashes = new TreeMap<String, Member>();
+        Set<String> activeMembers = new HashSet<>(nodes);
+        SortedMap<String, Member> newHashes = new TreeMap<>();
         for (Map.Entry<String, Member> entry : hashToMember.entrySet()) {
             if (activeMembers.contains(entry.getValue().name())) {
                 newHashes.put(entry.getKey(), entry.getValue());
@@ -203,7 +203,7 @@ public class ConsistentHash implements Externalizable {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        Set<Member> members = new HashSet<Member>(hashToMember.values());
+        Set<Member> members = new HashSet<>(hashToMember.values());
         out.writeInt(members.size());
         for (Member node : members) {
             out.writeUTF(node.name());
@@ -222,7 +222,7 @@ public class ConsistentHash implements Externalizable {
             String memberName = in.readUTF();
             int loadFactor = in.readInt();
             int supportedCommandCount = in.readInt();
-            Set<String> supportedCommands = new HashSet<String>(supportedCommandCount);
+            Set<String> supportedCommands = new HashSet<>(supportedCommandCount);
             for (int c = 0; c < supportedCommandCount; c++) {
                 supportedCommands.add(in.readUTF());
             }
@@ -240,7 +240,7 @@ public class ConsistentHash implements Externalizable {
      * @return the set of members part of this hash ring
      */
     public Set<Member> getMembers() {
-        return Collections.unmodifiableSet(new HashSet<Member>(hashToMember.values()));
+        return Collections.unmodifiableSet(new HashSet<>(hashToMember.values()));
     }
 
     /**
@@ -268,8 +268,8 @@ public class ConsistentHash implements Externalizable {
          */
         public Member(String nodeName, int segmentCount, Set<String> supportedCommandTypes) {
             this.nodeName = nodeName;
-            this.supportedCommandTypes = Collections.unmodifiableSet(new HashSet<String>(supportedCommandTypes));
-            Set<String> newHashes = new TreeSet<String>();
+            this.supportedCommandTypes = Collections.unmodifiableSet(new HashSet<>(supportedCommandTypes));
+            Set<String> newHashes = new TreeSet<>();
             for (int t = 0; t < segmentCount; t++) {
                 String hash = Digester.md5Hex(nodeName + " #" + t);
                 newHashes.add(hash);

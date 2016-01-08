@@ -66,7 +66,7 @@ public class SagaEntry {
         this.serializedSaga = serialized.getData();
         this.sagaType = serializer.typeForClass(saga.getClass()).getName();
         this.saga = saga;
-        this.associationValues = new HashSet<AssociationValue>(this.saga.getAssociationValues().asSet());
+        this.associationValues = new HashSet<>(this.saga.getAssociationValues().asSet());
     }
 
     /**
@@ -91,7 +91,7 @@ public class SagaEntry {
         if (saga != null) {
             return saga;
         }
-        return (Saga) serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedSaga, byte[].class,
+        return (Saga) serializer.deserialize(new SimpleSerializedObject<>(serializedSaga, byte[].class,
                                                                                 sagaType, ""));
     }
 
@@ -109,7 +109,7 @@ public class SagaEntry {
 
     @SuppressWarnings("unchecked")
     private Set<AssociationValue> toAssociationSet(DBObject dbSaga) {
-        Set<AssociationValue> values = new HashSet<AssociationValue>();
+        Set<AssociationValue> values = new HashSet<>();
         List<DBObject> list = (List<DBObject>) dbSaga.get(ASSOCIATIONS);
         if (list != null) {
             for (DBObject item : list) {

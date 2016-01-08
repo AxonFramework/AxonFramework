@@ -38,8 +38,8 @@ public class AMQPConfigurationBeanDefinitionParser extends AbstractBeanDefinitio
     private static final String ATTRIBUTE_ACKNOWLEDGE = "acknowledge";
     private static final String PROPERTY_ACKNOWLEDGE_MODE = "acknowledgeMode";
 
-    private static final Map<String, String> VALUE_PROPERTY_MAPPING = new HashMap<String, String>();
-    private static final Map<String, String> REF_PROPERTY_MAPPING = new HashMap<String, String>();
+    private static final Map<String, String> VALUE_PROPERTY_MAPPING = new HashMap<>();
+    private static final Map<String, String> REF_PROPERTY_MAPPING = new HashMap<>();
 
     static {
         REF_PROPERTY_MAPPING.put("connection-factory", "connectionFactory");

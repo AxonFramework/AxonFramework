@@ -51,7 +51,7 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
  */
 public final class AggregateAnnotationInspector {
 
-    private static final Map<Class<?>, AggregateAnnotationInspector> INSTANCES = new ConcurrentHashMap<Class<?>, AggregateAnnotationInspector>();
+    private static final Map<Class<?>, AggregateAnnotationInspector> INSTANCES = new ConcurrentHashMap<>();
     private final Field[] childEntityFields;
     private final Field identifierField;
     private final ParameterResolverFactory parameterResolverFactory;
@@ -76,7 +76,7 @@ public final class AggregateAnnotationInspector {
 
     @SuppressWarnings("unchecked")
     private AggregateAnnotationInspector(Class<?> entityType, ParameterResolverFactory parameterResolverFactory) {
-        List<Field> annotatedFields = new ArrayList<Field>();
+        List<Field> annotatedFields = new ArrayList<>();
         for (Field field : ReflectionUtils.fieldsOf(entityType)) {
             if (field.isAnnotationPresent(EventSourcedMember.class)) {
                 annotatedFields.add(field);
@@ -116,7 +116,7 @@ public final class AggregateAnnotationInspector {
         if (childEntityFields.length == 0 || instance == null) {
             return null;
         }
-        List<EventSourcedEntity> children = new ArrayList<EventSourcedEntity>();
+        List<EventSourcedEntity> children = new ArrayList<>();
         for (Field childEntityField : childEntityFields) {
             Object fieldValue = ReflectionUtils.getFieldValue(childEntityField, instance);
             if (EventSourcedEntity.class.isInstance(fieldValue)) {
@@ -148,11 +148,10 @@ public final class AggregateAnnotationInspector {
      * The field carrying the aggregate identifier must be annotated with {@link AggregateIdentifier}.
      *
      * @param aggregateRoot The aggregate root to find the aggregate on
-     * @param <I>           The type of identifier declared on the aggregate root
      * @return the value contained in the field annotated with {@link AggregateIdentifier}
      */
     @SuppressWarnings("unchecked")
-    public <I> I getIdentifier(AbstractAnnotatedAggregateRoot<I> aggregateRoot) {
+    public String getIdentifier(AbstractAnnotatedAggregateRoot aggregateRoot) {
         if (identifierField == null) {
             throw new IncompatibleAggregateException(
                     format("The aggregate class [%s] does not specify an Identifier. "
@@ -160,7 +159,8 @@ public final class AggregateAnnotationInspector {
                                    + "identifier is annotated with @AggregateIdentifier.",
                            aggregateRoot.getClass().getSimpleName()));
         }
-        return (I) ReflectionUtils.getFieldValue(identifierField, aggregateRoot);
+        final Object fieldValue = ReflectionUtils.getFieldValue(identifierField, aggregateRoot);
+        return fieldValue == null ? null : fieldValue.toString();
     }
 
     private Field locateIdentifierField(Class<? extends AbstractAnnotatedAggregateRoot> aggregateRootType) {

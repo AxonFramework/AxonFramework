@@ -16,19 +16,20 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 
 /**
  * Implementation of the EventEntryStore that stores events in DomainEventEntry entities and snapshot events in
@@ -37,7 +38,7 @@ import javax.persistence.Query;
  * This implementation requires that the aforementioned instances are available in the current persistence context.
  * <p/>
  * <em>Note: the SerializedType of Message Meta Data is not stored in this EventEntryStore. Upon retrieval,
- * it is set to the default value (name = "org.axonframework.domain.MetaData", revision = null). See {@link
+ * it is set to the default value (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link
  * org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @param <T> The type of data used by this EventEntryStore.
@@ -85,24 +86,23 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     }
 
     @Override
-    public void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject<T> serializedPayload,
+    public void persistEvent(DomainEventMessage event, SerializedObject<T> serializedPayload,
                              SerializedObject<T> serializedMetaData, EntityManager entityManager) {
-        entityManager.persist(createDomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData));
+        entityManager.persist(createDomainEventEntry(event, serializedPayload, serializedMetaData));
     }
 
     @Override
-    @SuppressWarnings({"unchecked"})
-    public SimpleSerializedDomainEventData loadLastSnapshotEvent(String aggregateType, Object identifier,
+    @SuppressWarnings("unchecked")
+    public SimpleSerializedDomainEventData<T> loadLastSnapshotEvent(String identifier,
                                                                  EntityManager entityManager) {
         List<SimpleSerializedDomainEventData<T>> entries = entityManager
                 .createQuery("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
                                      + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
                                      + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
                                      + "FROM " + snapshotEventEntryEntityName() + " e "
-                                     + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
+                                     + "WHERE e.aggregateIdentifier = :id "
                                      + "ORDER BY e.sequenceNumber DESC")
-                .setParameter("id", identifier.toString())
-                .setParameter("type", aggregateType)
+                .setParameter("id", identifier)
                 .setMaxResults(1)
                 .setFirstResult(0)
                 .getResultList();
@@ -122,13 +122,10 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent,
+    public void persistSnapshot(DomainEventMessage snapshotEvent,
                                 SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData,
                                 EntityManager entityManager) {
-        entityManager.persist(createSnapshotEventEntry(aggregateType,
-                                                       snapshotEvent,
-                                                       serializedPayload,
-                                                       serializedMetaData));
+        entityManager.persist(createSnapshotEventEntry(snapshotEvent, serializedPayload, serializedMetaData));
     }
 
     @Override
@@ -144,22 +141,21 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      * return the correct entity name. Note that it is preferable to provide a custom {@link
      * org.axonframework.eventstore.jpa.EventEntryFactory}, instead of overriding these methods.
      *
-     * @param aggregateType      The type identifier of the aggregate
      * @param event              The event to be stored
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized meta data of the event
      * @return a JPA entity, ready to be stored using the entity manager
      *
      * @see #domainEventEntryEntityName()
-     * @see org.axonframework.eventstore.jpa.EventEntryFactory#createDomainEventEntry(String,
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
+     * @see org.axonframework.eventstore.jpa.EventEntryFactory#createDomainEventEntry(
+     * DomainEventMessage, org.axonframework.serializer.SerializedObject,
      * org.axonframework.serializer.SerializedObject)
      */
     @SuppressWarnings("unchecked")
-    protected Object createDomainEventEntry(String aggregateType, DomainEventMessage event,
+    protected Object createDomainEventEntry(DomainEventMessage event,
                                             SerializedObject<T> serializedPayload,
                                             SerializedObject<T> serializedMetaData) {
-        return eventEntryFactory.createDomainEventEntry(aggregateType, event, serializedPayload, serializedMetaData);
+        return eventEntryFactory.createDomainEventEntry(event, serializedPayload, serializedMetaData);
     }
 
     /**
@@ -170,23 +166,21 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      * return the correct entity name. Note that it is preferable to provide a custom {@link
      * org.axonframework.eventstore.jpa.EventEntryFactory}, instead of overriding these methods.
      *
-     * @param aggregateType      The type identifier of the aggregate
      * @param snapshotEvent      The snapshot event to be stored
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized meta data of the event
      * @return a JPA entity, ready to be stored using the entity manager
      *
      * @see #snapshotEventEntryEntityName()
-     * @see org.axonframework.eventstore.jpa.EventEntryFactory#createSnapshotEventEntry(String,
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
+     * @see org.axonframework.eventstore.jpa.EventEntryFactory#createSnapshotEventEntry(
+     * DomainEventMessage, org.axonframework.serializer.SerializedObject,
      * org.axonframework.serializer.SerializedObject)
      */
     @SuppressWarnings("unchecked")
-    protected Object createSnapshotEventEntry(String aggregateType, DomainEventMessage snapshotEvent,
+    protected Object createSnapshotEventEntry(DomainEventMessage snapshotEvent,
                                               SerializedObject<T> serializedPayload,
                                               SerializedObject<T> serializedMetaData) {
-        return eventEntryFactory.createSnapshotEventEntry(aggregateType, snapshotEvent, serializedPayload,
-                                                          serializedMetaData);
+        return eventEntryFactory.createSnapshotEventEntry(snapshotEvent, serializedPayload, serializedMetaData);
     }
 
     /**
@@ -194,7 +188,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      *
      * @return The entity name of the DomainEventEntry subclass to use
      *
-     * @see #createDomainEventEntry(String, org.axonframework.domain.DomainEventMessage,
+     * @see #createDomainEventEntry(DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)
      * @see EventEntryFactory#getDomainEventEntryEntityName()
      */
@@ -207,7 +201,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
      *
      * @return The entity name of the SnapshotEventEntry subclass to use
      *
-     * @see #createSnapshotEventEntry(String, org.axonframework.domain.DomainEventMessage,
+     * @see #createSnapshotEventEntry(DomainEventMessage,
      * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)
      * @see EventEntryFactory#getSnapshotEventEntryEntityName()
      */
@@ -216,19 +210,17 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     }
 
     @Override
-    public void pruneSnapshots(String type, DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived,
+    public void pruneSnapshots(DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived,
                                EntityManager entityManager) {
-        Iterator<Long> redundantSnapshots = findRedundantSnapshots(type, mostRecentSnapshotEvent,
+        Iterator<Long> redundantSnapshots = findRedundantSnapshots(mostRecentSnapshotEvent,
                                                                    maxSnapshotsArchived, entityManager);
         if (redundantSnapshots.hasNext()) {
             Long sequenceOfFirstSnapshotToPrune = redundantSnapshots.next();
             entityManager.createQuery("DELETE FROM " + snapshotEventEntryEntityName() + " e "
-                                              + "WHERE e.type = :type "
-                                              + "AND e.aggregateIdentifier = :aggregateIdentifier "
+                                              + "WHERE e.aggregateIdentifier = :aggregateIdentifier "
                                               + "AND e.sequenceNumber <= :sequenceOfFirstSnapshotToPrune")
-                         .setParameter("type", type)
                          .setParameter("aggregateIdentifier",
-                                       mostRecentSnapshotEvent.getAggregateIdentifier().toString())
+                                       mostRecentSnapshotEvent.getAggregateIdentifier())
                          .setParameter("sequenceOfFirstSnapshotToPrune", sequenceOfFirstSnapshotToPrune)
                          .executeUpdate();
         }
@@ -237,23 +229,21 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     /**
      * Finds the first of redundant snapshots, returned as an iterator for convenience purposes.
      *
-     * @param type                 the type of the aggregate for which to find redundant snapshots
      * @param snapshotEvent        the last appended snapshot event
      * @param maxSnapshotsArchived the number of snapshots that may remain archived
      * @param entityManager        the entityManager providing access to the data store
      * @return an iterator over the snapshots found
      */
     @SuppressWarnings({"unchecked"})
-    private Iterator<Long> findRedundantSnapshots(String type, DomainEventMessage snapshotEvent,
+    private Iterator<Long> findRedundantSnapshots(DomainEventMessage snapshotEvent,
                                                   int maxSnapshotsArchived,
                                                   EntityManager entityManager) {
         return entityManager.createQuery(
                 "SELECT e.sequenceNumber FROM " + snapshotEventEntryEntityName() + " e "
-                        + "WHERE e.type = :type AND e.aggregateIdentifier = :aggregateIdentifier "
+                        + "WHERE e.aggregateIdentifier = :aggregateIdentifier "
                         + "ORDER BY e.sequenceNumber DESC"
         )
-                            .setParameter("type", type)
-                            .setParameter("aggregateIdentifier", snapshotEvent.getAggregateIdentifier().toString())
+                            .setParameter("aggregateIdentifier", snapshotEvent.getAggregateIdentifier())
                             .setFirstResult(maxSnapshotsArchived)
                             .setMaxResults(1)
                             .getResultList().iterator();
@@ -261,18 +251,17 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public Iterator<SerializedDomainEventData<T>> fetchAggregateStream(String aggregateType, Object identifier,
-                                                                    long firstSequenceNumber,
-                                                                    int batchSize, EntityManager entityManager) {
+    public Iterator<SerializedDomainEventData<T>> fetchAggregateStream(String identifier,
+                                                                       long firstSequenceNumber,
+                                                                       int batchSize, EntityManager entityManager) {
 
-        return new BatchingAggregateStreamIterator(firstSequenceNumber, identifier, aggregateType, batchSize,
+        return new BatchingAggregateStreamIterator(firstSequenceNumber, identifier, batchSize,
                                                    domainEventEntryEntityName(), entityManager);
     }
 
     private static final class BatchingAggregateStreamIterator<T> implements Iterator<SerializedDomainEventData<T>> {
 
-        private final Object id;
-        private final String typeId;
+        private final String id;
         private final int batchSize;
         private final String domainEventEntryEntityName;
         private final EntityManager entityManager;
@@ -280,10 +269,9 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
         private Iterator<SerializedDomainEventData<T>> currentBatch;
         private SerializedDomainEventData<T> next;
 
-        private BatchingAggregateStreamIterator(long firstSequenceNumber, Object id, String typeId, int batchSize,
+        private BatchingAggregateStreamIterator(long firstSequenceNumber, String id, int batchSize,
                                                 String domainEventEntryEntityName, EntityManager entityManager) {
             this.id = id;
-            this.typeId = typeId;
             this.batchSize = batchSize;
             this.domainEventEntryEntityName = domainEventEntryEntityName;
             this.entityManager = entityManager;
@@ -321,12 +309,11 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                             + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
                             + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) "
                             + "FROM " + domainEventEntryEntityName + " e "
-                            + "WHERE e.aggregateIdentifier = :id AND e.type = :type "
+                            + "WHERE e.aggregateIdentifier = :id "
                             + "AND e.sequenceNumber >= :seq "
                             + "ORDER BY e.sequenceNumber ASC"
             )
-                                .setParameter("id", id.toString())
-                                .setParameter("type", typeId)
+                                .setParameter("id", id)
                                 .setParameter("seq", firstSequenceNumber)
                                 .setMaxResults(batchSize)
                                 .getResultList();
@@ -371,7 +358,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
         @SuppressWarnings("unchecked")
         private List<SerializedDomainEventData<T>> fetchBatch() {
-            Map<String, Object> params = new HashMap<String, Object>(parameters);
+            Map<String, Object> params = new HashMap<>(parameters);
             Query query = entityManager.createQuery(
                     String.format("SELECT new org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData("
                                           + "e.eventIdentifier, e.aggregateIdentifier, e.sequenceNumber, "
@@ -384,8 +371,11 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                                        .setMaxResults(batchSize);
             for (Map.Entry<String, Object> entry : params.entrySet()) {
                 Object value = entry.getValue();
-                if (value instanceof DateTime) {
-                    value = eventEntryFactory.resolveDateTimeValue((DateTime) entry.getValue());
+                if (value instanceof ZonedDateTime) {
+                    value = eventEntryFactory.resolveDateTimeValue((ZonedDateTime) entry.getValue());
+                }
+                if (value instanceof Instant) {
+                    value = eventEntryFactory.resolveDateTimeValue((Instant) entry.getValue());
                 }
                 query.setParameter(entry.getKey(), value);
             }

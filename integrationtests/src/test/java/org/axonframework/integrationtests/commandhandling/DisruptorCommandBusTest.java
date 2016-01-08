@@ -17,17 +17,14 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -35,7 +32,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author Allard Buijze
@@ -61,39 +59,28 @@ public class DisruptorCommandBusTest {
 
     @Test
     public void handleCommandWithoutUsingAggregate() throws ExecutionException, InterruptedException {
-        commandBus.subscribe(String.class.getName(), new CommandHandler<Object>() {
-            @Override
-            public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-                return "ok";
-            }
-        });
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> "ok");
 
-        final FutureCallback<String> callback = new FutureCallback<String>();
-        commandBus.dispatch(new GenericCommandMessage<Object>("test"), callback);
+        final FutureCallback<String, String> callback = new FutureCallback<>();
+        commandBus.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
 
-        assertEquals("ok", callback.get());
+        assertEquals("ok", callback.getResult());
     }
 
     @DirtiesContext
     @Test
     public void handleCommandWithoutUsingAggregate_PublicationFails() throws ExecutionException, InterruptedException {
-        commandBus.subscribe(String.class.getName(), new CommandHandler<Object>() {
-            @Override
-            public Object handle(CommandMessage<Object> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-                unitOfWork.publishEvent(GenericEventMessage.asEventMessage("test"), eventBus);
-                return "ok";
-            }
+        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+            eventBus.publish(GenericEventMessage.asEventMessage("test"));
+            return "ok";
         });
         final RuntimeException failure = new RuntimeException("Test");
-        eventBus.subscribe(new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                throw failure;
-            }
-        });
+        SimpleEventProcessor eventProcessor = new SimpleEventProcessor("test");
+        eventProcessor.subscribe(e -> { throw failure; });
+        eventBus.subscribe(eventProcessor);
 
-        final FutureCallback<String> callback = new FutureCallback<String>();
-        commandBus.dispatch(new GenericCommandMessage<Object>("test"), callback);
+        final FutureCallback<String, String> callback = new FutureCallback<>();
+        commandBus.dispatch(new GenericCommandMessage<>("test"), callback);
 
         try {
             callback.getResult();

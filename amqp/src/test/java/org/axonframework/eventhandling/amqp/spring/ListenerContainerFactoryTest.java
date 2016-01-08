@@ -40,18 +40,18 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
  * @author Allard Buijze
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SimpleMessageListenerContainer.class, LegacyRabbitMqStrategy.class})
+@PrepareForTest({SimpleMessageListenerContainer.class, ListenerContainerFactory.class})
 public class ListenerContainerFactoryTest {
 
-    private ExtendedMessageListenerContainer mockContainer;
+    private SimpleMessageListenerContainer mockContainer;
     private ListenerContainerFactory testSubject;
     private ConnectionFactory mockConnectionFactory;
 
     @Before
     public void setUp() throws Exception {
         mockConnectionFactory = mock(ConnectionFactory.class);
-        mockContainer = PowerMockito.mock(ExtendedMessageListenerContainer.class);
-        whenNew(ExtendedMessageListenerContainer.class).withNoArguments().thenReturn(mockContainer);
+        mockContainer = PowerMockito.mock(SimpleMessageListenerContainer.class);
+        whenNew(SimpleMessageListenerContainer.class).withNoArguments().thenReturn(mockContainer);
         testSubject = new ListenerContainerFactory();
         testSubject.setConnectionFactory(mockConnectionFactory);
         PowerMockito.doNothing().when(mockContainer).afterPropertiesSet();

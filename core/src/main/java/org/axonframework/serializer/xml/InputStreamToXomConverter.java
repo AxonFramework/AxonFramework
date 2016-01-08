@@ -49,11 +49,8 @@ public class InputStreamToXomConverter extends AbstractContentTypeConverter<Inpu
     public Document convert(InputStream original) {
         try {
             return new Builder().build(new InputStreamReader(original));
-        } catch (ParsingException e) {
-            throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to XOM Document.", e);
-        } catch (IOException e) {
+        } catch (ParsingException | IOException e) {
             throw new CannotConvertBetweenTypesException("Cannot convert from InputStream to XOM Document.", e);
         }
-
     }
 }

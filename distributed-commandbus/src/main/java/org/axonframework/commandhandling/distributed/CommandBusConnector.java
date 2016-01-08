@@ -17,8 +17,9 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -44,7 +45,7 @@ public interface CommandBusConnector {
      * @param command    The command to send to the (remote) member
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    void send(String routingKey, CommandMessage<?> command) throws Exception;
+    <C> void send(String routingKey, CommandMessage<C> command) throws Exception;
 
     /**
      * Sends the given <code>command</code> to the node assigned to handle messages with the given
@@ -56,7 +57,8 @@ public interface CommandBusConnector {
      * Implementations <em>should</em> always invoke the callback with an outcome.
      * <p/>
      * If a member's connection was lost, and the result of the command is unclear, the {@link
-     * CommandCallback#onFailure(Throwable)} method is invoked with a {@link RemoteCommandHandlingException} describing
+     * CommandCallback#onFailure(org.axonframework.commandhandling.CommandMessage, Throwable)} method is invoked with a
+     * {@link RemoteCommandHandlingException} describing
      * the failed connection. A client may choose to resend a command.
      * <p/>
      * Connectors route the commands based on the given <code>routingKey</code>. Using the same <code>routingKey</code>
@@ -69,10 +71,12 @@ public interface CommandBusConnector {
      * @param <R>        The type of object expected as return value in the callback
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <R> void send(String routingKey, CommandMessage<?> command, CommandCallback<R> callback) throws Exception;
+    <C, R> void send(String routingKey, CommandMessage<C> command, CommandCallback<? super C, R> callback)
+            throws Exception;
 
     /**
-     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code> to the local segment of the
+     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code> to the local segment of
+     * the
      * command bus.
      * <p/>
      * If a subscription already exists for the given type, the behavior is undefined. Implementations may throw an
@@ -81,19 +85,7 @@ public interface CommandBusConnector {
      *
      * @param commandName The name of the command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
-     * @param <C>         The Type of command
+     * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
      */
-    <C> void subscribe(String commandName, CommandHandler<? super C> handler);
-
-    /**
-     * Unsubscribe the given <code>handler</code> to commands of type <code>commandType</code>. If the handler is not
-     * currently assigned to that type of command, no action is taken.
-     *
-     * @param commandName The name of the command the handler is subscribed to
-     * @param handler     The handler instance to unsubscribe from the CommandBus
-     * @param <C>         The Type of command
-     * @return <code>true</code> of this handler is successfully unsubscribed, <code>false</code> of the given
-     *         <code>handler</code> was not the current handler for given <code>commandType</code>.
-     */
-    <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler);
+    Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 }

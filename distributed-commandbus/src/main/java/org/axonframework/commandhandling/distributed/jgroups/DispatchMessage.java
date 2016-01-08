@@ -18,19 +18,14 @@ package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.jgroups.util.Streamable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 
 import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
 import static org.axonframework.serializer.MessageSerializer.serializePayload;
@@ -99,13 +94,13 @@ public class DispatchMessage implements Streamable, Externalizable {
      * @return the CommandMessage wrapped in this Message
      */
     public CommandMessage<?> getCommandMessage(Serializer serializer) {
-        final Object payload = serializer.deserialize(new SimpleSerializedObject<byte[]>(serializedPayload,
+        final Object payload = serializer.deserialize(new SimpleSerializedObject<>(serializedPayload,
                                                                                          byte[].class,
                                                                                          payloadType,
                                                                                          payloadRevision));
-        final MetaData metaData = (MetaData) serializer.deserialize(new SerializedMetaData<byte[]>(serializedMetaData,
+        final MetaData metaData = serializer.deserialize(new SerializedMetaData<>(serializedMetaData,
                                                                                                    byte[].class));
-        return new GenericCommandMessage<Object>(commandIdentifier, commandName, payload, metaData);
+        return new GenericCommandMessage<>(commandIdentifier, commandName, payload, metaData);
     }
 
     /**

@@ -16,24 +16,24 @@
 
 package org.axonframework.repository;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.eventhandling.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -56,18 +56,28 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private List<DomainEventMessage> capturedEvents;
+    private List<EventMessage> capturedEvents;
+    private EventProcessor eventProcessor = new SimpleEventProcessor("test");
+
 
     @Before
     public void setUp() {
-        capturedEvents = new ArrayList<DomainEventMessage>();
-        eventBus.subscribe(this);
+        capturedEvents = new ArrayList<>();
+        eventBus.subscribe(eventProcessor);
+        eventProcessor.subscribe(this);
+    }
+
+    @After
+    public void tearDown() {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
     @SuppressWarnings({"unchecked"})
     @Test
     public void testStoreAndLoadNewAggregate() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = startAndGetUnitOfWork();
         JpaAggregate originalAggregate = new JpaAggregate("Hello");
         repository.add(originalAggregate);
         uow.commit();
@@ -78,9 +88,8 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         assertEquals(1, results.size());
         JpaAggregate aggregate = results.get(0);
         assertEquals(originalAggregate.getIdentifier(), aggregate.getIdentifier());
-        assertEquals(0, aggregate.getUncommittedEventCount());
 
-        uow = DefaultUnitOfWork.startAndGet();
+        uow = startAndGetUnitOfWork();
         JpaAggregate storedAggregate = repository.load(originalAggregate.getIdentifier());
         uow.commit();
         assertEquals(storedAggregate.getIdentifier(), originalAggregate.getIdentifier());
@@ -96,17 +105,15 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
         assertEquals((Long) 0L, agg.getVersion());
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = startAndGetUnitOfWork();
         JpaAggregate aggregate = repository.load(agg.getIdentifier());
         aggregate.setMessage("And again");
         aggregate.setMessage("And more");
         uow.commit();
 
         assertEquals((Long) 1L, aggregate.getVersion());
-        assertEquals(0L, aggregate.getUncommittedEventCount());
         assertEquals(2, capturedEvents.size());
-        assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
-        assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
+        assertNotNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier()));
     }
 
     @Test
@@ -117,7 +124,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
         assertEquals((Long) 0L, agg.getVersion());
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = startAndGetUnitOfWork();
         JpaAggregate aggregate = repository.load(agg.getIdentifier());
         aggregate.setMessage("And again");
         aggregate.setMessage("And more");
@@ -126,18 +133,18 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.flush();
         entityManager.clear();
 
-        assertEquals(0L, aggregate.getUncommittedEventCount());
         assertEquals(2, capturedEvents.size());
-        assertEquals(0L, capturedEvents.get(0).getSequenceNumber());
-        assertEquals(1L, capturedEvents.get(1).getSequenceNumber());
-
         assertNull(entityManager.find(JpaAggregate.class, aggregate.getIdentifier()));
     }
 
     @Override
     public void handle(EventMessage event) {
-        if (DomainEventMessage.class.isInstance(event)) {
-            this.capturedEvents.add((DomainEventMessage) event);
-        }
+        this.capturedEvents.add(event);
+    }
+
+    private UnitOfWork startAndGetUnitOfWork() {
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        uow.resources().put(EventBus.KEY, eventBus);
+        return uow;
     }
 }

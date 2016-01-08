@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.amqp;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * RoutingKeyResolver implementation that uses the package name of the Message's payload as routing key.

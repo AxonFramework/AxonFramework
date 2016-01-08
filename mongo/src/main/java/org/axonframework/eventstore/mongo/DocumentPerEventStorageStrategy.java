@@ -16,21 +16,13 @@
 
 package org.axonframework.eventstore.mongo;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import org.axonframework.domain.DomainEventMessage;
+import com.mongodb.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
-import org.axonframework.serializer.SerializedDomainEventData;
-import org.axonframework.serializer.SerializedMetaData;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serializer.*;
 import org.axonframework.upcasting.UpcasterChain;
-import org.joda.time.DateTime;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
@@ -55,7 +47,7 @@ import static org.axonframework.upcasting.UpcastUtils.upcastAndDeserialize;
  * </ul>
  * <p/>
  * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
- * (name = "org.axonframework.domain.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
+ * (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
  *
  * @author Allard Buijze
  * @since 2.0
@@ -66,33 +58,31 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
     private static final int ORDER_DESC = -1;
 
     @Override
-    public DBObject[] createDocuments(String type, Serializer eventSerializer, List<DomainEventMessage> messages) {
+    public DBObject[] createDocuments(Serializer eventSerializer, List<DomainEventMessage<?>> messages) {
         DBObject[] dbObjects = new DBObject[messages.size()];
         for (int i = 0, messagesSize = messages.size(); i < messagesSize; i++) {
             DomainEventMessage message = messages.get(i);
-            dbObjects[i] = new EventEntry(type, message, eventSerializer).asDBObject();
+            dbObjects[i] = new EventEntry(message, eventSerializer).asDBObject();
         }
         return dbObjects;
     }
 
     @Override
-    public DBCursor findEvents(DBCollection collection, String aggregateType, String aggregateIdentifier,
+    public DBCursor findEvents(DBCollection collection, String aggregateIdentifier,
                                long firstSequenceNumber) {
-        return collection.find(EventEntry.forAggregate(aggregateType, aggregateIdentifier, firstSequenceNumber))
+        return collection.find(EventEntry.forAggregate(aggregateIdentifier, firstSequenceNumber))
                          .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_ASC));
     }
 
     @Override
-    public List<DomainEventMessage> extractEventMessages(DBObject entry, Object aggregateIdentifier,
-                                                         Serializer serializer, UpcasterChain upcasterChain,
-                                                         boolean skipUnknownTypes) {
-        return new EventEntry(entry).getDomainEvents(aggregateIdentifier, serializer, upcasterChain, skipUnknownTypes);
+    public List<DomainEventMessage> extractEventMessages(DBObject entry, Serializer serializer,
+                                                         UpcasterChain upcasterChain, boolean skipUnknownTypes) {
+        return new EventEntry(entry).getDomainEvents(serializer, upcasterChain, skipUnknownTypes);
     }
 
     @Override
     public void ensureIndexes(DBCollection eventsCollection, DBCollection snapshotsCollection) {
         eventsCollection.ensureIndex(new BasicDBObject(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
-                                             .append(EventEntry.AGGREGATE_TYPE_PROPERTY, 1)
                                              .append(EventEntry.SEQUENCE_NUMBER_PROPERTY, 1),
                                      "uniqueAggregateIndex",
                                      true);
@@ -102,10 +92,9 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
                                      "orderedEventStreamIndex",
                                      false);
         snapshotsCollection.ensureIndex(new BasicDBObject(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, 1)
-                                             .append(EventEntry.AGGREGATE_TYPE_PROPERTY, 1)
-                                             .append(EventEntry.SEQUENCE_NUMBER_PROPERTY, 1),
-                                     "uniqueAggregateIndex",
-                                     true);
+                                                .append(EventEntry.SEQUENCE_NUMBER_PROPERTY, 1),
+                                        "uniqueAggregateIndex",
+                                        true);
     }
 
     @Override
@@ -119,11 +108,10 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
     }
 
     @Override
-    public DBCursor findLastSnapshot(DBCollection collection, String aggregateType, String aggregateIdentifier) {
+    public DBCursor findLastSnapshot(DBCollection collection, String aggregateIdentifier) {
         DBObject mongoEntry = BasicDBObjectBuilder
                 .start()
                 .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                .add(EventEntry.AGGREGATE_TYPE_PROPERTY, aggregateType)
                 .get();
         return collection.find(mongoEntry)
                          .sort(new BasicDBObject(EventEntry.SEQUENCE_NUMBER_PROPERTY, ORDER_DESC))
@@ -150,11 +138,6 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         private static final String SEQUENCE_NUMBER_PROPERTY = "sequenceNumber";
 
         /**
-         * Property name in mongo for the Aggregate's Type Identifier.
-         */
-        private static final String AGGREGATE_TYPE_PROPERTY = "type";
-
-        /**
          * Property name in mongo for the Time Stamp.
          */
         private static final String TIME_STAMP_PROPERTY = "timeStamp";
@@ -169,8 +152,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
          */
         private final String aggregateIdentifier;
         private final long sequenceNumber;
-        private final String timeStamp;
-        private final String aggregateType;
+        private final long timeStamp;
         private final Object serializedPayload;
         private final String payloadType;
         private final String payloadRevision;
@@ -180,13 +162,11 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         /**
          * Constructor used to create a new event entry to store in Mongo.
          *
-         * @param aggregateType String containing the aggregate type of the event
-         * @param event         The actual DomainEvent to store
-         * @param serializer    Serializer to use for the event to store
+         * @param event      The actual DomainEvent to store
+         * @param serializer Serializer to use for the event to store
          */
-        private EventEntry(String aggregateType, DomainEventMessage event, Serializer serializer) {
-            this.aggregateType = aggregateType;
-            this.aggregateIdentifier = event.getAggregateIdentifier().toString();
+        private EventEntry(DomainEventMessage event, Serializer serializer) {
+            this.aggregateIdentifier = event.getAggregateIdentifier();
             this.sequenceNumber = event.getSequenceNumber();
             this.eventIdentifier = event.getIdentifier();
             Class<?> serializationTarget = String.class;
@@ -200,7 +180,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
             this.payloadType = serializedPayloadObject.getType().getName();
             this.payloadRevision = serializedPayloadObject.getType().getRevision();
             this.serializedMetaData = serializedMetaDataObject.getData();
-            this.timeStamp = event.getTimestamp().toString();
+            this.timeStamp = event.getTimestamp().toEpochMilli();
         }
 
         /**
@@ -212,8 +192,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
             this.aggregateIdentifier = (String) dbObject.get(AGGREGATE_IDENTIFIER_PROPERTY);
             this.sequenceNumber = ((Number) dbObject.get(SEQUENCE_NUMBER_PROPERTY)).longValue();
             this.serializedPayload = dbObject.get(SERIALIZED_PAYLOAD_PROPERTY);
-            this.timeStamp = (String) dbObject.get(TIME_STAMP_PROPERTY);
-            this.aggregateType = (String) dbObject.get(AGGREGATE_TYPE_PROPERTY);
+            this.timeStamp = (long) dbObject.get(TIME_STAMP_PROPERTY);
             this.payloadType = (String) dbObject.get(PAYLOAD_TYPE_PROPERTY);
             this.payloadRevision = (String) dbObject.get(PAYLOAD_REVISION_PROPERTY);
             this.serializedMetaData = dbObject.get(META_DATA_PROPERTY);
@@ -221,21 +200,33 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         }
 
         /**
+         * Returns the mongo DBObject used to query mongo for events for specified aggregate identifier.
+         *
+         * @param aggregateIdentifier Identifier of the aggregate to obtain the mongo DBObject for
+         * @param firstSequenceNumber number representing the first event to obtain
+         * @return Created DBObject based on the provided parameters to be used for a query
+         */
+        public static DBObject forAggregate(String aggregateIdentifier, long firstSequenceNumber) {
+            return BasicDBObjectBuilder.start()
+                                       .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
+                                       .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
+                                                                                                   firstSequenceNumber))
+                                       .get();
+        }
+
+        /**
          * Returns the actual DomainEvent from the EventEntry using the provided Serializer.
          *
-         * @param actualAggregateIdentifier The actual aggregate identifier instance used to perform the lookup, or
-         *                                  <code>null</code> if unknown
-         * @param eventSerializer           Serializer used to de-serialize the stored DomainEvent
-         * @param upcasterChain             Set of upcasters to use when an event needs upcasting before
-         *                                  de-serialization
-         * @param skipUnknownTypes          whether to skip unknown event types
+         * @param eventSerializer  Serializer used to de-serialize the stored DomainEvent
+         * @param upcasterChain    Set of upcasters to use when an event needs upcasting before
+         *                         de-serialization
+         * @param skipUnknownTypes whether to skip unknown event types
          * @return The actual DomainEventMessage instances stored in this entry
          */
         @SuppressWarnings("unchecked")
-        public List<DomainEventMessage> getDomainEvents(Object actualAggregateIdentifier, Serializer eventSerializer,
+        public List<DomainEventMessage> getDomainEvents(Serializer eventSerializer,
                                                         UpcasterChain upcasterChain, boolean skipUnknownTypes) {
-            return upcastAndDeserialize(this, actualAggregateIdentifier, eventSerializer,
-                                        upcasterChain, skipUnknownTypes);
+            return upcastAndDeserialize(this, eventSerializer, upcasterChain, skipUnknownTypes);
         }
 
         private Class<?> getRepresentationType() {
@@ -252,7 +243,7 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
         }
 
         @Override
-        public Object getAggregateIdentifier() {
+        public String getAggregateIdentifier() {
             return aggregateIdentifier;
         }
 
@@ -261,13 +252,14 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
          *
          * @return long representing the sequence number of the event
          */
+        @Override
         public long getSequenceNumber() {
             return sequenceNumber;
         }
 
         @Override
-        public DateTime getTimestamp() {
-            return new DateTime(timeStamp);
+        public Instant getTimestamp() {
+            return Instant.ofEpochMilli(timeStamp);
         }
 
         @SuppressWarnings("unchecked")
@@ -293,28 +285,10 @@ public class DocumentPerEventStorageStrategy implements StorageStrategy {
                                        .add(SEQUENCE_NUMBER_PROPERTY, sequenceNumber)
                                        .add(SERIALIZED_PAYLOAD_PROPERTY, serializedPayload)
                                        .add(TIME_STAMP_PROPERTY, timeStamp)
-                                       .add(AGGREGATE_TYPE_PROPERTY, aggregateType)
                                        .add(PAYLOAD_TYPE_PROPERTY, payloadType)
                                        .add(PAYLOAD_REVISION_PROPERTY, payloadRevision)
                                        .add(META_DATA_PROPERTY, serializedMetaData)
                                        .add(EVENT_IDENTIFIER_PROPERTY, eventIdentifier)
-                                       .get();
-        }
-
-        /**
-         * Returns the mongo DBObject used to query mongo for events for specified aggregate identifier and type.
-         *
-         * @param type                The type of the aggregate to create the mongo DBObject for
-         * @param aggregateIdentifier Identifier of the aggregate to obtain the mongo DBObject for
-         * @param firstSequenceNumber number representing the first event to obtain
-         * @return Created DBObject based on the provided parameters to be used for a query
-         */
-        public static DBObject forAggregate(String type, String aggregateIdentifier, long firstSequenceNumber) {
-            return BasicDBObjectBuilder.start()
-                                       .add(EventEntry.AGGREGATE_IDENTIFIER_PROPERTY, aggregateIdentifier)
-                                       .add(EventEntry.SEQUENCE_NUMBER_PROPERTY, new BasicDBObject("$gte",
-                                                                                                   firstSequenceNumber))
-                                       .add(EventEntry.AGGREGATE_TYPE_PROPERTY, type)
                                        .get();
         }
     }

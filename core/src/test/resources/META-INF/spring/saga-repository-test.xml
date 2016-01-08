@@ -25,11 +25,6 @@
     <context:annotation-config/>
     <tx:annotation-driven transaction-manager="transactionManager"/>
 
-    <import resource="db-context.xml"/>
-    <import resource="eventstore-jpa-test-context.xml"/>
-
-    <axon:event-bus id="eventBus" />
-
-    <axon:jpa-saga-repository id="sagaRepository"/>
+    <import resource="classpath:/META-INF/spring/db-context.xml"/>
 
 </beans>

@@ -16,9 +16,8 @@
 
 package org.axonframework.common.annotation;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -63,16 +62,7 @@ public final class MessageHandlerInvoker {
             // event listener doesn't support this type of event
             return null;
         }
-        try {
-            return m.invoke(target, parameter);
-        } catch (IllegalAccessException e) {
-            throw new MessageHandlerInvocationException("Access to the message handler method was denied.", e);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
-            }
-            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.", e);
-        }
+        return m.invoke(target, parameter);
     }
 
     /**

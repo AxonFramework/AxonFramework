@@ -16,11 +16,11 @@
 
 package org.axonframework.common;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.argThat;
 
 /**
  *

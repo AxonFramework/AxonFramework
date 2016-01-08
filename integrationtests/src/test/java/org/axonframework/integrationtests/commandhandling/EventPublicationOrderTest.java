@@ -19,24 +19,29 @@ package org.axonframework.integrationtests.commandhandling;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.UUID;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -53,27 +58,24 @@ public class EventPublicationOrderTest {
         this.commandBus = new SimpleCommandBus();
         this.eventBus = spy(new SimpleEventBus());
         eventStore = mock(EventStore.class);
-        this.repository = new EventSourcingRepository<StubAggregate>(StubAggregate.class, eventStore);
+        this.repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
         repository.setEventBus(eventBus);
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventBus);
-        AnnotationCommandHandlerAdapter.subscribe(target, commandBus);
+        new AnnotationCommandHandlerAdapter(target).subscribe(commandBus);
     }
 
     @Test
     public void testPublicationOrderIsMaintained_AggregateAdded() {
-        UUID aggregateId = UUID.randomUUID();
-        when(eventStore.readEvents("StubAggregate", aggregateId))
+        String aggregateId = UUID.randomUUID().toString();
+        when(eventStore.readEvents(aggregateId))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<Object>(aggregateId, 0,
                                                               new StubAggregateCreatedEvent(aggregateId))));
-        doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                System.out.println("Published event: " + invocation.getArguments()[0].toString());
-                return Void.class;
-            }
+        doAnswer(invocation -> {
+            System.out.println("Published event: " + invocation.getArguments()[0].toString());
+            return Void.class;
         }).when(eventBus).publish(isA(EventMessage.class));
         commandBus.dispatch(asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)));
         verify(eventBus).publish(isA(DomainEventMessage.class),

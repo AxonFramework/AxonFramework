@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 
 /**
  * Callback that does absolutely nothing when invoked. For performance reasons, an instance of this callback can be
@@ -26,7 +27,7 @@ import org.axonframework.commandhandling.CommandCallback;
  * @author Allard Buijze
  * @since 0.6
  */
-public final class NoOpCallback implements CommandCallback<Object> {
+public final class NoOpCallback implements CommandCallback<Object, Object> {
 
     /**
      * A statically available instance of the NoOpCallback. Provided for performance reasons.
@@ -39,7 +40,7 @@ public final class NoOpCallback implements CommandCallback<Object> {
      * This implementation does nothing.
      */
     @Override
-    public void onSuccess(Object result) {
+    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
     }
 
     /**
@@ -48,6 +49,6 @@ public final class NoOpCallback implements CommandCallback<Object> {
      * This implementation does nothing.
      */
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
     }
 }

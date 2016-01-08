@@ -17,7 +17,6 @@
 package org.axonframework.serializer;
 
 import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.converters.Converter;
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.converters.collections.MapConverter;
@@ -27,16 +26,14 @@ import com.thoughtworks.xstream.mapper.CannotResolveClassException;
 import com.thoughtworks.xstream.mapper.Mapper;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.Assert;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
-import org.joda.time.DateTime;
 
-import java.lang.reflect.Constructor;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -129,7 +126,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         if (converterFactory instanceof ChainingConverterFactory) {
             registerConverters((ChainingConverterFactory) converterFactory);
         }
-        xStream.registerConverter(new JodaTimeConverter());
         xStream.addImmutableType(UUID.class);
         xStream.aliasPackage("axon.domain", "org.axonframework.domain");
         xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
@@ -147,8 +143,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         xStream.aliasField("value", AssociationValue.class, "propertyValue");
 
         // for backward compatibility
-        xStream.alias("localDateTime", DateTime.class);
-        xStream.alias("dateTime", DateTime.class);
         xStream.alias("uuid", UUID.class);
 
         xStream.alias("meta-data", MetaData.class);
@@ -173,7 +167,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
         T result = doSerialize(object, expectedType, xStream);
-        return new SimpleSerializedObject<T>(result, expectedType, typeForClass(object.getClass()));
+        return new SimpleSerializedObject<>(result, expectedType, typeForClass(object.getClass()));
     }
 
     /**
@@ -324,38 +318,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
 
     /**
-     * XStream Converter to serialize DateTime classes as a String.
-     */
-    private static final class JodaTimeConverter implements Converter {
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean canConvert(Class type) {
-            return type != null && DateTime.class.getPackage().equals(type.getPackage());
-        }
-
-        @Override
-        public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
-            writer.setValue(source.toString());
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
-            try {
-                Constructor constructor = context.getRequiredType().getConstructor(Object.class);
-                return constructor.newInstance(reader.getValue());
-            } catch (Exception e) { // NOSONAR
-                throw new SerializationException(String.format(
-                        "An exception occurred while deserializing a Joda Time object: %s",
-                        context.getRequiredType().getSimpleName()), e);
-            }
-        }
-    }
-
-    /**
      * Class that marshals MetaData in the least verbose way.
      */
     private static final class MetaDataConverter extends MapConverter {
@@ -373,7 +335,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
             MetaData metaData = (MetaData) source;
             if (!metaData.isEmpty()) {
-                super.marshal(new HashMap<String, Object>(metaData), writer, context);
+                super.marshal(new HashMap<>(metaData), writer, context);
             }
         }
 
@@ -382,7 +344,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             if (!reader.hasMoreChildren()) {
                 return MetaData.emptyInstance();
             }
-            Map<String, Object> contents = new HashMap<String, Object>();
+            Map<String, Object> contents = new HashMap<>();
             populateMap(reader, context, contents);
             if (contents.isEmpty()) {
                 return MetaData.emptyInstance();

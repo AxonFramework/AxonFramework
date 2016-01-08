@@ -30,6 +30,6 @@ public abstract class AbstractContentTypeConverter<S, T> implements ContentTypeC
 
     @Override
     public SerializedObject<T> convert(SerializedObject<S> original) {
-        return new SimpleSerializedObject<T>(convert(original.getData()), targetType(), original.getType());
+        return new SimpleSerializedObject<>(convert(original.getData()), targetType(), original.getType());
     }
 }

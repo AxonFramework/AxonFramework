@@ -16,11 +16,11 @@
 
 package org.axonframework.eventstore.supporting;
 
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventstore.EventVisitor;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.eventstore.EventVisitor;
 
 /**
  * @author Knut-Olav Hoven

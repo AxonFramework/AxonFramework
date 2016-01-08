@@ -33,7 +33,7 @@ import java.util.List;
  */
 public abstract class ListMatcher extends BaseMatcher<List<?>> {
 
-    private List<Matcher<?>> failedMatchers = new ArrayList<Matcher<?>>();
+    private List<Matcher<?>> failedMatchers = new ArrayList<>();
     private final Matcher<?>[] matchers;
 
     /**

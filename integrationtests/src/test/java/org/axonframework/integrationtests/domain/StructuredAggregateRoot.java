@@ -26,7 +26,7 @@ import java.util.UUID;
 /**
  * @author Allard Buijze
  */
-public class StructuredAggregateRoot extends AbstractAnnotatedAggregateRoot<UUID> {
+public class StructuredAggregateRoot extends AbstractAnnotatedAggregateRoot {
 
     private int invocations;
     @EventSourcedMember

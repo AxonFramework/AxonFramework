@@ -16,16 +16,16 @@
 
 package org.axonframework.quickstart.handler;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 /**
  * @author Jettro Coenradie
  */
-public class CreateToDoCommandHandler implements CommandHandler<CreateToDoItemCommand> {
+public class CreateToDoCommandHandler implements MessageHandler<CommandMessage<?>> {
 
     private Repository<ToDoItem> repository;
 
@@ -34,8 +34,8 @@ public class CreateToDoCommandHandler implements CommandHandler<CreateToDoItemCo
     }
 
     @Override
-    public Object handle(CommandMessage<CreateToDoItemCommand> commandMessage, UnitOfWork unitOfWork) throws Throwable {
-        CreateToDoItemCommand command = commandMessage.getPayload();
+    public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork) throws Exception {
+        CreateToDoItemCommand command = (CreateToDoItemCommand) commandMessage.getPayload();
         ToDoItem toDoItem = new ToDoItem(command.getTodoId(), command.getDescription());
         repository.add(toDoItem);
         return toDoItem;

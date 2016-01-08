@@ -18,18 +18,20 @@ package org.axonframework.repository;
 
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.domain.AbstractAggregateRoot;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.UUID;
 import javax.persistence.EntityManager;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
- *
+ * @author Allard Buijze
  */
 public class GenericJpaRepositoryTest {
 
@@ -41,9 +43,9 @@ public class GenericJpaRepositoryTest {
     @Before
     public void setUp() {
         mockEntityManager = mock(EntityManager.class);
-        testSubject = new GenericJpaRepository<StubJpaAggregate>(new SimpleEntityManagerProvider(mockEntityManager),
+        testSubject = new GenericJpaRepository<>(new SimpleEntityManagerProvider(mockEntityManager),
                                                                  StubJpaAggregate.class);
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
         when(mockEntityManager.find(StubJpaAggregate.class, "123")).thenReturn(aggregate);
@@ -86,7 +88,7 @@ public class GenericJpaRepositoryTest {
 
     @Test
     public void testPersistAggregate_DefaultFlushMode() {
-        testSubject.doSaveWithLock(aggregate);
+        testSubject.doSave(aggregate);
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
@@ -94,7 +96,7 @@ public class GenericJpaRepositoryTest {
     @Test
     public void testPersistAggregate_ExplicitFlushModeOn() {
         testSubject.setForceFlushOnSave(true);
-        testSubject.doSaveWithLock(aggregate);
+        testSubject.doSave(aggregate);
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager).flush();
     }
@@ -102,7 +104,7 @@ public class GenericJpaRepositoryTest {
     @Test
     public void testPersistAggregate_ExplicitFlushModeOff() {
         testSubject.setForceFlushOnSave(false);
-        testSubject.doSaveWithLock(aggregate);
+        testSubject.doSave(aggregate);
         verify(mockEntityManager).persist(aggregate);
         verify(mockEntityManager, never()).flush();
     }
@@ -116,7 +118,7 @@ public class GenericJpaRepositoryTest {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 

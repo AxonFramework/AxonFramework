@@ -15,23 +15,22 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <groupId>org.axonframework</groupId>
     <artifactId>axon</artifactId>
-    <version>2.5-SNAPSHOT</version>
+    <version>3.0-SNAPSHOT</version>
     <modules>
         <module>core</module>
-        <module>integration</module>
-        <module>springmessaging</module>
+        <module>spring</module>
         <module>test</module>
         <module>distributed-commandbus</module>
         <module>integrationtests</module>
         <module>mongo</module>
-        <module>incubator/google-app-engine</module>
         <module>amqp</module>
-        <module>monitoring-jmx</module>
         <module>quickstart</module>
+        <module>metrics</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -95,25 +94,13 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>with-incubator</id>
-            <activation>
-                <property>
-                    <name>allmodules</name>
-                </property>
-            </activation>
-            <modules>
-                <module>incubator/redis</module>
-                <module>incubator/cassandra</module>
-            </modules>
-        </profile>
     </profiles>
 
     <properties>
         <slf4j.version>1.7.5</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
-        <spring.version>4.0.3.RELEASE</spring.version>
-        <rabbitmq.version>3.2.3</rabbitmq.version>
+        <spring.version>4.1.6.RELEASE</spring.version>
+        <rabbitmq.version>3.4.2</rabbitmq.version>
         <felix.bundle.plugin.version>2.4.0</felix.bundle.plugin.version>
         <felix.version>4.2.1</felix.version>
         <pax.exam.version>3.4.0</pax.exam.version>
@@ -144,7 +131,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>1.9.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -252,6 +238,21 @@
                 <artifactId>spring-context</artifactId>
                 <version>${spring.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.18.2-GA</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>1.10.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>1.10.8</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -272,8 +273,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
@@ -323,8 +324,10 @@
                             <goal>jar</goal>
                         </goals>
                     </execution>
-
                 </executions>
+				<configuration>
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>

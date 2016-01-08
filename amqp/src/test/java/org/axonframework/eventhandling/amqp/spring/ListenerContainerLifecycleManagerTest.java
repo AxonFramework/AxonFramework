@@ -17,15 +17,16 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.SimpleCluster;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.amqp.DefaultAMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.junit.*;
-import org.mockito.internal.util.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.util.MockUtil;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 
@@ -43,7 +44,7 @@ public class ListenerContainerLifecycleManagerTest {
     private ListenerContainerLifecycleManager testSubject;
     private ConnectionFactory mockConnectionFactory;
     private Serializer serializer;
-    private List<SimpleMessageListenerContainer> containersCreated = new ArrayList<SimpleMessageListenerContainer>();
+    private List<SimpleMessageListenerContainer> containersCreated = new ArrayList<>();
 
     @Before
     public void setUp() throws Exception {
@@ -65,48 +66,48 @@ public class ListenerContainerLifecycleManagerTest {
     }
 
     @Test
-    public void testTwoClustersForSingleQueue() {
-        testSubject.registerCluster(new SimpleCluster("cluster1"),
+    public void testTwoEventProcessorsForSingleQueue() {
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener = containersCreated.get(0).getMessageListener();
-        verify((ClusterMessageListener) messageListener, never()).addCluster(isA(SimpleCluster.class));
-        testSubject.registerCluster(new SimpleCluster("cluster2"),
+        verify((EventProcessorMessageListener) messageListener, never()).addEventProcessor(isA(SimpleEventProcessor.class));
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
 
-        assertTrue(messageListener instanceof ClusterMessageListener);
-        // the first cluster is added in the constructor
-        verify((ClusterMessageListener) messageListener, times(1)).addCluster(isA(SimpleCluster.class));
+        assertTrue(messageListener instanceof EventProcessorMessageListener);
+        // the first eventProcessor is added in the constructor
+        verify((EventProcessorMessageListener) messageListener, times(1)).addEventProcessor(isA(SimpleEventProcessor.class));
     }
 
     @Test
-    public void testTwoClustersForDifferentQueues() {
-        testSubject.registerCluster(new SimpleCluster("cluster1"),
+    public void testTwoEventProcessorsForDifferentQueues() {
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener1 = containersCreated.get(0).getMessageListener();
 
-        testSubject.registerCluster(new SimpleCluster("cluster2"),
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
         assertEquals(2, containersCreated.size());
         Object messageListener2 = containersCreated.get(1).getMessageListener();
 
-        // the first cluster is added in the constructor
-        verify((ClusterMessageListener) messageListener1, never()).addCluster(isA(SimpleCluster.class));
-        verify((ClusterMessageListener) messageListener2, never()).addCluster(isA(SimpleCluster.class));
+        // the first eventProcessor is added in the constructor
+        verify((EventProcessorMessageListener) messageListener1, never()).addEventProcessor(isA(SimpleEventProcessor.class));
+        verify((EventProcessorMessageListener) messageListener2, never()).addEventProcessor(isA(SimpleEventProcessor.class));
     }
 
     @Test
     public void testLifecycleOperationsPropagatedToAllListeners() throws Exception {
-        testSubject.registerCluster(new SimpleCluster("cluster1"),
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
-        testSubject.registerCluster(new SimpleCluster("cluster2"),
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -129,10 +130,10 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test
     public void testContainerManagerIsRunningIfAtLeastOneContainerIsRunning() throws Exception {
-        testSubject.registerCluster(new SimpleCluster("cluster1"),
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
-        testSubject.registerCluster(new SimpleCluster("cluster2"),
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -147,28 +148,28 @@ public class ListenerContainerLifecycleManagerTest {
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testClusterIsRejectedIfNoQueueSpecified() {
-        testSubject.registerCluster(new SimpleCluster("cluster1"),
+    public void testEventProcessorIsRejectedIfNoQueueSpecified() {
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
                                     new DefaultAMQPConsumerConfiguration(null),
                                     new DefaultAMQPMessageConverter(serializer));
     }
 
     @Test
-    public void testClusterIsCreatedAfterContainerStart() {
-        testSubject.registerCluster(new SimpleCluster("cluster1"),
+    public void testEventProcessorIsCreatedAfterContainerStart() {
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener = containersCreated.get(0).getMessageListener();
-        verify((ClusterMessageListener) messageListener, never()).addCluster(isA(SimpleCluster.class));
+        verify((EventProcessorMessageListener) messageListener, never()).addEventProcessor(isA(SimpleEventProcessor.class));
         testSubject.start();
-        testSubject.registerCluster(new SimpleCluster("cluster2"),
+        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
 
-        assertTrue(messageListener instanceof ClusterMessageListener);
-        // the first cluster is added in the constructor
-        verify((ClusterMessageListener) messageListener, times(1)).addCluster(isA(SimpleCluster.class));
+        assertTrue(messageListener instanceof EventProcessorMessageListener);
+        // the first eventProcessor is added in the constructor
+        verify((EventProcessorMessageListener) messageListener, times(1)).addEventProcessor(isA(SimpleEventProcessor.class));
     }
 
     private static class CallRealMethodWithSpiedArgument implements Answer {

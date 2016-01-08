@@ -18,39 +18,30 @@ package org.axonframework.integrationtests.loopbacktest.synchronous;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
+import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.LockManager;
-import org.axonframework.repository.OptimisticLockManager;
-import org.axonframework.repository.PessimisticLockManager;
+import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.Repository;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -62,81 +53,77 @@ public class SynchronousLoopbackTest {
 
     private CommandBus commandBus;
     private EventBus eventBus;
-    private UUID aggregateIdentifier;
+    private String aggregateIdentifier;
     private EventStore eventStore;
     private VoidCallback reportErrorCallback;
-    private CommandCallback<Object> expectErrorCallback;
+    private CommandCallback<Object, Object> expectErrorCallback;
 
     @Before
     public void setUp() {
-        aggregateIdentifier = UUID.randomUUID();
+        aggregateIdentifier = UUID.randomUUID().toString();
         commandBus = new SimpleCommandBus();
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
-        eventStore.appendEvents("CountingAggregate", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<AggregateCreatedEvent>(aggregateIdentifier, 0,
-                                                                     new AggregateCreatedEvent(aggregateIdentifier),
-                                                                     null
+        eventStore.appendEvents(Collections.singletonList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, 0,
+                        new AggregateCreatedEvent(aggregateIdentifier),
+                        null
                 )));
         reset(eventStore);
 
-        reportErrorCallback = new VoidCallback() {
+        reportErrorCallback = new VoidCallback<Object>() {
             @Override
-            protected void onSuccess() {
-
+            protected void onSuccess(CommandMessage<?> commandMessage) {
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage commandMessage, Throwable cause) {
                 throw new RuntimeException("Failure", cause);
             }
         };
-        expectErrorCallback = new CommandCallback<Object>() {
+        expectErrorCallback = new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 fail("Expected this command to fail");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                 assertEquals("Mock exception", cause.getMessage());
             }
         };
     }
 
-    protected void initializeRepository(LockManager lockingStrategy) {
-        EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<CountingAggregate>(
+    protected void initializeRepository(LockFactory lockingStrategy) {
+        EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<>(
                 CountingAggregate.class, eventStore,
                 lockingStrategy);
         repository.setEventBus(eventBus);
-        AnnotationCommandHandlerAdapter.subscribe(new CounterCommandHandler(repository), commandBus);
+        new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
     @Test
     public void testLoopBackKeepsProperEventOrder_PessimisticLocking() {
-        initializeRepository(new PessimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)), reportErrorCallback);
-                    }
+        initializeRepository(new PessimisticLockFactory());
+        EventListener el = event -> {
+            DomainEventMessage domainEvent = (DomainEventMessage) event;
+            if (event.getPayload() instanceof CounterChangedEvent) {
+                CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
+                if (counterChangedEvent.getCounter() == 1) {
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 1)), reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(
+                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                     counterChangedEvent.getCounter() + 2)), reportErrorCallback);
                 }
             }
         };
-        eventBus.subscribe(el);
+        eventBus.subscribe(new SimpleEventProcessor("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
+        DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
@@ -146,74 +133,35 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
+        verify(eventStore, times(3)).appendEvents(anyEventList());
     }
 
     @Test
-    public void testLoopBackKeepsProperEventOrder_OptimisticLocking() throws Throwable {
-        initializeRepository(new OptimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)), reportErrorCallback);
-                    }
+    public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() throws Exception {
+        initializeRepository(new PessimisticLockFactory());
+        EventListener el = event -> {
+            DomainEventMessage domainEvent = (DomainEventMessage) event;
+            if (event.getPayload() instanceof CounterChangedEvent) {
+                CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
+                if (counterChangedEvent.getCounter() == 1) {
+                    commandBus.dispatch(asCommandMessage(
+                                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                         counterChangedEvent.getCounter() + 1)),
+                                        reportErrorCallback);
+                    commandBus.dispatch(
+                            asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                      counterChangedEvent.getCounter() + 2)),
+                            reportErrorCallback);
+                } else if (counterChangedEvent.getCounter() == 2) {
+                    throw new RuntimeException("Mock exception");
                 }
             }
         };
-        eventBus.subscribe(el);
-
-        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
-
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
-        assertTrue(storedEvents.hasNext());
-        while (storedEvents.hasNext()) {
-            DomainEventMessage next = storedEvents.next();
-            if (next.getPayload() instanceof CounterChangedEvent) {
-                CounterChangedEvent event = (CounterChangedEvent) next.getPayload();
-                assertEquals(event.getCounter(), next.getSequenceNumber());
-            }
-        }
-
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
-    }
-
-    @Test
-    public void testLoopBackKeepsProperEventOrder_OptimisticLocking_ProcessingFails() throws Throwable {
-        initializeRepository(new OptimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)), reportErrorCallback);
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 2)),
-                                            reportErrorCallback);
-                    } else if (counterChangedEvent.getCounter() == 2) {
-                        throw new RuntimeException("Mock exception");
-                    }
-                }
-            }
-        };
-        eventBus.subscribe(el);
+        eventBus.subscribe(new SimpleEventProcessor("test", el));
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
+        DomainEventStream storedEvents = eventStore.readEvents(aggregateIdentifier);
         assertTrue(storedEvents.hasNext());
         while (storedEvents.hasNext()) {
             DomainEventMessage next = storedEvents.next();
@@ -223,48 +171,12 @@ public class SynchronousLoopbackTest {
             }
         }
 
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
+        verify(eventStore, times(3)).appendEvents(anyEventList());
     }
 
-    @Test
-    public void testLoopBackKeepsProperEventOrder_PessimisticLocking_ProcessingFails() throws Throwable {
-        initializeRepository(new PessimisticLockManager());
-        EventListener el = new EventListener() {
-            @Override
-            public void handle(EventMessage event) {
-                DomainEventMessage domainEvent = (DomainEventMessage) event;
-                if (event.getPayload() instanceof CounterChangedEvent) {
-                    CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
-                    if (counterChangedEvent.getCounter() == 1) {
-                        commandBus.dispatch(asCommandMessage(
-                                new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                         counterChangedEvent.getCounter() + 1)),
-                                            reportErrorCallback);
-                        commandBus.dispatch(
-                                asCommandMessage(new ChangeCounterCommand((UUID) domainEvent.getAggregateIdentifier(),
-                                                                          counterChangedEvent.getCounter() + 2)),
-                                reportErrorCallback);
-                    } else if (counterChangedEvent.getCounter() == 2) {
-                        throw new RuntimeException("Mock exception");
-                    }
-                }
-            }
-        };
-        eventBus.subscribe(el);
-
-        commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
-
-        DomainEventStream storedEvents = eventStore.readEvents("CountingAggregate", aggregateIdentifier);
-        assertTrue(storedEvents.hasNext());
-        while (storedEvents.hasNext()) {
-            DomainEventMessage next = storedEvents.next();
-            if (next.getPayload() instanceof CounterChangedEvent) {
-                CounterChangedEvent event = (CounterChangedEvent) next.getPayload();
-                assertEquals(event.getCounter(), next.getSequenceNumber());
-            }
-        }
-
-        verify(eventStore, times(3)).appendEvents(eq("CountingAggregate"), isA(DomainEventStream.class));
+    @SuppressWarnings("unchecked")
+    private static List<DomainEventMessage<?>> anyEventList() {
+        return anyList();
     }
 
     private static class CounterCommandHandler {
@@ -276,6 +188,7 @@ public class SynchronousLoopbackTest {
         }
 
         @CommandHandler
+        @SuppressWarnings("unchecked")
         public void changeCounter(ChangeCounterCommand command) {
             CountingAggregate aggregate = repository.load(command.getAggregateId());
             aggregate.setCounter(command.getNewValue());
@@ -284,15 +197,15 @@ public class SynchronousLoopbackTest {
 
     private static class ChangeCounterCommand {
 
-        private UUID aggregateId;
+        private String aggregateId;
         private int newValue;
 
-        private ChangeCounterCommand(UUID aggregateId, int newValue) {
+        private ChangeCounterCommand(String aggregateId, int newValue) {
             this.aggregateId = aggregateId;
             this.newValue = newValue;
         }
 
-        public UUID getAggregateId() {
+        public String getAggregateId() {
             return aggregateId;
         }
 
@@ -303,13 +216,13 @@ public class SynchronousLoopbackTest {
 
     private static class AggregateCreatedEvent {
 
-        private final UUID aggregateIdentifier;
+        private final String aggregateIdentifier;
 
-        private AggregateCreatedEvent(UUID aggregateIdentifier) {
+        private AggregateCreatedEvent(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
-        public UUID getAggregateIdentifier() {
+        public String getAggregateIdentifier() {
             return aggregateIdentifier;
         }
     }
@@ -321,9 +234,9 @@ public class SynchronousLoopbackTest {
         private int counter = 0;
 
         @AggregateIdentifier
-        private UUID identifier;
+        private String identifier;
 
-        private CountingAggregate(UUID identifier) {
+        private CountingAggregate(String identifier) {
             apply(new AggregateCreatedEvent(identifier));
         }
 
@@ -358,16 +271,16 @@ public class SynchronousLoopbackTest {
         }
     }
 
-    private static class InMemoryEventStore implements EventStore {
+    private class InMemoryEventStore implements EventStore {
 
-        private Map<Object, List<DomainEventMessage>> store = new HashMap<Object, List<DomainEventMessage>>();
+        protected Map<Object, List<DomainEventMessage>> store = new HashMap<>();
 
         @Override
-        public void appendEvents(String identifier, DomainEventStream events) {
-            while (events.hasNext()) {
-                DomainEventMessage next = events.next();
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            for (EventMessage event : events) {
+                DomainEventMessage next = (DomainEventMessage) event;
                 if (!store.containsKey(next.getAggregateIdentifier())) {
-                    store.put(next.getAggregateIdentifier(), new ArrayList<DomainEventMessage>());
+                    store.put(next.getAggregateIdentifier(), new ArrayList<>());
                 }
                 List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
                 eventList.add(next);
@@ -375,10 +288,16 @@ public class SynchronousLoopbackTest {
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
-            List<DomainEventMessage> events = store.get(identifier);
-            events = events == null ? new ArrayList<DomainEventMessage>() : events;
-            return new SimpleDomainEventStream(events);
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            if (!store.containsKey(identifier)) {
+                throw new AggregateNotFoundException(identifier, "Aggregate not found");
+            }
+            final List<DomainEventMessage> events = store.get(identifier);
+            List<DomainEventMessage> filteredEvents = events.stream().filter(
+                    message -> message.getSequenceNumber() >= firstSequenceNumber
+                            && message.getSequenceNumber() <= lastSequenceNumber).collect(Collectors.toList());
+            return new SimpleDomainEventStream(filteredEvents);
         }
     }
 }

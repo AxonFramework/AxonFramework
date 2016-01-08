@@ -18,16 +18,16 @@ package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
 import org.axonframework.commandhandling.distributed.CommandDispatchException;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.RemoteCommandHandlingException;
-import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.MemberAwareCommandCallback;
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.Serializer;
 import org.jgroups.*;
@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * A CommandBusConnector that uses JGroups to discover and connect to other JGroupsConnectors in the network. Depending
@@ -66,14 +67,14 @@ public class JGroupsConnector implements CommandBusConnector {
 
     private final JChannel channel;
     private AtomicReference<ConsistentHash> consistentHash =
-            new AtomicReference<ConsistentHash>(ConsistentHash.emptyRing());
+            new AtomicReference<>(ConsistentHash.emptyRing());
     private final String clusterName;
     private final CommandBus localSegment;
     private final MessageSerializer serializer;
     private final JoinCondition joinedCondition = new JoinCondition();
-    private final ConcurrentMap<String, MemberAwareCommandCallback> callbacks =
-            new ConcurrentHashMap<String, MemberAwareCommandCallback>();
-    private final Set<String> supportedCommandNames = new CopyOnWriteArraySet<String>();
+    private final ConcurrentMap<String, CallbackHolder> callbacks =
+            new ConcurrentHashMap<>();
+    private final Set<String> supportedCommandNames = new CopyOnWriteArraySet<>();
     private volatile int currentLoadFactor;
     private final JGroupsConnector.MessageReceiver messageReceiver;
     private final HashChangeListener hashChangeListener;
@@ -166,15 +167,10 @@ public class JGroupsConnector implements CommandBusConnector {
     private void sendMembershipUpdate(Address dest) throws MembershipUpdateFailedException {
         try {
             if (channel.isConnected()) {
-                final HashSet<String> commandNames = new HashSet<String>(supportedCommandNames);
-                updateConsistentHash(new UpdateFunction() {
-                    @Override
-                    public ConsistentHash update(ConsistentHash hash) {
-                        return hash.withAdditionalNode(getNodeName(), currentLoadFactor, commandNames);
-                    }
-                });
+                final HashSet<String> commandNames = new HashSet<>(supportedCommandNames);
+                updateConsistentHash(hash -> hash.withAdditionalNode(getNodeName(), currentLoadFactor, commandNames));
                 channel.send(new Message(dest, new JoinMessage(currentLoadFactor,
-                                                               commandNames))
+                                                               new HashSet<>(supportedCommandNames)))
                                      .setFlag(Message.Flag.RSVP));
             }
         } catch (Exception e) {
@@ -212,15 +208,15 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     @Override
-    public <R> void send(String routingKey, CommandMessage<?> commandMessage, CommandCallback<R> callback)
+    public <C, R> void send(String routingKey, CommandMessage<C> commandMessage, CommandCallback<? super C, R> callback)
             throws Exception {
         Address dest = resolveDestination(routingKey, commandMessage);
-        callbacks.put(commandMessage.getIdentifier(), new MemberAwareCommandCallback<R>(dest, callback));
+        callbacks.put(commandMessage.getIdentifier(), new CallbackHolder<>(dest, commandMessage, callback));
         channel.send(dest, new DispatchMessage(commandMessage, serializer, true));
     }
 
     @Override
-    public void send(String routingKey, CommandMessage<?> commandMessage) throws Exception {
+    public <C> void send(String routingKey, CommandMessage<C> commandMessage) throws Exception {
         Address dest = resolveDestination(routingKey, commandMessage);
         channel.send(dest, new DispatchMessage(commandMessage, serializer, false));
     }
@@ -236,22 +232,22 @@ public class JGroupsConnector implements CommandBusConnector {
     }
 
     @Override
-    public synchronized <C> void subscribe(String commandName, CommandHandler<? super C> handler) {
-        localSegment.subscribe(commandName, handler);
+    public synchronized Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        Registration subscription = localSegment.subscribe(commandName, handler);
         if (supportedCommandNames.add(commandName)) {
             sendMembershipUpdate(null);
         }
-    }
-
-    @Override
-    public synchronized <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler) {
-        if (localSegment.unsubscribe(commandName, handler)) {
-            if (supportedCommandNames.remove(commandName)) {
-                sendMembershipUpdate(null);
+        return () -> {
+            synchronized (this) {
+                if (subscription.cancel()) {
+                    if (supportedCommandNames.remove(commandName)) {
+                        sendMembershipUpdate(null);
+                    }
+                    return true;
+                }
+                return false;
             }
-            return true;
-        }
-        return false;
+        };
     }
 
     private Address getAddress(String nodeName) {
@@ -321,21 +317,16 @@ public class JGroupsConnector implements CommandBusConnector {
 
         @Override
         public void viewAccepted(final View view) {
-            ConsistentHashChange hashChange = updateConsistentHash(new UpdateFunction() {
-                @Override
-                public ConsistentHash update(ConsistentHash hash) {
-                    return hash.withExclusively(getMemberNames(view));
-                }
-            });
+            ConsistentHashChange hashChange = updateConsistentHash(hash -> hash.withExclusively(getMemberNames(view)));
             if (hashChange.isChange()) {
                 int messagesLost = 0;
                 // check whether the members with outstanding callbacks are all alive
-                for (Map.Entry<String, MemberAwareCommandCallback> entry : callbacks.entrySet()) {
+                for (Map.Entry<String, CallbackHolder> entry : callbacks.entrySet()) {
                     if (!entry.getValue().isMemberLive(view)) {
-                        MemberAwareCommandCallback callback = callbacks.remove(entry.getKey());
+                        CallbackHolder callback = callbacks.remove(entry.getKey());
                         if (callback != null) {
                             messagesLost++;
-                            callback.onFailure(new RemoteCommandHandlingException(
+                            callback.reportFailure(new RemoteCommandHandlingException(
                                     "The connection with the destination was lost before the result was reported."));
                         }
                     }
@@ -353,25 +344,23 @@ public class JGroupsConnector implements CommandBusConnector {
                 sendMembershipUpdate(null);
                 joinedCondition.markJoined(true);
             } else if (!view.equals(currentView)) {
-                for (Address member : view.getMembers()) {
-                    if ((currentView == null || !currentView.containsMember(member))
-                            && !member.equals(channel.getAddress())) {
-                        if (logger.isInfoEnabled()) {
-                            logger.info("New member detected: [{}]. Sending it my configuration.", member.toString());
-                        }
+                view.getMembers().stream()
+                    .filter(member -> (currentView == null || !currentView.containsMember(member))
+                            && !member.equals(channel.getAddress()))
+                    .forEach(member -> {
+                        logger.info("New member detected: [{}]. Sending it my configuration.", member);
                         sendMembershipUpdate(member);
-                    }
-                }
+                    });
             }
             currentView = view;
         }
 
         private void reportDisconnectedMembers(ConsistentHashChange hashChange) {
             Set<ConsistentHash.Member> newMembers = hashChange.newHash.getMembers();
-            Set<ConsistentHash.Member> oldMembers = new HashSet<ConsistentHash.Member>(hashChange.oldHash.getMembers());
+            Set<ConsistentHash.Member> oldMembers = new HashSet<>(hashChange.oldHash.getMembers());
             oldMembers.removeAll(newMembers);
             String[] memberNames = new String[oldMembers.size()];
-            int i=0;
+            int i = 0;
             for (ConsistentHash.Member member : oldMembers) {
                 memberNames[i++] = member.name();
             }
@@ -403,7 +392,7 @@ public class JGroupsConnector implements CommandBusConnector {
                 final CommandMessage commandMessage = message.getCommandMessage(serializer);
                 if (message.isExpectReply()) {
                     localSegment.dispatch(commandMessage, new ReplyingCallback(channel,
-                                                                               msg.getSrc(), commandMessage,serializer
+                                                                               msg.getSrc(), serializer
                     ));
                 } else {
                     localSegment.dispatch(commandMessage);
@@ -428,13 +417,8 @@ public class JGroupsConnector implements CommandBusConnector {
         private void processJoinMessage(final Message msg, final JoinMessage joinMessage) {
             final String channelName = channel.getName(msg.getSrc());
             if (channelName != null) {
-                updateConsistentHash(new UpdateFunction() {
-                    @Override
-                    public ConsistentHash update(ConsistentHash hash) {
-                        return hash.withAdditionalNode(channelName, joinMessage.getLoadFactor(),
-                                                       joinMessage.getCommandNames());
-                    }
-                });
+                updateConsistentHash(hash -> hash.withAdditionalNode(channelName, joinMessage.getLoadFactor(),
+                                                                     joinMessage.getCommandNames()));
                 if (logger.isInfoEnabled() && !msg.getSrc().equals(channel.getAddress())) {
                     logger.info("{} joined with load factor: {}", msg.getSrc(), joinMessage.getLoadFactor());
                 }
@@ -446,24 +430,19 @@ public class JGroupsConnector implements CommandBusConnector {
 
         @SuppressWarnings("unchecked")
         private void processReplyMessage(ReplyMessage replyMessage) {
-            MemberAwareCommandCallback callback = callbacks.remove(replyMessage.getCommandIdentifier());
+            CallbackHolder callback = callbacks.remove(replyMessage.getCommandIdentifier());
             if (callback != null) {
                 if (replyMessage.isSuccess()) {
-                    callback.onSuccess(replyMessage.getReturnValue(serializer));
+                    callback.reportSuccess(replyMessage.getReturnValue(serializer));
                 } else {
-                    callback.onFailure(replyMessage.getError(serializer));
+                    callback.reportFailure(replyMessage.getError(serializer));
                 }
             }
         }
-
     }
 
     private List<String> getMemberNames(View view) {
-        List<String> memberNames = new ArrayList<String>(view.size());
-        for (Address member : view.getMembers()) {
-            memberNames.add(channel.getName(member));
-        }
-        return memberNames;
+        return view.getMembers().stream().map(channel::getName).collect(Collectors.toList());
     }
 
     private static final class JoinCondition {
@@ -489,7 +468,34 @@ public class JGroupsConnector implements CommandBusConnector {
         }
     }
 
-    private static interface UpdateFunction {
+    private static class CallbackHolder<C, R> {
+
+        private final Address dest;
+        private final CommandCallback<? super C, R> callback;
+        private final CommandMessage<C> commandMessage;
+
+        public CallbackHolder(Address dest, CommandMessage<C> commandMessage,
+                              CommandCallback<? super C, R> callback) {
+            this.dest = dest;
+            this.callback = callback;
+            this.commandMessage = commandMessage;
+        }
+
+        public boolean isMemberLive(View currentView) {
+            return currentView.containsMember(dest);
+        }
+
+        public void reportSuccess(R result) {
+            callback.onSuccess(commandMessage, result);
+        }
+
+        public void reportFailure(Throwable cause) {
+            callback.onFailure(commandMessage, cause);
+        }
+    }
+
+    @FunctionalInterface
+    private interface UpdateFunction {
 
         ConsistentHash update(ConsistentHash hash);
     }

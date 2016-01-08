@@ -25,12 +25,12 @@
 
 	<rabbit:connection-factory id="connectionFactory2"/>
 
-    <amqp:terminal id="terminal1" exchange-name="Exchange" durable="true" transactional="false"
+    <amqp:eventBus id="terminal1" exchange-name="Exchange" durable="true" transactional="false"
                    wait-for-publisher-ack="true" connection-factory="connectionFactory"
                    message-converter="messageConverter" routing-key-resolver="routingKeyResolver"
                    serializer="serializer">
     <amqp:default-configuration transaction-size="20" transaction-manager="transactionManager"/>
-    </amqp:terminal>
+    </amqp:eventBus>
 
     <amqp:configuration id="fullConfig"
                         acknowledge="manual" advice-chain="mockAdviceChain" concurrency="1" queue-name="Queue"
@@ -38,12 +38,12 @@
                         recovery-interval="1000" shutdown-timeout="10" transaction-manager="transactionManager"
                         exclusive="true" transaction-size="200" prefetch="1000"/>
 
-    <axon:cluster id="testCluster" default="true">
+    <axon:event-processor id="testEventProcessor" default="true">
         <axon:meta-data>
             <entry key="AMQP.Config">
                 <amqp:configuration transaction-size="20000"/>
             </entry>
         </axon:meta-data>
-    </axon:cluster>
+    </axon:event-processor>
 
 </beans>

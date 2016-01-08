@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.Cluster;
+import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.slf4j.Logger;
@@ -28,10 +29,12 @@ import org.springframework.context.SmartLifecycle;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Manages the lifecycle of the SimpleMessageListenerContainers that have been created to receive messages for
- * Clusters. The ListenerContainerLifecycleManager starts each of the Listener Containers when the context is started
+ * Event Processors. The ListenerContainerLifecycleManager starts each of the Listener Containers when the context is started
  * and will stop each of them when the context is being shut down.
  * <p/>
  * This class must be defined as a top-level Spring bean.
@@ -45,52 +48,69 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     private static final Logger logger = LoggerFactory.getLogger(ListenerContainerLifecycleManager.class);
 
     // guarded by "this"
-    private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<String, SimpleMessageListenerContainer>();
+    private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<>();
+    private final ConcurrentMap<EventProcessor, SimpleMessageListenerContainer> containerPerProcessor = new ConcurrentHashMap<>();
     // guarded by "this"
     private boolean started = false;
     private SpringAMQPConsumerConfiguration defaultConfiguration;
-
     private int phase = Integer.MAX_VALUE;
 
     /**
-     * Registers the given <code>cluster</code>, assigning it to a listener that listens to the given
+     * Registers the given <code>eventProcessor</code>, assigning it to a listener that listens to the given
      * <code>queueName</code>. If no listener is present for the given <code>queueName</code>, it is created. If one
-     * already exists, it is assigned to the existing listener. Clusters that have been registered with the same
+     * already exists, it is assigned to the existing listener. Event processors that have been registered with the same
      * <code>queueName</code> will each receive a copy of all message on that queue
      *
-     * @param cluster          The cluster to forward messages to
-     * @param config           The configuration object for the cluster
+     * @param eventProcessor   The event processor to forward messages to
+     * @param config           The configuration object for the event processor
      * @param messageConverter The message converter to use to convert the AMQP Message to an Event Message
+     * @return a handle to unsubscribe the <code>eventProcessor</code>. When unsubscribed it will no longer receive messages.
      */
-    public synchronized void registerCluster(Cluster cluster, AMQPConsumerConfiguration config,
-                                             AMQPMessageConverter messageConverter) {
+    public synchronized Registration registerEventProcessor(EventProcessor eventProcessor, AMQPConsumerConfiguration config,
+                                                            AMQPMessageConverter messageConverter) {
         SpringAMQPConsumerConfiguration amqpConfig = SpringAMQPConsumerConfiguration.wrap(config);
         amqpConfig.setDefaults(defaultConfiguration);
         String queueName = amqpConfig.getQueueName();
         if (queueName == null) {
-            throw new AxonConfigurationException("The Cluster does not define a Queue Name, "
+            throw new AxonConfigurationException("The EventProcessor does not define a Queue Name, "
                                                          + "nor is there a default Queue Name configured in the "
                                                          + "ListenerContainerLifeCycleManager");
         }
+        Registration registration;
         if (containerPerQueue.containsKey(queueName)) {
-            ClusterMessageListener existingListener = (ClusterMessageListener) containerPerQueue.get(queueName)
-                                                                                                .getMessageListener();
-            existingListener.addCluster(cluster);
+            final SimpleMessageListenerContainer container = containerPerQueue.get(queueName);
+            EventProcessorMessageListener existingListener = (EventProcessorMessageListener) container.getMessageListener();
+            registration = existingListener.addEventProcessor(eventProcessor);
+            containerPerProcessor.put(eventProcessor, container);
             if (started && logger.isWarnEnabled()) {
-                logger.warn("A cluster was configured on queue [{}], "
+                logger.warn("An EventProcessor was configured on queue [{}], "
                                     + "while the Container for that queue was already processing events. "
-                                    + "This may lead to Events not being published to all Clusters",
+                                    + "This may lead to Events not being published to all EventProcessors",
                             queueName);
             }
         } else {
             SimpleMessageListenerContainer newContainer = createContainer(amqpConfig);
             newContainer.setQueueNames(queueName);
-            newContainer.setMessageListener(new ClusterMessageListener(cluster, messageConverter));
+            EventProcessorMessageListener newListener = new EventProcessorMessageListener(messageConverter);
+            registration = newListener.addEventProcessor(eventProcessor);
+            newContainer.setMessageListener(newListener);
             containerPerQueue.put(queueName, newContainer);
+            containerPerProcessor.put(eventProcessor, newContainer);
             if (started) {
                 newContainer.start();
             }
         }
+        return () -> {
+            if (registration.cancel()) {
+                SimpleMessageListenerContainer container = containerPerProcessor.get(eventProcessor);
+                final EventProcessorMessageListener listener = (EventProcessorMessageListener) container.getMessageListener();
+                if (listener.isEmpty()) {
+                    container.stop();
+                }
+                return true;
+            }
+            return false;
+        };
     }
 
     @Override
@@ -99,11 +119,8 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     }
 
     @Override
-    public synchronized void stop(Runnable callback) {
-        for (SimpleMessageListenerContainer container : containerPerQueue.values()) {
-            container.stop();
-        }
-        started = false;
+    public void stop(Runnable callback) {
+        stop();
         callback.run();
     }
 
@@ -162,10 +179,10 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
     }
 
     /**
-     * Sets the configuration with the entries to use as defaults in case a registered cluster does not provide
+     * Sets the configuration with the entries to use as defaults in case a registered event processor does not provide
      * explicit values.
      *
-     * @param defaultConfiguration The configuration instance containing defaults for each registered cluster
+     * @param defaultConfiguration The configuration instance containing defaults for each registered event processor
      */
     public synchronized void setDefaultConfiguration(SpringAMQPConsumerConfiguration defaultConfiguration) {
         this.defaultConfiguration = defaultConfiguration;

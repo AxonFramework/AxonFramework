@@ -10,7 +10,6 @@ import org.junit.*;
 import java.util.concurrent.Executor;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
 
 /**
@@ -60,7 +59,7 @@ public class FixtureTest_Resources {
         testResourcesAreScopedToSingleTest_MethodPartOne();
     }
 
-    public static class AggregateWithResources extends AbstractAnnotatedAggregateRoot<String> {
+    public static class AggregateWithResources extends AbstractAnnotatedAggregateRoot {
 
         @AggregateIdentifier
         private String id;
@@ -68,22 +67,12 @@ public class FixtureTest_Resources {
         @CommandHandler
         public AggregateWithResources(CreateAggregateCommand cmd, Executor resource, CommandBus commandBus) {
             apply(new MyEvent(cmd.getAggregateIdentifier(), 1));
-            resource.execute(new Runnable() {
-                @Override
-                public void run() {
-                    fail("Should not really be executed");
-                }
-            });
+            resource.execute(() -> fail("Should not really be executed"));
         }
 
         @CommandHandler
         public CommandBus handleCommand(TestCommand cmd, Executor resource, CommandBus commandBus) {
-            resource.execute(new Runnable() {
-                @Override
-                public void run() {
-                    fail("Should not really be executed");
-                }
-            });
+            resource.execute(() -> fail("Should not really be executed"));
             return commandBus;
         }
 

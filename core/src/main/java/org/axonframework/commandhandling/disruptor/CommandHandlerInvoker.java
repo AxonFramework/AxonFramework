@@ -21,8 +21,8 @@ import com.lmax.disruptor.LifecycleAware;
 import org.axonframework.cache.Cache;
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
@@ -30,7 +30,6 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
 import org.axonframework.repository.ConflictingAggregateVersionException;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,10 +48,10 @@ import java.util.concurrent.ConcurrentMap;
 public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>, LifecycleAware {
 
     private static final Logger logger = LoggerFactory.getLogger(CommandHandlerInvoker.class);
-    private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<CommandHandlerInvoker>();
+    private static final ThreadLocal<CommandHandlerInvoker> CURRENT_INVOKER = new ThreadLocal<>();
     private static final Object PLACEHOLDER_VALUE = new Object();
 
-    private final ConcurrentMap<String, DisruptorRepository> repositories = new ConcurrentHashMap<String, DisruptorRepository>();
+    private final ConcurrentMap<Class<?>, DisruptorRepository> repositories = new ConcurrentHashMap<>();
     private final Cache cache;
     private final int segmentId;
     private final EventStore eventStore;
@@ -77,16 +76,16 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * <p/>
      * Calling this method from any other thread will return <code>null</code>.
      *
-     * @param typeIdentifier The type identifier of the aggregate
-     * @param <T>            The type of aggregate
+     * @param type The type of aggregate
+     * @param <T>  The type of aggregate
      * @return the repository instance for aggregate of given type
      */
     @SuppressWarnings("unchecked")
-    public static <T extends EventSourcedAggregateRoot> DisruptorRepository<T> getRepository(String typeIdentifier) {
+    public static <T extends EventSourcedAggregateRoot> DisruptorRepository<T> getRepository(Class<?> type) {
         final CommandHandlerInvoker invoker = CURRENT_INVOKER.get();
         Assert.state(invoker != null, "The repositories of a DisruptorCommandBus are only available "
                 + "in the invoker thread");
-        return invoker.repositories.get(typeIdentifier);
+        return invoker.repositories.get(type);
     }
 
     @Override
@@ -94,15 +93,14 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         if (entry.isRecoverEntry()) {
             removeEntry(entry.getAggregateIdentifier());
         } else if (entry.getInvokerId() == segmentId) {
-            DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
-            unitOfWork.start();
+            entry.start();
             try {
                 Object result = entry.getInvocationInterceptorChain().proceed(entry.getCommand());
                 entry.setResult(result);
-                unitOfWork.commit();
-            } catch (Throwable throwable) {
+            } catch (Exception throwable) {
                 entry.setExceptionResult(throwable);
-                unitOfWork.rollback(throwable);
+            } finally {
+                entry.pause();
             }
         }
     }
@@ -119,16 +117,16 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     @SuppressWarnings("unchecked")
     public <T extends EventSourcedAggregateRoot> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
                                                                                 EventStreamDecorator decorator) {
-        String typeIdentifier = aggregateFactory.getTypeIdentifier();
+        Class<T> typeIdentifier = aggregateFactory.getAggregateType();
         if (!repositories.containsKey(typeIdentifier)) {
-            DisruptorRepository<T> repository = new DisruptorRepository<T>(aggregateFactory, cache, eventStore,
-                                                                           decorator);
+            DisruptorRepository<T> repository = new DisruptorRepository<>(aggregateFactory, cache, eventStore,
+                                                                          decorator);
             repositories.putIfAbsent(typeIdentifier, repository);
         }
         return repositories.get(typeIdentifier);
     }
 
-    private void removeEntry(Object aggregateIdentifier) {
+    private void removeEntry(String aggregateIdentifier) {
         for (DisruptorRepository repository : repositories.values()) {
             repository.removeFromCache(aggregateIdentifier);
         }
@@ -155,8 +153,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private final EventStore eventStore;
         private final EventStreamDecorator decorator;
         private final AggregateFactory<T> aggregateFactory;
-        private final Map<T, Object> firstLevelCache = new WeakHashMap<T, Object>();
-        private final String typeIdentifier;
+        private final Map<T, Object> firstLevelCache = new WeakHashMap<>();
         private final Cache cache;
 
         private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
@@ -165,11 +162,10 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             this.cache = cache;
             this.eventStore = eventStore;
             this.decorator = decorator;
-            this.typeIdentifier = this.aggregateFactory.getTypeIdentifier();
         }
 
         @Override
-        public T load(Object aggregateIdentifier, Long expectedVersion) {
+        public T load(String aggregateIdentifier, Long expectedVersion) {
             T aggregate = load(aggregateIdentifier);
             if (expectedVersion != null && aggregate.getVersion() > expectedVersion) {
                 throw new ConflictingAggregateVersionException(aggregateIdentifier,
@@ -180,7 +176,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public T load(Object aggregateIdentifier) {
+        public T load(String aggregateIdentifier) {
             T aggregateRoot = null;
             for (T cachedAggregate : firstLevelCache.keySet()) {
                 if (aggregateIdentifier.equals(cachedAggregate.getIdentifier())) {
@@ -189,7 +185,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 }
             }
             if (aggregateRoot == null) {
-                Object cachedItem = cache.get(aggregateIdentifier);
+                String cachedItem = cache.get(aggregateIdentifier);
                 if (cachedItem != null && aggregateFactory.getAggregateType().isInstance(cachedItem)) {
                     aggregateRoot = aggregateFactory.getAggregateType().cast(cachedItem);
                 }
@@ -199,8 +195,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                              aggregateIdentifier);
                 DomainEventStream events = null;
                 try {
-                    events = decorator.decorateForRead(typeIdentifier, aggregateIdentifier,
-                                                       eventStore.readEvents(typeIdentifier, aggregateIdentifier));
+                    events = decorator.decorateForRead(aggregateIdentifier,
+                                                       eventStore.readEvents(aggregateIdentifier));
                     if (events.hasNext()) {
                         aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
                         aggregateRoot.initializeState(events);
@@ -220,26 +216,16 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
                 cache.put(aggregateIdentifier, aggregateRoot);
             }
-            if (aggregateRoot != null) {
-                DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
-                unitOfWork.setAggregateType(typeIdentifier);
-                unitOfWork.setEventStreamDecorator(decorator);
-                unitOfWork.registerAggregate(aggregateRoot, null, null);
-            }
             return aggregateRoot;
         }
 
         @Override
         public void add(T aggregate) {
-            DisruptorUnitOfWork unitOfWork = (DisruptorUnitOfWork) CurrentUnitOfWork.get();
-            unitOfWork.setEventStreamDecorator(decorator);
-            unitOfWork.setAggregateType(typeIdentifier);
-            unitOfWork.registerAggregate(aggregate, null, null);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
             cache.put(aggregate.getIdentifier(), aggregate);
         }
 
-        private void removeFromCache(Object aggregateIdentifier) {
+        private void removeFromCache(String aggregateIdentifier) {
             for (T cachedAggregate : firstLevelCache.keySet()) {
                 if (aggregateIdentifier.equals(cachedAggregate.getIdentifier())) {
                     firstLevelCache.remove(cachedAggregate);

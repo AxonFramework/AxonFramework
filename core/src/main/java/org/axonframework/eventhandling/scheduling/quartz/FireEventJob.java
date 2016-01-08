@@ -16,12 +16,12 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.unitofwork.TransactionManager;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.unitofwork.TransactionManager;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -60,22 +60,18 @@ public class FireEventJob implements Job {
         EventMessage<?> eventMessage = createMessage(event);
         try {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            UnitOfWorkFactory unitOfWorkFactory =
-                    (UnitOfWorkFactory) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
-            UnitOfWork uow = unitOfWorkFactory.createUnitOfWork();
-            try {
-                uow.publishEvent(eventMessage, eventBus);
-            } finally {
-                uow.commit();
-            }
-            if (logger.isInfoEnabled()) {
-                logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
-                            eventMessage.getPayloadType().getSimpleName());
-            }
+            UnitOfWorkFactory<?> unitOfWorkFactory =
+                    (UnitOfWorkFactory<?>) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
+            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+            unitOfWork.execute(() -> eventBus.publish(eventMessage));
         } catch (Exception e) {
-            logger.warn("Exception occurred while publishing scheduled event [{}]",
+            logger.warn("Exception occurred while publishing a scheduled event [{}]",
                         eventMessage.getPayloadType().getSimpleName());
             throw new JobExecutionException(e);
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug("Job successfully executed. Scheduled Event [{}] has been published.",
+                    eventMessage.getPayloadType().getSimpleName());
         }
     }
 
@@ -89,10 +85,10 @@ public class FireEventJob implements Job {
     private EventMessage<?> createMessage(Object event) {
         EventMessage<?> eventMessage;
         if (event instanceof EventMessage) {
-            eventMessage = new GenericEventMessage<Object>(((EventMessage) event).getPayload(),
-                                                           ((EventMessage) event).getMetaData());
+            eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
+                                                     ((EventMessage) event).getMetaData());
         } else {
-            eventMessage = new GenericEventMessage<Object>(event);
+            eventMessage = new GenericEventMessage<>(event);
         }
         return eventMessage;
     }

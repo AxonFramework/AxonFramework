@@ -17,15 +17,15 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Allard Buijze
@@ -97,7 +97,7 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot implements Annot
     }
 
     @Override
-    public Object getIdentifier() {
-        return identifier;
+    public String getIdentifier() {
+        return identifier == null ? null :  identifier.toString();
     }
 }

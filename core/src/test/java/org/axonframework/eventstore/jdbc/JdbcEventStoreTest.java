@@ -17,49 +17,41 @@
 package org.axonframework.eventstore.jdbc;
 
 
-import org.axonframework.common.jdbc.ConnectionProvider;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
-import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.eventstore.EventVisitor;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventstore.*;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventstore.management.CriteriaBuilder;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.repository.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.SimpleSerializedType;
 import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.upcasting.LazyUpcasterChain;
-import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
 import org.hsqldb.jdbc.JDBCDataSource;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeUtils;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.time.Clock;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -81,13 +73,7 @@ public class JdbcEventStoreTest {
         dataSource.setUrl("jdbc:hsqldb:mem:test");
         this.conn = spy(dataSource.getConnection());
         doNothing().when(conn).close();
-        final GenericEventSqlSchema sqldef = new GenericEventSqlSchema();
-        final DefaultEventEntryStore eventEntryStore1 = new DefaultEventEntryStore(new ConnectionProvider() {
-            @Override
-            public Connection getConnection() throws SQLException {
-                return conn;
-            }
-        }, sqldef);
+        final DefaultEventEntryStore<String> eventEntryStore1 = new DefaultEventEntryStore<>(() -> conn);
         eventEntryStore1.createSchema();
         testSubject = new JdbcEventStore(eventEntryStore1);
 
@@ -110,22 +96,17 @@ public class JdbcEventStoreTest {
         conn.createStatement().execute("SHUTDOWN");
         conn.close();
         // just to make sure
-        DateTimeUtils.setCurrentMillisSystem();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testStoreAndLoadEvents_BadIdentifierType() {
-        testSubject.appendEvents("type", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<Object>(new BadIdentifierType(), 1, new Object())));
+        setClock(Clock.systemDefaultZone());
     }
 
     @Test(expected = UnknownSerializedTypeException.class)
     public void testUnknownSerializedTypeCausesException() throws SQLException {
-        testSubject.appendEvents("type", aggregate1.getUncommittedEvents());
-        final PreparedStatement preparedStatement = conn.prepareStatement("UPDATE DomainEventEntry e SET e.payloadType = ?");
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        final PreparedStatement preparedStatement = conn.prepareStatement(
+                "UPDATE DomainEventEntry e SET e.payloadType = ?");
         preparedStatement.setString(1, "unknown");
         preparedStatement.executeUpdate();
-        testSubject.readEvents("type", aggregate1.getIdentifier());
+        testSubject.readEvents(aggregate1.getIdentifier());
     }
 
     private long queryLong() throws SQLException {
@@ -140,12 +121,12 @@ public class JdbcEventStoreTest {
     public void testResourcesProperlyClosedWhenAggregateStreamIsNotFound() throws SQLException {
         reset(conn);
         doNothing().when(conn).close();
-        final List<PreparedStatement> statements = new ArrayList<PreparedStatement>();
-        final List<ResultSet> resultSets = new ArrayList<ResultSet>();
+        final List<PreparedStatement> statements = new ArrayList<>();
+        final List<ResultSet> resultSets = new ArrayList<>();
         doAnswer(new StatementAnswer(resultSets, statements)).when(conn).prepareStatement(anyString());
 
         try {
-            testSubject.readEvents("notExist", "noSuchId");
+            testSubject.readEvents("noSuchId");
             fail("Expected EventStreamNotFoundException");
         } catch (EventStreamNotFoundException e) {
             verify(conn, atLeastOnce()).prepareStatement(anyString());
@@ -162,34 +143,34 @@ public class JdbcEventStoreTest {
     @Test
     public void testStoreAndLoadEvents() throws SQLException {
         assertNotNull(testSubject);
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
-        assertEquals((long) aggregate1.getUncommittedEventCount(),queryLong());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        assertEquals((long) aggregate1.getRegisteredEventCount(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<Object>(aggregate2.getIdentifier(),
-                        0,
-                        new Object(),
-                        Collections.singletonMap("key", (Object) "Value"))));
+        testSubject.appendEvents(singletonList(
+                new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
+                                                0,
+                                                new Object(),
+                                                Collections.singletonMap("key", (Object) "Value"))));
 
-        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
+        DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
+        List<DomainEventMessage> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
             event.getPayload();
             event.getMetaData();
             actualEvents.add(event);
         }
-        assertEquals(aggregate1.getUncommittedEventCount(), actualEvents.size());
+        assertEquals(aggregate1.getRegisteredEventCount(), actualEvents.size());
 
         /// we make sure persisted events have the same MetaData alteration logic
-        DomainEventStream other = testSubject.readEvents("test", aggregate2.getIdentifier());
+        DomainEventStream other = testSubject.readEvents(aggregate2.getIdentifier());
         assertTrue(other.hasNext());
         DomainEventMessage messageWithMetaData = other.next();
         DomainEventMessage altered = messageWithMetaData.withMetaData(Collections.singletonMap("key2",
-                (Object) "value"));
+                                                                                               (Object) "value"));
         DomainEventMessage combined = messageWithMetaData.andMetaData(Collections.singletonMap("key2",
-                (Object) "value"));
+                                                                                               (Object) "value"));
         assertTrue(altered.getMetaData().containsKey("key2"));
         altered.getPayload();
         assertFalse(altered.getMetaData().containsKey("key"));
@@ -206,28 +187,23 @@ public class JdbcEventStoreTest {
         assertNotNull(testSubject);
         UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
         when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
-                        return Arrays.asList(serializedObject, serializedObject);
-                    }
+                .thenAnswer(invocation -> {
+                    SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
+                    return asList(serializedObject, serializedObject);
                 });
 
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
 
         testSubject.setUpcasterChain(mockUpcasterChain);
-        assertEquals((long) aggregate1.getUncommittedEventCount(),queryLong());
+        assertEquals((long) aggregate1.getRegisteredEventCount(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<Object>(aggregate2.getIdentifier(),
-                        0,
-                        new Object(),
-                        Collections.singletonMap("key", (Object) "Value"))));
+        testSubject.appendEvents(singletonList(
+                new GenericDomainEventMessage<>(aggregate2.getIdentifier(), 0, new Object(),
+                                                Collections.singletonMap("key", "Value"))));
 
-        DomainEventStream events = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> actualEvents = new ArrayList<DomainEventMessage>();
+        DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
+        List<DomainEventMessage<?>> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
             event.getPayload();
@@ -239,7 +215,7 @@ public class JdbcEventStoreTest {
         for (int t = 0; t < 20; t = t + 2) {
             assertEquals(actualEvents.get(t).getSequenceNumber(), actualEvents.get(t + 1).getSequenceNumber());
             assertEquals(actualEvents.get(t).getAggregateIdentifier(),
-                    actualEvents.get(t + 1).getAggregateIdentifier());
+                         actualEvents.get(t + 1).getAggregateIdentifier());
             assertEquals(actualEvents.get(t).getMetaData(), actualEvents.get(t + 1).getMetaData());
             assertNotNull(actualEvents.get(t).getPayload());
             assertNotNull(actualEvents.get(t + 1).getPayload());
@@ -248,15 +224,15 @@ public class JdbcEventStoreTest {
 
     @Test
     public void testLoad_LargeAmountOfEvents() {
-        List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
+        List<DomainEventMessage<?>> domainEvents = new ArrayList<>(110);
         String aggregateIdentifier = "id";
         for (int t = 0; t < 110; t++) {
-            domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
-                    "Mock contents", MetaData.emptyInstance()));
+            domainEvents.add(new GenericDomainEventMessage<>(aggregateIdentifier, (long) t,
+                                                             "Mock contents", MetaData.emptyInstance()));
         }
-        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
+        testSubject.appendEvents(domainEvents);
 
-        DomainEventStream events = testSubject.readEvents("test", aggregateIdentifier);
+        DomainEventStream events = testSubject.readEvents(aggregateIdentifier);
         long t = 0L;
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -275,19 +251,19 @@ public class JdbcEventStoreTest {
 
     @Test
     public void testLoad_LargeAmountOfEventsWithSnapshot() {
-        List<DomainEventMessage<String>> domainEvents = new ArrayList<DomainEventMessage<String>>(110);
+        List<DomainEventMessage<?>> domainEvents = new ArrayList<>(110);
         String aggregateIdentifier = "id";
         for (int t = 0; t < 110; t++) {
-            domainEvents.add(new GenericDomainEventMessage<String>(aggregateIdentifier, (long) t,
-                    "Mock contents", MetaData.emptyInstance()));
+            domainEvents.add(new GenericDomainEventMessage<>(aggregateIdentifier, (long) t,
+                                                             "Mock contents", MetaData.emptyInstance()));
         }
-        testSubject.appendEvents("test", new SimpleDomainEventStream(domainEvents));
-        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 30,
-                "Mock contents",
-                MetaData.emptyInstance()
+        testSubject.appendEvents(domainEvents);
+        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>(aggregateIdentifier, (long) 30,
+                                                                        "Mock contents",
+                                                                        MetaData.emptyInstance()
         ));
 
-        DomainEventStream events = testSubject.readEvents("test", aggregateIdentifier);
+        DomainEventStream events = testSubject.readEvents(aggregateIdentifier);
         long t = 30L;
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -298,17 +274,15 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testLoadWithSnapshotEvent() {
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
-        testSubject.appendSnapshotEvent("test", aggregate1.createSnapshotEvent());
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
+        aggregate1.getRegisteredEvents().clear();
         aggregate1.changeState();
-        testSubject.appendEvents("test", aggregate1.getUncommittedEvents());
-        aggregate1.commitEvents();
+        testSubject.appendEvents(aggregate1.getRegisteredEvents());
 
-        DomainEventStream actualEventStream = testSubject.readEvents("test", aggregate1.getIdentifier());
-        List<DomainEventMessage> domainEvents = new ArrayList<DomainEventMessage>();
+        DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
+        List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             DomainEventMessage next = actualEventStream.next();
             domainEvents.add(next);
@@ -318,12 +292,11 @@ public class JdbcEventStoreTest {
         assertEquals(2, domainEvents.size());
     }
 
-    @Transactional
     @Test
     public void testInsertDuplicateSnapshot() throws Exception {
-        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>("id1", 1, "test"));
         try {
-            testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>("id1", 1, "test"));
+            testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>("id1", 1, "test"));
             fail("Expected concurrency exception");
         } catch (ConcurrencyException e) {
             assertTrue(e.getMessage().contains("snapshot"));
@@ -332,51 +305,47 @@ public class JdbcEventStoreTest {
 
 
     @Test(expected = EventStreamNotFoundException.class)
-    @Transactional
     public void testLoadNonExistent() {
-        testSubject.readEvents("Stub", UUID.randomUUID());
+        testSubject.readEvents(UUID.randomUUID().toString());
     }
 
     @Test
-    @Transactional
     public void testVisitAllEvents() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(77)));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(23)));
+        testSubject.appendEvents(createDomainEvents(77));
+        testSubject.appendEvents(createDomainEvents(23));
 
         testSubject.visitEvents(eventVisitor);
         verify(eventVisitor, times(100)).doWithEvent(isA(DomainEventMessage.class));
     }
 
     @Test
-    @Transactional
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
-        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<String>("test", 0, "test");
-        testSubject.appendEvents("test", new SimpleDomainEventStream(eventMessage));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(10)));
+        testSubject.appendEvents(createDomainEvents(10));
+        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test");
+        testSubject.appendEvents(singletonList(eventMessage));
+        testSubject.appendEvents(createDomainEvents(10));
         // we upcast the event to two instances, one of which is an unknown class
-        testSubject.setUpcasterChain(new LazyUpcasterChain(Arrays.<Upcaster>asList(new StubUpcaster())));
+        testSubject.setUpcasterChain(new LazyUpcasterChain(singletonList(new StubUpcaster())));
         testSubject.visitEvents(eventVisitor);
 
         verify(eventVisitor, times(21)).doWithEvent(isA(DomainEventMessage.class));
     }
 
     @Test
-    @Transactional
     public void testVisitEvents_AfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-        DateTimeUtils.setCurrentMillisSystem();
+        setClock(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999000000, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(11));
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        setClock(onePM);
+        testSubject.appendEvents(createDomainEvents(12));
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(13));
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1000000, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(14));
+        setClock(Clock.systemDefaultZone());
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThan(onePM), eventVisitor);
@@ -384,42 +353,40 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testVisitEvents_BetweenTimestamps() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-        DateTime twoPM = new DateTime(2011, 12, 18, 14, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(twoPM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-        DateTimeUtils.setCurrentMillisSystem();
+        setClock(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999000000, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(11));
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        setClock(onePM);
+        testSubject.appendEvents(createDomainEvents(12));
+        ZonedDateTime twoPM = ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC);
+        setClock(twoPM);
+        testSubject.appendEvents(createDomainEvents(13));
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1000000, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(14));
+        setClock(Clock.systemDefaultZone());
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM)
-                .and(criteriaBuilder.property("timeStamp").lessThanEquals(twoPM)),
-                eventVisitor);
+                                               .and(criteriaBuilder.property("timeStamp").lessThanEquals(twoPM)),
+                                eventVisitor);
         verify(eventVisitor, times(12 + 13)).doWithEvent(isA(DomainEventMessage.class));
     }
 
     @Test
-    @Transactional
     public void testVisitEvents_OnOrAfterTimestamp() {
         EventVisitor eventVisitor = mock(EventVisitor.class);
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 12, 59, 59, 999).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(11)));
-        DateTime onePM = new DateTime(2011, 12, 18, 13, 0, 0, 0);
-        DateTimeUtils.setCurrentMillisFixed(onePM.getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(12)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 0).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(13)));
-        DateTimeUtils.setCurrentMillisFixed(new DateTime(2011, 12, 18, 14, 0, 0, 1).getMillis());
-        testSubject.appendEvents("test", new SimpleDomainEventStream(createDomainEvents(14)));
-        DateTimeUtils.setCurrentMillisSystem();
+        setClock(ZonedDateTime.of(2011, 12, 18, 12, 59, 59, 999000000, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(11));
+        ZonedDateTime onePM = ZonedDateTime.of(2011, 12, 18, 13, 0, 0, 0, ZoneOffset.UTC);
+        setClock(onePM);
+        testSubject.appendEvents(createDomainEvents(12));
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 0, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(13));
+        setClock(ZonedDateTime.of(2011, 12, 18, 14, 0, 0, 1000000, ZoneOffset.UTC));
+        testSubject.appendEvents(createDomainEvents(14));
+        setClock(Clock.systemDefaultZone());
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM), eventVisitor);
@@ -427,28 +394,22 @@ public class JdbcEventStoreTest {
     }
 
     @Test(expected = ConcurrencyException.class)
-    @Transactional
     public void testStoreDuplicateEvent_WithSqlExceptionTranslator() {
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>("123", 0L,
-                        "Mock contents", MetaData.emptyInstance())));
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>("123", 0L,
-                        "Mock contents", MetaData.emptyInstance())));
+        testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", 0L, "Mock contents",
+                                                                               MetaData.emptyInstance())));
+        testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", 0L, "Mock contents",
+                                                                               MetaData.emptyInstance())));
     }
 
     @DirtiesContext
     @Test
-    @Transactional
     public void testStoreDuplicateEvent_NoSqlExceptionTranslator() {
         testSubject.setPersistenceExceptionResolver(null);
         try {
-            testSubject.appendEvents("test", new SimpleDomainEventStream(
-                    new GenericDomainEventMessage<String>("123", (long) 0,
-                            "Mock contents", MetaData.emptyInstance())));
-            testSubject.appendEvents("test", new SimpleDomainEventStream(
-                    new GenericDomainEventMessage<String>("123", (long) 0,
-                            "Mock contents", MetaData.emptyInstance())));
+            testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", (long) 0, "Mock contents",
+                                                                                   MetaData.emptyInstance())));
+            testSubject.appendEvents(singletonList(new GenericDomainEventMessage<>("123", (long) 0, "Mock contents",
+                                                                                   MetaData.emptyInstance())));
         } catch (ConcurrencyException ex) {
             fail("Didn't expect exception to be translated");
         } catch (Exception ex) {
@@ -463,58 +424,56 @@ public class JdbcEventStoreTest {
     @SuppressWarnings({"PrimitiveArrayArgumentToVariableArgMethod", "unchecked"})
     @DirtiesContext
     @Test
-    @Transactional
     public void testCustomEventEntryStore() {
         EventEntryStore<String> eventEntryStore = mock(EventEntryStore.class);
         when(eventEntryStore.getDataType()).thenReturn(String.class);
         testSubject = new JdbcEventStore(eventEntryStore);
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(UUID.randomUUID(), (long) 0,
-                        "Mock contents", MetaData.emptyInstance())));
-        verify(eventEntryStore, times(2)).persistEvent(eq("test"), isA(DomainEventMessage.class),
-                Matchers.<SerializedObject>any(),
-                Matchers.<SerializedObject>any());
+        testSubject.appendEvents(asList(
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), (long) 0,
+                                                "Mock contents", MetaData.emptyInstance())));
+        verify(eventEntryStore, times(2)).persistEvent(isA(DomainEventMessage.class),
+                                                       Matchers.<SerializedObject>any(),
+                                                       Matchers.<SerializedObject>any());
 
         reset(eventEntryStore);
-        GenericDomainEventMessage<String> eventMessage = new GenericDomainEventMessage<String>(
-                UUID.randomUUID(), 0L, "Mock contents", MetaData.emptyInstance());
-        when(eventEntryStore.fetchAggregateStream(anyString(), any(), anyInt(), anyInt()))
-                .thenReturn(new ArrayList(Arrays.asList(new DomainEventEntry(
-                        "Mock", eventMessage,
+        GenericDomainEventMessage<String> eventMessage = new GenericDomainEventMessage<>(
+                UUID.randomUUID().toString(), 0L, "Mock contents", MetaData.emptyInstance());
+        when(eventEntryStore.fetchAggregateStream(any(), anyInt(), anyInt()))
+                .thenReturn(new ArrayList(singletonList(new DomainEventEntry(
+                        eventMessage,
                         mockSerializedObject("Mock contents".getBytes()),
                         mockSerializedObject("Mock contents".getBytes())))).iterator());
-        when(eventEntryStore.loadLastSnapshotEvent(anyString(), any()))
+        when(eventEntryStore.loadLastSnapshotEvent(any()))
                 .thenReturn(null);
 
-        testSubject.readEvents("test", "1");
+        testSubject.readEvents("1");
 
-        verify(eventEntryStore).fetchAggregateStream("test", "1", 0, 100);
-        verify(eventEntryStore).loadLastSnapshotEvent("test", "1");
+        verify(eventEntryStore).fetchAggregateStream("1", 0, 100);
+        verify(eventEntryStore).loadLastSnapshotEvent("1");
     }
 
     @Test
-    @Transactional
     public void testReadPartialStream_WithoutEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 4,
-                        "Mock contents", MetaData.emptyInstance())));
-        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>(aggregateIdentifier,
-                (long) 3,
-                "Mock contents",
-                MetaData.emptyInstance()));
+        final String aggregateIdentifier = UUID.randomUUID().toString();
+        testSubject.appendEvents(asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 4,
+                                                "Mock contents", MetaData.emptyInstance())));
+        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>(aggregateIdentifier,
+                                                                        (long) 3,
+                                                                        "Mock contents",
+                                                                        MetaData.emptyInstance()));
 
-        DomainEventStream actual = testSubject.readEvents("test", aggregateIdentifier, 2);
+        DomainEventStream actual = testSubject.readEvents(aggregateIdentifier, 2);
         for (int i = 2; i <= 4; i++) {
             assertTrue(actual.hasNext());
             assertEquals(i, actual.next().getSequenceNumber());
@@ -523,27 +482,26 @@ public class JdbcEventStoreTest {
     }
 
     @Test
-    @Transactional
     public void testReadPartialStream_WithEnd() {
-        final UUID aggregateIdentifier = UUID.randomUUID();
-        testSubject.appendEvents("test", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 1,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 2,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 3,
-                        "Mock contents", MetaData.emptyInstance()),
-                new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 4,
-                        "Mock contents", MetaData.emptyInstance())));
+        final String aggregateIdentifier = UUID.randomUUID().toString();
+        testSubject.appendEvents(asList(
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
+                                                "Mock contents", MetaData.emptyInstance()),
+                new GenericDomainEventMessage<>(aggregateIdentifier, (long) 4,
+                                                "Mock contents", MetaData.emptyInstance())));
 
-        testSubject.appendSnapshotEvent("test", new GenericDomainEventMessage<String>(aggregateIdentifier,
-                (long) 3,
-                "Mock contents",
-                MetaData.emptyInstance()));
+        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>(aggregateIdentifier,
+                                                                        (long) 3,
+                                                                        "Mock contents",
+                                                                        MetaData.emptyInstance()));
 
-        DomainEventStream actual = testSubject.readEvents("test", aggregateIdentifier, 2, 3);
+        DomainEventStream actual = testSubject.readEvents(aggregateIdentifier, 2, 3);
         for (int i = 2; i <= 3; i++) {
             assertTrue(actual.hasNext());
             assertEquals(i, actual.next().getSequenceNumber());
@@ -552,93 +510,18 @@ public class JdbcEventStoreTest {
     }
 
     private SerializedObject<byte[]> mockSerializedObject(byte[] bytes) {
-        return new SimpleSerializedObject<byte[]>(bytes, byte[].class, "java.lang.String", "0");
+        return new SimpleSerializedObject<>(bytes, byte[].class, "java.lang.String", "0");
     }
 
-    private List<DomainEventMessage<StubStateChangedEvent>> createDomainEvents(int numberOfEvents) {
-        List<DomainEventMessage<StubStateChangedEvent>> events = new ArrayList<DomainEventMessage<StubStateChangedEvent>>();
-        final Object aggregateIdentifier = UUID.randomUUID();
+    private List<DomainEventMessage<?>> createDomainEvents(int numberOfEvents) {
+        List<DomainEventMessage<?>> events = new ArrayList<>(numberOfEvents);
+        final String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
-            events.add(new GenericDomainEventMessage<StubStateChangedEvent>(
-                    aggregateIdentifier,
-                    t,
-                    new StubStateChangedEvent(), MetaData.emptyInstance()
+            events.add(new GenericDomainEventMessage<>(aggregateIdentifier, t,
+                                                       new StubStateChangedEvent(), MetaData.emptyInstance()
             ));
         }
         return events;
-    }
-
-    private static class StubAggregateRoot extends AbstractAnnotatedAggregateRoot {
-
-        private static final long serialVersionUID = -3656612830058057848L;
-        private final Object identifier;
-
-        private StubAggregateRoot() {
-            this(UUID.randomUUID());
-        }
-
-        private StubAggregateRoot(Object identifier) {
-            this.identifier = identifier;
-        }
-
-        public void changeState() {
-            apply(new StubStateChangedEvent());
-        }
-
-        @Override
-        public Object getIdentifier() {
-            return identifier;
-        }
-
-        @SuppressWarnings("UnusedDeclaration")
-        @EventHandler
-        public void handleStateChange(StubStateChangedEvent event) {
-        }
-
-        public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
-            return new GenericDomainEventMessage<StubStateChangedEvent>(getIdentifier(), getVersion(),
-                    new StubStateChangedEvent(),
-                    MetaData.emptyInstance()
-            );
-        }
-    }
-
-    private static class StubStateChangedEvent {
-
-        private StubStateChangedEvent() {
-        }
-    }
-
-    private static class BadIdentifierType {
-
-    }
-
-    private static class StubUpcaster implements Upcaster<byte[]> {
-
-        @Override
-        public boolean canUpcast(SerializedType serializedType) {
-            return "java.lang.String".equals(serializedType.getName());
-        }
-
-        @Override
-        public Class<byte[]> expectedRepresentationType() {
-            return byte[].class;
-        }
-
-        @Override
-        public List<SerializedObject<?>> upcast(SerializedObject<byte[]> intermediateRepresentation,
-                                                List<SerializedType> expectedTypes, UpcastingContext context) {
-            return Arrays.<SerializedObject<?>>asList(
-                    new SimpleSerializedObject<String>("data1", String.class, expectedTypes.get(0)),
-                    new SimpleSerializedObject<byte[]>(intermediateRepresentation.getData(), byte[].class,
-                            expectedTypes.get(1)));
-        }
-
-        @Override
-        public List<SerializedType> upcast(SerializedType serializedType) {
-            return Arrays.<SerializedType>asList(new SimpleSerializedType("unknownType1", "2"),
-                    new SimpleSerializedType(StubStateChangedEvent.class.getName(), "2"));
-        }
     }
 
     private static class StatementAnswer implements Answer<Statement> {
@@ -669,5 +552,11 @@ public class JdbcEventStoreTest {
                 return resultSet;
             }
         }
+    }
+    private void setClock(ZonedDateTime zonedDateTime) {
+        setClock(Clock.fixed(zonedDateTime.toInstant(), zonedDateTime.getZone()));
+    }
+    private void setClock(Clock clock) {
+        GenericEventMessage.clock = clock;
     }
 }

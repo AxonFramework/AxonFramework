@@ -341,7 +341,7 @@
                 </areaspec>
                 <programlisting language="java">AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(InvoicingSaga.class);
 fixture.givenAggregate(invoiceId).published(new InvoiceCreatedEvent())
-       .whenTimeElapses(Duration.standardDays(31))
+       .whenTimeElapses(Duration.ofDays(31))
        .expectDispatchedCommandsMatching(Matchers.listWithAllOf(aMarkAsOverdueCommand()));
 
 // or, to match against the payload of a Command Message only

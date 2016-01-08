@@ -191,7 +191,7 @@ public class SQLErrorCodesResolver implements org.axonframework.common.jdbc.Pers
         String key = databaseProductName.replaceAll(" ", "_") + PROPERTY_NAME_SUFFIX;
         String property = properties.getProperty(key);
 
-        List<Integer> keyCodes = new ArrayList<Integer>();
+        List<Integer> keyCodes = new ArrayList<>();
 
         if (property == null) {
             throw new AxonConfigurationException(String.format(

@@ -50,7 +50,7 @@ public class XomToStringConverterTest {
     public void testConvert() throws Exception {
         Document doc = new Document(new Element("rootElement"));
 
-        SimpleSerializedObject<Document> original = new SimpleSerializedObject<Document>(doc,
+        SimpleSerializedObject<Document> original = new SimpleSerializedObject<>(doc,
                 Document.class,
                 serializedType);
         SerializedObject<String> actual = testSubject.convert(original);

@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.io;
 
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;

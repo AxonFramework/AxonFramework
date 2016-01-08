@@ -93,7 +93,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
     @Override
     protected String doResolveRoutingKey(CommandMessage<?> command) {
-        Object aggregateIdentifier;
+        String aggregateIdentifier;
         try {
             aggregateIdentifier = findIdentifier(command);
         } catch (InvocationTargetException e) {
@@ -103,7 +103,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
             throw new AxonConfigurationException("The current security context does not allow extraction of "
                                                          + "aggregate information from the given command.", e);
         }
-        return aggregateIdentifier != null ? aggregateIdentifier.toString() : null;
+        return aggregateIdentifier != null ? aggregateIdentifier : null;
     }
 
     @SuppressWarnings("unchecked")

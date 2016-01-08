@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.eventhandling;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.Vector;
  */
 public class RegisteringEventHandler {
 
-    private List<EventMessage> capturedEvents = new Vector<EventMessage>();
+    private List<EventMessage> capturedEvents = new Vector<>();
 
     @EventHandler
     public void handleEvent(EventMessage event) {

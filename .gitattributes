@@ -1,0 +1,11 @@
+# Auto detect text files and perform LF normalization
+*               text=auto
+
+# Explicitly declare text files we want to always be normalized and converted
+# to native line endings on checkout.
+*.java          text
+*.properties    text
+*.java          text
+*.xml           text
+*.txt           text
+*.md            text

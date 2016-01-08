@@ -16,6 +16,7 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 
 /**
@@ -31,8 +32,8 @@ public class StubAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     @Override
-    public Object getIdentifier() {
-        return identifier;
+    public String getIdentifier() {
+        return identifier.toString();
     }
 
     public void doSomething() {

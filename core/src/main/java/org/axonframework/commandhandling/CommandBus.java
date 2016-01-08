@@ -16,6 +16,10 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.callbacks.LoggingCallback;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
+
 /**
  * The mechanism that dispatches Command objects to their appropriate CommandHandler. CommandHandlers can subscribe and
  * unsubscribe to specific types of commands on the command bus. Only a single handler may be subscribed for a single
@@ -32,11 +36,14 @@ public interface CommandBus {
      * feedback is given about the status of the dispatching process. Implementations may return immediately after
      * asserting a valid handler is registered for the given command.
      *
+     * @param <C>     The type of command to dispatch
      * @param command The Command to dispatch
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    void dispatch(CommandMessage<?> command);
+    default <C> void dispatch(CommandMessage<C> command) {
+        dispatch(command, LoggingCallback.INSTANCE);
+    }
 
     /**
      * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
@@ -51,11 +58,12 @@ public interface CommandBus {
      *
      * @param command  The Command to dispatch
      * @param callback The callback to invoke when command processing is complete
+     * @param <C>      The type of command to dispatch
      * @param <R>      The type of the expected result
      * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
-    <R> void dispatch(CommandMessage<?> command, CommandCallback<R> callback);
+    <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback);
 
     /**
      * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>.
@@ -66,19 +74,8 @@ public interface CommandBus {
      *
      * @param commandName The name of the command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
-     * @param <C>         The Type of command
+     * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
      */
-    <C> void subscribe(String commandName, CommandHandler<? super C> handler);
+    Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 
-    /**
-     * Unsubscribe the given <code>handler</code> to commands of type <code>commandType</code>. If the handler is not
-     * currently assigned to that type of command, no action is taken.
-     *
-     * @param commandName The name of the command the handler is subscribed to
-     * @param handler     The handler instance to unsubscribe from the CommandBus
-     * @param <C>         The Type of command
-     * @return <code>true</code> of this handler is successfully unsubscribed, <code>false</code> of the given
-     *         <code>handler</code> was not the current handler for given <code>commandType</code>.
-     */
-    <C> boolean unsubscribe(String commandName, CommandHandler<? super C> handler);
 }

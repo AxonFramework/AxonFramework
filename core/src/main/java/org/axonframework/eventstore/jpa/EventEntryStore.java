@@ -16,13 +16,13 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
+import javax.persistence.EntityManager;
 import java.util.Iterator;
 import java.util.Map;
-import javax.persistence.EntityManager;
 
 /**
  * Interface describing the mechanism that stores Events into the backing data store.
@@ -39,25 +39,23 @@ public interface EventEntryStore<T> {
      * <p/>
      * These events should be returned by the <code>fetchAggregateStream(...)</code> methods.
      *
-     * @param aggregateType      The type identifier of the aggregate that generated the event
      * @param event              The actual event instance. May be used to extract relevant meta data
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized MetaData of the event
      * @param entityManager      The entity manager providing access to the data store
      */
-    void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject<T> serializedPayload,
+    void persistEvent(DomainEventMessage event, SerializedObject<T> serializedPayload,
                       SerializedObject<T> serializedMetaData, EntityManager entityManager);
 
     /**
      * Load the last known snapshot event for aggregate of given <code>type</code> with given <code>identifier</code>
      * using given <code>entityManager</code>.
      *
-     * @param aggregateType The type identifier of the aggregate that generated the event
      * @param identifier    The identifier of the aggregate to load the snapshot for
      * @param entityManager The entity manager providing access to the data store
      * @return the serialized representation of the last known snapshot event
      */
-    SerializedDomainEventData<T> loadLastSnapshotEvent(String aggregateType, Object identifier,
+    SerializedDomainEventData<T> loadLastSnapshotEvent(String identifier,
                                                        EntityManager entityManager);
 
     /**
@@ -68,14 +66,13 @@ public interface EventEntryStore<T> {
      * <p/>
      * Note that the result is expected to be ordered by sequence number, with the lowest number first.
      *
-     * @param aggregateType       The type identifier of the aggregate that generated the event
      * @param identifier          The identifier of the aggregate to load the snapshot for
      * @param firstSequenceNumber The sequence number of the first event to include in the batch
      * @param batchSize           The number of entries to include in the batch (if available)
      * @param entityManager       The entity manager providing access to the data store
      * @return a List of serialized representations of Events included in this batch
      */
-    Iterator<? extends SerializedDomainEventData<T>> fetchAggregateStream(String aggregateType, Object identifier,
+    Iterator<? extends SerializedDomainEventData<T>> fetchAggregateStream(String identifier,
                                                                           long firstSequenceNumber, int batchSize,
                                                                           EntityManager entityManager);
 
@@ -106,12 +103,11 @@ public interface EventEntryStore<T> {
      * archive after pruning, unless that number of snapshots has not been created yet. The given
      * <code>entityManager</code> provides access to the data store.
      *
-     * @param type                    the type of the aggregate for which to prune snapshots
      * @param mostRecentSnapshotEvent the last appended snapshot event
      * @param maxSnapshotsArchived    the number of snapshots that may remain archived
      * @param entityManager           the entityManager providing access to the data store
      */
-    void pruneSnapshots(String type, DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived,
+    void pruneSnapshots(DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived,
                         EntityManager entityManager);
 
     /**
@@ -120,13 +116,12 @@ public interface EventEntryStore<T> {
      * <p/>
      * These snapshot events should be returned by the <code>loadLastSnapshotEvent(...)</code> methods.
      *
-     * @param aggregateType      The type identifier of the aggregate that generated the event
      * @param snapshotEvent      The actual snapshot event instance. May be used to extract relevant meta data
      * @param serializedPayload  The serialized payload of the event
      * @param serializedMetaData The serialized MetaData of the event
      * @param entityManager      The entity manager providing access to the data store
      */
-    void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent,
+    void persistSnapshot(DomainEventMessage snapshotEvent,
                          SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData,
                          EntityManager entityManager);
 

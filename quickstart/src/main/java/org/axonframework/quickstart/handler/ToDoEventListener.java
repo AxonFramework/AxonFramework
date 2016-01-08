@@ -16,8 +16,8 @@
 
 package org.axonframework.quickstart.handler;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 

@@ -40,6 +40,6 @@ public abstract class Fixtures {
      */
     public static <T extends EventSourcedAggregateRoot> FixtureConfiguration<T> newGivenWhenThenFixture(
             Class<T> aggregateType) {
-        return new GivenWhenThenTestFixture<T>(aggregateType);
+        return new GivenWhenThenTestFixture<>(aggregateType);
     }
 }

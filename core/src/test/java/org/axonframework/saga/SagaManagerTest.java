@@ -17,16 +17,16 @@
 package org.axonframework.saga;
 
 import org.apache.commons.collections.set.ListOrderedSet;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,8 +34,18 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -82,28 +92,9 @@ public class SagaManagerTest {
         testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockSagaFactory, Saga.class);
     }
 
-    @Deprecated
-    @Test
-    public void testSubscriptionIsIgnoredWithoutEventBus() {
-        testSubject.subscribe();
-        verify(mockEventBus, never()).subscribe(testSubject);
-        testSubject.unsubscribe();
-        verify(mockEventBus, never()).unsubscribe(testSubject);
-    }
-
-    @Deprecated
-    @Test
-    public void testSubscription() {
-        testSubject = new TestableAbstractSagaManager(mockEventBus, mockSagaRepository, mockSagaFactory, Saga.class);
-        testSubject.subscribe();
-        verify(mockEventBus).subscribe(testSubject);
-        testSubject.unsubscribe();
-        verify(mockEventBus).unsubscribe(testSubject);
-    }
-
     @Test
     public void testSagasLoadedAndCommitted() {
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         testSubject.handle(event);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
@@ -116,7 +107,7 @@ public class SagaManagerTest {
     @Test
     public void testExceptionPropagated() {
         testSubject.setSuppressExceptions(false);
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
         try {
             testSubject.handle(event);
@@ -132,7 +123,7 @@ public class SagaManagerTest {
 
     @Test
     public void testExceptionSuppressed() {
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
 
         testSubject.handle(event);
@@ -155,19 +146,16 @@ public class SagaManagerTest {
         final AtomicInteger nestingCounter = new AtomicInteger(20);
         final EventMessage event = GenericEventMessage.asEventMessage(new Object());
 
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                if (nestingCounter.decrementAndGet() > 0) {
-                    UnitOfWork uow = DefaultUnitOfWork.startAndGet();
-                    try {
-                        testSubject.handle(event);
-                    } finally {
-                        uow.commit();
-                    }
+        doAnswer(invocationOnMock -> {
+            if (nestingCounter.decrementAndGet() > 0) {
+                UnitOfWork uow = DefaultUnitOfWork.startAndGet((Message<?>) invocationOnMock.getArguments()[0]);
+                try {
+                    testSubject.handle(event);
+                } finally {
+                    uow.commit();
                 }
-                return null;
             }
+            return null;
         }).when(mockSaga1).handle(isA(EventMessage.class));
 
         testSubject.handle(event);
@@ -186,15 +174,10 @@ public class SagaManagerTest {
 
     private class TestableAbstractSagaManager extends AbstractSagaManager {
 
+        @SafeVarargs
         private TestableAbstractSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
                                             Class<? extends Saga>... sagaTypes) {
             super(sagaRepository, sagaFactory, sagaTypes);
-        }
-
-        private TestableAbstractSagaManager(EventBus eventBus, SagaRepository sagaRepository,
-                                            SagaFactory sagaFactory,
-                                            Class<? extends Saga>... sagaTypes) {
-            super(eventBus, sagaRepository, sagaFactory, sagaTypes);
         }
 
         @Override

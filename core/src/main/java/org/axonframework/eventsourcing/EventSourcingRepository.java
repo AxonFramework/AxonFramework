@@ -18,27 +18,18 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.AggregateRoot;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.repository.AggregateNotFoundException;
-import org.axonframework.repository.LockManager;
 import org.axonframework.repository.LockingRepository;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -56,9 +47,9 @@ import java.util.Set;
 public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extends LockingRepository<T> {
 
     private final EventStore eventStore;
-    private ConflictResolver conflictResolver;
-    private final Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<EventStreamDecorator>();
+    private final Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<>();
     private final AggregateFactory<T> aggregateFactory;
+    private ConflictResolver conflictResolver;
 
     /**
      * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
@@ -69,7 +60,7 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore) {
-        this(new GenericAggregateFactory<T>(aggregateType), eventStore);
+        this(new GenericAggregateFactory<>(aggregateType), eventStore);
     }
 
     /**
@@ -92,11 +83,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
-     * @param lockManager      the locking strategy to apply to this repository
+     * @param lockFactory      the locking strategy to apply to this repository
      */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   LockManager lockManager) {
-        super(aggregateFactory.getAggregateType(), lockManager);
+                                   LockFactory lockFactory) {
+        super(aggregateFactory.getAggregateType(), lockFactory);
         Assert.notNull(eventStore, "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
@@ -108,43 +99,11 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      *
      * @param aggregateType The type of aggregate to store in this repository
      * @param eventStore    The event store that holds the event streams for this repository
-     * @param lockManager   the locking strategy to apply to this
+     * @param lockFactory   the locking strategy to apply to this
      */
     public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
-                                   final LockManager lockManager) {
-        this(new GenericAggregateFactory<T>(aggregateType), eventStore, lockManager);
-    }
-
-    /**
-     * Perform the actual saving of the aggregate. All necessary locks have been verified.
-     *
-     * @param aggregate the aggregate to store
-     */
-    @Override
-    protected void doSaveWithLock(T aggregate) {
-        DomainEventStream eventStream = aggregate.getUncommittedEvents();
-        try {
-            Iterator<EventStreamDecorator> iterator = eventStreamDecorators.descendingIterator();
-            while (iterator.hasNext()) {
-                eventStream = iterator.next().decorateForAppend(getTypeIdentifier(), aggregate, eventStream);
-            }
-            eventStore.appendEvents(getTypeIdentifier(), eventStream);
-        } finally {
-            IOUtils.closeQuietlyIfCloseable(eventStream);
-        }
-    }
-
-    /**
-     * Delegates to {@link #doSaveWithLock(EventSourcedAggregateRoot)}, as Event Sourcing generally doesn't delete
-     * aggregates (not their events).
-     * <p/>
-     * This method may be safely overridden for special cases that do require deleting an Aggregate's Events.
-     *
-     * @param aggregate the aggregate to delete
-     */
-    @Override
-    protected void doDeleteWithLock(T aggregate) {
-        doSaveWithLock(aggregate);
+                                   final LockFactory lockFactory) {
+        this(new GenericAggregateFactory<>(aggregateType), eventStore, lockFactory);
     }
 
     /**
@@ -158,34 +117,43 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @throws AggregateNotFoundException when an aggregate with the given identifier does not exist
      */
     @Override
-    protected T doLoad(Object aggregateIdentifier, final Long expectedVersion) {
+    protected T doLoad(String aggregateIdentifier, final Long expectedVersion) {
         DomainEventStream events = null;
         DomainEventStream originalStream = null;
         try {
             try {
-                events = eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier);
+                events = eventStore.readEvents(aggregateIdentifier);
             } catch (EventStreamNotFoundException e) {
                 throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found", e);
             }
             originalStream = events;
             for (EventStreamDecorator decorator : eventStreamDecorators) {
-                events = decorator.decorateForRead(getTypeIdentifier(), aggregateIdentifier, events);
+                events = decorator.decorateForRead(aggregateIdentifier, events);
             }
 
             final T aggregate = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
-            List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
+            List<DomainEventMessage<?>> unseenEvents = new ArrayList<>();
             aggregate.initializeState(new CapturingEventStream(events, unseenEvents, expectedVersion));
             if (aggregate.isDeleted()) {
                 throw new AggregateDeletedException(aggregateIdentifier);
             }
-            CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, unseenEvents));
-
+            resolveConflicts(aggregate, unseenEvents);
             return aggregate;
         } finally {
             IOUtils.closeQuietlyIfCloseable(events);
             // if a decorator doesn't implement closeable, we still want to be sure we close the original stream
             IOUtils.closeQuietlyIfCloseable(originalStream);
         }
+    }
+
+    @Override
+    protected void doSave(T aggregate) {
+        // No action required
+    }
+
+    @Override
+    protected void doDelete(T aggregate) {
+        // No action required
     }
 
     /**
@@ -204,37 +172,34 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
      * @param aggregate    The aggregate containing the potential conflicts
      * @param unseenEvents The events that have been concurrently applied
      */
-    protected void resolveConflicts(T aggregate, DomainEventStream unseenEvents) {
-        CurrentUnitOfWork.get().registerListener(new ConflictResolvingListener(aggregate, asList(unseenEvents)));
-    }
-
-    private List<DomainEventMessage> asList(DomainEventStream domainEventStream) {
-        List<DomainEventMessage> unseenEvents = new ArrayList<DomainEventMessage>();
-        while (domainEventStream.hasNext()) {
-            unseenEvents.add(domainEventStream.next());
+    protected void resolveConflicts(T aggregate, List<DomainEventMessage<?>> unseenEvents) {
+        // TODO: Reinstate conflict resolution
+/*
+        if (CurrentUnitOfWork.isStarted() && !unseenEvents.isEmpty()) {
+            final String key = "Conflicts/" + aggregate.getIdentifier();
+            aggregate.addEventRegistrationCallback(new EventRegistrationCallback() {
+                @Override
+                public <P> DomainEventMessage<P> onRegisteredEvent(DomainEventMessage<P> event) {
+                    CurrentUnitOfWork.get().getOrComputeResource(key, k -> new ArrayList<>())
+                                     .add(event);
+                    return event;
+                }
+            });
+            CurrentUnitOfWork.get().onPrepareCommit(u -> {
+                final List<DomainEventMessage<?>> newEvents = u.getOrDefaultResource(key, Collections.emptyList());
+                if (!newEvents.isEmpty()) {
+                    conflictResolver.resolveConflicts(newEvents, unseenEvents);
+                }
+            });
         }
-        return unseenEvents;
-    }
-
-    /**
-     * Return the type identifier belonging to the AggregateFactory of this repository.
-     *
-     * @return the type identifier belonging to the AggregateFactory of this repository
-     */
-    public String getTypeIdentifier() {
-        if (aggregateFactory == null) {
-            throw new IllegalStateException("Either an aggregate factory must be configured (recommended), "
-                                                    + "or the getTypeIdentifier() method must be overridden.");
-        }
-        return aggregateFactory.getTypeIdentifier();
+*/
     }
 
     /**
      * {@inheritDoc}
      * <p/>
      * This implementation will do nothing if a conflict resolver (See {@link #setConflictResolver(ConflictResolver)}
-     * is
-     * set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
+     * is set. Otherwise, it will call <code>super.validateOnLoad(...)</code>.
      */
     @Override
     protected void validateOnLoad(T aggregate, Long expectedVersion) {
@@ -276,31 +241,6 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
         this.conflictResolver = conflictResolver;
     }
 
-    private final class ConflictResolvingListener extends UnitOfWorkListenerAdapter {
-
-        private final T aggregate;
-        private final List<DomainEventMessage> unseenEvents;
-
-        private ConflictResolvingListener(T aggregate, List<DomainEventMessage> unseenEvents) {
-            this.aggregate = aggregate;
-            this.unseenEvents = unseenEvents;
-        }
-
-        @Override
-        public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-                                    List<EventMessage> events) {
-            if (hasPotentialConflicts()) {
-                conflictResolver.resolveConflicts(asList(aggregate.getUncommittedEvents()), unseenEvents);
-            }
-        }
-
-        private boolean hasPotentialConflicts() {
-            return aggregate.getUncommittedEventCount() > 0
-                    && aggregate.getVersion() != null
-                    && !unseenEvents.isEmpty();
-        }
-    }
-
     /**
      * Wrapper around a DomainEventStream that captures all passing events of which the sequence number is larger than
      * the expected version number.
@@ -308,10 +248,10 @@ public class EventSourcingRepository<T extends EventSourcedAggregateRoot> extend
     private static final class CapturingEventStream implements DomainEventStream, Closeable {
 
         private final DomainEventStream eventStream;
-        private final List<DomainEventMessage> unseenEvents;
+        private final List<DomainEventMessage<?>> unseenEvents;
         private final Long expectedVersion;
 
-        private CapturingEventStream(DomainEventStream events, List<DomainEventMessage> unseenEvents,
+        private CapturingEventStream(DomainEventStream events, List<DomainEventMessage<?>> unseenEvents,
                                      Long expectedVersion) {
             eventStream = events;
             this.unseenEvents = unseenEvents;

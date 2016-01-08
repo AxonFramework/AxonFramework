@@ -16,9 +16,10 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
@@ -39,7 +40,7 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  */
 public class EventValidator implements EventListener {
 
-    private final List<EventMessage> publishedEvents = new ArrayList<EventMessage>();
+    private final List<EventMessage> publishedEvents = new ArrayList<>();
     private final EventBus eventBus;
     private final FieldFilter fieldFilter;
 
@@ -95,12 +96,12 @@ public class EventValidator implements EventListener {
      * Starts recording event published by the event bus.
      */
     public void startRecording() {
-        eventBus.subscribe(this);
+        eventBus.subscribe(new SimpleEventProcessor("recorder", this));
     }
 
     @SuppressWarnings({"unchecked"})
     private Matcher<Object>[] createEqualToMatchers(Object[] expected) {
-        List<Matcher<?>> matchers = new ArrayList<Matcher<?>>(expected.length);
+        List<Matcher<?>> matchers = new ArrayList<>(expected.length);
         for (Object event : expected) {
             matchers.add(equalTo(event, fieldFilter));
         }

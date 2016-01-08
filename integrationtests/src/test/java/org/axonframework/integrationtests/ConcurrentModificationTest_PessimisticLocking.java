@@ -18,16 +18,18 @@ package org.axonframework.integrationtests;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.integrationtests.commandhandling.CreateStubAggregateCommand;
 import org.axonframework.integrationtests.commandhandling.LoopingCommand;
 import org.axonframework.integrationtests.commandhandling.ProblematicCommand;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.integrationtests.eventhandling.RegisteringEventHandler;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -42,7 +44,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -81,20 +85,17 @@ public class ConcurrentModificationTest_PessimisticLocking {
         commandBus.dispatch(asCommandMessage(new CreateStubAggregateCommand(aggregateId)));
         ExecutorService service = Executors.newFixedThreadPool(THREAD_COUNT);
         final AtomicLong counter = new AtomicLong(0);
-        List<Future<?>> results = new LinkedList<Future<?>>();
+        List<Future<?>> results = new LinkedList<>();
         for (int t = 0; t < 30; t++) {
-            results.add(service.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)));
-                        commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
-                                            SilentCallback.INSTANCE);
-                        commandBus.dispatch(asCommandMessage(new LoopingCommand(aggregateId)));
-                        counter.incrementAndGet();
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
-                    }
+            results.add(service.submit(() -> {
+                try {
+                    commandBus.dispatch(asCommandMessage(new UpdateStubAggregateCommand(aggregateId)));
+                    commandBus.dispatch(asCommandMessage(new ProblematicCommand(aggregateId)),
+                                        SilentCallback.INSTANCE);
+                    commandBus.dispatch(asCommandMessage(new LoopingCommand(aggregateId)));
+                    counter.incrementAndGet();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
             }));
         }
@@ -123,16 +124,16 @@ public class ConcurrentModificationTest_PessimisticLocking {
         }
     }
 
-    private static class SilentCallback implements CommandCallback<Object> {
+    private static class SilentCallback implements CommandCallback<Object, Object> {
 
-        public static final CommandCallback<Object> INSTANCE = new SilentCallback();
+        public static final CommandCallback<Object, Object> INSTANCE = new SilentCallback();
 
         @Override
-        public void onSuccess(Object result) {
+        public void onSuccess(CommandMessage commandMessage, Object result) {
         }
 
         @Override
-        public void onFailure(Throwable cause) {
+        public void onFailure(CommandMessage commandMessage, Throwable cause) {
         }
     }
 }

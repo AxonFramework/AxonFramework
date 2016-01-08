@@ -17,16 +17,15 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import static org.axonframework.domain.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 
 /**
  * Simple Example that shows how to Create Saga instances, schedule deadlines and inject resources using Spring.
@@ -43,15 +42,11 @@ public class RunSagaWithSpring {
         // let's register a Command Handler that writes to System Out so we can see what happens
         applicationContext.getBean(CommandBus.class)
                           .subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                                     new CommandHandler<MarkToDoItemOverdueCommand>() {
-                                         @Override
-                                         public Object handle(
-                                                 CommandMessage<MarkToDoItemOverdueCommand> commandMessage,
-                                                 UnitOfWork unitOfWork) throws Throwable {
-                                             System.out.println(String.format("Got command to mark [%s] overdue!",
-                                                                              commandMessage.getPayload().getTodoId()));
-                                             return null;
-                                         }
+                                     (CommandMessage<?> commandMessage,
+                                      UnitOfWork unitOfWork) -> {
+                                         System.out.println(String.format("Got command to mark [%s] overdue!",
+                                                 ((MarkToDoItemOverdueCommand) commandMessage.getPayload()).getTodoId()));
+                                         return null;
                                      });
 
         EventBus eventBus = applicationContext.getBean(EventBus.class);

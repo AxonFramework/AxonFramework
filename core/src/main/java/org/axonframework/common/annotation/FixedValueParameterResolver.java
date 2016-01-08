@@ -16,7 +16,7 @@
 
 package org.axonframework.common.annotation;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 /**
  * ParameterResolver implementation that injects a fixed value. Useful for injecting parameter values that do not rely

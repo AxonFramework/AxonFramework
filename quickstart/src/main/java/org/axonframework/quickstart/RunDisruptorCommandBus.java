@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventstore.EventStore;
@@ -48,17 +49,18 @@ public class RunDisruptorCommandBus {
         // a Simple Event Bus will do
         EventBus eventBus = new SimpleEventBus();
 
+        // TODO: Listeners should subscribe to Event Store instead of Event Bus
         // we register the event handlers
-        AnnotationEventListenerAdapter.subscribe(new ToDoEventHandler(), eventBus);
+        eventBus.subscribe(new SimpleEventProcessor("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // we use default settings for the disruptor command bus
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
 
         // now, we obtain a repository from the command bus
-        Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<ToDoItem>(ToDoItem.class));
+        Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<>(ToDoItem.class));
 
         // we use the repository to register the command handler
-        AggregateAnnotationCommandHandler.subscribe(ToDoItem.class, repository, commandBus);
+        new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);
 
         // the CommandGateway provides a friendlier API to send commands
         CommandGateway commandGateway = new DefaultCommandGateway(commandBus);

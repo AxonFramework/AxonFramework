@@ -17,18 +17,19 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.StubAggregate;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.testutils.MockException;
-import org.junit.*;
+import org.junit.Test;
 
 import java.util.Collection;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
@@ -37,15 +38,15 @@ public class GenericAggregateFactoryTest {
 
     @Test(expected = IncompatibleAggregateException.class)
     public void testInitializeRepository_NoSuitableConstructor() {
-        new GenericAggregateFactory<UnsuitableAggregate>(UnsuitableAggregate.class);
+        new GenericAggregateFactory<>(UnsuitableAggregate.class);
     }
 
     @Test
     public void testInitializeRepository_ConstructorNotCallable() {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
-                new GenericAggregateFactory<ExceptionThrowingAggregate>(ExceptionThrowingAggregate.class);
+                new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
         try {
-            factory.createAggregate(UUID.randomUUID(), new GenericDomainEventMessage(new Object(), 0, new Object()));
+            factory.createAggregate(UUID.randomUUID().toString(), new GenericDomainEventMessage<>("", 0, new Object()));
             fail("Expected IncompatibleAggregateException");
         } catch (IncompatibleAggregateException e) {
             // we got it
@@ -53,20 +54,14 @@ public class GenericAggregateFactoryTest {
     }
 
     @Test
-    public void testAggregateTypeIsSimpleName() {
-        GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<StubAggregate>(StubAggregate.class);
-        assertEquals("StubAggregate", factory.getTypeIdentifier());
-    }
-
-    @Test
     public void testParameterResolverIsRegisteredWithCreatedAggregate() {
         final ParameterResolverFactory parameterResolverFactory = mock(ParameterResolverFactory.class);
-        GenericAggregateFactory<SpringWiredAggregate> factory =
-                new GenericAggregateFactory<SpringWiredAggregate>(SpringWiredAggregate.class,
-                                                                  parameterResolverFactory);
-        final SpringWiredAggregate aggregate = factory.createAggregate("test",
-                                                                       new GenericDomainEventMessage<Object>("test", 0,
-                                                                                                             "test"));
+        GenericAggregateFactory<AnnotatedAggregate> factory =
+                new GenericAggregateFactory<>(AnnotatedAggregate.class,
+                                              parameterResolverFactory);
+        final AnnotatedAggregate aggregate = factory.createAggregate("test",
+                                                                       new GenericDomainEventMessage<>("test", 0,
+                                                                                                       "test"));
         assertSame(parameterResolverFactory, aggregate.getParameterResolverFactory());
     }
 
@@ -74,11 +69,9 @@ public class GenericAggregateFactoryTest {
     public void testInitializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
         aggregate.doSomething();
-        aggregate.commitEvents();
-        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<StubAggregate>(
+        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
                 aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
-        GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<StubAggregate>(StubAggregate.class);
-        assertEquals("StubAggregate", factory.getTypeIdentifier());
+        GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
         assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshotMessage));
     }
 
@@ -93,11 +86,11 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
+        protected void handle(EventMessage event) {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return "unsuitableAggregateId";
         }
     }
@@ -112,11 +105,11 @@ public class GenericAggregateFactoryTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
+        protected void handle(EventMessage event) {
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
@@ -124,5 +117,13 @@ public class GenericAggregateFactoryTest {
         protected Collection<EventSourcedEntity> getChildEntities() {
             return null;
         }
+    }
+
+    private static class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
+
+        public ParameterResolverFactory getParameterResolverFactory() {
+            return super.createParameterResolverFactory();
+        }
+
     }
 }

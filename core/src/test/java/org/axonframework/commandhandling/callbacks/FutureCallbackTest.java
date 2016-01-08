@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling.callbacks;
 
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.testutils.MockException;
 import org.junit.*;
 
@@ -30,30 +32,28 @@ import static org.junit.Assert.*;
  */
 public class FutureCallbackTest {
 
-    private volatile FutureCallback<Object> testSubject;
+    private static final CommandMessage<Object> COMMAND_MESSAGE = GenericCommandMessage.asCommandMessage("Test");
+    private volatile FutureCallback<Object, Object> testSubject;
     private volatile Object resultFromParallelThread;
     private static final int THREAD_JOIN_TIMEOUT = 1000;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new FutureCallback<Object>();
+        testSubject = new FutureCallback<>();
     }
 
     @Test
     public void testOnSuccess() throws InterruptedException {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    resultFromParallelThread = testSubject.get();
-                } catch (Exception e) {
-                    resultFromParallelThread = e;
-                }
+        Thread t = new Thread(() -> {
+            try {
+                resultFromParallelThread = testSubject.get();
+            } catch (Exception e) {
+                resultFromParallelThread = e;
             }
         });
         t.start();
         assertTrue(t.isAlive());
-        testSubject.onSuccess("Hello world");
+        testSubject.onSuccess(COMMAND_MESSAGE, "Hello world");
         t.join(THREAD_JOIN_TIMEOUT);
         assertEquals("Hello world", resultFromParallelThread);
     }
@@ -61,20 +61,17 @@ public class FutureCallbackTest {
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     @Test
     public void testOnFailure() throws InterruptedException {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    resultFromParallelThread = testSubject.get();
-                } catch (Exception e) {
-                    resultFromParallelThread = e;
-                }
+        Thread t = new Thread(() -> {
+            try {
+                resultFromParallelThread = testSubject.get();
+            } catch (Exception e) {
+                resultFromParallelThread = e;
             }
         });
         t.start();
         assertTrue(t.isAlive());
         RuntimeException exception = new MockException();
-        testSubject.onFailure(exception);
+        testSubject.onFailure(COMMAND_MESSAGE, exception);
         t.join(THREAD_JOIN_TIMEOUT);
         assertTrue(resultFromParallelThread instanceof ExecutionException);
         assertEquals(exception, ((Exception) resultFromParallelThread).getCause());
@@ -82,47 +79,34 @@ public class FutureCallbackTest {
 
     @Test
     public void testOnSuccessForLimitedTime_Timeout() throws InterruptedException {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    resultFromParallelThread = testSubject.get(1, TimeUnit.NANOSECONDS);
-                } catch (Exception e) {
-                    resultFromParallelThread = e;
-                }
+        Thread t = new Thread(() -> {
+            try {
+                resultFromParallelThread = testSubject.get(1, TimeUnit.NANOSECONDS);
+            } catch (Exception e) {
+                resultFromParallelThread = e;
             }
         });
         t.start();
         t.join(1000);
-        testSubject.onSuccess("Hello world");
+        testSubject.onSuccess(COMMAND_MESSAGE, "Hello world");
         assertTrue(resultFromParallelThread instanceof TimeoutException);
     }
 
     @Test
     public void testOnSuccessForLimitedTime_InTime() throws InterruptedException {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    resultFromParallelThread = testSubject.get(10, TimeUnit.SECONDS);
-                } catch (Exception e) {
-                    resultFromParallelThread = e;
-                }
+        Thread t = new Thread(() -> {
+            try {
+                resultFromParallelThread = testSubject.get(10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                resultFromParallelThread = e;
             }
         });
         t.start();
         assertTrue(t.isAlive());
         assertFalse(testSubject.isDone());
-        testSubject.onSuccess("Hello world");
+        testSubject.onSuccess(COMMAND_MESSAGE, "Hello world");
         assertTrue(testSubject.isDone());
         t.join(THREAD_JOIN_TIMEOUT);
         assertEquals("Hello world", resultFromParallelThread);
-    }
-
-    @Test
-    public void testUnableToCancel() {
-        assertFalse(testSubject.cancel(true));
-        assertFalse(testSubject.cancel(false));
-        assertFalse(testSubject.isCancelled());
     }
 }

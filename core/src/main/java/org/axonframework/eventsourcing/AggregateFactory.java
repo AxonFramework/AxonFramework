@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-
 /**
  * Interface describing objects capable of creating instances of aggregates to be initialized with an event stream.
  * <p/>
@@ -42,17 +40,7 @@ public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
      *                            creation of the aggregate, or a snapshot event
      * @return an aggregate ready for initialization using a DomainEventStream.
      */
-    T createAggregate(Object aggregateIdentifier, DomainEventMessage<?> firstEvent);
-
-    /**
-     * Returns the type identifier for this aggregate factory. The type identifier is used by the EventStore to
-     * organize data related to the same type of aggregate.
-     * <p/>
-     * Tip: in most cases, the simple class name would be a good start.
-     *
-     * @return the type identifier of the aggregates this repository stores
-     */
-    String getTypeIdentifier();
+    T createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent);
 
     /**
      * Returns the type of aggregate this factory creates. All instances created by this factory must be an

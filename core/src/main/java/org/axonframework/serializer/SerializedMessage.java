@@ -16,9 +16,9 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.GenericMessage;
-import org.axonframework.domain.Message;
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.Map;
 
@@ -55,13 +55,13 @@ public class SerializedMessage<T> implements Message<T>, SerializationAware {
     public SerializedMessage(String identifier, SerializedObject<?> serializedPayload,
                              SerializedObject<?> serializedMetaData, Serializer serializer) {
         this.identifier = identifier;
-        this.serializedMetaData = new LazyDeserializingObject<MetaData>(serializedMetaData, serializer);
-        this.serializedPayload = new LazyDeserializingObject<T>(serializedPayload, serializer);
+        this.serializedMetaData = new LazyDeserializingObject<>(serializedMetaData, serializer);
+        this.serializedPayload = new LazyDeserializingObject<>(serializedPayload, serializer);
     }
 
     private SerializedMessage(SerializedMessage<T> message, Map<String, ?> metaData) {
         this.identifier = message.getIdentifier();
-        this.serializedMetaData = new LazyDeserializingObject<MetaData>(MetaData.from(metaData));
+        this.serializedMetaData = new LazyDeserializingObject<>(MetaData.from(metaData));
         this.serializedPayload = message.serializedPayload;
     }
 
@@ -104,16 +104,17 @@ public class SerializedMessage<T> implements Message<T>, SerializationAware {
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return serializedPayload.getType();
     }
 
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     @Override
     public SerializedMessage<T> withMetaData(Map<String, ?> metaData) {
-        if (this.serializedMetaData.getObject().equals(metaData)) {
+        if (serializedMetaData.getObject().equals(metaData)) {
             return this;
         }
-        return new SerializedMessage<T>(this, metaData);
+        return new SerializedMessage<>(this, metaData);
     }
 
     @Override
@@ -121,7 +122,7 @@ public class SerializedMessage<T> implements Message<T>, SerializationAware {
         if (metaData.isEmpty()) {
             return this;
         }
-        return new SerializedMessage<T>(this, getMetaData().mergedWith(metaData));
+        return new SerializedMessage<>(this, getMetaData().mergedWith(metaData));
     }
 
     /**
@@ -140,6 +141,6 @@ public class SerializedMessage<T> implements Message<T>, SerializationAware {
      * @return the GenericMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericMessage<T>(identifier, getPayload(), getMetaData());
+        return new GenericMessage<>(identifier, getPayload(), getMetaData());
     }
 }

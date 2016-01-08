@@ -18,9 +18,8 @@ package org.axonframework.quickstart;
 
 import org.apache.commons.io.FileUtils;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
@@ -28,6 +27,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * @author Allard Buijze
@@ -45,17 +46,17 @@ public class RunUpcasterWithSpring {
         EventStore eventStore = applicationContext.getBean(EventStore.class);
 
         // we append some events. Notice we append a "ToDoItemCreatedEvent".
-        eventStore.appendEvents("UpcasterSample", new SimpleDomainEventStream(
-                new GenericDomainEventMessage("todo1", 0, new ToDoItemCreatedEvent("todo1", "I need to do this today")),
-                new GenericDomainEventMessage("todo1", 1, new ToDoItemCompletedEvent("todo1"))
+        eventStore.appendEvents(Arrays.asList(
+                new GenericDomainEventMessage<Object>("todo1", 0, new ToDoItemCreatedEvent("todo1", "I need to do this today")),
+                new GenericDomainEventMessage<Object>("todo1", 1, new ToDoItemCompletedEvent("todo1"))
         ));
-        eventStore.appendEvents("UpcasterSample", new SimpleDomainEventStream(
-                new GenericDomainEventMessage("todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
+        eventStore.appendEvents(Collections.singletonList(
+                new GenericDomainEventMessage<Object>("todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
         ));
 
 
         // now, we read the events from the "todo1" stream
-        DomainEventStream upcastEvents = eventStore.readEvents("UpcasterSample", "todo1");
+        DomainEventStream upcastEvents = eventStore.readEvents("todo1");
         while (upcastEvents.hasNext()) {
             // and print them, so that we can see what we ended up with
             System.out.println(upcastEvents.next().getPayload().toString());

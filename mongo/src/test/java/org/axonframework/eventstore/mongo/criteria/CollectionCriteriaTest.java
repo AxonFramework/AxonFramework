@@ -30,7 +30,7 @@ public class CollectionCriteriaTest {
 
     @Test
     public void testValueInCollection() {
-        List<String> collection = new ArrayList<String>();
+        List<String> collection = new ArrayList<>();
         collection.add("first");
         collection.add("second");
         MongoCriteria actual = new MongoProperty("prop").in(collection);
@@ -56,7 +56,7 @@ public class CollectionCriteriaTest {
 
     @Test
     public void testValueNotInCollection() {
-        List<String> collection = new ArrayList<String>();
+        List<String> collection = new ArrayList<>();
         collection.add("first");
         collection.add("second");
         MongoCriteria actual = new MongoProperty("prop").notIn(collection);

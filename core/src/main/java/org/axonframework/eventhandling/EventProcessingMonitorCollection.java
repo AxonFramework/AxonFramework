@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.common.Registration;
 
 import java.util.List;
 import java.util.Set;
@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  */
 public class EventProcessingMonitorCollection implements EventProcessingMonitor, EventProcessingMonitorSupport {
 
-    private final Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<EventProcessingMonitor>();
+    private final Set<EventProcessingMonitor> delegates = new CopyOnWriteArraySet<>();
 
     @Override
     public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {
@@ -47,12 +47,8 @@ public class EventProcessingMonitorCollection implements EventProcessingMonitor,
     }
 
     @Override
-    public void subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
+    public Registration subscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
         delegates.add(monitor);
-    }
-
-    @Override
-    public void unsubscribeEventProcessingMonitor(EventProcessingMonitor monitor) {
-        delegates.remove(monitor);
+        return () -> delegates.remove(monitor);
     }
 }

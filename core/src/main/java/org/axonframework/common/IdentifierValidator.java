@@ -39,7 +39,11 @@ public final class IdentifierValidator {
     private static final IdentifierValidator INSTANCE = new IdentifierValidator();
     private static final Object NULL = new Object();
 
-    private final Map<Class<?>, Object> whiteList = new WeakHashMap<Class<?>, Object>();
+    private final Map<Class<?>, Object> whiteList = new WeakHashMap<>();
+
+    private IdentifierValidator() {
+        // Singleton, prevent construction
+    }
 
     /**
      * Returns the singleton instance of the IdentifierValidator.
@@ -48,28 +52,6 @@ public final class IdentifierValidator {
      */
     public static IdentifierValidator getInstance() {
         return INSTANCE;
-    }
-
-    /**
-     * Verifies whether the given <code>aggregateIdentifier</code> complies with the <code>toString</code> requirements
-     * and throws IllegalArgumentException if that is not the case.
-     * <p/>
-     * If a mere boolean is required, consider using <code>getInstance().{@link
-     * #isValidIdentifier(Class)}</code>.
-     *
-     * @param aggregateIdentifierType The identifier to validate
-     */
-    public static void validateIdentifier(Class<?> aggregateIdentifierType) {
-        if (!getInstance().isValidIdentifier(aggregateIdentifierType)) {
-            throw new IllegalArgumentException("One of the events contains an unsuitable aggregate identifier "
-                                                       + "for this EventStore implementation. See reference guide "
-                                                       + "for more information. Suspected class: "
-                                                       + aggregateIdentifierType.getName());
-        }
-    }
-
-    private IdentifierValidator() {
-        // Singleton, prevent construction
     }
 
     /**

@@ -18,9 +18,8 @@ package org.axonframework.quickstart;
 
 import org.apache.commons.io.FileUtils;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
@@ -36,10 +35,12 @@ import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcastingContext;
 import org.dom4j.Document;
 import org.dom4j.Element;
-import org.joda.time.DateTime;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 
 /**
@@ -61,16 +62,18 @@ public class RunUpcaster {
                                                           Collections.<Upcaster>singletonList(new ToDoItemUpcaster())));
 
         // we append some events. Notice we append a "ToDoItemCreatedEvent".
-        eventStore.appendEvents("UpcasterSample", new SimpleDomainEventStream(
-                new GenericDomainEventMessage("todo1", 0, new ToDoItemCreatedEvent("todo1", "I need to do this today")),
-                new GenericDomainEventMessage("todo1", 1, new ToDoItemCompletedEvent("todo1"))
-        ));
-        eventStore.appendEvents("UpcasterSample", new SimpleDomainEventStream(
-                new GenericDomainEventMessage("todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
-        ));
+        eventStore.appendEvents(
+                new GenericDomainEventMessage<>("todo1", 0,
+                                                new ToDoItemCreatedEvent("todo1", "I need to do this today")),
+                new GenericDomainEventMessage<>("todo1", 1, new ToDoItemCompletedEvent("todo1"))
+        );
+        eventStore.appendEvents(
+                new GenericDomainEventMessage<>("todo2", 0,
+                                                new ToDoItemCreatedEvent("todo2", "I also need to do this"))
+        );
 
         // now, we read the events from the "todo1" stream
-        DomainEventStream eventStream = eventStore.readEvents("UpcasterSample", "todo1");
+        DomainEventStream eventStream = eventStore.readEvents("todo1");
         while (eventStream.hasNext()) {
             // and print them, so that we can see what we ended up with
             System.out.println(eventStream.next().getPayload().toString());
@@ -108,7 +111,7 @@ public class RunUpcaster {
             // and add an element for the new "deadline" field
             rootElement.addElement("deadline")
                     // we set the value of the field to the default value: one day after the event was created
-                    .setText(context.getTimestamp().plusDays(1).toString());
+                    .setText(context.getTimestamp().plus(1, ChronoUnit.DAYS).toString());
             // we return the modified Document
             return data;
         }
@@ -128,9 +131,9 @@ public class RunUpcaster {
 
         private final String todoId;
         private final String description;
-        private final DateTime deadline;
+        private final Instant deadline;
 
-        public NewToDoItemWithDeadlineCreatedEvent(String todoId, String description, DateTime deadline) {
+        public NewToDoItemWithDeadlineCreatedEvent(String todoId, String description, Instant deadline) {
             this.todoId = todoId;
             this.description = description;
             this.deadline = deadline;
@@ -144,14 +147,15 @@ public class RunUpcaster {
             return description;
         }
 
-        public DateTime getDeadline() {
+        public Instant getDeadline() {
             return deadline;
         }
 
         @Override
         public String toString() {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-YYYY' at 'HH:mm");
             return "NewToDoItemWithDeadlineCreatedEvent(" + todoId + ", '" + description + "' before "
-                    + deadline.toString("dd-MM-YYYY") + " at " + deadline.toString("HH:mm") + ")";
+                    + formatter.format(deadline) + ")";
         }
     }
 }

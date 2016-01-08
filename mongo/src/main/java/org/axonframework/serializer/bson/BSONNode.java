@@ -39,7 +39,7 @@ public class BSONNode {
     private static final String ATTRIBUTE_PREFIX = "attr_";
     private static final String VALUE_KEY = "_value";
 
-    private final List<BSONNode> childNodes = new ArrayList<BSONNode>();
+    private final List<BSONNode> childNodes = new ArrayList<>();
     private String value;
     private String encodedName;
 
@@ -174,7 +174,7 @@ public class BSONNode {
      * @return an iterator providing access to the child nodes of the current node
      */
     public Iterator<BSONNode> children() {
-        List<BSONNode> children = new ArrayList<BSONNode>();
+        List<BSONNode> children = new ArrayList<>();
         for (BSONNode child : childNodes) {
             if (!child.encodedName.startsWith(ATTRIBUTE_PREFIX)) {
                 children.add(child);
@@ -190,7 +190,7 @@ public class BSONNode {
      * @return a Map containing the attributes of the current node
      */
     public Map<String, String> attributes() {
-        Map<String, String> attrs = new HashMap<String, String>();
+        Map<String, String> attrs = new HashMap<>();
         for (BSONNode child : childNodes) {
             if (!VALUE_KEY.equals(child.encodedName) && child.encodedName.startsWith(ATTRIBUTE_PREFIX)) {
                 attrs.put(child.encodedName, child.value);

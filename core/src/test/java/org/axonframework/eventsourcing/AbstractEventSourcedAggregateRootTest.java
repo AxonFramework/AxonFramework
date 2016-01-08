@@ -16,18 +16,23 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.domain.StubDomainEvent;
-import org.junit.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.testutils.RecordingEventBus;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Allard Buijze
@@ -35,12 +40,27 @@ import static org.junit.Assert.*;
 public class AbstractEventSourcedAggregateRootTest {
 
     private CompositeAggregateRoot testSubject;
+    private RecordingEventBus eventBus;
     private String identifier = "aggregateIdentifier";
+
+    @Before
+    public void setUp() {
+        eventBus = new RecordingEventBus();
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.resources().put(EventBus.KEY, eventBus);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
+    }
 
     @Test
     public void testInitializeWithEvents() {
         testSubject = new CompositeAggregateRoot();
-        testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<String>(
+        testSubject.initializeState(new SimpleDomainEventStream(new GenericDomainEventMessage<>(
                 identifier,
                 (long) 243,
                 "Mock contents", MetaData
@@ -48,7 +68,7 @@ public class AbstractEventSourcedAggregateRootTest {
         )));
 
         assertEquals(identifier, testSubject.getIdentifier());
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(0, eventBus.getPublishedEventCount());
         assertEquals(1, testSubject.getInvocationCount());
         assertEquals(1, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(new Long(243), testSubject.getVersion());
@@ -59,27 +79,23 @@ public class AbstractEventSourcedAggregateRootTest {
         testSubject = new CompositeAggregateRoot(identifier);
 
         assertNotNull(testSubject.getIdentifier());
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        assertEquals(0, eventBus.getPublishedEventCount());
         assertEquals(null, testSubject.getVersion());
 
         testSubject.apply(new StubDomainEvent());
 
         assertEquals(1, testSubject.getInvocationCount());
-        assertEquals(1, testSubject.getUncommittedEventCount());
+        assertEquals(1, eventBus.getPublishedEventCount());
         assertEquals(1, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(1, testSubject.getSimpleEntityList().get(0).getInvocationCount());
 
         testSubject.getSimpleEntity().applyEvent();
         assertEquals(2, testSubject.getInvocationCount());
-        assertEquals(2, testSubject.getUncommittedEventCount());
+        assertEquals(2, eventBus.getPublishedEventCount());
         assertEquals(2, testSubject.getSimpleEntity().getInvocationCount());
         assertEquals(2, testSubject.getSimpleEntityList().get(0).getInvocationCount());
 
-        assertEquals(null, testSubject.getVersion());
-
-        testSubject.commitEvents();
-        assertEquals(new Long(1), testSubject.getVersion());
-        assertFalse(testSubject.getUncommittedEvents().hasNext());
+        assertEquals(new Long(eventBus.getPublishedEventCount() - 1), testSubject.getVersion());
     }
 
     /**
@@ -89,7 +105,7 @@ public class AbstractEventSourcedAggregateRootTest {
 
         private int invocationCount;
         private SimpleEntity childEntity;
-        private List<SimpleEntity> childEntitiesList = new ArrayList<SimpleEntity>();
+        private List<SimpleEntity> childEntitiesList = new ArrayList<>();
         private String identifier;
 
         CompositeAggregateRoot(String identifier) {
@@ -100,8 +116,8 @@ public class AbstractEventSourcedAggregateRootTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            this.identifier = (String) event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            this.identifier = ((DomainEventMessage) event).getAggregateIdentifier();
             this.invocationCount++;
             if (childEntity == null) {
                 childEntity = new SimpleEntity();
@@ -128,7 +144,7 @@ public class AbstractEventSourcedAggregateRootTest {
 
         @Override
         protected Collection<EventSourcedEntity> getChildEntities() {
-            List<EventSourcedEntity> children = new ArrayList<EventSourcedEntity>();
+            List<EventSourcedEntity> children = new ArrayList<>();
             children.add(childEntity);
             children.addAll(childEntitiesList);
             return children;
@@ -143,7 +159,7 @@ public class AbstractEventSourcedAggregateRootTest {
         private int invocationCount;
 
         @Override
-        protected void handle(DomainEventMessage event) {
+        protected void handle(EventMessage event) {
             this.invocationCount++;
         }
 

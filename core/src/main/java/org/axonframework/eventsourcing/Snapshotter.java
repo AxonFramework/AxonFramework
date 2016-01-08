@@ -26,12 +26,12 @@ package org.axonframework.eventsourcing;
 public interface Snapshotter {
 
     /**
-     * Schedules snapshot taking for an aggregate with given <code>typeIdentifier</code> and
-     * <code>aggregateIdentifier</code>. The implementation may choose to process this call synchronously (i.e. in the
-     * caller's thread), asynchronously, or ignore the call altogether.
+     * Schedules snapshot taking for an aggregate with given <code>aggregateIdentifier</code>. The implementation may
+     * choose to process this call synchronously (i.e. in the caller's thread), asynchronously, or ignore the call
+     * altogether.
      *
-     * @param typeIdentifier      the type of the aggregate to take the snapshot for
+     * @param aggregateType      the type of the aggregate to take the snapshot for
      * @param aggregateIdentifier The identifier of the aggregate to take the snapshot for
      */
-    void scheduleSnapshot(String typeIdentifier, Object aggregateIdentifier);
+    void scheduleSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType, String aggregateIdentifier);
 }

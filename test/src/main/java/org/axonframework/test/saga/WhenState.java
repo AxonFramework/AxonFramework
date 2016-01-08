@@ -16,8 +16,9 @@
 
 package org.axonframework.test.saga;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 /**
  * Interface providing an API to methods in the "when" state of the fixture execution. Unlike the methods in the
@@ -30,8 +31,8 @@ public interface WhenState {
 
     /**
      * Use this method to indicate that an aggregate with given identifier should publish certain events, <em>while
-     * recording the outcome</em>. In contrast to the {@link FixtureConfiguration#givenAggregate(Object)} given} and
-     * {@link org.axonframework.test.saga.ContinuedGivenState#andThenAggregate(Object)} andThen} methods, this method
+     * recording the outcome</em>. In contrast to the {@link FixtureConfiguration#givenAggregate(String)} given} and
+     * {@link org.axonframework.test.saga.ContinuedGivenState#andThenAggregate(String)} andThen} methods, this method
      * will start recording activity on the EventBus and CommandBus.
      * <p/>
      * Can be chained to build natural sentences:<br/> <code>whenAggregate(someIdentifier).publishes(anEvent)</code>
@@ -42,7 +43,7 @@ public interface WhenState {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    WhenAggregateEventPublisher whenAggregate(Object aggregateIdentifier);
+    WhenAggregateEventPublisher whenAggregate(String aggregateIdentifier);
 
     /**
      * Use this method to indicate an application is published, <em>while recording the outcome</em>.
@@ -79,5 +80,5 @@ public interface WhenState {
      * @param newDateTime The time to advance the clock to
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenTimeAdvancesTo(DateTime newDateTime);
+    FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime);
 }

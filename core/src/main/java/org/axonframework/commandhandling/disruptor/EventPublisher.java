@@ -19,23 +19,15 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.RollbackConfiguration;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.repository.AggregateNotFoundException;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.TransactionManager;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.Transaction;
+import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
 
 import static java.lang.String.format;
@@ -51,12 +43,10 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
 
     private final EventStore eventStore;
-    private final EventBus eventBus;
     private final Executor executor;
     private final RollbackConfiguration rollbackConfiguration;
     private final int segmentId;
-    private final Set<Object> blackListedAggregates = new HashSet<Object>();
-    private final Map<CommandMessage, Object> failedCreateCommands = new WeakHashMap<CommandMessage, Object>();
+    private final Set<Object> blackListedAggregates = new HashSet<>();
     private final TransactionManager transactionManager;
 
     /**
@@ -64,18 +54,15 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
      * for aggregate of given <code>aggregateType</code>.
      *
      * @param eventStore            The EventStore persisting the generated events
-     * @param eventBus              The EventBus to publish events on
      * @param executor              The executor which schedules response reporting
      * @param transactionManager    The transaction manager that manages the transaction around event storage and
      *                              publication
      * @param rollbackConfiguration The configuration that indicates which exceptions should result in a UnitOfWork
      * @param segmentId             The ID of the segment this publisher should handle
      */
-    public EventPublisher(EventStore eventStore, EventBus eventBus, Executor executor,
-                          TransactionManager transactionManager, RollbackConfiguration rollbackConfiguration,
-                          int segmentId) {
+    public EventPublisher(EventStore eventStore, Executor executor, TransactionManager transactionManager,
+                          RollbackConfiguration rollbackConfiguration, int segmentId) {
         this.eventStore = eventStore;
-        this.eventBus = eventBus;
         this.executor = executor;
         this.transactionManager = transactionManager;
         this.rollbackConfiguration = rollbackConfiguration;
@@ -88,35 +75,15 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         if (entry.isRecoverEntry()) {
             recoverAggregate(entry);
         } else if (entry.getPublisherId() == segmentId) {
-            if (entry.getExceptionResult() instanceof AggregateNotFoundException
-                    && failedCreateCommands.remove(entry.getCommand()) == null) {
-                // the command failed for the first time
-                reschedule(entry);
+            entry.resume();
+            entry.onPrepareCommit(u -> eventStore.appendEvents(entry.getMessagesToPublish()));
+            String aggregateIdentifier = entry.getAggregateIdentifier();
+            if (aggregateIdentifier != null && blackListedAggregates.contains(aggregateIdentifier)) {
+                rejectExecution(entry, aggregateIdentifier);
             } else {
-                DisruptorUnitOfWork unitOfWork = entry.getUnitOfWork();
-                CurrentUnitOfWork.set(unitOfWork);
-                try {
-                    EventSourcedAggregateRoot aggregate = unitOfWork.getAggregate();
-                    if (aggregate != null && blackListedAggregates.contains(aggregate.getIdentifier())) {
-                        rejectExecution(entry, unitOfWork, entry.getAggregateIdentifier());
-                    } else {
-                        processPublication(entry, unitOfWork, aggregate);
-                    }
-                } finally {
-                    CurrentUnitOfWork.clear(unitOfWork);
-                }
+                processPublication(entry, entry, aggregateIdentifier);
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void reschedule(CommandHandlingEntry entry) {
-        failedCreateCommands.put(entry.getCommand(), logger);
-        executor.execute(new ReportResultTask(
-                entry.getCallback(), null,
-                new AggregateStateCorruptedException(
-                        entry.getAggregateIdentifier(), "Rescheduling command for execution. "
-                        + "It was executed against a potentially recently created command")));
     }
 
     private void recoverAggregate(CommandHandlingEntry entry) {
@@ -127,47 +94,44 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     @SuppressWarnings("unchecked")
-    private void rejectExecution(CommandHandlingEntry entry, DisruptorUnitOfWork unitOfWork,
-                                 Object aggregateIdentifier) {
-        executor.execute(new ReportResultTask(
-                entry.getCallback(), null,
-                new AggregateStateCorruptedException(
-                        unitOfWork.getAggregate(),
-                        format("Aggregate %s has been blacklisted and will be ignored until "
-                                       + "its state has been recovered.",
-                               aggregateIdentifier))));
+    private void rejectExecution(CommandHandlingEntry entry, String aggregateIdentifier) {
+        executor.execute(new ReportResultTask(entry.getCommand(),
+                                              entry.getCallback(), null,
+                                              new AggregateStateCorruptedException(
+                                                      aggregateIdentifier,
+                                                      format("Aggregate %s has been blacklisted and will be ignored "
+                                                                     + "until its state has been recovered.",
+                                                             aggregateIdentifier))));
+        entry.rollback(entry.getExceptionResult());
     }
 
     @SuppressWarnings("unchecked")
     private void processPublication(CommandHandlingEntry entry, DisruptorUnitOfWork unitOfWork,
-                                    EventSourcedAggregateRoot aggregate) {
+                                    String aggregateIdentifier) {
         invokeInterceptorChain(entry);
         Throwable exceptionResult = entry.getExceptionResult();
-        try {
-            if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
-                exceptionResult = performRollback(unitOfWork, entry.getAggregateIdentifier(), exceptionResult);
-            } else {
-                exceptionResult = performCommit(unitOfWork, aggregate, exceptionResult);
-            }
-        } finally {
-            unitOfWork.onCleanup();
+        if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
+            exceptionResult = performRollback(unitOfWork, entry.getAggregateIdentifier(), exceptionResult);
+        } else {
+            exceptionResult = performCommit(unitOfWork, exceptionResult, aggregateIdentifier);
         }
         if (exceptionResult != null || entry.getCallback().hasDelegate()) {
-            executor.execute(new ReportResultTask(entry.getCallback(), entry.getResult(), exceptionResult));
+            executor.execute(new ReportResultTask(entry.getCommand(), entry.getCallback(),
+                                                  entry.getResult(), exceptionResult));
         }
     }
 
     private void invokeInterceptorChain(CommandHandlingEntry entry) {
         try {
             entry.setResult(entry.getPublisherInterceptorChain().proceed(entry.getCommand()));
-        } catch (Throwable throwable) {
+        } catch (Exception throwable) {
             entry.setExceptionResult(throwable);
         }
     }
 
-    private Throwable performRollback(DisruptorUnitOfWork unitOfWork, Object aggregateIdentifier,
+    private Throwable performRollback(DisruptorUnitOfWork unitOfWork, String aggregateIdentifier,
                                       Throwable exceptionResult) {
-        unitOfWork.onRollback(exceptionResult);
+        unitOfWork.rollback(exceptionResult);
         if (aggregateIdentifier != null) {
             exceptionResult = notifyBlacklisted(unitOfWork, aggregateIdentifier, exceptionResult);
         }
@@ -175,34 +139,26 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     }
 
     @SuppressWarnings("unchecked")
-    private Throwable performCommit(DisruptorUnitOfWork unitOfWork, EventSourcedAggregateRoot aggregate,
-                                    Throwable exceptionResult) {
-        unitOfWork.onPrepareCommit();
-        Object transaction = null;
+    private Throwable performCommit(DisruptorUnitOfWork unitOfWork,
+                                    Throwable exceptionResult, String aggregateIdentifier) {
         try {
             if (exceptionResult != null && rollbackConfiguration.rollBackOn(exceptionResult)) {
                 unitOfWork.rollback(exceptionResult);
             } else {
                 if (transactionManager != null) {
-                    transaction = transactionManager.startTransaction();
+                    Transaction transaction = transactionManager.startTransaction();
+                    unitOfWork.onCommit(u -> transaction.commit());
+                    unitOfWork.onRollback((u, e) -> transaction.rollback());
                 }
-                storeAndPublish(unitOfWork);
-                if (transaction != null) {
-                    unitOfWork.onPrepareTransactionCommit(transaction);
-                    transactionManager.commitTransaction(transaction);
-                }
-                unitOfWork.onAfterCommit();
+                unitOfWork.commit();
             }
         } catch (Exception e) {
-            try {
-                if (transaction != null) {
-                    transactionManager.rollbackTransaction(transaction);
-                }
-            } catch (Exception te) {
-                logger.info("Failed to explicitly rollback the transaction: ", te);
+            if (unitOfWork.isActive()) {
+                // probably the transaction failed. Unit of Work needs to be rolled back.
+                unitOfWork.rollback(e);
             }
-            if (aggregate != null) {
-                exceptionResult = notifyBlacklisted(unitOfWork, aggregate.getIdentifier(), e);
+            if (aggregateIdentifier != null) {
+                exceptionResult = notifyBlacklisted(unitOfWork, aggregateIdentifier, e);
             } else {
                 exceptionResult = e;
             }
@@ -210,19 +166,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         return exceptionResult;
     }
 
-    private void storeAndPublish(DisruptorUnitOfWork unitOfWork) {
-        DomainEventStream eventsToStore = unitOfWork.getEventsToStore();
-        if (eventsToStore.hasNext()) {
-            eventStore.appendEvents(unitOfWork.getAggregateType(), eventsToStore);
-        }
-        List<EventMessage> eventMessages = unitOfWork.getEventsToPublish();
-        EventMessage[] eventsToPublish = eventMessages.toArray(new EventMessage[eventMessages.size()]);
-        if (eventBus != null && eventsToPublish.length > 0) {
-            eventBus.publish(eventsToPublish);
-        }
-    }
-
-    private Throwable notifyBlacklisted(DisruptorUnitOfWork unitOfWork, Object aggregateIdentifier,
+    private Throwable notifyBlacklisted(DisruptorUnitOfWork unitOfWork, String aggregateIdentifier,
                                         Throwable cause) {
         Throwable exceptionResult;
         blackListedAggregates.add(aggregateIdentifier);
@@ -231,17 +175,22 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 format("Aggregate %s state corrupted. "
                                + "Blacklisting the aggregate until a reset message has been received",
                        aggregateIdentifier), cause);
-        unitOfWork.onRollback(exceptionResult);
+        if (unitOfWork.isActive()) {
+            unitOfWork.rollback(exceptionResult);
+        }
         return exceptionResult;
     }
 
-    private static class ReportResultTask<R> implements Runnable {
+    private static class ReportResultTask<C, R> implements Runnable {
 
-        private final CommandCallback<R> callback;
+        private final CommandMessage<C> commandMessage;
+        private final CommandCallback<C, R> callback;
         private final R result;
         private final Throwable exceptionResult;
 
-        public ReportResultTask(CommandCallback<R> callback, R result, Throwable exceptionResult) {
+        public ReportResultTask(CommandMessage<C> commandMessage, CommandCallback<C, R> callback,
+                                R result, Throwable exceptionResult) {
+            this.commandMessage = commandMessage;
             this.callback = callback;
             this.result = result;
             this.exceptionResult = exceptionResult;
@@ -250,9 +199,9 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         @Override
         public void run() {
             if (exceptionResult != null) {
-                callback.onFailure(exceptionResult);
+                callback.onFailure(commandMessage, exceptionResult);
             } else {
-                callback.onSuccess(result);
+                callback.onSuccess(commandMessage, result);
             }
         }
     }

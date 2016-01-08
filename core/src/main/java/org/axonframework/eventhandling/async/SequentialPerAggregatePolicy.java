@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 /**
  * Concurrency policy that requires sequential processing of events raised by the same aggregate. Events from different

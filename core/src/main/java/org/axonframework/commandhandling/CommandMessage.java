@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 
 import java.util.Map;
 

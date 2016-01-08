@@ -17,8 +17,8 @@
 package org.axonframework.common.annotation;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.Message;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -74,7 +74,7 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
     }
 
     @Override
-    public Object invoke(Object target, Message message) throws InvocationTargetException, IllegalAccessException {
+    public Object invoke(Object target, Message message) {
         Assert.isTrue(method.getDeclaringClass().isInstance(target),
                       "Given target is not an instance of the method's owner.");
         Assert.notNull(message, "Event may not be null");
@@ -82,7 +82,17 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
         for (int i = 0; i < parameterValues.length; i++) {
             parameterValues[i] = getParameterValueResolvers()[i].resolveParameterValue(message);
         }
-        return method.invoke(target, parameterValues);
+        try {
+            return method.invoke(target, parameterValues);
+        } catch (IllegalAccessException e) {
+            throw new MessageHandlerInvocationException("Access to the message handler method was denied.", e);
+        } catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.",
+                    e.getCause());
+        }
     }
 
     @Override

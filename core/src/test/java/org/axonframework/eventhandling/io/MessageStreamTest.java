@@ -16,12 +16,12 @@
 
 package org.axonframework.eventhandling.io;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.GenericEventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.junit.*;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +29,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Collections;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -41,7 +42,7 @@ public class MessageStreamTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         XStreamSerializer serializer = new XStreamSerializer();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        GenericEventMessage<String> message = new GenericEventMessage<String>("This is the payload",
+        GenericEventMessage<String> message = new GenericEventMessage<>("This is the payload",
                                                                               Collections.<String, Object>singletonMap(
                                                                                       "metaKey",
                                                                                       "MetaValue"));
@@ -62,7 +63,7 @@ public class MessageStreamTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         XStreamSerializer serializer = new XStreamSerializer();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
-        GenericDomainEventMessage<String> message = new GenericDomainEventMessage<String>(
+        GenericDomainEventMessage<String> message = new GenericDomainEventMessage<>(
                 "AggregateID", 1L, "This is the payload", Collections.<String, Object>singletonMap("metaKey",
                                                                                                    "MetaValue"));
         out.writeEventMessage(message);

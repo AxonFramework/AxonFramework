@@ -64,7 +64,7 @@ public class ExecutorServiceFactoryBean implements FactoryBean<ExecutorService>,
     @Override
     public void afterPropertiesSet() throws Exception {
         if (queue == null) {
-            queue = new LinkedBlockingQueue<Runnable>();
+            queue = new LinkedBlockingQueue<>();
         }
         executorService = new ThreadPoolExecutor(20, 20, 60, TimeUnit.SECONDS, queue);
     }

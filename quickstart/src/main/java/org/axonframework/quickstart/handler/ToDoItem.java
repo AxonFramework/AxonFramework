@@ -16,7 +16,7 @@
 
 package org.axonframework.quickstart.handler;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
@@ -46,7 +46,7 @@ public class ToDoItem extends AbstractEventSourcedAggregateRoot {
     }
 
     @Override
-    protected void handle(DomainEventMessage eventMessage) {
+    protected void handle(EventMessage eventMessage) {
         if (eventMessage.getPayloadType().equals(ToDoItemCreatedEvent.class)) {
             ToDoItemCreatedEvent event = (ToDoItemCreatedEvent) eventMessage.getPayload();
             this.id = event.getTodoId();
@@ -54,7 +54,7 @@ public class ToDoItem extends AbstractEventSourcedAggregateRoot {
     }
 
     @Override
-    public Object getIdentifier() {
+    public String getIdentifier() {
         return id;
     }
 }

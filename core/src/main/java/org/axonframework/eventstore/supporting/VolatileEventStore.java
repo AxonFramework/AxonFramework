@@ -16,35 +16,32 @@
 
 package org.axonframework.eventstore.supporting;
 
-import java.util.ArrayList;
-
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.eventstore.management.EventStoreManagement;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
+ * TODO: fix documentation
+ *
  * @author Knut-Olav Hoven
  */
 public class VolatileEventStore implements EventStore, EventStoreManagement {
 
-    static class AggregateTypedEventMessage {
-        String type;
-        DomainEventMessage<?> eventMessage;
-    }
-
-    private final ArrayList<AggregateTypedEventMessage> volatileEvents = new ArrayList<AggregateTypedEventMessage>();
+    private final ArrayList<DomainEventMessage<?>> volatileEvents = new ArrayList<>();
 
     @Override
     public synchronized void visitEvents(EventVisitor visitor) {
-        for (AggregateTypedEventMessage eventMessage : volatileEvents) {
-            visitor.doWithEvent(eventMessage.eventMessage);
-        }
+        volatileEvents.forEach(visitor::doWithEvent);
     }
 
     @Override
@@ -58,31 +55,29 @@ public class VolatileEventStore implements EventStore, EventStoreManagement {
     }
 
     @Override
-    public synchronized void appendEvents(String type, DomainEventStream events) {
-        while (events.hasNext()) {
-            AggregateTypedEventMessage obj = new AggregateTypedEventMessage();
-            obj.type = type;
-            obj.eventMessage = events.next();
-            volatileEvents.add(obj);
-        }
+    public synchronized void appendEvents(List<DomainEventMessage<?>> events) {
+        volatileEvents.addAll(events);
     }
 
     @Override
-    public synchronized DomainEventStream readEvents(String type, Object identifier) {
-        ArrayList<DomainEventMessage<?>> selection = new ArrayList<DomainEventMessage<?>>();
-        for (AggregateTypedEventMessage typedMessage : volatileEvents) {
-            if (typedMessage.type.equals(type)) {
-                DomainEventMessage<?> evMsg = typedMessage.eventMessage;
-                if (identifier.equals(evMsg.getAggregateIdentifier())) {
-                    selection.add(typedMessage.eventMessage);
-                }
-            }
-        }
+    public DomainEventStream readEvents(String identifier) {
+        return readEvents(identifier, 0, Long.MAX_VALUE);
+    }
+
+    @Override
+    public synchronized DomainEventStream readEvents(String identifier,
+                                                     long firstSequenceNumber, long lastSequenceNumber) {
+        List<DomainEventMessage<?>> selection = volatileEvents
+                .stream()
+                .filter(message -> identifier.equals(message.getAggregateIdentifier())
+                        && message.getSequenceNumber() >= firstSequenceNumber
+                        && message.getSequenceNumber() <= lastSequenceNumber)
+                .collect(Collectors.toList());
 
         return new SimpleDomainEventStream(selection);
     }
 
-    public TimestampCutoffReadonlyEventStore cutoff(DateTime cutOffTimestamp) {
+    public TimestampCutoffReadonlyEventStore cutoff(Instant cutOffTimestamp) {
         return new TimestampCutoffReadonlyEventStore(this, this, cutOffTimestamp);
     }
 }

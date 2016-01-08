@@ -58,7 +58,7 @@ public class ReplyingCallbackTest {
 
     @Before
     public void setup(){
-        replyingCallback = new ReplyingCallback(mockChannel, mockAddr, mockCommandMsg,mockSerializer);
+        replyingCallback = new ReplyingCallback(mockChannel, mockAddr, mockSerializer);
         when(mockCommandMsg.getIdentifier()).thenReturn(IDENTIFIER);
     }
 
@@ -67,7 +67,7 @@ public class ReplyingCallbackTest {
         Object dummyData = new Object();
         ReplyMessage expectedReplyMsg = new ReplyMessage(IDENTIFIER, dummyData, null, mockSerializer);
 
-        replyingCallback.onSuccess(dummyData);
+        replyingCallback.onSuccess(mockCommandMsg, dummyData);
 
         verify(mockChannel).send(eq(mockAddr),refEq(expectedReplyMsg));
     }
@@ -82,7 +82,7 @@ public class ReplyingCallbackTest {
         expectedException.expect(CommandResponseProcessingFailedException.class);
         expectedException.expectCause(is(expectedCause));
 
-        replyingCallback.onSuccess(dummyData);
+        replyingCallback.onSuccess(mockCommandMsg, dummyData);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class ReplyingCallbackTest {
         Exception exception = new Exception();
         ReplyMessage expectedReplyMsg = new ReplyMessage(IDENTIFIER, null, exception, mockSerializer);
 
-        replyingCallback.onFailure(exception);
+        replyingCallback.onFailure(mockCommandMsg, exception);
 
         verify(mockChannel).send(eq(mockAddr),refEq(expectedReplyMsg));
     }
@@ -104,6 +104,6 @@ public class ReplyingCallbackTest {
         expectedException.expect(CommandResponseProcessingFailedException.class);
         expectedException.expectCause(nullValue(Exception.class));
 
-        replyingCallback.onFailure(exception);
+        replyingCallback.onFailure(mockCommandMsg, exception);
     }
 }

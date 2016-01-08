@@ -32,9 +32,8 @@ import org.slf4j.LoggerFactory;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ReplyingCallback implements CommandCallback<Object> {
+public class ReplyingCallback implements CommandCallback<Object, Object> {
 
-    private final CommandMessage commandMessage;
     private final JChannel channel;
     private final Serializer serializer;
 
@@ -42,23 +41,21 @@ public class ReplyingCallback implements CommandCallback<Object> {
     private final Address address;
 
     /**
-     * Initialize the callback to send a reply for an incoming <code>commandMessage</code> to given <code>address</code> using the given <code>channel</code>.
+     * Initialize the callback to send a reply to given <code>address</code> using the given <code>channel</code>.
      * The given <code>serializer</code> is used to serialize the reply message.
      *
-     * @param channel        The channel to send the reply on
-     * @param address        The destination for the reply message
-     * @param commandMessage The incoming command message
-     * @param serializer     The serializer to serialize the reply with
+     * @param channel    The channel to send the reply on
+     * @param address    The destination for the reply message
+     * @param serializer The serializer to serialize the reply with
      */
-    public ReplyingCallback(JChannel channel, Address address, CommandMessage commandMessage, Serializer serializer) {
+    public ReplyingCallback(JChannel channel, Address address, Serializer serializer) {
         this.address = address;
-        this.commandMessage = commandMessage;
         this.channel = channel;
         this.serializer = serializer;
     }
 
     @Override
-    public void onSuccess(Object result) {
+    public void onSuccess(CommandMessage<?> commandMessage, Object result) {
         try {
             channel.send(address, new ReplyMessage(commandMessage.getIdentifier(),
                                                    result,
@@ -73,7 +70,7 @@ public class ReplyingCallback implements CommandCallback<Object> {
     }
 
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
         try {
             channel.send(address, new ReplyMessage(commandMessage.getIdentifier(),
                                                    null,

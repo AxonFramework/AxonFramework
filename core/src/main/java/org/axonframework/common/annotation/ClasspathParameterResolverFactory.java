@@ -46,7 +46,7 @@ public final class ClasspathParameterResolverFactory {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger(ClasspathParameterResolverFactory.class);
     private static final Object monitor = new Object();
     private static final Map<ClassLoader, WeakReference<ParameterResolverFactory>> FACTORIES =
-            new WeakHashMap<ClassLoader, WeakReference<ParameterResolverFactory>>();
+            new WeakHashMap<>();
 
     /**
      * Creates an instance for the given <code>clazz</code>. Effectively, the class loader of the given class is used
@@ -71,13 +71,13 @@ public final class ClasspathParameterResolverFactory {
             ParameterResolverFactory factory;
             if (!FACTORIES.containsKey(classLoader)) {
                 factory = MultiParameterResolverFactory.ordered(findDelegates(classLoader));
-                FACTORIES.put(classLoader, new WeakReference<ParameterResolverFactory>(factory));
+                FACTORIES.put(classLoader, new WeakReference<>(factory));
                 return factory;
             }
             factory = FACTORIES.get(classLoader).get();
             if (factory == null) {
                 factory = MultiParameterResolverFactory.ordered(findDelegates(classLoader));
-                FACTORIES.put(classLoader, new WeakReference<ParameterResolverFactory>(factory));
+                FACTORIES.put(classLoader, new WeakReference<>(factory));
             }
             return factory;
         }
@@ -89,7 +89,7 @@ public final class ClasspathParameterResolverFactory {
         }
         Iterator<ParameterResolverFactory> iterator = load(ParameterResolverFactory.class, classLoader).iterator();
         //noinspection WhileLoopReplaceableByForEach
-        final List<ParameterResolverFactory> factories = new ArrayList<ParameterResolverFactory>();
+        final List<ParameterResolverFactory> factories = new ArrayList<>();
         while (iterator.hasNext()) {
             try {
                 ParameterResolverFactory factory = iterator.next();

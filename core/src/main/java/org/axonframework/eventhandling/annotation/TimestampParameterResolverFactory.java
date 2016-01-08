@@ -18,12 +18,13 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.Message;
-import org.joda.time.DateTime;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
+
+import java.time.Instant;
 
 /**
- * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link DateTime} that are annotated
+ * AbstractAnnotatedParameterResolverFactory that accepts parameters with type {@link Instant} that are annotated
  * with the {@link Timestamp} annotation and assigns the timestamp of the EventMessage.
  *
  * @author Allard Buijze
@@ -31,31 +32,31 @@ import org.joda.time.DateTime;
  */
 @Priority(Priority.HIGH)
 public final class TimestampParameterResolverFactory
-        extends AbstractAnnotatedParameterResolverFactory<Timestamp, DateTime> {
+        extends AbstractAnnotatedParameterResolverFactory<Timestamp, Instant> {
 
-    private final ParameterResolver<DateTime> resolver;
+    private final ParameterResolver<Instant> resolver;
 
     /**
      * Initializes a {@link org.axonframework.common.annotation.ParameterResolverFactory} for {@link Timestamp}
      * annotated parameters
      */
     public TimestampParameterResolverFactory() {
-        super(Timestamp.class, DateTime.class);
+        super(Timestamp.class, Instant.class);
         resolver = new TimestampParameterResolver();
     }
 
     @Override
-    protected ParameterResolver<DateTime> getResolver() {
+    protected ParameterResolver<Instant> getResolver() {
         return resolver;
     }
 
     /**
      * ParameterResolver that resolved Timestamp parameters
      */
-    static class TimestampParameterResolver implements ParameterResolver<DateTime> {
+    static class TimestampParameterResolver implements ParameterResolver<Instant> {
 
         @Override
-        public DateTime resolveParameterValue(Message message) {
+        public Instant resolveParameterValue(Message message) {
             if (message instanceof EventMessage) {
                 return ((EventMessage) message).getTimestamp();
             }

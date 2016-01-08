@@ -20,7 +20,10 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.annotation.Timestamp;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+
 
 /**
  * Event handler that listens to both events and prints a message to the system output stream.
@@ -29,12 +32,14 @@ import org.joda.time.DateTime;
  */
 public class ToDoEventHandler {
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("d-M-y H:m");
+
     @EventHandler
-    public void handle(ToDoItemCreatedEvent event, @Timestamp DateTime time) {
+    public void handle(ToDoItemCreatedEvent event, @Timestamp Instant time) {
         System.out.println(String.format("We've got something to do: %s (%s, created at %s)",
-                                         event.getDescription(),
-                                         event.getTodoId(),
-                                         time.toString("d-M-y H:m")));
+                event.getDescription(),
+                event.getTodoId(),
+                DATE_TIME_FORMATTER.format(time)));
     }
 
     @EventHandler

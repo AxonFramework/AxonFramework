@@ -79,11 +79,11 @@ public class LazyUpcasterChain extends AbstractUpcasterChain {
                                                      SerializedObject<?> sourceObject,
                                                      List<SerializedType> targetTypes,
                                                      UpcastingContext context) {
-        LazyUpcastObject<T> lazyUpcastObject = new LazyUpcastObject<T>(sourceObject, targetTypes, upcaster, context);
-        List<SerializedObject<?>> upcastObjects = new ArrayList<SerializedObject<?>>(targetTypes.size());
+        LazyUpcastObject<T> lazyUpcastObject = new LazyUpcastObject<>(sourceObject, targetTypes, upcaster, context);
+        List<SerializedObject<?>> upcastObjects = new ArrayList<>(targetTypes.size());
         int t = 0;
         for (SerializedType serializedType : targetTypes) {
-            upcastObjects.add(new LazyUpcastingSerializedObject<T>(t, lazyUpcastObject, serializedType));
+            upcastObjects.add(new LazyUpcastingSerializedObject<>(t, lazyUpcastObject, serializedType));
             t++;
         }
         return upcastObjects;

@@ -16,9 +16,8 @@
 
 package org.axonframework.common.jdbc;
 
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -68,20 +67,46 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
         }
 
         UnitOfWork uow = CurrentUnitOfWork.get();
-        Connection connection = uow.getResource(CONNECTION_RESOURCE_NAME);
+        Connection connection = uow.root().getResource(CONNECTION_RESOURCE_NAME);
         if (connection == null || connection.isClosed()) {
             final Connection delegateConnection = delegate.getConnection();
             connection = ConnectionWrapperFactory.wrap(delegateConnection,
                                                        UoWAttachedConnection.class,
                                                        new UoWAttachedConnectionImpl(delegateConnection),
                                                        new ConnectionWrapperFactory.NoOpCloseHandler());
-            uow.attachResource(CONNECTION_RESOURCE_NAME, connection, inherited);
-            uow.registerListener(new ConnectionManagingUnitOfWorkListenerAdapter());
+            uow.root().resources().put(CONNECTION_RESOURCE_NAME, connection);
+            uow.onCommit(u -> {
+                Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
+                try {
+                    if (!cx.getAutoCommit()) {
+                        cx.commit();
+                    }
+                } catch (SQLException e) {
+                    throw new JdbcTransactionException("Unable to commit transaction", e);
+                }
+            });
+            uow.onCleanup(u -> {
+                Connection cx = u.getResource(CONNECTION_RESOURCE_NAME);
+                JdbcUtils.closeQuietly(cx);
+                if (cx instanceof UoWAttachedConnection) {
+                    ((UoWAttachedConnection) cx).forceClose();
+                }
+            });
+            uow.onRollback((u, e) -> {
+                Connection cx = u.getResource(CONNECTION_RESOURCE_NAME);
+                try {
+                    if (!cx.isClosed() && !cx.getAutoCommit()) {
+                        cx.rollback();
+                    }
+                } catch (SQLException ex) {
+                    throw new JdbcTransactionException("Unable to rollback transaction", ex);
+                }
+            });
         }
         return connection;
     }
 
-    private static interface UoWAttachedConnection {
+    private interface UoWAttachedConnection {
 
         void forceClose();
     }
@@ -97,49 +122,6 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
         @Override
         public void forceClose() {
             JdbcUtils.closeQuietly(delegateConnection);
-        }
-    }
-
-    private static class ConnectionManagingUnitOfWorkListenerAdapter extends UnitOfWorkListenerAdapter {
-
-        @Override
-        public void afterCommit(UnitOfWork unitOfWork) {
-            if (!unitOfWork.isTransactional()) {
-                onPrepareTransactionCommit(unitOfWork, null);
-            }
-        }
-
-        @Override
-        public void onPrepareTransactionCommit(UnitOfWork unitOfWork, Object transaction) {
-            Connection connection = unitOfWork.getResource(CONNECTION_RESOURCE_NAME);
-            try {
-                if (!connection.getAutoCommit()) {
-                    connection.commit();
-                }
-            } catch (SQLException e) {
-                throw new JdbcTransactionException("Unable to commit transaction", e);
-            }
-        }
-
-        @Override
-        public void onCleanup(UnitOfWork unitOfWork) {
-            Connection connection = unitOfWork.getResource(CONNECTION_RESOURCE_NAME);
-            JdbcUtils.closeQuietly(connection);
-            if (connection instanceof UoWAttachedConnection) {
-                ((UoWAttachedConnection) connection).forceClose();
-            }
-        }
-
-        @Override
-        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-            Connection connection = unitOfWork.getResource(CONNECTION_RESOURCE_NAME);
-            try {
-                if (!connection.isClosed() && !connection.getAutoCommit()) {
-                    connection.rollback();
-                }
-            } catch (SQLException e) {
-                throw new JdbcTransactionException("Unable to rollback transaction", e);
-            }
         }
     }
 }

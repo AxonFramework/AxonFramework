@@ -18,19 +18,18 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.NoCache;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.PartialStreamSupport;
-import org.axonframework.repository.LockManager;
-import org.axonframework.repository.PessimisticLockManager;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * Implementation of the event sourcing repository that uses a cache to improve loading performance. The cache removes
- * the need to read all events from disk, at the cost of memory usage. Since caching is not compatible with the
- * optimistic locking strategy, only pessimistic locking is available for this type of repository.
+ * the need to read all events from disk, at the cost of memory usage.
  * <p/>
  * Note that an entry of a cached aggregate is immediately invalidated when an error occurs while saving that
  * aggregate. This is done to prevent the cache from returning aggregates that may not have fully persisted to disk.
@@ -41,20 +40,18 @@ import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
  */
 public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot> extends EventSourcingRepository<T> {
 
+    private final EventStore eventStore;
     private Cache cache = NoCache.INSTANCE;
-    private final boolean hasEventStorePartialReadSupport;
-    private final PartialStreamSupport eventStore;
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
-     * Optimistic locking is not compatible with caching.
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore) {
-        this(aggregateFactory, eventStore, new PessimisticLockManager());
+        this(aggregateFactory, eventStore, new PessimisticLockFactory());
     }
 
     /**
@@ -64,19 +61,18 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
-     * @param lockManager      The lock manager restricting concurrent access to aggregate instances
+     * @param lockFactory      The lock factory restricting concurrent access to aggregate instances
      * @see org.axonframework.repository.LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                          LockManager lockManager) {
-        super(aggregateFactory, eventStore, lockManager);
-        this.hasEventStorePartialReadSupport = (eventStore instanceof PartialStreamSupport);
-        this.eventStore = eventStore instanceof PartialStreamSupport ? (PartialStreamSupport) eventStore : null;
+                                          LockFactory lockFactory) {
+        super(aggregateFactory, eventStore, lockFactory);
+        this.eventStore = eventStore;
     }
 
     @Override
     public void add(T aggregate) {
-        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregate.getIdentifier()));
+        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregate.getIdentifier()));
         super.add(aggregate);
     }
 
@@ -104,22 +100,31 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      */
     @SuppressWarnings({"unchecked"})
     @Override
-    public T doLoad(Object aggregateIdentifier, Long expectedVersion) {
+    public T doLoad(String aggregateIdentifier, Long expectedVersion) {
         T aggregate = cache.get(aggregateIdentifier);
-        if (aggregate == null
-                || (!hasEventStorePartialReadSupport && !hasExpectedVersion(expectedVersion, aggregate.getVersion()))) {
+        if (aggregate == null) {
             // if the event store doesn't support partial stream loading, we need to load the aggregate from the event store entirely
             aggregate = super.doLoad(aggregateIdentifier, expectedVersion);
         } else if (!hasExpectedVersion(expectedVersion, aggregate.getVersion())) {
             // the event store support partial stream reading, so let's read the unseen events
-            resolveConflicts(aggregate, eventStore.readEvents(getTypeIdentifier(), aggregateIdentifier,
-                                                              expectedVersion + 1, aggregate.getVersion()));
+            resolveConflicts(aggregate,
+                             readToList(eventStore.readEvents(aggregateIdentifier,
+                                                              expectedVersion + 1, aggregate.getVersion())));
         } else if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
-        CurrentUnitOfWork.get().registerListener(new CacheClearingUnitOfWorkListener(aggregateIdentifier));
+        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregateIdentifier));
         return aggregate;
     }
+
+    private List<DomainEventMessage<?>> readToList(DomainEventStream domainEventStream) {
+        List<DomainEventMessage<?>> unseenEvents = new ArrayList<>();
+        while (domainEventStream.hasNext()) {
+            unseenEvents.add(domainEventStream.next());
+        }
+        return unseenEvents;
+    }
+
 
     private boolean hasExpectedVersion(Long expectedVersion, Long actualVersion) {
         return expectedVersion == null || (actualVersion != null && actualVersion.equals(expectedVersion));
@@ -132,19 +137,5 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
      */
     public void setCache(Cache cache) {
         this.cache = cache;
-    }
-
-    private class CacheClearingUnitOfWorkListener extends UnitOfWorkListenerAdapter {
-
-        private final Object identifier;
-
-        public CacheClearingUnitOfWorkListener(Object identifier) {
-            this.identifier = identifier;
-        }
-
-        @Override
-        public void onRollback(UnitOfWork unitOfWork, Throwable failureCause) {
-            cache.remove(identifier);
-        }
     }
 }

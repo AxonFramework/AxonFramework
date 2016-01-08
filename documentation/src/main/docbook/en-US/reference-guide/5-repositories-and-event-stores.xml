@@ -87,36 +87,20 @@
                 dispatching logic, it will also ensure that aggregates are not concurrently
                 modified.
             </para>
-            <para>You can configure the <code>LockingRepository</code> with a locking strategy, such
-                an optimistic or a pessimistic one. When the optimistic lock detects concurrent
-                access, the second thread saving an aggregate will receive a
-                    <code>ConcurrencyException</code>. The pessimistic lock will prevent concurrent
-                access to the aggregate altogether. The pessimistic locking strategy is the default
-                strategy. A custom locking strategy can be provided by implementing the
-                    <code>LockManager</code> interface.</para>
+            <para>You can configure the <code>LockingRepository</code> with a locking strategy.
+                A pessimistic locking strategy is the default strategy. Pessimistic locks will
+                prevent concurrent access to the aggregate.  A custom locking strategy can be provided
+                by implementing the  <code>LockFactory</code> interface.</para>
             <para>Deadlocks are a common problem when threads use more than one lock to complete
                 their operation. In the case of Sagas, it is not uncommon that a command is
                 dispatched -causing a lock to be acquired-, while still holding a lock on the
-                aggregate that cause the Saga to be invoked. The <code>PessimisticLockManager</code>
+                aggregate that cause the Saga to be invoked. The <code>PessimisticLockFactory</code>
                 will automatically detect an imminent deadlock and will throw a
                     <code>DeadlockException</code> before the deadlock actually occurs. It is safe
                 to retry the operation once all nested Units of Work have been rolled back (to
                 ensure all locks are released). The <code>CommandGateway</code> will not invoke the
                     <code>RetryScheduler</code> if a <code>DeadlockException</code> occurred to
                 prevent a retry before all held locks have been released.</para>
-            <para>
-                <warning>
-                    <title>Event ordering and optimistic locking strategy</title>
-                    <para>Note that the optimistic lock doesn't lock any threads at all. While this reduces contention,
-                        it also means
-                        that the thread scheduler of your underlying architecture (OS, CPU, etc) is free to
-                        schedule threads as it sees fit. In high-concurrent environments (many threads
-                        accessing the same aggregate simultaneously), this could lead to events not being
-                        dispatched in exactly the same order as they are generated. If this guarantee is
-                        important, use pessimistic locking instead.
-                    </para>
-                </warning>
-            </para>
             <para>
                 <note>
                     <title>ConcurrencyException vs ConflictingModificationException</title>
@@ -231,15 +215,6 @@
                     implemented, if the Cache providers have done that migration as well. Until
                     then, you might have to select your cache implementation version
                     carefully.</para>
-            </note>
-            <note>
-                <para>Using a cache with optimistic locking could cause undesired side-effects.
-                    Optimistic locking allows concurrent access to objects and will only fail when
-                    two threads have concurrently made any modifications to that object. When using
-                    a cache, both threads will receive the same instance of the object. They will
-                    both apply their changes to that same instance, potentially interfering with
-                    each other.
-                </para>
             </note>
         </simplesect>
         <simplesect>

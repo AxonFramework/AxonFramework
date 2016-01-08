@@ -16,7 +16,10 @@
 
 package org.axonframework.saga.repository.jdbc;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 import org.axonframework.saga.Saga;
@@ -25,40 +28,52 @@ import org.axonframework.saga.repository.StubSaga;
 import org.axonframework.saga.repository.jpa.AssociationValueEntry;
 import org.axonframework.saga.repository.jpa.SagaEntry;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Set;
-import java.util.UUID;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
+import java.util.Set;
+import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "/META-INF/spring/jdbc-saga-repository-test.xml")
+@ContextConfiguration(locations = "/META-INF/spring/db-context.xml")
 @Transactional
 public class JdbcSagaRepository_JpaBackedTest {
 
-    @Autowired
     private JdbcSagaRepository repository;
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Autowired
+    private DataSource dataSource;
+
     private XStreamSerializer serializer;
 
     @Before
     public void setUp() {
+        repository = new JdbcSagaRepository(new UnitOfWorkAwareConnectionProviderWrapper(
+                new SpringDataSourceConnectionProvider(dataSource)));
+
         entityManager.clear();
         entityManager.createQuery("DELETE FROM SagaEntry");
         entityManager.createQuery("DELETE FROM AssociationValueEntry");
@@ -249,7 +264,7 @@ public class JdbcSagaRepository_JpaBackedTest {
     @DirtiesContext
     @Test
     public void testEndSaga() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet();
+        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         String identifier = UUID.randomUUID().toString();
         StubSaga saga = new StubSaga(identifier);
         saga.associate("key", "value");

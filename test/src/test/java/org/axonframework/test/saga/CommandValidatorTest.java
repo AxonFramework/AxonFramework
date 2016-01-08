@@ -7,7 +7,6 @@ import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.junit.*;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,7 +50,7 @@ public class CommandValidatorTest {
     }
 
     private List<CommandMessage<?>> listOfOneCommandMessage(Object msg) {
-        return Arrays.<CommandMessage<?>>asList(GenericCommandMessage.asCommandMessage(msg));
+        return Collections.singletonList(GenericCommandMessage.asCommandMessage(msg));
     }
 
 

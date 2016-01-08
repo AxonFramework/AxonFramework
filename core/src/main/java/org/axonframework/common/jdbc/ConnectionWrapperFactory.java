@@ -57,7 +57,7 @@ public abstract class ConnectionWrapperFactory {
                                                    new InvocationHandler() {
                                                        @Override
                                                        public Object invoke(Object proxy, Method method, Object[] args)
-                                                               throws Throwable {
+                                                               throws Exception {
                                                            if ("equals".equals(method.getName()) && args != null
                                                                    && args.length == 1) {
                                                                return proxy == args[0];
@@ -98,7 +98,7 @@ public abstract class ConnectionWrapperFactory {
                                                    new InvocationHandler() {
                                                        @Override
                                                        public Object invoke(Object proxy, Method method, Object[] args)
-                                                               throws Throwable {
+                                                               throws Exception {
                                                            if ("equals".equals(method.getName()) && args != null
                                                                    && args.length == 1) {
                                                                return proxy == args[0];

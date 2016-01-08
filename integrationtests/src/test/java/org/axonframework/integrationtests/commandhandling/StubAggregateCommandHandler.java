@@ -17,10 +17,10 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 /**
  * @author Allard Buijze
@@ -37,28 +37,28 @@ public class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateUpdated(UpdateStubAggregateCommand command) {
-        StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString(), command.getAggregateVersion());
         aggregate.makeAChange();
     }
 
     @CommandHandler
     public void handleStubAggregateUpdatedWithExtraEvent(UpdateStubAggregateWithExtraEventCommand command,
                                                          UnitOfWork unitOfWork) {
-        StubAggregate aggregate = repository.load(command.getAggregateId());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString());
         aggregate.makeAChange();
-        unitOfWork.publishEvent(new GenericEventMessage<MyEvent>(new MyEvent()), eventBus);
+        eventBus.publish(new GenericEventMessage<>(new MyEvent()));
         aggregate.makeAChange();
     }
 
     @CommandHandler
     public void handleStubAggregateLooping(LoopingCommand command) {
-        StubAggregate aggregate = repository.load(command.getAggregateId());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString());
         aggregate.makeALoopingChange();
     }
 
     @CommandHandler
     public void handleProblematicCommand(ProblematicCommand command) {
-        StubAggregate aggregate = repository.load(command.getAggregateId(), command.getAggregateVersion());
+        StubAggregate aggregate = repository.load(command.getAggregateId().toString(), command.getAggregateVersion());
         aggregate.causeTrouble();
     }
 

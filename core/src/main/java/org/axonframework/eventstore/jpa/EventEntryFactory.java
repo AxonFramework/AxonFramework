@@ -16,9 +16,12 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
+
 
 /**
  * Interface describing a factory that creates Entities for the JpaEventStore to persist. The EventEntryFactory allows
@@ -30,7 +33,7 @@ import org.joda.time.DateTime;
  * <li>aggregateIdentifier (String)</li>
  * <li>sequenceNumber (long)</li>
  * <li>eventIdentifier (String)</li>
- * <li>timeStamp (any object supported by {@link org.joda.time.DateTime#DateTime(Object)}</li>
+ * <li>timeStamp (any object supported by {@link Instant#parse(CharSequence)}</li>
  * <li>payloadType (String)</li>
  * <li>payloadRevision (String)</li>
  * <li>payload (the type defined by the EventEntryFactory implementation)</li>
@@ -50,11 +53,11 @@ public interface EventEntryFactory<T> {
 
     /**
      * Returns the type used to store serialized payloads. This must correspond to the declared type of the
-     * snapshot event entry and domain event entry returned by {@link #createSnapshotEventEntry(String,
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
-     * org.axonframework.serializer.SerializedObject)} and {@link #createDomainEventEntry(String,
-     * org.axonframework.domain.DomainEventMessage, org.axonframework.serializer.SerializedObject,
-     * org.axonframework.serializer.SerializedObject)} respectively.
+     * snapshot event entry and domain event entry returned by {@link
+     * #createSnapshotEventEntry(DomainEventMessage,
+     * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)} and {@link
+     * #createDomainEventEntry(DomainEventMessage,
+     * org.axonframework.serializer.SerializedObject, org.axonframework.serializer.SerializedObject)} respectively.
      *
      * @return the type used to store serialized payloads
      */
@@ -64,26 +67,24 @@ public interface EventEntryFactory<T> {
      * Creates an entity representing a Domain Event, which contains the data provided in the parameters, which can be
      * stored using the JPA Entity Manager configured on the JpaEventStore using this factory.
      *
-     * @param aggregateType      The type identifier of the aggregate that generated the domain event
      * @param event              The DomainEventMessage containing the data to store
      * @param serializedPayload  The serialized payload
      * @param serializedMetaData The serialized meta data
      * @return the instance to store using the EntityManager
      */
-    Object createDomainEventEntry(String aggregateType, DomainEventMessage event,
+    Object createDomainEventEntry(DomainEventMessage event,
                                   SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData);
 
     /**
      * Creates an entity representing a Snapshot Event, which contains the data provided in the parameters, which can
      * be stored using the JPA Entity Manager configured on the JpaEventStore using this factory.
      *
-     * @param aggregateType      The type identifier of the aggregate that generated the domain event
      * @param snapshotEvent      The DomainEventMessage containing the data to store
      * @param serializedPayload  The serialized payload
      * @param serializedMetaData The serialized meta data
      * @return the instance to store using the EntityManager
      */
-    Object createSnapshotEventEntry(String aggregateType, DomainEventMessage snapshotEvent,
+    Object createSnapshotEventEntry(DomainEventMessage snapshotEvent,
                                     SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData);
 
     /**
@@ -101,12 +102,11 @@ public interface EventEntryFactory<T> {
     String getSnapshotEventEntryEntityName();
 
     /**
+     *
      * Returns the representation used for the given <code>dateTime</code> in the event entry.
-     * <p/>
-     * For example, if the date is stored as an ISO-8601 String, this methods return the dateTime.toString().
      *
      * @param dateTime The date to return the representation for
      * @return The value used to store the given date
      */
-    Object resolveDateTimeValue(DateTime dateTime);
+    long resolveDateTimeValue(TemporalAccessor dateTime);
 }

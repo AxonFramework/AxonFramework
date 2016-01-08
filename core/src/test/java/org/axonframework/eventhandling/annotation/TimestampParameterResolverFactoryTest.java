@@ -17,18 +17,20 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.joda.time.DateTime;
-import org.joda.time.ReadableInstant;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.lang.annotation.Annotation;
+import java.time.Instant;
+import java.time.temporal.Temporal;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -42,18 +44,13 @@ public class TimestampParameterResolverFactoryTest {
     public void setUp() throws Exception {
         testSubject = new TimestampParameterResolverFactory();
         annotation = mock(Timestamp.class);
-        when (annotation.annotationType()).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return Timestamp.class;
-            }
-        });
+        when (annotation.annotationType()).thenAnswer(invocationOnMock -> Timestamp.class);
     }
 
     @Test
     public void testResolvesToDateTimeWhenAnnotated() throws Exception {
         ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                DateTime.class,
+                                                                Instant.class,
                                                                 new Annotation[]{annotation});
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
@@ -63,7 +60,7 @@ public class TimestampParameterResolverFactoryTest {
     @Test
     public void testResolvesToReadableInstantWhenAnnotated() throws Exception {
         ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                ReadableInstant.class,
+                                                                Temporal.class,
                                                                 new Annotation[]{annotation});
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
@@ -73,7 +70,7 @@ public class TimestampParameterResolverFactoryTest {
     @Test
     public void testIgnoredWhenNotAnnotated() throws Exception {
         ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                DateTime.class,
+                                                                Instant.class,
                                                                 new Annotation[0]);
         assertNull(resolver);
     }

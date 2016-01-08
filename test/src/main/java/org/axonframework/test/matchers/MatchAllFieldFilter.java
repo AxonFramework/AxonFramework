@@ -32,7 +32,7 @@ import java.util.List;
  */
 public class MatchAllFieldFilter implements FieldFilter {
 
-    private final List<FieldFilter> filters = new ArrayList<FieldFilter>();
+    private final List<FieldFilter> filters = new ArrayList<>();
 
     /**
      * Initializes a filter that accepts any field that is accepted by all given <code>filters</code>

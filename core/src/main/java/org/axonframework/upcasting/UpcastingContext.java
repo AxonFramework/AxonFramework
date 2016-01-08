@@ -16,8 +16,10 @@
 
 package org.axonframework.upcasting;
 
-import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
+import org.axonframework.messaging.metadata.MetaData;
+
+import java.time.Instant;
+
 
 /**
  * Interface describing an object that provides contextual information about the object being upcast. Generally, this
@@ -41,7 +43,7 @@ public interface UpcastingContext {
      *
      * @return the Identifier of the Aggregate to which the Event was applied, or <code>null</code> if not applicable
      */
-    Object getAggregateIdentifier();
+    String getAggregateIdentifier();
 
     /**
      * Returns the sequence number of the event in the aggregate, or <code>null</code> if the message wrapping the
@@ -57,7 +59,7 @@ public interface UpcastingContext {
      *
      * @return the timestamp at which the event was first created, if available
      */
-    DateTime getTimestamp();
+    Instant getTimestamp();
 
     /**
      * Returns the meta data of the message wrapping the object being upcast. If the meta data is not available, or is

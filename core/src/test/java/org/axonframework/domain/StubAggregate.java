@@ -16,8 +16,9 @@
 
 package org.axonframework.domain;
 
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcedEntity;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.*;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -43,13 +44,13 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     @Override
-    public Object getIdentifier() {
-        return identifier;
+    public String getIdentifier() {
+        return identifier.toString();
     }
 
     @Override
-    protected void handle(DomainEventMessage event) {
-        identifier = event.getAggregateIdentifier();
+    protected void handle(EventMessage event) {
+        identifier = ((DomainEventMessage)event).getAggregateIdentifier();
         invocationCount++;
     }
 
@@ -58,7 +59,7 @@ public class StubAggregate extends AbstractEventSourcedAggregateRoot {
     }
 
     public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<StubDomainEvent>(getIdentifier(), (long) 5,
+        return new GenericDomainEventMessage<>(getIdentifier(), (long) 5,
                                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 

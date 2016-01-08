@@ -16,15 +16,12 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.MetaData;
-import org.junit.*;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.Collections;
 
 import static org.junit.Assert.*;
@@ -39,8 +36,8 @@ public class SerializationAwareEventMessageTest {
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new SerializationAwareEventMessage<String>(
-                new GenericEventMessage<String>("payload", Collections.singletonMap("key", "value")));
+        testSubject = new SerializationAwareEventMessage<>(
+                new GenericEventMessage<>("payload", Collections.singletonMap("key", "value")));
     }
 
     @Test
@@ -58,7 +55,7 @@ public class SerializationAwareEventMessageTest {
     public void testSerializePayloadTwice() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize("payload", byte[].class)).thenReturn(serializedObject);
         SerializedObject<byte[]> actual1 = testSubject.serializePayload(serializer, byte[].class);
         SerializedObject<byte[]> actual2 = testSubject.serializePayload(serializer, byte[].class);
@@ -71,7 +68,7 @@ public class SerializationAwareEventMessageTest {
     public void testSerializePayloadTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize("payload", byte[].class)).thenReturn(serializedObject);
         SerializedObject<byte[]> actual1 = testSubject.serializePayload(serializer, byte[].class);
         SerializedObject<String> actual2 = testSubject.serializePayload(serializer, String.class);
@@ -86,7 +83,7 @@ public class SerializationAwareEventMessageTest {
     public void testSerializeMetaDataTwice() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
         testSubject.serializeMetaData(serializer, byte[].class);
         testSubject.serializeMetaData(serializer, byte[].class);
@@ -98,7 +95,7 @@ public class SerializationAwareEventMessageTest {
     public void testSerializeMetaDataTwice_DifferentRepresentations() {
         Serializer serializer = mock(Serializer.class);
         final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<byte[]>("payload".getBytes(), byte[].class, "String", "0");
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
         SerializedObject<byte[]> actual1 = testSubject.serializeMetaData(serializer, byte[].class);
         SerializedObject<String> actual2 = testSubject.serializeMetaData(serializer, String.class);

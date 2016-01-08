@@ -16,8 +16,8 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.hamcrest.Description;
 import org.hamcrest.StringDescription;
 
@@ -262,8 +262,8 @@ public class Reporter {
                                      Collection<?> rightColumnEvents,
                                      String leftColumnName,
                                      String rightColumnName) {
-        List<String> actualTypes = new ArrayList<String>(rightColumnEvents.size());
-        List<String> expectedTypes = new ArrayList<String>(leftColumnEvents.size());
+        List<String> actualTypes = new ArrayList<>(rightColumnEvents.size());
+        List<String> expectedTypes = new ArrayList<>(leftColumnEvents.size());
         int largestExpectedSize = leftColumnName.length();
         for (Object event : rightColumnEvents) {
             actualTypes.add(payloadContentType(event));

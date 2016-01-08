@@ -16,10 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,18 +30,19 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AggregateSnapshotter extends AbstractSnapshotter {
 
-    private final Map<String, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<String, AggregateFactory<?>>();
+    private final Map<Class<? extends EventSourcedAggregateRoot>, AggregateFactory<?>> aggregateFactories = new ConcurrentHashMap<>();
 
     @Override
-    protected DomainEventMessage createSnapshot(String typeIdentifier, Object aggregateIdentifier,
+    protected DomainEventMessage createSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType,
+                                                String aggregateIdentifier,
                                                 DomainEventStream eventStream) {
 
         DomainEventMessage firstEvent = eventStream.peek();
-        AggregateFactory<?> aggregateFactory = aggregateFactories.get(typeIdentifier);
+        AggregateFactory<?> aggregateFactory = aggregateFactories.get(aggregateType);
         EventSourcedAggregateRoot aggregate = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         aggregate.initializeState(eventStream);
 
-        return new GenericDomainEventMessage<EventSourcedAggregateRoot>(
+        return new GenericDomainEventMessage<>(
                 aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
     }
 
@@ -60,7 +57,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      */
     public void setAggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
         for (AggregateFactory<?> factory : aggregateFactories) {
-            this.aggregateFactories.put(factory.getTypeIdentifier(), factory);
+            this.aggregateFactories.put(factory.getAggregateType(), factory);
         }
     }
 }

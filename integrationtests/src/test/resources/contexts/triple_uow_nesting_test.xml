@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2010-2012. Axon Framework
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
+
+    <axon:annotation-config/>
+
+    <axon:event-bus id="eventBus"/>
+    <axon:command-bus id="commandBus" transaction-manager="transactionManager"/>
+
+    <bean class="org.axonframework.integrationtests.loopbacktest.TripleUnitOfWorkNestingTest$MyCommandHandler"/>
+
+    <bean class="org.axonframework.integrationtests.loopbacktest.TripleUnitOfWorkNestingTest$LoopbackSaga"/>
+
+    <axon:event-sourcing-repository id="aggregateARepository"
+                                    aggregate-type="org.axonframework.integrationtests.loopbacktest.TripleUnitOfWorkNestingTest$AggregateA"
+                                    event-store="eventStore"/>
+    <axon:event-sourcing-repository id="aggregateBRepository"
+                                    aggregate-type="org.axonframework.integrationtests.loopbacktest.TripleUnitOfWorkNestingTest$AggregateB"
+                                    event-store="eventStore"/>
+
+    <axon:jpa-event-store id="eventStore" data-source="dataSource"/>
+
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="persistenceUnitName" value="integrationtest"/>
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+                <property name="databasePlatform" value="org.hibernate.dialect.HSQLDialect"/>
+                <property name="generateDdl" value="true"/>
+                <property name="showSql" value="false"/>
+            </bean>
+        </property>
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+
+    <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>
+
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="org.hsqldb.jdbcDriver"/>
+        <property name="jdbcUrl" value="jdbc:hsqldb:mem:addressbook"/>
+        <property name="user" value="sa"/>
+        <property name="password" value=""/>
+        <property name="maxPoolSize" value="50"/>
+        <property name="minPoolSize" value="1"/>
+    </bean>
+
+</beans>

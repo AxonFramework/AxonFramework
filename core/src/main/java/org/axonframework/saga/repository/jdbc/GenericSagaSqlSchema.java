@@ -172,8 +172,8 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
 
     @Override
     public SerializedObject<byte[]> readSerializedSaga(ResultSet resultSet) throws SQLException {
-        return new SimpleSerializedObject<byte[]>(resultSet.getBytes(1), byte[].class,
-                resultSet.getString(2),
-                resultSet.getString(3));
+        return new SimpleSerializedObject<>(resultSet.getBytes(1), byte[].class,
+                                                  resultSet.getString(2),
+                                                  resultSet.getString(3));
     }
 }

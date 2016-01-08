@@ -27,16 +27,15 @@ import org.slf4j.LoggerFactory;
  * aggregate is blacklisted.
  *
  * @param <R> The return value of the Command
+ * @param <C> The type of payload of the dispatched command
  * @author Allard Buijze
  * @since 2.0
  */
-public class BlacklistDetectingCallback<R>
-        implements CommandCallback<R> {
+public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
 
     private static final Logger logger = LoggerFactory.getLogger(BlacklistDetectingCallback.class);
 
-    private final CommandCallback<R> delegate;
-    private final CommandMessage command;
+    private final CommandCallback<C, R> delegate;
     private final RingBuffer<CommandHandlingEntry> ringBuffer;
     private final DisruptorCommandBus commandBus;
     private final boolean rescheduleOnCorruptState;
@@ -46,7 +45,6 @@ public class BlacklistDetectingCallback<R>
      * <code>ringBuffer</code> if it failed due to a corrupt state.
      *
      * @param delegate                 The callback to invoke when an exception occurred
-     * @param command                  The command being executed
      * @param ringBuffer               The RingBuffer on which an Aggregate Cleanup should be scheduled when a
      *                                 corrupted
      *                                 aggregate state was detected
@@ -56,37 +54,36 @@ public class BlacklistDetectingCallback<R>
      * @param rescheduleOnCorruptState Whether the command should be retried if it has been executed against corrupt
      *                                 state
      */
-    public BlacklistDetectingCallback(CommandCallback<R> delegate, CommandMessage command,
+    public BlacklistDetectingCallback(CommandCallback<C, R> delegate,
                                       RingBuffer<CommandHandlingEntry> ringBuffer,
                                       DisruptorCommandBus commandBus, boolean rescheduleOnCorruptState) {
         this.delegate = delegate;
-        this.command = command;
         this.ringBuffer = ringBuffer;
         this.commandBus = commandBus;
         this.rescheduleOnCorruptState = rescheduleOnCorruptState;
     }
 
     @Override
-    public void onSuccess(R result) {
+    public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
         if (delegate != null) {
-            delegate.onSuccess(result);
+            delegate.onSuccess(commandMessage, result);
         }
     }
 
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(CommandMessage<? extends C> command, Throwable cause) {
         if (cause instanceof AggregateBlacklistedException) {
             long sequence = ringBuffer.next();
             CommandHandlingEntry event = ringBuffer.get(sequence);
             event.resetAsRecoverEntry(((AggregateBlacklistedException) cause).getAggregateIdentifier());
             ringBuffer.publish(sequence);
             if (delegate != null) {
-                delegate.onFailure(cause.getCause());
+                delegate.onFailure(command, cause.getCause());
             }
         } else if (rescheduleOnCorruptState && cause instanceof AggregateStateCorruptedException) {
             commandBus.doDispatch(command, delegate);
         } else if (delegate != null) {
-            delegate.onFailure(cause);
+            delegate.onFailure(command, cause);
         } else {
             logger.warn("Command {} resulted in an exception:", command.getPayloadType().getSimpleName(), cause);
         }

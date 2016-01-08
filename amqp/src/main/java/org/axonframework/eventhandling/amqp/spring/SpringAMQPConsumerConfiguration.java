@@ -236,17 +236,17 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the name of the Queue that a Cluster should be connected to. If it is <code>null</code>, a Queue Name is
+     * Sets the name of the Queue that an Event Processor should be connected to. If it is <code>null</code>, a Queue Name is
      * expected to be provided by the default configuration.
      *
-     * @param queueName The queue name to connect the Cluster to
+     * @param queueName The queue name to connect the event processor to
      */
     public void setQueueName(String queueName) {
         this.queueName = queueName;
     }
 
     /**
-     * Sets the PlatformTransactionManager to use for the cluster. Setting the transaction manager will also mark
+     * Sets the PlatformTransactionManager to use for the event processor. Setting the transaction manager will also mark
      * used channels as transacted (see
      * {@link org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setChannelTransacted(boolean)
      * setChannelTransacted()}).
@@ -259,7 +259,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the Error Handler to use for the cluster.
+     * Sets the Error Handler to use for the event processor.
      *
      * @param errorHandler the Error Handler to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setErrorHandler(org.springframework.util.ErrorHandler)
@@ -269,7 +269,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the Transaction Size to use for the cluster.
+     * Sets the Transaction Size to use for the event processor.
      *
      * @param txSize the transaction size to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setTxSize(int)
@@ -279,7 +279,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the PrefetchCount to use for the cluster.
+     * Sets the PrefetchCount to use for the event processor.
      *
      * @param prefetchCount the prefetch count to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setPrefetchCount(int)
@@ -289,7 +289,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the Advice Chain to use for the cluster.
+     * Sets the Advice Chain to use for the event processor.
      *
      * @param adviceChain the advice chain to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setAdviceChain(org.aopalliance.aop.Advice[])
@@ -299,7 +299,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the Recovery Interval to use for the cluster.
+     * Sets the Recovery Interval to use for the event processor.
      *
      * @param recoveryInterval the recovery interval to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setRecoveryInterval(long)
@@ -309,7 +309,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the number of concurrent consumers to use for the cluster
+     * Sets the number of concurrent consumers to use for the event processor.
      *
      * @param concurrentConsumers The number of concurrent consumers
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setConcurrentConsumers(int)
@@ -319,7 +319,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the receive timeout to use for the cluster
+     * Sets the receive timeout to use for the event processor.
      *
      * @param receiveTimeout The receive timeout to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setReceiveTimeout(long)
@@ -329,7 +329,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the shutdown timeout to use for the cluster
+     * Sets the shutdown timeout to use for the event processor.
      *
      * @param shutdownTimeout The shutdown timeout to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setShutdownTimeout(long)
@@ -339,7 +339,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the task executor to use for the cluster
+     * Sets the task executor to use for the event processor.
      *
      * @param taskExecutor The task executor to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setTaskExecutor(java.util.concurrent.Executor)
@@ -349,7 +349,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the transaction attribute to use for the cluster
+     * Sets the transaction attribute to use for the event processor.
      *
      * @param transactionAttribute The transaction attribute to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setTransactionAttribute(org.springframework.transaction.interceptor.TransactionAttribute)
@@ -359,7 +359,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the message properties converter to use for the cluster
+     * Sets the message properties converter to use for the event processor.
      *
      * @param messagePropertiesConverter The message properties converter to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setMessagePropertiesConverter(org.springframework.amqp.rabbit.support.MessagePropertiesConverter)
@@ -369,7 +369,7 @@ public class SpringAMQPConsumerConfiguration implements AMQPConsumerConfiguratio
     }
 
     /**
-     * Sets the acknowledge mode to use for the cluster
+     * Sets the acknowledge mode to use for the event processor.
      *
      * @param acknowledgeMode The acknowledge mode to set
      * @see org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer#setAcknowledgeMode(org.springframework.amqp.core.AcknowledgeMode)

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.MessageSerializer;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;

@@ -1,6 +1,6 @@
 package org.axonframework.saga.annotation;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.async.RetryPolicy;
 import org.axonframework.saga.Saga;
 

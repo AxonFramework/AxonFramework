@@ -59,8 +59,8 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     }
 
     @Override
-    protected <R> void doDispatch(CommandMessage<?> command, CommandCallback<R> callback) {
-        executor.execute(new DispatchCommand<R>(command, callback));
+    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+        executor.execute(new DispatchCommand<>(command, callback));
     }
 
     /**
@@ -79,12 +79,12 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
         }
     }
 
-    private final class DispatchCommand<R> implements Runnable {
+    private final class DispatchCommand<C, R> implements Runnable {
 
-        private final CommandMessage<?> command;
-        private final CommandCallback<R> callback;
+        private final CommandMessage<C> command;
+        private final CommandCallback<? super C, R> callback;
 
-        public DispatchCommand(CommandMessage<?> command, CommandCallback<R> callback) {
+        public DispatchCommand(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
             this.command = command;
             this.callback = callback;
         }

@@ -18,9 +18,10 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.FactoryBeanNotInitializedException;
 import org.springframework.beans.factory.InitializingBean;
@@ -28,8 +29,6 @@ import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Collections;
 import java.util.List;
-
-import static java.util.Arrays.asList;
 
 /**
  * FactoryBean that creates a gateway instance for any given (compatible) interface. If no explicit interface is
@@ -47,8 +46,8 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
 
     private CommandBus commandBus;
     private RetryScheduler retryScheduler;
-    private List<CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
-    private List<CommandCallback<?>> commandCallbacks = Collections.emptyList();
+    private List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = Collections.emptyList();
+    private List<CommandCallback<?, ?>> commandCallbacks = Collections.emptyList();
     private T gateway;
     private Class<T> gatewayInterface;
 
@@ -80,9 +79,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
             gatewayInterface = (Class<T>) CommandGateway.class;
         }
         final GatewayProxyFactory factory = new GatewayProxyFactory(commandBus, retryScheduler, dispatchInterceptors);
-        for (CommandCallback<?> commandCallback : commandCallbacks) {
-            factory.registerCommandCallback(commandCallback);
-        }
+        commandCallbacks.forEach(factory::registerCommandCallback);
         gateway = factory.createGateway(gatewayInterface);
     }
 
@@ -121,17 +118,17 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
     }
 
     /**
-     * Sets the interceptors that should be invoked before a command is dispatched the the Command Bus.
+     * Add an interceptor that should be invoked before a command is dispatched the the Command Bus.
      * <p/>
-     * Note that these interceptors will be specific to this Gateway instance. Messages dispatched through other
+     * Note that interceptors added here are specific to this Gateway instance. Messages dispatched through other
      * gateways or directly to the command bus will not pass through these interceptors.
      *
-     * @param commandDispatchInterceptors the interceptors that should be invoked before a command is dispatched the
-     *                                    the
-     *                                    Command Bus
+     * @param messageDispatchInterceptor the interceptor that should be invoked before a command is dispatched the
+     *                                   the Command Bus
      */
-    public void setCommandDispatchInterceptors(CommandDispatchInterceptor... commandDispatchInterceptors) {
-        setCommandDispatchInterceptors(asList(commandDispatchInterceptors));
+    public void addCommandDispatchInterceptor(
+            MessageDispatchInterceptor<CommandMessage<?>> messageDispatchInterceptor) {
+        this.dispatchInterceptors.add(messageDispatchInterceptor);
     }
 
     /**
@@ -140,16 +137,18 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
      * Note that these interceptors will be specific to this Gateway instance. Messages dispatched through other
      * gateways or directly to the command bus will not pass through these interceptors.
      *
-     * @param commandDispatchInterceptors the interceptors that should be invoked before a command is dispatched the
+     * @param messageDispatchInterceptors the interceptors that should be invoked before a command is dispatched the
      *                                    the
      *                                    Command Bus
      */
-    public void setCommandDispatchInterceptors(List<CommandDispatchInterceptor> commandDispatchInterceptors) {
-        this.dispatchInterceptors = commandDispatchInterceptors;
+    public void setCommandDispatchInterceptors(
+            List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
+        this.dispatchInterceptors = messageDispatchInterceptors;
     }
 
     /**
-     * Registers the <code>commandCallbacks</code>, which are invoked for each sent command, unless Axon is able to detect
+     * Registers the <code>commandCallbacks</code>, which are invoked for each sent command, unless Axon is able to
+     * detect
      * that the result of the command does not match the type accepted by that callback.
      * <p/>
      * Axon will check the signature of the onSuccess() method and only invoke the callback if the actual result of the
@@ -158,7 +157,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
      *
      * @param commandCallbacks The callbacks to register
      */
-    public void setCommandCallbacks(List<CommandCallback<?>> commandCallbacks) {
+    public void setCommandCallbacks(List<CommandCallback<?, ?>> commandCallbacks) {
         this.commandCallbacks = commandCallbacks;
     }
 }

@@ -51,8 +51,8 @@ public class JavaSerializationTest {
         String xml = new String(serializer.serialize(aggregateRoot, byte[].class).getData(), UTF8);
         assertNotNull(xml);
 
-        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject<byte[]>(xml.getBytes(UTF8), byte[].class, "ignored", "0"));
+        StubAnnotatedAggregate unmarshalled = serializer.deserialize(
+                new SimpleSerializedObject<>(xml.getBytes(UTF8), byte[].class, "ignored", "0"));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }
@@ -68,8 +68,8 @@ public class JavaSerializationTest {
         String xml = new String(data, UTF8);
         assertNotNull(xml);
 
-        StubAnnotatedAggregate unmarshalled = (StubAnnotatedAggregate) serializer.deserialize(
-                new SimpleSerializedObject<byte[]>(data, byte[].class, "ignored", "0"));
+        StubAnnotatedAggregate unmarshalled = serializer.deserialize(
+                new SimpleSerializedObject<>(data, byte[].class, "ignored", "0"));
 
         validateAggregateCondition(aggregateRoot, unmarshalled);
     }
@@ -92,15 +92,8 @@ public class JavaSerializationTest {
     private void validateAggregateCondition(StubAnnotatedAggregate original, StubAnnotatedAggregate unmarshalled) {
         assertNotNull(unmarshalled);
         assertEquals(original.getIdentifier(), unmarshalled.getIdentifier());
-        assertEquals(null, unmarshalled.getVersion());
-        assertEquals(1, unmarshalled.getUncommittedEventCount());
-
-        unmarshalled.commitEvents();
-
         assertEquals((Long) 0L, unmarshalled.getVersion());
-
         unmarshalled.doSomething();
-
-        assertEquals(1L, unmarshalled.getUncommittedEvents().next().getSequenceNumber());
+        assertEquals((Long) 1L, unmarshalled.getVersion());
     }
 }

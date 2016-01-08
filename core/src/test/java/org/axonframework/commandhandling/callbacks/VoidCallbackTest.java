@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.callbacks;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
@@ -35,16 +36,16 @@ public class VoidCallbackTest {
     @Test
     public void testCallbackCalled() {
         SimpleCommandBus scb = new SimpleCommandBus();
-        AnnotationCommandHandlerAdapter.subscribe(this, scb);
+        new AnnotationCommandHandlerAdapter(this).subscribe(scb);
 
-        scb.dispatch(GenericCommandMessage.asCommandMessage("Hello"), new VoidCallback() {
+        scb.dispatch(GenericCommandMessage.asCommandMessage("Hello"), new VoidCallback<Object>() {
             @Override
-            protected void onSuccess() {
+            protected void onSuccess(CommandMessage<?> commandMessage) {
                 // what I expected
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage commandMessage, Throwable cause) {
                 cause.printStackTrace();
                 fail("Did not expect a failure");
             }

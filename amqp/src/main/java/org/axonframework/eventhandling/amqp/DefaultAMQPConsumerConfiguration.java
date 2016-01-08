@@ -30,7 +30,7 @@ public class DefaultAMQPConsumerConfiguration implements AMQPConsumerConfigurati
     /**
      * Initializes the configuration with the given <code>queueName</code>.
      *
-     * @param queueName The name of the Queue a cluster should connect to
+     * @param queueName The name of the Queue a event processor should connect to
      */
     public DefaultAMQPConsumerConfiguration(String queueName) {
         this.queueName = queueName;

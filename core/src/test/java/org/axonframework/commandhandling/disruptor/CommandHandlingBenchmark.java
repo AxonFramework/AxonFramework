@@ -17,21 +17,19 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
-import org.axonframework.eventsourcing.EventSourcedEntity;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.UnitOfWork;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -47,18 +45,18 @@ public class CommandHandlingBenchmark {
         CommandBus cb = new SimpleCommandBus();
 
         InMemoryEventStore eventStore = new InMemoryEventStore();
-        eventStore.appendInitialEvent("test", new SimpleDomainEventStream(new GenericDomainEventMessage<SomeEvent>(
-                aggregateIdentifier, 0, new SomeEvent())));
+        eventStore.appendInitialEvent(new SimpleDomainEventStream(new GenericDomainEventMessage<>(
+                aggregateIdentifier.toString(), 0, new SomeEvent())));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
         Repository<MyAggregate> repository = new Repository<MyAggregate>() {
             @Override
-            public MyAggregate load(Object aggregateIdentifier, Long expectedVersion) {
+            public MyAggregate load(String aggregateIdentifier, Long expectedVersion) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public MyAggregate load(Object aggregateIdentifier) {
+            public MyAggregate load(String aggregateIdentifier) {
                 return myAggregate;
             }
 
@@ -81,7 +79,7 @@ public class CommandHandlingBenchmark {
         System.out.println(String.format("Just did %d commands per second", ((COMMAND_COUNT * 1000) / (t2 - t1))));
     }
 
-    private static class MyAggregate extends AbstractAnnotatedAggregateRoot<UUID> {
+    private static class MyAggregate extends AbstractAnnotatedAggregateRoot {
 
         private final UUID identifier;
 
@@ -94,8 +92,8 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public UUID getIdentifier() {
-            return identifier;
+        public String getIdentifier() {
+            return identifier.toString();
         }
 
         public void doSomething() {
@@ -112,7 +110,7 @@ public class CommandHandlingBenchmark {
 
     }
 
-    private static class MyCommandHandler implements CommandHandler<String> {
+    private static class MyCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final Repository<MyAggregate> repository;
 
@@ -121,8 +119,8 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
-            repository.load(aggregateIdentifier).doSomething();
+        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+            repository.load(aggregateIdentifier.toString()).doSomething();
             return null;
         }
     }
@@ -131,21 +129,28 @@ public class CommandHandlingBenchmark {
 
         private DomainEventStream storedEvents;
 
-        public void appendInitialEvent(String type, DomainEventStream events) {
+        public void appendInitialEvent(DomainEventStream events) {
             storedEvents = events;
         }
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
+        public void appendEvents(List<DomainEventMessage<?>> events) {
 //            while (events.hasNext()) {
 //                storedEvents.add(events.next());
 //            }
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
+        public DomainEventStream readEvents(String identifier) {
             System.out.println(".");
             return storedEvents;
         }
+
+        @Override
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
+                                            long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
     }
 }

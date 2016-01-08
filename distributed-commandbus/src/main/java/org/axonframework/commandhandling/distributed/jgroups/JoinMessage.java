@@ -40,7 +40,7 @@ public class JoinMessage implements Streamable, Externalizable {
 
     private static final long serialVersionUID = 5829153340455127795L;
     private int loadFactor;
-    private final Set<String> commandNames = new HashSet<String>();
+    private final Set<String> commandNames = new HashSet<>();
 
     /**
      * Default constructor required by the {@link Streamable} and {@link Externalizable} interfaces. Do not use

@@ -47,7 +47,7 @@ public class AssociationValueMap {
      * Initializes a new and empty AssociationValueMap.
      */
     public AssociationValueMap() {
-        mappings = new ConcurrentSkipListSet<SagaAssociationValue>(new AssociationValueComparator());
+        mappings = new ConcurrentSkipListSet<>(new AssociationValueComparator());
     }
 
     /**
@@ -58,7 +58,7 @@ public class AssociationValueMap {
      * @return A set of Saga identifiers
      */
     public Set<String> findSagas(String sagaType, AssociationValue associationValue) {
-        Set<String> identifiers = new HashSet<String>();
+        Set<String> identifiers = new HashSet<>();
         for (SagaAssociationValue item : mappings.tailSet(new SagaAssociationValue(associationValue, sagaType, null))) {
             if (!item.getKey().equals(associationValue.getKey())) {
                 // we've had all relevant items

@@ -16,14 +16,16 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.EventFactory;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.DefaultInterceptorChain;
-import org.axonframework.commandhandling.InterceptorChain;
-import org.axonframework.unitofwork.UnitOfWork;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,31 +35,27 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.0
  */
-public class CommandHandlingEntry {
+public class CommandHandlingEntry extends DisruptorUnitOfWork {
 
-    private final CommandHandler<Object> repeatingCommandHandler;
+    private final MessageHandler<CommandMessage<?>> repeatingCommandHandler;
     private CommandMessage<?> command;
-    private InterceptorChain invocationInterceptorChain;
-    private InterceptorChain publisherInterceptorChain;
-    private DisruptorUnitOfWork unitOfWork;
-    private Throwable exceptionResult;
+    private InterceptorChain<CommandMessage<?>> invocationInterceptorChain;
+    private InterceptorChain<CommandMessage<?>> publisherInterceptorChain;
+    private Exception exceptionResult;
     private Object result;
     private int publisherSegmentId;
     private BlacklistDetectingCallback callback;
     // for recovery of corrupt aggregates
     private boolean isRecoverEntry;
-    private Object aggregateIdentifier;
+    private String aggregateIdentifier;
     private int invokerSegmentId;
-    private int serializerSegmentId;
-    private final boolean transactional;
+    private List<DomainEventMessage<?>> messagesToPublish = new ArrayList<>();
 
     /**
      * Initializes the CommandHandlingEntry
      *
-     * @param transactional Whether this entry contains transactional Unit of Work
      */
-    public CommandHandlingEntry(boolean transactional) {
-        this.transactional = transactional;
+    public CommandHandlingEntry() {
         repeatingCommandHandler = new RepeatingCommandHandler();
     }
 
@@ -92,20 +90,11 @@ public class CommandHandlingEntry {
     }
 
     /**
-     * Returns the UnitOfWork for the command execution.
-     *
-     * @return the UnitOfWork for the command execution
-     */
-    public DisruptorUnitOfWork getUnitOfWork() {
-        return unitOfWork;
-    }
-
-    /**
      * Registers the exception that occurred while processing the incoming command.
      *
      * @param exceptionResult the exception that occurred while processing the incoming command
      */
-    public void setExceptionResult(Throwable exceptionResult) {
+    public void setExceptionResult(Exception exceptionResult) {
         this.exceptionResult = exceptionResult;
     }
 
@@ -115,7 +104,7 @@ public class CommandHandlingEntry {
      *
      * @return the exception that occurred while processing the incoming command, if any.
      */
-    public Throwable getExceptionResult() {
+    public Exception getExceptionResult() {
         return exceptionResult;
     }
 
@@ -126,6 +115,14 @@ public class CommandHandlingEntry {
      */
     public void setResult(Object result) {
         this.result = result;
+    }
+
+    public List<DomainEventMessage<?>> getMessagesToPublish() {
+        return messagesToPublish;
+    }
+
+    public void publishMessages(List<DomainEventMessage<?>> messagesToPublish) {
+        this.messagesToPublish.addAll(messagesToPublish);
     }
 
     /**
@@ -164,8 +161,12 @@ public class CommandHandlingEntry {
      *
      * @return the identifier of the aggregate to recover
      */
-    public Object getAggregateIdentifier() {
-        return aggregateIdentifier;
+    public String getAggregateIdentifier() {
+        if (aggregateIdentifier != null) {
+            return aggregateIdentifier;
+        }
+        final EventSourcedAggregateRoot aggregateRoot = (EventSourcedAggregateRoot) resources().get("AggregateRoot");
+        return aggregateRoot == null ? null : aggregateRoot.getIdentifier();
     }
 
     /**
@@ -175,15 +176,6 @@ public class CommandHandlingEntry {
      */
     public int getInvokerId() {
         return invokerSegmentId;
-    }
-
-    /**
-     * Returns the Segment ID that identifies the serializer thread to process this entry
-     *
-     * @return the Segment ID that identifies the serializer thread to process this entry
-     */
-    public int getSerializerSegmentId() {
-        return serializerSegmentId;
     }
 
     /**
@@ -202,33 +194,32 @@ public class CommandHandlingEntry {
      * @param newCommandHandler      The Command Handler responsible for handling <code>newCommand</code>
      * @param newInvokerSegmentId    The SegmentID of the invoker that should process this entry
      * @param newPublisherSegmentId  The SegmentID of the publisher that should process this entry
-     * @param newSerializerSegmentId The SegmentID of the serializer that should process this entry
      * @param newCallback            The callback to report the result of command execution to
      * @param invokerInterceptors    The interceptors to invoke during the command handler invocation phase
      * @param publisherInterceptors  The interceptors to invoke during the publication phase
      */
-    public void reset(CommandMessage<?> newCommand, CommandHandler newCommandHandler, // NOSONAR - Not important
-                      int newInvokerSegmentId, int newPublisherSegmentId, int newSerializerSegmentId,
-                      BlacklistDetectingCallback newCallback, List<CommandHandlerInterceptor> invokerInterceptors,
-                      List<CommandHandlerInterceptor> publisherInterceptors) {
+    public void reset(CommandMessage<?> newCommand, MessageHandler<? super CommandMessage<?>> newCommandHandler, // NOSONAR - Not important
+                      int newInvokerSegmentId, int newPublisherSegmentId, BlacklistDetectingCallback newCallback,
+                      List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors,
+                      List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
         this.command = newCommand;
         this.invokerSegmentId = newInvokerSegmentId;
         this.publisherSegmentId = newPublisherSegmentId;
-        this.serializerSegmentId = newSerializerSegmentId;
         this.callback = newCallback;
         this.isRecoverEntry = false;
-        this.aggregateIdentifier = null;
+        this.messagesToPublish.clear();
         this.result = null;
         this.exceptionResult = null;
-        this.unitOfWork = new DisruptorUnitOfWork(transactional);
-        this.invocationInterceptorChain = new DefaultInterceptorChain(newCommand,
-                                                                      unitOfWork,
-                                                                      newCommandHandler,
-                                                                      invokerInterceptors);
-        this.publisherInterceptorChain = new DefaultInterceptorChain(newCommand,
-                                                                     unitOfWork,
-                                                                     repeatingCommandHandler,
-                                                                     publisherInterceptors);
+        this.aggregateIdentifier = null;
+        this.invocationInterceptorChain = new DefaultInterceptorChain<>(newCommand,
+                                                                        this,
+                invokerInterceptors, newCommandHandler
+        );
+        this.publisherInterceptorChain = new DefaultInterceptorChain<>(newCommand,
+                                                                       this,
+                publisherInterceptors, repeatingCommandHandler
+        );
+        reset(newCommand);
     }
 
     /**
@@ -236,45 +227,22 @@ public class CommandHandlingEntry {
      *
      * @param newAggregateIdentifier The identifier of the aggregate to recover
      */
-    public void resetAsRecoverEntry(Object newAggregateIdentifier) {
+    public void resetAsRecoverEntry(String newAggregateIdentifier) {
         this.isRecoverEntry = true;
-        this.aggregateIdentifier = newAggregateIdentifier;
         this.command = null;
         this.callback = null;
         result = null;
         exceptionResult = null;
         invocationInterceptorChain = null;
-        unitOfWork = null;
         invokerSegmentId = -1;
-        serializerSegmentId = -1;
+        this.aggregateIdentifier = newAggregateIdentifier;
+        this.messagesToPublish.clear();
     }
 
-    /**
-     * Factory class for CommandHandlingEntry instances.
-     */
-    public static class Factory implements EventFactory<CommandHandlingEntry> {
-
-        private final boolean transactional;
-
-        /**
-         * Initialize the factory with given <code>transactional</code> flag
-         *
-         * @param transactional whether the entries contain transactional Units of Work
-         */
-        public Factory(boolean transactional) {
-            this.transactional = transactional;
-        }
+    private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         @Override
-        public CommandHandlingEntry newInstance() {
-            return new CommandHandlingEntry(transactional);
-        }
-    }
-
-    private class RepeatingCommandHandler implements CommandHandler<Object> {
-
-        @Override
-        public Object handle(CommandMessage<Object> commandMessage, UnitOfWork uow) throws Throwable {
+        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
             if (exceptionResult != null) {
                 throw exceptionResult;
             }

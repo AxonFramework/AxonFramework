@@ -16,11 +16,11 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,8 +28,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Collections.singleton;
-import static org.mockito.AdditionalMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.AdditionalMatchers.not;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -38,9 +44,8 @@ public class SimpleSagaManagerTest {
 
     private SimpleSagaManager testSubject;
     private SagaRepository repository;
-    private EventMessage event = new GenericEventMessage<Object>(new Object());
+    private EventMessage event = new GenericEventMessage<>(new Object());
     private Saga saga1;
-    private EventBus eventBus;
     private AssociationValue associationValue;
 
     @Before
@@ -48,9 +53,8 @@ public class SimpleSagaManagerTest {
         repository = mock(SagaRepository.class);
         AssociationValueResolver associationValueResolver = mock(AssociationValueResolver.class);
         SagaFactory sagaFactory = mock(SagaFactory.class);
-        eventBus = mock(EventBus.class);
-        testSubject = new SimpleSagaManager(Saga.class, repository, associationValueResolver, sagaFactory, eventBus);
-        Set<String> sagasFromRepository = new HashSet<String>();
+        testSubject = new SimpleSagaManager(Saga.class, repository, associationValueResolver, sagaFactory);
+        Set<String> sagasFromRepository = new HashSet<>();
 
         saga1 = mock(Saga.class);
         when(saga1.getSagaIdentifier()).thenReturn("saga1");
@@ -118,7 +122,7 @@ public class SimpleSagaManagerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testAllSagasAreInvoked() {
-        EventMessage event = new GenericEventMessage<Object>(new Object());
+        EventMessage event = new GenericEventMessage<>(new Object());
         final Saga saga1 = mock(Saga.class);
         final Saga saga2 = mock(Saga.class);
         when(saga1.getSagaIdentifier()).thenReturn("saga1");
@@ -126,7 +130,7 @@ public class SimpleSagaManagerTest {
         activate(saga1);
         activate(saga2);
         when(repository.find(isA(Class.class), isA(AssociationValue.class)))
-                .thenReturn(new HashSet<String>(Arrays.asList("saga1", "saga2")));
+                .thenReturn(new HashSet<>(Arrays.asList("saga1", "saga2")));
         when(repository.load("saga1")).thenReturn(saga1);
         when(repository.load("saga2")).thenReturn(saga2);
 
@@ -135,13 +139,5 @@ public class SimpleSagaManagerTest {
         verify(saga2, times(1)).handle(event);
         verify(repository).commit(saga1);
         verify(repository).commit(saga2);
-    }
-
-    @Test
-    public void testSubscribeAndUnsubscribeFromEventBus() {
-        testSubject.subscribe();
-        verify(eventBus).subscribe(testSubject);
-        testSubject.unsubscribe();
-        verify(eventBus).unsubscribe(testSubject);
     }
 }

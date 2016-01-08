@@ -21,7 +21,7 @@ import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.DataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
@@ -94,24 +94,23 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     }
 
     @Override
-    public SerializedDomainEventData<T> loadLastSnapshotEvent(String aggregateType, Object identifier) {
+    public SerializedDomainEventData<T> loadLastSnapshotEvent(String identifier) {
         ResultSet result = null;
-        PreparedStatement preparedStatement = null;
         Connection connection = null;
+        PreparedStatement statement = null;
         try {
             connection = connectionProvider.getConnection();
-            preparedStatement = sqlSchema.sql_loadLastSnapshot(connection, identifier, aggregateType);
-            result = preparedStatement.executeQuery();
+            statement = sqlSchema.sql_loadLastSnapshot(connection, identifier);
+            result = statement.executeQuery();
             if (result.next()) {
                 return sqlSchema.createSerializedDomainEventData(result);
             }
             return null;
         } catch (SQLException e) {
-            throw new EventStoreException("Exception while attempting to load last snapshot event of "
-                                                  + aggregateType + "/" + identifier, e);
+            throw new EventStoreException("Exception while attempting to load last snapshot event of " + identifier, e);
         } finally {
+            closeQuietly(statement);
             closeQuietly(result);
-            closeQuietly(preparedStatement);
             closeQuietly(connection);
         }
     }
@@ -121,8 +120,8 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                                                                 int batchSize) {
         try {
             Connection connection = connectionProvider.getConnection();
-            return new ConnectionResourceManagingIterator<T>(
-                    new FilteredBatchingIterator<T>(whereClause, parameters, batchSize, sqlSchema, connection),
+            return new ConnectionResourceManagingIterator<>(
+                    new FilteredBatchingIterator<>(whereClause, parameters, batchSize, sqlSchema, connection),
                     connection);
         } catch (SQLException e) {
             throw new EventStoreException("Exception while attempting to read from the Event Store database", e);
@@ -133,7 +132,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
 
     @Override
-    public void persistSnapshot(String aggregateType, DomainEventMessage snapshotEvent,
+    public void persistSnapshot(DomainEventMessage snapshotEvent,
                                 SerializedObject<T> serializedPayload, SerializedObject<T> serializedMetaData) {
         PreparedStatement preparedStatement = null;
         Connection connection = null;
@@ -141,15 +140,13 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             connection = connectionProvider.getConnection();
             preparedStatement = sqlSchema.sql_insertSnapshotEventEntry(connection,
                                                                        snapshotEvent.getIdentifier(),
-                                                                       snapshotEvent.getAggregateIdentifier()
-                                                                                    .toString(),
+                                                                       snapshotEvent.getAggregateIdentifier(),
                                                                        snapshotEvent.getSequenceNumber(),
                                                                        snapshotEvent.getTimestamp(),
                                                                        serializedPayload.getType().getName(),
                                                                        serializedPayload.getType().getRevision(),
                                                                        serializedPayload.getData(),
-                                                                       serializedMetaData.getData(),
-                                                                       aggregateType);
+                                                                       serializedMetaData.getData());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new EventStoreException("Exception while attempting to persist a snapshot", e);
@@ -160,7 +157,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     }
 
     @Override
-    public void persistEvent(String aggregateType, DomainEventMessage event, SerializedObject<T> serializedPayload,
+    public void persistEvent(DomainEventMessage event, SerializedObject<T> serializedPayload,
                              SerializedObject<T> serializedMetaData) {
 
         PreparedStatement preparedStatement = null;
@@ -169,15 +166,13 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             connection = connectionProvider.getConnection();
             preparedStatement = sqlSchema.sql_insertDomainEventEntry(connection,
                                                                      event.getIdentifier(),
-                                                                     event.getAggregateIdentifier().toString(),
+                                                                     event.getAggregateIdentifier(),
                                                                      event.getSequenceNumber(),
                                                                      event.getTimestamp(),
                                                                      serializedPayload.getType().getName(),
                                                                      serializedPayload.getType().getRevision(),
                                                                      serializedPayload.getData(),
-                                                                     serializedMetaData.getData(),
-                                                                     aggregateType
-            );
+                                                                     serializedMetaData.getData());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             throw new EventStoreException("Exception occurred while attempting to persist an event", e);
@@ -189,16 +184,14 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
 
 
     @Override
-    public void pruneSnapshots(String type, DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived) {
-        Iterator<Long> redundantSnapshots = findRedundantSnapshots(type, mostRecentSnapshotEvent,
-                                                                   maxSnapshotsArchived);
+    public void pruneSnapshots(DomainEventMessage mostRecentSnapshotEvent, int maxSnapshotsArchived) {
+        Iterator<Long> redundantSnapshots = findRedundantSnapshots(mostRecentSnapshotEvent, maxSnapshotsArchived);
         if (redundantSnapshots.hasNext()) {
             long sequenceOfFirstSnapshotToPrune = redundantSnapshots.next();
             Connection connection = null;
             try {
                 connection = connectionProvider.getConnection();
                 executeUpdate(sqlSchema.sql_pruneSnapshots(connection,
-                                                           type,
                                                            mostRecentSnapshotEvent.getAggregateIdentifier(),
                                                            sequenceOfFirstSnapshotToPrune), "prune snapshots");
             } catch (SQLException e) {
@@ -217,12 +210,11 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     /**
      * Finds the first of redundant snapshots, returned as an iterator for convenience purposes.
      *
-     * @param type                 the type of the aggregate for which to find redundant snapshots
      * @param snapshotEvent        the last appended snapshot event
      * @param maxSnapshotsArchived the number of snapshots that may remain archived
      * @return an iterator over the snapshots found
      */
-    private Iterator<Long> findRedundantSnapshots(String type, DomainEventMessage snapshotEvent,
+    private Iterator<Long> findRedundantSnapshots(DomainEventMessage snapshotEvent,
                                                   int maxSnapshotsArchived) {
         ResultSet resultSet = null;
         PreparedStatement statement = null;
@@ -230,14 +222,13 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
         try {
             connection = connectionProvider.getConnection();
             statement = sqlSchema.sql_findSnapshotSequenceNumbers(connection,
-                                                                  type,
                                                                   snapshotEvent.getAggregateIdentifier());
             resultSet = statement.executeQuery();
             //noinspection StatementWithEmptyBody
             while (maxSnapshotsArchived-- > 0 && resultSet.next()) { // NOSONAR
                 // ignore
             }
-            List<Long> result = new ArrayList<Long>();
+            List<Long> result = new ArrayList<>();
             while (resultSet.next()) {
                 result.add(resultSet.getLong(1));
             }
@@ -253,22 +244,47 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     }
 
     @Override
-    public Iterator<SerializedDomainEventData<T>> fetchAggregateStream(String aggregateType, Object identifier,
-                                                                    long firstSequenceNumber, int fetchSize) {
+    public Iterator<SerializedDomainEventData<T>> fetchAggregateStream(String identifier,
+                                                                       long firstSequenceNumber, int fetchSize) {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
             connection = connectionProvider.getConnection();
-            statement = sqlSchema.sql_fetchFromSequenceNumber(connection, aggregateType, identifier,
-                                                              firstSequenceNumber);
+            statement = sqlSchema.sql_fetchFromSequenceNumber(connection, identifier, firstSequenceNumber);
             statement.setFetchSize(fetchSize);
-            return new ConnectionResourceManagingIterator<T>(
-                    new PreparedStatementIterator<T>(statement, sqlSchema),
+            return new ConnectionResourceManagingIterator<>(
+                    new PreparedStatementIterator<>(statement, sqlSchema),
                     connection);
         } catch (SQLException e) {
             closeQuietly(connection);
             closeQuietly(statement);
             throw new EventStoreException("Exception while attempting to read from an Aggregate Stream", e);
+        }
+    }
+
+    private void executeUpdate(PreparedStatement preparedStatement, String description) {
+        try {
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            throw new EventStoreException("Exception occurred while attempting to " + description, e);
+        } finally {
+            closeQuietly(preparedStatement);
+        }
+    }
+
+    /**
+     * Performs the DDL queries to create the schema necessary for this EventEntryStore implementation.
+     *
+     * @throws SQLException when an error occurs executing SQL statements
+     */
+    public void createSchema() throws SQLException {
+        Connection connection = null;
+        try {
+            connection = connectionProvider.getConnection();
+            executeUpdate(sqlSchema.sql_createDomainEventEntryTable(connection), "create domain event entry table");
+            executeUpdate(sqlSchema.sql_createSnapshotEventEntryTable(connection), "create snapshot entry table");
+        } finally {
+            closeQuietly(connection);
         }
     }
 
@@ -311,13 +327,13 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
     private static class FilteredBatchingIterator<T> implements Iterator<SerializedDomainEventData<T>>, Closeable {
 
         private final Connection connection;
-        private PreparedStatementIterator<T> currentBatch;
-        private SerializedDomainEventData<T> next;
-        private SerializedDomainEventData<T>  lastItem;
         private final String whereClause;
         private final List<Object> parameters;
         private final int batchSize;
         private final EventSqlSchema<T> sqlSchema;
+        private PreparedStatementIterator<T> currentBatch;
+        private SerializedDomainEventData<T> next;
+        private SerializedDomainEventData<T> lastItem;
 
         public FilteredBatchingIterator(
                 String whereClause,
@@ -338,7 +354,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
         }
 
         private PreparedStatementIterator<T> fetchBatch() {
-            LinkedList<Object> params = new LinkedList<Object>(parameters);
+            LinkedList<Object> params = new LinkedList<>(parameters);
             String batchWhereClause = buildWhereClause(params);
             try {
                 final PreparedStatement sql = sqlSchema.sql_getFetchAll(
@@ -346,7 +362,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
                         batchWhereClause,
                         params.toArray());
                 sql.setMaxRows(batchSize);
-                return new PreparedStatementIterator<T>(sql, sqlSchema);
+                return new PreparedStatementIterator<>(sql, sqlSchema);
             } catch (SQLException e) {
                 throw new EventStoreException("Exception occurred while attempting to execute prepared statement", e);
             }
@@ -427,7 +443,7 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
             this.statement = statement;
             try {
                 ResultSet resultSet = statement.executeQuery();
-                rsIterator = new ResultSetIterator<T>(resultSet, sqlSchema);
+                rsIterator = new ResultSetIterator<>(resultSet, sqlSchema);
             } catch (SQLException e) {
                 throw new EventStoreException("Exception occurred while attempting to execute query on statement", e);
             }
@@ -517,32 +533,6 @@ public class DefaultEventEntryStore<T> implements EventEntryStore<T> {
         @Override
         public void close() throws IOException {
             closeQuietly(rs);
-        }
-    }
-
-    private int executeUpdate(PreparedStatement preparedStatement, String description) {
-        try {
-            return preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            throw new EventStoreException("Exception occurred while attempting to " + description, e);
-        } finally {
-            closeQuietly(preparedStatement);
-        }
-    }
-
-    /**
-     * Performs the DDL queries to create the schema necessary for this EventEntryStore implementation.
-     *
-     * @throws SQLException when an error occurs executing SQL statements
-     */
-    public void createSchema() throws SQLException {
-        Connection connection = null;
-        try {
-            connection = connectionProvider.getConnection();
-            executeUpdate(sqlSchema.sql_createDomainEventEntryTable(connection), "create domain event entry table");
-            executeUpdate(sqlSchema.sql_createSnapshotEventEntryTable(connection), "create snapshot entry table");
-        } finally {
-            closeQuietly(connection);
         }
     }
 }

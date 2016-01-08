@@ -50,13 +50,13 @@ public class EventListenerOrderComparator implements Comparator<EventListener> {
         int order1 = orderResolver.orderOf(o1);
         int order2 = orderResolver.orderOf(o2);
         if (order1 != order2) {
-            return order1 - order2;
+            return Long.compare(order1, order2);
         }
 
         int hc1 = o1.hashCode();
         int hc2 = o2.hashCode();
         if (hc1 != hc2) {
-            return hc2 - hc1;
+            return Long.compare(hc1, hc2);
         }
 
         if (o1.getClass().equals(o2.getClass())) {
@@ -64,7 +64,7 @@ public class EventListenerOrderComparator implements Comparator<EventListener> {
             int ihc1 = System.identityHashCode(o1);
             int ihc2 = System.identityHashCode(o2);
 
-            return ihc2 - ihc1;
+            return Long.compare(ihc1, ihc2);
         }
         return o1.getClass().getName().compareTo(o2.getClass().getName());
     }

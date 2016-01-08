@@ -1,21 +1,24 @@
 package org.axonframework.saga.annotation;
 
+import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.common.annotation.SpringBeanParameterResolverFactory;
+import org.axonframework.common.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.async.RetryPolicy;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManagerTest.AddAssociationEvent;
 import org.axonframework.saga.annotation.AsyncAnnotatedSagaManagerTest.OptionallyCreateNewEvent;
 import org.axonframework.saga.repository.jpa.JpaSagaRepository;
-import org.axonframework.unitofwork.SpringTransactionManager;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.axonframework.spring.unitofwork.SpringTransactionManager;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,16 +31,16 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
-import static org.axonframework.domain.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -199,7 +202,9 @@ public class AsyncAnnotatedSagaManagerIntegrationTest {
 
         @Bean
         public ParameterResolverFactory parameterResolverFactory() {
-            return new SpringBeanParameterResolverFactory();
+            return MultiParameterResolverFactory.ordered(
+                    ClasspathParameterResolverFactory.forClass(AsyncAnnotatedSagaManagerTest.StubAsyncSaga.class),
+                    new SimpleResourceParameterResolverFactory(invocationLogger()));
         }
 
         @Bean

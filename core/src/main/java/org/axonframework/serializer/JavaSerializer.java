@@ -73,7 +73,7 @@ public class JavaSerializer implements Serializer {
         }
         T converted = converterFactory.getConverter(byte[].class, expectedType)
                                       .convert(baos.toByteArray());
-        return new SimpleSerializedObject<T>(converted, expectedType, instance.getClass().getName(),
+        return new SimpleSerializedObject<>(converted, expectedType, instance.getClass().getName(),
                                              revisionOf(instance.getClass()));
     }
 
@@ -92,9 +92,7 @@ public class JavaSerializer implements Serializer {
         try {
             ois = new ObjectInputStream(converted.getData());
             return (T) ois.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
-        } catch (IOException e) {
+        } catch (ClassNotFoundException | IOException e) {
             throw new SerializationException("An error occurred while deserializing: " + e.getMessage(), e);
         } finally {
             IOUtils.closeQuietly(ois);

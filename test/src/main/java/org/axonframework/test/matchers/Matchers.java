@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 import org.hamcrest.Factory;
 import org.hamcrest.Matcher;
 
@@ -51,7 +51,7 @@ public abstract class Matchers {
      * @return a Matcher that evaluates a Message's payload.
      */
     public static Matcher<Message> messageWithPayload(Matcher<?> payloadMatcher) {
-        return new PayloadMatcher<Message>(payloadMatcher);
+        return new PayloadMatcher<>(payloadMatcher);
     }
 
     /**
@@ -144,7 +144,7 @@ public abstract class Matchers {
      */
     @Factory
     public static <T> EqualFieldsMatcher<T> equalTo(T expected) {
-        return new EqualFieldsMatcher<T>(expected);
+        return new EqualFieldsMatcher<>(expected);
     }
 
     /**
@@ -160,7 +160,7 @@ public abstract class Matchers {
      */
     @Factory
     public static <T> EqualFieldsMatcher<T> equalTo(T expected, FieldFilter filter) {
-        return new EqualFieldsMatcher<T>(expected, filter);
+        return new EqualFieldsMatcher<>(expected, filter);
     }
 
     /**

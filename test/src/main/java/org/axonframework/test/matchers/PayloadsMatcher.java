@@ -16,7 +16,7 @@
 
 package org.axonframework.test.matchers;
 
-import org.axonframework.domain.Message;
+import org.axonframework.messaging.Message;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -47,7 +47,7 @@ public class PayloadsMatcher extends BaseMatcher<List<? extends Message<?>>> {
         if (!List.class.isInstance(item)) {
             return false;
         }
-        List<Object> payloads = new ArrayList<Object>();
+        List<Object> payloads = new ArrayList<>();
         for (Object listItem : (List) item) {
             if (Message.class.isInstance(listItem)) {
                 payloads.add(((Message) listItem).getPayload());

@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.lock.DeadlockException;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,18 +32,17 @@ import java.util.List;
  * retrying of commands.
  *
  * @param <R> The type of return value expected by the callback
+ * @param <C> The type of payload of the dispatched command
  * @author Allard Buijze
  * @see DefaultCommandGateway
  * @since 2.0
  */
-public class RetryingCallback<R> implements CommandCallback<R> {
+public class RetryingCallback<C, R> implements CommandCallback<C, R> {
 
-    private final CommandCallback<R> delegate;
-    private final CommandMessage commandMessage;
+    private final CommandCallback<C, R> delegate;
     private final RetryScheduler retryScheduler;
     private final CommandBus commandBus;
     private final List<Class<? extends Throwable>[]> history;
-    private final Runnable dispatchCommand;
 
     /**
      * Initialize the RetryingCallback with the given <code>delegate</code>, representing the actual callback passed as
@@ -51,27 +50,25 @@ public class RetryingCallback<R> implements CommandCallback<R> {
      * <code>commandBus</code>.
      *
      * @param delegate       The callback to invoke when the command succeeds, or when retries are rejected.
-     * @param commandMessage The message being dispatched
      * @param retryScheduler The scheduler that decides if and when a retry should be scheduled
      * @param commandBus     The commandBus on which the command must be dispatched
      */
-    public RetryingCallback(CommandCallback<R> delegate, CommandMessage commandMessage, RetryScheduler retryScheduler,
+    public RetryingCallback(CommandCallback<C, R> delegate,
+                            RetryScheduler retryScheduler,
                             CommandBus commandBus) {
         this.delegate = delegate;
-        this.commandMessage = commandMessage;
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
-        this.history = new ArrayList<Class<? extends Throwable>[]>();
-        this.dispatchCommand = new RetryDispatch();
+        this.history = new ArrayList<>();
     }
 
     @Override
-    public void onSuccess(R result) {
-        delegate.onSuccess(result);
+    public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+        delegate.onSuccess(commandMessage, result);
     }
 
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
         history.add(simplify(cause));
         try {
             // we fail immediately when the exception is checked,
@@ -79,12 +76,12 @@ public class RetryingCallback<R> implements CommandCallback<R> {
             if (!(cause instanceof RuntimeException)
                     || (isCausedBy(cause, DeadlockException.class) && CurrentUnitOfWork.isStarted())
                     || !retryScheduler.scheduleRetry(commandMessage, (RuntimeException) cause,
-                                                     new ArrayList<Class<? extends Throwable>[]>(history),
-                                                     dispatchCommand)) {
-                delegate.onFailure(cause);
+                                                     new ArrayList<>(history),
+                                                     new RetryDispatch(commandMessage))) {
+                delegate.onFailure(commandMessage, cause);
             }
         } catch (Exception e) {
-            delegate.onFailure(e);
+            delegate.onFailure(commandMessage, e);
         }
     }
 
@@ -95,7 +92,7 @@ public class RetryingCallback<R> implements CommandCallback<R> {
 
     @SuppressWarnings("unchecked")
     private Class<? extends Throwable>[] simplify(Throwable cause) {
-        List<Class<? extends Throwable>> types = new ArrayList<Class<? extends Throwable>>();
+        List<Class<? extends Throwable>> types = new ArrayList<>();
         types.add(cause.getClass());
         Throwable rootCause = cause;
         while (rootCause.getCause() != null) {
@@ -107,12 +104,18 @@ public class RetryingCallback<R> implements CommandCallback<R> {
 
     private class RetryDispatch implements Runnable {
 
+        private final CommandMessage<? extends C> commandMessage;
+
+        private RetryDispatch(CommandMessage<? extends C> commandMessage) {
+            this.commandMessage = commandMessage;
+        }
+
         @Override
         public void run() {
             try {
                 commandBus.dispatch(commandMessage, RetryingCallback.this);
             } catch (Exception e) {
-                RetryingCallback.this.onFailure(e);
+                RetryingCallback.this.onFailure(commandMessage, e);
             }
         }
     }

@@ -16,17 +16,16 @@
 
 package org.axonframework.eventhandling.scheduling.java;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.Saga;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
-import org.joda.time.Duration;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.quartz.SchedulerException;
 
 import java.io.ByteArrayInputStream;
@@ -34,14 +33,21 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -69,16 +75,13 @@ public class SimpleEventSchedulerTest {
     @Test
     public void testScheduleJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
-        testSubject.schedule(new Duration(30), new Object());
+        testSubject.schedule(Duration.ofMillis(30), new Object());
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus).publish(isA(EventMessage.class));
     }
@@ -98,19 +101,16 @@ public class SimpleEventSchedulerTest {
     @Test
     public void testCancelJob() throws SchedulerException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                latch.countDown();
-                return null;
-            }
+        doAnswer(invocation -> {
+            latch.countDown();
+            return null;
         }).when(eventBus).publish(isA(EventMessage.class));
         Saga mockSaga = mock(Saga.class);
         when(mockSaga.getSagaIdentifier()).thenReturn(UUID.randomUUID().toString());
         EventMessage<Object> event1 = createEvent();
         final EventMessage<Object> event2 = createEvent();
-        ScheduleToken token1 = testSubject.schedule(new Duration(100), event1);
-        testSubject.schedule(new Duration(120), event2);
+        ScheduleToken token1 = testSubject.schedule(Duration.ofMillis(100), event1);
+        testSubject.schedule(Duration.ofMillis(120), event2);
         testSubject.cancelSchedule(token1);
         latch.await(1, TimeUnit.SECONDS);
         verify(eventBus, never()).publish(event1);
@@ -121,7 +121,7 @@ public class SimpleEventSchedulerTest {
     }
 
     private EventMessage<Object> createEvent() {
-        return new GenericEventMessage<Object>(new Object());
+        return new GenericEventMessage<>(new Object());
     }
 
     private static class EqualPayloadMatcher extends BaseMatcher<EventMessage> {

@@ -16,20 +16,18 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -38,37 +36,34 @@ import static org.mockito.Mockito.*;
 public class DistributedCommandBusTest {
 
     private DistributedCommandBus testSubject;
-    private CommandBus mockLocalSegment;
     private CommandBusConnector mockConnector;
+    private Registration mockSubscription;
     private RoutingStrategy mockRoutingStrategy;
-    private CommandHandler<Object> mockHandler;
+    private MessageHandler<? super CommandMessage<?>> mockHandler;
     private CommandMessage<?> message;
-    private FutureCallback<Object> callback;
-    private CommandDispatchInterceptor mockDispatchInterceptor;
+    private FutureCallback<Object, Object> callback;
+    private MessageDispatchInterceptor mockDispatchInterceptor;
 
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
-        mockLocalSegment = mock(CommandBus.class);
         mockConnector = mock(CommandBusConnector.class);
+        mockSubscription = mock(Registration.class);
+        when(mockConnector.subscribe(any(), any())).thenReturn(mockSubscription);
         mockRoutingStrategy = mock(RoutingStrategy.class);
         when(mockRoutingStrategy.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
 
         testSubject = new DistributedCommandBus(mockConnector, mockRoutingStrategy);
-        mockHandler = mock(CommandHandler.class);
-        message = new GenericCommandMessage<Object>(new Object());
-        callback = new FutureCallback<Object>();
-        mockDispatchInterceptor = mock(CommandDispatchInterceptor.class);
-        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        mockHandler = mock(MessageHandler.class);
+        message = new GenericCommandMessage<>(new Object());
+        callback = new FutureCallback<>();
+        mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
+        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         testSubject.setCommandDispatchInterceptors(Collections.singleton(mockDispatchInterceptor));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testDispatchIsDelegatedToConnection_WithCallback() throws Exception {
         testSubject.dispatch(message, callback);
 
@@ -78,6 +73,7 @@ public class DistributedCommandBusTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testDispatchIsDelegatedToConnection_WithoutCallback() throws Exception {
         testSubject.dispatch(message);
 
@@ -87,21 +83,16 @@ public class DistributedCommandBusTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = CommandDispatchException.class)
     public void testDispatchErrorIsPropagated_WithCallback() throws Exception {
         doThrow(new Exception()).when(mockConnector).send(anyString(),
                                                           any(CommandMessage.class),
                                                           any(CommandCallback.class));
         testSubject.dispatch(message, callback);
-        try {
-            callback.getResult();
-            fail("Expected Exception");
-        } catch (CommandDispatchException e) {
-            assertNotNull(e);
-        }
     }
 
-    @Test
+    @Test(expected = CommandDispatchException.class)
+    @SuppressWarnings("unchecked")
     public void testDispatchErrorIsPropagated_WithoutCallback() throws Exception {
         doThrow(new Exception("Mock")).when(mockConnector).send(anyString(), any(CommandMessage.class));
         testSubject.dispatch(message);
@@ -117,8 +108,9 @@ public class DistributedCommandBusTest {
 
     @Test
     public void testUnsubscribeIsDoneOnConnector() {
-        testSubject.unsubscribe(Object.class.getName(), mockHandler);
+        Registration subscription = testSubject.subscribe(Object.class.getName(), mockHandler);
+        subscription.cancel();
 
-        verify(mockConnector).unsubscribe(Object.class.getName(), mockHandler);
+        verify(mockSubscription).cancel();
     }
 }

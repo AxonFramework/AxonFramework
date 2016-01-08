@@ -16,11 +16,11 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.MetaData;
-import org.junit.*;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.junit.Test;
 
 import java.util.UUID;
 
@@ -35,11 +35,11 @@ public class SequentialPerAggregatePolicyTest {
     public void testSequentialIdentifier() {
         // ok, pretty useless, but everything should be tested
         SequentialPerAggregatePolicy testSubject = new SequentialPerAggregatePolicy();
-        Object aggregateIdentifier = UUID.randomUUID();
+        String aggregateIdentifier = UUID.randomUUID().toString();
         Object id1 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
-        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID()));
-        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<String>("bla"));
+        Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()));
+        Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>("bla"));
 
         assertEquals(id1, id2);
         assertFalse(id1.equals(id3));
@@ -47,8 +47,8 @@ public class SequentialPerAggregatePolicyTest {
         assertNull(id4);
     }
 
-    private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0,
+    private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
+        return new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                      new Object(), MetaData.emptyInstance());
     }
 }

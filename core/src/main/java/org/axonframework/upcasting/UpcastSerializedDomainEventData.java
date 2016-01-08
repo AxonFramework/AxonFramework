@@ -18,7 +18,9 @@ package org.axonframework.upcasting;
 
 import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
+
+import java.time.Instant;
+
 
 /**
  * SerializedDomainEventData implementation that can be used to duplicate existing SerializedDomainEventData instances
@@ -31,7 +33,7 @@ import org.joda.time.DateTime;
 public class UpcastSerializedDomainEventData<T> implements SerializedDomainEventData<T> {
 
     private final SerializedDomainEventData<T> original;
-    private final Object identifier;
+    private final String identifier;
     private final SerializedObject<T> upcastPayload;
 
     /**
@@ -43,7 +45,7 @@ public class UpcastSerializedDomainEventData<T> implements SerializedDomainEvent
      * @param aggregateIdentifier The aggregate identifier instance
      * @param upcastPayload       The replacement payload
      */
-    public UpcastSerializedDomainEventData(SerializedDomainEventData<T> original, Object aggregateIdentifier,
+    public UpcastSerializedDomainEventData(SerializedDomainEventData<T> original, String aggregateIdentifier,
                                            SerializedObject<T> upcastPayload) {
         this.original = original;
         this.identifier = aggregateIdentifier;
@@ -56,7 +58,7 @@ public class UpcastSerializedDomainEventData<T> implements SerializedDomainEvent
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return identifier;
     }
 
@@ -66,7 +68,7 @@ public class UpcastSerializedDomainEventData<T> implements SerializedDomainEvent
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return original.getTimestamp();
     }
 

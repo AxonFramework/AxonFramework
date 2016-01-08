@@ -16,11 +16,13 @@
 
 package org.axonframework.common.annotation;
 
+import org.axonframework.messaging.Message;
+
 import java.lang.annotation.Annotation;
 
 /**
  * Interface for objects capable of creating Parameter Resolver instances for annotated handler methods. These
- * resolvers provide the parameter values to use, given an incoming {@link org.axonframework.domain.Message}.
+ * resolvers provide the parameter values to use, given an incoming {@link Message}.
  * <p/>
  * One of the implementations is the {@link ClasspathParameterResolverFactory}, which allows application developers to
  * provide custom ParameterResolverFactory implementations using the ServiceLoader mechanism. To do so, place a file

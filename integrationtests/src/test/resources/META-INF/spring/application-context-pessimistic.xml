@@ -27,7 +27,7 @@
         <constructor-arg value="org.axonframework.integrationtests.commandhandling.StubAggregate"/>
         <constructor-arg ref="eventStore"/>
         <constructor-arg>
-            <bean class="org.axonframework.repository.PessimisticLockManager"/>
+            <bean class="org.axonframework.repository.PessimisticLockFactory"/>
         </constructor-arg>
         <property name="eventBus" ref="eventBus"/>
     </bean>

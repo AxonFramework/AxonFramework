@@ -20,7 +20,9 @@ import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.CallbackBehavior;
-import org.joda.time.DateTime;
+
+import java.time.ZonedDateTime;
+
 
 /**
  * Interface describing action to perform on a Saga Test Fixture during the configuration phase.
@@ -119,7 +121,7 @@ public interface FixtureConfiguration {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    GivenAggregateEventPublisher givenAggregate(Object aggregateIdentifier);
+    GivenAggregateEventPublisher givenAggregate(String aggregateIdentifier);
 
     /**
      * Indicates that the given <code>applicationEvent</code> has been published in the past. This event is sent to the
@@ -149,5 +151,5 @@ public interface FixtureConfiguration {
      *
      * @return the simulated "current time" of the fixture.
      */
-    DateTime currentTime();
+    ZonedDateTime currentTime();
 }

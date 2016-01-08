@@ -17,9 +17,11 @@
 package org.axonframework.repository;
 
 import org.axonframework.domain.AbstractAggregateRoot;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.DefaultUnitOfWork;
-import org.junit.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * @author Allard Buijze
@@ -36,7 +38,7 @@ public class AbstractRepositoryTest {
             }
 
             @Override
-            protected JpaAggregate doLoad(Object aggregateIdentifier, Long expectedVersion) {
+            protected JpaAggregate doLoad(String aggregateIdentifier, Long expectedVersion) {
                 return new JpaAggregate();
             }
 
@@ -44,7 +46,7 @@ public class AbstractRepositoryTest {
             protected void doDelete(JpaAggregate aggregate) {
             }
         };
-        DefaultUnitOfWork.startAndGet();
+        DefaultUnitOfWork.startAndGet(null);
     }
 
     @After
@@ -63,7 +65,7 @@ public class AbstractRepositoryTest {
     public void testAggregateTypeVerification_WrongType() throws Exception {
         testSubject.add(new AbstractAggregateRoot() {
             @Override
-            public Object getIdentifier() {
+            public String getIdentifier() {
                 return "1";
             }
         });

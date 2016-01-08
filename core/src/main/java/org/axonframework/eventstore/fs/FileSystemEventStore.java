@@ -18,9 +18,8 @@ package org.axonframework.eventstore.fs;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
@@ -31,13 +30,9 @@ import org.axonframework.upcasting.SimpleUpcasterChain;
 import org.axonframework.upcasting.UpcasterAware;
 import org.axonframework.upcasting.UpcasterChain;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.SequenceInputStream;
+import java.io.*;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * Implementation of the {@link org.axonframework.eventstore.EventStore} that serializes objects (by default using
@@ -53,7 +48,7 @@ import java.io.SequenceInputStream;
  * @author Frank Versnel
  * @since 0.5
  */
-public class FileSystemEventStore implements EventStore, SnapshotEventStore, UpcasterAware {
+public class FileSystemEventStore implements SnapshotEventStore, UpcasterAware {
 
     private final Serializer eventSerializer;
     private final EventFileResolver eventFileResolver;
@@ -74,7 +69,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
      * serializing the payload and meta data of Event Messages.
      * <p/>
      * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
-     * (name = "org.axonframework.domain.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
+     * (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
      *
      * @param serializer        The serializer capable of serializing (at least) DomainEvents
      * @param eventFileResolver The EventFileResolver providing access to event files
@@ -86,38 +81,27 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
         this.eventFileResolver = eventFileResolver;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * This implementation writes events to an event log on the file system. It uses a directory per type of aggregate,
-     * containing 1 file per aggregate.
-     */
     @Override
-    public void appendEvents(String type, DomainEventStream eventsToStore) {
-        if (!eventsToStore.hasNext()) {
+    public void appendEvents(List<DomainEventMessage<?>> events) {
+        if (events == null || events.isEmpty()) {
             return;
         }
 
         OutputStream out = null;
         try {
-            DomainEventMessage next = eventsToStore.next();
-            if (next.getSequenceNumber() == 0
-                    && eventFileResolver.eventFileExists(type, next.getAggregateIdentifier())) {
+            DomainEventMessage first = events.get(0);
+            if (first.getSequenceNumber() == 0
+                    && eventFileResolver.eventFileExists(first.getAggregateIdentifier())) {
                 throw new ConflictingModificationException("Could not create event stream for aggregate, such stream "
-                                                                   + "already exists, type=" + type + ", id="
-                                                                   + next.getAggregateIdentifier());
+                                                                   + "already exists, id="
+                                                                   + first.getAggregateIdentifier());
             }
-            out = eventFileResolver.openEventFileForWriting(type, next.getAggregateIdentifier());
+            out = eventFileResolver.openEventFileForWriting(first.getAggregateIdentifier());
             FileSystemEventMessageWriter eventMessageWriter =
                     new FileSystemEventMessageWriter(new DataOutputStream(out), eventSerializer);
-            do {
+            for (DomainEventMessage<?> next : events) {
                 eventMessageWriter.writeEventMessage(next);
-                if (eventsToStore.hasNext()) {
-                    next = eventsToStore.next();
-                } else {
-                    next = null;
-                }
-            } while (next != null);
+            }
         } catch (IOException e) {
             throw new EventStoreException("Unable to store given entity due to an IOException", e);
         } finally {
@@ -126,16 +110,62 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
     }
 
     @Override
-    public DomainEventStream readEvents(String type, Object aggregateIdentifier) {
+    public DomainEventStream readEvents(String identifier, long firstSequenceNumber, long lastSequenceNumber) {
         try {
-            if (!eventFileResolver.eventFileExists(type, aggregateIdentifier)) {
-                throw new EventStreamNotFoundException(type, aggregateIdentifier);
+            InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(identifier);
+            final FileSystemBufferedReaderDomainEventStream fullStream = new FileSystemBufferedReaderDomainEventStream(
+                    eventFileInputStream,
+                    eventSerializer,
+                    upcasterChain);
+            return new DomainEventStream() {
+                @Override
+                public boolean hasNext() {
+                    while (fullStream.hasNext() && fullStream.peek().getSequenceNumber() < firstSequenceNumber) {
+                        fullStream.next();
+                    }
+                    return fullStream.hasNext() && fullStream.peek().getSequenceNumber() <= lastSequenceNumber;
+                }
+
+                @Override
+                public DomainEventMessage next() {
+                    while (fullStream.hasNext() && fullStream.peek().getSequenceNumber() < firstSequenceNumber) {
+                        fullStream.next();
+                    }
+                    final DomainEventMessage next = fullStream.next();
+                    if (next.getSequenceNumber() > lastSequenceNumber) {
+                        throw new NoSuchElementException("Attempt to read beyond end of stream");
+                    }
+                    return next;
+                }
+
+                @Override
+                public DomainEventMessage peek() {
+                    final DomainEventMessage peek = fullStream.peek();
+                    if (!hasNext()) {
+                        throw new NoSuchElementException("Attempt to read beyond enf of stream");
+                    }
+                    return peek;
+                }
+            };
+        } catch (IOException e) {
+            throw new EventStoreException(
+                    String.format("An error occurred while trying to open the event file "
+                                          + "for aggregate with identifier [%s]",
+                                  identifier), e);
+        }
+    }
+
+    @Override
+    public DomainEventStream readEvents(String aggregateIdentifier) {
+        try {
+            if (!eventFileResolver.eventFileExists(aggregateIdentifier)) {
+                throw new EventStreamNotFoundException(aggregateIdentifier);
             }
 
-            InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(type, aggregateIdentifier);
+            InputStream eventFileInputStream = eventFileResolver.openEventFileForReading(aggregateIdentifier);
             DomainEventMessage snapshotEvent;
             try {
-                snapshotEvent = readSnapshotEvent(type, aggregateIdentifier, eventFileInputStream);
+                snapshotEvent = readSnapshotEvent(aggregateIdentifier, eventFileInputStream);
                 // trigger deserialization
                 snapshotEvent.getPayload();
             } catch (Exception e) {
@@ -143,7 +173,7 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
                 snapshotEvent = null;
                 // we need to reset the stream, as it points to the event after the snapshot
                 IOUtils.closeQuietly(eventFileInputStream);
-                eventFileInputStream = eventFileResolver.openEventFileForReading(type, aggregateIdentifier);
+                eventFileInputStream = eventFileResolver.openEventFileForReading(aggregateIdentifier);
             }
 
             InputStream is = eventFileInputStream;
@@ -159,8 +189,8 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
         } catch (IOException e) {
             throw new EventStoreException(
                     String.format("An error occurred while trying to open the event file "
-                                          + "for aggregate type [%s] with identifier [%s]",
-                                  type, aggregateIdentifier), e);
+                                          + "for aggregate with identifier [%s]",
+                                  aggregateIdentifier), e);
         }
     }
 
@@ -171,12 +201,12 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
      * @throws EventStoreException when an error occurs while reading or writing to the event logs.
      */
     @Override
-    public void appendSnapshotEvent(String type, DomainEventMessage snapshotEvent) throws EventStoreException {
+    public void appendSnapshotEvent(DomainEventMessage snapshotEvent) throws EventStoreException {
         InputStream eventFile = null;
         try {
-            eventFile = eventFileResolver.openEventFileForReading(type, snapshotEvent.getAggregateIdentifier());
+            eventFile = eventFileResolver.openEventFileForReading(snapshotEvent.getAggregateIdentifier());
             OutputStream snapshotEventFile =
-                    eventFileResolver.openSnapshotFileForWriting(type, snapshotEvent.getAggregateIdentifier());
+                    eventFileResolver.openSnapshotFileForWriting(snapshotEvent.getAggregateIdentifier());
             FileSystemSnapshotEventWriter snapshotEventWriter =
                     new FileSystemSnapshotEventWriter(eventFile, snapshotEventFile, eventSerializer);
 
@@ -188,14 +218,14 @@ public class FileSystemEventStore implements EventStore, SnapshotEventStore, Upc
         }
     }
 
-    private DomainEventMessage readSnapshotEvent(String type, Object identifier, InputStream eventFileInputStream)
+    private DomainEventMessage readSnapshotEvent(String identifier, InputStream eventFileInputStream)
             throws IOException {
         DomainEventMessage snapshotEvent = null;
-        if (eventFileResolver.snapshotFileExists(type, identifier)) {
-            InputStream snapshotEventFile = eventFileResolver.openSnapshotFileForReading(type, identifier);
+        if (eventFileResolver.snapshotFileExists(identifier)) {
+            InputStream snapshotEventFile = eventFileResolver.openSnapshotFileForReading(identifier);
             FileSystemSnapshotEventReader fileSystemSnapshotEventReader =
                     new FileSystemSnapshotEventReader(eventFileInputStream, snapshotEventFile, eventSerializer);
-            snapshotEvent = fileSystemSnapshotEventReader.readSnapshotEvent(type, identifier);
+            snapshotEvent = fileSystemSnapshotEventReader.readSnapshotEvent(identifier);
         }
         return snapshotEvent;
     }

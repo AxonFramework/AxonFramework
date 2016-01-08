@@ -1,12 +1,12 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.junit.*;
+import org.junit.Test;
 
 /**
  * @author Allard Buijze
@@ -18,14 +18,8 @@ public class FixtureTest_Hierarchy {
         Fixtures.newGivenWhenThenFixture(AbstractAggregate.class)
                 .registerAggregateFactory(new AggregateFactory<AbstractAggregate>() {
                     @Override
-                    public AbstractAggregate createAggregate(Object aggregateIdentifier,
-                                                             DomainEventMessage<?> firstEvent) {
+                    public AbstractAggregate createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
                         return new ConcreteAggregate();
-                    }
-
-                    @Override
-                    public String getTypeIdentifier() {
-                        return "AbstractAggregate";
                     }
 
                     @Override

@@ -20,16 +20,17 @@ import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.cache.Cache;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
-import org.axonframework.commandhandling.CommandHandlerInterceptor;
+import org.axonframework.cache.NoCache;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.RollbackConfiguration;
-import org.axonframework.commandhandling.RollbackOnUncheckedExceptionConfiguration;
 import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.common.Assert;
-import org.axonframework.cache.NoCache;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.unitofwork.TransactionManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,16 +59,14 @@ public class DisruptorConfiguration {
     private boolean rescheduleCommandsOnCorruptState;
     private long coolingDownPeriod;
     private Cache cache;
-    private final List<CommandHandlerInterceptor> invokerInterceptors = new ArrayList<CommandHandlerInterceptor>();
-    private final List<CommandHandlerInterceptor> publisherInterceptors = new ArrayList<CommandHandlerInterceptor>();
-    private final List<CommandDispatchInterceptor> dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>();
+    private final List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors = new ArrayList<>();
+    private final List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors = new ArrayList<>();
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new ArrayList<>();
     private TransactionManager transactionManager;
     private CommandTargetResolver commandTargetResolver;
     private int invokerThreadCount = 1;
     private int publisherThreadCount = 1;
-    private int serializerThreadCount = 1;
     private Serializer serializer;
-    private Class<?> serializedRepresentation = byte[].class;
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
@@ -80,7 +79,7 @@ public class DisruptorConfiguration {
         coolingDownPeriod = 1000;
         cache = NoCache.INSTANCE;
         rescheduleCommandsOnCorruptState = true;
-        rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
+        rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
         commandTargetResolver = new AnnotationCommandTargetResolver();
     }
 
@@ -150,7 +149,7 @@ public class DisruptorConfiguration {
      *
      * @return the interceptors for the DisruptorCommandBus
      */
-    public List<CommandHandlerInterceptor> getInvokerInterceptors() {
+    public List<MessageHandlerInterceptor<CommandMessage<?>>> getInvokerInterceptors() {
         return invokerInterceptors;
     }
 
@@ -165,7 +164,7 @@ public class DisruptorConfiguration {
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setInvokerInterceptors(
-            List<CommandHandlerInterceptor> invokerInterceptors) {  //NOSONAR (setter may hide field)
+            List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors) {  //NOSONAR (setter may hide field)
         this.invokerInterceptors.clear();
         this.invokerInterceptors.addAll(invokerInterceptors);
         return this;
@@ -176,7 +175,7 @@ public class DisruptorConfiguration {
      *
      * @return the interceptors for the DisruptorCommandBus
      */
-    public List<CommandHandlerInterceptor> getPublisherInterceptors() {
+    public List<MessageHandlerInterceptor<CommandMessage<?>>> getPublisherInterceptors() {
         return publisherInterceptors;
     }
 
@@ -188,7 +187,7 @@ public class DisruptorConfiguration {
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setPublisherInterceptors(
-            List<CommandHandlerInterceptor> publisherInterceptors) { //NOSONAR (setter may hide field)
+            List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) { //NOSONAR (setter may hide field)
         this.publisherInterceptors.clear();
         this.publisherInterceptors.addAll(publisherInterceptors);
         return this;
@@ -199,7 +198,7 @@ public class DisruptorConfiguration {
      *
      * @return the dispatch interceptors for the DisruptorCommandBus
      */
-    public List<CommandDispatchInterceptor> getDispatchInterceptors() {
+    public List<MessageDispatchInterceptor<CommandMessage<?>>> getDispatchInterceptors() {
         return dispatchInterceptors;
     }
 
@@ -211,7 +210,7 @@ public class DisruptorConfiguration {
      * @return <code>this</code> for method chaining
      */
     public DisruptorConfiguration setDispatchInterceptors(
-            List<CommandDispatchInterceptor> dispatchInterceptors) { //NOSONAR (setter may hide field)
+            List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) { //NOSONAR (setter may hide field)
         this.dispatchInterceptors.clear();
         this.dispatchInterceptors.addAll(dispatchInterceptors);
         return this;
@@ -233,8 +232,8 @@ public class DisruptorConfiguration {
 
     /**
      * Sets the rollback configuration for the DisruptorCommandBus to use. Defaults to {@link
-     * RollbackOnUncheckedExceptionConfiguration} a configuration that commits on checked exceptions, and performs a
-     * rollback on runtime exceptions.
+     * RollbackConfigurationType#UNCHECKED_EXCEPTIONS}, a configuration that commits on checked exceptions,
+     * and performs a rollback on runtime exceptions.
      *
      * @param rollbackConfiguration the RollbackConfiguration indicating for the DisruptorCommandBus
      * @return <code>this</code> for method chaining
@@ -402,29 +401,6 @@ public class DisruptorConfiguration {
     }
 
     /**
-     * Returns the configured number of threads that should perform the pre-serialization step. This value is ignored
-     * unless a serializer is set using {@link #setSerializer(org.axonframework.serializer.Serializer)}.
-     *
-     * @return the number of threads to perform pre-serialization with
-     */
-    public int getSerializerThreadCount() {
-        return serializerThreadCount;
-    }
-
-    /**
-     * Sets the number of threads that should perform the pre-serialization step. This value is ignored
-     * unless a serializer is set using {@link #setSerializer(org.axonframework.serializer.Serializer)}.
-     *
-     * @param newSerializerThreadCount the number of threads to perform pre-serialization with
-     * @return <code>this</code> for method chaining
-     */
-    public DisruptorConfiguration setSerializerThreadCount(int newSerializerThreadCount) {
-        Assert.isTrue(newSerializerThreadCount >= 0, "SerializerThreadCount must be >= 0");
-        this.serializerThreadCount = newSerializerThreadCount;
-        return this;
-    }
-
-    /**
      * Returns the serializer to perform pre-serialization with, or <code>null</code> if no pre-serialization should be
      * done.
      *
@@ -446,39 +422,6 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setSerializer(Serializer newSerializer) {
         this.serializer = newSerializer;
-        return this;
-    }
-
-    /**
-     * Indicates whether pre-serialization is configured. Is <code>true</code> when a serializer and at
-     * least one thread is configured.
-     *
-     * @return whether pre-serialization is configured
-     */
-    public boolean isPreSerializationConfigured() {
-        return serializer != null && serializerThreadCount > 0;
-    }
-
-    /**
-     * Returns the type of data the serialized object should be represented in. Defaults to a byte array.
-     *
-     * @return the type of data the serialized object should be represented in
-     */
-    public Class<?> getSerializedRepresentation() {
-        return serializedRepresentation;
-    }
-
-    /**
-     * Sets the type of data the serialized object should be represented in. Defaults to a byte array
-     * (<code>byte[]</code>).
-     *
-     * @param newSerializedRepresentation the type of data the serialized object should be represented in. May not be
-     *                                    <code>null</code>.
-     * @return <code>this</code> for method chaining
-     */
-    public DisruptorConfiguration setSerializedRepresentation(Class<?> newSerializedRepresentation) {
-        Assert.notNull(newSerializedRepresentation, "Serialized representation may not be null");
-        this.serializedRepresentation = newSerializedRepresentation;
         return this;
     }
 

@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
@@ -55,15 +56,15 @@ public class RunAnnotatedAggregate {
         EventBus eventBus = new SimpleEventBus();
 
         // we need to configure the repository
-        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<ToDoItem>(ToDoItem.class,
+        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class,
                                                                                              eventStore);
         repository.setEventBus(eventBus);
 
         // Axon needs to know that our ToDoItem Aggregate can handle commands
-        AggregateAnnotationCommandHandler.subscribe(ToDoItem.class, repository, commandBus);
+        new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);
 
         // We register an event listener to see which events are created
-        AnnotationEventListenerAdapter.subscribe(new ToDoEventHandler(), eventBus);
+        eventBus.subscribe(new SimpleEventProcessor("logging", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
 
         // and let's send some Commands on the CommandBus.
         CommandGenerator.sendCommands(commandGateway);

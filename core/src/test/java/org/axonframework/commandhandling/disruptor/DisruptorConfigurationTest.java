@@ -33,9 +33,4 @@ public class DisruptorConfigurationTest {
         new DisruptorConfiguration().setInvokerThreadCount(0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetIllegalSerializerThreadCount() {
-        new DisruptorConfiguration().setSerializerThreadCount(-1);
-    }
-
 }

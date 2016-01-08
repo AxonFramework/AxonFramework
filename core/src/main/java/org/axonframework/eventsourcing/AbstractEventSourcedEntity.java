@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.Collection;
 
@@ -44,16 +44,14 @@ public abstract class AbstractEventSourcedEntity<T extends AbstractEventSourcedA
     }
 
     @Override
-    public void handleRecursively(DomainEventMessage event) {
+    public void handleRecursively(EventMessage event) {
         handle(event);
         Collection<? extends EventSourcedEntity> childEntities = getChildEntities();
         if (childEntities != null) {
-            for (EventSourcedEntity entity : childEntities) {
-                if (entity != null) {
-                    entity.registerAggregateRoot(aggregateRoot);
-                    entity.handleRecursively(event);
-                }
-            }
+            childEntities.stream().filter(entity -> entity != null).forEach(entity -> {
+                entity.registerAggregateRoot(aggregateRoot);
+                entity.handleRecursively(event);
+            });
         }
     }
 
@@ -72,11 +70,11 @@ public abstract class AbstractEventSourcedEntity<T extends AbstractEventSourcedA
      *
      * @param event The event to handle
      */
-    protected abstract void handle(DomainEventMessage event);
+    protected abstract void handle(EventMessage event);
 
     /**
      * Apply the provided event. Applying events means they are added to the uncommitted event queue and forwarded to
-     * the {@link #handle(org.axonframework.domain.DomainEventMessage)} event handler method} for processing.
+     * the {@link #handle(EventMessage)} event handler method} for processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *
@@ -88,8 +86,8 @@ public abstract class AbstractEventSourcedEntity<T extends AbstractEventSourcedA
 
     /**
      * Apply the provided event and attaching the given <code>metaData</code>. Applying events means they are added to
-     * the uncommitted event queue and forwarded to the {@link #handle(org.axonframework.domain.DomainEventMessage)}
-     * event handler method} for processing.
+     * the uncommitted event queue and forwarded to the {@link #handle(EventMessage)} event handler method} for
+     * processing.
      * <p/>
      * The event is applied on all entities part of this aggregate.
      *

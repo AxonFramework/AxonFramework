@@ -16,8 +16,9 @@
 
 package org.axonframework.test.saga;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+
+import java.time.Duration;
+import java.time.ZonedDateTime;
 
 /**
  * Interface describing methods that can be executed after the first "given" state has been supplied. Either more
@@ -37,7 +38,7 @@ public interface ContinuedGivenState extends WhenState {
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
      */
-    GivenAggregateEventPublisher andThenAggregate(Object aggregateIdentifier);
+    GivenAggregateEventPublisher andThenAggregate(String aggregateIdentifier);
 
     /**
      * Simulate time shifts in the current given state. This can be useful when the time between given events is of
@@ -55,7 +56,7 @@ public interface ContinuedGivenState extends WhenState {
      * @param newDateTime The time to advance the clock to
      * @return an object that allows registration of the actual events to send
      */
-    ContinuedGivenState andThenTimeAdvancesTo(DateTime newDateTime);
+    ContinuedGivenState andThenTimeAdvancesTo(ZonedDateTime newDateTime);
 
     /**
      * Indicates that the given <code>event</code> has been published in the past. This event is sent to the associated

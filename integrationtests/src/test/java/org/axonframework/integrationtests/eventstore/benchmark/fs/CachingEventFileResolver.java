@@ -33,53 +33,48 @@ import java.util.concurrent.ConcurrentSkipListMap;
 public class CachingEventFileResolver implements EventFileResolver, DisposableBean {
 
     private final EventFileResolver delegate;
-    private final ConcurrentMap<String, OutputStreamWrapper> openFiles = new ConcurrentSkipListMap<String, OutputStreamWrapper>();
+    private final ConcurrentMap<String, OutputStreamWrapper> openFiles = new ConcurrentSkipListMap<>();
 
     public CachingEventFileResolver(File baseDir) {
         this.delegate = new SimpleEventFileResolver(baseDir);
     }
 
     @Override
-    public OutputStream openEventFileForWriting(String type, Object aggregateIdentifier)
+    public OutputStream openEventFileForWriting(String aggregateIdentifier)
             throws IOException {
-        if (!openFiles.containsKey(getKey(type, aggregateIdentifier))) {
-            OutputStream out = delegate.openEventFileForWriting(type, aggregateIdentifier);
-            openFiles.putIfAbsent(getKey(type, aggregateIdentifier), new OutputStreamWrapper(out));
+        if (!openFiles.containsKey(aggregateIdentifier)) {
+            OutputStream out = delegate.openEventFileForWriting(aggregateIdentifier);
+            openFiles.putIfAbsent(aggregateIdentifier, new OutputStreamWrapper(out));
         }
-        return openFiles.get(getKey(type, aggregateIdentifier));
-    }
-
-    private String getKey(String type, Object aggregateIdentifier) {
-        return type + aggregateIdentifier.toString();
+        return openFiles.get(aggregateIdentifier);
     }
 
     @Override
-    public OutputStream openSnapshotFileForWriting(String type, Object aggregateIdentifier)
+    public OutputStream openSnapshotFileForWriting(String aggregateIdentifier)
             throws IOException {
-        return delegate.openSnapshotFileForWriting(type, aggregateIdentifier);
+        return delegate.openSnapshotFileForWriting(aggregateIdentifier);
     }
 
     @Override
-    public InputStream openEventFileForReading(String type, Object aggregateIdentifier)
+    public InputStream openEventFileForReading(String aggregateIdentifier)
             throws IOException {
-        return delegate.openEventFileForReading(type, aggregateIdentifier);
+        return delegate.openEventFileForReading(aggregateIdentifier);
     }
 
     @Override
-    public InputStream openSnapshotFileForReading(String type, Object aggregateIdentifier)
+    public InputStream openSnapshotFileForReading(String aggregateIdentifier)
             throws IOException {
-        return delegate.openSnapshotFileForReading(type, aggregateIdentifier);
+        return delegate.openSnapshotFileForReading(aggregateIdentifier);
     }
 
     @Override
-    public boolean eventFileExists(String type, Object aggregateIdentifier) throws IOException {
-        return openFiles.containsKey(getKey(type, aggregateIdentifier)) || delegate.eventFileExists(type,
-                                                                                                    aggregateIdentifier);
+    public boolean eventFileExists(String aggregateIdentifier) throws IOException {
+        return openFiles.containsKey(aggregateIdentifier) || delegate.eventFileExists(aggregateIdentifier);
     }
 
     @Override
-    public boolean snapshotFileExists(String type, Object aggregateIdentifier) throws IOException {
-        return delegate.eventFileExists(type, aggregateIdentifier);
+    public boolean snapshotFileExists(String aggregateIdentifier) throws IOException {
+        return delegate.eventFileExists(aggregateIdentifier);
     }
 
     @Override

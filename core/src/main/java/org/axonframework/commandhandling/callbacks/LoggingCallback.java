@@ -27,28 +27,25 @@ import org.slf4j.LoggerFactory;
  * @author Allard Buijze
  * @since 2.0
  */
-public class LoggingCallback implements CommandCallback<Object> {
+public class LoggingCallback implements CommandCallback<Object, Object> {
 
     private static final Logger logger = LoggerFactory.getLogger(LoggingCallback.class);
 
-    private final CommandMessage<?> message;
-
     /**
-     * Initialize a LoggingCallback for the given <code>message</code>.
-     *
-     * @param message The message for which the results are to be logged.
+     * The singleton instance for this callback
      */
-    public LoggingCallback(CommandMessage<?> message) {
-        this.message = message;
+    public static final LoggingCallback INSTANCE = new LoggingCallback();
+
+    private LoggingCallback() {
     }
 
     @Override
-    public void onSuccess(Object result) {
+    public void onSuccess(CommandMessage message, Object result) {
         logger.info("Command executed successfully: {}", message.getCommandName());
     }
 
     @Override
-    public void onFailure(Throwable cause) {
+    public void onFailure(CommandMessage<?> message, Throwable cause) {
         logger.warn("Command resulted in exception: {}", message.getCommandName(), cause);
     }
 }

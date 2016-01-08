@@ -16,19 +16,25 @@
 
 package org.axonframework.integrationtests.jpa;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
-import java.util.UUID;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Allard Buijze
  */
 @Entity
 public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRoot {
+
+    private transient List<DomainEventMessage<?>> registeredEvents;
 
     @Basic
     private long counter;
@@ -47,6 +53,27 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
         apply(new SomeEvent());
     }
 
+    @Override
+    protected <T> void registerEventMessage(EventMessage<T> message) {
+        super.registerEventMessage(message);
+        getRegisteredEvents().add((DomainEventMessage<?>) message);
+    }
+
+    public List<DomainEventMessage<?>> getRegisteredEvents() {
+        if (registeredEvents == null) {
+            registeredEvents = new ArrayList<>();
+        }
+        return registeredEvents;
+    }
+
+    public int getRegisteredEventCount() {
+        return registeredEvents == null ? 0 : registeredEvents.size();
+    }
+
+    public void reset() {
+        registeredEvents.clear();
+    }
+
     @EventSourcingHandler
     private void onSomeEvent(SomeEvent event) {
         counter++;
@@ -57,7 +84,7 @@ public class SimpleJpaEventSourcedAggregate extends AbstractAnnotatedAggregateRo
     }
 
     @Override
-    public Object getIdentifier() {
+    public String getIdentifier() {
         return identifier;
     }
 }

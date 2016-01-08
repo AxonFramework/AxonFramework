@@ -18,15 +18,18 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.correlation.CorrelationDataHolder;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.CustomTypeSafeMatcher;
-import org.junit.*;
-import org.mockito.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,52 +49,39 @@ public class DefaultCommandGatewayTest {
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
     private RetryScheduler mockRetryScheduler;
-    private CommandDispatchInterceptor mockCommandMessageTransformer;
+    private MessageDispatchInterceptor mockCommandMessageTransformer;
 
     @Before
     public void setUp() throws Exception {
-        CorrelationDataHolder.clear();
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
-        mockCommandMessageTransformer = mock(CommandDispatchInterceptor.class);
-        when(mockCommandMessageTransformer.handle(isA(CommandMessage.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                return invocation.getArguments()[0];
-            }
-        });
+        mockCommandMessageTransformer = mock(MessageDispatchInterceptor.class);
+        when(mockCommandMessageTransformer.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
         testSubject = new DefaultCommandGateway(mockCommandBus, mockRetryScheduler, mockCommandMessageTransformer);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        CorrelationDataHolder.clear();
     }
 
     @SuppressWarnings({"unchecked", "serial"})
     @Test
     public void testSendWithCallback_CommandIsRetried() {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((CommandCallback) invocation.getArguments()[1])
-                        .onFailure(new RuntimeException(new RuntimeException()));
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((CommandCallback) invocation.getArguments()[1])
+                    .onFailure((CommandMessage) invocation.getArguments()[0],
+                               new RuntimeException(new RuntimeException()));
+            return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
                                               isA(Runnable.class)))
                 .thenAnswer(new RescheduleCommand())
                 .thenReturn(false);
-        final AtomicReference<Object> actualResult = new AtomicReference<Object>();
-        testSubject.send("Command", new CommandCallback<Object>() {
+        final AtomicReference<Object> actualResult = new AtomicReference<>();
+        testSubject.send("Command", new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 actualResult.set(result);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                 actualResult.set(cause);
             }
         });
@@ -109,13 +99,11 @@ public class DefaultCommandGatewayTest {
     @SuppressWarnings({"unchecked", "serial"})
     @Test
     public void testSendWithoutCallback_CommandIsRetried() {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((CommandCallback) invocation.getArguments()[1])
-                        .onFailure(new RuntimeException(new RuntimeException()));
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((CommandCallback) invocation.getArguments()[1])
+                    .onFailure((CommandMessage) invocation.getArguments()[0],
+                               new RuntimeException(new RuntimeException()));
+            return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
                                               isA(Runnable.class)))
@@ -138,12 +126,10 @@ public class DefaultCommandGatewayTest {
     @Test
     public void testSendAndWait_CommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((CommandCallback) invocation.getArguments()[1]).onFailure(failure);
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
+                                                                       failure);
+            return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
                                               isA(Runnable.class)))
@@ -170,12 +156,10 @@ public class DefaultCommandGatewayTest {
     @Test
     public void testSendAndWaitWithTimeout_CommandIsRetried() {
         final RuntimeException failure = new RuntimeException(new RuntimeException());
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                ((CommandCallback) invocation.getArguments()[1]).onFailure(failure);
-                return null;
-            }
+        doAnswer(invocation -> {
+            ((CommandCallback) invocation.getArguments()[1]).onFailure((CommandMessage) invocation.getArguments()[0],
+                                                                       failure);
+            return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
         when(mockRetryScheduler.scheduleRetry(isA(CommandMessage.class), isA(RuntimeException.class), isA(List.class),
                                               isA(Runnable.class)))
@@ -201,12 +185,9 @@ public class DefaultCommandGatewayTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSendAndWait_NullOnInterrupt() {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Thread.currentThread().interrupt();
-                return null;
-            }
+        doAnswer(invocation -> {
+            Thread.currentThread().interrupt();
+            return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
         assertNull(testSubject.sendAndWait("Hello"));
@@ -217,12 +198,9 @@ public class DefaultCommandGatewayTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSendAndWaitWithTimeout_NullOnInterrupt() {
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Thread.currentThread().interrupt();
-                return null;
-            }
+        doAnswer(invocation -> {
+            Thread.currentThread().interrupt();
+            return null;
         }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
 
         assertNull(testSubject.sendAndWait("Hello", 60, TimeUnit.SECONDS));
@@ -240,40 +218,46 @@ public class DefaultCommandGatewayTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testCorrelationDataIsAttachedToCommandAsObject() throws Exception {
-        CorrelationDataHolder.setCorrelationData(Collections.singletonMap("correlationId", "test"));
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<?>>("header correlationId") {
+        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>("header correlationId") {
             @Override
-            protected boolean matchesSafely(CommandMessage<?> item) {
+            protected boolean matchesSafely(CommandMessage<Object> item) {
                 return "test".equals(item.getMetaData().get("correlationId"));
             }
         }), isA(CommandCallback.class));
+
+        CurrentUnitOfWork.clear(unitOfWork);
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testCorrelationDataIsAttachedToCommandAsMessage() throws Exception {
-        final Map<String, String> data = new HashMap<String, String>();
+        final Map<String, String> data = new HashMap<>();
         data.put("correlationId", "test");
         data.put("header", "someValue");
-        CorrelationDataHolder.setCorrelationData(data);
-        testSubject.send(new GenericCommandMessage<String>("Hello", Collections.singletonMap("header", "value")));
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork.registerCorrelationDataProvider(message -> data);
+        testSubject.send(new GenericCommandMessage<>("Hello", Collections.singletonMap("header", "value")));
 
-        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<?>>(
+        verify(mockCommandBus).dispatch(argThat(new CustomTypeSafeMatcher<CommandMessage<Object>>(
                 "header 'correlationId' and 'header'") {
             @Override
-            protected boolean matchesSafely(CommandMessage<?> item) {
+            protected boolean matchesSafely(CommandMessage<Object> item) {
                 return "test".equals(item.getMetaData().get("correlationId"))
                         && "value".equals(item.getMetaData().get("header"));
             }
         }), isA(CommandCallback.class));
+
+        CurrentUnitOfWork.clear(unitOfWork);
     }
 
     private static class RescheduleCommand implements Answer<Boolean> {
 
         @Override
-        public Boolean answer(InvocationOnMock invocation) throws Throwable {
+        public Boolean answer(InvocationOnMock invocation) throws Exception {
             ((Runnable) invocation.getArguments()[3]).run();
             return true;
         }

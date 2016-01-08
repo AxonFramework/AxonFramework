@@ -16,25 +16,34 @@
 
 package org.axonframework.eventstore.supporting;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventContainer;
-import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.junit.Test;
+
+import java.time.Duration;
+import java.time.Instant;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Knut-Olav Hoven
  */
 public class TimestampCutoffReadonlyEventStoreTest {
 
+    private static Instant future() {
+        return Instant.now().plus(Duration.ofHours(1));
+    }
+
+    private static Instant past() {
+        return Instant.now().minus(Duration.ofHours(1));
+    }
+
     @Test
     public void readEvents_givenNoEvents() {
         TimestampCutoffReadonlyEventStore es = givenNoEvents();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isFalse();
     }
@@ -43,7 +52,7 @@ public class TimestampCutoffReadonlyEventStoreTest {
     public void readEvents_givenEventsFromBackend() {
         TimestampCutoffReadonlyEventStore es = givenEventsFromBackend();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isTrue();
         assertThat(readEvents.next().getSequenceNumber()).isEqualTo(0L);
@@ -55,7 +64,7 @@ public class TimestampCutoffReadonlyEventStoreTest {
     public void readEvents_givenVolatileEventsAndCutOffBackendEvents() {
         TimestampCutoffReadonlyEventStore es = givenCutOffBackendEvents();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isFalse();
     }
@@ -102,29 +111,18 @@ public class TimestampCutoffReadonlyEventStoreTest {
 
     private TimestampCutoffReadonlyEventStore givenEventsFromBackend() {
         VolatileEventStore backend = new VolatileEventStore();
-        EventContainer ec = new EventContainer("My-1");
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        backend.appendEvents("MyAggregate", ec.getEventStream());
-
+        backend.appendEvents(createEventMessage(0, new MyEvent(1)), createEventMessage(1, new MyEvent(2)));
         return new TimestampCutoffReadonlyEventStore(backend, backend, future());
     }
 
     private TimestampCutoffReadonlyEventStore givenCutOffBackendEvents() {
         VolatileEventStore backend = new VolatileEventStore();
-        EventContainer ecBack = new EventContainer("My-1");
-        ecBack.initializeSequenceNumber(0L);
-        ecBack.addEvent(MetaData.emptyInstance(), new MyEvent("newer, cut off"));
-        backend.appendEvents("MyAggregate", ecBack.getEventStream());
+        backend.appendEvents(createEventMessage(1, new MyEvent("newer, cut off")));
 
         return new TimestampCutoffReadonlyEventStore(backend, backend, past());
     }
 
-    private static DateTime future() {
-        return DateTime.now().plus(Duration.standardHours(1));
-    }
-
-    private static DateTime past() {
-        return DateTime.now().minus(Duration.standardHours(1));
+    private DomainEventMessage<?> createEventMessage(long sequenceNumber, Object event) {
+        return new GenericDomainEventMessage<>("My-1", sequenceNumber, event);
     }
 }

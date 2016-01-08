@@ -18,6 +18,7 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.junit.*;
 import org.junit.runner.*;
@@ -59,14 +60,14 @@ public class CacheIntegrationTest {
 
         assertTrue(cache.containsKey("1234"));
 
-        commandGateway.send(new TestAggregateRoot.FailCommand("1234"), new CommandCallback<Object>() {
+        commandGateway.send(new TestAggregateRoot.FailCommand("1234"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 fail("Command should not have succeeded");
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
 //                These lines prove that JCache doesn't work properly..
                 assertTrue("Got an exception, as expected, but it seems to be the wrong one: " + cause.getClass()
                                                                                                       .getName(),

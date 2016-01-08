@@ -16,8 +16,8 @@
 
 package org.axonframework.saga;
 
-import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Interface toward the Manager of one or more types of Saga. The SagaManager is an infrastructure object responsible

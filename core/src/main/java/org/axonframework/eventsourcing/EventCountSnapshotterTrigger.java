@@ -18,11 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkListenerAdapter;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -44,14 +40,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
 
     private static final int DEFAULT_TRIGGER_VALUE = 50;
-
+    private final ConcurrentMap<String, AtomicInteger> counters = new ConcurrentHashMap<>();
     private Snapshotter snapshotter;
-    private final ConcurrentMap<Object, AtomicInteger> counters = new ConcurrentHashMap<Object, AtomicInteger>();
     private volatile boolean clearCountersAfterAppend = true;
     private int trigger = DEFAULT_TRIGGER_VALUE;
 
     @Override
-    public DomainEventStream decorateForRead(String aggregateType, Object aggregateIdentifier,
+    public DomainEventStream decorateForRead(String aggregateIdentifier,
                                              DomainEventStream eventStream) {
         AtomicInteger counter = new AtomicInteger(0);
         counters.put(aggregateIdentifier, counter);
@@ -59,18 +54,23 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     }
 
     @Override
-    public DomainEventStream decorateForAppend(String aggregateType, EventSourcedAggregateRoot aggregate,
-                                               DomainEventStream eventStream) {
-        Object aggregateIdentifier = aggregate.getIdentifier();
+    public List<DomainEventMessage<?>> decorateForAppend(EventSourcedAggregateRoot aggregate,
+                                                         List<DomainEventMessage<?>> eventStream) {
+        String aggregateIdentifier = aggregate.getIdentifier();
         counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
         AtomicInteger counter = counters.get(aggregateIdentifier);
-        return new TriggeringEventStream(aggregateType, aggregateIdentifier, eventStream, counter);
+        counter.addAndGet(eventStream.size());
+        if (counter.get() > trigger) {
+            CurrentUnitOfWork.get().onCleanup(u -> triggerSnapshotIfRequired(aggregate.getClass(),
+                                                                             aggregateIdentifier, counter));
+        }
+        return eventStream;
     }
 
-    private void triggerSnapshotIfRequired(String type, Object aggregateIdentifier,
-                                           final AtomicInteger eventCount) {
+    private void triggerSnapshotIfRequired(Class<? extends EventSourcedAggregateRoot> aggregateType,
+                                           String aggregateIdentifier, final AtomicInteger eventCount) {
         if (eventCount.get() > trigger) {
-            snapshotter.scheduleSnapshot(type, aggregateIdentifier);
+            snapshotter.scheduleSnapshot(aggregateType, aggregateIdentifier);
             eventCount.set(1);
         }
     }
@@ -138,9 +138,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      * @param caches The caches used by caching repositories
      */
     public void setAggregateCaches(List<Cache> caches) {
-        for (Cache cache : caches) {
-            setAggregateCache(cache);
-        }
+        caches.forEach(this::setAggregateCache);
     }
 
     private class CountingEventStream implements DomainEventStream, Closeable {
@@ -185,62 +183,16 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         }
     }
 
-    private final class TriggeringEventStream extends CountingEventStream {
-
-        private final String aggregateType;
-        private final Object aggregateIdentifier;
-
-        private TriggeringEventStream(String aggregateType, Object aggregateIdentifier,
-                                      DomainEventStream delegate, AtomicInteger counter) {
-            super(delegate, counter);
-            this.aggregateType = aggregateType;
-            this.aggregateIdentifier = aggregateIdentifier;
-        }
-
-        @Override
-        public boolean hasNext() {
-            boolean hasNext = super.hasNext();
-            if (!hasNext) {
-                CurrentUnitOfWork.get().registerListener(new SnapshotTriggeringListener(aggregateType,
-                                                                                        aggregateIdentifier,
-                                                                                        getCounter()));
-                if (clearCountersAfterAppend) {
-                    counters.remove(aggregateIdentifier, getCounter());
-                }
-            }
-            return hasNext;
-        }
-    }
-
     private final class CacheListener extends Cache.EntryListenerAdapter {
 
         @Override
         public void onEntryExpired(Object key) {
-            counters.remove(key);
+            counters.remove(key.toString());
         }
 
         @Override
         public void onEntryRemoved(Object key) {
-            counters.remove(key);
-        }
-    }
-
-    private class SnapshotTriggeringListener extends UnitOfWorkListenerAdapter {
-
-        private final String aggregateType;
-        private final Object aggregateIdentifier;
-        private final AtomicInteger counter;
-
-        public SnapshotTriggeringListener(String aggregateType,
-                                          Object aggregateIdentifier, AtomicInteger counter) {
-            this.aggregateType = aggregateType;
-            this.aggregateIdentifier = aggregateIdentifier;
-            this.counter = counter;
-        }
-
-        @Override
-        public void onCleanup(UnitOfWork unitOfWork) {
-            triggerSnapshotIfRequired(aggregateType, aggregateIdentifier, counter);
+            counters.remove(key.toString());
         }
     }
 }

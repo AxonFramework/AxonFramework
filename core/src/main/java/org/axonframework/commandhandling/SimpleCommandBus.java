@@ -16,19 +16,15 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.callbacks.LoggingCallback;
-import org.axonframework.monitoring.MonitorRegistry;
-import org.axonframework.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.unitofwork.TransactionManager;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.axonframework.unitofwork.UnitOfWorkFactory;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.*;
+import org.axonframework.messaging.unitofwork.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -49,29 +45,23 @@ public class SimpleCommandBus implements CommandBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
-    private final ConcurrentMap<String, CommandHandler<?>> subscriptions =
-            new ConcurrentHashMap<String, CommandHandler<?>>();
-    private final SimpleCommandBusStatistics statistics = new SimpleCommandBusStatistics();
-    private volatile Iterable<? extends CommandHandlerInterceptor> handlerInterceptors = Collections.emptyList();
-    private volatile Iterable<? extends CommandDispatchInterceptor> dispatchInterceptors = Collections.emptyList();
-    private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
-    private RollbackConfiguration rollbackConfiguration = new RollbackOnUncheckedExceptionConfiguration();
+    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
+            new ConcurrentHashMap<>();
+    private volatile Iterable<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors
+            = Collections.emptyList();
+    private volatile Iterable<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors
+            = Collections.emptyList();
+    private UnitOfWorkFactory<?> unitOfWorkFactory = new DefaultUnitOfWorkFactory();
+    private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
     /**
      * Initializes the SimpleCommandBus.
      */
     public SimpleCommandBus() {
-        MonitorRegistry.registerMonitoringBean(statistics, SimpleCommandBus.class);
-    }
-
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-    @Override
-    public void dispatch(CommandMessage<?> command) {
-        doDispatch(intercept(command), new LoggingCallback(command));
     }
 
     @Override
-    public <R> void dispatch(CommandMessage<?> command, final CommandCallback<R> callback) {
+    public <C, R> void dispatch(CommandMessage<C> command, final CommandCallback<? super C, R> callback) {
         doDispatch(intercept(command), callback);
     }
 
@@ -81,10 +71,11 @@ public class SimpleCommandBus implements CommandBus {
      * @param command The original command being dispatched
      * @return The command to actually dispatch
      */
-    protected CommandMessage<?> intercept(CommandMessage<?> command) {
-        CommandMessage<?> commandToDispatch = command;
-        for (CommandDispatchInterceptor interceptor : dispatchInterceptors) {
-            commandToDispatch = interceptor.handle(commandToDispatch);
+    @SuppressWarnings("unchecked")
+    protected <C> CommandMessage<C> intercept(CommandMessage<C> command) {
+        CommandMessage<C> commandToDispatch = command;
+        for (MessageDispatchInterceptor<CommandMessage<?>> interceptor : dispatchInterceptors) {
+            commandToDispatch = (CommandMessage<C>) interceptor.handle(commandToDispatch);
         }
         return commandToDispatch;
     }
@@ -97,18 +88,18 @@ public class SimpleCommandBus implements CommandBus {
      * @param <R>      The type of result expected from the command handler
      */
     @SuppressWarnings({"unchecked"})
-    protected <R> void doDispatch(CommandMessage<?> command, CommandCallback<R> callback) {
+    protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         try {
-            CommandHandler handler = findCommandHandlerFor(command);
+            MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command);
             Object result = doDispatch(command, handler);
-            callback.onSuccess((R) result);
-        } catch (Throwable throwable) {
-            callback.onFailure(throwable);
+            callback.onSuccess(command, (R) result);
+        } catch (Exception throwable) {
+            callback.onFailure(command, throwable);
         }
     }
 
-    private CommandHandler findCommandHandlerFor(CommandMessage<?> command) {
-        final CommandHandler handler = subscriptions.get(command.getCommandName());
+    private MessageHandler<? super CommandMessage<?>> findCommandHandlerFor(CommandMessage<?> command) {
+        final MessageHandler<? super CommandMessage<?>> handler = subscriptions.get(command.getCommandName());
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler was subscribed to command [%s]",
                                                           command.getCommandName()));
@@ -116,26 +107,14 @@ public class SimpleCommandBus implements CommandBus {
         return handler;
     }
 
-    private Object doDispatch(CommandMessage<?> command, CommandHandler commandHandler) throws Throwable {
-        logger.debug("Dispatching command [{}]", command.getCommandName());
-        statistics.recordReceivedCommand();
-        UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork();
-        InterceptorChain chain = new DefaultInterceptorChain(command, unitOfWork, commandHandler, handlerInterceptors);
-
-        Object returnValue;
-        try {
-            returnValue = chain.proceed();
-        } catch (Throwable throwable) {
-            if (rollbackConfiguration.rollBackOn(throwable)) {
-                unitOfWork.rollback(throwable);
-            } else {
-                unitOfWork.commit();
-            }
-            throw throwable;
+    private <C> Object doDispatch(CommandMessage<C> command, MessageHandler<? super CommandMessage<?>> handler) throws Exception {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Dispatching command [{}]", command.getCommandName());
         }
-
-        unitOfWork.commit();
-        return returnValue;
+        UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(command);
+        InterceptorChain<CommandMessage<?>> chain = new DefaultInterceptorChain<>(
+                command, unitOfWork, handlerInterceptors, handler);
+        return unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
     }
 
     /**
@@ -144,24 +123,11 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param commandName The type of command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
-     * @param <T>         The Type of command
      */
     @Override
-    public <T> void subscribe(String commandName, CommandHandler<? super T> handler) {
+    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         subscriptions.put(commandName, handler);
-        statistics.reportHandlerRegistered(commandName);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public <T> boolean unsubscribe(String commandName, CommandHandler<? super T> handler) {
-        if (subscriptions.remove(commandName, handler)) {
-            statistics.recordUnregisteredHandler(commandName);
-            return true;
-        }
-        return false;
+        return () -> subscriptions.remove(commandName, handler);
     }
 
     /**
@@ -170,8 +136,8 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param handlerInterceptors The interceptors to invoke when commands are handled
      */
-    public void setHandlerInterceptors(List<? extends CommandHandlerInterceptor> handlerInterceptors) {
-        this.handlerInterceptors = new ArrayList<CommandHandlerInterceptor>(handlerInterceptors);
+    public void setHandlerInterceptors(List<? extends MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors) {
+        this.handlerInterceptors = new ArrayList<>(handlerInterceptors);
     }
 
     /**
@@ -180,29 +146,9 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param dispatchInterceptors The interceptors to invoke when commands are dispatched
      */
-    public void setDispatchInterceptors(List<? extends CommandDispatchInterceptor> dispatchInterceptors) {
-        this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(dispatchInterceptors);
-    }
-
-    /**
-     * Convenience method that allows you to register command handlers using a Dependency Injection framework. The
-     * parameter of this method is a <code>Map&lt;Object&lt;T&gt;, CommandHandler&lt;? super T&gt;&gt;</code>. The key
-     * represents the type (either as a String or Class) of command to register the handler for, the value is the
-     * actual handler.
-     *
-     * @param handlers The handlers to subscribe in the form of a Map of Class - CommandHandler entries.
-     */
-    @SuppressWarnings({"unchecked"})
-    public void setSubscriptions(Map<?, ?> handlers) {
-        for (Map.Entry<?, ?> entry : handlers.entrySet()) {
-            String commandName;
-            if (entry.getKey() instanceof Class) {
-                commandName = ((Class) entry.getKey()).getName();
-            } else {
-                commandName = entry.getKey().toString();
-            }
-            subscribe(commandName, (CommandHandler) entry.getValue());
-        }
+    public void setDispatchInterceptors(
+            List<? extends MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
+        this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
     }
 
     /**
@@ -210,7 +156,7 @@ public class SimpleCommandBus implements CommandBus {
      * {@link DefaultUnitOfWorkFactory}.
      * <p/>
      * This method should not be used in combination with
-     * {@link #setTransactionManager(org.axonframework.unitofwork.TransactionManager)}. For transaction support, ensure
+     * {@link #setTransactionManager(TransactionManager)}. For transaction support, ensure
      * the provided UnitOfWorkFactory implementation binds each UnitOfWork to a transaction.
      *
      * @param unitOfWorkFactory The UnitOfWorkFactory providing UoW instances for this Command Bus.
@@ -221,7 +167,7 @@ public class SimpleCommandBus implements CommandBus {
 
     /**
      * Sets the transaction manager that manages the transaction around command handling. This should not be used in
-     * combination with {@link #setUnitOfWorkFactory(org.axonframework.unitofwork.UnitOfWorkFactory)}.
+     * combination with {@link #setUnitOfWorkFactory(UnitOfWorkFactory)}.
      *
      * @param transactionManager the transaction manager to use
      */

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.amqp;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Interface toward a mechanism that provides the AMQP Routing Key for a given EventMessage. AMQP Message Brokers use

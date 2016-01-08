@@ -17,20 +17,16 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.axonframework.messaging.metadata.MetaData;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
 /**
@@ -41,12 +37,12 @@ public class AggregateSnapshotterTest {
     private AggregateSnapshotter testSubject;
     private AggregateFactory mockAggregateFactory;
 
-    @SuppressWarnings({"unchecked"})
     @Before
+    @SuppressWarnings({"unchecked"})
     public void setUp() throws Exception {
         SnapshotEventStore mockEventStore = mock(SnapshotEventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
-        when(mockAggregateFactory.getTypeIdentifier()).thenReturn("test");
+        when(mockAggregateFactory.getAggregateType()).thenReturn(EventSourcedAggregateRoot.class);
         testSubject = new AggregateSnapshotter();
         testSubject.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(mockAggregateFactory));
         testSubject.setEventStore(mockEventStore);
@@ -54,46 +50,40 @@ public class AggregateSnapshotterTest {
     }
 
     @Test
+    @SuppressWarnings({"unchecked"})
     public void testCreateSnapshot() {
-        UUID aggregateIdentifier = UUID.randomUUID();
-        DomainEventMessage firstEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                                              "Mock contents", MetaData.emptyInstance()
-        );
+        String aggregateIdentifier = UUID.randomUUID().toString();
+        DomainEventMessage firstEvent = new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+                                                                        "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
         EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);
         when(aggregate.getIdentifier()).thenReturn(aggregateIdentifier);
         when(mockAggregateFactory.createAggregate(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
-        DomainEventMessage snapshot =  testSubject.createSnapshot("test", aggregateIdentifier, eventStream);
+        DomainEventMessage snapshot = testSubject.createSnapshot(EventSourcedAggregateRoot.class,
+                                                                 aggregateIdentifier, eventStream);
 
         verify(mockAggregateFactory).createAggregate(aggregateIdentifier, firstEvent);
         assertSame(aggregate, snapshot.getPayload());
     }
 
     @Test
+    @SuppressWarnings({"unchecked"})
     public void testCreateSnapshot_FirstEventLoadedIsSnapshotEvent() {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
-        aggregate.doSomething();
-        aggregate.commitEvents();
 
-        DomainEventMessage<StubAggregate> first =
-                new GenericDomainEventMessage<StubAggregate>(
-                        aggregate.getIdentifier(), aggregate.getVersion(), aggregate);
-        DomainEventMessage secondEvent = new GenericDomainEventMessage<String>(aggregateIdentifier, (long) 0,
-                                                                               "Mock contents", MetaData.emptyInstance()
-        );
-        SimpleDomainEventStream eventStream = new SimpleDomainEventStream(first, secondEvent);
+        DomainEventMessage<StubAggregate> first = new GenericDomainEventMessage<>(
+                aggregate.getIdentifier(), 0, aggregate);
+        DomainEventMessage second = new GenericDomainEventMessage<>(
+                aggregateIdentifier.toString(), 0, "Mock contents", MetaData.emptyInstance());
+        SimpleDomainEventStream eventStream = new SimpleDomainEventStream(first, second);
 
         when(mockAggregateFactory.createAggregate(any(), any(DomainEventMessage.class)))
-                .thenAnswer(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        return ((DomainEventMessage)invocation.getArguments()[1]).getPayload();
-                    }
-                });
+                .thenAnswer(invocation -> ((DomainEventMessage) invocation.getArguments()[1]).getPayload());
 
-        DomainEventMessage snapshot = testSubject.createSnapshot("test", aggregateIdentifier, eventStream);
+        DomainEventMessage snapshot = testSubject.createSnapshot(EventSourcedAggregateRoot.class,
+                                                                 aggregateIdentifier.toString(), eventStream);
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getPayload());
 
         verify(mockAggregateFactory).createAggregate(any(), any(DomainEventMessage.class));

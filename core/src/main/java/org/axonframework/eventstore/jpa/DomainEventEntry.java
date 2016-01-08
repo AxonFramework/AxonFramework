@@ -16,15 +16,15 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
-import org.joda.time.DateTime;
 
 import javax.persistence.Entity;
+import java.time.Instant;
 
 /**
  * JPA compliant wrapper around a DomainEvent. It stores a DomainEvent by extracting some of the information needed to
- * base searches on, and stores the {@link org.axonframework.domain.DomainEventMessage} itself as a serialized object
+ * base searches on, and stores the {@link DomainEventMessage} itself as a serialized object
  * using an {@link org.axonframework.serializer.Serializer}
  *
  * @author Allard Buijze
@@ -42,30 +42,28 @@ public class DomainEventEntry extends AbstractEventEntry {
     /**
      * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type     The type identifier of the aggregate root the event belongs to
      * @param event    The event to store in the eventstore
      * @param payload  The serialized version of the Event
      * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage event,
+    public DomainEventEntry(DomainEventMessage<?> event,
                             SerializedObject<byte[]> payload,
                             SerializedObject<byte[]> metaData) {
-        super(type, event, payload, metaData);
+        super(event, payload, metaData);
     }
 
     /**
      * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type     The type identifier of the aggregate root the event belongs to
      * @param event    The event to store in the eventstore
      * @param dateTime The timestamp to store in the Event Store
      * @param payload  The serialized version of the Event
      * @param metaData The serialized metaData of the Event
      */
-    public DomainEventEntry(String type, DomainEventMessage event, DateTime dateTime,
+    public DomainEventEntry(DomainEventMessage<?> event, Instant dateTime,
                             SerializedObject<byte[]> payload,
                             SerializedObject<byte[]> metaData) {
-        super(type, event, dateTime, payload, metaData);
+        super(event, dateTime, payload, metaData);
     }
 
 

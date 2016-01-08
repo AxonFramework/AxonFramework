@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.monitoring.MonitorRegistry;
+import org.axonframework.common.Registration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -33,73 +33,63 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * @author Allard Buijze
  * @since 0.5
  */
-public class SimpleEventBus implements EventBus {
+public class SimpleEventBus extends AbstractEventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
-    private final Set<EventListener> listeners = new CopyOnWriteArraySet<EventListener>();
-    private final SimpleEventBusStatistics statistics = new SimpleEventBusStatistics();
+    private final Set<EventProcessor> eventProcessors = new CopyOnWriteArraySet<>();
+
+    private final PublicationStrategy publicationStrategy;
 
     /**
-     * Initializes the SimpleEventBus and registers the mbeans for management information.
+     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
+     * processors.
      */
     public SimpleEventBus() {
-        MonitorRegistry.registerMonitoringBean(statistics, SimpleEventBus.class);
+        this(new DirectTerminal());
+    }
+
+    /**
+     * Initializes an event bus with given {@link PublicationStrategy}.
+     *
+     * @param publicationStrategy The strategy used by the event bus to publish events to listeners
+     */
+    public SimpleEventBus(PublicationStrategy publicationStrategy) {
+        this.publicationStrategy = publicationStrategy;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void unsubscribe(EventListener eventListener) {
-        String listenerType = classNameOf(eventListener);
-        if (listeners.remove(eventListener)) {
-            statistics.recordUnregisteredListener(listenerType);
-            logger.debug("EventListener {} unsubscribed successfully", listenerType);
+    public Registration subscribe(EventProcessor eventProcessor) {
+        if (this.eventProcessors.add(eventProcessor)) {
+            logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor.getName());
         } else {
-            logger.info("EventListener {} not removed. It was already unsubscribed", listenerType);
+            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor.getName());
         }
+        return () -> {
+            if (eventProcessors.remove(eventProcessor)) {
+                logger.debug("EventListener {} unsubscribed successfully", eventProcessor.getName());
+                return true;
+            } else {
+                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor.getName());
+                return false;
+            }
+        };
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void subscribe(EventListener eventListener) {
-        String listenerType = classNameOf(eventListener);
-        if (listeners.add(eventListener)) {
-            statistics.listenerRegistered(listenerType);
-            logger.debug("EventListener [{}] subscribed successfully", listenerType);
-        } else {
-            logger.info("EventListener [{}] not added. It was already subscribed", listenerType);
-        }
+    protected void prepareCommit(List<EventMessage<?>> events) {
+        publicationStrategy.publish(events, eventProcessors);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void publish(EventMessage... events) {
-        statistics.recordPublishedEvent();
-        if (!listeners.isEmpty()) {
-            for (EventMessage event : events) {
-                for (EventListener listener : listeners) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Dispatching Event [{}] to EventListener [{}]",
-                                     event.getPayloadType().getSimpleName(), classNameOf(listener));
-                    }
-                    listener.handle(event);
-                }
+    private static class DirectTerminal implements PublicationStrategy {
+
+        @Override
+        public void publish(List<EventMessage<?>> events, Set<EventProcessor> eventProcessors) {
+            for (EventProcessor eventProcessor : eventProcessors) {
+                eventProcessor.handle(events);
             }
         }
-    }
-
-    private String classNameOf(EventListener eventListener) {
-        Class<?> listenerType;
-        if (eventListener instanceof EventListenerProxy) {
-            listenerType = ((EventListenerProxy) eventListener).getTargetType();
-        } else {
-            listenerType = eventListener.getClass();
-        }
-        return listenerType.getSimpleName();
     }
 }

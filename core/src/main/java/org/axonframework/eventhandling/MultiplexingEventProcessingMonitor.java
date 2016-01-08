@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.EventMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MultiplexingEventProcessingMonitor implements EventProcessingMonitor {
 
-    private final ConcurrentMap<String, Counter> eventCounters = new ConcurrentHashMap<String, Counter>();
+    private final ConcurrentMap<String, Counter> eventCounters = new ConcurrentHashMap<>();
 
     private final EventProcessingMonitor targetMonitor;
 
@@ -76,7 +75,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
      * @param eventMessage The message about to be sent
      * @param member       The member that will be invoked
      * @throws java.lang.IllegalArgumentException if the given <code>eventMessage</code> has not been {@link
-     * #prepare(org.axonframework.domain.EventMessage) prepared} yet.
+     * #prepare(EventMessage) prepared} yet.
      */
     public void prepareForInvocation(EventMessage eventMessage, EventListener member) {
         if (member instanceof EventProcessingMonitorSupport) {
@@ -88,7 +87,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
 
     @Override
     public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {
-        List<EventMessage> messagesToAck = new ArrayList<EventMessage>(eventMessages.size());
+        List<EventMessage> messagesToAck = new ArrayList<>(eventMessages.size());
         for (EventMessage eventMessage : eventMessages) {
             final String eventIdentifier = eventMessage.getIdentifier();
             Counter counter = eventCounters.get(eventIdentifier);
@@ -108,7 +107,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
 
     @Override
     public void onEventProcessingFailed(List<? extends EventMessage> eventMessages, Throwable cause) {
-        List<EventMessage> messagesToReport = new ArrayList<EventMessage>(eventMessages.size());
+        List<EventMessage> messagesToReport = new ArrayList<>(eventMessages.size());
         for (EventMessage eventMessage : eventMessages) {
             final String eventIdentifier = eventMessage.getIdentifier();
             Counter counter = eventCounters.get(eventIdentifier);

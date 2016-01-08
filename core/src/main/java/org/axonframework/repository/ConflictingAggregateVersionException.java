@@ -27,7 +27,7 @@ package org.axonframework.repository;
 public class ConflictingAggregateVersionException extends ConflictingModificationException {
 
     private static final long serialVersionUID = 1827438009942802481L;
-    private final Object aggregateIdentifier;
+    private final String aggregateIdentifier;
     private final long expectedVersion;
     private final long actualVersion;
 
@@ -38,11 +38,11 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
      * @param expectedVersion     The version expected by the component loading the aggregate
      * @param actualVersion       The actual version of the aggregate
      */
-    public ConflictingAggregateVersionException(Object aggregateIdentifier,
+    public ConflictingAggregateVersionException(String aggregateIdentifier,
                                                 long expectedVersion, long actualVersion) {
         super(String.format("The version of aggregate [%s] was not as expected. "
                                     + "Expected [%s], but repository found [%s]",
-                            aggregateIdentifier.toString(), expectedVersion, actualVersion));
+                            aggregateIdentifier, expectedVersion, actualVersion));
         this.aggregateIdentifier = aggregateIdentifier;
         this.expectedVersion = expectedVersion;
         this.actualVersion = actualVersion;
@@ -56,11 +56,11 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
      * @param actualVersion       The actual version of the aggregate
      * @param cause               The underlying cause of the exception
      */
-    public ConflictingAggregateVersionException(Object aggregateIdentifier,
+    public ConflictingAggregateVersionException(String aggregateIdentifier,
                                                 long expectedVersion, long actualVersion, Throwable cause) {
         super(String.format("The version of aggregate [%s] was not as expected. "
                                     + "Expected [%s], but repository found [%s]",
-                            aggregateIdentifier.toString(), expectedVersion, actualVersion),
+                            aggregateIdentifier, expectedVersion, actualVersion),
               cause);
         this.aggregateIdentifier = aggregateIdentifier;
         this.expectedVersion = expectedVersion;

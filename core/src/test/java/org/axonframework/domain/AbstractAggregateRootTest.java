@@ -16,14 +16,20 @@
 
 package org.axonframework.domain;
 
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.xml.XStreamSerializer;
-import org.junit.*;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.StubDomainEvent;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 /**
  * @author Allard Buijze
@@ -31,70 +37,40 @@ import static org.junit.Assert.*;
 public class AbstractAggregateRootTest {
 
     private AggregateRoot testSubject;
+    private EventBus mockEventBus;
 
     @Before
     public void setUp() {
+        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        mockEventBus = mock(EventBus.class);
+        unitOfWork.resources().put(EventBus.KEY, mockEventBus);
         testSubject = new AggregateRoot();
     }
 
-    @Test
-    public void testSerializability_GenericXStreamSerializer() throws IOException {
-        XStreamSerializer serializer = new XStreamSerializer();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        baos.write(serializer.serialize(testSubject, byte[].class).getData());
-
-        assertEquals(0, deserialized(baos).getUncommittedEventCount());
-        assertFalse(deserialized(baos).getUncommittedEvents().hasNext());
-        assertNotNull(deserialized(baos).getIdentifier());
-
-        AggregateRoot deserialized = deserialized(baos);
-        deserialized.doSomething();
-        assertEquals(1, deserialized.getUncommittedEventCount());
-        assertNotNull(deserialized.getUncommittedEvents().next());
-
-        AggregateRoot deserialized2 = deserialized(baos);
-        deserialized2.doSomething();
-        assertNotNull(deserialized2.getUncommittedEvents().next());
-        assertEquals(1, deserialized2.getUncommittedEventCount());
-    }
-
-    private AggregateRoot deserialized(ByteArrayOutputStream baos) {
-        XStreamSerializer serializer = new XStreamSerializer();
-        return (AggregateRoot) serializer.deserialize(new SimpleSerializedObject<byte[]>(baos.toByteArray(),
-                                                                                         byte[].class,
-                                                                                         "ignored",
-                                                                                         "0"));
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.get().rollback();
+        }
     }
 
     @Test
     public void testRegisterEvent() {
-        assertEquals(0, testSubject.getUncommittedEventCount());
+        verifyZeroInteractions(mockEventBus);
         testSubject.doSomething();
-        assertEquals(1, testSubject.getUncommittedEventCount());
-    }
-
-    @Test
-    public void testReadEventStreamDuringEventCommit() {
-        testSubject.doSomething();
-        testSubject.doSomething();
-        DomainEventStream uncommittedEvents = testSubject.getUncommittedEvents();
-        uncommittedEvents.next();
-        testSubject.commitEvents();
-        assertTrue(uncommittedEvents.hasNext());
-        assertNotNull(uncommittedEvents.next());
-        assertFalse(uncommittedEvents.hasNext());
+        verify(mockEventBus).publish(any(EventMessage.class));
     }
 
     private static class AggregateRoot extends AbstractAggregateRoot {
 
-        private final Object identifier;
+        private final String identifier;
 
         private AggregateRoot() {
             identifier = IdentifierFactory.getInstance().generateIdentifier();
         }
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 

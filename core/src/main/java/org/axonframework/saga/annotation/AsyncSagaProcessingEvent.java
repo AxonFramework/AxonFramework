@@ -17,7 +17,7 @@
 package org.axonframework.saga.annotation;
 
 import com.lmax.disruptor.EventFactory;
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.SagaCreationPolicy;
@@ -36,20 +36,20 @@ import java.util.Set;
 public class AsyncSagaProcessingEvent {
 
     private EventMessage publishedEvent;
-    private final List<SagaMethodMessageHandler> handlers = new ArrayList<SagaMethodMessageHandler>();
+    private final List<SagaMethodMessageHandler> handlers = new ArrayList<>();
     private Class<? extends AbstractAnnotatedSaga> sagaType;
     private AbstractAnnotatedSaga newSaga;
     private final AsyncSagaCreationElector elector = new AsyncSagaCreationElector();
     private SagaMethodMessageHandler creationHandler;
     private AssociationValue initialAssociationValue;
-    private final Set<AssociationValue> associationValues = new HashSet<AssociationValue>();
+    private final Set<AssociationValue> associationValues = new HashSet<>();
 
     /**
      * Returns the event that has been published on the EventBus. This is the event that will trigger Sagas.
      *
      * @return the event that has been published on the EventBus
      */
-    public EventMessage getPublishedEvent() {
+    public EventMessage<?> getPublishedEvent() {
         return publishedEvent;
     }
 

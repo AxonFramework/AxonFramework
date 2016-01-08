@@ -16,14 +16,14 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.junit.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Allard Buijze
@@ -45,7 +45,7 @@ public class SequentialPolicyTest {
     }
 
     private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<Object>(aggregateIdentifier, (long) 0, new Object(),
+        return new GenericDomainEventMessage<>(aggregateIdentifier.toString(), (long) 0, new Object(),
                                                      MetaData.emptyInstance());
     }
 }

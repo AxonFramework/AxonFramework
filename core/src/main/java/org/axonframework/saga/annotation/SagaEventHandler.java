@@ -16,6 +16,8 @@
 
 package org.axonframework.saga.annotation;
 
+import org.axonframework.eventhandling.EventMessage;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,7 +29,7 @@ import java.lang.annotation.Target;
  * <p/>
  * Annotated methods must comply to a few simple rules: <ul> <li>The method must accept 1 parameter: a subtype of
  * {@link
- * org.axonframework.domain.EventMessage} <li>Return values are allowed, but are ignored<li>Exceptions are highly
+ * EventMessage} <li>Return values are allowed, but are ignored<li>Exceptions are highly
  * discouraged,
  * and are likely to be caught and ignored by the dispatchers </ul>
  * <p/>

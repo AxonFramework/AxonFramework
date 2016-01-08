@@ -47,7 +47,7 @@ public class InputStreamToXomConverterTest {
         byte[] bytes = "<parent><child/></parent>".getBytes();
         InputStream inputStream = new ByteArrayInputStream(bytes);
         SerializedObject<Document> actual = testSubject
-                .convert(new SimpleSerializedObject<InputStream>(inputStream, InputStream.class, type));
+                .convert(new SimpleSerializedObject<>(inputStream, InputStream.class, type));
 
         assertEquals("parent", actual.getData().getRootElement().getLocalName());
     }

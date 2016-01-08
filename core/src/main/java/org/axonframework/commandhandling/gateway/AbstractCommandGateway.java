@@ -18,12 +18,10 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandDispatchInterceptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.common.Assert;
-import org.axonframework.correlation.CorrelationDataHolder;
-import org.axonframework.domain.MetaData;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +40,7 @@ public abstract class AbstractCommandGateway {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<CommandDispatchInterceptor> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
 
     /**
      * Initialize the AbstractCommandGateway with given <code>commandBus</code>, <code>retryScheduler</code> and
@@ -51,14 +49,14 @@ public abstract class AbstractCommandGateway {
      * @param commandBus                  The command bus on which to dispatch events
      * @param retryScheduler              The scheduler capable of performing retries of failed commands. May be
      *                                    <code>null</code> when to prevent retries.
-     * @param commandDispatchInterceptors The interceptors to invoke when dispatching a command
+     * @param messageDispatchInterceptors The interceptors to invoke when dispatching a command
      */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                     List<CommandDispatchInterceptor> commandDispatchInterceptors) {
+                                     List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
         Assert.notNull(commandBus, "commandBus may not be null");
         this.commandBus = commandBus;
-        if (commandDispatchInterceptors != null && !commandDispatchInterceptors.isEmpty()) {
-            this.dispatchInterceptors = new ArrayList<CommandDispatchInterceptor>(commandDispatchInterceptors);
+        if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
+            this.dispatchInterceptors = new ArrayList<>(messageDispatchInterceptors);
         } else {
             this.dispatchInterceptors = Collections.emptyList();
         }
@@ -72,11 +70,11 @@ public abstract class AbstractCommandGateway {
      * @param callback The callback to notify with the processing result
      * @param <R>      The type of response expected from the command
      */
-    protected <R> void send(Object command, CommandCallback<R> callback) {
-        CommandMessage commandMessage = processInterceptors(createCommandMessage(command));
-        CommandCallback<R> commandCallback = callback;
+    protected <C, R> void send(C command, CommandCallback<? super C, R> callback) {
+        CommandMessage<? extends C> commandMessage = processInterceptors(asCommandMessage(command));
+        CommandCallback<? super C, R> commandCallback = callback;
         if (retryScheduler != null) {
-            commandCallback = new RetryingCallback<R>(callback, commandMessage, retryScheduler, commandBus);
+            commandCallback = new RetryingCallback<>(callback, retryScheduler, commandBus);
         }
         commandBus.dispatch(commandMessage, commandCallback);
     }
@@ -89,17 +87,11 @@ public abstract class AbstractCommandGateway {
      */
     protected void sendAndForget(Object command) {
         if (retryScheduler == null) {
-            commandBus.dispatch(processInterceptors(createCommandMessage(command)));
+            commandBus.dispatch(processInterceptors(asCommandMessage(command)));
         } else {
-            CommandMessage<?> commandMessage = createCommandMessage(command);
-            send(commandMessage, new LoggingCallback(commandMessage));
+            CommandMessage<?> commandMessage = asCommandMessage(command);
+            send(commandMessage, LoggingCallback.INSTANCE);
         }
-    }
-
-    private CommandMessage createCommandMessage(Object command) {
-        CommandMessage<?> message = asCommandMessage(command);
-        return message.withMetaData(MetaData.from(CorrelationDataHolder.getCorrelationData())
-                                            .mergedWith(message.getMetaData()));
     }
 
     /**
@@ -108,10 +100,11 @@ public abstract class AbstractCommandGateway {
      * @param commandMessage The incoming command message
      * @return The command message to dispatch
      */
-    protected CommandMessage processInterceptors(CommandMessage commandMessage) {
-        CommandMessage message = commandMessage;
-        for (CommandDispatchInterceptor dispatchInterceptor : dispatchInterceptors) {
-            message = dispatchInterceptor.handle(message);
+    @SuppressWarnings("unchecked")
+    protected <C> CommandMessage<? extends C> processInterceptors(CommandMessage<C> commandMessage) {
+        CommandMessage<? extends C> message = commandMessage;
+        for (MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor : dispatchInterceptors) {
+            message = (CommandMessage) dispatchInterceptor.handle(message);
         }
         return message;
     }

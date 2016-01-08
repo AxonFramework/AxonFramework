@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
  * @author Allard Buijze
  * @since 2.4.1
  */
+@FunctionalInterface
 public interface FieldFilter {
 
     /**

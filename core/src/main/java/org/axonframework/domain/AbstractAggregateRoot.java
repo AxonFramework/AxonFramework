@@ -16,37 +16,27 @@
 
 package org.axonframework.domain;
 
+import org.axonframework.common.Assert;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+
 import java.io.Serializable;
-import javax.persistence.Basic;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
-import javax.persistence.Version;
 
 /**
- * Very basic implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
+ * Abstract implementation of the AggregateRoot interface. It provides the mechanism to keep track of uncommitted
  * events and maintains a version number based on the number of events generated.
  *
- * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @since 0.6
  */
-@MappedSuperclass
-public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Serializable {
+public abstract class AbstractAggregateRoot implements AggregateRoot, Serializable {
 
     private static final long serialVersionUID = 6330592271927197888L;
 
-    @Transient
-    private volatile EventContainer eventContainer;
-
-    @Transient
     private boolean deleted = false;
-
-    @Basic(optional = true)
-    private Long lastEventSequenceNumber;
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    @Version
-    private Long version;
 
     /**
      * Registers an event to be published when the aggregate is saved, containing the given <code>payload</code> and no
@@ -56,7 +46,7 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
      * @param <T>     The type of payload
      * @return The Event holding the given <code>payload</code>
      */
-    protected <T> DomainEventMessage<T> registerEvent(T payload) {
+    protected <T> EventMessage<T> registerEvent(T payload) {
         return registerEvent(MetaData.emptyInstance(), payload);
     }
 
@@ -68,8 +58,10 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
      * @param <T>      The type of payload
      * @return The Event holding the given <code>payload</code>
      */
-    protected <T> DomainEventMessage<T> registerEvent(MetaData metaData, T payload) {
-        return getEventContainer().addEvent(metaData, payload);
+    protected <T> EventMessage<T> registerEvent(MetaData metaData, T payload) {
+        final EventMessage<T> message = new GenericEventMessage<>(payload, metaData);
+        registerEventMessage(message);
+        return message;
     }
 
     /**
@@ -77,10 +69,13 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
      *
      * @param message The message to publish
      * @param <T>     The payload type carried by the message
-     * @return The event as registered by the aggregate
      */
-    protected <T> DomainEventMessage<T> registerEventMessage(DomainEventMessage<T> message) {
-        return getEventContainer().addEvent(message);
+    protected <T> void registerEventMessage(EventMessage<T> message) {
+        if (CurrentUnitOfWork.isStarted()) {
+            EventBus eventBus = CurrentUnitOfWork.get().getResource(EventBus.KEY);
+            Assert.state(eventBus != null, "The Unit of Work did not supply an Event Bus");
+            eventBus.publish(message);
+        }
     }
 
     /**
@@ -100,84 +95,4 @@ public abstract class AbstractAggregateRoot<I> implements AggregateRoot<I>, Seri
         return deleted;
     }
 
-    @Override
-    public void addEventRegistrationCallback(EventRegistrationCallback eventRegistrationCallback) {
-        getEventContainer().addEventRegistrationCallback(eventRegistrationCallback);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public DomainEventStream getUncommittedEvents() {
-        if (eventContainer == null) {
-            return SimpleDomainEventStream.emptyStream();
-        }
-        return eventContainer.getEventStream();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void commitEvents() {
-        if (eventContainer != null) {
-            lastEventSequenceNumber = eventContainer.getLastSequenceNumber();
-            eventContainer.commit();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int getUncommittedEventCount() {
-        return eventContainer != null ? eventContainer.size() : 0;
-    }
-
-    /**
-     * Initialize the event stream using the given sequence number of the last known event. This will cause the new
-     * events to be attached to this aggregate to be assigned a continuous sequence number.
-     *
-     * @param lastSequenceNumber The sequence number of the last event from this aggregate
-     */
-    protected void initializeEventStream(long lastSequenceNumber) {
-        getEventContainer().initializeSequenceNumber(lastSequenceNumber);
-        lastEventSequenceNumber = lastSequenceNumber >= 0 ? lastSequenceNumber : null;
-    }
-
-    /**
-     * Returns the sequence number of the last committed event, or <code>null</code> if no events have been committed
-     * before.
-     *
-     * @return the sequence number of the last committed event
-     */
-    protected Long getLastCommittedEventSequenceNumber() {
-        if (eventContainer == null) {
-            return lastEventSequenceNumber;
-        }
-        return eventContainer.getLastCommittedSequenceNumber();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Long getVersion() {
-        return version;
-    }
-
-    private EventContainer getEventContainer() {
-        if (eventContainer == null) {
-            Object identifier = getIdentifier();
-            if (identifier == null) {
-                throw new AggregateIdentifierNotInitializedException(
-                        "AggregateIdentifier is unknown in [" + getClass().getName() + "]. "
-                                + "Make sure the Aggregate Identifier is initialized before registering events.");
-            }
-            eventContainer = new EventContainer(identifier);
-            eventContainer.initializeSequenceNumber(lastEventSequenceNumber);
-        }
-        return eventContainer;
-    }
 }

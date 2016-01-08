@@ -16,17 +16,18 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 
 /**
  * Interface to be implemented by classes that can handle events.
  *
  * @author Allard Buijze
  * @see EventBus
- * @see org.axonframework.domain.DomainEventMessage
+ * @see DomainEventMessage
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
+@FunctionalInterface
 public interface EventListener {
 
     /**

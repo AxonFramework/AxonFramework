@@ -37,7 +37,7 @@ public class AggregateStateCorruptedException extends AxonTransientException {
 
     private static final long serialVersionUID = 133015394552568435L;
 
-    private final Object aggregateIdentifier;
+    private final String aggregateIdentifier;
 
     /**
      * Initializes the exception with given <code>aggregateIdentifier</code> and given explanatory
@@ -46,7 +46,7 @@ public class AggregateStateCorruptedException extends AxonTransientException {
      * @param aggregateIdentifier The identifier of the blacklisted aggregate
      * @param message             The message explaining why the blacklisting occurred
      */
-    public AggregateStateCorruptedException(Object aggregateIdentifier, String message) {
+    public AggregateStateCorruptedException(String aggregateIdentifier, String message) {
         super(message);
         this.aggregateIdentifier = aggregateIdentifier;
     }
@@ -59,7 +59,7 @@ public class AggregateStateCorruptedException extends AxonTransientException {
      * @param message             The message explaining why the blacklisting occurred
      * @param cause               The cause of the blacklist
      */
-    public AggregateStateCorruptedException(Object aggregateIdentifier, String message, Throwable cause) {
+    public AggregateStateCorruptedException(String aggregateIdentifier, String message, Throwable cause) {
         super(message, cause);
         this.aggregateIdentifier = aggregateIdentifier;
     }
@@ -69,7 +69,7 @@ public class AggregateStateCorruptedException extends AxonTransientException {
      *
      * @return the identifier of the blacklisted aggregate
      */
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 }

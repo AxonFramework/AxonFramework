@@ -17,12 +17,11 @@
 package org.axonframework.test.utils;
 
 import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
+import org.axonframework.messaging.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.List;
 
@@ -43,14 +42,14 @@ public class RecordingCommandBusTest {
     @Test
     public void testPublishCommand() {
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object>() {
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 assertNull("Expected default callback behavior to invoke onSuccess(null)", result);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                 fail("Didn't expect callack to be invoked");
             }
         });
@@ -63,21 +62,16 @@ public class RecordingCommandBusTest {
 
     @Test
     public void testPublishCommandWithCallbackBehavior() {
-        testSubject.setCallbackBehavior(new CallbackBehavior() {
-            @Override
-            public Object handle(Object commandPayload, MetaData commandMetaData) throws Throwable {
-                return "callbackResult";
-            }
-        });
+        testSubject.setCallbackBehavior((commandPayload, commandMetaData) -> "callbackResult");
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("First"));
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object>() {
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Second"), new CommandCallback<Object, Object>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(CommandMessage<?> commandMessage, Object result) {
                 assertEquals("callbackResult", result);
             }
 
             @Override
-            public void onFailure(Throwable cause) {
+            public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
                 fail("Didn't expect callack to be invoked");
             }
         });
@@ -90,12 +84,9 @@ public class RecordingCommandBusTest {
 
     @Test
     public void testRegisterHandler() {
-        CommandHandler<String> handler = new CommandHandler<String>() {
-            @Override
-            public Object handle(CommandMessage<String> command, UnitOfWork unitOfWork) throws Throwable {
-                fail("Did not expect handler to be invoked");
-                return null;
-            }
+        MessageHandler<? super CommandMessage<?>> handler = (command, unitOfWork) -> {
+            fail("Did not expect handler to be invoked");
+            return null;
         };
         testSubject.subscribe(String.class.getName(), handler);
         assertTrue(testSubject.isSubscribed(handler));

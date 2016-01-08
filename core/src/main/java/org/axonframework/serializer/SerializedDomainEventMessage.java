@@ -16,11 +16,11 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -42,7 +42,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
 
     private final long sequenceNumber;
     @SuppressWarnings("NonSerializableFieldInSerializableClass")
-    private final Object aggregateIdentifier;
+    private final String aggregateIdentifier;
     private final SerializedEventMessage<T> eventMessage;
 
     /**
@@ -53,7 +53,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @param serializer      The Serializer to deserialize the meta data and payload with
      */
     public SerializedDomainEventMessage(SerializedDomainEventData domainEventData, Serializer serializer) {
-        eventMessage = new SerializedEventMessage<T>(
+        eventMessage = new SerializedEventMessage<>(
                 domainEventData.getEventIdentifier(), domainEventData.getTimestamp(),
                 domainEventData.getPayload(), domainEventData.getMetaData(), serializer);
         aggregateIdentifier = domainEventData.getAggregateIdentifier();
@@ -69,7 +69,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @param aggregateIdentifier The identifier of the aggregate that generated the message
      * @param sequenceNumber      The sequence number of the generated event
      */
-    public SerializedDomainEventMessage(SerializedEventMessage<T> eventMessage, Object aggregateIdentifier,
+    public SerializedDomainEventMessage(SerializedEventMessage<T> eventMessage, String aggregateIdentifier,
                                         long sequenceNumber) {
         this.eventMessage = eventMessage;
         this.aggregateIdentifier = aggregateIdentifier;
@@ -98,18 +98,18 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     }
 
     @Override
-    public Object getAggregateIdentifier() {
+    public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
     @Override
     public DomainEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (eventMessage.isPayloadDeserialized()) {
-            return new GenericDomainEventMessage<T>(getIdentifier(), getTimestamp(),
+            return new GenericDomainEventMessage<>(getIdentifier(), getTimestamp(),
                                                     aggregateIdentifier, sequenceNumber,
                                                     getPayload(), newMetaData);
         } else {
-            return new SerializedDomainEventMessage<T>(this, newMetaData);
+            return new SerializedDomainEventMessage<>(this, newMetaData);
         }
     }
 
@@ -125,11 +125,10 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return eventMessage.getPayloadType();
     }
 
-    @SuppressWarnings({"unchecked"})
     @Override
     public T getPayload() {
         return eventMessage.getPayload();
@@ -141,7 +140,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return eventMessage.getTimestamp();
     }
 
@@ -166,7 +165,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @return the GenericDomainEventMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericDomainEventMessage<T>(getIdentifier(), getTimestamp(),
+        return new GenericDomainEventMessage<>(getIdentifier(), getTimestamp(),
                                                 getAggregateIdentifier(), getSequenceNumber(),
                                                 getPayload(), getMetaData());
     }

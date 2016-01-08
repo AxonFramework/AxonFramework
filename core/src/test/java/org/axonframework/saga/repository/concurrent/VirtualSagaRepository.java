@@ -38,9 +38,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class VirtualSagaRepository extends AbstractSagaRepository {
 
-    private ConcurrentMap<String, byte[]> storage = new ConcurrentHashMap<String, byte[]>();
-    private List<Saga> deletedSagas = new CopyOnWriteArrayList<Saga>();
-    private ConcurrentMap<AssociationValue, String> associations = new ConcurrentHashMap<AssociationValue, String>();
+    private ConcurrentMap<String, byte[]> storage = new ConcurrentHashMap<>();
+    private List<Saga> deletedSagas = new CopyOnWriteArrayList<>();
+    private ConcurrentMap<AssociationValue, String> associations = new ConcurrentHashMap<>();
 
     @Override
     public Saga load(String sagaIdentifier) {

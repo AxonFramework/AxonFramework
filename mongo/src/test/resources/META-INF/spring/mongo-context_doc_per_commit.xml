@@ -48,7 +48,7 @@
     </bean>
 
     <!-- Axon saga's -->
-    <bean id="springResourceInjector" class="org.axonframework.saga.spring.SpringResourceInjector"/>
+    <bean id="springResourceInjector" class="org.axonframework.spring.saga.SpringResourceInjector"/>
 
     <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
         <constructor-arg ref="sagaMongoTemplate"/>

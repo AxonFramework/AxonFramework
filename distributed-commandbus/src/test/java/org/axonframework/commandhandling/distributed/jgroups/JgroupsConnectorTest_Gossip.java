@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
@@ -26,14 +25,17 @@ import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -84,11 +86,11 @@ public class JgroupsConnectorTest_Gossip {
         final AtomicInteger counter1 = new AtomicInteger(0);
         final AtomicInteger counter2 = new AtomicInteger(0);
 
-        connector1.subscribe(String.class.getName(), new CountingCommandHandler<String>(counter1));
+        connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(Long.class.getName(), new CountingCommandHandler<Long>(counter2));
+        connector2.subscribe(Long.class.getName(), new CountingCommandHandler(counter2));
         connector2.connect(80);
 
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
@@ -105,7 +107,7 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         final AtomicInteger counter2 = new AtomicInteger(0);
-        connector2.subscribe(String.class.getName(), new CountingCommandHandler<Object>(counter2));
+        connector2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
         connector1.connect(20);
         connector2.connect(20);
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
@@ -151,7 +153,7 @@ public class JgroupsConnectorTest_Gossip {
         return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_gossip.xml");
     }
 
-    private static class CountingCommandHandler<T> implements CommandHandler<T> {
+    private static class CountingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         private final AtomicInteger counter;
 
@@ -160,7 +162,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<T> stringCommandMessage, UnitOfWork unitOfWork) throws Throwable {
+        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork unitOfWork) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }

@@ -17,11 +17,12 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.annotation.ParameterResolver;
-import org.joda.time.DateTime;
+
 import org.junit.Test;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
 
@@ -31,14 +32,14 @@ import static org.junit.Assert.assertEquals;
 public class AnnotatedParameterResolverFactoryTest {
     @Test
     public void testTimestampParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
-        Method method = TestClass.class.getMethod("methodWithTimestampParameter", DateTime.class, Long.class, DateTime.class);
+        Method method = TestClass.class.getMethod("methodWithTimestampParameter", Instant.class, Long.class, Instant.class);
         testMethod(new TimestampParameterResolverFactory(), method,
                 new Class<?>[]{TimestampParameterResolverFactory.TimestampParameterResolver.class, null, null});
     }
 
     @Test
     public void testSequenceNumberParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
-        Method method = TestClass.class.getMethod("methodWithSequenceNumberParameter", Long.class, DateTime.class);
+        Method method = TestClass.class.getMethod("methodWithSequenceNumberParameter", Long.class, Instant.class);
         testMethod(new SequenceNumberParameterResolverFactory(), method,
                 new Class<?>[]{ SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class, null});
     }
@@ -52,11 +53,11 @@ public class AnnotatedParameterResolverFactoryTest {
 
     @SuppressWarnings("unused")
     private static class TestClass {
-        public void methodWithTimestampParameter(@Timestamp DateTime timestamp, @Timestamp Long wrongType, DateTime unannotated) {
+        public void methodWithTimestampParameter(@Timestamp Instant timestamp, @Timestamp Long wrongType, Instant unannotated) {
 
         }
 
-        public void methodWithSequenceNumberParameter(@SequenceNumber Long sequenceNumber, @Timestamp DateTime different) {
+        public void methodWithSequenceNumberParameter(@SequenceNumber Long sequenceNumber, @Timestamp Instant different) {
 
         }
 

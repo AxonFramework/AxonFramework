@@ -30,6 +30,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class MatchAllFieldFilterTest {
 
+    @SuppressWarnings("unused")
     private String field;
 
     @Test

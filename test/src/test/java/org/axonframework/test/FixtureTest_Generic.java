@@ -16,21 +16,26 @@
 
 package org.axonframework.test;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventstore.EventStoreException;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Allard Buijze
@@ -46,7 +51,6 @@ public class FixtureTest_Generic {
         fixture.setReportIllegalStateChange(false);
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StandardAggregate.class);
-        when(mockAggregateFactory.getTypeIdentifier()).thenReturn(StandardAggregate.class.getSimpleName());
         when(mockAggregateFactory.createAggregate(isA(String.class), isA(DomainEventMessage.class)))
                 .thenReturn(new StandardAggregate("id1"));
     }
@@ -107,7 +111,7 @@ public class FixtureTest_Generic {
                .when(new TestCommand("AggregateId"))
                .expectEvents(new MyEvent("AggregateId", 3));
 
-        DomainEventStream events = fixture.getEventStore().readEvents("StandardAggregate", "AggregateId");
+        DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {
             assertTrue(events.hasNext());
             DomainEventMessage next = events.next();
@@ -132,17 +136,17 @@ public class FixtureTest_Generic {
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), 0, new StubDomainEvent())));
+        fixture.getEventStore().appendEvents(asList(
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
-        UUID identifier = UUID.randomUUID();
-        fixture.getEventStore().appendEvents("whatever", new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<StubDomainEvent>(identifier, 2, new StubDomainEvent())));
+        String identifier = UUID.randomUUID().toString();
+        fixture.getEventStore().appendEvents(asList(
+                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
     }
 
     private class StubDomainEvent {

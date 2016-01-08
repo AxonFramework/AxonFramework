@@ -69,13 +69,15 @@ public class FileSystemEventMessageReader implements Closeable {
         byte[] metaData = new byte[metaDataSize];
         in.readFully(metaData);
 
-        return new SimpleSerializedDomainEventData(identifier,
-                                        aggregateIdentifier,
-                                        sequenceNumber,
-                                        timestamp,
-                                        payloadType,
-                                        payloadRevision,
-                                        payload, metaData);
+        return new SimpleSerializedDomainEventData<>(
+                identifier,
+                aggregateIdentifier,
+                sequenceNumber,
+                timestamp,
+                payloadType,
+                payloadRevision,
+                payload,
+                metaData);
     }
 
     @Override

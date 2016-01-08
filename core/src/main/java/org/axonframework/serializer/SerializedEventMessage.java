@@ -16,11 +16,11 @@
 
 package org.axonframework.serializer;
 
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericEventMessage;
-import org.axonframework.domain.MetaData;
-import org.joda.time.DateTime;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.metadata.MetaData;
 
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -38,7 +38,7 @@ import java.util.Map;
 public class SerializedEventMessage<T> implements EventMessage<T>, SerializationAware {
 
     private static final long serialVersionUID = -4704515337335869770L;
-    private final DateTime timestamp;
+    private final Instant timestamp;
     private final SerializedMessage<T> message;
 
     /**
@@ -51,9 +51,9 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
      * @param serializer         The serializer to deserialize the payload and meta data with
      * @throws UnknownSerializedTypeException if the type of the serialized object cannot be resolved to a class
      */
-    public SerializedEventMessage(String eventIdentifier, DateTime timestamp, SerializedObject<?> serializedPayload,
+    public SerializedEventMessage(String eventIdentifier, Instant timestamp, SerializedObject<?> serializedPayload,
                                   SerializedObject<?> serializedMetaData, Serializer serializer) {
-        message = new SerializedMessage<T>(eventIdentifier, serializedPayload, serializedMetaData, serializer);
+        message = new SerializedMessage<>(eventIdentifier, serializedPayload, serializedMetaData, serializer);
         this.timestamp = timestamp;
     }
 
@@ -78,7 +78,7 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
     }
 
     @Override
-    public DateTime getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
@@ -94,16 +94,17 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
     }
 
     @Override
-    public Class getPayloadType() {
+    public Class<T> getPayloadType() {
         return message.getPayloadType();
     }
 
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     @Override
     public SerializedEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (getMetaData().equals(newMetaData)) {
             return this;
         } else {
-            return new SerializedEventMessage<T>(this, newMetaData);
+            return new SerializedEventMessage<>(this, newMetaData);
         }
     }
 
@@ -129,6 +130,6 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
      * @return the GenericEventMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericEventMessage<T>(getIdentifier(), getTimestamp(), getPayload(), getMetaData());
+        return new GenericEventMessage<>(getIdentifier(), getTimestamp(), getPayload(), getMetaData());
     }
 }

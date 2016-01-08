@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2015. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can
@@ -28,10 +32,14 @@ import org.axonframework.domain.EventMessage;
  * @author Allard Buijze
  * @see EventListener
  * @see SimpleEventBus
- * @see ClusteringEventBus
  * @since 0.1
  */
 public interface EventBus {
+
+    /**
+     * The default key used to map an event bus as a resource.
+     */
+    String KEY = EventBus.class.getName();
 
     /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
@@ -42,26 +50,43 @@ public interface EventBus {
      *
      * @param events The collection of events to publish
      */
-    void publish(EventMessage... events);
+    default void publish(EventMessage<?>... events) {
+        publish(Arrays.asList(events));
+    }
 
     /**
-     * Subscribe the given <code>eventListener</code> to this bus. When subscribed, it will receive all events
+     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
+     * listeners.
+     * <p/>
+     * Implementations may treat the given <code>events</code> as a single batch and distribute the events as such to
+     * all subscribed EventListeners.
+     *
+     * @param events The collection of events to publish
+     */
+    void publish(List<EventMessage<?>> events);
+
+    /**
+     * Subscribe the given <code>eventProcessor</code> to this bus. When subscribed, it will receive all events
      * published to this bus.
      * <p/>
-     * If the given <code>eventListener</code> is already subscribed, nothing happens.
+     * If the given <code>eventProcessor</code> is already subscribed, nothing happens.
      *
-     * @param eventListener The event listener to subscribe
-     * @throws EventListenerSubscriptionFailedException
-     *          if the listener could not be subscribed
+     * @param eventProcessor The event processor to subscribe
+     * @return a handle to unsubscribe the <code>eventProcessor</code>. When unsubscribed it will no longer receive events.
+     * @throws EventListenerSubscriptionFailedException if the listener could not be subscribed
      */
-    void subscribe(EventListener eventListener);
+    Registration subscribe(EventProcessor eventProcessor);
 
     /**
-     * Unsubscribe the given <code>eventListener</code> to this bus. When unsubscribed, it will no longer receive
-     * events
-     * published to this bus.
+     * Register the given <code>interceptor</code> with this bus. When subscribed it will intercept any event messages
+     * published on this bus.
+     * <p/>
+     * If the given <code>interceptor</code> is already registered, nothing happens.
      *
-     * @param eventListener The event listener to unsubscribe
+     * @param dispatchInterceptor The event message dispatch interceptor to register
+     * @return a handle to unregister the <code>dispatchInterceptor</code>. When unregistered it will no longer be
+     * given event messages published on this bus.
      */
-    void unsubscribe(EventListener eventListener);
+    Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor);
+
 }

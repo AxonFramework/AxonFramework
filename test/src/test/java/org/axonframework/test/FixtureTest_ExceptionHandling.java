@@ -110,7 +110,7 @@ public class FixtureTest_ExceptionHandling {
 		}
 	}
 
-	private static class MyAggregate extends AbstractAnnotatedAggregateRoot<String> {
+	private static class MyAggregate extends AbstractAnnotatedAggregateRoot {
 		@AggregateIdentifier
 		String id;
 

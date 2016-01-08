@@ -46,7 +46,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
     private static final ServiceLoader<PropertyAccessStrategy> LOADER =
             ServiceLoader.load(PropertyAccessStrategy.class);
 
-    private static final SortedSet<PropertyAccessStrategy> STRATEGIES = new ConcurrentSkipListSet<PropertyAccessStrategy>();
+    private static final SortedSet<PropertyAccessStrategy> STRATEGIES = new ConcurrentSkipListSet<>();
 
     static {
         for (PropertyAccessStrategy factory : LOADER) {

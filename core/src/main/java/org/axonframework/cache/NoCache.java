@@ -16,6 +16,8 @@
 
 package org.axonframework.cache;
 
+import org.axonframework.common.Registration;
+
 /**
  * Cache implementation that does absolutely nothing. Objects aren't cached, making it a special case implementation
  * for
@@ -59,10 +61,7 @@ public final class NoCache implements Cache {
     }
 
     @Override
-    public void registerCacheEntryListener(EntryListener cacheEntryListener) {
-    }
-
-    @Override
-    public void unregisterCacheEntryListener(EntryListener cacheEntryRemovedListener) {
+    public Registration registerCacheEntryListener(EntryListener cacheEntryListener) {
+        return () -> true;
     }
 }

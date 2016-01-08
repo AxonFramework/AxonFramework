@@ -16,18 +16,18 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.MetaData;
-import org.axonframework.domain.StubDomainEvent;
-import org.junit.*;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.metadata.MetaData;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze
@@ -51,7 +51,7 @@ public class AbstractEventSourcedEntityTest {
     }
 
     private DomainEventMessage domainEvent(StubDomainEvent stubDomainEvent) {
-        return new GenericDomainEventMessage<StubDomainEvent>(UUID.randomUUID(), (long) 0,
+        return new GenericDomainEventMessage<>(UUID.randomUUID().toString(), (long) 0,
                                                               stubDomainEvent, MetaData.emptyInstance());
     }
 
@@ -90,7 +90,7 @@ public class AbstractEventSourcedEntityTest {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
+        protected void handle(EventMessage event) {
             if (invocationCount == 1 && child == null) {
                 child = new StubEntity();
             }

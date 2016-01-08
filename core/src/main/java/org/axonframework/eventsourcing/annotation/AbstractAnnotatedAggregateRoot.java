@@ -19,13 +19,13 @@ package org.axonframework.eventsourcing.annotation;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandlerInvoker;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcedEntity;
-import org.axonframework.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.util.Collection;
 import javax.persistence.MappedSuperclass;
+import java.util.Collection;
 
 /**
  * Convenience super type for aggregate roots that have their event handler methods annotated with the {@link
@@ -34,14 +34,13 @@ import javax.persistence.MappedSuperclass;
  * <p/>
  * Implementations can call the {@link #apply(Object)} method to have an event applied.
  *
- * @param <I> The type of the identifier of this aggregate
  * @author Allard Buijze
  * @see org.axonframework.eventsourcing.annotation.EventSourcingHandler
  * @see org.axonframework.eventhandling.annotation.EventHandler
  * @since 0.1
  */
 @MappedSuperclass
-public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSourcedAggregateRoot<I> {
+public abstract class AbstractAnnotatedAggregateRoot extends AbstractEventSourcedAggregateRoot {
 
     private static final long serialVersionUID = -1206026570158467937L;
     private transient MessageHandlerInvoker eventHandlerInvoker; // NOSONAR
@@ -56,7 +55,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
      * @see org.axonframework.eventhandling.annotation.EventHandler
      */
     @Override
-    protected void handle(DomainEventMessage event) {
+    protected void handle(EventMessage event) {
         ensureInspectorInitialized();
         ensureInvokerInitialized();
         eventHandlerInvoker.invokeHandlerMethod(event);
@@ -64,7 +63,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
 
     @SuppressWarnings("unchecked")
     @Override
-    public I getIdentifier() {
+    public String getIdentifier() {
         ensureInspectorInitialized();
         return inspector.getIdentifier(this);
     }
@@ -93,7 +92,7 @@ public abstract class AbstractAnnotatedAggregateRoot<I> extends AbstractEventSou
      * Creates (or returns) a ParameterResolverFactory which is used by this aggregate root to resolve the parameters
      * for @EventSourcingHandler annotated methods.
      * <p/>
-     * Unless a specific ParameterResolverFactory has ben registered using {@link #registerParameterResolverFactory(org.axonframework.common.annotation.ParameterResolverFactory)},
+     * Unless a specific ParameterResolverFactory has been registered using {@link #registerParameterResolverFactory(org.axonframework.common.annotation.ParameterResolverFactory)},
      * this implementation uses the aggregate root's class loader to find parameter resolver factory implementations
      * on the classpath.
      *

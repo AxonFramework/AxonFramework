@@ -16,32 +16,26 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
-import org.axonframework.domain.DomainEventMessage;
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventMessage;
-import org.axonframework.domain.GenericDomainEventMessage;
-import org.axonframework.domain.SimpleDomainEventStream;
+import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcedEntity;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.repository.Repository;
-import org.axonframework.unitofwork.UnitOfWork;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Allard Buijze
@@ -54,16 +48,17 @@ public class DisruptorCommandBusBenchmark {
         CountingEventBus eventBus = new CountingEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore);
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
-        stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<StubAggregate>(StubAggregate.class)));
+        stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
-        inMemoryEventStore.appendEvents(StubAggregate.class.getSimpleName(), new SimpleDomainEventStream(
-                new GenericDomainEventMessage<StubDomainEvent>(aggregateIdentifier, 0, new StubDomainEvent())));
+        inMemoryEventStore.appendEvents(asList(new GenericDomainEventMessage<>(aggregateIdentifier,
+                                                                               0,
+                                                                               new StubDomainEvent())));
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
-            CommandMessage<StubCommand> command = new GenericCommandMessage<StubCommand>(
+            CommandMessage<StubCommand> command = new GenericCommandMessage<>(
                     new StubCommand(aggregateIdentifier));
             commandBus.dispatch(command);
         }
@@ -85,7 +80,7 @@ public class DisruptorCommandBusBenchmark {
         private String identifier;
 
         @Override
-        public Object getIdentifier() {
+        public String getIdentifier() {
             return identifier;
         }
 
@@ -94,8 +89,8 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        protected void handle(DomainEventMessage event) {
-            identifier = (String) event.getAggregateIdentifier();
+        protected void handle(EventMessage event) {
+            identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
         }
 
         @Override
@@ -106,26 +101,31 @@ public class DisruptorCommandBusBenchmark {
 
     private static class InMemoryEventStore implements EventStore {
 
-        private final Map<String, DomainEventMessage> storedEvents = new HashMap<String, DomainEventMessage>();
+        private final Map<String, DomainEventMessage> storedEvents = new HashMap<>();
         private final CountDownLatch countDownLatch = new CountDownLatch((int) (COMMAND_COUNT + 1L));
 
         @Override
-        public void appendEvents(String type, DomainEventStream events) {
-            if (!events.hasNext()) {
+        public void appendEvents(List<DomainEventMessage<?>> events) {
+            if (events == null || events.isEmpty()) {
                 return;
             }
-            String key = events.peek().getAggregateIdentifier().toString();
+            String key = events.get(0).getAggregateIdentifier();
             DomainEventMessage<?> lastEvent = null;
-            while (events.hasNext()) {
+            for (EventMessage<?> event : events) {
                 countDownLatch.countDown();
-                lastEvent = events.next();
+                lastEvent = (DomainEventMessage<?>) event;
             }
             storedEvents.put(key, lastEvent);
         }
 
         @Override
-        public DomainEventStream readEvents(String type, Object identifier) {
-            return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier.toString())));
+        public DomainEventStream readEvents(String identifier) {
+            return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier)));
+        }
+
+        @Override
+        public DomainEventStream readEvents(String identifier, long firstSequenceNumber, long lastSequenceNumber) {
+            throw new UnsupportedOperationException("Not implemented");
         }
     }
 
@@ -143,7 +143,7 @@ public class DisruptorCommandBusBenchmark {
         }
     }
 
-    private static class StubHandler implements CommandHandler<StubCommand> {
+    private static class StubHandler implements MessageHandler<CommandMessage<?>> {
 
         private Repository<StubAggregate> repository;
 
@@ -151,8 +151,9 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<StubCommand> command, UnitOfWork unitOfWork) throws Throwable {
-            repository.load(command.getPayload().getAggregateIdentifier()).doSomething();
+        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
+            StubCommand payload = (StubCommand) message.getPayload();
+            repository.load(payload.getAggregateIdentifier().toString()).doSomething();
             return null;
         }
 
@@ -170,18 +171,18 @@ public class DisruptorCommandBusBenchmark {
         private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
 
         @Override
-        public void publish(EventMessage... events) {
+        public void publish(List<EventMessage<?>> events) {
             publisherCountDown.countDown();
         }
 
         @Override
-        public void subscribe(EventListener eventListener) {
-            throw new UnsupportedOperationException("Not implemented yet");
+        public Registration subscribe(EventProcessor eventProcessor) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public void unsubscribe(EventListener eventListener) {
-            throw new UnsupportedOperationException("Not implemented yet");
+        public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
+            throw new UnsupportedOperationException();
         }
     }
 }

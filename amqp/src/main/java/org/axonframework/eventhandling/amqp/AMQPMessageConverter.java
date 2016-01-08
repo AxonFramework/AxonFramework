@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.amqp;
 
-import org.axonframework.domain.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Map;
 
@@ -42,7 +42,7 @@ public interface AMQPMessageConverter {
      *
      * @param messageBody The body of the AMQP Message
      * @param headers     The headers attached to the AMQP Message
-     * @return The Event Message to publish on the local clusters
+     * @return The Event Message to publish on the local event processors
      */
     EventMessage readAMQPMessage(byte[] messageBody, Map<String, Object> headers);
 }

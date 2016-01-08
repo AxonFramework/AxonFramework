@@ -16,16 +16,16 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.domain.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.SerializedMetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
-import org.joda.time.DateTime;
 
-import java.util.Arrays;
 import javax.persistence.Basic;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
+import java.time.Instant;
+import java.util.Arrays;
 
 /**
  * Data needed by different types of event logs.
@@ -46,30 +46,27 @@ public abstract class AbstractEventEntry extends AbstractEventEntryData<byte[]> 
     /**
      * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type     The type identifier of the aggregate root the event belongs to
      * @param event    The event to store in the EventStore
      * @param payload  The serialized payload of the Event
      * @param metaData The serialized metaData of the Event
      */
-    protected AbstractEventEntry(String type, DomainEventMessage event,
+    protected AbstractEventEntry(DomainEventMessage event,
                                  SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
-        this(type, event, event.getTimestamp(), payload, metaData);
+        this(event, event.getTimestamp(), payload, metaData);
     }
 
     /**
      * Initialize an Event entry for the given <code>event</code>.
      *
-     * @param type      The type identifier of the aggregate root the event belongs to
      * @param event     The event to store in the EventStore
      * @param timestamp The timestamp to store
      * @param payload   The serialized payload of the Event
      * @param metaData  The serialized metaData of the Event
      */
-    protected AbstractEventEntry(String type, DomainEventMessage event, DateTime timestamp,
+    protected AbstractEventEntry(DomainEventMessage event, Instant timestamp,
                                  SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
         super(event.getIdentifier(),
-              type,
-              event.getAggregateIdentifier().toString(),
+              event.getAggregateIdentifier(),
               event.getSequenceNumber(),
               timestamp, payload.getType()
         );
@@ -85,12 +82,12 @@ public abstract class AbstractEventEntry extends AbstractEventEntryData<byte[]> 
 
     @Override
     public SerializedObject<byte[]> getPayload() {
-        return new SimpleSerializedObject<byte[]>(payload, byte[].class, getPayloadType());
+        return new SimpleSerializedObject<>(payload, byte[].class, getPayloadType());
     }
 
     @Override
     public SerializedObject<byte[]> getMetaData() {
-        return new SerializedMetaData<byte[]>(metaData, byte[].class);
+        return new SerializedMetaData<>(metaData, byte[].class);
     }
 
 

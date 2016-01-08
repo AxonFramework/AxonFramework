@@ -29,10 +29,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.context.ApplicationContext;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.same;
 import static org.powermock.api.mockito.PowerMockito.verifyNew;
 import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
@@ -89,11 +86,8 @@ public class JGroupsConnectorFactoryBeanTest {
 
         verifyStatic(never());
         Util.registerChannel(any(JChannel.class), anyString());
-
-        testSubject.stop(new Runnable() {
-            @Override
-            public void run() {
-            }
+        
+        testSubject.stop(() -> {
         });
 
         verify(mockChannel).close();
@@ -172,10 +166,7 @@ public class JGroupsConnectorFactoryBeanTest {
         verify(mockConnector).connect(100);
         verify(mockChannel, never()).close();
 
-        testSubject.stop(new Runnable() {
-            @Override
-            public void run() {
-            }
+        testSubject.stop(() -> {
         });
 
         verify(mockChannel).close();

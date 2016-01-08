@@ -16,12 +16,12 @@
 
 package org.axonframework.eventstore.supporting;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import org.axonframework.domain.DomainEventStream;
-import org.axonframework.domain.EventContainer;
-import org.axonframework.domain.MetaData;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.junit.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Knut-Olav Hoven
@@ -32,7 +32,7 @@ public class VolatileEventStoreTest {
     public void readEvents_givenNoEvents() {
         VolatileEventStore es = new VolatileEventStore();
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isFalse();
     }
@@ -41,17 +41,15 @@ public class VolatileEventStoreTest {
     public void readEvents_givenEvents_ofTwoAggregates() {
         VolatileEventStore es = new VolatileEventStore();
 
-        EventContainer ec1 = new EventContainer("My-1");
-        ec1.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        ec1.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-        es.appendEvents("MyAggregate", ec1.getEventStream());
+        String aggregateId = "My-1";
+        es.appendEvents(createEventMessage(aggregateId, 0, new MyEvent(1)),
+                        createEventMessage(aggregateId, 1, new MyEvent(2)));
 
-        EventContainer ec2 = new EventContainer("My-2");
-        ec2.addEvent(MetaData.emptyInstance(), new MyEvent(21));
-        ec2.addEvent(MetaData.emptyInstance(), new MyEvent(22));
-        es.appendEvents("MyAggregate", ec2.getEventStream());
+        aggregateId = "My-2";
+        es.appendEvents(createEventMessage(aggregateId, 0, new MyEvent(21)),
+                createEventMessage(aggregateId, 1, new MyEvent(22)));
 
-        DomainEventStream readEvents = es.readEvents("MyAggregate", "My-1");
+        DomainEventStream readEvents = es.readEvents("My-1");
 
         assertThat(readEvents.hasNext()).isTrue();
         assertThat(readEvents.next().getSequenceNumber()).isEqualTo(0L);
@@ -73,12 +71,9 @@ public class VolatileEventStoreTest {
     @Test
     public void visitEvents_givenEvents() {
         VolatileEventStore es = new VolatileEventStore();
-        EventContainer ec = new EventContainer("My-1");
-
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(1));
-        ec.addEvent(MetaData.emptyInstance(), new MyEvent(2));
-
-        es.appendEvents("MyAggregate", ec.getEventStream());
+        String aggregateId = "My-1";
+        es.appendEvents(createEventMessage(aggregateId, 0, new MyEvent(1)),
+                        createEventMessage(aggregateId, 1, new MyEvent(2)));
 
         CapturingEventVisitor visitor = new CapturingEventVisitor();
 
@@ -86,5 +81,9 @@ public class VolatileEventStoreTest {
 
         assertThat(visitor.visited()).hasSize(2);
         assertThat(visitor.visited().get(1).getSequenceNumber()).isEqualTo(1L);
+    }
+
+    private DomainEventMessage<?> createEventMessage(String aggregateId, long sequenceNumber, Object event) {
+        return new GenericDomainEventMessage<>(aggregateId, sequenceNumber, event);
     }
 }
