@@ -7,8 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -21,25 +19,23 @@ import java.util.function.Consumer;
 public abstract class AbstractUnitOfWork implements UnitOfWork {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
-    private final UnitOfWorkHandlerCollection listeners = new UnitOfWorkHandlerCollection();
     private final Map<String, Object> resources = new HashMap<>();
-    private final Queue<CorrelationDataProvider> correlationDataProviders = new ArrayDeque<>();
-    private Phase phase = Phase.NOT_STARTED;
+    private final Collection<CorrelationDataProvider> correlationDataProviders = new LinkedHashSet<>();
     private UnitOfWork parentUnitOfWork;
-    private ExecutionResult executionResult;
+    private Phase phase = Phase.NOT_STARTED;
 
     @Override
     public void start() {
         if (logger.isDebugEnabled()) {
             logger.debug("Starting Unit Of Work");
         }
-        Assert.state(Phase.NOT_STARTED.equals(phase), "UnitOfWork is already started");
+        Assert.state(Phase.NOT_STARTED.equals(phase()), "UnitOfWork is already started");
         if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
             this.parentUnitOfWork = CurrentUnitOfWork.get();
-            root().onCleanup(u -> listeners.invokeHandlers(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED));
+            root().onCleanup(u -> changePhase(Phase.CLEANUP, Phase.CLOSED));
         }
-        setPhase(Phase.STARTED);
+        changePhase(Phase.STARTED);
         CurrentUnitOfWork.set(this);
     }
 
@@ -48,13 +44,13 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         if (logger.isDebugEnabled()) {
             logger.debug("Committing Unit Of Work");
         }
-        Assert.state(phase == Phase.STARTED, String.format("The UnitOfWork is in an incompatible phase: %s", phase));
+        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork is in an incompatible phase: %s", phase()));
         Assert.state(isCurrent(), "The UnitOfWork is not the current Unit of Work");
         try {
-            if (parentUnitOfWork != null) {
-                commitAsNested();
-            } else {
+            if (isRoot()) {
                 commitAsRoot();
+            } else {
+                commitAsNested();
             }
         } finally {
             CurrentUnitOfWork.clear(this);
@@ -64,32 +60,29 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     private void commitAsRoot() {
         try {
             try {
-                listeners.invokeHandlers(this, this::setPhase, Phase.PREPARE_COMMIT, Phase.COMMIT);
+                changePhase(Phase.PREPARE_COMMIT, Phase.COMMIT);
             } catch (Exception e) {
-                listeners.invokeRollbackListeners(this, e, this::setPhase);
+                setRollbackCause(e);
+                changePhase(Phase.ROLLBACK);
                 throw e;
             }
-
-            if (phase == Phase.COMMIT) {
-                listeners.invokeHandlers(this, this::setPhase, Phase.AFTER_COMMIT);
+            if (phase() == Phase.COMMIT) {
+                changePhase(Phase.AFTER_COMMIT);
             }
         } finally {
-            listeners.invokeHandlers(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED);
+            changePhase(Phase.CLEANUP, Phase.CLOSED);
         }
-    }
-
-    private boolean isCurrent() {
-        return CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get() == this;
     }
 
     private void commitAsNested() {
         UnitOfWork root = root();
         try {
-            listeners.invokeHandlers(this, p -> this.phase = p, Phase.PREPARE_COMMIT, Phase.COMMIT);
-            root.afterCommit(u -> listeners.invokeHandlers(this, this::setPhase, Phase.AFTER_COMMIT));
-            root.onRollback((u, e) -> listeners.invokeRollbackListeners(this, e, this::setPhase));
+            changePhase(Phase.PREPARE_COMMIT, Phase.COMMIT);
+            root.afterCommit(u -> changePhase(Phase.AFTER_COMMIT));
+            root.onRollback(u -> changePhase(Phase.ROLLBACK));
         } catch (Exception e) {
-            listeners.invokeRollbackListeners(this, e, this::setPhase);
+            setRollbackCause(e);
+            changePhase(Phase.ROLLBACK);
             throw e;
         }
     }
@@ -99,14 +92,14 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
         if (logger.isDebugEnabled()) {
             logger.debug("Rolling back Unit Of Work.", cause);
         }
-        Assert.state(isActive() && phase.isBefore(Phase.ROLLBACK),
-                String.format("The UnitOfWork is in an incompatible phase: %s", phase));
+        Assert.state(isActive() && phase().isBefore(Phase.ROLLBACK),
+                String.format("The UnitOfWork is in an incompatible phase: %s", phase()));
         Assert.state(isCurrent(), "The UnitOfWork is not the current Unit of Work");
         try {
-            listeners.invokeRollbackListeners(this, cause, this::setPhase);
-            if (parentUnitOfWork == null) {
-                // rollback as root
-                listeners.invokeHandlers(this, this::setPhase, Phase.CLEANUP, Phase.CLOSED);
+            setRollbackCause(cause);
+            changePhase(Phase.ROLLBACK);
+            if (isRoot()) {
+                changePhase(Phase.CLEANUP, Phase.CLOSED);
             }
         } finally {
             CurrentUnitOfWork.clear(this);
@@ -144,76 +137,65 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public Phase phase() {
-        return phase;
-    }
-
-    @Override
     public void onPrepareCommit(Consumer<UnitOfWork> handler) {
-        addListener(Phase.PREPARE_COMMIT, handler);
+        addHandler(Phase.PREPARE_COMMIT, handler);
     }
 
     @Override
     public void onCommit(Consumer<UnitOfWork> handler) {
-        addListener(Phase.COMMIT, handler);
+        addHandler(Phase.COMMIT, handler);
     }
 
     @Override
     public void afterCommit(Consumer<UnitOfWork> handler) {
-        addListener(Phase.AFTER_COMMIT, handler);
+        addHandler(Phase.AFTER_COMMIT, handler);
     }
 
     @Override
-    public void onRollback(BiConsumer<UnitOfWork, Throwable> handler) {
-        Assert.state(!Phase.ROLLBACK.isBefore(phase),
-                     "Cannot register a rollback listener. The Unit of Work is already after commit.");
-        listeners.addRollbackHandler(handler);
+    public void onRollback(Consumer<UnitOfWork> handler) {
+        addHandler(Phase.ROLLBACK, handler);
     }
 
     @Override
     public void onCleanup(Consumer<UnitOfWork> handler) {
-        addListener(Phase.CLEANUP, handler);
+        addHandler(Phase.CLEANUP, handler);
     }
 
     @Override
-    public void execute(Runnable task, RollbackConfiguration rollbackConfiguration) {
-        try {
-            executeWithResult(() -> {
-                task.run();
-                return null;
-            }, rollbackConfiguration);
-        } catch (Exception e) {
-            throw (RuntimeException) e;
+    public Phase phase() {
+        return phase;
+    }
+
+    /**
+     * Overwrite the current phase with the given <code>phase</code>.
+     *
+     * @param phase the new phase of the Unit of Work
+     */
+    protected void setPhase(Phase phase) {
+        this.phase = phase;
+    }
+
+    /**
+     * Ask the unit of work to transition to the given <code>phases</code> sequentially. In each of the phases the
+     * unit of work is responsible for invoking the handlers attached to each phase.
+     * <p/>
+     * By default this sets the Phase and invokes the handlers attached to the phase.
+     *
+     * @param phases The phases to transition to in sequential order
+     */
+    protected void changePhase(Phase... phases) {
+        for (Phase phase : phases) {
+            setPhase(phase);
+            notifyHandlers(phase);
         }
     }
 
-    @Override
-    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
-        if (phase() == Phase.NOT_STARTED) {
-            start();
-        }
-        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
-        R result;
-        try {
-            result = task.call();
-        } catch (Exception e) {
-            executionResult = new ExecutionResult(e);
-            if (rollbackConfiguration.rollBackOn(e)) {
-                rollback(e);
-            } else {
-                commit();
-            }
-            throw e;
-        }
-        executionResult = new ExecutionResult(result);
-        commit();
-        return result;
-    }
-
-    @Override
-    public ExecutionResult getExecutionResult() {
-        return executionResult;
-    }
+    /**
+     * Notify the handlers attached to the given <code>phase</code>.
+     *
+     * @param phase The phase for which to invoke registered handlers.
+     */
+    protected abstract void notifyHandlers(Phase phase);
 
     /**
      * Register the given <code>handler</code> with the Unit of Work. The handler will be invoked when the
@@ -222,27 +204,19 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
      * @param phase     the Phase of the Unit of Work at which to invoke the handler
      * @param handler   the handler to add
      */
-    protected void addListener(Phase phase, Consumer<UnitOfWork> handler) {
-        Assert.state(!phase.isBefore(this.phase), "Cannot register a listener for phase: " + phase
-                + " because the Unit of Work is already in a later phase: " + this.phase);
-        listeners.addHandler(phase, handler);
-    }
+    protected abstract void addHandler(Phase phase, Consumer<UnitOfWork> handler);
 
     /**
-     * Set the the phase of the Unit of Work to given <code>phase</code>.
+     * Set the execution result of processing the current {@link #getMessage() Message}.
      *
-     * @param phase The new phase of the Unit of Work
+     * @param executionResult the ExecutionResult of the currently handled Message
      */
-    protected void setPhase(Phase phase) {
-        this.phase = phase;
-    }
+    protected abstract void setExecutionResult(ExecutionResult executionResult);
 
     /**
-     * Returns the collection of handlers for this Unit of Work.
+     * Sets the cause for rolling back this Unit of Work.
      *
-     * @return the collection of handlers for this Unit of Work.
+     * @param cause The cause for rolling back this Unit of Work
      */
-    protected UnitOfWorkHandlerCollection handlers() {
-        return listeners;
-    }
+    protected abstract void setRollbackCause(Throwable cause);
 }

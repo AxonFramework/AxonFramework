@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.unitofwork;
+package org.axonframework.messaging.interceptors;
 
 /**
  * Interface of an object that represents a started transaction that can be committed or rolled back.

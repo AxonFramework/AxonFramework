@@ -72,7 +72,7 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
                 UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(event);
                 InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(event, unitOfWork,
                         interceptors, (message, uow) -> {
-                            eventListeners.forEach(eventListener -> eventListener.handle(event));
+                            eventListeners.forEach(eventListener -> eventListener.handle(message));
                             return null;
                 });
                 unitOfWork.execute(() -> {
@@ -94,11 +94,14 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
         }
     }
 
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     private void notifyMonitors(List<EventMessage<?>> events, EventProcessingMonitor monitor,
                                 RuntimeException exception) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(u -> monitor.onEventProcessingCompleted(events));
-            CurrentUnitOfWork.get().onRollback((u, e) -> monitor.onEventProcessingFailed(events, exception == null ? e : exception));
+            CurrentUnitOfWork.get().onRollback(u -> monitor.onEventProcessingFailed(events, exception == null
+                    && u.getExecutionResult().isExceptionResult() ? u.getExecutionResult().getExceptionResult()
+                    : exception));
         } else if (exception == null) {
             monitor.onEventProcessingCompleted(events);
         } else {

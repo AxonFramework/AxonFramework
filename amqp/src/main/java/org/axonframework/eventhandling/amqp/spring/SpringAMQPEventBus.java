@@ -114,7 +114,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
                     }
                     tryClose(channel);
                 });
-                CurrentUnitOfWork.get().onRollback((u, e) -> {
+                CurrentUnitOfWork.get().onRollback(u -> {
                     try {
                         if (isTransactional) {
                             channel.txRollback();

@@ -23,7 +23,12 @@ import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.*;
+import org.axonframework.messaging.interceptors.Transaction;
+import org.axonframework.messaging.interceptors.TransactionManager;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.testutils.MockException;
 import org.junit.Before;
 import org.junit.Test;

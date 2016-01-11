@@ -17,11 +17,11 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.AbstractUnitOfWork;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.*;
 
 import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 /**
  * Specialized UnitOfWork instance for the {@link DisruptorCommandBus}. It expects the executing command message to
@@ -32,7 +32,7 @@ import java.util.Optional;
  */
 public class DisruptorUnitOfWork extends AbstractUnitOfWork {
 
-    private Message<?> message;
+    private MessageProcessingContext processingContext;
 
     /**
      * Resets the state of this Unit of Work, by setting its phase to {@link Phase#NOT_STARTED}, replacing the message
@@ -41,8 +41,11 @@ public class DisruptorUnitOfWork extends AbstractUnitOfWork {
      * @param message the new Message that is about to be processed.
      */
     public void reset(Message<?> message) {
-        handlers().clear();
-        this.message = message;
+        if (processingContext == null) {
+            processingContext = new MessageProcessingContext(message);
+        } else {
+            processingContext.reset(message);
+        }
         setPhase(Phase.NOT_STARTED);
     }
 
@@ -69,6 +72,41 @@ public class DisruptorUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     public Message<?> getMessage() {
-        return message;
+        return processingContext.getMessage();
+    }
+
+    @Override
+    protected void notifyHandlers(Phase phase) {
+        processingContext.notifyHandlers(this, phase);
+    }
+
+    @Override
+    protected void addHandler(Phase phase, Consumer<UnitOfWork> handler) {
+        processingContext.addHandler(phase, handler);
+    }
+
+    @Override
+    protected void setExecutionResult(ExecutionResult executionResult) {
+        processingContext.setExecutionResult(executionResult);
+    }
+
+    @Override
+    protected void setRollbackCause(Throwable cause) {
+        setExecutionResult(new ExecutionResult(cause));
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * This feature is not supported by this Unit of Work.
+     */
+    @Override
+    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ExecutionResult getExecutionResult() {
+        return processingContext.getExecutionResult();
     }
 }

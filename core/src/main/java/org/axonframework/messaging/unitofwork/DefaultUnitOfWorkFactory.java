@@ -17,6 +17,8 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.interceptors.Transaction;
+import org.axonframework.messaging.interceptors.TransactionManager;
 
 /**
  * {@link UnitOfWorkFactory} implementation that creates instances of the {@link DefaultUnitOfWork}.
@@ -58,7 +60,7 @@ public class DefaultUnitOfWorkFactory extends AbstractUnitOfWorkFactory<DefaultU
             Transaction transaction = transactionManager.startTransaction();
             DefaultUnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
             unitOfWork.onCommit(u -> transaction.commit());
-            unitOfWork.onRollback((u, e) -> transaction.rollback());
+            unitOfWork.onRollback(u -> transaction.rollback());
             return unitOfWork;
         }
         return DefaultUnitOfWork.startAndGet(message);

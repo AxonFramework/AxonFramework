@@ -92,7 +92,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
                     ((UoWAttachedConnection) cx).forceClose();
                 }
             });
-            uow.onRollback((u, e) -> {
+            uow.onRollback(u -> {
                 Connection cx = u.getResource(CONNECTION_RESOURCE_NAME);
                 try {
                     if (!cx.isClosed() && !cx.getAutoCommit()) {

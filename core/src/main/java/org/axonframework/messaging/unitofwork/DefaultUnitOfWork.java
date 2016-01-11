@@ -16,28 +16,27 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
 
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+
 /**
- * TODO: fix documentation
- *
- * Implementation of the UnitOfWork that buffers all published events until it is committed. Aggregates that have not
- * been explicitly save in their aggregates will be saved when the UnitOfWork commits.
- * <p/>
- * This implementation requires a mechanism that explicitly commits or rolls back.
+ * Implementation of the UnitOfWork that processes a single message.
  *
  * @author Allard Buijze
  * @since 0.6
  */
 public class DefaultUnitOfWork extends AbstractUnitOfWork {
 
-    private final Message<?> message;
+    private final MessageProcessingContext processingContext;
 
     /**
      * Initializes a Unit of Work (without starting it).
      */
     public DefaultUnitOfWork(Message<?> message) {
-        this.message = message;
+        processingContext = new MessageProcessingContext(message);
     }
 
     /**
@@ -56,7 +55,57 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     }
 
     @Override
+    public <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception {
+        if (phase() == Phase.NOT_STARTED) {
+            start();
+        }
+        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        R result;
+        try {
+            result = task.call();
+        } catch (Exception e) {
+            if (rollbackConfiguration.rollBackOn(e)) {
+                rollback(e);
+            } else {
+                setExecutionResult(new ExecutionResult(e));
+                commit();
+            }
+            throw e;
+        }
+        setExecutionResult(new ExecutionResult(result));
+        commit();
+        return result;
+    }
+
+    @Override
+    protected void setRollbackCause(Throwable cause) {
+        setExecutionResult(new ExecutionResult(cause));
+    }
+
+    @Override
+    protected void notifyHandlers(Phase phase) {
+        processingContext.notifyHandlers(this, phase);
+    }
+
+    @Override
+    protected void addHandler(Phase phase, Consumer<UnitOfWork> handler) {
+        Assert.state(!phase.isBefore(phase()), "Cannot register a listener for phase: " + phase
+                + " because the Unit of Work is already in a later phase: " + phase());
+        processingContext.addHandler(phase, handler);
+    }
+
+    @Override
     public Message<?> getMessage() {
-        return message;
+        return processingContext.getMessage();
+    }
+
+    @Override
+    protected void setExecutionResult(ExecutionResult executionResult) {
+        processingContext.setExecutionResult(executionResult);
+    }
+
+    @Override
+    public ExecutionResult getExecutionResult() {
+        return processingContext.getExecutionResult();
     }
 }

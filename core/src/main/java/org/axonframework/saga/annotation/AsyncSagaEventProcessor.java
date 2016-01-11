@@ -21,7 +21,7 @@ import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.RingBuffer;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.Message;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.saga.AssociationValue;
@@ -232,7 +232,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         newlyCreatedSagas.put(newSaga.getSagaIdentifier(), newSaga);
     }
 
-    private void ensureActiveUnitOfWork(Message<?> message) {
+    private void ensureActiveUnitOfWork(EventMessage<?> message) {
         if (unitOfWork == null || !unitOfWork.isActive()) {
             // TODO: Implement batching support
             unitOfWork = unitOfWorkFactory.createUnitOfWork(message);

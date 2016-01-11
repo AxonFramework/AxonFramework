@@ -16,8 +16,6 @@ package org.axonframework.messaging.interceptors;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.Transaction;
-import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 /**
@@ -39,7 +37,7 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
     public Object handle(T message, UnitOfWork unitOfWork, InterceptorChain<T> interceptorChain) throws Exception {
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
-        unitOfWork.onRollback((u, t) -> transaction.rollback());
+        unitOfWork.onRollback(u -> transaction.rollback());
         return interceptorChain.proceed();
     }
 }

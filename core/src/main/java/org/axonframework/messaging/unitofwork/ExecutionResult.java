@@ -82,4 +82,9 @@ public class ExecutionResult {
     public int hashCode() {
         return Objects.hash(result);
     }
+
+    @Override
+    public String toString() {
+        return String.format("ExecutionResult containing [%s]", result);
+    }
 }
