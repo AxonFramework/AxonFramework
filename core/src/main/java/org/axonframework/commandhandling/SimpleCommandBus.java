@@ -18,6 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.*;
+import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.unitofwork.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

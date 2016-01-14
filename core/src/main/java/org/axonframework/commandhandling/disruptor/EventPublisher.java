@@ -20,9 +20,9 @@ import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.messaging.interceptors.Transaction;
+import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.Transaction;
-import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,7 +148,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
                 if (transactionManager != null) {
                     Transaction transaction = transactionManager.startTransaction();
                     unitOfWork.onCommit(u -> transaction.commit());
-                    unitOfWork.onRollback((u, e) -> transaction.rollback());
+                    unitOfWork.onRollback(u -> transaction.rollback());
                 }
                 unitOfWork.commit();
             }

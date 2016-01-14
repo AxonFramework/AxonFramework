@@ -72,7 +72,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
 
     @Override
     public void add(T aggregate) {
-        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregate.getIdentifier()));
+        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.getIdentifier()));
         super.add(aggregate);
     }
 
@@ -113,7 +113,7 @@ public class CachingEventSourcingRepository<T extends EventSourcedAggregateRoot>
         } else if (aggregate.isDeleted()) {
             throw new AggregateDeletedException(aggregateIdentifier);
         }
-        CurrentUnitOfWork.get().onRollback((u, e) -> cache.remove(aggregateIdentifier));
+        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregateIdentifier));
         return aggregate;
     }
 

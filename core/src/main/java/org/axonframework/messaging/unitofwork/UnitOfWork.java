@@ -23,7 +23,6 @@ import org.axonframework.messaging.metadata.MetaData;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -61,7 +60,7 @@ public interface UnitOfWork {
     void commit();
 
     /**
-     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(BiConsumer)
+     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer)
      * and clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered
      * from the {@link CurrentUnitOfWork}.
      * <p/>
@@ -74,7 +73,7 @@ public interface UnitOfWork {
     }
 
     /**
-     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(BiConsumer)
+     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer)
      * and clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered
      * from the {@link CurrentUnitOfWork}.
      *
@@ -126,11 +125,12 @@ public interface UnitOfWork {
 
     /**
      * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
-     * the Unit of Work changes to {@link Phase#ROLLBACK}.
+     * the Unit of Work changes to {@link Phase#ROLLBACK}. On rollback, the cause for the rollback can obtained from
+     * the supplied
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onRollback(BiConsumer<UnitOfWork, Throwable> handler);
+    void onRollback(Consumer<UnitOfWork> handler);
 
     /**
      * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
@@ -148,6 +148,15 @@ public interface UnitOfWork {
      * @return an optional parent Unit of Work
      */
     Optional<UnitOfWork> parent();
+
+    /**
+     * Check that returns <code>true</code> if this Unit of Work has not got a parent.
+     *
+     * @return <code>true</code> if this Unit of Work has no parent
+     */
+    default boolean isRoot() {
+        return !parent().isPresent();
+    }
 
     /**
      * Returns the root of this Unit of Work. If this Unit of Work has no parent (see {@link #parent()}) it returns
@@ -245,7 +254,16 @@ public interface UnitOfWork {
      * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when
      *                              task execution fails
      */
-    void execute(Runnable task, RollbackConfiguration rollbackConfiguration);
+    default void execute(Runnable task, RollbackConfiguration rollbackConfiguration) {
+        try {
+            executeWithResult(() -> {
+                task.run();
+                return null;
+            }, rollbackConfiguration);
+        } catch (Exception e) {
+            throw (RuntimeException) e;
+        }
+    }
 
     /**
      * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
@@ -284,6 +302,15 @@ public interface UnitOfWork {
      * been given a task to execute.
      */
     ExecutionResult getExecutionResult();
+
+    /**
+     * Check if the Unit of Work is the 'currently' active Unit of Work returned by {@link CurrentUnitOfWork#get()}.
+     *
+     * @return <code>true</code> if the Unit of Work is the currently active Unit of Work
+     */
+    default boolean isCurrent() {
+        return CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get() == this;
+    }
 
     /**
      * Enum indicating possible phases of the Unit of Work.

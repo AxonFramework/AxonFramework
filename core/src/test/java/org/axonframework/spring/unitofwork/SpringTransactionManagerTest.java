@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.unitofwork;
 
-import org.axonframework.messaging.unitofwork.Transaction;
+import org.axonframework.messaging.interceptors.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.transaction.PlatformTransactionManager;

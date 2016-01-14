@@ -27,9 +27,9 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResol
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.serializer.Serializer;
 
 import java.util.ArrayList;

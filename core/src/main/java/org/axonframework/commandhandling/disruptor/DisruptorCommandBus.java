@@ -27,7 +27,7 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.TransactionManager;
+import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
