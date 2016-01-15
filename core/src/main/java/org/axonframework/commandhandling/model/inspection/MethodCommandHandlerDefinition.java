@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.definitions;
+package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.model.AbstractMessageHandler;
-import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.Message;
-import org.axonframework.commandhandling.model.inspection.CommandMessageHandler;
 import org.axonframework.common.annotation.HandlerDefinition;
 import org.axonframework.common.annotation.MessageHandler;
+import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
+import java.util.Map;
 import java.util.Optional;
 
-import static org.axonframework.common.ReflectionUtils.findAnnotation;
+import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
 
 public class MethodCommandHandlerDefinition implements HandlerDefinition {
 
     @Override
     public <T> Optional<MessageHandler<T>> createHandler(Class<T> declaringType, Executable executable, ParameterResolverFactory parameterResolverFactory) {
-        CommandHandler annotation = findAnnotation(executable, CommandHandler.class);
+        Map<String, Object> annotation = findAnnotationAttributes(executable, CommandHandler.class).orElse(null);
         if (annotation != null && executable.getParameterCount() > 0) {
-            return Optional.of(new MethodCommandMessageHandler<>(executable, annotation, parameterResolverFactory));
+            return Optional.of(new MethodCommandMessageHandler<>(executable, annotation,
+                                                                 parameterResolverFactory));
         }
         return Optional.empty();
     }
@@ -46,14 +47,16 @@ public class MethodCommandHandlerDefinition implements HandlerDefinition {
 
         private final String commandName;
         private final boolean isFactoryHandler;
+        private final String routingKey;
 
-        public MethodCommandMessageHandler(Executable executable, CommandHandler annotation,
+        public MethodCommandMessageHandler(Executable executable, Map<String, Object> annotationAttributes,
                                            ParameterResolverFactory parameterResolverFactory) {
             super(executable, parameterResolverFactory);
-            if ("".equals(annotation.commandName())) {
+            this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null : (String) annotationAttributes.get("routingKey");
+            if ("".equals(annotationAttributes.get("commandName"))) {
                 commandName = executable.getParameters()[0].getType().getName();
             } else {
-                commandName = annotation.commandName();
+                commandName = (String) annotationAttributes.get("commandName");
             }
             isFactoryHandler = (executable instanceof Constructor);
         }
@@ -61,6 +64,11 @@ public class MethodCommandHandlerDefinition implements HandlerDefinition {
         @Override
         protected boolean typeMatches(Message<?> message) {
             return message instanceof CommandMessage && commandName.equals(((CommandMessage) message).getCommandName());
+        }
+
+        @Override
+        public String routingKey() {
+            return routingKey;
         }
 
         @Override

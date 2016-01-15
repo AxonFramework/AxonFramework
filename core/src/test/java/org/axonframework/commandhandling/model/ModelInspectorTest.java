@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.junit.Test;
 
+import javax.persistence.Id;
 import java.lang.annotation.*;
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicLong;
@@ -86,6 +87,15 @@ public class ModelInspectorTest {
         AggregateModel<SomeAnnotatedHandlers> inspector = ModelInspector.inspectAggregate(SomeAnnotatedHandlers.class);
 
         assertEquals("id", inspector.getIdentifier(new SomeAnnotatedHandlers()));
+        assertEquals("id", inspector.routingKey());
+    }
+
+    @Test
+    public void testFindJavaxPersistenceIdentifier() throws Exception {
+        AggregateModel<JavaxPersistenceAnnotatedHandlers> inspector = ModelInspector.inspectAggregate(JavaxPersistenceAnnotatedHandlers.class);
+
+        assertEquals("id", inspector.getIdentifier(new JavaxPersistenceAnnotatedHandlers()));
+        assertEquals("id", inspector.routingKey());
     }
 
     @Test
@@ -93,6 +103,22 @@ public class ModelInspectorTest {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
 
         assertEquals("id", inspector.getIdentifier(new SomeSubclass()));
+    }
+
+    private static class JavaxPersistenceAnnotatedHandlers {
+
+        @Id
+        private String id = "id";
+
+        @CommandHandler(commandName = "java.lang.String")
+        public boolean handle(CharSequence test) {
+            return test.equals("ok");
+        }
+
+        @CommandHandler
+        public boolean testInt(Integer test) {
+            return test > 0;
+        }
     }
 
     private static class SomeAnnotatedHandlers {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -496,11 +496,6 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test(expected = AxonConfigurationException.class)
-    public void testAggregateContainsHandlerForCommandWithoutRoutingProperty() throws Exception {
-        new AggregateAnnotationCommandHandler(CommandDoesNotContainRequiredRoutingProperty.class, mockRepository);
-    }
-
-    @Test(expected = AxonConfigurationException.class)
     public void testAnnotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined()
             throws Exception {
         new AggregateAnnotationCommandHandler(CollectionFieldWithoutGenerics.class, mockRepository);
@@ -581,17 +576,6 @@ public class AggregateAnnotationCommandHandlerTest {
 
         verify(mockRepository).load(aggregateIdentifier, null);
     }
-
-    @Test(expected = AxonConfigurationException.class)
-    public void testAnnotatedFieldMustBeAMap() throws Exception {
-        new AggregateAnnotationCommandHandler(AnnotatedFieldIsNotMap.class, mockRepository);
-    }
-
-    @Test(expected = AxonConfigurationException.class)
-    public void testAnnotatedMapFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined() throws Exception {
-        new AggregateAnnotationCommandHandler(MapFieldWithoutGenerics.class, mockRepository);
-    }
-
 
     private abstract static class AbstractStubCommandAnnotatedAggregate {
 
@@ -692,18 +676,6 @@ public class AggregateAnnotationCommandHandlerTest {
         }
     }
 
-    private static class CommandDoesNotContainRequiredRoutingProperty extends StubCommandAnnotatedAggregate {
-
-        public CommandDoesNotContainRequiredRoutingProperty(String aggregateIdentifier) {
-            super(aggregateIdentifier);
-        }
-
-        @CommandHandler
-        public void handle(CommandWithoutRequiredRoutingProperty command) {
-
-        }
-    }
-
     private static class CollectionFieldWithoutGenerics extends StubCommandAnnotatedAggregate {
 
         @AggregateMember
@@ -758,6 +730,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
     private static class StubCommandAnnotatedMapEntity {
 
+        @EntityId(routingKey = "entityId")
         private String id;
 
         private StubCommandAnnotatedMapEntity(String id) {
@@ -771,26 +744,6 @@ public class AggregateAnnotationCommandHandlerTest {
 
         private String getId() {
             return id;
-        }
-    }
-
-    private static class AnnotatedFieldIsNotMap extends StubCommandAnnotatedAggregate {
-
-        @CommandHandlingMemberMap(commandTargetProperty = "entityId")
-        private Set<String> wrongField;
-
-        public AnnotatedFieldIsNotMap(String aggregateIdentifier) {
-            super(aggregateIdentifier);
-        }
-    }
-
-    private static class MapFieldWithoutGenerics extends StubCommandAnnotatedAggregate {
-
-        @CommandHandlingMemberMap(commandTargetProperty = "entityId")
-        private Map wrongField;
-
-        public MapFieldWithoutGenerics(String aggregateIdentifier) {
-            super(aggregateIdentifier);
         }
     }
 

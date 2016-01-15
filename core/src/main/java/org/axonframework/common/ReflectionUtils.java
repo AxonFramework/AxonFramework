@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,9 @@
 
 package org.axonframework.common;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.security.AccessController;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -207,89 +199,6 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Find an annotation of given <code>annotationType</code> on the given <code>element</code>, considering that the
-     * given <code>annotationType</code> may be present as a meta annotation on any other annotation on that element.
-     *
-     * @param element        The element to inspect
-     * @param annotationType The type of annotation to find
-     * @param <T>            The generic type of the annotation
-     * @return the annotation, or <code>null</code> if no such annotation is present.
-     */
-    public static <T extends Annotation> T findAnnotation(AnnotatedElement element, Class<T> annotationType) {
-        T ann = element.getAnnotation(annotationType);
-        if (ann == null) {
-            HashSet<Class<? extends Annotation>> visited = new HashSet<>();
-            for (Annotation metaAnn : element.getAnnotations()) {
-                ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
-                if (ann != null) {
-                    break;
-                }
-            }
-        }
-        return ann;
-    }
-
-    public static <T extends Annotation> Map<String, Object> findAnnotationAttributes(AnnotatedElement element, Class<T> annotationType) {
-        Map<String, Object> attributes = new HashMap<>();
-        T ann = element.getAnnotation(annotationType);
-        if (ann != null) {
-            collectAttributes(ann, attributes);
-        } else {
-            HashSet<Class<? extends Annotation>> visited = new HashSet<>();
-            for (Annotation metaAnn : element.getAnnotations()) {
-                if (collectAnnotationAttributes(metaAnn.annotationType(), annotationType, visited, attributes)) {
-                    collectAttributes(metaAnn, attributes);
-                }
-            }
-        }
-        return attributes;
-    }
-
-    private static <T extends Annotation> boolean collectAnnotationAttributes(Class<? extends Annotation> target, Class<T> annotationType, HashSet<Class<? extends Annotation>> visited, Map<String, Object> attributes) {
-        T ann = target.getAnnotation(annotationType);
-        if (ann == null && visited.add(target)) {
-            for (Annotation metaAnn : target.getAnnotations()) {
-                if(collectAnnotationAttributes(metaAnn.annotationType(), annotationType, visited, attributes)) {
-                    collectAttributes(metaAnn, attributes);
-                    return true;
-                }
-            }
-        } else if (ann != null) {
-            collectAttributes(ann, attributes);
-            return true;
-        }
-        return false;
-    }
-
-    private static <T extends Annotation> void collectAttributes(T ann, Map<String, Object> attributes) {
-        Method[] methods = ann.annotationType().getDeclaredMethods();
-        for (Method method : methods) {
-            if (method.getParameterTypes().length == 0 && method.getReturnType() != void.class) {
-                try {
-                    Object value = method.invoke(ann);
-                    attributes.put(method.getName(), value);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new AxonConfigurationException("Error while inspecting annotation values", e);
-                }
-            }
-        }
-    }
-
-    private static <T extends Annotation> T getAnnotation(Class<? extends Annotation> target, Class<T> annotationType,
-                                                          Set<Class<? extends Annotation>> visited) {
-        T ann = target.getAnnotation(annotationType);
-        if (ann == null && visited.add(target)) {
-            for (Annotation metaAnn : target.getAnnotations()) {
-                ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
-                if (ann != null) {
-                    break;
-                }
-            }
-        }
-        return ann;
-    }
-
-    /**
      * Returns the boxed wrapper type for the given <code>primitiveType</code>.
      *
      * @param primitiveType The primitive type to return boxed wrapper type for
@@ -321,5 +230,22 @@ public abstract class ReflectionUtils {
      */
     public static boolean isTransient(Field field) {
         return Modifier.isTransient(field.getModifiers());
+    }
+
+    /**
+     * Resolve a generic type parameter from a field declaration
+     *
+     * @param field            The field to find generic parameters for
+     * @param genericTypeIndex The index of the type
+     * @return an optional that contains the resolved type, if found
+     */
+    public static Optional<Class<?>> resolveGenericType(Field field, int genericTypeIndex) {
+        final Type genericType = field.getGenericType();
+        if (genericType == null
+                || !(genericType instanceof ParameterizedType)
+                || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
+            return Optional.empty();
+        }
+        return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
     }
 }

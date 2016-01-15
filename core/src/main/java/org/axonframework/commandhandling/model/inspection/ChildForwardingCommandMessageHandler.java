@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.definitions;
+package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.inspection.CommandMessageHandler;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
 import java.util.function.BiFunction;
 
-public class ChildForwardingCommandMessageHandler<T, C> implements CommandMessageHandler<T> {
+public class ChildForwardingCommandMessageHandler<P, C> implements CommandMessageHandler<P> {
 
+    private final String parentRoutingKey;
     private final CommandMessageHandler<? super C> childHandler;
-    private final BiFunction<CommandMessage<?>, T, C> childEntityResolver;
+    private final BiFunction<CommandMessage<?>, P, C> childEntityResolver;
 
-    public ChildForwardingCommandMessageHandler(CommandMessageHandler<? super C> childHandler,
-                                                BiFunction<CommandMessage<?>, T, C> childEntityResolver) {
+    public ChildForwardingCommandMessageHandler(String parentRoutingKey,
+                                                CommandMessageHandler<? super C> childHandler,
+                                                BiFunction<CommandMessage<?>, P, C> childEntityResolver) {
+        this.parentRoutingKey = parentRoutingKey;
         this.childHandler = childHandler;
         this.childEntityResolver = childEntityResolver;
     }
@@ -37,6 +39,11 @@ public class ChildForwardingCommandMessageHandler<T, C> implements CommandMessag
     @Override
     public String commandName() {
         return childHandler.commandName();
+    }
+
+    @Override
+    public String routingKey() {
+        return parentRoutingKey;
     }
 
     @Override
@@ -61,7 +68,7 @@ public class ChildForwardingCommandMessageHandler<T, C> implements CommandMessag
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handle(Message<?> message, T target) {
+    public Object handle(Message<?> message, P target) {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
             throw new IllegalStateException("Aggregate cannot handle this command, as there is no entity instance to forward it to.");

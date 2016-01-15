@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.MessageHandler;
+import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.Message;
@@ -101,7 +101,7 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T>, An
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
             }
-            throw new CommandExecutionException("Error invoking CommandHandler method", e.getCause());
+            throw new MessageHandlerInvocationException("Error invoking CommandHandler method", e.getCause());
         }
     }
 

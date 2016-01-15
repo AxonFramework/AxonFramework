@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,40 +14,47 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.definitions;
+package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.model.AbstractMessageHandler;
-import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.common.annotation.HandlerDefinition;
+import org.axonframework.common.annotation.MessageHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
-import org.axonframework.common.annotation.HandlerDefinition;
-import org.axonframework.common.annotation.MessageHandler;
 
 import java.lang.reflect.Executable;
+import java.util.Map;
 import java.util.Optional;
 
 public class MethodEventHandlerDefinition implements HandlerDefinition {
 
     @Override
     public <T> Optional<MessageHandler<T>> createHandler(Class<T> declaringType, Executable executable, ParameterResolverFactory parameterResolverFactory) {
-        EventHandler annotation = ReflectionUtils.findAnnotation(executable, EventHandler.class);
+        Map<String, Object> annotation = AnnotationUtils.findAnnotationAttributes(executable, EventHandler.class).orElse(null);
         if (annotation != null && executable.getParameterCount() > 0) {
-            return Optional.of(new MethodMessageHandler<>(executable, parameterResolverFactory));
+            Class<?> explicitPayloadType = (Class<?>) annotation.get("eventType");
+            return Optional.of(new MethodMessageHandler<>(executable, explicitPayloadType, parameterResolverFactory));
         }
         return Optional.empty();
     }
 
     private class MethodMessageHandler<T> extends AbstractMessageHandler<T> {
 
-        public MethodMessageHandler(Executable executable, ParameterResolverFactory parameterResolverFactory) {
+        private final Class<?> expectedPayloadType;
+
+        public MethodMessageHandler(Executable executable, Class<?> expectedPayloadType,
+                                    ParameterResolverFactory parameterResolverFactory) {
             super(executable, parameterResolverFactory);
+            this.expectedPayloadType = expectedPayloadType;
         }
 
         @Override
         protected boolean typeMatches(Message<?> message) {
-            return EventMessage.class.isInstance(message);
+            return EventMessage.class.isInstance(message)
+                    && expectedPayloadType.isAssignableFrom(message.getPayloadType());
         }
 
     }

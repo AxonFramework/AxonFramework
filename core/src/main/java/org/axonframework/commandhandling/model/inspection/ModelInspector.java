@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotatedHandlerInspector;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MessageHandler;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.annotation.*;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.AggregateVersion;
+import org.axonframework.eventsourcing.annotation.EntityId;
 import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Field;
 import java.util.*;
 
+import static java.lang.String.format;
+
 public class ModelInspector<T> implements AggregateModel<T> {
 
-    private final Class<T> inspectedType;
+    private final Class<? extends T> inspectedType;
     private final Map<Class<?>, ModelInspector> registry;
     private final List<ChildEntity<T>> children;
     private final AnnotatedHandlerInspector<T> handlerInspector;
@@ -42,7 +42,7 @@ public class ModelInspector<T> implements AggregateModel<T> {
     private Field versionField;
     private String routingKey;
 
-    private ModelInspector(Class<T> inspectedType,
+    private ModelInspector(Class<? extends T> inspectedType,
                            Map<Class<?>, ModelInspector> registry, AnnotatedHandlerInspector<T> handlerInspector) {
         this.inspectedType = inspectedType;
         this.registry = registry;
@@ -64,7 +64,7 @@ public class ModelInspector<T> implements AggregateModel<T> {
                                new HashMap<>());
     }
 
-    private static <T> ModelInspector<T> createInspector(Class<T> inspectedType,
+    private static <T> ModelInspector<T> createInspector(Class<? extends T> inspectedType,
                                                          AnnotatedHandlerInspector<T> handlerInspector,
                                                          Map<Class<?>, ModelInspector> registry) {
         //noinspection unchecked
@@ -72,7 +72,7 @@ public class ModelInspector<T> implements AggregateModel<T> {
                                                                                       registry));
     }
 
-    private static <T> ModelInspector<T> initialize(Class<T> inspectedType,
+    private static <T> ModelInspector<T> initialize(Class<? extends T> inspectedType,
                                                     AnnotatedHandlerInspector<T> handlerInspector,
                                                     Map<Class<?>, ModelInspector> registry) {
         ModelInspector<T> inspector = new ModelInspector<>(inspectedType, registry, handlerInspector);
@@ -97,26 +97,29 @@ public class ModelInspector<T> implements AggregateModel<T> {
         ServiceLoader<ChildEntityDefinition> childEntityDefinitions = ServiceLoader.load(ChildEntityDefinition.class,
                                                                                          inspectedType.getClassLoader());
         for (Field field : ReflectionUtils.fieldsOf(inspectedType)) {
-            // TODO: Use filters/predicate to allow specification of which entities in a field receive an event or command
             childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
                 children.add(child);
                 child.commandHandlers().forEach(commandHandlers::putIfAbsent);
             }));
 
-            AggregateIdentifier identifier = ReflectionUtils.findAnnotation(field, AggregateIdentifier.class);
-            if (identifier != null) {
-                // TODO: Support javax.persistence.Id annotation
+            AnnotationUtils.findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> {
                 identifierField = field;
-                if (!"".equals(identifier.routingKey())) {
-                    this.routingKey = identifier.routingKey();
+                if (!"".equals(attributes.get("routingKey"))) {
+                    routingKey = (String) attributes.get("routingKey");
                 } else {
-                    this.routingKey = field.getName();
+                    routingKey = field.getName();
                 }
+            });
+            if (identifierField == null) {
+                AnnotationUtils.findAnnotationAttributes(field, "javax.persistence.Id"
+                )
+                        .ifPresent(a -> {
+                            identifierField = field;
+                            routingKey = field.getName();
+                        });
             }
-            if (ReflectionUtils.findAnnotation(field, AggregateVersion.class) != null) {
-                // TODO: Support javax.sql.Timestamp and java.time.LocalDateTime
-                versionField = field;
-            }
+            AnnotationUtils.findAnnotationAttributes(field, AggregateVersion.class)
+                    .ifPresent(attributes -> versionField = field);
         }
     }
 
@@ -132,11 +135,16 @@ public class ModelInspector<T> implements AggregateModel<T> {
 
     @Override
     public CommandMessageHandler<? super T> commandHandler(String commandName) {
-        return commandHandlers.get(commandName);
+        CommandMessageHandler<? super T> handler = commandHandlers.get(commandName);
+        if (handler == null) {
+            throw new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandName));
+        }
+
+        return handler;
     }
 
     @Override
-    public <C> ModelInspector<C> modelOf(Class<C> entityType) {
+    public <C> ModelInspector<C> modelOf(Class<? extends C> entityType) {
         return ModelInspector.createInspector(entityType, handlerInspector.inspect(entityType), registry);
     }
 
@@ -175,5 +183,10 @@ public class ModelInspector<T> implements AggregateModel<T> {
             return Objects.toString(ReflectionUtils.getFieldValue(identifierField, target), null);
         }
         return null;
+    }
+
+    @Override
+    public String routingKey() {
+        return routingKey;
     }
 }

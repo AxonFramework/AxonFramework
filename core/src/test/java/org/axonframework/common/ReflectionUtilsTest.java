@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,6 @@ package org.axonframework.common;
 
 import org.junit.Test;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -146,65 +142,7 @@ public class ReflectionUtilsTest {
         assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
     }
 
-    @Test
-    public void testFindAttributesOnDirectAnnotation() throws NoSuchMethodException {
-        Map<String, Object> results = ReflectionUtils.findAnnotationAttributes(getClass().getDeclaredMethod("directAnnotated"), TheTarget.class);
-
-        assertEquals("value", results.get("property"));
-    }
-
-    @Test
-    public void testFindAttributesOnStaticMetaAnnotation() throws NoSuchMethodException {
-        Map<String, Object> results = ReflectionUtils.findAnnotationAttributes(getClass().getDeclaredMethod("staticallyOverridden"), TheTarget.class);
-
-        assertEquals("overridden_statically", results.get("property"));
-    }
-
-    @Test
-    public void testFindAttributesOnDynamicMetaAnnotation() throws NoSuchMethodException {
-        Map<String, Object> results = ReflectionUtils.findAnnotationAttributes(getClass().getDeclaredMethod("dynamicallyOverridden"), TheTarget.class);
-
-        assertEquals("dynamic-override", results.get("property"));
-        assertEquals("extra", results.get("extraValue"));
-    }
-
-    @TheTarget
-    public void directAnnotated() { }
-
-    @StaticOverrideAnnotated
-    public void staticallyOverridden() {
-
-    }
-
-    @DynamicOverrideAnnotated(property = "dynamic-override")
-    public void dynamicallyOverridden() {
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.ANNOTATION_TYPE,ElementType.METHOD})
-    public @interface TheTarget {
-
-        String property() default "value";
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.ANNOTATION_TYPE,ElementType.METHOD})
-    @TheTarget(property = "overridden_statically")
-    public @interface StaticOverrideAnnotated {
-
-    }
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.ANNOTATION_TYPE,ElementType.METHOD})
-    @TheTarget
-    public @interface DynamicOverrideAnnotated {
-
-        String property();
-
-        String extraValue() default "extra";
-    }
-
-    private static class SomeType implements SomeInterface  {
+    private static class SomeType implements SomeInterface {
 
         private String field1 = "field1";
         private String field2 = "field2";
@@ -219,11 +157,11 @@ public class ReflectionUtilsTest {
         }
     }
 
-    public static interface SomeInterface {
+    public interface SomeInterface {
         String getField1();
     }
 
-    public static interface SomeSubInterface {
+    public interface SomeSubInterface {
         int getField3();
 
     }
@@ -231,6 +169,7 @@ public class ReflectionUtilsTest {
     public static class SomeSubType extends SomeType implements SomeSubInterface {
 
         public int field3 = 3;
+
         @Override
         public int getField3() {
             return field3;

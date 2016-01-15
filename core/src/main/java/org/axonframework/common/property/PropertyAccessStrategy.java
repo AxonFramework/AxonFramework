@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
      * @param <T>          Thy type defining the property
      * @return suitable {@link Property}, or <code>null</code> if none is found
      */
-    public static <T> Property<T> getProperty(Class<T> targetClass, String propertyName) {
+    public static <T> Property<T> getProperty(Class<? extends T> targetClass, String propertyName) {
         Property<T> property = null;
         Iterator<PropertyAccessStrategy> strategies = STRATEGIES.iterator();
         while (property == null && strategies.hasNext()) {
@@ -128,6 +128,6 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
      * @return the Property instance providing access to the property value, or <code>null</code> if property could not
      * be found.
      */
-    protected abstract <T> Property<T> propertyFor(Class<T> targetClass, String property);
+    protected abstract <T> Property<T> propertyFor(Class<? extends T> targetClass, String property);
 }
 

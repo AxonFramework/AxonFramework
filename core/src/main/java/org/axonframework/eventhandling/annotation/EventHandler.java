@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.MetaData;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Annotation to be placed on methods that can handle events. The parameters of the annotated method are resolved using
@@ -77,9 +73,8 @@ import java.lang.annotation.Target;
 public @interface EventHandler {
 
     /**
-     * The type of event this method handles. If specified, this handler will only be invoked for message that have a
-     * payload assignable to the given payload type. If unspecified, the first parameter of the method defines the type
-     * of supported event.
+     * The type of event this method handles. This handler will only be considered for invocation if the event message's
+     * payload is assignable to this type.
      */
-    Class<?> eventType() default Void.class;
+    Class<?> eventType() default Object.class;
 }

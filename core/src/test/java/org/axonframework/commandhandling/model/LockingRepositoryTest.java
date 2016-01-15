@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.lock.Lock;
@@ -174,7 +173,6 @@ public class LockingRepositoryTest {
 
     private UnitOfWork startAndGetUnitOfWork() {
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(MESSAGE);
-        uow.resources().put(EventBus.KEY, mockEventBus);
         return uow;
     }
 

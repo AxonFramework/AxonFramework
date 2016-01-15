@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,5 +76,5 @@ public @interface EventSourcingHandler {
      * payload assignable to the given payload type. If unspecified, the first parameter of the method defines the type
      * of supported event.
      */
-    Class<?> eventType() default Void.class;
+    Class<?> eventType() default Object.class;
 }

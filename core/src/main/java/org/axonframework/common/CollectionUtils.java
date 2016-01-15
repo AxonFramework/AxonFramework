@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,10 @@ public abstract class CollectionUtils {
     /**
      * Returns a list of objects of <code>expectedType</code> contained in the given <code>collection</code>. Any
      * objects in the collection that are not assignable to the given <code>expectedType</code> are filtered out.
-     * <p/>
+     * <p>
      * The order of the items in the list is the same as the order they were provided by the collection. The given
      * <code>collection</code> remains unchanged by this method.
-     * <p/>
+     * <p>
      * If the given collection is null, en empty list is returned.
      *
      * @param collection   An iterable (e.g. Collection) containing the unfiltered items.
@@ -74,6 +74,22 @@ public abstract class CollectionUtils {
         for (Annotation annotation : annotations) {
             if (annotation.annotationType().equals(annotationType)) {
                 return (T) annotation;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the first non-null value in the given {@code values}
+     *
+     * @param values The values to iterate
+     * @param <T>    The type of values
+     * @return The first non-null value, or {@code null} if all values are {@code null}, or if no values were given.
+     */
+    public static <T> T firstNonNull(T... values) {
+        for (T value : values) {
+            if (value != null) {
+                return value;
             }
         }
         return null;

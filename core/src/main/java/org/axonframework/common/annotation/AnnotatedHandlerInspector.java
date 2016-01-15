@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class AnnotatedHandlerInspector<T> {
     }
 
 
-    private static <T> AnnotatedHandlerInspector<T> createInspector(Class<T> inspectedType, ParameterResolverFactory parameterResolverFactory, Map<Class<?>, AnnotatedHandlerInspector> registry) {
+    private static <T> AnnotatedHandlerInspector<T> createInspector(Class<? extends T> inspectedType, ParameterResolverFactory parameterResolverFactory, Map<Class<?>, AnnotatedHandlerInspector> registry) {
         //noinspection unchecked
         return registry.computeIfAbsent(inspectedType, k -> AnnotatedHandlerInspector.initialize(inspectedType, parameterResolverFactory, registry));
     }
@@ -73,12 +73,14 @@ public class AnnotatedHandlerInspector<T> {
         ServiceLoader.load(HandlerDefinition.class).forEach(definitions::add);
         for (Method method : inspectedType.getDeclaredMethods()) {
             definitions.forEach(definition ->
-                                        definition.createHandler(inspectedType, method, parameterResolverFactory)
+                                        definition.createHandler(inspectedType,
+                                                                 method, parameterResolverFactory)
                                                 .ifPresent(this::registerHandler));
         }
         for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
             definitions.forEach(definition ->
-                                        definition.createHandler(inspectedType, constructor, parameterResolverFactory)
+                                        definition.createHandler(inspectedType,
+                                                                 constructor, parameterResolverFactory)
                                                 .ifPresent(this::registerHandler));
         }
         superClassInspectors.forEach(sci -> handlers.addAll(sci.getHandlers()));
@@ -89,7 +91,7 @@ public class AnnotatedHandlerInspector<T> {
         handlers.add(handler);
     }
 
-    public <C> AnnotatedHandlerInspector<C> inspect(Class<C> entityType) {
+    public <C> AnnotatedHandlerInspector<C> inspect(Class<? extends C> entityType) {
         return AnnotatedHandlerInspector.createInspector(entityType, parameterResolverFactory, registry);
     }
 
