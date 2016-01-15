@@ -20,17 +20,26 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.model.AbstractRepository;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.*;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.Repository;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
+
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * Benchmark test created to compare
@@ -42,6 +51,7 @@ public class CommandHandlingBenchmark {
     private static final UUID aggregateIdentifier = UUID.randomUUID();
 
     public static void main(String[] args) {
+        EventBus eventBus = new SimpleEventBus();
         CommandBus cb = new SimpleCommandBus();
 
         InMemoryEventStore eventStore = new InMemoryEventStore();
@@ -49,20 +59,25 @@ public class CommandHandlingBenchmark {
                 aggregateIdentifier.toString(), 0, new SomeEvent())));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
-        Repository<MyAggregate> repository = new Repository<MyAggregate>() {
+        Repository<MyAggregate> repository = new AbstractRepository<MyAggregate, AnnotatedAggregate<MyAggregate>>(MyAggregate.class) {
+
             @Override
-            public MyAggregate load(String aggregateIdentifier, Long expectedVersion) {
+            protected AnnotatedAggregate<MyAggregate> doCreateNew(Supplier<MyAggregate> factoryMethod) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 
             @Override
-            public MyAggregate load(String aggregateIdentifier) {
-                return myAggregate;
+            protected void doSave(AnnotatedAggregate<MyAggregate> aggregate) {
             }
 
             @Override
-            public void add(MyAggregate aggregate) {
-                throw new UnsupportedOperationException("Not implemented yet");
+            protected AnnotatedAggregate<MyAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
+                return new AnnotatedAggregate<>(myAggregate, aggregateModel(), eventBus);
+            }
+
+            @Override
+            protected void doDelete(AnnotatedAggregate<MyAggregate> aggregate) {
+
             }
         };
         cb.subscribe(String.class.getName(), new MyCommandHandler(repository));
@@ -79,8 +94,9 @@ public class CommandHandlingBenchmark {
         System.out.println(String.format("Just did %d commands per second", ((COMMAND_COUNT * 1000) / (t2 - t1))));
     }
 
-    private static class MyAggregate extends AbstractAnnotatedAggregateRoot {
+    private static class MyAggregate {
 
+        @AggregateIdentifier
         private final UUID identifier;
 
         protected MyAggregate() {
@@ -91,19 +107,11 @@ public class CommandHandlingBenchmark {
             this.identifier = identifier;
         }
 
-        @Override
-        public String getIdentifier() {
-            return identifier.toString();
-        }
 
         public void doSomething() {
             apply(new SomeEvent());
         }
 
-        @Override
-        protected Collection<EventSourcedEntity> getChildEntities() {
-            return Collections.emptyList();
-        }
     }
 
     private static class SomeEvent {
@@ -120,7 +128,7 @@ public class CommandHandlingBenchmark {
 
         @Override
         public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
-            repository.load(aggregateIdentifier.toString()).doSomething();
+            repository.load(aggregateIdentifier.toString()).execute(MyAggregate::doSomething);
             return null;
         }
     }

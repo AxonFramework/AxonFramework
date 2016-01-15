@@ -2,14 +2,9 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.cache.WeakReferenceCache;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.CompositeEventStreamDecorator;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.SnapshotterTrigger;
-import org.axonframework.repository.Repository;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.FactoryBean;
@@ -127,7 +122,7 @@ public class DisruptorRepositoryBeanDefinitionParser extends AbstractBeanDefinit
 
         private DisruptorCommandBus commandBus;
         private List<EventStreamDecorator> eventStreamDecorators = new ArrayList<>();
-        private AggregateFactory<? extends EventSourcedAggregateRoot> factory;
+        private AggregateFactory<?> factory;
 
         @Override
         public Repository getObject() throws Exception {
@@ -165,7 +160,7 @@ public class DisruptorRepositoryBeanDefinitionParser extends AbstractBeanDefinit
          * @param factory the aggregate factory used to create instances for the repository to create
          */
         @Required
-        public void setAggregateFactory(AggregateFactory<? extends EventSourcedAggregateRoot> factory) {
+        public void setAggregateFactory(AggregateFactory<?> factory) {
             this.factory = factory;
         }
 

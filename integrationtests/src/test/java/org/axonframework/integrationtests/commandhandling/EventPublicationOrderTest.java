@@ -58,8 +58,7 @@ public class EventPublicationOrderTest {
         this.commandBus = new SimpleCommandBus();
         this.eventBus = spy(new SimpleEventBus());
         eventStore = mock(EventStore.class);
-        this.repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
-        repository.setEventBus(eventBus);
+        this.repository = new EventSourcingRepository<>(StubAggregate.class, eventStore, eventBus);
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventBus);

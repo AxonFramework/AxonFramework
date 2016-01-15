@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.MetaData;
 
@@ -64,6 +65,7 @@ import java.lang.annotation.*;
  * @author Allard Buijze
  * @since 2.1
  */
+@EventHandler
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
@@ -74,5 +76,5 @@ public @interface EventSourcingHandler {
      * payload assignable to the given payload type. If unspecified, the first parameter of the method defines the type
      * of supported event.
      */
-    Class<?> eventType() default Void.class;
+    Class<?> eventType() default Object.class;
 }

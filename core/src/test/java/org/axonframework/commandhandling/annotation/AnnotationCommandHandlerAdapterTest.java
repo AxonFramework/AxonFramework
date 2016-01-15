@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,6 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(null, actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
-
-        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -83,8 +81,6 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(1, mockTarget.returningHandlerInvoked);
-
-        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -95,8 +91,6 @@ public class AnnotationCommandHandlerAdapterTest {
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
         assertEquals(1, mockTarget.almostDuplicateReturningHandlerInvoked);
-
-        verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
     }
 
     @Test
@@ -106,7 +100,6 @@ public class AnnotationCommandHandlerAdapterTest {
             fail("Expected exception");
         } catch (MessageHandlerInvocationException ex) {
             assertEquals(Exception.class, ex.getCause().getClass());
-            verify(mockUnitOfWork.resources()).put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
             return;
         }
         fail("Shouldn't make it till here");

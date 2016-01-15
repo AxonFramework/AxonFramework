@@ -16,13 +16,12 @@
 
 package org.axonframework.test;
 
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 /**
  *
  */
-public class MyEntity extends AbstractAnnotatedEntity {
+public class MyEntity {
 
     private Integer lastNumber;
 

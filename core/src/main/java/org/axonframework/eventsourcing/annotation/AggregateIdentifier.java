@@ -27,8 +27,10 @@ import java.lang.annotation.Target;
  * @author Allard Buijze
  * @since 2.0
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@EntityId
 public @interface AggregateIdentifier {
 
+    String routingKey() default "";
 }

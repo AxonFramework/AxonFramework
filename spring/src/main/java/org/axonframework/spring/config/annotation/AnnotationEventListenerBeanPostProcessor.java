@@ -17,7 +17,6 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.domain.AggregateRoot;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.annotation.EventHandler;
@@ -49,13 +48,8 @@ public class AnnotationEventListenerBeanPostProcessor
 
     @Override
     protected boolean isPostProcessingCandidate(Class<?> targetClass) {
-        return isNotAggregateRoot(targetClass)
-                && isNotEventHandlerSubclass(targetClass)
+        return isNotEventHandlerSubclass(targetClass)
                 && hasEventHandlerMethod(targetClass);
-    }
-
-    private boolean isNotAggregateRoot(Class<?> targetClass) {
-        return !AggregateRoot.class.isAssignableFrom(targetClass);
     }
 
     private boolean isNotEventHandlerSubclass(Class<?> beanClass) {

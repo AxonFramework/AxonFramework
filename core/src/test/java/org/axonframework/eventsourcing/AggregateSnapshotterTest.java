@@ -42,7 +42,7 @@ public class AggregateSnapshotterTest {
     public void setUp() throws Exception {
         SnapshotEventStore mockEventStore = mock(SnapshotEventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
-        when(mockAggregateFactory.getAggregateType()).thenReturn(EventSourcedAggregateRoot.class);
+        when(mockAggregateFactory.getAggregateType()).thenReturn(Object.class);
         testSubject = new AggregateSnapshotter();
         testSubject.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(mockAggregateFactory));
         testSubject.setEventStore(mockEventStore);
@@ -56,11 +56,10 @@ public class AggregateSnapshotterTest {
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
-        EventSourcedAggregateRoot aggregate = mock(EventSourcedAggregateRoot.class);
-        when(aggregate.getIdentifier()).thenReturn(aggregateIdentifier);
+        Object aggregate = new Object();
         when(mockAggregateFactory.createAggregate(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
-        DomainEventMessage snapshot = testSubject.createSnapshot(EventSourcedAggregateRoot.class,
+        DomainEventMessage snapshot = testSubject.createSnapshot(Object.class,
                                                                  aggregateIdentifier, eventStream);
 
         verify(mockAggregateFactory).createAggregate(aggregateIdentifier, firstEvent);
@@ -82,7 +81,7 @@ public class AggregateSnapshotterTest {
         when(mockAggregateFactory.createAggregate(any(), any(DomainEventMessage.class)))
                 .thenAnswer(invocation -> ((DomainEventMessage) invocation.getArguments()[1]).getPayload());
 
-        DomainEventMessage snapshot = testSubject.createSnapshot(EventSourcedAggregateRoot.class,
+        DomainEventMessage snapshot = testSubject.createSnapshot(Object.class,
                                                                  aggregateIdentifier.toString(), eventStream);
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getPayload());
 

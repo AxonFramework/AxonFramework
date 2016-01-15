@@ -19,6 +19,7 @@ package org.axonframework.integrationtests.loopbacktest;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
@@ -27,13 +28,11 @@ import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.repository.Repository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -148,13 +148,13 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         @CommandHandler
         public void handle(String stringCommand) {
             eventBus.publish(new GenericEventMessage<>("Mock"));
-            aggregateARepository.load(aggregateAIdentifier).doSomething(stringCommand);
+            aggregateARepository.load(aggregateAIdentifier).execute(r-> r.doSomething(stringCommand));
         }
 
         @CommandHandler
         public void handle(Object objectCommand) {
             eventBus.publish(new GenericEventMessage<>("Mock"));
-            aggregateBRepository.load(aggregateBIdentifier).doSomething();
+            aggregateBRepository.load(aggregateBIdentifier).execute(AggregateB::doSomething);
         }
     }
 
@@ -192,17 +192,12 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
 
     }
 
-    public static class AggregateA extends AbstractAnnotatedAggregateRoot {
+    public static class AggregateA {
 
         @AggregateIdentifier
         private String identifier;
 
         public AggregateA() {
-        }
-
-        @Override
-        public String getIdentifier() {
-            return identifier;
         }
 
         @EventSourcingHandler
@@ -221,7 +216,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         }
     }
 
-    public static class AggregateB extends AbstractAnnotatedAggregateRoot {
+    public static class AggregateB {
 
         @AggregateIdentifier
         private String identifier;
@@ -232,11 +227,6 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         @EventSourcingHandler
         private void handle(CreateEvent event) {
             this.identifier = event.getIdentifier();
-        }
-
-        @Override
-        public String getIdentifier() {
-            return identifier;
         }
 
         public void doSomething() {

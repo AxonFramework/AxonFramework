@@ -26,7 +26,7 @@ package org.axonframework.eventsourcing;
  * @author Allard Buijze
  * @since 0.6
  */
-public interface AggregateFactory<T extends EventSourcedAggregateRoot> {
+public interface AggregateFactory<T> {
 
     /**
      * Instantiate the aggregate using the given aggregate identifier and first event. The first event of the event

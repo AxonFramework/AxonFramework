@@ -16,14 +16,15 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * @author Allard Buijze
  */
-public class StubAggregate extends AbstractAnnotatedAggregateRoot {
+public class StubAggregate {
 
     private int changeCounter;
 
@@ -45,11 +46,6 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
         throw new RuntimeException("That's problematic");
     }
 
-    @Override
-    public void markDeleted() {
-        super.markDeleted();
-    }
-
     @EventSourcingHandler
     private void onCreated(StubAggregateCreatedEvent event) {
         this.identifier = event.getAggregateIdentifier();
@@ -62,6 +58,6 @@ public class StubAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     public void makeALoopingChange() {
-        apply(new LoopingChangeDoneEvent(getIdentifier()));
+        apply(new LoopingChangeDoneEvent(identifier));
     }
 }

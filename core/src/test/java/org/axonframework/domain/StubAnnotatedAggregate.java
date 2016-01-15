@@ -17,26 +17,27 @@
 package org.axonframework.domain;
 
 import org.axonframework.eventsourcing.StubDomainEvent;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * @author Allard Buijze
  */
-public class StubAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
+public class StubAnnotatedAggregate  {
 
-    private static final long serialVersionUID = -4775374127196305627L;
+    @AggregateIdentifier
     private final Object identifier;
 
     public StubAnnotatedAggregate(Object identifier) {
         this.identifier = identifier;
     }
 
-    @Override
-    public String getIdentifier() {
-        return identifier.toString();
-    }
-
     public void doSomething() {
         apply(new StubDomainEvent());
+    }
+
+    public Object getIdentifier() {
+        return identifier;
     }
 }

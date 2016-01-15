@@ -16,17 +16,18 @@
 
 package org.axonframework.integrationtests.domain;
 
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcedMember;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+
 /**
  * @author Allard Buijze
  */
-public class StructuredAggregateRoot extends AbstractAnnotatedAggregateRoot {
+public class StructuredAggregateRoot {
 
     private int invocations;
     @EventSourcedMember

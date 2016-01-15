@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,13 @@
 
 package org.axonframework.common;
 
-import org.junit.*;
+import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static org.axonframework.common.ReflectionUtils.explicitlyUnequal;
-import static org.axonframework.common.ReflectionUtils.hasEqualsMethod;
-import static org.axonframework.common.ReflectionUtils.resolvePrimitiveWrapperType;
+import static org.axonframework.common.ReflectionUtils.*;
 import static org.junit.Assert.*;
 
 /**
@@ -148,7 +142,7 @@ public class ReflectionUtilsTest {
         assertEquals(Long.class, resolvePrimitiveWrapperType(long.class));
     }
 
-    private static class SomeType implements SomeInterface  {
+    private static class SomeType implements SomeInterface {
 
         private String field1 = "field1";
         private String field2 = "field2";
@@ -163,11 +157,11 @@ public class ReflectionUtilsTest {
         }
     }
 
-    public static interface SomeInterface {
+    public interface SomeInterface {
         String getField1();
     }
 
-    public static interface SomeSubInterface {
+    public interface SomeSubInterface {
         int getField3();
 
     }
@@ -175,6 +169,7 @@ public class ReflectionUtilsTest {
     public static class SomeSubType extends SomeType implements SomeSubInterface {
 
         public int field3 = 3;
+
         @Override
         public int getField3() {
             return field3;

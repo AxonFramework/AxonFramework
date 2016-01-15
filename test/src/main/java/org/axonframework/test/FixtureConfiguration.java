@@ -18,14 +18,13 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcedAggregateRoot;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.repository.Repository;
 import org.axonframework.test.matchers.FieldFilter;
 
 import java.util.List;
@@ -35,7 +34,7 @@ import java.util.List;
  * case to prepare the fixture for test execution.
  * <p/>
  * The fixture is initialized using a Command Handler that expects an <code>@CommandHandler</code> aggregate. If you
- * have implemented your own command handler (either using annotations, or by implementing the {@link CommandHandler}
+ * have implemented your own command handler (either using annotations, or by implementing the {@link MessageHandler}
  * interace), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
  * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
  * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
@@ -80,7 +79,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 0.6
  */
-public interface FixtureConfiguration<T extends EventSourcedAggregateRoot> {
+public interface FixtureConfiguration<T> {
 
     /**
      * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository must be wired

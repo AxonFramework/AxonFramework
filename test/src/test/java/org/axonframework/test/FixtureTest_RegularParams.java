@@ -16,7 +16,7 @@
 
 package org.axonframework.test;
 
-import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.hamcrest.core.IsNull;
 import org.junit.*;
 

@@ -18,7 +18,6 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
@@ -36,6 +35,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.Executor;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.mockito.Mockito.isA;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.timeout;
@@ -103,7 +103,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest_CustomParameterReso
         }
     }
 
-    public static class StubAggregate extends AbstractAnnotatedAggregateRoot {
+    public static class StubAggregate {
 
         @AggregateIdentifier
         private String id;

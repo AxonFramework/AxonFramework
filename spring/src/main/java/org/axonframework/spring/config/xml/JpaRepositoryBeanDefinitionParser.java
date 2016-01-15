@@ -18,7 +18,7 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.repository.GenericJpaRepository;
+import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;

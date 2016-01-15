@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventstore.EventStore;
@@ -23,7 +24,6 @@ import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.messaging.interceptors.NoTransactionManager;
 import org.axonframework.messaging.interceptors.Transaction;
 import org.axonframework.messaging.interceptors.TransactionManager;
-import org.axonframework.repository.ConcurrencyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private TransactionManager transactionManager = new NoTransactionManager();
 
     @Override
-    public void scheduleSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType, String aggregateIdentifier) {
+    public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
         executor.execute(new SilentTask(
                 new TransactionalRunnableWrapper(transactionManager,
                                                  createSnapshotterTask(aggregateType, aggregateIdentifier)
@@ -62,7 +62,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @return the task containing snapshot creation logic
      */
-    protected Runnable createSnapshotterTask(Class<? extends EventSourcedAggregateRoot> aggregateType,
+    protected Runnable createSnapshotterTask(Class<?> aggregateType,
                                              String aggregateIdentifier) {
         return new CreateSnapshotTask(aggregateType, aggregateIdentifier);
     }
@@ -77,7 +77,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param eventStream         The event stream containing the aggregate's past events
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
-    protected abstract DomainEventMessage createSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType,
+    protected abstract DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                          String aggregateIdentifier, DomainEventStream eventStream);
 
     /**
@@ -164,7 +164,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             try {
                 snapshotterTask.run();
             } catch (ConcurrencyException e) {
-                logger.info("An up-to-date snapshot entry already exists, ignoring this attempts.");
+                logger.info("An up-to-date snapshot entry already exists, ignoring this attempt.");
             } catch (RuntimeException e) {
                 if (logger.isDebugEnabled()) {
                     logger.warn("An attempt to create and store a snapshot resulted in an exception:", e);
@@ -178,11 +178,10 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     private final class CreateSnapshotTask implements Runnable {
 
-        private final Class<? extends EventSourcedAggregateRoot> aggregateType;
+        private final Class<?> aggregateType;
         private final String aggregateIdentifier;
 
-        private CreateSnapshotTask(Class<? extends EventSourcedAggregateRoot> aggregateType,
-                                   String aggregateIdentifier) {
+        private CreateSnapshotTask(Class<?> aggregateType, String aggregateIdentifier) {
             this.aggregateType = aggregateType;
             this.aggregateIdentifier = aggregateIdentifier;
         }

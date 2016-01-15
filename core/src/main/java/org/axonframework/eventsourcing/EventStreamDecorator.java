@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.commandhandling.model.Aggregate;
+
 import java.util.List;
 
 /**
@@ -47,6 +49,6 @@ public interface EventStreamDecorator {
      * @param events        The events to append to the event store
      * @return the decorated event stream
      */
-    List<DomainEventMessage<?>> decorateForAppend(EventSourcedAggregateRoot aggregate,
+    List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
                                                   List<DomainEventMessage<?>> events);
 }

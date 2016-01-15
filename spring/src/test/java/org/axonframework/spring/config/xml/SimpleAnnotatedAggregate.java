@@ -18,14 +18,16 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.domain.IdentifierFactory;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 
 /**
  * @author Allard Buijze
  */
-public class SimpleAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
+public class SimpleAnnotatedAggregate {
 
     private static final long serialVersionUID = 2918101112106880702L;
+
+    @AggregateIdentifier
     private final String identifier;
 
     @CommandHandler
@@ -39,10 +41,5 @@ public class SimpleAnnotatedAggregate extends AbstractAnnotatedAggregateRoot {
     }
 
     public static class CreateSimpleAggregateCommand {
-    }
-
-    @Override
-    public String getIdentifier() {
-        return identifier;
     }
 }

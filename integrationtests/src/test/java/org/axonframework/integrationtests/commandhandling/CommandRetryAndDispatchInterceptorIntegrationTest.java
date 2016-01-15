@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.gateway.*;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

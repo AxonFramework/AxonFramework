@@ -21,11 +21,12 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventstore.*;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.messaging.metadata.MetaData;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.UnknownSerializedTypeException;
@@ -45,10 +46,7 @@ import java.sql.*;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -63,9 +61,11 @@ import static org.mockito.Mockito.*;
 public class JdbcEventStoreTest {
 
     private JdbcEventStore testSubject;
-    private StubAggregateRoot aggregate1;
-    private StubAggregateRoot aggregate2;
+    private List<DomainEventMessage<?>> domainEventMessages1;
+    private List<DomainEventMessage<?>> domainEventMessages2;
     private Connection conn;
+    private String aggregateId1;
+    private String aggregateId2;
 
     @Before
     public void setUp() throws SQLException {
@@ -77,17 +77,21 @@ public class JdbcEventStoreTest {
         eventEntryStore1.createSchema();
         testSubject = new JdbcEventStore(eventEntryStore1);
 
-        aggregate1 = new StubAggregateRoot(UUID.randomUUID());
-        for (int t = 0; t < 10; t++) {
-            aggregate1.changeState();
-        }
+        aggregateId1 = UUID.randomUUID().toString();
+        aggregateId2 = UUID.randomUUID().toString();
+        domainEventMessages1 = generateDomainEventMessages(aggregateId1, 0, 10);
+        domainEventMessages2 = generateDomainEventMessages(aggregateId2, 0, 4);
 
-        aggregate2 = new StubAggregateRoot();
-        aggregate2.changeState();
-        aggregate2.changeState();
-        aggregate2.changeState();
         conn.prepareStatement("DELETE FROM DomainEventEntry").executeUpdate();
         conn.prepareStatement("DELETE FROM SnapshotEventEntry").executeUpdate();
+    }
+
+    private List<DomainEventMessage<?>> generateDomainEventMessages(String aggregateIdentifier, int offset, int count) {
+        List<DomainEventMessage<?>> messages = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            messages.add(new GenericDomainEventMessage<>(aggregateIdentifier, offset + i, new StubStateChangedEvent()));
+        }
+        return  messages;
     }
 
     @After
@@ -101,12 +105,12 @@ public class JdbcEventStoreTest {
 
     @Test(expected = UnknownSerializedTypeException.class)
     public void testUnknownSerializedTypeCausesException() throws SQLException {
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        testSubject.appendEvents(domainEventMessages1);
         final PreparedStatement preparedStatement = conn.prepareStatement(
                 "UPDATE DomainEventEntry e SET e.payloadType = ?");
         preparedStatement.setString(1, "unknown");
         preparedStatement.executeUpdate();
-        testSubject.readEvents(aggregate1.getIdentifier());
+        testSubject.readEvents(aggregateId1);
     }
 
     private long queryLong() throws SQLException {
@@ -143,17 +147,17 @@ public class JdbcEventStoreTest {
     @Test
     public void testStoreAndLoadEvents() throws SQLException {
         assertNotNull(testSubject);
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
-        assertEquals((long) aggregate1.getRegisteredEventCount(), queryLong());
+        testSubject.appendEvents(domainEventMessages1);
+        assertEquals((long) domainEventMessages1.size(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents(singletonList(
-                new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
+                new GenericDomainEventMessage<>(aggregateId2,
                                                 0,
                                                 new Object(),
                                                 Collections.singletonMap("key", (Object) "Value"))));
 
-        DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
+        DomainEventStream events = testSubject.readEvents(aggregateId1);
         List<DomainEventMessage> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -161,10 +165,10 @@ public class JdbcEventStoreTest {
             event.getMetaData();
             actualEvents.add(event);
         }
-        assertEquals(aggregate1.getRegisteredEventCount(), actualEvents.size());
+        assertEquals(domainEventMessages1.size(), actualEvents.size());
 
         /// we make sure persisted events have the same MetaData alteration logic
-        DomainEventStream other = testSubject.readEvents(aggregate2.getIdentifier());
+        DomainEventStream other = testSubject.readEvents(aggregateId2);
         assertTrue(other.hasNext());
         DomainEventMessage messageWithMetaData = other.next();
         DomainEventMessage altered = messageWithMetaData.withMetaData(Collections.singletonMap("key2",
@@ -192,17 +196,17 @@ public class JdbcEventStoreTest {
                     return asList(serializedObject, serializedObject);
                 });
 
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        testSubject.appendEvents(domainEventMessages1);
 
         testSubject.setUpcasterChain(mockUpcasterChain);
-        assertEquals((long) aggregate1.getRegisteredEventCount(), queryLong());
+        assertEquals((long) domainEventMessages1.size(), queryLong());
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents(singletonList(
-                new GenericDomainEventMessage<>(aggregate2.getIdentifier(), 0, new Object(),
+                new GenericDomainEventMessage<>(aggregateId2, 0, new Object(),
                                                 Collections.singletonMap("key", "Value"))));
 
-        DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
+        DomainEventStream events = testSubject.readEvents(aggregateId1);
         List<DomainEventMessage<?>> actualEvents = new ArrayList<>();
         while (events.hasNext()) {
             DomainEventMessage event = events.next();
@@ -275,18 +279,16 @@ public class JdbcEventStoreTest {
 
     @Test
     public void testLoadWithSnapshotEvent() {
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
-        testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
-        aggregate1.getRegisteredEvents().clear();
-        aggregate1.changeState();
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
+        testSubject.appendEvents(domainEventMessages1);
+        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>(aggregateId1, 10, "snapshot"));
+        testSubject.appendEvents(generateDomainEventMessages(aggregateId1, 11, 1));
 
-        DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
+        DomainEventStream actualEventStream = testSubject.readEvents(aggregateId1);
         List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             DomainEventMessage next = actualEventStream.next();
             domainEvents.add(next);
-            assertEquals(aggregate1.getIdentifier(), next.getAggregateIdentifier());
+            assertEquals(aggregateId1, next.getAggregateIdentifier());
         }
 
         assertEquals(2, domainEvents.size());

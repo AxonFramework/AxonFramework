@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,9 @@
 
 package org.axonframework.common;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.security.AccessController;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Utility class for working with Java Reflection API.
@@ -40,11 +31,7 @@ public abstract class ReflectionUtils {
     /**
      * A map of Primitive types to their respective wrapper types.
      */
-    private static final Map<Class<?>,Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
-
-    private ReflectionUtils() {
-        // utility class
-    }
+    private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new HashMap<>(8);
 
     static {
         primitiveWrapperTypeMap.put(boolean.class, Boolean.class);
@@ -57,6 +44,10 @@ public abstract class ReflectionUtils {
         primitiveWrapperTypeMap.put(short.class, Short.class);
     }
 
+    private ReflectionUtils() {
+        // utility class
+    }
+
     /**
      * Returns the value of the given <code>field</code> in the given <code>object</code>. If necessary, the field is
      * made accessible, assuming the security manager allows it.
@@ -64,9 +55,8 @@ public abstract class ReflectionUtils {
      * @param field  The field containing the value
      * @param object The object to retrieve the field's value from
      * @return the value of the <code>field</code> in the <code>object</code>
-     *
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
-     * made accessible
+     *                               made accessible
      */
     public static Object getFieldValue(Field field, Object object) {
         ensureAccessible(field);
@@ -137,9 +127,8 @@ public abstract class ReflectionUtils {
      * @param member The member (field, method, constructor, etc) to make accessible
      * @param <T>    The type of member to make accessible
      * @return the given <code>member</code>, for easier method chaining
-     *
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
-     * made accessible
+     *                               made accessible
      */
     public static <T extends AccessibleObject> T ensureAccessible(T member) {
         if (!isAccessible(member)) {
@@ -165,7 +154,6 @@ public abstract class ReflectionUtils {
      *
      * @param member The member to check
      * @return <code>true</code> if the member is public and non-final, otherwise <code>false</code>.
-     *
      * @see #isAccessible(java.lang.reflect.AccessibleObject)
      * @see #ensureAccessible(java.lang.reflect.AccessibleObject)
      */
@@ -215,7 +203,6 @@ public abstract class ReflectionUtils {
      *
      * @param primitiveType The primitive type to return boxed wrapper type for
      * @return the boxed wrapper type for the given <code>primitiveType</code>
-     *
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
     public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
@@ -243,5 +230,22 @@ public abstract class ReflectionUtils {
      */
     public static boolean isTransient(Field field) {
         return Modifier.isTransient(field.getModifiers());
+    }
+
+    /**
+     * Resolve a generic type parameter from a field declaration
+     *
+     * @param field            The field to find generic parameters for
+     * @param genericTypeIndex The index of the type
+     * @return an optional that contains the resolved type, if found
+     */
+    public static Optional<Class<?>> resolveGenericType(Field field, int genericTypeIndex) {
+        final Type genericType = field.getGenericType();
+        if (genericType == null
+                || !(genericType instanceof ParameterizedType)
+                || ((ParameterizedType) genericType).getActualTypeArguments().length <= genericTypeIndex) {
+            return Optional.empty();
+        }
+        return Optional.of((Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[genericTypeIndex]);
     }
 }

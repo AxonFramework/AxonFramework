@@ -29,7 +29,7 @@ import org.axonframework.eventstore.management.Criteria;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteriaBuilder;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;

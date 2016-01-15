@@ -21,7 +21,7 @@ import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.repository.ConflictingModificationException;
+import org.axonframework.commandhandling.model.ConflictingModificationException;
 import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.junit.Before;

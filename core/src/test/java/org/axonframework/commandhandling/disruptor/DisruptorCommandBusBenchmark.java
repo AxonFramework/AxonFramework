@@ -19,22 +19,27 @@ package org.axonframework.commandhandling.disruptor;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateLifecycle;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.Repository;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -48,13 +53,13 @@ public class DisruptorCommandBusBenchmark {
         CountingEventBus eventBus = new CountingEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore, eventBus);
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
-        inMemoryEventStore.appendEvents(asList(new GenericDomainEventMessage<>(aggregateIdentifier,
-                                                                               0,
-                                                                               new StubDomainEvent())));
+        inMemoryEventStore.appendEvents(singletonList(new GenericDomainEventMessage<>(aggregateIdentifier,
+                                                                                      0,
+                                                                                      new StubDomainEvent())));
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {
@@ -75,27 +80,22 @@ public class DisruptorCommandBusBenchmark {
         }
     }
 
-    private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
+    private static class StubAggregate {
 
+        @AggregateIdentifier
         private String identifier;
 
-        @Override
         public String getIdentifier() {
             return identifier;
         }
 
         public void doSomething() {
-            apply(new SomethingDoneEvent());
+            AggregateLifecycle.apply(new SomethingDoneEvent());
         }
 
-        @Override
+        @EventSourcingHandler
         protected void handle(EventMessage event) {
             identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
-        }
-
-        @Override
-        protected Collection<EventSourcedEntity> getChildEntities() {
-            return Collections.emptyList();
         }
     }
 
@@ -120,7 +120,7 @@ public class DisruptorCommandBusBenchmark {
 
         @Override
         public DomainEventStream readEvents(String identifier) {
-            return new SimpleDomainEventStream(Collections.singletonList(storedEvents.get(identifier)));
+            return new SimpleDomainEventStream(singletonList(storedEvents.get(identifier)));
         }
 
         @Override
@@ -132,13 +132,13 @@ public class DisruptorCommandBusBenchmark {
     private static class StubCommand {
 
         @TargetAggregateIdentifier
-        private Object aggregateIdentifier;
+        private String aggregateIdentifier;
 
-        public StubCommand(Object aggregateIdentifier) {
+        public StubCommand(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
-        public Object getAggregateIdentifier() {
+        public String getAggregateIdentifier() {
             return aggregateIdentifier;
         }
     }
@@ -153,7 +153,7 @@ public class DisruptorCommandBusBenchmark {
         @Override
         public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
             StubCommand payload = (StubCommand) message.getPayload();
-            repository.load(payload.getAggregateIdentifier().toString()).doSomething();
+            repository.load(payload.getAggregateIdentifier()).execute(StubAggregate::doSomething);
             return null;
         }
 

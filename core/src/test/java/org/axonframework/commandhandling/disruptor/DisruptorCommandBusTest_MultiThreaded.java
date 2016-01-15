@@ -22,32 +22,39 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateLifecycle;
+import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.SimpleDomainEventStream;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.Repository;
 import org.axonframework.testutils.MockException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
@@ -81,19 +88,18 @@ public class DisruptorCommandBusTest_MultiThreaded {
         testSubject.stop();
     }
 
-    //todo fix test
-    @Ignore
     @SuppressWarnings("unchecked")
-    @Test//(timeout = 10000)
+    @Test(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore,
+                eventBus,
                 new DisruptorConfiguration().setBufferSize(4)
-                                            .setProducerType(ProducerType.MULTI)
-                                            .setWaitStrategy(new SleepingWaitStrategy())
-                                            .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
-                                            .setInvokerThreadCount(2)
-                                            .setPublisherThreadCount(3));
+                        .setProducerType(ProducerType.MULTI)
+                        .setWaitStrategy(new SleepingWaitStrategy())
+                        .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
+                        .setInvokerThreadCount(2)
+                        .setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
@@ -103,9 +109,10 @@ public class DisruptorCommandBusTest_MultiThreaded {
         stubHandler.setRepository(spiedRepository);
         final Map<Object, Object> garbageCollectionPrevention = new ConcurrentHashMap<>();
         doAnswer(invocation -> {
-            garbageCollectionPrevention.put(invocation.getArguments()[0], new Object());
-            return invocation.callRealMethod();
-        }).when(spiedRepository).add(isA(StubAggregate.class));
+            Aggregate<StubAggregate> realAggregate = (Aggregate<StubAggregate>) invocation.callRealMethod();
+            garbageCollectionPrevention.put(realAggregate, new Object());
+            return realAggregate;
+        }).when(spiedRepository).newInstance(any());
         doAnswer(invocation -> {
             Object aggregate = invocation.callRealMethod();
             garbageCollectionPrevention.put(aggregate, new Object());
@@ -129,51 +136,44 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         testSubject.stop();
-        assertEquals(20, garbageCollectionPrevention.size());
         // only the commands executed after the failed ones will cause a readEvents() to occur
         assertEquals(10, inMemoryEventStore.loadCounter.get());
+        assertEquals(20, garbageCollectionPrevention.size());
         assertEquals((COMMAND_COUNT * AGGREGATE_COUNT) + (2 * AGGREGATE_COUNT),
                      inMemoryEventStore.storedEventCounter.get());
         verify(mockCallback, times(990)).onSuccess(any(), any());
         verify(mockCallback, times(10)).onFailure(any(), isA(RuntimeException.class));
     }
 
-    private static class StubAggregate extends AbstractEventSourcedAggregateRoot {
+    private static class StubAggregate {
 
-        private static final long serialVersionUID = 8192033940704210095L;
-
+        @AggregateIdentifier
         private String identifier;
 
         private StubAggregate(String identifier) {
             this.identifier = identifier;
-            apply(new SomethingDoneEvent());
+            AggregateLifecycle.apply(new SomethingDoneEvent());
         }
 
         @SuppressWarnings("UnusedDeclaration")
         public StubAggregate() {
         }
 
-        @Override
         public String getIdentifier() {
             return identifier;
         }
 
         public void doSomething() {
-            apply(new SomethingDoneEvent());
+            AggregateLifecycle.apply(new SomethingDoneEvent());
         }
 
         public void createFailingEvent() {
-            apply(new FailingEvent());
+            AggregateLifecycle.apply(new FailingEvent());
         }
 
-        @Override
+        @EventSourcingHandler
         protected void handle(EventMessage event) {
-            identifier = ((DomainEventMessage)event).getAggregateIdentifier();
-        }
-
-        @Override
-        protected Collection<EventSourcedEntity> getChildEntities() {
-            return Collections.emptyList();
+            identifier = ((DomainEventMessage) event).getAggregateIdentifier();
         }
     }
 
@@ -273,15 +273,14 @@ public class DisruptorCommandBusTest_MultiThreaded {
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();
             } else if (CreateCommand.class.isAssignableFrom(command.getPayloadType())) {
-                StubAggregate aggregate = new StubAggregate(payload.getAggregateIdentifier().toString());
-                repository.add(aggregate);
-                aggregate.doSomething();
+                Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(payload.getAggregateIdentifier().toString()));
+                aggregate.execute(StubAggregate::doSomething);
             } else {
-                StubAggregate aggregate = repository.load(payload.getAggregateIdentifier().toString());
+                Aggregate<StubAggregate> aggregate = repository.load(payload.getAggregateIdentifier().toString());
                 if (ErrorCommand.class.isAssignableFrom(command.getPayloadType())) {
-                    aggregate.createFailingEvent();
+                    aggregate.execute(StubAggregate::createFailingEvent);
                 } else {
-                    aggregate.doSomething();
+                    aggregate.execute(StubAggregate::doSomething);
                 }
             }
 

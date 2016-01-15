@@ -195,12 +195,7 @@ public class RepositoryBeanDefinitionParserTest {
 //        snapshotTrigger.
     }
 
-    /**
-     * Mock {@link EventSourcedAggregateRoot} instance for the test.
-     *
-     * @author Ben Z. Tels
-     */
-    public static class EventSourcedAggregateRootMock implements EventSourcedAggregateRoot {
+    public static class EventSourcedAggregateRootMock {
 
         @AggregateIdentifier
         private String id;
@@ -212,36 +207,5 @@ public class RepositoryBeanDefinitionParserTest {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String getIdentifier() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean isDeleted() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public Long getVersion() {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void initializeState(DomainEventStream domainEventStream) {
-            throw new UnsupportedOperationException("Not implemented yet");
-        }
     }
 }

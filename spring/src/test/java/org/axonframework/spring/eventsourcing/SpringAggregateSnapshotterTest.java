@@ -54,16 +54,11 @@ public class SpringAggregateSnapshotterTest {
         when(mockApplicationContext.getBeansOfType(AggregateFactory.class)).thenReturn(
                 Collections.<String, AggregateFactory>singletonMap(
                         "myFactory",
-                        new AbstractAggregateFactory<StubAggregate>() {
+                        new AbstractAggregateFactory<StubAggregate>(StubAggregate.class) {
                             @Override
                             public StubAggregate doCreateAggregate(String aggregateIdentifier,
                                                                    DomainEventMessage firstEvent) {
                                 return new StubAggregate(aggregateIdentifier);
-                            }
-
-                            @Override
-                            public Class<StubAggregate> getAggregateType() {
-                                return StubAggregate.class;
                             }
                         }));
         testSubject.setEventStore(mockEventStore);

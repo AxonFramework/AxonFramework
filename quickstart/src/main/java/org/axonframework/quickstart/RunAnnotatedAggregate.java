@@ -57,8 +57,7 @@ public class RunAnnotatedAggregate {
 
         // we need to configure the repository
         EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class,
-                                                                                             eventStore);
-        repository.setEventBus(eventBus);
+                                                                                     eventStore, eventBus);
 
         // Axon needs to know that our ToDoItem Aggregate can handle commands
         new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);

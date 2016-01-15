@@ -36,7 +36,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
@@ -53,22 +52,19 @@ public class CommandHandlingTest {
     @Before
     public void setUp() {
         stubEventStore = new StubEventStore();
-        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore);
-        repository.setEventBus(stubEventStore);
+        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore, stubEventStore);
         aggregateIdentifier = "testAggregateIdentifier";
     }
 
     @Test
     public void testCommandHandlerLoadsSameAggregateTwice() {
         startAndGetUnitOfWork();
-        StubAggregate stubAggregate = new StubAggregate(aggregateIdentifier);
-        stubAggregate.doSomething();
-        repository.add(stubAggregate);
+        repository.newInstance(() -> new StubAggregate(aggregateIdentifier)).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
         startAndGetUnitOfWork();
-        repository.load(aggregateIdentifier).doSomething();
-        repository.load(aggregateIdentifier).doSomething();
+        repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
+        repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
         DomainEventStream es = stubEventStore.readEvents(aggregateIdentifier);
@@ -90,7 +86,7 @@ public class CommandHandlingTest {
     private static class StubEventStore extends AbstractEventBus implements EventStore {
 
         private List<DomainEventMessage> storedEvents = new LinkedList<>();
-
+        private List<EventMessage> publishedEvents = new LinkedList<>();
 
         @Override
         public void appendEvents(List<DomainEventMessage<?>> events) {
@@ -107,14 +103,14 @@ public class CommandHandlingTest {
                                             long lastSequenceNumber) {
             return new SimpleDomainEventStream(
                     storedEvents.stream()
-                                .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
-                                        && m.getSequenceNumber() <= lastSequenceNumber)
-                                .collect(toList()));
+                            .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
+                                    && m.getSequenceNumber() <= lastSequenceNumber)
+                            .collect(toList()));
         }
 
         @Override
         protected void commit(List<EventMessage<?>> events) {
-            appendEvents(events.stream().map(event -> (DomainEventMessage<?>) event).collect(Collectors.toList()));
+            publishedEvents.addAll(events);
         }
 
         @Override

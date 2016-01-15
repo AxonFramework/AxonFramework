@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,7 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Marker annotation to mark any method on an object as being a CommandHandler. Use the {@link
@@ -46,7 +42,7 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.ANNOTATION_TYPE})
 public @interface CommandHandler {
 
     /**
@@ -54,4 +50,11 @@ public @interface CommandHandler {
      * (i.e. first parameter).
      */
     String commandName() default "";
+
+    /**
+     * The property of the command to be used as a routing key towards this command handler instance. If multiple
+     * handlers instances are available, a sending component is responsible to route commands with the same routing key
+     * value to the correct instance.
+     */
+    String routingKey() default "";
 }

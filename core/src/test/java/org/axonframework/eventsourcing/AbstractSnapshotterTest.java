@@ -22,7 +22,7 @@ import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.messaging.interceptors.Transaction;
 import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.metadata.MetaData;
-import org.axonframework.repository.ConcurrencyException;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
@@ -51,7 +51,7 @@ public class AbstractSnapshotterTest {
         mockEventStore = mock(SnapshotEventStore.class);
         testSubject = new AbstractSnapshotter() {
             @Override
-            protected DomainEventMessage createSnapshot(Class<? extends EventSourcedAggregateRoot> aggregateType,
+            protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                         String aggregateIdentifier, DomainEventStream eventStream) {
                 long lastIdentifier = getLastIdentifierFrom(eventStream);
                 if (lastIdentifier <= 0) {
@@ -83,7 +83,7 @@ public class AbstractSnapshotterTest {
                                                         "Mock contents", MetaData.emptyInstance()),
                         new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                         "Mock contents", MetaData.emptyInstance())));
-        testSubject.scheduleSnapshot(EventSourcedAggregateRoot.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore).appendSnapshotEvent(argThat(event(aggregateIdentifier, 1)));
     }
 
@@ -100,9 +100,9 @@ public class AbstractSnapshotterTest {
                                                         "Mock contents", MetaData.emptyInstance()),
                         new GenericDomainEventMessage<>(aggregateIdentifier, (long) 1,
                                                         "Mock contents", MetaData.emptyInstance())));
-        testSubject.scheduleSnapshot(EventSourcedAggregateRoot.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
 
-        testSubject.scheduleSnapshot(EventSourcedAggregateRoot.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore, times(2)).appendSnapshotEvent(argThat(event(aggregateIdentifier, 1)));
         verify(logger, never()).warn(anyString());
         verify(logger, never()).error(anyString());
@@ -115,7 +115,7 @@ public class AbstractSnapshotterTest {
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
                                                         "Mock contents", MetaData.emptyInstance())));
-        testSubject.scheduleSnapshot(EventSourcedAggregateRoot.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore, never()).appendSnapshotEvent(any(DomainEventMessage.class));
     }
 
@@ -126,7 +126,7 @@ public class AbstractSnapshotterTest {
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
                                                         "Mock contents", MetaData.emptyInstance())));
-        testSubject.scheduleSnapshot(EventSourcedAggregateRoot.class, aggregateIdentifier);
+        testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore, never()).appendSnapshotEvent(any(DomainEventMessage.class));
     }
 

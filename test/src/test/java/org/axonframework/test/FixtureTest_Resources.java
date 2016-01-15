@@ -2,13 +2,13 @@ package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.junit.*;
 
 import java.util.concurrent.Executor;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -59,7 +59,7 @@ public class FixtureTest_Resources {
         testResourcesAreScopedToSingleTest_MethodPartOne();
     }
 
-    public static class AggregateWithResources extends AbstractAnnotatedAggregateRoot {
+    public static class AggregateWithResources {
 
         @AggregateIdentifier
         private String id;

@@ -17,16 +17,19 @@
 package org.axonframework.quickstart.handler;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AbstractEventSourcedAggregateRoot;
-import org.axonframework.eventsourcing.EventSourcedEntity;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
+
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * @author Jettro Coenradie
  */
-public class ToDoItem extends AbstractEventSourcedAggregateRoot {
+public class ToDoItem {
 
+    @AggregateIdentifier
     private String id;
 
     public ToDoItem() {
@@ -40,21 +43,11 @@ public class ToDoItem extends AbstractEventSourcedAggregateRoot {
         apply(new ToDoItemCompletedEvent(id));
     }
 
-    @Override
-    protected Iterable<? extends EventSourcedEntity> getChildEntities() {
-        return null;
-    }
-
-    @Override
+    @EventSourcingHandler
     protected void handle(EventMessage eventMessage) {
         if (eventMessage.getPayloadType().equals(ToDoItemCreatedEvent.class)) {
             ToDoItemCreatedEvent event = (ToDoItemCreatedEvent) eventMessage.getPayload();
             this.id = event.getTodoId();
         }
-    }
-
-    @Override
-    public String getIdentifier() {
-        return id;
     }
 }

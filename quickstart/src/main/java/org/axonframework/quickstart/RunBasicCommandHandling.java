@@ -59,8 +59,7 @@ public class RunBasicCommandHandling {
         EventBus eventBus = new SimpleEventBus();
 
         // we need to configure the repository
-        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class, eventStore);
-        repository.setEventBus(eventBus);
+        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class, eventStore, eventBus);
 
         // Register the Command Handlers with the command bus by subscribing to the name of the command
         commandBus.subscribe(CreateToDoItemCommand.class.getName(),

@@ -17,6 +17,9 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
+import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.messaging.GenericMessage;
@@ -44,7 +47,7 @@ public class EventCountSnapshotterTriggerTest {
     private String aggregateIdentifier;
     private Cache mockCache;
     private CapturingMatcher<Cache.EntryListener> listenerConfiguration;
-    private EventSourcedAggregateRoot aggregate;
+    private Aggregate<?> aggregate;
 
     private UnitOfWork unitOfWork;
 
@@ -58,7 +61,8 @@ public class EventCountSnapshotterTriggerTest {
         testSubject.setTrigger(3);
         testSubject.setSnapshotter(mockSnapshotter);
         aggregateIdentifier = "aggregateIdentifier";
-        aggregate = new StubAggregate(aggregateIdentifier);
+        aggregate = new AnnotatedAggregate<>(new StubAggregate(aggregateIdentifier),
+                                             ModelInspector.inspectAggregate(StubAggregate.class), null);
         //noinspection unchecked
         mockCache = mock(Cache.class);
         listenerConfiguration = new CapturingMatcher<>();
@@ -97,9 +101,9 @@ public class EventCountSnapshotterTriggerTest {
                                                 "Mock contents",
                                                 MetaData.emptyInstance())));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
+        verify(mockSnapshotter).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
     }
 
     @Test
@@ -148,16 +152,16 @@ public class EventCountSnapshotterTriggerTest {
         )));
         testSubject.decorateForAppend(aggregate, Arrays.asList(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 2,
-                        "Mock contents", MetaData.emptyInstance()
+                                                "Mock contents", MetaData.emptyInstance()
                 )));
         testSubject.decorateForAppend(aggregate, Arrays.asList(
                 new GenericDomainEventMessage<>(aggregateIdentifier, (long) 3,
                                                 "Mock contents", MetaData.emptyInstance()
                 )));
 
-        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
+        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
         CurrentUnitOfWork.commit();
-        verify(mockSnapshotter).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
+        verify(mockSnapshotter).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
     }
 
     @Test

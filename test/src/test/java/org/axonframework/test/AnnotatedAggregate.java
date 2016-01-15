@@ -19,18 +19,19 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 
 import java.util.UUID;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.markDeleted;
 import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Allard Buijze
  */
-class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot implements AnnotatedAggregateInterface {
+class AnnotatedAggregate implements AnnotatedAggregateInterface {
 
     @SuppressWarnings("UnusedDeclaration")
     private transient int counter;
@@ -94,10 +95,5 @@ class AnnotatedAggregate extends AbstractAnnotatedAggregateRoot implements Annot
         // this state change should be accepted, since it happens on a transient value
         counter++;
         apply(new MyEvent(command.getAggregateIdentifier(), lastNumber + 1));
-    }
-
-    @Override
-    public String getIdentifier() {
-        return identifier == null ? null :  identifier.toString();
     }
 }

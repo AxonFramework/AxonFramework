@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.annotation.ParameterResolverFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -29,7 +28,7 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 /**
  * Aggregate factory that uses a convention to create instances of aggregates. The type must declare a no-arg
  * constructor accepting.
- * <p/>
+ * <p>
  * If the constructor is not accessible (not public), and the JVM's security setting allow it, the
  * GenericAggregateFactory will try to make it accessible. If that doesn't succeed, an exception is thrown.
  *
@@ -37,9 +36,8 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
  * @author Allard Buijze
  * @since 0.7
  */
-public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extends AbstractAggregateFactory<T> {
+public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
 
-    private final Class<T> aggregateType;
     private final Constructor<T> constructor;
 
     /**
@@ -47,33 +45,12 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
      *
      * @param aggregateType The type of aggregate this factory creates instances of.
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     * settings prevent the GenericAggregateFactory from calling the
-     * constructor.
+     *                                        settings prevent the GenericAggregateFactory from calling the
+     *                                        constructor.
      */
     public GenericAggregateFactory(Class<T> aggregateType) {
-        this(aggregateType, null);
-    }
-
-    /**
-     * Initialize the AggregateFactory for creating instances of the given <code>aggregateType</code> and using the
-     * given <code>parameterResolverFactory</code> to resolve parameters of annotated event handler methods.
-     * <p/>
-     * Note that the <code>parameterResolverFactory</code> is only used if the aggregate is an instance of {@code
-     * org.axonframework.eventsourcing.annotation.AbstractAnnotatedAggregateRoot}. In other cases, this parameter is
-     * ignored
-     *
-     * @param aggregateType            The type of aggregate this factory creates instances of.
-     * @param parameterResolverFactory THe factory that resolves parameters of annotated event handlers
-     * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     * settings prevent the GenericAggregateFactory from calling the
-     * constructor.
-     */
-    public GenericAggregateFactory(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
-        super(parameterResolverFactory);
-        Assert.isTrue(EventSourcedAggregateRoot.class.isAssignableFrom(aggregateType),
-                      "The given aggregateType must be a subtype of EventSourcedAggregateRoot");
+        super(aggregateType);
         Assert.isFalse(Modifier.isAbstract(aggregateType.getModifiers()), "Given aggregateType may not be abstract");
-        this.aggregateType = aggregateType;
         try {
             this.constructor = ensureAccessible(aggregateType.getDeclaredConstructor());
         } catch (NoSuchMethodException e) {
@@ -84,11 +61,11 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <p>
      *
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security
-     * settings prevent the GenericAggregateFactory from calling the
-     * constructor.
+     *                                        settings prevent the GenericAggregateFactory from calling the
+     *                                        constructor.
      */
     @SuppressWarnings({"unchecked"})
     @Override
@@ -98,21 +75,16 @@ public class GenericAggregateFactory<T extends EventSourcedAggregateRoot> extend
         } catch (InstantiationException e) {
             throw new IncompatibleAggregateException(format(
                     "The aggregate [%s] does not have a suitable no-arg constructor.",
-                    aggregateType.getSimpleName()), e);
+                    getAggregateType().getSimpleName()), e);
         } catch (IllegalAccessException e) {
             throw new IncompatibleAggregateException(format(
                     "The aggregate no-arg constructor of the aggregate [%s] is not accessible. Please ensure that "
                             + "the constructor is public or that the Security Manager allows access through "
-                            + "reflection.", aggregateType.getSimpleName()), e);
+                            + "reflection.", getAggregateType().getSimpleName()), e);
         } catch (InvocationTargetException e) {
             throw new IncompatibleAggregateException(format(
                     "The no-arg constructor of [%s] threw an exception on invocation.",
-                    aggregateType.getSimpleName()), e);
+                    getAggregateType().getSimpleName()), e);
         }
-    }
-
-    @Override
-    public Class<T> getAggregateType() {
-        return aggregateType;
     }
 }

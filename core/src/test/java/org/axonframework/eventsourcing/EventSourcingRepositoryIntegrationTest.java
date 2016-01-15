@@ -16,24 +16,26 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.common.lock.LockFactory;
-import org.axonframework.common.lock.PessimisticLockFactory;
+import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateLifecycle;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.repository.ConcurrencyException;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -52,11 +54,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
     private List<Thread> startedThreads = new ArrayList<>();
 
-    //todo fix test
-    @Ignore
     @Test(timeout = 60000)
     public void testPessimisticLocking() throws Throwable {
-        initializeRepository(new PessimisticLockFactory());
+        initializeRepository();
         long lastSequenceNumber = executeConcurrentModifications(CONCURRENT_MODIFIERS);
 
         // with pessimistic locking, all modifications are guaranteed successful
@@ -69,21 +69,18 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         return CONCURRENT_MODIFIERS - uncaughtExceptions.size();
     }
 
-    private void initializeRepository(LockFactory strategy) {
+    private void initializeRepository() {
         eventStore = new InMemoryEventStore();
-        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore,
-                                                   strategy);
+        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore, null);
         EventBus mockEventBus = mock(EventBus.class);
-        repository.setEventBus(mockEventBus);
 
         UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
         uow.resources().put(EventBus.KEY, mockEventBus);
-        SimpleAggregateRoot aggregate = new SimpleAggregateRoot();
-        repository.add(aggregate);
+        Aggregate<SimpleAggregateRoot> aggregate = repository.newInstance(SimpleAggregateRoot::new);
         uow.commit();
 
         reset(mockEventBus);
-        aggregateIdentifier = aggregate.getIdentifier();
+        aggregateIdentifier = aggregate.map(SimpleAggregateRoot::getIdentifier);
     }
 
     private long executeConcurrentModifications(final int concurrentModifiers) throws Throwable {
@@ -133,9 +130,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
             try {
                 awaitFor.await();
                 UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
-                SimpleAggregateRoot aggregate = repository.load(aggregateIdentifier, null);
-                aggregate.doOperation();
-                aggregate.doOperation();
+                Aggregate<SimpleAggregateRoot> aggregate = repository.load(aggregateIdentifier, null);
+                aggregate.execute(SimpleAggregateRoot::doOperation);
+                aggregate.execute(SimpleAggregateRoot::doOperation);
                 uow.commit();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -154,13 +151,14 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         uncaughtExceptions.add(e);
     }
 
-    private static class SimpleAggregateRoot extends AbstractEventSourcedAggregateRoot {
+    private static class SimpleAggregateRoot {
 
+        @AggregateIdentifier
         private String identifier;
 
         private SimpleAggregateRoot() {
             identifier = UUID.randomUUID().toString();
-            apply(new StubDomainEvent());
+            AggregateLifecycle.apply(new StubDomainEvent());
         }
 
         private SimpleAggregateRoot(String identifier) {
@@ -168,36 +166,29 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         }
 
         private void doOperation() {
-            apply(new StubDomainEvent());
+            AggregateLifecycle.apply(new StubDomainEvent());
         }
 
-        @Override
+        @EventSourcingHandler
         protected void handle(EventMessage event) {
             identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
         }
 
-        @Override
         public String getIdentifier() {
             return identifier;
-        }
-
-        @Override
-        protected Collection<EventSourcedEntity> getChildEntities() {
-            return null;
         }
     }
 
     private static class SimpleAggregateFactory extends AbstractAggregateFactory<SimpleAggregateRoot> {
 
+        public SimpleAggregateFactory() {
+            super(SimpleAggregateRoot.class);
+        }
+
         @Override
         public SimpleAggregateRoot doCreateAggregate(String aggregateIdentifier,
                                                      DomainEventMessage firstEvent) {
             return new SimpleAggregateRoot(aggregateIdentifier);
-        }
-
-        @Override
-        public Class<SimpleAggregateRoot> getAggregateType() {
-            return SimpleAggregateRoot.class;
         }
     }
 
@@ -212,12 +203,9 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
         @Override
         public synchronized DomainEventStream readEvents(String identifier) {
-            List<DomainEventMessage> relevant = new ArrayList<>();
-            for (DomainEventMessage event : domainEvents) {
-                if (event.getAggregateIdentifier().equals(identifier)) {
-                    relevant.add(event);
-                }
-            }
+            List<DomainEventMessage> relevant = domainEvents.stream()
+                    .filter(event -> event.getAggregateIdentifier().equals(identifier))
+                    .collect(Collectors.toList());
 
             return new SimpleDomainEventStream(relevant);
         }

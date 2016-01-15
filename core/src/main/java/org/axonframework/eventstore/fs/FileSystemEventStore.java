@@ -16,6 +16,7 @@
 
 package org.axonframework.eventstore.fs;
 
+import org.axonframework.commandhandling.model.ConflictingModificationException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -23,7 +24,8 @@ import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.SnapshotEventStore;
-import org.axonframework.repository.ConflictingModificationException;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.axonframework.upcasting.SimpleUpcasterChain;
@@ -31,6 +33,7 @@ import org.axonframework.upcasting.UpcasterAware;
 import org.axonframework.upcasting.UpcasterChain;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -38,9 +41,9 @@ import java.util.NoSuchElementException;
  * Implementation of the {@link org.axonframework.eventstore.EventStore} that serializes objects (by default using
  * XStream) and
  * writes them to files to disk. Each aggregate is represented by a single file.
- * <p/>
+ * <p>
  * Use {@link EventFileResolver} to specify the directory where event files should be stored and written to.
- * <p/>
+ * <p>
  * Note that the resource supplied must point to a folder and should contain a trailing slash. See {@link
  * org.springframework.core.io.FileSystemResource#FileSystemResource(String)}.
  *
@@ -67,7 +70,7 @@ public class FileSystemEventStore implements SnapshotEventStore, UpcasterAware {
     /**
      * Initialize the FileSystemEventStore using the given <code>serializer</code>. The serializer must be capable of
      * serializing the payload and meta data of Event Messages.
-     * <p/>
+     * <p>
      * <em>Note: the SerializedType of Message Meta Data is not stored. Upon retrieval, it is set to the default value
      * (name = "org.axonframework.messaging.metadata.MetaData", revision = null). See {@link org.axonframework.serializer.SerializedMetaData#isSerializedMetaData(org.axonframework.serializer.SerializedObject)}</em>
      *
@@ -83,6 +86,20 @@ public class FileSystemEventStore implements SnapshotEventStore, UpcasterAware {
 
     @Override
     public void appendEvents(List<DomainEventMessage<?>> events) {
+        if (CurrentUnitOfWork.isStarted()) {
+            UnitOfWork uow = CurrentUnitOfWork.get();
+            uow.getOrComputeResource(toString(), k -> {
+                List<DomainEventMessage<?>> eventsToPublish = new ArrayList<>();
+                uow.onPrepareCommit(u -> doAppendEvents(eventsToPublish));
+                uow.onRollback(u -> eventsToPublish.clear());
+                return eventsToPublish;
+            }).addAll(events);
+        } else {
+            doAppendEvents(events);
+        }
+    }
+
+    private void doAppendEvents(List<DomainEventMessage<?>> events) {
         if (events == null || events.isEmpty()) {
             return;
         }

@@ -16,10 +16,10 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.repository.AggregateNotFoundException;
+import org.axonframework.commandhandling.model.AggregateNotFoundException;
 
 /**
- * Special case of the {@link org.axonframework.repository.AggregateNotFoundException} that indicates that historic
+ * Special case of the {@link AggregateNotFoundException} that indicates that historic
  * information of an aggregate was found, but the aggregate has been deleted.
  *
  * @author Allard Buijze

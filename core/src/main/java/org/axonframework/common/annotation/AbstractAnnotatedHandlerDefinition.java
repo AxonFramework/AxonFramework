@@ -29,7 +29,7 @@ import java.lang.reflect.AccessibleObject;
  * @since 2.1
  */
 public abstract class AbstractAnnotatedHandlerDefinition<T extends Annotation>
-        implements HandlerDefinition<AccessibleObject> {
+        implements LegacyHandlerDefinition<AccessibleObject> {
 
     private final Class<T> annotationType;
 
