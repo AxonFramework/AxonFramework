@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,10 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
-import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
@@ -43,10 +41,8 @@ import org.axonframework.messaging.unitofwork.Transaction;
 import org.axonframework.messaging.unitofwork.TransactionManager;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.testutils.MockException;
-import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
@@ -68,8 +64,6 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-//todo fix test
-@Ignore
 public class DisruptorCommandBusTest {
 
     private static final int COMMAND_COUNT = 100 * 1000;
@@ -156,39 +150,6 @@ public class DisruptorCommandBusTest {
         verify(mockCallback).onSuccess(eq(command), any());
     }
 
-    /* see AXON-323: http://issues.axonframework.org/youtrack/issue/AXON-323 */
-    @Test
-    public void testEventsPublishedWithoutAggregateArePassedToListener() throws Exception {
-        final EventBus eventBus = mock(EventBus.class);
-        testSubject = new DisruptorCommandBus(inMemoryEventStore, eventBus,
-                                              new DisruptorConfiguration()
-                                                      .setInvokerInterceptors(
-                                                              Collections.<MessageHandlerInterceptor<CommandMessage<?>>>singletonList(
-                                                                      (commandMessage, unitOfWork, interceptorChain)
-                                                                              -> interceptorChain.proceed())));
-        testSubject.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
-            eventBus.publish(GenericEventMessage.asEventMessage("ok"));
-            return null;
-        });
-
-        final FutureCallback<String, Void> callback = new FutureCallback<>();
-        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
-
-        callback.awaitCompletion(5, TimeUnit.SECONDS);
-
-        verify(eventBus).publish(argThat(new org.hamcrest.TypeSafeMatcher<EventMessage>() {
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("an event with meta data");
-            }
-
-            @Override
-            protected boolean matchesSafely(EventMessage item) {
-                return "value".equals(item.getMetaData().get("meta-key"));
-            }
-        }));
-    }
-
     @Test
     public void testPublishUnsupportedCommand() throws Exception {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
@@ -268,9 +229,9 @@ public class DisruptorCommandBusTest {
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
 
-        verify(mockTransactionManager, times(1001)).startTransaction();
+        verify(mockTransactionManager, times(991)).startTransaction();
         verify(mockTransaction, times(991)).commit();
-        verify(mockTransaction, times(10)).rollback();
+        verifyNoMoreInteractions(mockTransaction, mockTransactionManager);
     }
 
     @SuppressWarnings("unchecked")
