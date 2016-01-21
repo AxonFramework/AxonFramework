@@ -83,7 +83,7 @@ public class AsynchronousEventProcessorTest {
     }
 
     @Test
-    public void testSimpleConfig_ProceedOnFailure() {
+    public void testSimpleConfig_ProceedOnFailure() throws Exception {
         testSubject = new AsynchronousEventProcessor("async", executor,
                                               new SequentialPerAggregatePolicy());
         final List<EventMessage> ackedMessages = listenForAcknowledgedMessages();
@@ -187,7 +187,7 @@ public class AsynchronousEventProcessorTest {
     }
 
     @Test
-    public void testExceptionsIgnoredWhenErrorPolicyIsProceed_IncludesAsyncHandler() {
+    public void testExceptionsIgnoredWhenErrorPolicyIsProceed_IncludesAsyncHandler() throws Exception {
         final List<EventMessage> ackedMessages = listenForAcknowledgedMessages();
         final List<EventMessage> failedMessages = listenForFailedMessages();
 

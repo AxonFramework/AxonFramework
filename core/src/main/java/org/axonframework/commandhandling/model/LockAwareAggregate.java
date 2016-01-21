@@ -22,7 +22,7 @@ import org.axonframework.common.lock.Lock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class LockAwareAggregate<T, A extends Aggregate<T>> implements Aggregate<T> {
+public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregate<AR> {
 
     private final A wrappedAggregate;
     private final Lock lock;
@@ -51,17 +51,17 @@ public class LockAwareAggregate<T, A extends Aggregate<T>> implements Aggregate<
     }
 
     @Override
-    public Object handle(CommandMessage<?> msg) {
+    public Object handle(CommandMessage<?> msg) throws Exception {
         return wrappedAggregate.handle(msg);
     }
 
     @Override
-    public <R> R map(Function<T, R> invocation) {
-        return wrappedAggregate.map(invocation);
+    public <R> R invoke(Function<AR, R> invocation) {
+        return wrappedAggregate.invoke(invocation);
     }
 
     @Override
-    public void execute(Consumer<T> invocation) {
+    public void execute(Consumer<AR> invocation) {
         wrappedAggregate.execute(invocation);
     }
 
@@ -71,7 +71,7 @@ public class LockAwareAggregate<T, A extends Aggregate<T>> implements Aggregate<
     }
 
     @Override
-    public Class<? extends T> rootType() {
+    public Class<? extends AR> rootType() {
         return wrappedAggregate.rootType();
     }
 }

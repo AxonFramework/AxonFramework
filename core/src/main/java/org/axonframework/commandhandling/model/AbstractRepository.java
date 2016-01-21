@@ -24,7 +24,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 /**
  * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
@@ -57,7 +57,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     @Override
-    public A newInstance(Supplier<T> factoryMethod) {
+    public A newInstance(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNew(factoryMethod);
         aggregate.execute(root -> Assert.isTrue(aggregateType.isInstance(root),
                                                 "Unsuitable aggregate for this repository: wrong type"));
@@ -71,7 +71,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         return aggregate;
     }
 
-    protected abstract A doCreateNew(Supplier<T> factoryMethod);
+    protected abstract A doCreateNew(Callable<T> factoryMethod) throws Exception;
 
     /**
      * {@inheritDoc}

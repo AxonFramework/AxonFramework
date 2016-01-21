@@ -85,7 +85,7 @@ public class EventProcessorTaskTest {
     }
 
     @Test
-    public void testEventProcessingDelayed_ScheduledExecutorService() {
+    public void testEventProcessingDelayed_ScheduledExecutorService() throws Exception {
         EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<>(new StubDomainEvent());
         EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
@@ -117,7 +117,7 @@ public class EventProcessorTaskTest {
     }
 
     @Test
-    public void testEventProcessingDelayed_ExecutorDoesNotSupportScheduling() {
+    public void testEventProcessingDelayed_ExecutorDoesNotSupportScheduling() throws Exception {
         EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<>(new StubDomainEvent());
         EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);
@@ -155,7 +155,7 @@ public class EventProcessorTaskTest {
      * This test verifies issue #15 (http://code.google.com/p/axonframework/issues/detail?id=15)
      */
     @Test
-    public void testEventProcessingRetried_TransactionStartupFails() {
+    public void testEventProcessingRetried_TransactionStartupFails() throws Exception {
         EventMessage<? extends StubDomainEvent> event1 = new GenericEventMessage<>(new StubDomainEvent());
         EventMessage<? extends StubDomainEvent> event2 = new GenericEventMessage<>(new StubDomainEvent());
         final EventListener listener = mock(EventListener.class);

@@ -37,7 +37,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.fail;
@@ -75,7 +75,7 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testStoreNewAggregate() {
+    public void testStoreNewAggregate() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
@@ -86,7 +86,7 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadAndStoreAggregate() {
+    public void testLoadAndStoreAggregate() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
         testSubject.newInstance(() -> aggregate).execute(StubAggregate::doSomething);
@@ -107,7 +107,7 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadAndStoreAggregate_LockReleasedOnException() {
+    public void testLoadAndStoreAggregate_LockReleasedOnException() throws Exception {
         startAndGetUnitOfWork();
         StubAggregate aggregate = new StubAggregate();
 
@@ -136,7 +136,7 @@ public class LockingRepositoryTest {
     }
 
     @Test
-    public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() {
+    public void testLoadAndStoreAggregate_PessimisticLockReleasedOnException() throws Exception {
         lockFactory = spy(new PessimisticLockFactory());
         testSubject = new InMemoryLockingRepository(lockFactory, mockEventBus);
         testSubject = spy(testSubject);
@@ -207,7 +207,7 @@ public class LockingRepositoryTest {
         }
 
         @Override
-        protected Aggregate<StubAggregate> doCreateNewForLock(Supplier<StubAggregate> factoryMethod) {
+        protected Aggregate<StubAggregate> doCreateNewForLock(Callable<StubAggregate> factoryMethod) throws Exception {
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventBus, mock(EventStore.class));
         }
 

@@ -22,6 +22,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 public abstract class AggregateLifecycle {
@@ -69,17 +70,25 @@ public abstract class AggregateLifecycle {
 
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
 
-    protected <V> V executeWithResult(Supplier<V> callable) {
+    protected <V> V executeWithResultOrException(Callable<V> callable) throws Exception {
         AggregateLifecycle existing = CURRENT.get();
         CURRENT.set(this);
         try {
-            return callable.get();
+            return callable.call();
         } finally {
             if (existing == null) {
                 CURRENT.remove();
             } else {
                 CURRENT.set(existing);
             }
+        } 
+    }
+    
+    protected <V> V executeWithResult(Supplier<V> task) {
+        try {
+            return executeWithResultOrException(task::get);
+        } catch (Exception e) {
+            throw (RuntimeException) e;
         }
     }
 

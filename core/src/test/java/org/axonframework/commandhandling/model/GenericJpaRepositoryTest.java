@@ -64,7 +64,7 @@ public class GenericJpaRepositoryTest {
     @Test
     public void testLoadAggregate() {
         Aggregate<StubJpaAggregate> actualResult = testSubject.load(aggregateId);
-        assertSame(aggregate, actualResult.map(Function.identity()));
+        assertSame(aggregate, actualResult.invoke(Function.identity()));
     }
 
     @Test

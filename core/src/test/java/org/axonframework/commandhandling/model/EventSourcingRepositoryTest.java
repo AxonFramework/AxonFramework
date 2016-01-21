@@ -85,7 +85,7 @@ public class EventSourcingRepositoryTest {
         verify(eventBus, never()).publish(Matchers.<EventMessage<?>[]>anyVararg());
         actual.execute(StubAggregate::changeState);
         assertEquals(6L, (long) actual.version());
-        List<DomainEventMessage<String>> domainEventMessages = actual.map(StubAggregate::getMessages);
+        List<DomainEventMessage<String>> domainEventMessages = actual.invoke(StubAggregate::getMessages);
         assertEquals(6, domainEventMessages.size());
         DomainEventMessage<String> message = domainEventMessages.get(5);
         assertEquals("Got messages: 5", message.getPayload());
@@ -101,9 +101,9 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testCreateNewAggregate() {
+    public void testCreateNewAggregate() throws Exception {
         Aggregate<StubAggregate> instance = repository.newInstance(() -> new StubAggregate("id", "Hello"));
-        List<DomainEventMessage<String>> messages = instance.map(StubAggregate::getMessages);
+        List<DomainEventMessage<String>> messages = instance.invoke(StubAggregate::getMessages);
         assertEquals(2, messages.size());
         assertEquals("Hello", messages.get(0).getPayload());
         assertEquals("Got messages: 1", messages.get(1).getPayload());

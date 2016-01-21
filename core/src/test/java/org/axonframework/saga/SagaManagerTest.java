@@ -84,7 +84,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testSagasLoadedAndCommitted() {
+    public void testSagasLoadedAndCommitted() throws Exception {
         EventMessage event = new GenericEventMessage<>(new Object());
         testSubject.handle(event);
         verify(mockSaga1).handle(event);
@@ -96,7 +96,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testExceptionPropagated() {
+    public void testExceptionPropagated() throws Exception {
         testSubject.setSuppressExceptions(false);
         EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
@@ -113,7 +113,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public void testExceptionSuppressed() {
+    public void testExceptionSuppressed() throws Exception {
         EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
 
@@ -126,7 +126,7 @@ public class SagaManagerTest {
     }
 
     @Test
-    public synchronized void testAccessToSagaWhileInCreation() throws InterruptedException {
+    public synchronized void testAccessToSagaWhileInCreation() throws Exception {
         when(mockSagaFactory.createSaga(isA(Class.class))).thenReturn(mockSaga1);
         reset(mockSagaRepository);
         when(mockSagaRepository.find(isA(Class.class), isA(AssociationValue.class)))

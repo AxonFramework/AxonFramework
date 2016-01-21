@@ -41,6 +41,6 @@ public class MarkCompletedCommandHandler implements MessageHandler<CommandMessag
         MarkCompletedCommand command = (MarkCompletedCommand) commandMessage.getPayload();
         Aggregate<ToDoItem> toDoItem = repository.load(command.getTodoId());
         toDoItem.execute(ToDoItem::markCompleted);
-        return toDoItem.map(Function.identity());
+        return toDoItem.invoke(Function.identity());
     }
 }

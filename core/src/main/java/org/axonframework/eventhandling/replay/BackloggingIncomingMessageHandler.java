@@ -23,12 +23,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -111,7 +106,8 @@ public class BackloggingIncomingMessageHandler implements IncomingMessageHandler
     }
 
     @Override
-    public synchronized List<EventMessage<?>> onIncomingMessages(EventProcessor destination, List<EventMessage<?>> messages) {
+    public synchronized List<EventMessage<?>> onIncomingMessages(EventProcessor destination,
+                                                                 List<EventMessage<?>> messages) {
         if (!inReplay) {
             destination.handle(messages);
             return null;

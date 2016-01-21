@@ -29,6 +29,7 @@ import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -53,8 +54,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         this.eventBus = eventBus;
     }
 
-    public void registerRoot(Supplier<T> aggregateFactory) {
-        this.aggregateRoot = executeWithResult(aggregateFactory::get);
+    public void registerRoot(Callable<T> aggregateFactory) throws Exception {
+        this.aggregateRoot = executeWithResultOrException(aggregateFactory::call);
         while (!delayedTasks.isEmpty()) {
             delayedTasks.poll().run();
         }
@@ -71,7 +72,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
-    public <R> R map(Function<T, R> invocation) {
+    public <R> R invoke(Function<T, R> invocation) {
         return executeWithResult(() -> invocation.apply(aggregateRoot));
     }
 
@@ -111,8 +112,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handle(CommandMessage<?> msg) {
-        return executeWithResult(() -> {
+    public Object handle(CommandMessage<?> msg) throws Exception {
+        return executeWithResultOrException(() -> {
             MessageHandler<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
             Object result = handler.handle(msg, aggregateRoot);
             if (aggregateRoot == null) {

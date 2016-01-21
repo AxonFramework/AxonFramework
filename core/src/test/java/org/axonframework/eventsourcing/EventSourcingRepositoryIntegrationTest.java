@@ -26,7 +26,6 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -69,7 +68,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         return CONCURRENT_MODIFIERS - uncaughtExceptions.size();
     }
 
-    private void initializeRepository() {
+    private void initializeRepository() throws Exception {
         eventStore = new InMemoryEventStore();
         repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore, null);
         EventBus mockEventBus = mock(EventBus.class);
@@ -80,7 +79,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         uow.commit();
 
         reset(mockEventBus);
-        aggregateIdentifier = aggregate.map(SimpleAggregateRoot::getIdentifier);
+        aggregateIdentifier = aggregate.invoke(SimpleAggregateRoot::getIdentifier);
     }
 
     private long executeConcurrentModifications(final int concurrentModifiers) throws Throwable {

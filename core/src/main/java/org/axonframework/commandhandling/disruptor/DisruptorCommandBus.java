@@ -25,7 +25,10 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -37,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
@@ -361,7 +363,7 @@ public class DisruptorCommandBus implements CommandBus {
         }
 
         @Override
-        public Aggregate<T> newInstance(Supplier<T> factoryMethod) {
+        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
         }
     }

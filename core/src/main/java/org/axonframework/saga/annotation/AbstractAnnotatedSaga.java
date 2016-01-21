@@ -73,7 +73,7 @@ public abstract class AbstractAnnotatedSaga implements Saga, Serializable {
     }
 
     @Override
-    public final void handle(EventMessage event) {
+    public final void handle(EventMessage event) throws Exception {
         if (isActive) {
             ensureInspectorInitialized();
             SagaMethodMessageHandler handler = inspector.findHandlerMethod(this, event);

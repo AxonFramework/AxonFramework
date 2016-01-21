@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling.model;
 
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 /**
  * The repository provides an abstraction of the storage of aggregates.
@@ -51,5 +51,5 @@ public interface Repository<T> {
     /**
      * TODO: documentation
      */
-    Aggregate<T> newInstance(Supplier<T> factoryMethod);
+    Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception;
 }

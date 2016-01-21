@@ -56,7 +56,7 @@ public class AbstractAnnotatedSagaTest {
     }
 
     @Test
-    public void testEndedAfterInvocation_BeanProperty() {
+    public void testEndedAfterInvocation_BeanProperty() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
         testSubject.associateWith("propertyName", "id");
         testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
@@ -67,7 +67,7 @@ public class AbstractAnnotatedSagaTest {
     }
 
     @Test
-    public void testEndedAfterInvocation_WhenAssociationIsRemoved() {
+    public void testEndedAfterInvocation_WhenAssociationIsRemoved() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSagaWithExplicitAssociationRemoval();
         testSubject.associateWith("propertyName", "id");
         testSubject.handle(new GenericEventMessage<>(new RegularEvent("id")));
@@ -78,7 +78,7 @@ public class AbstractAnnotatedSagaTest {
     }
 
     @Test
-    public void testEndedAfterInvocation_UniformAccessPrinciple() {
+    public void testEndedAfterInvocation_UniformAccessPrinciple() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
         testSubject.associateWith("propertyName", "id");
         testSubject.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));

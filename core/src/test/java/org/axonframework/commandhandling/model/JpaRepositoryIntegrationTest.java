@@ -76,9 +76,9 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void testStoreAndLoadNewAggregate() {
+    public void testStoreAndLoadNewAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
-        String originalId = repository.newInstance(() -> new JpaAggregate("Hello")).map(JpaAggregate::getIdentifier);
+        String originalId = repository.newInstance(() -> new JpaAggregate("Hello")).invoke(JpaAggregate::getIdentifier);
         uow.commit();
 
         entityManager.flush();

@@ -42,7 +42,7 @@ public class SimpleEventProcessorTest {
     }
 
     @Test
-    public void testSubscribeMember() {
+    public void testSubscribeMember() throws Exception {
         testSubject.subscribe(eventListener);
         EventMessage<?> eventMessage = new GenericEventMessage<>("Some event");
         testSubject.handle(eventMessage);
@@ -50,7 +50,7 @@ public class SimpleEventProcessorTest {
     }
 
     @Test
-    public void testSubscribeOrderedMembers() {
+    public void testSubscribeOrderedMembers() throws Exception {
         OrderResolver mockOrderResolver = mock(OrderResolver.class);
         EventListener eventListener2 = mock(EventListener.class);
         when(mockOrderResolver.orderOf(eventListener)).thenReturn(1);
@@ -79,7 +79,7 @@ public class SimpleEventProcessorTest {
     }
 
     @Test
-    public void testPublishEvent() {
+    public void testPublishEvent() throws Exception {
         testSubject.subscribe(eventListener);
         EventMessage event = new GenericEventMessage<>(new Object());
         testSubject.handle(event);

@@ -88,7 +88,7 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T>, An
     }
 
     @Override
-    public Object handle(Message<?> message, T target) {
+    public Object handle(Message<?> message, T target) throws Exception {
         try {
             if (executable instanceof Method) {
                 return ((Method) executable).invoke(target, resolveParameterValues(message));
@@ -98,10 +98,11 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T>, An
                 throw new IllegalStateException("What kind of handler is this?");
             }
         } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
+            if (e.getCause() instanceof Exception) {
+                throw (Exception) e.getCause();
             }
-            throw new MessageHandlerInvocationException("Error invoking CommandHandler method", e.getCause());
+            throw new MessageHandlerInvocationException(
+                    String.format("Error handling an object of type [%s]", message.getPayloadType()), e);
         }
     }
 

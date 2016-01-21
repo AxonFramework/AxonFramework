@@ -6,7 +6,6 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
-import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
@@ -106,7 +105,7 @@ public class CommandHandlerInvokerTest {
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> {
             Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(aggregateIdentifier));
             aggregate.execute(StubAggregate::doSomething);
-            return aggregate.map(Function.identity());
+            return aggregate.invoke(Function.identity());
         });
 
         testSubject.onEvent(commandHandlingEntry, 0, true);

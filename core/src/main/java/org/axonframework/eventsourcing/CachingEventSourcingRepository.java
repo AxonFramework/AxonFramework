@@ -29,7 +29,7 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.io.Serializable;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 
 /**
@@ -86,7 +86,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     }
 
     @Override
-    protected EventSourcedAggregate<T> doCreateNewForLock(Supplier<T> factoryMethod) {
+    protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
         EventSourcedAggregate<T> aggregate = super.doCreateNewForLock(factoryMethod);
         String aggregateIdentifier = aggregate.identifier();
         // TODO: Add an entry in the cache which is serializable

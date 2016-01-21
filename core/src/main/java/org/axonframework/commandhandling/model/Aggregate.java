@@ -27,9 +27,9 @@ public interface Aggregate<T> {
 
     Long version();
 
-    Object handle(CommandMessage<?> msg);
+    Object handle(CommandMessage<?> msg) throws Exception;
 
-    <R> R map(Function<T, R> invocation);
+    <R> R invoke(Function<T, R> invocation);
 
     void execute(Consumer<T> invocation);
 

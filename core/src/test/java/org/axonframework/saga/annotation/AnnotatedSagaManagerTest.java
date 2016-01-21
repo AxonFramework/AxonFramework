@@ -36,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonMap;
+import static junit.framework.TestCase.fail;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -56,26 +57,26 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testCreationPolicy_NoneExists() {
+    public void testCreationPolicy_NoneExists() throws Exception {
         manager.handle(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123", MyTestSaga.class).size());
     }
 
     @Test
-    public void testCreationPolicy_OneAlreadyExists() {
+    public void testCreationPolicy_OneAlreadyExists() throws Exception {
         manager.handle(new GenericEventMessage<>(new StartingEvent("123")));
         manager.handle(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123", MyTestSaga.class).size());
     }
 
     @Test
-    public void testHandleUnrelatedEvent() {
+    public void testHandleUnrelatedEvent() throws Exception {
         manager.handle(new GenericEventMessage<>("Unrelated"));
         verify(sagaRepository, never()).find(any(Class.class), (AssociationValue) isNull());
     }
 
     @Test
-    public void testCreationPolicy_CreationForced() {
+    public void testCreationPolicy_CreationForced() throws Exception {
         StartingEvent startingEvent = new StartingEvent("123");
         manager.handle(new GenericEventMessage<>(startingEvent));
         manager.handle(new GenericEventMessage<>(new ForcingStartEvent("123")));
@@ -90,13 +91,13 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testCreationPolicy_SagaNotCreated() {
+    public void testCreationPolicy_SagaNotCreated() throws Exception {
         manager.handle(new GenericEventMessage<>(new MiddleEvent("123")));
         assertEquals(0, repositoryContents("123", MyTestSaga.class).size());
     }
 
     @Test
-    public void testMostSpecificHandlerEvaluatedFirst() {
+    public void testMostSpecificHandlerEvaluatedFirst() throws Exception {
         manager.handle(new GenericEventMessage<>(new StartingEvent("12")));
         manager.handle(new GenericEventMessage<>(new StartingEvent("23")));
         assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
@@ -109,7 +110,7 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testLifecycle_DestroyedOnEnd() {
+    public void testLifecycle_DestroyedOnEnd() throws Exception {
         manager.handle(new GenericEventMessage<>(new StartingEvent("12")));
         manager.handle(new GenericEventMessage<>(new StartingEvent("23")));
         manager.handle(new GenericEventMessage<>(new MiddleEvent("12")));
@@ -128,12 +129,12 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testNullAssociationValueDoesNotThrowNullPointer() {
+    public void testNullAssociationValueDoesNotThrowNullPointer() throws Exception {
         manager.handle(asEventMessage(new StartingEvent(null)));
     }
 
     @Test
-    public void testLifeCycle_ExistingInstanceIgnoresEvent() {
+    public void testLifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
         manager.handle(new GenericEventMessage<>(new StartingEvent("12")));
         manager.handle(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(1, repositoryContents("12", MyTestSaga.class).size());
@@ -141,7 +142,7 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test
-    public void testLifeCycle_IgnoredEventDoesNotCreateInstance() {
+    public void testLifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
         manager.handle(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(0, repositoryContents("12", MyTestSaga.class).size());
     }
@@ -167,10 +168,16 @@ public class AnnotatedSagaManagerTest {
     }
 
     @Test(timeout = 5000)
-    public void testEventForSagaIsHandledWhenSagaIsBeingCreated() throws InterruptedException {
+    public void testEventForSagaIsHandledWhenSagaIsBeingCreated() throws Exception {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         final CountDownLatch awaitStart = new CountDownLatch(1);
-        executor.execute(() -> manager.handle(new GenericEventMessage<StartingEvent>(new SlowStartingEvent("12", awaitStart, 100))));
+        executor.execute(() -> {
+            try {
+                manager.handle(new GenericEventMessage<StartingEvent>(new SlowStartingEvent("12", awaitStart, 100)));
+            } catch (Exception e) {
+                fail("The manager failed to handle the event");
+            }
+        });
         awaitStart.await();
         manager.handle(asEventMessage(new MiddleEvent("12")));
         executor.shutdown();
@@ -345,7 +352,13 @@ public class AnnotatedSagaManagerTest {
 
         @Override
         public void run() {
-            manager.handle(eventMessage);
+            try {
+                manager.handle(eventMessage);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                fail("The handler failed to handle the message");
+            }
         }
     }
 }

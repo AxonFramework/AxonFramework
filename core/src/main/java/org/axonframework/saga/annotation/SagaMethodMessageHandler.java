@@ -204,7 +204,7 @@ public class SagaMethodMessageHandler implements Comparable<SagaMethodMessageHan
      * @param target  The instance to invoke a method on
      * @param message The message to use to resolve the parameters of the handler to invoke
      */
-    public void invoke(Object target, EventMessage message) {
+    public void invoke(Object target, EventMessage message) throws Exception {
         if (!isHandlerAvailable()) {
             return;
         }

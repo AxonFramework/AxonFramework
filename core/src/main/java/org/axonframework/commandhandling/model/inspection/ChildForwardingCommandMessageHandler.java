@@ -68,7 +68,7 @@ public class ChildForwardingCommandMessageHandler<P, C> implements CommandMessag
 
     @SuppressWarnings("unchecked")
     @Override
-    public Object handle(Message<?> message, P target) {
+    public Object handle(Message<?> message, P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
             throw new IllegalStateException("Aggregate cannot handle this command, as there is no entity instance to forward it to.");

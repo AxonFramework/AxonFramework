@@ -118,7 +118,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      */
     protected abstract void doPublish(List<EventMessage<?>> events, Set<EventListener> eventListeners,
                                       Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
-                                      MultiplexingEventProcessingMonitor eventProcessingMonitor);
+                                      MultiplexingEventProcessingMonitor eventProcessingMonitor) ;
 
     @Override
     public String getName() {

@@ -74,7 +74,7 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
     }
 
     @Override
-    public Object invoke(Object target, Message message) {
+    public Object invoke(Object target, Message<?> message) throws Exception {
         Assert.isTrue(method.getDeclaringClass().isInstance(target),
                       "Given target is not an instance of the method's owner.");
         Assert.notNull(message, "Event may not be null");
@@ -84,14 +84,12 @@ public final class MethodMessageHandler extends AbstractMessageHandler {
         }
         try {
             return method.invoke(target, parameterValues);
-        } catch (IllegalAccessException e) {
-            throw new MessageHandlerInvocationException("Access to the message handler method was denied.", e);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof RuntimeException) {
-                throw (RuntimeException) e.getCause();
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            if (e.getCause() instanceof Exception) {
+                throw (Exception) e.getCause();
             }
-            throw new MessageHandlerInvocationException("An exception occurred while invoking the handler method.",
-                    e.getCause());
+            throw new MessageHandlerInvocationException(
+                    String.format("Error handling an object of type [%s]", message.getPayloadType()), e);
         }
     }
 

@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.CommandMessageHandler;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
@@ -42,7 +41,7 @@ import java.util.*;
  * @since 1.2
  */
 public class AggregateAnnotationCommandHandler<T> implements MessageHandler<CommandMessage<?>>,
-                                                                                   SupportedCommandNamesAware {
+        SupportedCommandNamesAware {
 
     private final Repository<T> repository;
 
@@ -71,7 +70,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     public AggregateAnnotationCommandHandler(Class<T> aggregateType, Repository<T> repository,
                                              CommandTargetResolver commandTargetResolver) {
         this(aggregateType, repository, commandTargetResolver,
-             ClasspathParameterResolverFactory.forClass(aggregateType));
+                ClasspathParameterResolverFactory.forClass(aggregateType));
     }
 
     /**
@@ -88,7 +87,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
                                              CommandTargetResolver commandTargetResolver,
                                              ParameterResolverFactory parameterResolverFactory) {
         this(repository, commandTargetResolver,
-             ModelInspector.inspectAggregate(aggregateType, parameterResolverFactory));
+                ModelInspector.inspectAggregate(aggregateType, parameterResolverFactory));
     }
 
     /**
@@ -136,7 +135,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         Map<String, MessageHandler<CommandMessage<?>>> handlersFound = new HashMap<>();
         AggregateCommandHandler aggregateCommandHandler = new AggregateCommandHandler();
         aggregateModel.commandHandlers().forEach((k, v) -> {
-            if (v instanceof CommandMessageHandler && ((CommandMessageHandler) v).isFactoryHandler()) {
+            if (v.isFactoryHandler()) {
                 handlersFound.put(k, new AggregateConstructorCommandHandler(v));
             } else {
                 handlersFound.put(k, aggregateCommandHandler);
@@ -180,9 +179,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         @SuppressWarnings("unchecked")
         @Override
         public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
-            Aggregate<T> aggregate = repository.newInstance(
-                    () -> (T) handler.handle(command, null)
-            );
+            Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
             return resolveReturnValue(command, aggregate);
         }
     }
@@ -191,7 +188,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
 
         @SuppressWarnings("unchecked")
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) {
+        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
             return repository.load(iv.getIdentifier(), iv.getVersion()).handle(command);
         }

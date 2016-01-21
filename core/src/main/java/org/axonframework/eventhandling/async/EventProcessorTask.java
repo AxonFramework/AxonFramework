@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.async;
 
-import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.MultiplexingEventProcessingMonitor;
@@ -239,7 +238,7 @@ public class EventProcessorTask implements Runnable {
                     processedEvents.add(event);
                 }
                 retryAfter = System.currentTimeMillis() + processingResult.waitTime();
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 processingResult = new ProcessingResult(errorHandler.handleError(e, event, null), e);
                 if (processingResult.requiresRescheduleEvent()) {
                     eventQueue.addFirst(event);
@@ -269,7 +268,7 @@ public class EventProcessorTask implements Runnable {
      * @param unitOfWork    The unit of work that is processing the event
      * @return the policy for retrying/proceeding with this event
      */
-    protected ProcessingResult doHandle(EventMessage<?> event, UnitOfWork<EventMessage<?>> unitOfWork) {
+    protected ProcessingResult doHandle(EventMessage<?> event, UnitOfWork<EventMessage<?>> unitOfWork) throws Exception {
         InterceptorChain<EventMessage<?>> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
                 interceptors, (eventMessage, uow) -> {
             eventProcessingMonitor.prepare(event);
@@ -288,12 +287,7 @@ public class EventProcessorTask implements Runnable {
             }
             return new ProcessingResult(RetryPolicy.proceed(), failure);
         });
-        try {
-            return (ProcessingResult) interceptorChain.proceed();
-        } catch (Exception e) {
-            throw new MessageHandlerInvocationException(String.format(
-                    "An exception occurred while trying to process an event message [%s]", event), e);
-        }
+        return (ProcessingResult) interceptorChain.proceed();
     }
 
     private synchronized void cleanUp() {

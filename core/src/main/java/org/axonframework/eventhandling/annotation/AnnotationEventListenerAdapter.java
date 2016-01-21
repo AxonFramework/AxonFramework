@@ -62,11 +62,8 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
                                                                parameterResolverFactory);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void handle(EventMessage event) {
+    public void handle(EventMessage event) throws Exception {
         for (MessageHandler<? super Object> handler : inspector.getHandlers()) {
             if (handler.canHandle(event)) {
                 handler.handle(event, annotatedEventListener);

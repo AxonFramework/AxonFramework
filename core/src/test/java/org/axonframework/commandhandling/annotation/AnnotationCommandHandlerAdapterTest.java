@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -99,8 +98,8 @@ public class AnnotationCommandHandlerAdapterTest {
         try {
             testSubject.handle(GenericCommandMessage.asCommandMessage(new HashSet()), mockUnitOfWork);
             fail("Expected exception");
-        } catch (MessageHandlerInvocationException ex) {
-            assertEquals(Exception.class, ex.getCause().getClass());
+        } catch (Exception ex) {
+            assertEquals(Exception.class, ex.getClass());
             return;
         }
         fail("Shouldn't make it till here");

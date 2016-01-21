@@ -92,7 +92,7 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * @param message The message providing parameter values
      * @return The result of the handler invocation
      */
-    public abstract Object invoke(Object target, Message message);
+    public abstract Object invoke(Object target, Message<?> message) throws Exception;
 
     /**
      * Returns the type of payload this handler expects.

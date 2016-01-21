@@ -68,7 +68,7 @@ public abstract class AbstractSagaManager implements SagaManager {
     }
 
     @Override
-    public void handle(final EventMessage event) {
+    public void handle(final EventMessage event) throws Exception{
         for (Class<? extends Saga> sagaType : sagaTypes) {
             Collection<AssociationValue> associationValues = extractAssociationValues(sagaType, event);
             if (associationValues != null && !associationValues.isEmpty()) {
@@ -84,7 +84,7 @@ public abstract class AbstractSagaManager implements SagaManager {
     }
 
     private boolean invokeExistingSagas(EventMessage event, Class<? extends Saga> sagaType,
-                                        Collection<AssociationValue> associationValues) {
+                                        Collection<AssociationValue> associationValues) throws Exception {
         Set<String> sagas = new TreeSet<>();
         for (AssociationValue associationValue : associationValues) {
             sagas.addAll(sagaRepository.find(sagaType, associationValue));
@@ -122,7 +122,7 @@ public abstract class AbstractSagaManager implements SagaManager {
         return false;
     }
 
-    private void startNewSaga(EventMessage event, Class<? extends Saga> sagaType, AssociationValue associationValue) {
+    private void startNewSaga(EventMessage event, Class<? extends Saga> sagaType, AssociationValue associationValue) throws Exception {
         Saga newSaga = sagaFactory.createSaga(sagaType);
         newSaga.getAssociationValues().add(associationValue);
         preProcessSaga(newSaga);
@@ -190,7 +190,7 @@ public abstract class AbstractSagaManager implements SagaManager {
     protected abstract Set<AssociationValue> extractAssociationValues(Class<? extends Saga> sagaType,
                                                                       EventMessage event);
 
-    private Saga loadAndInvoke(EventMessage event, String sagaId, Collection<AssociationValue> associations) {
+    private Saga loadAndInvoke(EventMessage event, String sagaId, Collection<AssociationValue> associations) throws Exception {
         Saga saga = sagasInCreation.get(sagaId);
         if (saga == null) {
             saga = sagaRepository.load(sagaId);
@@ -217,10 +217,10 @@ public abstract class AbstractSagaManager implements SagaManager {
     protected void preProcessSaga(Saga saga) {
     }
 
-    private void doInvokeSaga(EventMessage event, Saga saga) {
+    private void doInvokeSaga(EventMessage event, Saga saga) throws Exception {
         try {
             saga.handle(event);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             if (suppressExceptions) {
                 logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
                                     saga.getClass().getSimpleName(),

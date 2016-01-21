@@ -27,10 +27,9 @@ import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStreamNotFoundException;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -150,7 +149,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     }
 
     @Override
-    protected EventSourcedAggregate<T> doCreateNewForLock(Supplier<T> factoryMethod) {
+    protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
         return EventSourcedAggregate.initialize(factoryMethod, aggregateModel(), eventBus, eventStore);
     }
 

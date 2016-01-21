@@ -28,5 +28,5 @@ public interface MessageHandler<T> extends AnnotatedElement {
 
     boolean canHandle(Message<?> message);
 
-    Object handle(Message<?> message, T target);
+    Object handle(Message<?> message, T target) throws Exception;
 }

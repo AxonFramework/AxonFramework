@@ -22,20 +22,14 @@ import org.axonframework.saga.annotation.AnnotatedSagaManager;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -77,7 +71,11 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
         final AtomicInteger counter = new AtomicInteger(0);
         List<Thread> threads = prepareThreads(SAGA_COUNT, () -> {
             String id = Integer.toString(counter.getAndIncrement());
-            sagaManager.handle(eventWith(new CreateEvent(id)));
+            try {
+                sagaManager.handle(eventWith(new CreateEvent(id)));
+            } catch (Exception e) {
+                fail("The saga event handler failed");
+            }
             try {
                 startCdl.await();
             } catch (InterruptedException e) {
@@ -91,10 +89,18 @@ public class SagaRepositoryConcurrencyTest implements Thread.UncaughtExceptionHa
                 if (item == null) {
                     mustContinue = false;
                 } else {
-                    sagaManager.handle(item);
+                    try {
+                        sagaManager.handle(item);
+                    } catch (Exception e) {
+                        fail("The saga event handler failed");
+                    }
                 }
             }
-            sagaManager.handle(eventWith(new DeleteEvent(id)));
+            try {
+                sagaManager.handle(eventWith(new DeleteEvent(id)));
+            } catch (Exception e) {
+                fail("The saga event handler failed");
+            }
         });
         awaitThreadTermination(threads);
         // now, all threads have ended

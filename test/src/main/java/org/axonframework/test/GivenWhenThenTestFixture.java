@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -418,7 +418,7 @@ public class GivenWhenThenTestFixture<T>
         }
 
         @Override
-        public Aggregate<T> newInstance(Supplier<T> factoryMethod) {
+        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             return delegate.newInstance(factoryMethod);
         }
 

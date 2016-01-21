@@ -139,7 +139,6 @@ public class ModelInspector<T> implements AggregateModel<T> {
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandName));
         }
-
         return handler;
     }
 
@@ -154,7 +153,14 @@ public class ModelInspector<T> implements AggregateModel<T> {
     }
 
     private void doPublish(EventMessage<?> message, T target) {
-        getHandler(message).ifPresent(h -> h.handle(message, target));
+        getHandler(message).ifPresent(h -> {
+            try {
+                h.handle(message, target);
+            } catch (Exception e) {
+                throw new MessageHandlerInvocationException(
+                        format("Error handling event of type [%s] in aggregate", message.getPayloadType()), e);
+            }
+        });
         children.forEach(i -> i.publish(message, target));
     }
 

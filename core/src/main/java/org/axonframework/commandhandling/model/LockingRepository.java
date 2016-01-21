@@ -24,7 +24,7 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 /**
  * Implementation of the Repository interface that takes provides a locking mechanism to prevent concurrent
@@ -72,7 +72,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     @Override
-    protected LockAwareAggregate<T, A> doCreateNew(Supplier<T> factoryMethod) {
+    protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNewForLock(factoryMethod);
         final String aggregateIdentifier = aggregate.identifier();
         Lock lock = lockFactory.obtainLock(aggregateIdentifier);
@@ -88,7 +88,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
         return new LockAwareAggregate<>(aggregate, lock);
     }
 
-    protected abstract A doCreateNewForLock(Supplier<T> factoryMethod);
+    protected abstract A doCreateNewForLock(Callable<T> factoryMethod) throws Exception;
 
     /**
      * Perform the actual loading of an aggregate. The necessary locks have been obtained.

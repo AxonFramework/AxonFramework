@@ -24,8 +24,7 @@ import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.eventhandling.EventBus;
 
 import javax.persistence.EntityManager;
-
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 import static java.lang.String.format;
 
@@ -97,8 +96,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     }
 
     @Override
-    protected AnnotatedAggregate<T> doCreateNewForLock(Supplier<T> factoryMethod) {
-        return new AnnotatedAggregate<>(factoryMethod.get(), aggregateModel(), eventBus);
+    protected AnnotatedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
+        return new AnnotatedAggregate<>(factoryMethod.call(), aggregateModel(), eventBus);
     }
 
     @Override

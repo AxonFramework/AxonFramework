@@ -53,7 +53,7 @@ public interface Saga {
      *
      * @param event the event to handle
      */
-    void handle(EventMessage event);
+    void handle(EventMessage event) throws Exception;
 
     /**
      * Indicates whether or not this saga is active. A Saga is active when its life cycle has not been ended.

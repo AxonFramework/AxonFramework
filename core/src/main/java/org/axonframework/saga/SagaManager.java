@@ -38,5 +38,5 @@ public interface SagaManager extends EventListenerProxy {
      * @param event the event to handle
      */
     @Override
-    void handle(EventMessage event);
+    void handle(EventMessage event) throws Exception;
 }

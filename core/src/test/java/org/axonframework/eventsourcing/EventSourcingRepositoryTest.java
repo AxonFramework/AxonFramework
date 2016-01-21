@@ -86,9 +86,9 @@ public class EventSourcingRepositoryTest {
 
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier, null);
 
-        assertEquals(2, aggregate.map(TestAggregate::getHandledEvents).size());
-        assertSame(event1, aggregate.map(TestAggregate::getHandledEvents).get(0));
-        assertSame(event2, aggregate.map(TestAggregate::getHandledEvents).get(1));
+        assertEquals(2, aggregate.invoke(TestAggregate::getHandledEvents).size());
+        assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
+        assertSame(event2, aggregate.invoke(TestAggregate::getHandledEvents).get(1));
 
         // now the aggregate is loaded (and hopefully correctly locked)
         StubDomainEvent event3 = new StubDomainEvent();

@@ -23,7 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 /**
  * @author Allard Buijze
@@ -37,8 +37,8 @@ public class AbstractRepositoryTest {
         testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(JpaAggregate.class) {
 
             @Override
-            protected AnnotatedAggregate<JpaAggregate> doCreateNew(Supplier<JpaAggregate> factoryMethod) {
-                return new AnnotatedAggregate<>(factoryMethod.get(), aggregateModel(), null);
+            protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod) throws Exception {
+                return new AnnotatedAggregate<>(factoryMethod.call(), aggregateModel(), null);
             }
 
             @Override

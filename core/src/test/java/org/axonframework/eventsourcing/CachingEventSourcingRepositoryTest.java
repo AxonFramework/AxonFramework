@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import com.fasterxml.jackson.databind.introspect.Annotated;
 import net.sf.ehcache.CacheManager;
 import org.axonframework.cache.Cache;
 import org.axonframework.cache.EhCacheAdapter;
@@ -24,7 +23,6 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockAwareAggregate;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
@@ -37,8 +35,6 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.testutils.MockException;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +43,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -84,7 +79,7 @@ public class CachingEventSourcingRepositoryTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testAggregatesRetrievedFromCache() {
+    public void testAggregatesRetrievedFromCache() throws Exception {
         startAndGetUnitOfWork();
 
 //        // ensure the cached aggregate has been committed before being cached.
@@ -129,7 +124,7 @@ public class CachingEventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoadDeletedAggregate() {
+    public void testLoadDeletedAggregate() throws Exception {
         String identifier = "aggregateId";
 
         startAndGetUnitOfWork();
@@ -154,7 +149,7 @@ public class CachingEventSourcingRepositoryTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testCacheClearedAfterRollbackOfAddedAggregate() {
+    public void testCacheClearedAfterRollbackOfAddedAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
         doThrow(new MockException()).when(mockEventStore).appendEvents(anyList());
         try {

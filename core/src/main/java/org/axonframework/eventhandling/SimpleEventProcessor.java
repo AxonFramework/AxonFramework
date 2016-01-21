@@ -72,31 +72,22 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
                 UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
                 InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
                         interceptors, (message, uow) -> {
-                            eventListeners.forEach(eventListener -> eventListener.handle(message));
+                            for (EventListener eventListener : eventListeners) {
+                                eventListener.handle(message);
+                            }
                             return null;
                 });
-                unitOfWork.execute(() -> {
-                    try {
-                        interceptorChain.proceed();
-                    } catch (Exception e) {
-                        if (e instanceof RuntimeException) {
-                            throw (RuntimeException) e;
-                        }
-                        throw new MessageHandlerInvocationException(String.format(
-                                "An exception occurred while trying to process an event message [%s]", event), e);
-                    }
-                });
+                unitOfWork.executeWithResult(interceptorChain::proceed);
             }
             notifyMonitors(events, monitor, null);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             notifyMonitors(events, monitor, e);
-            throw e;
+            throw new MessageHandlerInvocationException("Error processing published events", e);
         }
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    private void notifyMonitors(List<EventMessage<?>> events, EventProcessingMonitor monitor,
-                                RuntimeException exception) {
+    private void notifyMonitors(List<EventMessage<?>> events, EventProcessingMonitor monitor, Exception exception) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(u -> monitor.onEventProcessingCompleted(events));
             CurrentUnitOfWork.get().onRollback(u -> monitor.onEventProcessingFailed(events, exception == null

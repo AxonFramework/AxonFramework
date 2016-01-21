@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.metadata.MetaData;
 
+import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
@@ -42,8 +43,8 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         return aggregate;
     }
 
-    public static <T> EventSourcedAggregate<T> initialize(Supplier<T> aggregateFactory, AggregateModel<T> inspector,
-                                                          EventBus eventBus, EventStore eventStore) {
+    public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
+                                                          EventBus eventBus, EventStore eventStore) throws Exception {
         EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<T>(inspector, eventBus, eventStore);
         aggregate.registerWithUnitOfWork();
         aggregate.registerRoot(aggregateFactory);

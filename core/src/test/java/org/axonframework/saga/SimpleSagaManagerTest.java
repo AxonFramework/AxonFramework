@@ -29,13 +29,7 @@ import java.util.Set;
 
 import static java.util.Collections.singleton;
 import static org.mockito.AdditionalMatchers.not;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -72,7 +66,7 @@ public class SimpleSagaManagerTest {
     }
 
     @Test
-    public void testSagaAlwaysCreatedOnEvent() {
+    public void testSagaAlwaysCreatedOnEvent() throws Exception {
         testSubject.setEventsToAlwaysCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
         testSubject.handle(event);
 
@@ -81,7 +75,7 @@ public class SimpleSagaManagerTest {
     }
 
     @Test
-    public void testSagaOptionallyCreatedOnEvent_SagasExist() {
+    public void testSagaOptionallyCreatedOnEvent_SagasExist() throws Exception {
         testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
 
         activate(saga1);
@@ -102,7 +96,7 @@ public class SimpleSagaManagerTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testSagaOptionallyCreatedOnEvent_NoSagaFound() {
+    public void testSagaOptionallyCreatedOnEvent_NoSagaFound() throws Exception {
         when(repository.find(isA(Class.class), isA(AssociationValue.class))).thenReturn(Collections.<String>emptySet());
         testSubject.setEventsToOptionallyCreateNewSagasFor(Arrays.<Class<?>>asList(Object.class));
         testSubject.handle(event);
@@ -121,7 +115,7 @@ public class SimpleSagaManagerTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testAllSagasAreInvoked() {
+    public void testAllSagasAreInvoked() throws Exception {
         EventMessage event = new GenericEventMessage<>(new Object());
         final Saga saga1 = mock(Saga.class);
         final Saga saga2 = mock(Saga.class);

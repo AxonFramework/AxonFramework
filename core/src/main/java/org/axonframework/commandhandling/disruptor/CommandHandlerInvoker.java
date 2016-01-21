@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 /**
  * Component of the DisruptorCommandBus that invokes the command handler. The execution is done within a Unit Of Work.
@@ -198,7 +198,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                 Object cachedItem = cache.get(aggregateIdentifier);
                 if (cachedItem != null && EventSourcedAggregate.class.isInstance(cachedItem)) {
                     EventSourcedAggregate<T> cachedAggregate = (EventSourcedAggregate<T>) cachedItem;
-                    aggregateRoot = cachedAggregate.map(r -> {
+                    aggregateRoot = cachedAggregate.invoke(r -> {
                         if (aggregateFactory.getAggregateType().isInstance(r)) {
                             return cachedAggregate;
                         } else {
@@ -215,7 +215,8 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                     events = decorator.decorateForRead(aggregateIdentifier,
                                                        eventStore.readEvents(aggregateIdentifier));
                     if (events.hasNext()) {
-                        aggregateRoot = EventSourcedAggregate.initialize(aggregateFactory.createAggregate(aggregateIdentifier, events.peek()), model, eventBus, eventStore);
+                        aggregateRoot = EventSourcedAggregate.initialize(aggregateFactory.createAggregate(
+                                aggregateIdentifier, events.peek()), model, eventBus, eventStore);
                         aggregateRoot.initializeState(events);
                     }
                 } catch (EventStreamNotFoundException e) {
@@ -237,7 +238,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         }
 
         @Override
-        public Aggregate<T> newInstance(Supplier<T> factoryMethod) {
+        public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod, model,
                                                                                   eventBus, eventStore);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);

@@ -20,24 +20,23 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.model.AbstractRepository;
-import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.SimpleDomainEventStream;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
@@ -62,7 +61,7 @@ public class CommandHandlingBenchmark {
         Repository<MyAggregate> repository = new AbstractRepository<MyAggregate, AnnotatedAggregate<MyAggregate>>(MyAggregate.class) {
 
             @Override
-            protected AnnotatedAggregate<MyAggregate> doCreateNew(Supplier<MyAggregate> factoryMethod) {
+            protected AnnotatedAggregate<MyAggregate> doCreateNew(Callable<MyAggregate> factoryMethod) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
 

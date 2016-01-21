@@ -26,7 +26,6 @@ import java.lang.annotation.Annotation;
 import java.util.Comparator;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class HandlerComparatorTest {
@@ -103,7 +102,7 @@ public class HandlerComparatorTest {
         }
 
         @Override
-        public Object handle(Message<?> message, Object target) {
+        public Object handle(Message<?> message, Object target) throws Exception {
             throw new UnsupportedOperationException("Not implemented yet");
         }
 

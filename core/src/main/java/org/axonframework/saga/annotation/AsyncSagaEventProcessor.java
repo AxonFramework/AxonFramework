@@ -21,8 +21,8 @@ import com.lmax.disruptor.LifecycleAware;
 import com.lmax.disruptor.RingBuffer;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.common.annotation.ParameterResolverFactory;
-import org.axonframework.eventhandling.async.RetryPolicy;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.async.RetryPolicy;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.axonframework.saga.AssociationValue;
@@ -267,7 +267,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
         return ringBuffer.getCursor() <= sequence;
     }
 
-    private void processNewSagaInstance(AsyncSagaProcessingEvent entry, AssociationValue associationValue) {
+    private void processNewSagaInstance(AsyncSagaProcessingEvent entry, AssociationValue associationValue) throws Exception {
         ensureActiveUnitOfWork(entry.getPublishedEvent());
         final AbstractAnnotatedSaga newSaga = entry.getNewSaga();
         if (parameterResolverFactory != null) {

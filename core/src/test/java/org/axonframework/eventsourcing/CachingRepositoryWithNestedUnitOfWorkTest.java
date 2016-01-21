@@ -22,10 +22,6 @@ import org.axonframework.cache.EhCacheAdapter;
 import org.axonframework.cache.NoCache;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.eventhandling.*;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
@@ -36,7 +32,6 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -142,31 +137,31 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     @Test
-    public void testWithoutCache() {
+    public void testWithoutCache() throws Exception {
         repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
-    public void testWithCache() {
+    public void testWithCache() throws Exception {
         repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
-    public void testMinimalScenarioWithoutCache() {
+    public void testMinimalScenarioWithoutCache() throws Exception {
         repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
-    public void testMinimalScenarioWithCache() {
+    public void testMinimalScenarioWithCache() throws Exception {
         repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
 
-    public void testMinimalScenario(String id) {
+    public void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
         eventProcessor.subscribe(new CommandExecutingEventListener("1", null, true));
         eventProcessor.subscribe(new CommandExecutingEventListener("2", null, true));
@@ -180,7 +175,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         assertTrue(verify.tokens.containsAll(asList("1", "2")));
     }
 
-    private void executeComplexScenario(String id) {
+    private void executeComplexScenario(String id) throws Exception {
         // Unit Of Work hierarchy:
         // root ("2")
         //		4
@@ -229,7 +224,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         UnitOfWork<?> uow = uowFactory.createUnitOfWork(null);
         Aggregate<TestAggregate> verify = repository.load(id);
         uow.rollback();
-        return verify.map(Function.identity());
+        return verify.invoke(Function.identity());
     }
 
     /**

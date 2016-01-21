@@ -53,7 +53,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
-import java.util.function.Supplier;
+import java.util.concurrent.Callable;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
@@ -93,7 +93,7 @@ public class AggregateAnnotationCommandHandlerTest {
         when(mockRepository.newInstance(any()))
                 .thenAnswer(
                         invocation ->
-                                EventSourcedAggregate.initialize((Supplier<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
+                                EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                                                                  aggregateModel,
                                                                  mock(EventBus.class), mock(EventStore.class)));
 
@@ -179,7 +179,7 @@ public class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    public void testCommandHandlerCreatesAggregateInstance() {
+    public void testCommandHandlerCreatesAggregateInstance() throws Exception {
 
         final CommandCallback callback = spy(LoggingCallback.INSTANCE);
         final CommandMessage<Object> message = GenericCommandMessage.asCommandMessage(new CreateCommand("id", "Hi"));
