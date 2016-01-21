@@ -47,7 +47,7 @@ public abstract class AggregateLifecycle {
     public static AggregateLifecycle getInstance() {
         AggregateLifecycle instance = CURRENT.get();
         if (instance == null && CurrentUnitOfWork.isStarted()) {
-            UnitOfWork unitOfWork = CurrentUnitOfWork.get();
+            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Set<AggregateLifecycle> managedAggregates = unitOfWork.getResource("ManagedAggregates");
             if (managedAggregates != null && managedAggregates.size() == 1) {
                 instance = managedAggregates.iterator().next();
@@ -62,7 +62,7 @@ public abstract class AggregateLifecycle {
     protected abstract void doMarkDeleted();
 
     protected void registerWithUnitOfWork() {
-        UnitOfWork unitOfWork = CurrentUnitOfWork.get();
+        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
         HashSet<AggregateLifecycle> managedAggregates = unitOfWork.getOrComputeResource("ManagedAggregates", k -> new HashSet<>());
         managedAggregates.add(this);
     }

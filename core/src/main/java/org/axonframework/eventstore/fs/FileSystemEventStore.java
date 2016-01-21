@@ -87,7 +87,7 @@ public class FileSystemEventStore implements SnapshotEventStore, UpcasterAware {
     @Override
     public void appendEvents(List<DomainEventMessage<?>> events) {
         if (CurrentUnitOfWork.isStarted()) {
-            UnitOfWork uow = CurrentUnitOfWork.get();
+            UnitOfWork<?> uow = CurrentUnitOfWork.get();
             uow.getOrComputeResource(toString(), k -> {
                 List<DomainEventMessage<?>> eventsToPublish = new ArrayList<>();
                 uow.onPrepareCommit(u -> doAppendEvents(eventsToPublish));
