@@ -104,7 +104,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      * @throws Exception any exception occurring while handling the command
      */
     @Override
-    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
         final MethodMessageHandler handler = handlers.get(command.getCommandName());
         if (handler == null) {
             throw new NoHandlerForCommandException("No handler found for command " + command.getCommandName());

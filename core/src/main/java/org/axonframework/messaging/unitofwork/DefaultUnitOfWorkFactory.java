@@ -55,10 +55,10 @@ public class DefaultUnitOfWorkFactory extends AbstractUnitOfWorkFactory<DefaultU
      * starts the Unit of Work.
      */
     @Override
-    public DefaultUnitOfWork doCreateUnitOfWork(Message<?> message) {
+    public DefaultUnitOfWork<?> doCreateUnitOfWork(Message<?> message) {
         if (transactionManager != null) {
             Transaction transaction = transactionManager.startTransaction();
-            DefaultUnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
+            DefaultUnitOfWork<?> unitOfWork = DefaultUnitOfWork.startAndGet(message);
             unitOfWork.onCommit(u -> transaction.commit());
             unitOfWork.onRollback(u -> transaction.rollback());
             return unitOfWork;

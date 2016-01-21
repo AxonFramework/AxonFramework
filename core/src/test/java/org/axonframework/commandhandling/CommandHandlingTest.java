@@ -81,8 +81,8 @@ public class CommandHandlingTest {
         assertFalse(es.hasNext());
     }
 
-    private UnitOfWork startAndGetUnitOfWork() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+    private UnitOfWork<?> startAndGetUnitOfWork() {
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         uow.resources().put(EventBus.KEY, stubEventStore);
         return uow;
     }

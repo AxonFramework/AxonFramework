@@ -48,7 +48,7 @@ public class EventSourcingRepositoryTest {
     private EventStore mockEventStore;
     private EventBus mockEventBus;
     private EventSourcingRepository<TestAggregate> testSubject;
-    private UnitOfWork unitOfWork;
+    private UnitOfWork<?> unitOfWork;
     private StubAggregateFactory stubAggregateFactory;
 
     @Before

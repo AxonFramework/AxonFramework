@@ -38,12 +38,12 @@ import static org.mockito.Mockito.*;
  */
 public class AbstractEventBusTest {
 
-    private UnitOfWork unitOfWork;
+    private UnitOfWork<?> unitOfWork;
     private StubPublishingEventBus testSubject;
 
     @Before
     public void setUp() {
-        (unitOfWork = spy(new DefaultUnitOfWork(null))).start();
+        (unitOfWork = spy(new DefaultUnitOfWork<>(null))).start();
         testSubject = spy(new StubPublishingEventBus());
     }
 
@@ -201,7 +201,7 @@ public class AbstractEventBusTest {
                 if (number > 0) {
                     EventMessage nextEvent = numberedEvent(number - 1);
                     if (startNewUowBeforePublishing) {
-                        UnitOfWork nestedUnitOfWork = DefaultUnitOfWork.startAndGet(null);
+                        UnitOfWork<?> nestedUnitOfWork = DefaultUnitOfWork.startAndGet(null);
                         try {
                             publish(nextEvent);
                         } finally {

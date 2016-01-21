@@ -131,7 +131,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
     }
 
     @Override
-    public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> commandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
         unitOfWork.resources().put(ParameterResolverFactory.class.getName(), parameterResolverFactory);
         return handlers.get(commandMessage.getCommandName()).handle(commandMessage, unitOfWork);
     }
@@ -169,7 +169,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             final T createdAggregate = handler.invoke(null, command);
             repository.add(createdAggregate);
             return resolveReturnValue(command, createdAggregate);
@@ -185,7 +185,7 @@ public class AggregateAnnotationCommandHandler<T extends AggregateRoot> implemen
         }
 
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) {
+        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) {
             T aggregate = loadAggregate(command);
             return commandHandler.invoke(aggregate, command);
         }

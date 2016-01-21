@@ -94,8 +94,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     @SuppressWarnings("unchecked")
     private void rejectExecution(CommandHandlingEntry entry, String aggregateIdentifier) {
-        executor.execute(new ReportResultTask(entry.getCommand(),
-                                              entry.getCallback(), null,
+        executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(), null,
                                               new AggregateStateCorruptedException(
                                                       aggregateIdentifier,
                                                       format("Aggregate %s has been blacklisted and will be ignored "
@@ -115,14 +114,14 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
             exceptionResult = performCommit(unitOfWork, exceptionResult, aggregateIdentifier);
         }
         if (exceptionResult != null || entry.getCallback().hasDelegate()) {
-            executor.execute(new ReportResultTask(entry.getCommand(), entry.getCallback(),
+            executor.execute(new ReportResultTask(entry.getMessage(), entry.getCallback(),
                                                   entry.getResult(), exceptionResult));
         }
     }
 
     private void invokeInterceptorChain(CommandHandlingEntry entry) {
         try {
-            entry.setResult(entry.getPublisherInterceptorChain().proceed(entry.getCommand()));
+            entry.setResult(entry.getPublisherInterceptorChain().proceed());
         } catch (Exception throwable) {
             entry.setExceptionResult(throwable);
         }

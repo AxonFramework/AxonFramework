@@ -140,7 +140,7 @@ public class AbstractSnapshotterTest {
 
         testScheduleSnapshot();
 
-        InOrder inOrder = inOrder(mockEventStore, txManager);
+        InOrder inOrder = inOrder(mockEventStore, txManager, mockTransaction);
         inOrder.verify(txManager).startTransaction();
         inOrder.verify(mockEventStore).readEvents(anyString());
         inOrder.verify(mockEventStore).appendSnapshotEvent(isA(DomainEventMessage.class));

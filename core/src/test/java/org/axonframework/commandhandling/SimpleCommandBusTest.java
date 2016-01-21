@@ -123,7 +123,7 @@ public class SimpleCommandBusTest {
     @SuppressWarnings("unchecked")
     public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() throws Exception {
         UnitOfWorkFactory mockUnitOfWorkFactory = mock(DefaultUnitOfWorkFactory.class);
-        UnitOfWork mockUnitOfWork = spy(new DefaultUnitOfWork(null));
+        UnitOfWork<CommandMessage<?>> mockUnitOfWork = spy(new DefaultUnitOfWork<>(null));
         when(mockUnitOfWorkFactory.createUnitOfWork(any())).thenReturn(mockUnitOfWork);
 
         testSubject.setUnitOfWorkFactory(mockUnitOfWorkFactory);
@@ -177,13 +177,13 @@ public class SimpleCommandBusTest {
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
         final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
-        when(mockInterceptor1.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> mockInterceptor2.handle((CommandMessage) invocation.getArguments()[0],
-                                                                  (UnitOfWork) invocation.getArguments()[1],
-                                                                  (InterceptorChain) invocation.getArguments()[2]));
-        when(mockInterceptor2.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> commandHandler.handle((CommandMessage) invocation.getArguments()[0],
-                                                                (UnitOfWork) invocation.getArguments()[1]));
+        when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
+                .thenAnswer(invocation -> mockInterceptor2.handle(
+                        (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
+                                                                  (InterceptorChain) invocation.getArguments()[1]));
+        when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
+                .thenAnswer(invocation -> commandHandler.handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage(),
+                                                                (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]));
         testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
@@ -202,10 +202,10 @@ public class SimpleCommandBusTest {
                              });
 
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
-        inOrder.verify(mockInterceptor1).handle(isA(CommandMessage.class),
-                                                isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(mockInterceptor2).handle(isA(CommandMessage.class),
-                                                isA(UnitOfWork.class), isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor1).handle(
+                isA(UnitOfWork.class), isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor2).handle(
+                isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle(isA(GenericCommandMessage.class), isA(UnitOfWork.class));
     }
 
@@ -215,13 +215,13 @@ public class SimpleCommandBusTest {
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
         final MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
-        when(mockInterceptor1.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> mockInterceptor2.handle((CommandMessage) invocation.getArguments()[0],
-                                                                  (UnitOfWork) invocation.getArguments()[1],
-                                                                  (InterceptorChain) invocation.getArguments()[2]));
-        when(mockInterceptor2.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> commandHandler.handle((CommandMessage) invocation.getArguments()[0],
-                                                                (UnitOfWork) invocation.getArguments()[1]));
+        when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
+                .thenAnswer(invocation -> mockInterceptor2.handle(
+                        (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
+                                                                  (InterceptorChain) invocation.getArguments()[1]));
+        when(mockInterceptor2.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
+                .thenAnswer(invocation -> commandHandler.handle(((UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]).getMessage(),
+                                                                (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0]));
 
         testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class)))
@@ -242,10 +242,10 @@ public class SimpleCommandBusTest {
         });
 
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
-        inOrder.verify(mockInterceptor1).handle(isA(CommandMessage.class),
-                                                isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(mockInterceptor2).handle(isA(CommandMessage.class),
-                                                isA(UnitOfWork.class), isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor1).handle(
+                isA(UnitOfWork.class), isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor2).handle(
+                isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(commandHandler).handle(isA(GenericCommandMessage.class), isA(UnitOfWork.class));
     }
 
@@ -254,17 +254,17 @@ public class SimpleCommandBusTest {
     public void testInterceptorChain_InterceptorThrowsException() throws Exception {
         MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor1 = mock(MessageHandlerInterceptor.class);
         final MessageHandlerInterceptor<CommandMessage<?>> mockInterceptor2 = mock(MessageHandlerInterceptor.class);
-        when(mockInterceptor1.handle(isA(CommandMessage.class), isA(UnitOfWork.class), isA(InterceptorChain.class)))
-                .thenAnswer(invocation -> mockInterceptor2.handle((CommandMessage) invocation.getArguments()[0],
-                                                                  (UnitOfWork) invocation.getArguments()[1],
-                                                                  (InterceptorChain) invocation.getArguments()[2]));
+        when(mockInterceptor1.handle(isA(UnitOfWork.class), isA(InterceptorChain.class)))
+                .thenAnswer(invocation -> mockInterceptor2.handle(
+                        (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[0],
+                                                                  (InterceptorChain) invocation.getArguments()[1]));
         testSubject.setHandlerInterceptors(Arrays.asList(mockInterceptor1, mockInterceptor2));
         MessageHandler<CommandMessage<?>> commandHandler = mock(MessageHandler.class);
         when(commandHandler.handle(isA(CommandMessage.class), isA(UnitOfWork.class))).thenReturn("Hi there!");
         testSubject.subscribe(String.class.getName(), commandHandler);
         RuntimeException someException = new RuntimeException("Mocking");
-        doThrow(someException).when(mockInterceptor2).handle(isA(CommandMessage.class),
-                                                             isA(UnitOfWork.class),
+        doThrow(someException).when(mockInterceptor2).handle(
+                isA(UnitOfWork.class),
                                                              isA(InterceptorChain.class));
         testSubject.dispatch(GenericCommandMessage.asCommandMessage("Hi there!"),
                              new CommandCallback<Object, Object>() {
@@ -279,16 +279,16 @@ public class SimpleCommandBusTest {
             }
         });
         InOrder inOrder = inOrder(mockInterceptor1, mockInterceptor2, commandHandler);
-        inOrder.verify(mockInterceptor1).handle(isA(CommandMessage.class),
-                                                isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(mockInterceptor2).handle(isA(CommandMessage.class),
-                                                isA(UnitOfWork.class), isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor1).handle(
+                isA(UnitOfWork.class), isA(InterceptorChain.class));
+        inOrder.verify(mockInterceptor2).handle(
+                isA(UnitOfWork.class), isA(InterceptorChain.class));
         inOrder.verify(commandHandler, never()).handle(isA(CommandMessage.class), isA(UnitOfWork.class));
     }
 
     private static class MyStringCommandHandler implements MessageHandler<CommandMessage<?>> {
         @Override
-        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> message, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             return message;
         }
     }

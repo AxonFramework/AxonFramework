@@ -36,8 +36,8 @@ import static org.junit.Assert.assertFalse;
 public class UnitOfWorkNestingTest {
 
     private List<PhaseTransition> phaseTransitions = new ArrayList<>();
-    private UnitOfWork outer;
-    private UnitOfWork inner;
+    private UnitOfWork<?> outer;
+    private UnitOfWork<?> inner;
 
     @SuppressWarnings({"unchecked", "deprecation"})
     @Before
@@ -63,7 +63,7 @@ public class UnitOfWorkNestingTest {
         registerListeners(inner);
     }
 
-    private void registerListeners(UnitOfWork unitOfWork) {
+    private void registerListeners(UnitOfWork<?> unitOfWork) {
         unitOfWork.onPrepareCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.PREPARE_COMMIT)));
         unitOfWork.onCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.COMMIT)));
         unitOfWork.afterCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.AFTER_COMMIT)));
@@ -202,9 +202,9 @@ public class UnitOfWorkNestingTest {
     private static class PhaseTransition {
 
         private final UnitOfWork.Phase phase;
-        private final UnitOfWork unitOfWork;
+        private final UnitOfWork<?> unitOfWork;
 
-        public PhaseTransition(UnitOfWork unitOfWork, UnitOfWork.Phase phase) {
+        public PhaseTransition(UnitOfWork<?> unitOfWork, UnitOfWork.Phase phase) {
             this.unitOfWork = unitOfWork;
             this.phase = phase;
         }

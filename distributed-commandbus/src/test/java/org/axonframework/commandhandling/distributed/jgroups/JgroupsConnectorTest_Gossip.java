@@ -162,7 +162,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }

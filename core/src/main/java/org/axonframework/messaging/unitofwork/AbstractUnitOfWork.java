@@ -1,6 +1,7 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
 import org.axonframework.messaging.metadata.MetaData;
 import org.slf4j.Logger;
@@ -16,12 +17,12 @@ import java.util.function.Consumer;
  * @author Allard Buijze
  * @since 3.0
  */
-public abstract class AbstractUnitOfWork implements UnitOfWork {
+public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOfWork<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
     private final Map<String, Object> resources = new HashMap<>();
     private final Collection<CorrelationDataProvider> correlationDataProviders = new LinkedHashSet<>();
-    private UnitOfWork parentUnitOfWork;
+    private UnitOfWork<?> parentUnitOfWork;
     private Phase phase = Phase.NOT_STARTED;
 
     @Override
@@ -75,7 +76,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     private void commitAsNested() {
-        UnitOfWork root = root();
+        UnitOfWork<?> root = root();
         try {
             changePhase(Phase.PREPARE_COMMIT, Phase.COMMIT);
             root.afterCommit(u -> changePhase(Phase.AFTER_COMMIT));
@@ -107,7 +108,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public Optional<UnitOfWork> parent() {
+    public Optional<UnitOfWork<?>> parent() {
         return Optional.ofNullable(parentUnitOfWork);
     }
 
@@ -137,27 +138,27 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
     }
 
     @Override
-    public void onPrepareCommit(Consumer<UnitOfWork> handler) {
+    public void onPrepareCommit(Consumer<UnitOfWork<T>> handler) {
         addHandler(Phase.PREPARE_COMMIT, handler);
     }
 
     @Override
-    public void onCommit(Consumer<UnitOfWork> handler) {
+    public void onCommit(Consumer<UnitOfWork<T>> handler) {
         addHandler(Phase.COMMIT, handler);
     }
 
     @Override
-    public void afterCommit(Consumer<UnitOfWork> handler) {
+    public void afterCommit(Consumer<UnitOfWork<T>> handler) {
         addHandler(Phase.AFTER_COMMIT, handler);
     }
 
     @Override
-    public void onRollback(Consumer<UnitOfWork> handler) {
+    public void onRollback(Consumer<UnitOfWork<T>> handler) {
         addHandler(Phase.ROLLBACK, handler);
     }
 
     @Override
-    public void onCleanup(Consumer<UnitOfWork> handler) {
+    public void onCleanup(Consumer<UnitOfWork<T>> handler) {
         addHandler(Phase.CLEANUP, handler);
     }
 
@@ -204,7 +205,7 @@ public abstract class AbstractUnitOfWork implements UnitOfWork {
      * @param phase     the Phase of the Unit of Work at which to invoke the handler
      * @param handler   the handler to add
      */
-    protected abstract void addHandler(Phase phase, Consumer<UnitOfWork> handler);
+    protected abstract void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler);
 
     /**
      * Set the execution result of processing the current {@link #getMessage() Message}.

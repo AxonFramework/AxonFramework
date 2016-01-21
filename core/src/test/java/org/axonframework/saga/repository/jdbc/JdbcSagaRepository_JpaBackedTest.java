@@ -44,12 +44,7 @@ import javax.sql.DataSource;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -264,7 +259,7 @@ public class JdbcSagaRepository_JpaBackedTest {
     @DirtiesContext
     @Test
     public void testEndSaga() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         String identifier = UUID.randomUUID().toString();
         StubSaga saga = new StubSaga(identifier);
         saga.associate("key", "value");

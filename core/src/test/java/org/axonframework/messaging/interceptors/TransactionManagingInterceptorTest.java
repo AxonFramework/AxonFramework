@@ -16,7 +16,9 @@ package org.axonframework.messaging.interceptors;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,7 +32,7 @@ public class TransactionManagingInterceptorTest {
 
     private Message<?> message;
     private InterceptorChain<Message<?>> interceptorChain;
-    private UnitOfWork unitOfWork;
+    private UnitOfWork<Message<?>> unitOfWork;
     private TransactionManager transactionManager;
     private Transaction transaction;
     private TransactionManagingInterceptor<Message<?>> subject;
@@ -52,9 +54,9 @@ public class TransactionManagingInterceptorTest {
 
     @Test
     public void testStartTransaction() throws Exception {
-        UnitOfWork unitOfWork = spy(this.unitOfWork);
+        UnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
 
-        subject.handle(message, unitOfWork, interceptorChain);
+        subject.handle(unitOfWork, interceptorChain);
         verify(transactionManager).startTransaction();
         verify(interceptorChain).proceed();
 
@@ -64,7 +66,7 @@ public class TransactionManagingInterceptorTest {
 
     @Test
     public void testUnitOfWorkCommit() throws Exception {
-        subject.handle(message, unitOfWork, interceptorChain);
+        subject.handle(unitOfWork, interceptorChain);
         unitOfWork.commit();
 
         verify(transaction).commit();
@@ -72,7 +74,7 @@ public class TransactionManagingInterceptorTest {
 
     @Test
     public void testUnitOfWorkRollback() throws Exception {
-        subject.handle(message, unitOfWork, interceptorChain);
+        subject.handle(unitOfWork, interceptorChain);
         unitOfWork.rollback();
 
         verify(transaction).rollback();

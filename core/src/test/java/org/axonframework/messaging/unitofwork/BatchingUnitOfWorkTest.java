@@ -30,7 +30,7 @@ import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 public class BatchingUnitOfWorkTest {
 
     private List<PhaseTransition> transitions;
-    private BatchingUnitOfWork subject;
+    private BatchingUnitOfWork<?> subject;
 
     @Before
     public void setUp() {
@@ -40,7 +40,7 @@ public class BatchingUnitOfWorkTest {
     @Test
     public void testExecuteTask() throws Exception {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
-        subject = new BatchingUnitOfWork(messages);
+        subject = new BatchingUnitOfWork<>(messages);
         subject.executeWithResult(() -> {
             registerListeners(subject);
             return resultFor(subject.getMessage());
@@ -54,7 +54,7 @@ public class BatchingUnitOfWorkTest {
     @Test
     public void testRollback() throws Exception {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
-        subject = new BatchingUnitOfWork(messages);
+        subject = new BatchingUnitOfWork<>(messages);
         MockException e = new MockException();
         try {
             subject.executeWithResult(() -> {
@@ -75,7 +75,7 @@ public class BatchingUnitOfWorkTest {
     @Test
     public void testSuppressedExceptionOnRollback() throws Exception {
         List<Message<?>> messages = Arrays.asList(toMessage(0), toMessage(1), toMessage(2));
-        subject = new BatchingUnitOfWork(messages);
+        subject = new BatchingUnitOfWork<>(messages);
         MockException taskException = new MockException("task exception");
         MockException commitException = new MockException("commit exception");
         try {
@@ -100,7 +100,7 @@ public class BatchingUnitOfWorkTest {
         assertSame(commitException, taskException.getSuppressed()[0]);
     }
 
-    private void registerListeners(UnitOfWork unitOfWork) {
+    private void registerListeners(UnitOfWork<?> unitOfWork) {
         unitOfWork.onPrepareCommit(u -> transitions.add(new PhaseTransition(u.getMessage(), PREPARE_COMMIT)));
         unitOfWork.onCommit(u -> transitions.add(new PhaseTransition(u.getMessage(), COMMIT)));
         unitOfWork.afterCommit(u -> transitions.add(new PhaseTransition(u.getMessage(), AFTER_COMMIT)));

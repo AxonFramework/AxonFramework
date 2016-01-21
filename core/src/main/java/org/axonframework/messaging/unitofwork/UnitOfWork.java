@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a {@link Message}.
@@ -37,7 +38,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @since 0.6
  */
-public interface UnitOfWork {
+public interface UnitOfWork<T extends Message<?>> {
 
     /**
      * Starts the current unit of work. The UnitOfWork instance is registered with the CurrentUnitOfWork.
@@ -105,7 +106,7 @@ public interface UnitOfWork {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onPrepareCommit(Consumer<UnitOfWork> handler);
+    void onPrepareCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
      * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
@@ -113,7 +114,7 @@ public interface UnitOfWork {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onCommit(Consumer<UnitOfWork> handler);
+    void onCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
      * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
@@ -121,7 +122,7 @@ public interface UnitOfWork {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void afterCommit(Consumer<UnitOfWork> handler);
+    void afterCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
      * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
@@ -130,7 +131,7 @@ public interface UnitOfWork {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onRollback(Consumer<UnitOfWork> handler);
+    void onRollback(Consumer<UnitOfWork<T>> handler);
 
     /**
      * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
@@ -138,7 +139,7 @@ public interface UnitOfWork {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onCleanup(Consumer<UnitOfWork> handler);
+    void onCleanup(Consumer<UnitOfWork<T>> handler);
 
     /**
      * Returns an optional for the parent of this Unit of Work. The optional holds the Unit of Work that was active
@@ -147,7 +148,7 @@ public interface UnitOfWork {
      *
      * @return an optional parent Unit of Work
      */
-    Optional<UnitOfWork> parent();
+    Optional<UnitOfWork<?>> parent();
 
     /**
      * Check that returns <code>true</code> if this Unit of Work has not got a parent.
@@ -164,7 +165,7 @@ public interface UnitOfWork {
      *
      * @return the root of this Unit of Work
      */
-    default UnitOfWork root() {
+    default UnitOfWork<?> root() {
         return parent().map(UnitOfWork::root).orElse(this);
     }
 
@@ -174,7 +175,15 @@ public interface UnitOfWork {
      *
      * @return the Message being processed by this Unit of Work
      */
-    Message<?> getMessage();
+    T getMessage();
+
+    /**
+     * Transform the Message being processed using the given operator and stores the result.
+     *
+     * @param transformOperator The transform operator to apply to the stored message
+     * @return this Unit of Work
+     */
+    UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator);
 
     /**
      * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.
@@ -207,12 +216,12 @@ public interface UnitOfWork {
      * is available.
      *
      * @param name The name under which the resource was attached
-     * @param <T>  The type of resource
+     * @param <R>  The type of resource
      * @return The resource mapped to the given <code>name</code>, or <code>null</code> if no resource was found.
      */
     @SuppressWarnings("unchecked")
-    default <T> T getResource(String name) {
-        return (T) resources().get(name);
+    default <R> R getResource(String name) {
+        return (R) resources().get(name);
     }
 
     /**
@@ -220,13 +229,13 @@ public interface UnitOfWork {
      * yet the <code>mappingFunction</code> is invoked to provide the mapping.
      *
      * @param key  The name under which the resource was attached
-     * @param <T>  The type of resource
+     * @param <R>  The type of resource
      * @return The resource mapped to the given <code>key</code>, or the resource returned by the
      * <code>mappingFunction</code> if no resource was found.
      */
     @SuppressWarnings("unchecked")
-    default <T> T getOrComputeResource(String key, Function<? super String, T> mappingFunction) {
-        return (T) resources().computeIfAbsent(key, mappingFunction);
+    default <R> R getOrComputeResource(String key, Function<? super String, R> mappingFunction) {
+        return (R) resources().computeIfAbsent(key, mappingFunction);
     }
 
     /**

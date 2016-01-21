@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -23,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
@@ -32,13 +32,13 @@ import static org.mockito.Mockito.*;
  */
 public class DefaultInterceptorChainTest {
 
-    private UnitOfWork mockUnitOfWork;
+    private UnitOfWork<Message<?>> unitOfWork;
     private MessageHandler<Message<?>> mockHandler;
 
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() throws Exception {
-        mockUnitOfWork = mock(UnitOfWork.class);
+        unitOfWork = new DefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
         when(mockHandler.handle(isA(Message.class), isA(UnitOfWork.class))).thenReturn("Result");
     }
@@ -46,13 +46,16 @@ public class DefaultInterceptorChainTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testChainWithDifferentProceedCalls() throws Exception {
-        MessageHandlerInterceptor interceptor1 = (message, unitOfWork, interceptorChain)
-                -> interceptorChain.proceed(new GenericMessage<>("testing"));
-        MessageHandlerInterceptor interceptor2 = (message, unitOfWork, interceptorChain)
-                -> interceptorChain.proceed();
+        MessageHandlerInterceptor interceptor1 = (unitOfWork, interceptorChain) -> {
+            unitOfWork.transformMessage(m -> new GenericMessage<>("testing"));
+            return interceptorChain.proceed();
+        };
+        MessageHandlerInterceptor interceptor2 = (unitOfWork, interceptorChain) -> interceptorChain.proceed();
 
-        DefaultInterceptorChain testSubject = new DefaultInterceptorChain(asCommandMessage("original"),
-                                                                          mockUnitOfWork, asList(interceptor1, interceptor2), mockHandler
+
+        unitOfWork.transformMessage(m -> new GenericMessage<>("original"));
+        DefaultInterceptorChain testSubject = new DefaultInterceptorChain(
+                unitOfWork, asList(interceptor1, interceptor2), mockHandler
         );
 
         String actual = (String) testSubject.proceed();

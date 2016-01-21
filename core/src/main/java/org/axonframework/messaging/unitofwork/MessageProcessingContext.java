@@ -24,6 +24,7 @@ import java.util.Deque;
 import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * Maintains the context around the processing of a single Message. This class notifies handlers when the Unit of Work
@@ -32,14 +33,14 @@ import java.util.function.Consumer;
  * @author Rene de Waele
  * @since 3.0
  */
-public class MessageProcessingContext {
+public class MessageProcessingContext<T extends Message<?>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageProcessingContext.class);
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    private static final Deque<Consumer<UnitOfWork>> EMPTY = new LinkedList<>();
+    private static final Deque EMPTY = new LinkedList<>();
 
-    private final EnumMap<Phase, Deque<Consumer<UnitOfWork>>> handlers = new EnumMap<>(Phase.class);
-    private Message<?> message;
+    private final EnumMap<Phase, Deque<Consumer<UnitOfWork<T>>>> handlers = new EnumMap<>(Phase.class);
+    private T message;
     private ExecutionResult executionResult;
 
     /**
@@ -47,7 +48,7 @@ public class MessageProcessingContext {
      *
      * @param message The Message that is to be processed.
      */
-    public MessageProcessingContext(Message<?> message) {
+    public MessageProcessingContext(T message) {
         this.message = message;
     }
 
@@ -57,11 +58,12 @@ public class MessageProcessingContext {
      * @param unitOfWork    The Unit of Work that is changing its phase
      * @param phase         The phase for which attached handlers should be invoked
      */
-    public void notifyHandlers(UnitOfWork unitOfWork, Phase phase) {
+    @SuppressWarnings("unchecked")
+    public void notifyHandlers(UnitOfWork<T> unitOfWork, Phase phase) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Notifying handlers for phase {}", phase.toString());
         }
-        Deque<Consumer<UnitOfWork>> l = handlers.getOrDefault(phase, EMPTY);
+        Deque<Consumer<UnitOfWork<T>>> l = handlers.getOrDefault(phase, EMPTY);
         while (!l.isEmpty()) {
             l.poll().accept(unitOfWork);
         }
@@ -74,11 +76,11 @@ public class MessageProcessingContext {
      * @param phase   The phase of the unit of work to attach the handler to
      * @param handler The handler to invoke in the given phase
      */
-    public void addHandler(Phase phase, Consumer<UnitOfWork> handler) {
+    public void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Adding handler {} for phase {}", handler.getClass().getName(), phase.toString());
         }
-        final Deque<Consumer<UnitOfWork>> consumers = handlers.computeIfAbsent(phase, p -> new ArrayDeque<>());
+        final Deque<Consumer<UnitOfWork<T>>> consumers = handlers.computeIfAbsent(phase, p -> new ArrayDeque<>());
         if (phase.isReverseCallbackOrder()) {
             consumers.addFirst(handler);
         } else {
@@ -112,7 +114,7 @@ public class MessageProcessingContext {
      *
      * @return the Message that is being processed
      */
-    public Message<?> getMessage() {
+    public T getMessage() {
         return message;
     }
 
@@ -127,12 +129,21 @@ public class MessageProcessingContext {
     }
 
     /**
+     * Transform the Message being processed using the given operator.
+     *
+     * @param transformOperator The transform operator to apply to the stored message
+     */
+    public void transformMessage(UnaryOperator<T> transformOperator) {
+        message = transformOperator.apply(message);
+    }
+
+    /**
      * Reset the processing context. This clears the execution result and map with registered handlers, and replaces
      * the current Message with the given <code>message</code>.
      *
      * @param message The new message that is being processed
      */
-    public void reset(Message<?> message) {
+    public void reset(T message) {
         this.message = message;
         handlers.clear();
         executionResult = null;

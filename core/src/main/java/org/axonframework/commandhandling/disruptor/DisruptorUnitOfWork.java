@@ -22,6 +22,7 @@ import org.axonframework.messaging.unitofwork.*;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * Specialized UnitOfWork instance for the {@link DisruptorCommandBus}. It expects the executing command message to
@@ -30,9 +31,9 @@ import java.util.function.Consumer;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DisruptorUnitOfWork extends AbstractUnitOfWork {
+public class DisruptorUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
-    private MessageProcessingContext processingContext;
+    private MessageProcessingContext<T> processingContext;
 
     /**
      * Resets the state of this Unit of Work, by setting its phase to {@link Phase#NOT_STARTED}, replacing the message
@@ -40,9 +41,9 @@ public class DisruptorUnitOfWork extends AbstractUnitOfWork {
      *
      * @param message the new Message that is about to be processed.
      */
-    public void reset(Message<?> message) {
+    public void reset(T message) {
         if (processingContext == null) {
-            processingContext = new MessageProcessingContext(message);
+            processingContext = new MessageProcessingContext<>(message);
         } else {
             processingContext.reset(message);
         }
@@ -66,13 +67,19 @@ public class DisruptorUnitOfWork extends AbstractUnitOfWork {
     }
 
     @Override
-    public Optional<UnitOfWork> parent() {
+    public Optional<UnitOfWork<?>> parent() {
         return Optional.empty();
     }
 
     @Override
-    public Message<?> getMessage() {
+    public T getMessage() {
         return processingContext.getMessage();
+    }
+
+    @Override
+    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+        processingContext.transformMessage(transformOperator);
+        return this;
     }
 
     @Override
@@ -81,7 +88,7 @@ public class DisruptorUnitOfWork extends AbstractUnitOfWork {
     }
 
     @Override
-    protected void addHandler(Phase phase, Consumer<UnitOfWork> handler) {
+    protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
         processingContext.addHandler(phase, handler);
     }
 

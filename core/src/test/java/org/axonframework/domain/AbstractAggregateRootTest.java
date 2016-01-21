@@ -27,9 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -41,7 +39,7 @@ public class AbstractAggregateRootTest {
 
     @Before
     public void setUp() {
-        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<?> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         mockEventBus = mock(EventBus.class);
         unitOfWork.resources().put(EventBus.KEY, mockEventBus);
         testSubject = new AggregateRoot();

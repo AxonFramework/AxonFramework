@@ -29,24 +29,22 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 public interface MessageHandlerInterceptor<T extends Message<?>> {
 
     /**
-     * Invoked before the given <code>message</code> is handled by a designated
-     * {@link org.axonframework.messaging.MessageHandler}.
+     * Invoked before a Message is handled by a designated {@link org.axonframework.messaging.MessageHandler}.
      * <p/>
-     * The interceptor is responsible for the continuation of the dispatch process by invoking the {@link
-     * InterceptorChain#proceed(Message)} method on the given <code>interceptorChain</code>.
+     * The interceptor is responsible for the continuation of the handling process by invoking the {@link
+     * InterceptorChain#proceed()} method on the given <code>interceptorChain</code>.
      * <p/>
-     * The given <code>unitOfWork</code> contains contextual information. Any information gathered by interceptors may
-     * be attached to the unitOfWork.
+     * The given <code>unitOfWork</code> contains contextual information. Any information gathered by interceptors
+     * may be attached to the unitOfWork.
      * <p/>
      * Interceptors are highly recommended not to change the type of the message handling result, as the dispatching
      * component might expect a result of a specific type.
      *
-     * @param message          The message being handled
      * @param unitOfWork       The UnitOfWork that is processing the message
      * @param interceptorChain The interceptor chain that allows this interceptor to proceed the dispatch process
      * @return the result of the message handler. May have been modified by interceptors.
      *
      * @throws Exception any exception that occurs while handling the message
      */
-    Object handle(T message, UnitOfWork unitOfWork, InterceptorChain<T> interceptorChain) throws Exception;
+    Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception;
 }

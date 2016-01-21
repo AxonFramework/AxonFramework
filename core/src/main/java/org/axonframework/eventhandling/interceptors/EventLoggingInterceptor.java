@@ -69,7 +69,7 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
         StringBuilder sb = new StringBuilder(String.format("Events published: [%s]",
                 messages.stream().map(m -> m.getPayloadType().getSimpleName()).collect(Collectors.joining(", "))));
         if (CurrentUnitOfWork.isStarted()) {
-            UnitOfWork unitOfWork = CurrentUnitOfWork.get();
+            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Message<?> message = unitOfWork.getMessage();
             sb.append(String.format(" while processing a [%s]", message.getPayloadType().getSimpleName()));
             ExecutionResult executionResult = unitOfWork.getExecutionResult();

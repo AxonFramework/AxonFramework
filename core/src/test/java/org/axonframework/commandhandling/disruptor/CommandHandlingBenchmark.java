@@ -119,7 +119,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             repository.load(aggregateIdentifier.toString()).doSomething();
             return null;
         }
@@ -135,6 +135,7 @@ public class CommandHandlingBenchmark {
 
         @Override
         public void appendEvents(List<DomainEventMessage<?>> events) {
+            //todo fix
 //            while (events.hasNext()) {
 //                storedEvents.add(events.next());
 //            }

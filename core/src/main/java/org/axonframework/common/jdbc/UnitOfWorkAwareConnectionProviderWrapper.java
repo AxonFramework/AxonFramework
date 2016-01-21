@@ -66,7 +66,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
             return delegate.getConnection();
         }
 
-        UnitOfWork uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Connection connection = uow.root().getResource(CONNECTION_RESOURCE_NAME);
         if (connection == null || connection.isClosed()) {
             final Connection delegateConnection = delegate.getConnection();

@@ -29,8 +29,7 @@ import static org.mockito.Mockito.*;
 public class CorrelationDataInterceptorTest {
 
     private CorrelationDataInterceptor<Message<?>> subject;
-    private UnitOfWork mockUnitOfWork;
-    private Message<?> mockMessage;
+    private UnitOfWork<Message<?>> mockUnitOfWork;
     private InterceptorChain<Message<?>> mockInterceptorChain;
 
     @Before
@@ -38,7 +37,6 @@ public class CorrelationDataInterceptorTest {
     public void setUp() {
         subject = new CorrelationDataInterceptor<>();
         mockUnitOfWork = mock(UnitOfWork.class);
-        mockMessage = mock(Message.class);
         mockInterceptorChain = mock(InterceptorChain.class);
     }
 
@@ -48,7 +46,7 @@ public class CorrelationDataInterceptorTest {
         CorrelationDataProvider mockProvider2 = mock(CorrelationDataProvider.class);
         subject.registerCorrelationDataProvider(mockProvider1);
         subject.registerCorrelationDataProvider(mockProvider2);
-        subject.handle(mockMessage, mockUnitOfWork, mockInterceptorChain);
+        subject.handle(mockUnitOfWork, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);
         verify(mockInterceptorChain).proceed();
@@ -58,12 +56,12 @@ public class CorrelationDataInterceptorTest {
     public void testUnregisteredProviderIsNoLongerAttachedToUnitOfWork() throws Exception {
         CorrelationDataProvider mockProvider = mock(CorrelationDataProvider.class);
         Registration registration = subject.registerCorrelationDataProvider(mockProvider);
-        subject.handle(mockMessage, mockUnitOfWork, mockInterceptorChain);
+        subject.handle(mockUnitOfWork, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider);
         verify(mockInterceptorChain).proceed();
         registration.cancel();
         reset((Object) mockInterceptorChain);
-        subject.handle(mockMessage, mockUnitOfWork, mockInterceptorChain);
+        subject.handle(mockUnitOfWork, mockInterceptorChain);
         verifyNoMoreInteractions(mockUnitOfWork);
         verify(mockInterceptorChain).proceed();
     }

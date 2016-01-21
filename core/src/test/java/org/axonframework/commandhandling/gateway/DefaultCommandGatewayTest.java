@@ -218,7 +218,7 @@ public class DefaultCommandGatewayTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testCorrelationDataIsAttachedToCommandAsObject() throws Exception {
-        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.registerCorrelationDataProvider(message -> Collections.singletonMap("correlationId", "test"));
         testSubject.send("Hello");
 
@@ -238,7 +238,7 @@ public class DefaultCommandGatewayTest {
         final Map<String, String> data = new HashMap<>();
         data.put("correlationId", "test");
         data.put("header", "someValue");
-        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.registerCorrelationDataProvider(message -> data);
         testSubject.send(new GenericCommandMessage<>("Hello", Collections.singletonMap("header", "value")));
 

@@ -77,7 +77,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testStoreAndLoadNewAggregate() {
-        UnitOfWork uow = startAndGetUnitOfWork();
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
         JpaAggregate originalAggregate = new JpaAggregate("Hello");
         repository.add(originalAggregate);
         uow.commit();
@@ -105,7 +105,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
         assertEquals((Long) 0L, agg.getVersion());
 
-        UnitOfWork uow = startAndGetUnitOfWork();
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
         JpaAggregate aggregate = repository.load(agg.getIdentifier());
         aggregate.setMessage("And again");
         aggregate.setMessage("And more");
@@ -124,7 +124,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
         assertEquals((Long) 0L, agg.getVersion());
 
-        UnitOfWork uow = startAndGetUnitOfWork();
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
         JpaAggregate aggregate = repository.load(agg.getIdentifier());
         aggregate.setMessage("And again");
         aggregate.setMessage("And more");
@@ -142,8 +142,8 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         this.capturedEvents.add(event);
     }
 
-    private UnitOfWork startAndGetUnitOfWork() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+    private UnitOfWork<?> startAndGetUnitOfWork() {
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         uow.resources().put(EventBus.KEY, eventBus);
         return uow;
     }

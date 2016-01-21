@@ -94,14 +94,14 @@ public class SimpleEventProcessorTest {
         MessageHandlerInterceptor<EventMessage<?>> interceptor = mock(MessageHandlerInterceptor.class);
         Registration registration = testSubject.registerInterceptor(interceptor);
         EventMessage event = new GenericEventMessage<>(new Object());
-        when(interceptor.handle(same(event), any(), any())).then(invocation -> {
-            ((InterceptorChain<EventMessage<?>>) invocation.getArguments()[2]).proceed();
+        when(interceptor.handle(any(), any())).then(invocation -> {
+            ((InterceptorChain<EventMessage<?>>) invocation.getArguments()[1]).proceed();
             return null;
         });
         testSubject.handle(event, event);
 
         verify(eventListener, times(2)).handle(event);
-        verify(interceptor, times(2)).handle(eq(event), any(UnitOfWork.class), any(InterceptorChain.class));
+        verify(interceptor, times(2)).handle(any(UnitOfWork.class), any(InterceptorChain.class));
 
         registration.cancel();
         testSubject.handle(event);

@@ -220,7 +220,7 @@ public class EventProcessorTask implements Runnable {
         final EventMessage<?> event = nextEvent();
         ProcessingResult processingResult = ProcessingResult.REGULAR;
         if (event != null) {
-            UnitOfWork uow = null;
+            UnitOfWork<EventMessage<?>> uow = null;
             try {
                 uow = unitOfWorkFactory.createUnitOfWork(event);
                 processingResult = doHandle(event, uow);
@@ -269,8 +269,8 @@ public class EventProcessorTask implements Runnable {
      * @param unitOfWork    The unit of work that is processing the event
      * @return the policy for retrying/proceeding with this event
      */
-    protected ProcessingResult doHandle(EventMessage<?> event, UnitOfWork unitOfWork) {
-        InterceptorChain<EventMessage<?>> interceptorChain = new DefaultInterceptorChain<>(event, unitOfWork,
+    protected ProcessingResult doHandle(EventMessage<?> event, UnitOfWork<EventMessage<?>> unitOfWork) {
+        InterceptorChain<EventMessage<?>> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
                 interceptors, (eventMessage, uow) -> {
             eventProcessingMonitor.prepare(event);
             RuntimeException failure = null;

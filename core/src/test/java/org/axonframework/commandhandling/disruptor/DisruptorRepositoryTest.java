@@ -1,5 +1,6 @@
 package org.axonframework.commandhandling.disruptor;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
@@ -41,7 +42,7 @@ public class DisruptorRepositoryTest {
         gateway.sendAndWait(new CreateCommandAndEvent(aggregateId));
 
         // Load the aggregate from the repository -- from "worker" thread
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<CommandMessage<?>> uow = DefaultUnitOfWork.startAndGet(null);
         try {
             Aggregate aggregate = repository.load(aggregateId);
             fail("Expected IllegalStateException");

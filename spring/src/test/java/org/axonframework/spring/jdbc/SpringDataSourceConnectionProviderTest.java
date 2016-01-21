@@ -39,11 +39,7 @@ import java.sql.SQLException;
 
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ContextConfiguration(classes = SpringDataSourceConnectionProviderTest.Context.class)
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -73,7 +69,7 @@ public class SpringDataSourceConnectionProviderTest {
             return null;
         });
 
-        UnitOfWork uow = unitOfWorkFactory.createUnitOfWork(null);
+        UnitOfWork<?> uow = unitOfWorkFactory.createUnitOfWork(null);
         Connection connection = connectionProvider.getConnection();
 
         connection.commit();
@@ -88,7 +84,7 @@ public class SpringDataSourceConnectionProviderTest {
             mockConnection = (Connection) spy;
             return spy;
         }).when(dataSource).getConnection();
-        UnitOfWork uow = unitOfWorkFactory.createUnitOfWork(null);
+        UnitOfWork<?> uow = unitOfWorkFactory.createUnitOfWork(null);
         Connection connection = connectionProvider.getConnection();
         assertNotSame(connection, mockConnection);
 

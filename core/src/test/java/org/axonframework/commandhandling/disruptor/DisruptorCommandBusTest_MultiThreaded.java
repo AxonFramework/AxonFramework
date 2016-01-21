@@ -268,7 +268,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             StubCommand payload = (StubCommand) command.getPayload();
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();

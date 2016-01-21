@@ -46,7 +46,7 @@ public class EventCountSnapshotterTriggerTest {
     private CapturingMatcher<Cache.EntryListener> listenerConfiguration;
     private EventSourcedAggregateRoot aggregate;
 
-    private UnitOfWork unitOfWork;
+    private UnitOfWork<?> unitOfWork;
 
     @Before
     public void setUp() throws Exception {

@@ -50,7 +50,7 @@ public class CurrentUnitOfWorkTest {
 
     @Test
     public void testSetSession() {
-        UnitOfWork mockUnitOfWork = mock(UnitOfWork.class);
+        UnitOfWork<?> mockUnitOfWork = mock(UnitOfWork.class);
         CurrentUnitOfWork.set(mockUnitOfWork);
         assertSame(mockUnitOfWork, CurrentUnitOfWork.get());
 
@@ -60,9 +60,9 @@ public class CurrentUnitOfWorkTest {
 
     @Test
     public void testNotCurrentUnitOfWorkCommitted() {
-        DefaultUnitOfWork outerUoW = new DefaultUnitOfWork(null);
+        DefaultUnitOfWork<?> outerUoW = new DefaultUnitOfWork<>(null);
         outerUoW.start();
-        new DefaultUnitOfWork(null).start();
+        new DefaultUnitOfWork<>(null).start();
         try {
             outerUoW.commit();
         } catch (IllegalStateException e) {

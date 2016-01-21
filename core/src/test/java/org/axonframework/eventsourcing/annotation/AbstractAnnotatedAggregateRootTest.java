@@ -61,7 +61,7 @@ public class AbstractAnnotatedAggregateRootTest {
     @Before
     public void setUp() {
         eventBus = new RecordingEventBus();
-        UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<?> unitOfWork = DefaultUnitOfWork.startAndGet(null);
         unitOfWork.resources().put(EventBus.KEY, eventBus);
     }
 
@@ -154,7 +154,7 @@ public class AbstractAnnotatedAggregateRootTest {
     @Ignore
     @Test
     public void testAggregateRetrievesParameterResolverFactoryFromUnitOfWork() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         uow.resources().put(ParameterResolverFactory.class.getName(), MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(CustomParameterAggregateRoot.class),
                 (memberAnnotations, parameterType, parameterAnnotations) -> {

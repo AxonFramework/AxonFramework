@@ -172,8 +172,8 @@ public class LockingRepositoryTest {
         verify(lock).release();
     }
 
-    private UnitOfWork startAndGetUnitOfWork() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(MESSAGE);
+    private UnitOfWork<?> startAndGetUnitOfWork() {
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(MESSAGE);
         uow.resources().put(EventBus.KEY, mockEventBus);
         return uow;
     }

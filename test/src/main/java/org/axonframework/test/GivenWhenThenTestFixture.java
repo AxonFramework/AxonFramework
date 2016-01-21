@@ -261,7 +261,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
 
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
-            UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+            UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
             try {
                 EventSourcedAggregateRoot aggregate2 = repository.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
@@ -531,7 +531,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
     private class AggregateRegisteringInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
         @Override
-        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork, InterceptorChain<CommandMessage<?>> interceptorChain)
+        public Object handle(UnitOfWork<CommandMessage<?>> unitOfWork, InterceptorChain<CommandMessage<?>> interceptorChain)
                 throws Exception {
             // TODO: Fix
 //            unitOfWork.onPrepareCommit(new UnitOfWorkListenerAdapter() {

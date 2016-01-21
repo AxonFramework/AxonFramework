@@ -65,7 +65,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
     @Override
     public void add(T aggregate) {
         Assert.isTrue(aggregateType.isInstance(aggregate), "Unsuitable aggregate for this repository: wrong type");
-        UnitOfWork uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Assert.state(uow != null, "Aggregate cannot be added outside the scope of a Unit of Work.");
         Map<String, T> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
         Assert.isTrue(aggregates.putIfAbsent(aggregate.getIdentifier(), aggregate) == null,
@@ -81,7 +81,7 @@ public abstract class AbstractRepository<T extends AggregateRoot> implements Rep
      */
     @Override
     public T load(String aggregateIdentifier, Long expectedVersion) {
-        UnitOfWork uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
         if (uow != null) {
             Map<String, T> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
             return aggregates.computeIfAbsent(aggregateIdentifier, s -> {
