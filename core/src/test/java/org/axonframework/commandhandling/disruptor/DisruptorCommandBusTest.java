@@ -112,13 +112,13 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         GenericAggregateFactory<StubAggregate> aggregateFactory = new GenericAggregateFactory<>(StubAggregate.class);
         stubHandler.setRepository(testSubject.createRepository(aggregateFactory));
-        Consumer<UnitOfWork> mockPrepareCommitConsumer = mock(Consumer.class);
-        Consumer<UnitOfWork> mockAfterCommitConsumer = mock(Consumer.class);
-        Consumer<UnitOfWork> mockCleanUpConsumer = mock(Consumer.class);
+        Consumer<UnitOfWork<CommandMessage<?>>> mockPrepareCommitConsumer = mock(Consumer.class);
+        Consumer<UnitOfWork<CommandMessage<?>>> mockAfterCommitConsumer = mock(Consumer.class);
+        Consumer<UnitOfWork<CommandMessage<?>>> mockCleanUpConsumer = mock(Consumer.class);
         when(mockHandlerInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class),
                                            any(InterceptorChain.class)))
                 .thenAnswer(invocation -> {
-                    final UnitOfWork unitOfWork = (UnitOfWork) invocation.getArguments()[1];
+                    final UnitOfWork<CommandMessage<?>> unitOfWork = (UnitOfWork<CommandMessage<?>>) invocation.getArguments()[1];
                     unitOfWork.onPrepareCommit(mockPrepareCommitConsumer);
                     unitOfWork.afterCommit(mockAfterCommitConsumer);
                     unitOfWork.onCleanup(mockCleanUpConsumer);
@@ -140,8 +140,8 @@ public class DisruptorCommandBusTest {
                                   mockCleanUpConsumer,
                                   mockCallback);
         inOrder.verify(mockDispatchInterceptor).handle(isA(CommandMessage.class));
-        inOrder.verify(mockHandlerInterceptor).handle(any(CommandMessage.class),
-                                                      any(UnitOfWork.class),
+        inOrder.verify(mockHandlerInterceptor).handle(
+                any(UnitOfWork.class),
                                                       any(InterceptorChain.class));
         inOrder.verify(mockPrepareCommitConsumer).accept(isA(UnitOfWork.class));
         inOrder.verify(mockAfterCommitConsumer).accept(isA(UnitOfWork.class));
@@ -290,9 +290,8 @@ public class DisruptorCommandBusTest {
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
-        stubHandler.setRepository(testSubject
-                                          .createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
-        when(mockInterceptor.handle(any(CommandMessage.class), any(UnitOfWork.class), any(InterceptorChain.class)))
+        stubHandler.setRepository(testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+        when(mockInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class)))
                 .thenAnswer(invocation -> ((InterceptorChain) invocation.getArguments()[2]).proceed());
         testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier)));
         CommandCallback mockCallback = mock(CommandCallback.class);
@@ -485,7 +484,7 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             StubCommand payload = (StubCommand) command.getPayload();
             if (ExceptionCommand.class.isAssignableFrom(command.getPayloadType())) {
                 throw ((ExceptionCommand) command.getPayload()).getException();

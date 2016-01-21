@@ -62,7 +62,7 @@ public class FireEventJob implements Job {
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
             UnitOfWorkFactory<?> unitOfWorkFactory =
                     (UnitOfWorkFactory<?>) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
-            UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+            UnitOfWork<EventMessage<?>> unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
             unitOfWork.execute(() -> eventBus.publish(eventMessage));
         } catch (Exception e) {
             logger.warn("Exception occurred while publishing a scheduled event [{}]",

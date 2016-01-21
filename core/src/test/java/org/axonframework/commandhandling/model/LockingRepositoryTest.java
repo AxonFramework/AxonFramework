@@ -171,8 +171,8 @@ public class LockingRepositoryTest {
         verify(lock).release();
     }
 
-    private UnitOfWork startAndGetUnitOfWork() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(MESSAGE);
+    private UnitOfWork<?> startAndGetUnitOfWork() {
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(MESSAGE);
         return uow;
     }
 

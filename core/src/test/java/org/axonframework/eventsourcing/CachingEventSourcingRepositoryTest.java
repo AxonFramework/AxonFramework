@@ -155,7 +155,7 @@ public class CachingEventSourcingRepositoryTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testCacheClearedAfterRollbackOfAddedAggregate() {
-        UnitOfWork uow = startAndGetUnitOfWork();
+        UnitOfWork<?> uow = startAndGetUnitOfWork();
         doThrow(new MockException()).when(mockEventStore).appendEvents(anyList());
         try {
             testSubject.newInstance(() -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
@@ -166,8 +166,8 @@ public class CachingEventSourcingRepositoryTest {
         assertNull(cache.get("id1"));
     }
 
-    private UnitOfWork startAndGetUnitOfWork() {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+    private UnitOfWork<?> startAndGetUnitOfWork() {
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         uow.resources().put(EventBus.KEY, eventBus);
         return uow;
     }

@@ -21,6 +21,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 /**
  * Implementation of the UnitOfWork that processes a single message.
@@ -28,15 +29,15 @@ import java.util.function.Consumer;
  * @author Allard Buijze
  * @since 0.6
  */
-public class DefaultUnitOfWork extends AbstractUnitOfWork {
+public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
-    private final MessageProcessingContext processingContext;
+    private final MessageProcessingContext<T> processingContext;
 
     /**
      * Initializes a Unit of Work (without starting it).
      */
-    public DefaultUnitOfWork(Message<?> message) {
-        processingContext = new MessageProcessingContext(message);
+    public DefaultUnitOfWork(T message) {
+        processingContext = new MessageProcessingContext<>(message);
     }
 
     /**
@@ -48,8 +49,8 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
      *
      * @return the started UnitOfWork instance
      */
-    public static DefaultUnitOfWork startAndGet(Message<?> message) {
-        DefaultUnitOfWork uow = new DefaultUnitOfWork(message);
+    public static <T extends Message<?>> DefaultUnitOfWork<T> startAndGet(T message) {
+        DefaultUnitOfWork<T> uow = new DefaultUnitOfWork<>(message);
         uow.start();
         return uow;
     }
@@ -88,15 +89,21 @@ public class DefaultUnitOfWork extends AbstractUnitOfWork {
     }
 
     @Override
-    protected void addHandler(Phase phase, Consumer<UnitOfWork> handler) {
+    protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
         Assert.state(!phase.isBefore(phase()), "Cannot register a listener for phase: " + phase
                 + " because the Unit of Work is already in a later phase: " + phase());
         processingContext.addHandler(phase, handler);
     }
 
     @Override
-    public Message<?> getMessage() {
+    public T getMessage() {
         return processingContext.getMessage();
+    }
+
+    @Override
+    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+        processingContext.transformMessage(transformOperator);
+        return this;
     }
 
     @Override

@@ -34,7 +34,7 @@ public class TransactionManagingInterceptor<T extends Message<?>> implements Mes
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object handle(T message, UnitOfWork unitOfWork, InterceptorChain<T> interceptorChain) throws Exception {
+    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception {
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
         unitOfWork.onRollback(u -> transaction.rollback());

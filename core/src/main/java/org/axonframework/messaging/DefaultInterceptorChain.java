@@ -31,39 +31,30 @@ public class DefaultInterceptorChain<T extends Message<?>> implements Intercepto
 
     private final MessageHandler<? super T> handler;
     private final Iterator<? extends MessageHandlerInterceptor<T>> chain;
-    private final UnitOfWork unitOfWork;
-    private T message;
+    private final UnitOfWork<T> unitOfWork;
 
     /**
      * Initialize the default interceptor chain to dispatch the given <code>message</code>, through the
      * <code>chain</code>, to the <code>handler</code>.
      *
-     * @param message       The message to dispatch through the interceptor chain
      * @param unitOfWork    The UnitOfWork the message is executed in
      * @param interceptors  The interceptors composing the chain
      * @param handler       The handler for the message
      */
-    public DefaultInterceptorChain(T message, UnitOfWork unitOfWork,
+    public DefaultInterceptorChain(UnitOfWork<T> unitOfWork,
                                    Iterable<? extends MessageHandlerInterceptor<T>> interceptors,
                                    MessageHandler<? super T> handler) {
-        this.message = message;
         this.handler = handler;
         this.chain = interceptors.iterator();
         this.unitOfWork = unitOfWork;
     }
 
     @Override
-    public Object proceed(T messageToProceedWith) throws Exception {
-        message = messageToProceedWith;
-        if (chain.hasNext()) {
-            return chain.next().handle(messageToProceedWith, unitOfWork, this);
-        } else {
-            return handler.handle(messageToProceedWith, unitOfWork);
-        }
-    }
-
-    @Override
     public Object proceed() throws Exception {
-        return proceed(message);
+        if (chain.hasNext()) {
+            return chain.next().handle(unitOfWork, this);
+        } else {
+            return handler.handle(unitOfWork.getMessage(), unitOfWork);
+        }
     }
 }

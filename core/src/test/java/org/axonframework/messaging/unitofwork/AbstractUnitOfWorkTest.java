@@ -38,7 +38,7 @@ import static org.mockito.Mockito.*;
 public class AbstractUnitOfWorkTest {
 
     private List<PhaseTransition> phaseTransitions;
-    private UnitOfWork subject;
+    private UnitOfWork<?> subject;
 
     @SuppressWarnings({"unchecked", "deprecation"})
     @Before
@@ -56,7 +56,7 @@ public class AbstractUnitOfWorkTest {
         registerListeners(subject);
     }
 
-    private void registerListeners(UnitOfWork unitOfWork) {
+    private void registerListeners(UnitOfWork<?> unitOfWork) {
         unitOfWork.onPrepareCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.PREPARE_COMMIT)));
         unitOfWork.onCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.COMMIT)));
         unitOfWork.afterCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.AFTER_COMMIT)));
@@ -139,9 +139,9 @@ public class AbstractUnitOfWorkTest {
     private static class PhaseTransition {
 
         private final UnitOfWork.Phase phase;
-        private final UnitOfWork unitOfWork;
+        private final UnitOfWork<?> unitOfWork;
 
-        public PhaseTransition(UnitOfWork unitOfWork, UnitOfWork.Phase phase) {
+        public PhaseTransition(UnitOfWork<?> unitOfWork, UnitOfWork.Phase phase) {
             this.unitOfWork = unitOfWork;
             this.phase = phase;
         }

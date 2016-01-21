@@ -18,14 +18,8 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Kristian Rosenvold
@@ -142,7 +136,7 @@ public class JdbcSagaRepositoryTest {
 
     @Test
     public void testSaveSaga_InsideUnitOfWorkWithoutConnection() throws SQLException {
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(null);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
 
         String identifier = UUID.randomUUID().toString();
         StubSaga saga = new StubSaga(identifier);

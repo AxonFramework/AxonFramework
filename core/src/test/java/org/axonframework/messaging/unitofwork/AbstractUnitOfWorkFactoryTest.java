@@ -25,16 +25,16 @@ public class AbstractUnitOfWorkFactoryTest {
     public void testCorrelationDataProviderRegistration() {
         CorrelationDataProvider mockCorrelationDataProvider = mock(CorrelationDataProvider.class);
         Registration registration = subject.registerCorrelationDataProvider(mockCorrelationDataProvider);
-        UnitOfWork mockUnitOfWork = subject.createUnitOfWork(null);
+        UnitOfWork<?> mockUnitOfWork = subject.createUnitOfWork(null);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockCorrelationDataProvider);
         registration.cancel();
         mockUnitOfWork = subject.createUnitOfWork(null);
         verify(mockUnitOfWork, never()).registerCorrelationDataProvider(any());
     }
 
-    private static class StubUnitOfWorkFactory extends AbstractUnitOfWorkFactory<UnitOfWork> {
+    private static class StubUnitOfWorkFactory extends AbstractUnitOfWorkFactory<UnitOfWork<?>> {
         @Override
-        protected UnitOfWork doCreateUnitOfWork(Message<?> message) {
+        protected UnitOfWork<?> doCreateUnitOfWork(Message<?> message) {
             return mock(UnitOfWork.class);
         }
     }

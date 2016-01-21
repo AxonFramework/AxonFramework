@@ -33,6 +33,6 @@ public interface MessageHandler<T extends Message<?>> {
      *
      * @throws Exception any exception that occurs during message handling
      */
-    Object handle(T message, UnitOfWork unitOfWork) throws Exception;
+    Object handle(T message, UnitOfWork<? extends T> unitOfWork) throws Exception;
 
 }

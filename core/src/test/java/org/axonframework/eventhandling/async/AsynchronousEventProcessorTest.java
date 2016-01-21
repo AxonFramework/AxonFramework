@@ -64,7 +64,7 @@ public class AsynchronousEventProcessorTest {
         executor = mock(Executor.class);
         doAnswer(invocation -> {
             // since we need to pretend we run in another thread, we clear the Unit of Work first
-            UnitOfWork currentUnitOfWork = null;
+            UnitOfWork<?> currentUnitOfWork = null;
             if (CurrentUnitOfWork.isStarted()) {
                 currentUnitOfWork = CurrentUnitOfWork.get();
                 CurrentUnitOfWork.clear(currentUnitOfWork);
@@ -163,10 +163,10 @@ public class AsynchronousEventProcessorTest {
 
     @Test
     public void testEventsScheduledForHandlingWhenSurroundingUnitOfWorkCommits() {
-        final GenericEventMessage<String> message1 = new GenericEventMessage<String>("Message 1");
-        final GenericEventMessage<String> message2 = new GenericEventMessage<String>("Message 2");
+        final GenericEventMessage<String> message1 = new GenericEventMessage<>("Message 1");
+        final GenericEventMessage<String> message2 = new GenericEventMessage<>("Message 2");
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message1);
+        UnitOfWork<EventMessage<?>> uow = DefaultUnitOfWork.startAndGet(message1);
         uow.onPrepareCommit(u -> {
             verify(executor, never()).execute(isA(Runnable.class));
             verify(mockTransactionManager, never()).startTransaction();
@@ -278,14 +278,14 @@ public class AsynchronousEventProcessorTest {
         MessageHandlerInterceptor<EventMessage<?>> interceptor = mock(MessageHandlerInterceptor.class);
         Registration registration = testSubject.registerInterceptor(interceptor);
         EventMessage event = new GenericEventMessage<>(new Object());
-        when(interceptor.handle(same(event), any(), any())).then(invocation -> {
-            ((InterceptorChain<EventMessage<?>>) invocation.getArguments()[2]).proceed();
+        when(interceptor.handle(any(), any())).then(invocation -> {
+            ((InterceptorChain<EventMessage<?>>) invocation.getArguments()[1]).proceed();
             return null;
         });
         testSubject.handle(event, event);
 
         verify(eventListener, times(2)).handle(event);
-        verify(interceptor, times(2)).handle(eq(event), any(UnitOfWork.class), any(InterceptorChain.class));
+        verify(interceptor, times(2)).handle(any(UnitOfWork.class), any(InterceptorChain.class));
 
         registration.cancel();
         testSubject.handle(event);

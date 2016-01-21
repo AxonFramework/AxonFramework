@@ -74,15 +74,16 @@ public class AggregateAnnotationCommandHandlerTest {
     @Before
     public void setUp() throws Exception {
         commandBus = new SimpleCommandBus();
-        commandBus.setUnitOfWorkFactory(new UnitOfWorkFactory() {
+        commandBus.setUnitOfWorkFactory(new UnitOfWorkFactory<UnitOfWork<?>>() {
             @Override
             public Registration registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
                 return () -> true;
             }
 
             @Override
-            public UnitOfWork createUnitOfWork(Message message) {
-                UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(message);
+            @SuppressWarnings("unchecked")
+            public UnitOfWork<CommandMessage<?>> createUnitOfWork(Message<?> message) {
+                UnitOfWork  unitOfWork = DefaultUnitOfWork.startAndGet(message);
                 unitOfWork.resources().put(EventBus.KEY, mock(EventBus.class));
                 return unitOfWork;
             }
@@ -606,7 +607,8 @@ public class AggregateAnnotationCommandHandlerTest {
         private Map<String, StubCommandAnnotatedMapEntity> entityMap;
 
         @CommandHandler
-        public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData, UnitOfWork unitOfWork,
+        public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData,
+                                             UnitOfWork<CommandMessage<?>> unitOfWork,
                                              @org.axonframework.common.annotation.MetaData("notExist") String value) {
             super(createCommand.getId());
             Assert.assertNotNull(metaData);

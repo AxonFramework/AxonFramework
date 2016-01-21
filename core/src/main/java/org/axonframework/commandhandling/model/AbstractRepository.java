@@ -61,7 +61,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         A aggregate = doCreateNew(factoryMethod);
         aggregate.execute(root -> Assert.isTrue(aggregateType.isInstance(root),
                                                 "Unsuitable aggregate for this repository: wrong type"));
-        UnitOfWork uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, Aggregate<T>> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
         Assert.isTrue(aggregates.putIfAbsent(aggregate.identifier(), aggregate) == null,
                       "The Unit of Work already has an Aggregate with the same identifier");
@@ -81,7 +81,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      */
     @Override
     public A load(String aggregateIdentifier, Long expectedVersion) {
-        UnitOfWork uow = CurrentUnitOfWork.get();
+        UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, A> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
         A aggregate = aggregates.computeIfAbsent(aggregateIdentifier,
                                                  s -> doLoad(aggregateIdentifier, expectedVersion));

@@ -69,8 +69,8 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
                           MultiplexingEventProcessingMonitor monitor) {
         try {
             for (EventMessage event : events) {
-                UnitOfWork unitOfWork = DefaultUnitOfWork.startAndGet(event);
-                InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(event, unitOfWork,
+                UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
+                InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
                         interceptors, (message, uow) -> {
                             eventListeners.forEach(eventListener -> eventListener.handle(message));
                             return null;

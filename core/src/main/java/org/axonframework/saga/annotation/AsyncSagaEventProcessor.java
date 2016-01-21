@@ -53,7 +53,7 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     private final int processorId;
     private final RingBuffer<AsyncSagaProcessingEvent> ringBuffer;
     private final AsyncAnnotatedSagaManager.SagaManagerStatus status;
-    private UnitOfWork unitOfWork;
+    private UnitOfWork<EventMessage<?>> unitOfWork;
     private final ErrorHandler errorHandler;
 
     private AsyncSagaEventProcessor(SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,

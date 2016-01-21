@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
@@ -46,7 +47,7 @@ public class AnnotationCommandHandlerAdapterTest {
     private AnnotationCommandHandlerAdapter testSubject;
     private CommandBus mockBus;
     private MyCommandHandler mockTarget;
-    private UnitOfWork mockUnitOfWork;
+    private UnitOfWork<CommandMessage<?>> mockUnitOfWork;
     private ParameterResolverFactory parameterResolverFactory;
 
     @Before
@@ -85,7 +86,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test
     public void testHandlerDispatching_WithCustomCommandName() throws Exception {
-        Object actualReturnValue = testSubject.handle(new GenericCommandMessage("almostLong", 1L, MetaData.emptyInstance()),
+        Object actualReturnValue = testSubject.handle(new GenericCommandMessage<>("almostLong", 1L, MetaData.emptyInstance()),
                                                       mockUnitOfWork);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
@@ -132,19 +133,19 @@ public class AnnotationCommandHandlerAdapterTest {
 
         @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
-        public void myVoidHandler(String stringCommand, UnitOfWork unitOfWork) {
+        public void myVoidHandler(String stringCommand, UnitOfWork<CommandMessage<?>> unitOfWork) {
             voidHandlerInvoked++;
         }
 
         @CommandHandler(commandName = "almostLong")
-        public Long myAlmostDuplicateReturningHandler(Long longCommand, UnitOfWork unitOfWork) {
+        public Long myAlmostDuplicateReturningHandler(Long longCommand, UnitOfWork<CommandMessage<?>> unitOfWork) {
             assertNotNull("The UnitOfWork was not passed to the command handler", unitOfWork);
             almostDuplicateReturningHandlerInvoked++;
             return longCommand;
         }
 
         @CommandHandler
-        public Long myReturningHandler(Long longCommand, UnitOfWork unitOfWork) {
+        public Long myReturningHandler(Long longCommand, UnitOfWork<CommandMessage<?>> unitOfWork) {
             assertNotNull("The UnitOfWork was not passed to the command handler", unitOfWork);
             returningHandlerInvoked++;
             return longCommand;

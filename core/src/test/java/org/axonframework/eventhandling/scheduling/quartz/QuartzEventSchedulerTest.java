@@ -120,7 +120,7 @@ public class QuartzEventSchedulerTest {
     @Test
     public void testScheduleJob_CustomUnitOfWork() throws InterruptedException, SchedulerException {
         final UnitOfWorkFactory unitOfWorkFactory = mock(UnitOfWorkFactory.class);
-        UnitOfWork unitOfWork = mock(UnitOfWork.class);
+        UnitOfWork<EventMessage<?>> unitOfWork = mock(UnitOfWork.class);
         doAnswer(invocation -> {
             ((Runnable) invocation.getArguments()[0]).run();
             return null;

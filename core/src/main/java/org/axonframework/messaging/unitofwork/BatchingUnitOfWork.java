@@ -19,6 +19,7 @@ import org.axonframework.messaging.Message;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -27,16 +28,17 @@ import java.util.stream.Collectors;
  * @author Rene de Waele
  * @since 3.0
  */
-public class BatchingUnitOfWork extends AbstractUnitOfWork {
+public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
-    private final List<MessageProcessingContext> processingContexts;
-    private MessageProcessingContext processingContext;
+    private final List<MessageProcessingContext<T>> processingContexts;
+    private MessageProcessingContext<T> processingContext;
 
-    public BatchingUnitOfWork(Message<?>... messages) {
+    @SafeVarargs
+    public BatchingUnitOfWork(T... messages) {
         this(Arrays.asList(messages));
     }
 
-    public BatchingUnitOfWork(List<Message<?>> messages) {
+    public BatchingUnitOfWork(List<T> messages) {
         Assert.isFalse(messages.isEmpty(), "The list of Messages to process is empty");
         processingContexts = messages.stream().map(MessageProcessingContext::new).collect(Collectors.toList());
         processingContext = processingContexts.get(0);
@@ -57,7 +59,7 @@ public class BatchingUnitOfWork extends AbstractUnitOfWork {
         Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result = null;
         Exception exception = null;
-        for (MessageProcessingContext processingContext : processingContexts) {
+        for (MessageProcessingContext<T> processingContext : processingContexts) {
             this.processingContext = processingContext;
             try {
                 result = task.call();
@@ -95,8 +97,14 @@ public class BatchingUnitOfWork extends AbstractUnitOfWork {
     }
 
     @Override
-    public Message<?> getMessage() {
+    public T getMessage() {
         return processingContext.getMessage();
+    }
+
+    @Override
+    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+        processingContext.transformMessage(transformOperator);
+        return this;
     }
 
     @Override
@@ -106,7 +114,7 @@ public class BatchingUnitOfWork extends AbstractUnitOfWork {
 
     @Override
     protected void notifyHandlers(Phase phase) {
-        Iterator<MessageProcessingContext> iterator = phase.isReverseCallbackOrder()
+        Iterator<MessageProcessingContext<T>> iterator = phase.isReverseCallbackOrder()
                 ? new LinkedList<>(processingContexts).descendingIterator() : processingContexts.iterator();
         iterator.forEachRemaining(context -> (processingContext = context).notifyHandlers(this, phase));
     }
@@ -117,7 +125,7 @@ public class BatchingUnitOfWork extends AbstractUnitOfWork {
     }
 
     @Override
-    protected void addHandler(Phase phase, Consumer<UnitOfWork> handler) {
+    protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
         processingContext.addHandler(phase, handler);
     }
 

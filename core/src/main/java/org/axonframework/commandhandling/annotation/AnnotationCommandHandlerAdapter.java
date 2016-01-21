@@ -97,7 +97,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      * @throws Exception any exception occurring while handling the command
      */
     @Override
-    public Object handle(CommandMessage<?> command, UnitOfWork unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
         return modelInspector.commandHandler(command.getCommandName()).handle(command, target);
     }
 

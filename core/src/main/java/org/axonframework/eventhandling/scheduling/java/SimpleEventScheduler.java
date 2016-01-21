@@ -130,7 +130,7 @@ public class SimpleEventScheduler implements EventScheduler {
                 logger.debug("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
             try {
-                UnitOfWork unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+                UnitOfWork<EventMessage<?>> unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
                 unitOfWork.execute(() -> eventBus.publish(eventMessage));
             } finally {
                 tokens.remove(tokenId);

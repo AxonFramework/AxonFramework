@@ -34,10 +34,9 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.0
  */
-public class CommandHandlingEntry extends DisruptorUnitOfWork {
+public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>> {
 
     private final MessageHandler<CommandMessage<?>> repeatingCommandHandler;
-    private CommandMessage<?> command;
     private InterceptorChain<CommandMessage<?>> invocationInterceptorChain;
     private InterceptorChain<CommandMessage<?>> publisherInterceptorChain;
     private Exception exceptionResult;
@@ -59,21 +58,12 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
     }
 
     /**
-     * Returns the CommandMessage to be executed.
-     *
-     * @return the CommandMessage to be executed
-     */
-    public CommandMessage<?> getCommand() {
-        return command;
-    }
-
-    /**
      * Returns the InterceptorChain for the invocation process registered with this entry, or <code>null</code> if none
      * is available.
      *
      * @return the InterceptorChain for the invocation process registered with this entry
      */
-    public InterceptorChain getInvocationInterceptorChain() {
+    public InterceptorChain<CommandMessage<?>> getInvocationInterceptorChain() {
         return invocationInterceptorChain;
     }
 
@@ -197,7 +187,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
                       int newInvokerSegmentId, int newPublisherSegmentId, BlacklistDetectingCallback newCallback,
                       List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors,
                       List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
-        this.command = newCommand;
         this.invokerSegmentId = newInvokerSegmentId;
         this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;
@@ -206,12 +195,12 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
         this.result = null;
         this.exceptionResult = null;
         this.aggregateIdentifier = null;
-        this.invocationInterceptorChain = new DefaultInterceptorChain<>(newCommand,
-                                                                        this,
+        this.invocationInterceptorChain = new DefaultInterceptorChain<>(
+                this,
                 invokerInterceptors, newCommandHandler
         );
-        this.publisherInterceptorChain = new DefaultInterceptorChain<>(newCommand,
-                                                                       this,
+        this.publisherInterceptorChain = new DefaultInterceptorChain<>(
+                this,
                 publisherInterceptors, repeatingCommandHandler
         );
         reset(newCommand);
@@ -224,7 +213,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
      */
     public void resetAsRecoverEntry(String newAggregateIdentifier) {
         this.isRecoverEntry = true;
-        this.command = null;
         this.callback = null;
         result = null;
         exceptionResult = null;
@@ -232,6 +220,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
         invokerSegmentId = -1;
         this.aggregateIdentifier = newAggregateIdentifier;
         this.messagesToPublish.clear();
+        reset(null);
     }
 
     public void registerAggregateIdentifier(String aggregateIdentifier) {
@@ -246,7 +235,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork {
     private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         @Override
-        public Object handle(CommandMessage<?> message, UnitOfWork unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> message, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             if (exceptionResult != null) {
                 throw exceptionResult;
             }

@@ -30,7 +30,7 @@ import java.util.LinkedList;
  */
 public abstract class CurrentUnitOfWork {
 
-    private static final ThreadLocal<Deque<UnitOfWork>> CURRENT = new ThreadLocal<>();
+    private static final ThreadLocal<Deque<UnitOfWork<?>>> CURRENT = new ThreadLocal<>();
 
     private CurrentUnitOfWork() {
     }
@@ -54,7 +54,7 @@ public abstract class CurrentUnitOfWork {
      * @return The UnitOfWork bound to the current thread.
      * @throws IllegalStateException if no UnitOfWork is active
      */
-    public static UnitOfWork get() {
+    public static UnitOfWork<?> get() {
         if (isEmpty()) {
             throw new IllegalStateException("No UnitOfWork is currently started for this thread.");
         }
@@ -62,7 +62,7 @@ public abstract class CurrentUnitOfWork {
     }
 
     private static boolean isEmpty() {
-        Deque<UnitOfWork> unitsOfWork = CURRENT.get();
+        Deque<UnitOfWork<?>> unitsOfWork = CURRENT.get();
         return unitsOfWork == null || unitsOfWork.isEmpty();
     }
 
@@ -82,7 +82,7 @@ public abstract class CurrentUnitOfWork {
      *
      * @param unitOfWork The UnitOfWork to bind to the current thread.
      */
-    public static void set(UnitOfWork unitOfWork) {
+    public static void set(UnitOfWork<?> unitOfWork) {
         if (CURRENT.get() == null) {
             CURRENT.set(new LinkedList<>());
         }
@@ -97,7 +97,7 @@ public abstract class CurrentUnitOfWork {
      * @throws IllegalStateException when the given UnitOfWork was not the current active UnitOfWork. This exception
      *                               indicates a potentially wrong nesting of Units Of Work.
      */
-    public static void clear(UnitOfWork unitOfWork) {
+    public static void clear(UnitOfWork<?> unitOfWork) {
         if (isStarted() && CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
             if (CURRENT.get().isEmpty()) {

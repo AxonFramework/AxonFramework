@@ -39,13 +39,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -98,7 +92,7 @@ public class SpringAMQPEventBusTest {
     @Test
     public void testSendMessage_WithTransactionalUnitOfWork() throws IOException {
         GenericEventMessage<String> message = new GenericEventMessage<>("Message");
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
 
         Connection connection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(connection);
@@ -125,7 +119,7 @@ public class SpringAMQPEventBusTest {
     @Test
     public void testSendMessage_WithTransactionalUnitOfWork_ChannelClosedBeforeCommit() throws IOException {
         GenericEventMessage<String> message = new GenericEventMessage<>("Message");
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
 
         Connection connection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(connection);
@@ -156,7 +150,7 @@ public class SpringAMQPEventBusTest {
     @Test
     public void testSendMessage_WithUnitOfWorkRollback() throws IOException {
         GenericEventMessage<String> message = new GenericEventMessage<>("Message");
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
 
         Connection connection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(connection);
@@ -200,7 +194,7 @@ public class SpringAMQPEventBusTest {
         when(serializer.serialize(message.getMetaData(), byte[].class))
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
 
-        UnitOfWork uow = DefaultUnitOfWork.startAndGet(message);
+        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
 
         testSubject.publish(message);
         verify(channel, never()).waitForConfirms();

@@ -24,7 +24,7 @@ public class GenericMessageTest {
 
     @Before
     public void setUp() throws Exception {
-        UnitOfWork unitOfWork = mock(UnitOfWork.class);
+        UnitOfWork<?> unitOfWork = mock(UnitOfWork.class);
         when(unitOfWork.getCorrelationData()).thenAnswer(invocation -> correlationData);
         CurrentUnitOfWork.set(unitOfWork);
     }

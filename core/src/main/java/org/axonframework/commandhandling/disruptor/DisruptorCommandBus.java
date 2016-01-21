@@ -387,7 +387,7 @@ public class DisruptorCommandBus implements CommandBus {
         @Override
         public void handleEventException(Throwable ex, long sequence, Object event) {
             logger.error("Exception occurred while processing a {}.",
-                         ((CommandHandlingEntry) event).getCommand().getPayloadType().getSimpleName(),
+                         ((CommandHandlingEntry) event).getMessage().getPayloadType().getSimpleName(),
                          ex);
         }
 

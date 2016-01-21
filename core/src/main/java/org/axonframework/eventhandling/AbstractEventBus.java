@@ -42,7 +42,7 @@ public abstract class AbstractEventBus implements EventBus {
     @Override
     public void publish(List<EventMessage<?>> events) {
         if (CurrentUnitOfWork.isStarted()) {
-            UnitOfWork unitOfWork = CurrentUnitOfWork.get();
+            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Assert.state(!unitOfWork.phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT),
                     "It is not allowed to publish events when the current Unit of Work has already been committed. " +
                     "Please start a new Unit of Work before publishing events.");

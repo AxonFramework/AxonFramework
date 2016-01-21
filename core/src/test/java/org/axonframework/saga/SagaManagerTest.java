@@ -36,16 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  *
@@ -148,7 +139,7 @@ public class SagaManagerTest {
 
         doAnswer(invocationOnMock -> {
             if (nestingCounter.decrementAndGet() > 0) {
-                UnitOfWork uow = DefaultUnitOfWork.startAndGet((Message<?>) invocationOnMock.getArguments()[0]);
+                UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet((Message<?>) invocationOnMock.getArguments()[0]);
                 try {
                     testSubject.handle(event);
                 } finally {

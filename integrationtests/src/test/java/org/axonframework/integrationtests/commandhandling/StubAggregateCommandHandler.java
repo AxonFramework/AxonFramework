@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
@@ -44,7 +45,7 @@ public class StubAggregateCommandHandler {
 
     @CommandHandler
     public void handleStubAggregateUpdatedWithExtraEvent(UpdateStubAggregateWithExtraEventCommand command,
-                                                         UnitOfWork unitOfWork) {
+                                                         UnitOfWork<CommandMessage<?>> unitOfWork) {
         Aggregate<StubAggregate> aggregate = repository.load(command.getAggregateId().toString());
         aggregate.execute(StubAggregate::makeAChange);
         eventBus.publish(new GenericEventMessage<>(new MyEvent()));

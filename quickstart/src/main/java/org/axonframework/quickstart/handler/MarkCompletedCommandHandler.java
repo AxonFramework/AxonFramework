@@ -37,7 +37,7 @@ public class MarkCompletedCommandHandler implements MessageHandler<CommandMessag
     }
 
     @Override
-    public Object handle(CommandMessage<?> commandMessage, UnitOfWork unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> commandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
         MarkCompletedCommand command = (MarkCompletedCommand) commandMessage.getPayload();
         Aggregate<ToDoItem> toDoItem = repository.load(command.getTodoId());
         toDoItem.execute(ToDoItem::markCompleted);
