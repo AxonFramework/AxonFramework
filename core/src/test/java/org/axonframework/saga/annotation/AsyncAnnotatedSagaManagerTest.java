@@ -26,24 +26,22 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.eventhandling.EventProcessingMonitor;
 import org.axonframework.saga.Saga;
 import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.unitofwork.TransactionManager;
 import org.junit.*;
-import org.mockito.internal.stubbing.answers.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.mockito.internal.stubbing.answers.CallsRealMethods;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.domain.GenericEventMessage.asEventMessage;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -119,6 +117,22 @@ public class AsyncAnnotatedSagaManagerTest {
         assertEquals("Incorrect live saga count", 0, sagaRepository.getLiveSagas());
     }
 
+    @Test
+    public void testUnitOfWorkClosedWhenNotHandlingSagas() throws InterruptedException {
+        TransactionManager<Object> transactionManager = mock(TransactionManager.class);
+        when(transactionManager.startTransaction()).thenReturn(new Object());
+        testSubject.setTransactionManager(transactionManager);
+        testSubject.start();
+
+        testSubject.handle(asEventMessage(new UpdateEvent("notExist")));
+        testSubject.stop();
+        executorService.shutdown();
+        assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));
+
+        verify(transactionManager, times(3)).startTransaction();
+        verify(transactionManager, times(3)).commitTransaction(anyObject());
+    }
+
     @Test(timeout = 10000, expected = AxonConfigurationException.class)
     public void testThreadPoolExecutorHasTooSmallCorePoolSize() throws InterruptedException {
         testSubject.setStartTimeout(100);
@@ -173,9 +187,19 @@ public class AsyncAnnotatedSagaManagerTest {
         testSubject.subscribeEventProcessingMonitor(mockMonitor);
         final StubInMemorySagaRepository spy = spy(sagaRepository);
         testSubject.setSagaRepository(spy);
-        Exception failure = new RuntimeException("Mock Exception");
-        doThrow(failure).when(spy).commit(isA(Saga.class));
-        doThrow(failure).when(spy).add(isA(Saga.class));
+        final AtomicBoolean failureMode = new AtomicBoolean(true);
+        final Answer failure = new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                if (failureMode.get()) {
+                    throw new RuntimeException("Mock Exception");
+                } else {
+                    return invocationOnMock.callRealMethod();
+                }
+            }
+        };
+        doAnswer(failure).when(spy).commit(isA(Saga.class));
+        doAnswer(failure).when(spy).add(isA(Saga.class));
         testSubject.start();
         assertEquals(0, sagaRepository.getKnownSagas());
 
@@ -187,8 +211,7 @@ public class AsyncAnnotatedSagaManagerTest {
         Thread.sleep(500);
         // to make sure at least one failed call was made...
         verify(spy, atLeastOnce()).add(isA(Saga.class));
-        doCallRealMethod().when(spy).commit(isA(Saga.class));
-        doCallRealMethod().when(spy).add(isA(Saga.class));
+        failureMode.set(false);
         testSubject.stop();
         executorService.shutdown();
         assertTrue("Service refused to stop in 10 seconds", executorService.awaitTermination(10, TimeUnit.SECONDS));

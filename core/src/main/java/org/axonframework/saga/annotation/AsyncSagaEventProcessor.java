@@ -260,8 +260,8 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
     @SuppressWarnings("unchecked")
     private boolean persistProcessedSagas(boolean logExceptions) throws Exception {
         try {
+            Set<String> committedSagas = new HashSet<String>();
             if (!processedSagas.isEmpty()) {
-                Set<String> committedSagas = new HashSet<String>();
                 ensureActiveUnitOfWork();
                 for (Saga saga : processedSagas.values()) {
                     if (newlyCreatedSagas.containsKey(saga.getSagaIdentifier())) {
@@ -271,10 +271,12 @@ public final class AsyncSagaEventProcessor implements EventHandler<AsyncSagaProc
                     }
                     committedSagas.add(saga.getSagaIdentifier());
                 }
-                unitOfWork.commit();
-                processedSagas.keySet().removeAll(committedSagas);
-                newlyCreatedSagas.keySet().removeAll(committedSagas);
             }
+            if (unitOfWork != null && unitOfWork.isStarted()) {
+                unitOfWork.commit();
+            }
+            processedSagas.keySet().removeAll(committedSagas);
+            newlyCreatedSagas.keySet().removeAll(committedSagas);
             return true;
         } catch (Exception e) {
             if (AxonNonTransientException.isCauseOf(e)) {
