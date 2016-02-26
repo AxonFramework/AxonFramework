@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package org.axonframework.common.annotation;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,7 +37,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      * Creates a MultiParameterResolverFactory instance with the given <code>delegates</code>, which are automatically
      * ordered based on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes.
      * Classes with the same Priority are kept in the order as provided in the <code>delegates</code>.
-     * <p/>
+     * <p>
      * If one of the delegates is a MultiParameterResolverFactory itself, that factory's delegates are 'mixed' with
      * the given <code>delegates</code>, based on their respective order.
      *
@@ -51,7 +52,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
      * Creates a MultiParameterResolverFactory instance with the given <code>delegates</code>, which are automatically
      * ordered based on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes.
      * Classes with the same Priority are kept in the order as provided in the <code>delegates</code>.
-     * <p/>
+     * <p>
      * If one of the delegates is a MultiParameterResolverFactory itself, that factory's delegates are 'mixed' with
      * the given <code>delegates</code>, based on their respective order.
      *
@@ -104,11 +105,11 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
         return Arrays.asList(factories);
     }
 
+
     @Override
-    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                            Annotation[] parameterAnnotations) {
+    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         for (ParameterResolverFactory factory : factories) {
-            ParameterResolver resolver = factory.createInstance(memberAnnotations, parameterType, parameterAnnotations);
+            ParameterResolver resolver = factory.createInstance(executable, parameters, parameterIndex);
             if (resolver != null) {
                 return resolver;
             }

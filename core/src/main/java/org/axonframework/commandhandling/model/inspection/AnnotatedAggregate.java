@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,9 +56,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     public void registerRoot(Callable<T> aggregateFactory) throws Exception {
         this.aggregateRoot = executeWithResultOrException(aggregateFactory::call);
-        while (!delayedTasks.isEmpty()) {
-            delayedTasks.poll().run();
-        }
+        execute(() -> {
+            while (!delayedTasks.isEmpty()) {
+                delayedTasks.poll().run();
+            }
+        });
+
     }
 
     @Override

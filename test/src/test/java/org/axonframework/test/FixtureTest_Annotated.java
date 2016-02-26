@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,9 +29,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -41,6 +41,13 @@ public class FixtureTest_Annotated {
     @Before
     public void setUp() {
         fixture = Fixtures.newGivenWhenThenFixture(AnnotatedAggregate.class);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (CurrentUnitOfWork.isStarted()) {
+            fail("A unit of work is still running");
+        }
     }
 
     @Test
@@ -59,20 +66,20 @@ public class FixtureTest_Annotated {
     public void testAggregateIdentifier_ServerGeneratedIdentifier() {
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given()
-               .when(new CreateAggregateCommand());
+                .when(new CreateAggregateCommand());
     }
 
     @Test(expected = FixtureExecutionException.class)
     public void testUnavailableResourcesCausesFailure() {
         fixture.given()
-               .when(new CreateAggregateCommand());
+                .when(new CreateAggregateCommand());
     }
 
     @Test
     public void testAggregateIdentifier_IdentifierAutomaticallyDeducted() {
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
-               .when(new TestCommand("AggregateId"))
-               .expectEvents(new MyEvent("AggregateId", 3));
+                .when(new TestCommand("AggregateId"))
+                .expectEvents(new MyEvent("AggregateId", 3));
 
         DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {
@@ -95,8 +102,8 @@ public class FixtureTest_Annotated {
                               new TestCommand("aggregateId"),
                               new TestCommand("aggregateId"),
                               new TestCommand("aggregateId"))
-               .when(new TestCommand("aggregateId"))
-               .expectEvents(new MyEvent("aggregateId", 4));
+                .when(new TestCommand("aggregateId"))
+                .expectEvents(new MyEvent("aggregateId", 4));
     }
 
     @Test(expected = FixtureExecutionException.class)
@@ -104,7 +111,7 @@ public class FixtureTest_Annotated {
         // a 'when' will cause command handlers to be registered.
         fixture.registerInjectableResource(new HardToCreateResource());
         fixture.given()
-               .when(new CreateAggregateCommand("AggregateId"));
+                .when(new CreateAggregateCommand("AggregateId"));
         fixture.registerInjectableResource("I am injectable");
     }
 
@@ -126,8 +133,8 @@ public class FixtureTest_Annotated {
     @Test
     public void testFixture_AggregateDeleted() {
         fixture.given(new MyEvent("aggregateId", 5))
-               .when(new DeleteCommand("aggregateId", false))
-               .expectEvents(new MyAggregateDeletedEvent(false));
+                .when(new DeleteCommand("aggregateId", false))
+                .expectEvents(new MyAggregateDeletedEvent(false));
     }
 
     @Test

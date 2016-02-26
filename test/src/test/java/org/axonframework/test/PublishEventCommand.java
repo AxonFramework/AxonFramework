@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.mongo.criteria;
-
-import com.mongodb.BasicDBObject;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+package org.axonframework.test;
 
 /**
  * @author Allard Buijze
  */
-public class AndTest {
+class PublishEventCommand {
 
-    @Test
-    public void testAndOperator() {
-        MongoCriteria criteria1 = new StubMongoCriteria(new BasicDBObject("a1", "b"));
-        MongoCriteria criteria2 = new StubMongoCriteria(new BasicDBObject("a2", "b"));
-        String actual = new And(criteria1, criteria2).asMongoObject().toString();
-        assertEquals("{ \"$and\" : [ " + criteria1.toString() + " , " + criteria2.toString() + "]}", actual);
+    private Object aggregateIdentifier;
+
+    PublishEventCommand(Object aggregateIdentifier) {
+        this.aggregateIdentifier = aggregateIdentifier;
+    }
+
+    public Object getAggregateIdentifier() {
+        return aggregateIdentifier;
     }
 }

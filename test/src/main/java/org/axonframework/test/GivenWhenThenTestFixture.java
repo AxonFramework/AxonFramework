@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResol
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.eventhandling.AbstractEventBus;
@@ -37,6 +38,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.test.matchers.FieldFilter;
@@ -49,6 +51,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -76,7 +79,7 @@ public class GivenWhenThenTestFixture<T>
     private Deque<DomainEventMessage> storedEvents;
     private List<EventMessage> publishedEvents;
     private long sequenceNumber = 0;
-    private Aggregate workingAggregate;
+    private Aggregate<T> workingAggregate;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
@@ -298,8 +301,8 @@ public class GivenWhenThenTestFixture<T>
                                                        workingAggregate.rootType().getName(),
                                                        eventSourcedAggregate.rootType().getName()));
         }
-        ensureValuesEqual(workingAggregate,
-                          eventSourcedAggregate,
+        ensureValuesEqual(workingAggregate.invoke(Function.identity()),
+                          eventSourcedAggregate.invoke(Function.identity()),
                           eventSourcedAggregate.rootType().getName(),
                           comparedEntries, fieldFilter);
     }
@@ -320,15 +323,11 @@ public class GivenWhenThenTestFixture<T>
                         && !Modifier.isTransient(field.getModifiers())) {
                     ensureAccessible(field);
                     String newPropertyPath = propertyPath + "." + field.getName();
-                    try {
-                        Object workingFieldValue = field.get(workingValue);
-                        Object eventSourcedFieldValue = field.get(eventSourcedValue);
-                        ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath,
-                                          comparedEntries, fieldFilter);
-                    } catch (IllegalAccessException e) {
-                        logger.warn("Could not access field \"{}\". Unable to detect inappropriate state changes.",
-                                    newPropertyPath);
-                    }
+
+                    Object workingFieldValue = ReflectionUtils.getFieldValue(field, workingValue);
+                    Object eventSourcedFieldValue = ReflectionUtils.getFieldValue(field, eventSourcedValue);
+                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath,
+                                      comparedEntries, fieldFilter);
                 }
             }
         }
@@ -451,6 +450,14 @@ public class GivenWhenThenTestFixture<T>
 
         @Override
         public void appendEvents(List<DomainEventMessage<?>> events) {
+            if (CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.get().onPrepareCommit(u -> doAppendEvents(events));
+            } else {
+                doAppendEvents(events);
+            }
+        }
+
+        protected void doAppendEvents(List<DomainEventMessage<?>> events) {
             for (DomainEventMessage event : events) {
                 if (aggregateIdentifier == null) {
                     aggregateIdentifier = event.getAggregateIdentifier();
@@ -493,9 +500,9 @@ public class GivenWhenThenTestFixture<T>
             }
             return new SimpleDomainEventStream(
                     allEvents.stream()
-                             .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
-                                     && m.getSequenceNumber() <= lastSequenceNumber)
-                             .collect(toList()));
+                            .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
+                                    && m.getSequenceNumber() <= lastSequenceNumber)
+                            .collect(toList()));
         }
 
         private void injectAggregateIdentifier() {
@@ -535,17 +542,12 @@ public class GivenWhenThenTestFixture<T>
         @Override
         public Object handle(UnitOfWork<CommandMessage<?>> unitOfWork, InterceptorChain<CommandMessage<?>> interceptorChain)
                 throws Exception {
-            // TODO: Fix
-//            unitOfWork.onPrepareCommit(new UnitOfWorkListenerAdapter() {
-//                @Override
-//                public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-//                                            List<EventMessage> events) {
-//                    Iterator<AggregateRoot> iterator = aggregateRoots.iterator();
-//                    if (iterator.hasNext()) {
-//                        workingAggregate = iterator.next();
-//                    }
-//                }
-//            });
+            unitOfWork.onPrepareCommit(u -> {
+                Set<Aggregate> aggregates = u.getResource("ManagedAggregates");
+                if (aggregates != null && aggregates.size() == 1) {
+                    workingAggregate = aggregates.iterator().next();
+                }
+            });
             return interceptorChain.proceed();
         }
     }

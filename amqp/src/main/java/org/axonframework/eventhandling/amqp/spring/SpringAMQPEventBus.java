@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQ
 /**
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
  * outgoing messages are sent to a configured Exchange, which defaults to {@value #DEFAULT_EXCHANGE_NAME}.
- * <p/>
+ * <p>
  * This terminal does not dispatch Events internally, as it relies on each event processor to listen to it's own AMQP Queue.
  *
  * @author Allard Buijze
@@ -74,7 +74,9 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     protected void prepareCommit(List<EventMessage<?>> events) {
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
-            if (waitForAck) {
+            if (isTransactional) {
+                channel.txSelect();
+            } else if (waitForAck) {
                 channel.confirmSelect();
             }
             for (EventMessage event : events) {
@@ -225,7 +227,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     /**
      * Sets the ListenerContainerLifecycleManager that creates and manages the lifecycle of Listener Containers for the
      * event processors that are connected to this terminal.
-     * <p/>
+     * <p>
      * Defaults to an autowired ListenerContainerLifecycleManager
      *
      * @param listenerContainerLifecycleManager the listenerContainerLifecycleManager to set
@@ -237,10 +239,10 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
 
     /**
      * Whether this Terminal should dispatch its Events in a transaction or not. Defaults to <code>false</code>.
-     * <p/>
+     * <p>
      * If a delegate Terminal  is configured, the transaction will be committed <em>after</em> the delegate has
      * dispatched the events.
-     * <p/>
+     * <p>
      * Transactional behavior cannot be enabled if {@link #setWaitForPublisherAck(boolean)} has been set to
      * <code>true</code>.
      *
@@ -256,9 +258,9 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
      * Enables or diables the RabbitMQ specific publisher acknowledgements (confirms). When confirms are enabled, the
      * terminal will wait until the server has acknowledged the reception (or fsync to disk on persistent messages) of
      * all published messages.
-     * <p/>
+     * <p>
      * Server ACKS cannot be enabled when transactions are enabled.
-     * <p/>
+     * <p>
      * See <a href="http://www.rabbitmq.com/confirms.html">RabbitMQ Documentation</a> for more information about
      * publisher acknowledgements.
      *
@@ -274,7 +276,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
      * Sets the maximum amount of time (in milliseconds) the publisher may wait for the acknowledgement of published
      * messages. If not all messages have been acknowledged withing this time, the publication will throw an
      * EventPublicationFailedException.
-     * <p/>
+     * <p>
      * This setting is only used when {@link #setWaitForPublisherAck(boolean)} is set to <code>true</code>.
      *
      * @param publisherAckTimeout The number of milliseconds to wait for confirms, or 0 to wait indefinitely.
@@ -287,7 +289,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
      * Sets the ConnectionFactory providing the Connections and Channels to send messages on. The SpringAMQPTerminal
      * does not cache or reuse connections. Providing a ConnectionFactory instance that caches connections will prevent
      * new connections to be opened for each invocation to {@link #publish(EventMessage[])}
-     * <p/>
+     * <p>
      * Defaults to an autowired Connection Factory.
      *
      * @param connectionFactory The connection factory to set
@@ -300,7 +302,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
      * Sets the Message Converter that creates AMQP Messages from Event Messages and vice versa. Setting this property
      * will ignore the "durable", "serializer" and "routingKeyResolver" properties, which just act as short hands to
      * create a DefaultAMQPMessageConverter instance.
-     * <p/>
+     * <p>
      * Defaults to a DefaultAMQPMessageConverter.
      *
      * @param messageConverter The message converter to convert AMQP Messages to Event Messages and vice versa.
@@ -312,9 +314,9 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     /**
      * Whether or not messages should be marked as "durable" when sending them out. Durable messages suffer from a
      * performance penalty, but will survive a reboot of the Message broker that stores them.
-     * <p/>
+     * <p>
      * By default, messages are durable.
-     * <p/>
+     * <p>
      * Note that this setting is ignored if a {@link
      * #setMessageConverter(org.axonframework.eventhandling.amqp.AMQPMessageConverter) MessageConverter} is provided.
      * In that case, the message converter must add the properties to reflect the required durability setting.
@@ -327,10 +329,10 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
 
     /**
      * Sets the serializer to serialize messages with when sending them to the Exchange.
-     * <p/>
+     * <p>
      * Defaults to an autowired serializer, which requires exactly 1 eligible serializer to be present in the
      * application context.
-     * <p/>
+     * <p>
      * This setting is ignored if a {@link
      * #setMessageConverter(org.axonframework.eventhandling.amqp.AMQPMessageConverter) MessageConverter} is configured.
      *
@@ -344,7 +346,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
      * Sets the RoutingKeyResolver that provides the Routing Key for each message to dispatch. Defaults to a {@link
      * org.axonframework.eventhandling.amqp.PackageRoutingKeyResolver}, which uses the package name of the message's
      * payload as a Routing Key.
-     * <p/>
+     * <p>
      * This setting is ignored if a {@link
      * #setMessageConverter(org.axonframework.eventhandling.amqp.AMQPMessageConverter) MessageConverter} is configured.
      *

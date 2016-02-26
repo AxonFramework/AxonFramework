@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import static java.lang.String.format;
  * process in two steps, which can be executed in different threads. The CommandBus is backed by a {@link Disruptor},
  * which ensures that two steps are executed sequentially in these threads, while minimizing locking and inter-thread
  * communication.
- * <p/>
+ * <p>
  * The process is split into two separate steps, each of which is executed in a different thread:
  * <ol>
  * <li><em>Command Handler execution</em><br/>This process invokes the command handler with the incoming command. The
@@ -57,39 +57,39 @@ import static java.lang.String.format;
  * (with any optional application events) to the event bus. Finally, an asynchronous task is scheduled to invoke the
  * command handler callback with the result of the command handling result.</li>
  * </ol>
- * <p/>
+ * <p>
  * <em>Exceptions and recovery</em>
- * <p/>
+ * <p>
  * This separation of process steps makes this implementation very efficient and highly performing. However, it does
  * not cope with exceptions very well. When an exception occurs, an Aggregate that has been loaded is potentially
  * corrupt. That means that an aggregate does not represent a state that can be reproduced by replaying its committed
  * events. Although this implementation will recover from this corrupt state, it may result in a number of commands
  * being rejected in the meantime. These command may be retried if the cause of the {@link
  * AggregateStateCorruptedException} does not indicate a non-transient error.
- * <p/>
+ * <p>
  * Commands that have been executed against a potentially corrupt Aggregate will result in a {@link
  * AggregateStateCorruptedException} exception. These commands are automatically rescheduled for processing by
  * default. Use {@link DisruptorConfiguration#setRescheduleCommandsOnCorruptState(boolean)} disable this feature. Note
  * that the order in which commands are executed is not fully guaranteed when this feature is enabled (default).
- * <p/>
+ * <p>
  * <em>Limitations of this implementation</em>
- * <p/>
+ * <p>
  * Although this implementation allows applications to achieve extreme performance (over 1M commands on commodity
  * hardware), it does have some limitations. It only allows a single aggregate to be invoked during command processing.
- * <p/>
+ * <p>
  * This implementation can only work with Event Sourced Aggregates.
- * <p/>
+ * <p>
  * <em>Infrastructure considerations</em>
- * <p/>
+ * <p>
  * This CommandBus implementation has special requirements for the Repositories being used during Command Processing.
  * Therefore, the Repository instance to use in the Command Handler must be created using {@link
  * #createRepository(org.axonframework.eventsourcing.AggregateFactory)}.
  * Using another repository will most likely result in undefined behavior.
- * <p/>
+ * <p>
  * The DisruptorCommandBus must have access to at least 3 threads, two of which are permanently used while the
  * DisruptorCommandBus is operational. At least one additional thread is required to invoke callbacks and initiate a
  * recovery process in the case of exceptions.
- * <p/>
+ * <p>
  * Consider providing an alternative {@link org.axonframework.domain.IdentifierFactory} implementation. The default
  * implementation used {@link java.util.UUID#randomUUID()} to generated identifier for Events. The poor performance of
  * this method severely impacts overall performance of the DisruptorCommandBus. A better performing alternative is, for
@@ -170,7 +170,7 @@ public class DisruptorCommandBus implements CommandBus {
         disruptor.handleExceptionsWith(new ExceptionHandler());
 
         disruptor.handleEventsWith(commandHandlerInvokers)
-                 .then(publishers);
+                .then(publishers);
 
         coolingDownPeriod = configuration.getCoolingDownPeriod();
         disruptor.start();
@@ -259,7 +259,7 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
      * <code>aggregateFactory</code>.
-     * <p/>
+     * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
      *
@@ -274,10 +274,10 @@ public class DisruptorCommandBus implements CommandBus {
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
      * <code>aggregateFactory</code>. The given <code>decorator</code> is used to decorate event streams.
-     * <p/>
+     * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
-     * <p/>
+     * <p>
      * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
      * return the same instance as the first invocation, even if the given <code>decorator</code> is different.
      *
@@ -286,8 +286,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <T>              The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
-                                                                                EventStreamDecorator decorator) {
+    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory, EventStreamDecorator decorator) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
             invoker.createRepository(aggregateFactory, decorator);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,13 +105,10 @@ public class SpringAMQPEventBusTest {
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
         testSubject.publish(message);
 
+        uow.commit();
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
                                                   eq(false), eq(false),
                                                   any(AMQP.BasicProperties.class), isA(byte[].class));
-        verify(transactionalChannel, never()).txCommit();
-        verify(transactionalChannel, never()).close();
-
-        uow.commit();
         verify(transactionalChannel).txCommit();
         verify(transactionalChannel).close();
     }
@@ -132,19 +129,19 @@ public class SpringAMQPEventBusTest {
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
         testSubject.publish(message);
 
-        verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
-                                                  eq(false), eq(false),
-                                                  any(AMQP.BasicProperties.class), isA(byte[].class));
-        verify(transactionalChannel, never()).txCommit();
-        verify(transactionalChannel, never()).close();
-
         try {
             uow.commit();
             fail("Expected exception");
         } catch (EventPublicationFailedException e) {
             assertNotNull(e.getMessage());
         }
+        verify(transactionalChannel).txSelect();
+        verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
+                                                  eq(false), eq(false),
+                                                  any(AMQP.BasicProperties.class), isA(byte[].class));
         verify(transactionalChannel, never()).txCommit();
+        verify(transactionalChannel).txRollback();
+        verify(transactionalChannel).close();
     }
 
     @Test
@@ -162,17 +159,16 @@ public class SpringAMQPEventBusTest {
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
         testSubject.publish(message);
 
-        verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
-                                                  eq(false), eq(false),
-                                                  any(AMQP.BasicProperties.class), isA(byte[].class));
         verify(transactionalChannel, never()).txRollback();
         verify(transactionalChannel, never()).txCommit();
         verify(transactionalChannel, never()).close();
 
         uow.rollback();
+        verify(transactionalChannel, never()).basicPublish(eq("mockExchange"), eq("java.lang"),
+                                                           eq(false), eq(false),
+                                                           any(AMQP.BasicProperties.class), isA(byte[].class));
         verify(transactionalChannel, never()).txCommit();
-        verify(transactionalChannel).txRollback();
-        verify(transactionalChannel).close();
+        verify(connectionFactory, never()).createConnection();
     }
 
     @Test
@@ -186,6 +182,7 @@ public class SpringAMQPEventBusTest {
         when(connectionFactory.createConnection()).thenReturn(connection);
         Channel channel = mock(Channel.class);
 
+        when(channel.isOpen()).thenReturn(true);
         when(channel.waitForConfirms()).thenReturn(true);
         when(connection.createChannel(false)).thenReturn(channel);
         GenericEventMessage<String> message = new GenericEventMessage<>("Message");
@@ -206,6 +203,9 @@ public class SpringAMQPEventBusTest {
                                      eq(false), eq(false),
                                      any(AMQP.BasicProperties.class), isA(byte[].class));
         verify(channel).waitForConfirmsOrDie(123);
+        verify(channel, never()).txSelect();
+        verify(channel, never()).txCommit();
+        verify(channel, never()).txRollback();
     }
 
     @Test(expected = IllegalArgumentException.class)

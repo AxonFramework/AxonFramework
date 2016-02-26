@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,8 +53,12 @@ class MyCommandHandler {
     public void handleStrangeCommand(StrangeCommand testCommand) {
         repository.load(testCommand.getAggregateIdentifier().toString(), null).execute(StandardAggregate::doSomething);
         eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
-        eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
         throw new StrangeCommandReceivedException("Strange command received");
+    }
+
+    @CommandHandler
+    public void handleEventPublishingCommand(PublishEventCommand testCommand) {
+        eventBus.publish(new GenericEventMessage<>(new MyApplicationEvent()));
     }
 
     @CommandHandler

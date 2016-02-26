@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,19 @@ package org.axonframework.common.annotation;
 
 import org.axonframework.messaging.Message;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 
 /**
  * Interface for objects capable of creating Parameter Resolver instances for annotated handler methods. These
  * resolvers provide the parameter values to use, given an incoming {@link Message}.
- * <p/>
+ * <p>
  * One of the implementations is the {@link ClasspathParameterResolverFactory}, which allows application developers to
  * provide custom ParameterResolverFactory implementations using the ServiceLoader mechanism. To do so, place a file
  * called <code>org.axonframework.common.annotation.ParameterResolverFactory</code> in the
  * <code>META-INF/services</code> folder. In this file, place the fully qualified class names of all available
  * implementations.
- * <p/>
+ * <p>
  * The factory implementations must be public, non-abstract, have a default public constructor and implement the
  * ParameterResolverFactory interface.
  *
@@ -42,14 +43,13 @@ public interface ParameterResolverFactory {
     /**
      * If available, creates a ParameterResolver instance that can provide a parameter of type
      * <code>parameterType</code> for a given message.
-     * <p/>
+     * <p>
      * If the ParameterResolverFactory cannot provide a suitable ParameterResolver, returns <code>null</code>.
      *
-     * @param memberAnnotations    annotations placed on the member (e.g. method)
-     * @param parameterType        the parameter type to find a resolver for
-     * @param parameterAnnotations annotations placed on the parameter
+     * @param executable     The executable (constructor or method) to inspect
+     * @param parameters     The parameters on the executable to inspect
+     * @param parameterIndex The index of the parameter to return a ParameterResolver for
      * @return a suitable ParameterResolver, or <code>null</code> if none is found
      */
-    ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                     Annotation[] parameterAnnotations);
+    ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex);
 }

@@ -70,6 +70,7 @@ public abstract class CollectionUtils {
      * @return the first annotation found, or <code>null</code> if no such annotation is present
      */
     @SuppressWarnings({"unchecked"})
+    @Deprecated
     public static <T> T getAnnotation(Annotation[] annotations, Class<T> annotationType) {
         for (Annotation annotation : annotations) {
             if (annotation.annotationType().equals(annotationType)) {

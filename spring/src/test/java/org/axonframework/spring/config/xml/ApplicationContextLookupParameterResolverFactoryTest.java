@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2016. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.annotation.FixedValueParameterResolver;
@@ -11,7 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -62,9 +79,8 @@ public class ApplicationContextLookupParameterResolverFactoryTest {
     public static class CustomParameterResolverFactory implements ParameterResolverFactory {
 
         @Override
-        public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                                Annotation[] parameterAnnotations) {
-            if (TimeUnit.class.isAssignableFrom(parameterType)) {
+        public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+            if (TimeUnit.class.isAssignableFrom(parameters[parameterIndex].getType())) {
                 return new FixedValueParameterResolver<>(TimeUnit.DAYS);
             }
             return null;

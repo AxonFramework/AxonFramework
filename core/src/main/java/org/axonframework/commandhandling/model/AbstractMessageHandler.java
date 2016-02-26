@@ -17,10 +17,7 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.MessageHandler;
-import org.axonframework.common.annotation.MessageHandlerInvocationException;
-import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.annotation.*;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
@@ -30,35 +27,26 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T>, An
 
     private final Class<?> payloadType;
     private final int parameterCount;
-    private final ParameterResolver[] parameterResolvers;
+    private final ParameterResolver<?>[] parameterResolvers;
     private final Executable executable;
 
-    public AbstractMessageHandler(Executable executable, ParameterResolverFactory parameterResolverFactory) {
+    public AbstractMessageHandler(Executable executable, Class<?> explicitPayloadType,
+                                  ParameterResolverFactory parameterResolverFactory) {
         this.executable = executable;
         ReflectionUtils.ensureAccessible(this.executable);
         Parameter[] parameters = executable.getParameters();
         this.parameterCount = executable.getParameterCount();
         parameterResolvers = new ParameterResolver[parameterCount];
+        Class<?> supportedPayloadType = explicitPayloadType;
         for (int i = 0; i < parameterCount; i++) {
-            Parameter parameter = parameters[i];
-            parameterResolvers[i] = (parameterResolverFactory.createInstance(executable.getAnnotations(), parameter.getType(), parameter.getAnnotations()));
+            parameterResolvers[i] = (parameterResolverFactory.createInstance(executable, parameters, i));
+            if (supportedPayloadType.isAssignableFrom(parameterResolvers[i].supportedPayloadType())) {
+                supportedPayloadType = parameterResolvers[i].supportedPayloadType();
+            } else if (!parameterResolvers[i].supportedPayloadType().isAssignableFrom(supportedPayloadType)) {
+                throw new UnsupportedHandlerException(String.format("The method %s seems to have parameters that put conflicting requirements on the payload type applicable on that method: %s vs %s", executable.toGenericString(), supportedPayloadType, parameterResolvers[i].supportedPayloadType()), executable);
+            }
         }
-        if (parameterResolvers[0] == null) {
-            this.payloadType = executable.getParameterTypes()[0];
-            parameterResolvers[0] = new ParameterResolver() {
-                @Override
-                public Object resolveParameterValue(Message message) {
-                    return message.getPayload();
-                }
-
-                @Override
-                public boolean matches(Message message) {
-                    return payloadType.isAssignableFrom(message.getPayloadType());
-                }
-            };
-        } else {
-            this.payloadType = null; // TODO: Expect payload type from annotation
-        }
+        this.payloadType = supportedPayloadType;
     }
 
     @Override
@@ -100,6 +88,8 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T>, An
         } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
             if (e.getCause() instanceof Exception) {
                 throw (Exception) e.getCause();
+            } else if (e.getCause() instanceof Error) {
+                throw (Error) e.getCause();
             }
             throw new MessageHandlerInvocationException(
                     String.format("Error handling an object of type [%s]", message.getPayloadType()), e);

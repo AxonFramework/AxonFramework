@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 
 import java.lang.annotation.Annotation;
-
-import static org.axonframework.common.CollectionUtils.getAnnotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 
 /**
  * ParameterResolverFactory that will supply a parameter resolver when a matching parameter annotation is paired
  * with a suitable type of parameter.
- * <p/>
+ * <p>
  * Handling is in place to ensure that primitive parameter types will be resolved correctly from their respective
  * wrapper types.
  *
@@ -37,7 +38,7 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
  * @author Mark Ingram
  * @since 2.1
  */
-public abstract class AbstractAnnotatedParameterResolverFactory<A, P> implements ParameterResolverFactory {
+public abstract class AbstractAnnotatedParameterResolverFactory<A extends Annotation, P> implements ParameterResolverFactory {
 
     private final Class<A> annotationType;
     private final Class<P> declaredParameterType;
@@ -62,10 +63,10 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A, P> implements
     protected abstract ParameterResolver<P> getResolver();
 
     @Override
-    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                            Annotation[] parameterAnnotations) {
-        A annotation = getAnnotation(parameterAnnotations, annotationType);
+    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+        A annotation = AnnotationUtils.findAnnotation(parameters[parameterIndex], annotationType);
         if (annotation != null) {
+            Class<?> parameterType = parameters[parameterIndex].getType();
             if (parameterType.isAssignableFrom(declaredParameterType)) {
                 return getResolver();
             }
@@ -73,7 +74,7 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A, P> implements
             //a 2nd chance to resolve if the parameter is primitive but its boxed wrapper type is assignable
             if (parameterType.isPrimitive()
                     && ReflectionUtils.resolvePrimitiveWrapperType(parameterType)
-                                      .isAssignableFrom(declaredParameterType)) {
+                    .isAssignableFrom(declaredParameterType)) {
                 return getResolver();
             }
         }

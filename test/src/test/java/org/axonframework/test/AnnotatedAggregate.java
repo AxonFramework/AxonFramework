@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,7 @@ class AnnotatedAggregate implements AnnotatedAggregateInterface {
 
     @EventSourcingHandler
     public void handleAll(DomainEventMessage event) {
+        System.out.println("Invoked with payload: " + event.getPayloadType().getName());
         // we don't care about events
     }
 

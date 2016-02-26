@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,7 @@ import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.mongoutils.MongoLauncher;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,10 +46,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
  * <p>Beware with this test, it requires a running mongodb as specified in the configuration file, if no mongo instance
@@ -75,8 +68,8 @@ public class MongoEventStoreTest_DBObjectSerialization {
     private Mongo mongo;
     private DefaultMongoTemplate mongoTemplate;
 
-    private StubAggregateRoot aggregate1;
-    private StubAggregateRoot aggregate2;
+    private List<DomainEventMessage<?>> aggregate1;
+    private List<DomainEventMessage<?>> aggregate2;
 
     @Autowired
     private ApplicationContext context;
@@ -108,26 +101,26 @@ public class MongoEventStoreTest_DBObjectSerialization {
         }
         mongoTemplate = new DefaultMongoTemplate(mongo);
         mongoTemplate.domainEventCollection().getDB().dropDatabase();
-        aggregate1 = new StubAggregateRoot();
+        aggregate1 = new ArrayList<>();
         for (int t = 0; t < 10; t++) {
-            aggregate1.changeState();
+            aggregate1.add(new GenericDomainEventMessage<Object>("aggregate1", t, new StubStateChangedEvent()));
         }
 
-        aggregate2 = new StubAggregateRoot();
-        aggregate2.changeState();
-        aggregate2.changeState();
-        aggregate2.changeState();
+        aggregate2 = new ArrayList<>();
+        for (int t = 0; t < 3; t++) {
+            aggregate2.add(new GenericDomainEventMessage<Object>("aggregate2", t, new StubStateChangedEvent()));
+        }
     }
 
     @Test
     public void testStoreAndLoadEvents() {
         assertNotNull(testSubject);
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
-        assertEquals((long) aggregate1.getRegisteredEventCount(), mongoTemplate.domainEventCollection().count());
+        testSubject.appendEvents(aggregate1);
+        assertEquals((long) aggregate1.size(), mongoTemplate.domainEventCollection().count());
 
         // we store some more events to make sure only correct events are retrieved
-        testSubject.appendEvents(aggregate2.getRegisteredEvents());
-        DomainEventStream events = testSubject.readEvents(aggregate1.getIdentifier());
+        testSubject.appendEvents(aggregate2);
+        DomainEventStream events = testSubject.readEvents("aggregate1");
         List<DomainEventMessage> actualEvents = new ArrayList<>();
         long expectedSequenceNumber = 0L;
         while (events.hasNext()) {
@@ -140,19 +133,16 @@ public class MongoEventStoreTest_DBObjectSerialization {
                          event.getSequenceNumber());
             expectedSequenceNumber++;
         }
-        assertEquals(aggregate1.getRegisteredEventCount(), actualEvents.size());
+        assertEquals(aggregate1.size(), actualEvents.size());
     }
 
     @Test
     public void testLoadWithSnapshotEvent() {
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
-        aggregate1.reset();
-        testSubject.appendSnapshotEvent(aggregate1.createSnapshotEvent());
-        aggregate1.changeState();
-        testSubject.appendEvents(aggregate1.getRegisteredEvents());
-        aggregate1.reset();
+        testSubject.appendEvents(aggregate1.subList(0, 8));
+        testSubject.appendSnapshotEvent(aggregate1.get(8));
+        testSubject.appendEvents(aggregate1.get(9));
 
-        DomainEventStream actualEventStream = testSubject.readEvents(aggregate1.getIdentifier());
+        DomainEventStream actualEventStream = testSubject.readEvents("aggregate1");
         List<DomainEventMessage> domainEvents = new ArrayList<>();
         while (actualEventStream.hasNext()) {
             domainEvents.add(actualEventStream.next());
@@ -212,7 +202,7 @@ public class MongoEventStoreTest_DBObjectSerialization {
 
         CriteriaBuilder criteriaBuilder = testSubject.newCriteriaBuilder();
         testSubject.visitEvents(criteriaBuilder.property("timeStamp").greaterThanEquals(onePM)
-                                               .and(criteriaBuilder.property("timeStamp").lessThanEquals(twoPM)),
+                                        .and(criteriaBuilder.property("timeStamp").lessThanEquals(twoPM)),
                                 eventVisitor);
         verify(eventVisitor, times(12 + 13)).doWithEvent(isA(DomainEventMessage.class));
     }
@@ -250,6 +240,7 @@ public class MongoEventStoreTest_DBObjectSerialization {
     private void setClock(ZonedDateTime zonedDateTime) {
         setClock(Clock.fixed(zonedDateTime.toInstant(), zonedDateTime.getZone()));
     }
+
     private void setClock(Clock clock) {
         GenericEventMessage.clock = clock;
     }

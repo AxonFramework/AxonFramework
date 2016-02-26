@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,14 @@ import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
 import java.util.Arrays;
 
 /**
  * Abstract superclass for annotation based Message handlers. Handlers can be compared with on another to decide upon
  * their priority. Handlers that deal with unrelated payloads (i.e. have no parent-child relationship) are ordered
  * based on their payload type's class name.
- * <p/>
+ * <p>
  * Handler invokers should always evaluate the first (smallest) suitable handler before evaluating the next.
  *
  * @author Allard Buijze
@@ -125,30 +126,26 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * location.
      *
      * @param parameterResolverFactory The factory to create the ParameterResolvers with
-     * @param memberAnnotations        The annotations on the member (e.g. method)
-     * @param parameterTypes           The parameter type of the member
-     * @param parameterAnnotations     The annotations on each of the parameters
+     * @param executable               The member to find resolvers for
      * @param resolvePayload           Indicates whether the payload of the message should be resolved from the
      *                                 parameters
      * @return the parameter resolvers for the given Member details
-     *
      * @see java.lang.reflect.Method
      * @see java.lang.reflect.Constructor
      */
     protected static ParameterResolver[] findResolvers(ParameterResolverFactory parameterResolverFactory,
-                                                       Annotation[] memberAnnotations, Class<?>[] parameterTypes,
-                                                       Annotation[][] parameterAnnotations, boolean resolvePayload) {
-        int parameters = parameterTypes.length;
+                                                       Executable executable, boolean resolvePayload) {
+        int parameters = executable.getParameterCount();
         ParameterResolver[] parameterValueResolvers = new ParameterResolver[parameters];
         for (int i = 0; i < parameters; i++) {
             // currently, the first parameter is considered the payload parameter
             final boolean isPayloadParameter = resolvePayload && i == 0;
-            if (isPayloadParameter && !Message.class.isAssignableFrom(parameterTypes[i])) {
-                parameterValueResolvers[i] = new PayloadParameterResolver(parameterTypes[i]);
+            if (isPayloadParameter && !Message.class.isAssignableFrom(executable.getParameterTypes()[i])) {
+                parameterValueResolvers[i] = new PayloadParameterResolver(executable.getParameterTypes()[i]);
             } else {
-                parameterValueResolvers[i] = parameterResolverFactory.createInstance(memberAnnotations,
-                                                                                     parameterTypes[i],
-                                                                                     parameterAnnotations[i]);
+                parameterValueResolvers[i] = parameterResolverFactory.createInstance(executable,
+                                                                                     executable.getParameters(),
+                                                                                     i);
             }
         }
         return parameterValueResolvers;
@@ -172,25 +169,6 @@ public abstract class AbstractMessageHandler implements Comparable<AbstractMessa
      * @return the annotation instance, or <code>null</code> if no such annotation is present.
      */
     public abstract <T extends Annotation> T getAnnotation(Class<T> annotationType);
-
-    private static class PayloadParameterResolver implements ParameterResolver {
-
-        private final Class<?> payloadType;
-
-        public PayloadParameterResolver(Class<?> payloadType) {
-            this.payloadType = payloadType;
-        }
-
-        @Override
-        public Object resolveParameterValue(Message message) {
-            return message.getPayload();
-        }
-
-        @Override
-        public boolean matches(Message message) {
-            return message.getPayloadType() != null && payloadType.isAssignableFrom(message.getPayloadType());
-        }
-    }
 
     private static final class Score implements Comparable<Score> {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,8 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 import java.util.Map;
 
 /**
@@ -47,13 +48,12 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
     private ApplicationContext applicationContext;
 
-    @SuppressWarnings("SuspiciousMethodCalls")
     @Override
-    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                            Annotation[] parameterAnnotations) {
+    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         if (applicationContext == null) {
             return null;
         }
+        Class<?> parameterType = parameters[parameterIndex].getType();
         Map<String, ?> beansFound = applicationContext.getBeansOfType(parameterType);
         if (beansFound.isEmpty()) {
             return null;
