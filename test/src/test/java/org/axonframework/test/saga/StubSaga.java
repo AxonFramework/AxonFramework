@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventTemplate;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
@@ -38,6 +39,7 @@ public class StubSaga extends AbstractAnnotatedSaga {
     private static final int TRIGGER_DURATION_MINUTES = 10;
     private transient StubGateway stubGateway;
     private transient EventBus eventBus;
+    private transient EventTemplate eventTemplate;
     private transient EventScheduler scheduler;
     private List<Object> handledEvents = new ArrayList<Object>();
     private ScheduleToken timer;
@@ -61,7 +63,11 @@ public class StubSaga extends AbstractAnnotatedSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleEvent(TriggerExistingSagaEvent event) {
         handledEvents.add(event);
-        eventBus.publish(new GenericEventMessage<SagaWasTriggeredEvent>(new SagaWasTriggeredEvent(this)));
+        if (event.isUseEventTemplate()) {
+            eventTemplate.publishEvent(new SagaWasTriggeredEvent(this));
+        } else {
+            eventBus.publish(new GenericEventMessage<SagaWasTriggeredEvent>(new SagaWasTriggeredEvent(this)));
+        }
     }
 
     @EndSaga
@@ -99,6 +105,14 @@ public class StubSaga extends AbstractAnnotatedSaga {
 
     public void setEventBus(EventBus eventBus) {
         this.eventBus = eventBus;
+    }
+
+    public EventTemplate getEventTemplate() {
+        return eventTemplate;
+    }
+
+    public void setEventTemplate(EventTemplate eventTemplate) {
+        this.eventTemplate = eventTemplate;
     }
 
     public EventScheduler getScheduler() {
