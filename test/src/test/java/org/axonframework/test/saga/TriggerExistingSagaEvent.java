@@ -22,12 +22,22 @@ package org.axonframework.test.saga;
 public class TriggerExistingSagaEvent {
 
     private String identifier;
+    private boolean useEventTemplate;
 
     public TriggerExistingSagaEvent(String identifier) {
+        this(identifier, false);
+    }
+
+    public TriggerExistingSagaEvent(String identifier, boolean useEventTemplate) {
         this.identifier = identifier;
+        this.useEventTemplate = useEventTemplate;
     }
 
     public String getIdentifier() {
         return identifier;
+    }
+
+    public boolean isUseEventTemplate() {
+        return useEventTemplate;
     }
 }

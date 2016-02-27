@@ -22,6 +22,7 @@ import org.axonframework.domain.EventMessage;
 import org.axonframework.domain.GenericDomainEventMessage;
 import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventTemplate;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.saga.GenericSagaFactory;
 import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
@@ -82,6 +83,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         sagaManager.setSuppressExceptions(false);
 
         registeredResources.add(eventBus);
+        registeredResources.add(new EventTemplate(eventBus));
         commandBus = new RecordingCommandBus();
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);

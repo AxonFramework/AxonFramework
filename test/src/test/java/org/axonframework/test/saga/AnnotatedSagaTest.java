@@ -123,6 +123,25 @@ public class AnnotatedSagaTest {
     }
 
     @Test
+    public void testFixtureApi_WhenEventIsPublishedToEventTemplate() {
+        UUID aggregate1 = UUID.randomUUID();
+        UUID aggregate2 = UUID.randomUUID();
+        AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
+        FixtureExecutionResult validator = fixture
+                .givenAggregate(aggregate1).published(new TriggerSagaStartEvent(aggregate1.toString()),
+                                                      new TriggerExistingSagaEvent(aggregate1.toString()))
+                .whenAggregate(aggregate1).publishes(new TriggerExistingSagaEvent(aggregate1.toString(), true));
+
+        validator.expectActiveSagas(1);
+        validator.expectAssociationWith("identifier", aggregate1);
+        validator.expectNoAssociationWith("identifier", aggregate2);
+        validator.expectScheduledEventMatching(Duration.standardMinutes(10),
+            Matchers.messageWithPayload(CoreMatchers.any(Object.class)));
+        validator.expectDispatchedCommandsEqualTo();
+        validator.expectPublishedEventsMatching(listWithAnyOf(messageWithPayload(any(SagaWasTriggeredEvent.class))));
+    }
+
+    @Test
     public void testFixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() {
         UUID aggregate1 = UUID.randomUUID();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
