@@ -25,6 +25,7 @@ import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 
@@ -35,7 +36,8 @@ import java.time.format.DateTimeFormatter;
  */
 public class ToDoEventHandler {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("d-M-y H:m");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("d-M-y H:m").withZone(ZoneId.systemDefault());
 
     @EventHandler
     public void handle(ToDoItemCreatedEvent event, @Timestamp Instant time) {

@@ -33,5 +33,5 @@ public interface WhenAggregateEventPublisher {
      * @param event The event published by the aggregate
      * @return a reference to the test results for the validation  phase
      */
-    FixtureExecutionResult publishes(Object event);
+    FixtureExecutionResult publishes(Object event) throws Exception;
 }

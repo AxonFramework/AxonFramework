@@ -89,7 +89,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) {
+    public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
             eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
@@ -100,7 +100,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) {
+    public FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
             eventScheduler.advanceTime(newDateTime, sagaManager::handle);
@@ -128,7 +128,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public ContinuedGivenState givenAPublished(Object event) {
+    public ContinuedGivenState givenAPublished(Object event) throws Exception {
         sagaManager.handle(GenericEventMessage.asEventMessage(event));
         return this;
     }
@@ -144,19 +144,19 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) {
+    public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) throws Exception {
         eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
         return this;
     }
 
     @Override
-    public ContinuedGivenState andThenTimeAdvancesTo(final ZonedDateTime newDateTime) {
+    public ContinuedGivenState andThenTimeAdvancesTo(final ZonedDateTime newDateTime) throws Exception {
         eventScheduler.advanceTime(newDateTime, sagaManager::handle);
         return this;
     }
 
     @Override
-    public ContinuedGivenState andThenAPublished(Object event) {
+    public ContinuedGivenState andThenAPublished(Object event) throws Exception {
         sagaManager.handle(GenericEventMessage.asEventMessage(event));
         return this;
     }
@@ -168,7 +168,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public FixtureExecutionResult whenPublishingA(Object event) {
+    public FixtureExecutionResult whenPublishingA(Object event) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
             sagaManager.handle(GenericEventMessage.asEventMessage(event));
@@ -287,13 +287,13 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         }
 
         @Override
-        public ContinuedGivenState published(Object... events) {
+        public ContinuedGivenState published(Object... events) throws Exception {
             publish(events);
             return AnnotatedSagaTestFixture.this;
         }
 
         @Override
-        public FixtureExecutionResult publishes(Object event) {
+        public FixtureExecutionResult publishes(Object event) throws Exception {
             try {
                 publish(event);
             } finally {
@@ -302,7 +302,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
             return fixtureExecutionResult;
         }
 
-        private void publish(Object... events) {
+        private void publish(Object... events) throws Exception {
             GenericEventMessage.clock = Clock.fixed(currentTime().toInstant(),currentTime().getZone());
 
             try {

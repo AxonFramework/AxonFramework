@@ -111,7 +111,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
 
     @Test
     @DirtiesContext
-    public void testSagaManagerWiring() {
+    public void testSagaManagerWiring() throws Exception {
         // this part should prove correct autowiring of the saga manager
         SagaManager sagaManager = beanFactory.getBean("sagaManager", SagaManager.class);
         assertNotNull(sagaManager);
@@ -172,7 +172,7 @@ public class AnnotationConfigurationBeanDefinitionParserTest {
 
     @Test
     @DirtiesContext
-    public void testAsyncSagaManagerWiring() throws InterruptedException {
+    public void testAsyncSagaManagerWiring() throws Exception {
 
         // this part should prove correct autowiring of the saga manager
         SagaManager sagaManager = beanFactory.getBean("asyncSagaManager", SagaManager.class);

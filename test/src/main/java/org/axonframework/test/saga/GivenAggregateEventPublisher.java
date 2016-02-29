@@ -34,5 +34,5 @@ public interface GivenAggregateEventPublisher {
      * @param events The events published by the aggregate
      * @return a reference to the fixture to support a fluent interface
      */
-    ContinuedGivenState published(Object... events);
+    ContinuedGivenState published(Object... events) throws Exception;
 }
