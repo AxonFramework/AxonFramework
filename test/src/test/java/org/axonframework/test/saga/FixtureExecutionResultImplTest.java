@@ -204,7 +204,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongDateTime() {
+    public void testExpectScheduledEvent_WrongDateTime() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
@@ -212,7 +212,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongClass() {
+    public void testExpectScheduledEvent_WrongClass() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
@@ -220,7 +220,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_WrongEvent() {
+    public void testExpectScheduledEvent_WrongEvent() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1),
                                 new GenericEventMessage<>(applicationEvent));
         eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
@@ -231,7 +231,7 @@ public class FixtureExecutionResultImplTest {
 
     @SuppressWarnings({"unchecked"})
     @Test(expected = AxonAssertionError.class)
-    public void testExpectScheduledEvent_FailedMatcher() {
+    public void testExpectScheduledEvent_FailedMatcher() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});
@@ -240,7 +240,7 @@ public class FixtureExecutionResultImplTest {
     }
 
     @Test
-    public void testExpectScheduledEvent_Found() {
+    public void testExpectScheduledEvent_Found() throws Exception {
         eventScheduler.schedule(Duration.ofSeconds(1), new GenericEventMessage<>(
                 applicationEvent));
         eventScheduler.advanceTime(Duration.ofMillis(500), i -> {});

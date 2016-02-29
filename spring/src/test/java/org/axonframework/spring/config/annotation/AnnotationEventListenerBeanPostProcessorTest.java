@@ -45,7 +45,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
     }
 
     @Test
-    public void testEventHandlerCallsRedirectToAdapter() {
+    public void testEventHandlerCallsRedirectToAdapter() throws Exception {
         Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 
@@ -82,7 +82,7 @@ public class AnnotationEventListenerBeanPostProcessorTest {
 
     @Test
     // verifies issue #73
-    public void testEventHandlerCallsRedirectToAdapter_ExceptionPropagated() {
+    public void testEventHandlerCallsRedirectToAdapter_ExceptionPropagated() throws Exception {
         Object result1 = testSubject.postProcessBeforeInitialization(new SyncEventListener(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 
