@@ -47,7 +47,7 @@ public interface ContinuedGivenState extends WhenState {
      * @param elapsedTime The amount of time that will elapse
      * @return an object that allows registration of the actual events to send
      */
-    ContinuedGivenState andThenTimeElapses(Duration elapsedTime);
+    ContinuedGivenState andThenTimeElapses(Duration elapsedTime) throws Exception;
 
     /**
      * Simulate time shifts in the current given state. This can be useful when the time between given events is of
@@ -56,7 +56,7 @@ public interface ContinuedGivenState extends WhenState {
      * @param newDateTime The time to advance the clock to
      * @return an object that allows registration of the actual events to send
      */
-    ContinuedGivenState andThenTimeAdvancesTo(ZonedDateTime newDateTime);
+    ContinuedGivenState andThenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception;
 
     /**
      * Indicates that the given <code>event</code> has been published in the past. This event is sent to the associated
@@ -65,5 +65,5 @@ public interface ContinuedGivenState extends WhenState {
      * @param event The event to publish
      * @return an object that allows chaining of more given state
      */
-    ContinuedGivenState andThenAPublished(Object event);
+    ContinuedGivenState andThenAPublished(Object event) throws Exception;
 }

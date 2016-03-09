@@ -39,7 +39,7 @@ class MyCommandHandler {
     }
 
     @CommandHandler
-    public void createAggregate(CreateAggregateCommand command) {
+    public void createAggregate(CreateAggregateCommand command) throws Exception {
         repository.newInstance(() -> new StandardAggregate(0, command.getAggregateIdentifier()));
     }
 

@@ -66,7 +66,7 @@ public class SpringBeanParameterResolverFactoryTest {
     }
 
     @Test
-    public void testMethodsAreProperlyInjected() {
+    public void testMethodsAreProperlyInjected() throws Exception {
         assertNotNull(annotatedHandler);
         assertTrue(annotatedHandler instanceof EventListener);
         ((EventListener) annotatedHandler).handle(asEventMessage("Hello"));
@@ -75,7 +75,7 @@ public class SpringBeanParameterResolverFactoryTest {
     }
 
     @Test
-    public void testNewInstanceIsCreatedEachTimePrototypeResourceIsInjected() {
+    public void testNewInstanceIsCreatedEachTimePrototypeResourceIsInjected() throws Exception {
         EventListener handler = (EventListener) applicationContext.getBean("prototypeResourceHandler");
         handler.handle(asEventMessage("Hello1"));
         handler.handle(asEventMessage("Hello2"));

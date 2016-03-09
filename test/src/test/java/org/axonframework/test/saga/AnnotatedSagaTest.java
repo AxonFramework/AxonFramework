@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
 public class AnnotatedSagaTest {
 
     @Test
-    public void testFixtureApi_WhenEventOccurs() {
+    public void testFixtureApi_WhenEventOccurs() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
@@ -66,7 +66,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_AggregatePublishedEvent_NoHistoricActivity() {
+    public void testFixtureApi_AggregatePublishedEvent_NoHistoricActivity() throws Exception {
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         fixture.givenNoPriorActivity()
                .whenAggregate("id").publishes(new TriggerSagaStartEvent("id"))
@@ -75,7 +75,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test // testing issue AXON-279
-    public void testFixtureApi_PublishedEvent_NoHistoricActivity() {
+    public void testFixtureApi_PublishedEvent_NoHistoricActivity() throws Exception {
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         fixture.givenNoPriorActivity()
                .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
@@ -84,7 +84,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_WithApplicationEvents() {
+    public void testFixtureApi_WithApplicationEvents() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
@@ -102,7 +102,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_WhenEventIsPublishedToEventBus() {
+    public void testFixtureApi_WhenEventIsPublishedToEventBus() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         String aggregate2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
@@ -121,7 +121,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() {
+    public void testFixtureApi_ElapsedTimeBetweenEventsHasEffectOnScheduler() throws Exception {
         String aggregate1 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
         FixtureExecutionResult validator = fixture
@@ -211,7 +211,7 @@ public class AnnotatedSagaTest {
     }
 
     @Test
-    public void testFixtureApi_WhenTimeAdvances() {
+    public void testFixtureApi_WhenTimeAdvances() throws Exception {
         String identifier = UUID.randomUUID().toString();
         String identifier2 = UUID.randomUUID().toString();
         AnnotatedSagaTestFixture fixture = new AnnotatedSagaTestFixture(StubSaga.class);
