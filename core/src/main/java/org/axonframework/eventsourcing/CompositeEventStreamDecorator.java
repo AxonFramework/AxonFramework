@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.Aggregate;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * EventStreamDecorator implementation that delegates to several other decorator instances.
@@ -33,24 +34,22 @@ public class CompositeEventStreamDecorator implements EventStreamDecorator {
 
     /**
      * Initialize the decorator, delegating to the given <code>eventStreamDecorators</code>. The decorators are
-     * invoked in the iterator's order on
-     * {@link #decorateForRead(String, DomainEventStream)},
-     * and in reverse order on {@link #decorateForAppend(Aggregate, List)}.
+     * invoked in the iterator's order on {@link #decorateForRead}, and in reverse order on {@link #decorateForAppend}.
      *
      * @param eventStreamDecorators The decorators to decorate Event Streams with
      */
     public CompositeEventStreamDecorator(Collection<EventStreamDecorator> eventStreamDecorators) {
-        this.eventStreamDecorators = eventStreamDecorators.toArray(
-                new EventStreamDecorator[eventStreamDecorators.size()]);
+        this.eventStreamDecorators = eventStreamDecorators
+                .toArray(new EventStreamDecorator[eventStreamDecorators.size()]);
     }
 
     @Override
-    public DomainEventStream decorateForRead(String aggregateIdentifier, DomainEventStream eventStream) {
-        DomainEventStream events = eventStream;
+    public Stream<? extends DomainEventMessage<?>> decorateForRead(String aggregateIdentifier,
+                                                                   Stream<? extends DomainEventMessage<?>> eventStream) {
         for (EventStreamDecorator decorator : eventStreamDecorators) {
-            events = decorator.decorateForRead(aggregateIdentifier, events);
+            eventStream = decorator.decorateForRead(aggregateIdentifier, eventStream);
         }
-        return events;
+        return eventStream;
     }
 
     @Override

@@ -18,7 +18,6 @@ package org.axonframework.test;
 
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventstore.EventStoreException;
@@ -28,14 +27,8 @@ import org.junit.Test;
 import java.util.UUID;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -137,16 +130,16 @@ public class FixtureTest_Generic {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         fixture.getEventStore().appendEvents(asList(
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent(), type),
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent(), type)));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
         fixture.getEventStore().appendEvents(asList(
-                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent(), type),
+                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent(), type)));
     }
 
     private class StubDomainEvent {

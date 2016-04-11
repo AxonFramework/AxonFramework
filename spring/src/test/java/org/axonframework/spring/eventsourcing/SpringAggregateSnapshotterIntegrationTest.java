@@ -77,8 +77,8 @@ public class SpringAggregateSnapshotterIntegrationTest {
         new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
-                eventStore.appendEvents(Arrays.asList(new GenericDomainEventMessage<>("id1", 0, "Payload1"),
-                                                      new GenericDomainEventMessage<>("id1", 1, "Payload2")));
+                eventStore.appendEvents(Arrays.asList(new GenericDomainEventMessage<>("id1", 0, "Payload1", type),
+                                                      new GenericDomainEventMessage<>("id1", 1, "Payload2", type)));
             }
         });
         try {

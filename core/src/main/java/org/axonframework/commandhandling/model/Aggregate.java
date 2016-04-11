@@ -23,6 +23,8 @@ import java.util.function.Function;
 
 public interface Aggregate<T> {
 
+    String type();
+
     String identifier();
 
     Long version();

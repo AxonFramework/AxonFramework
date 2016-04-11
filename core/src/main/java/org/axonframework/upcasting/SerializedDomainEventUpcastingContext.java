@@ -16,9 +16,9 @@
 
 package org.axonframework.upcasting;
 
+import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.serializer.LazyDeserializingObject;
-import org.axonframework.serializer.SerializedDomainEventData;
 import org.axonframework.serializer.Serializer;
 
 import java.time.Instant;

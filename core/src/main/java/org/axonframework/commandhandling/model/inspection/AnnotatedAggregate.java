@@ -62,6 +62,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
+    public String type() {
+        return inspector.type();
+    }
+
+    @Override
     public String identifier() {
         return inspector.getIdentifier(aggregateRoot);
     }

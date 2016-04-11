@@ -36,6 +36,7 @@ public class SQLStateResolver implements org.axonframework.common.jdbc.Persisten
     }
 
     @Override
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public boolean isDuplicateKeyViolation(Exception exception) {
         boolean isDuplicateKey = false;
         SQLException sqlException = findSQLException(exception);

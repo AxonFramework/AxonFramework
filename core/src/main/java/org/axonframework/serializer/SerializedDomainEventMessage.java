@@ -18,6 +18,7 @@ package org.axonframework.serializer;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.messaging.metadata.MetaData;
 
 import java.time.Instant;
@@ -43,6 +44,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     private final long sequenceNumber;
     @SuppressWarnings("NonSerializableFieldInSerializableClass")
     private final String aggregateIdentifier;
+    private final String type;
     private final SerializedEventMessage<T> eventMessage;
 
     /**
@@ -53,9 +55,10 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @param serializer      The Serializer to deserialize the meta data and payload with
      */
     public SerializedDomainEventMessage(SerializedDomainEventData domainEventData, Serializer serializer) {
-        eventMessage = new SerializedEventMessage<>(
-                domainEventData.getEventIdentifier(), domainEventData.getTimestamp(),
-                domainEventData.getPayload(), domainEventData.getMetaData(), serializer);
+        eventMessage = new SerializedEventMessage<>(domainEventData.getEventIdentifier(),
+                                                    domainEventData.getTimestamp(), domainEventData.getPayload(),
+                                                    domainEventData.getMetaData(), serializer);
+        type = domainEventData.getType();
         aggregateIdentifier = domainEventData.getAggregateIdentifier();
         sequenceNumber = domainEventData.getSequenceNumber();
     }
@@ -66,18 +69,21 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * an instance of an existing serialized Domain Event Message
      *
      * @param eventMessage        The eventMessage to wrap
+     * @param type
      * @param aggregateIdentifier The identifier of the aggregate that generated the message
      * @param sequenceNumber      The sequence number of the generated event
      */
-    public SerializedDomainEventMessage(SerializedEventMessage<T> eventMessage, String aggregateIdentifier,
+    public SerializedDomainEventMessage(SerializedEventMessage<T> eventMessage, String type, String aggregateIdentifier,
                                         long sequenceNumber) {
         this.eventMessage = eventMessage;
+        this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
     }
 
     private SerializedDomainEventMessage(SerializedDomainEventMessage<T> original, Map<String, ?> metaData) {
         eventMessage = original.eventMessage.withMetaData(metaData);
+        this.type = original.getType();
         this.aggregateIdentifier = original.getAggregateIdentifier();
         this.sequenceNumber = original.getSequenceNumber();
     }
@@ -105,9 +111,8 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
     @Override
     public DomainEventMessage<T> withMetaData(Map<String, ?> newMetaData) {
         if (eventMessage.isPayloadDeserialized()) {
-            return new GenericDomainEventMessage<>(getIdentifier(), getTimestamp(),
-                                                    aggregateIdentifier, sequenceNumber,
-                                                    getPayload(), newMetaData);
+            return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber, getPayload(),
+                                                   MetaData.from(newMetaData), getIdentifier(), getTimestamp());
         } else {
             return new SerializedDomainEventMessage<>(this, newMetaData);
         }
@@ -149,6 +154,11 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
         return eventMessage.getIdentifier();
     }
 
+    @Override
+    public String getType() {
+        return type;
+    }
+
     /**
      * Indicates whether the payload of this message has already been deserialized.
      *
@@ -165,8 +175,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @return the GenericDomainEventMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericDomainEventMessage<>(getIdentifier(), getTimestamp(),
-                                                getAggregateIdentifier(), getSequenceNumber(),
-                                                getPayload(), getMetaData());
+        return new GenericDomainEventMessage<>(type, getAggregateIdentifier(), getSequenceNumber(), getPayload(),
+                                               getMetaData(), getIdentifier(), getTimestamp());
     }
 }

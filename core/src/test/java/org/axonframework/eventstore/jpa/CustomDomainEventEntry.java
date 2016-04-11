@@ -17,49 +17,26 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serializer.SerializedMetaData;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.eventstore.AbstractTrackedDomainEventEntry;
+import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
-import javax.persistence.Lob;
-import java.time.Instant;
 
 /**
  * @author Allard Buijze
  */
 @Entity
-public class CustomDomainEventEntry extends AbstractEventEntryData<String> {
+public class CustomDomainEventEntry extends AbstractTrackedDomainEventEntry<String> {
 
-    @Lob
-    private String metaData;
-
-    @Lob
-    private String payload;
-
-    public CustomDomainEventEntry(DomainEventMessage event,
-                                  Instant timestamp,
-                                  SerializedObject<String> payload,
-                                  SerializedObject<String> metaData) {
-        super(event.getIdentifier(),
-              event.getAggregateIdentifier(),
-              event.getSequenceNumber(),
-              timestamp, payload.getType()
-        );
-        this.payload = payload.getData();
-        this.metaData = metaData.getData();
+    public CustomDomainEventEntry(DomainEventMessage event, Serializer serializer) {
+        super(event, serializer);
     }
 
-    public CustomDomainEventEntry() {
+    protected CustomDomainEventEntry() {
     }
 
     @Override
-    public SerializedObject<String> getMetaData() {
-        return new SerializedMetaData<>(metaData, String.class);
-    }
-
-    @Override
-    public SerializedObject<String> getPayload() {
-        return new SimpleSerializedObject<>(payload, String.class, getPayloadType());
+    protected Class<String> getContentType() {
+        return String.class;
     }
 }

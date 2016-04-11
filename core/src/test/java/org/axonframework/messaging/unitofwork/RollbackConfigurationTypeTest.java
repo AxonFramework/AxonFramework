@@ -41,4 +41,12 @@ public class RollbackConfigurationTypeTest {
         assertFalse(testSubject.rollBackOn(new Exception()));
         assertTrue(testSubject.rollBackOn(new AssertionError()));
     }
+
+    @Test
+    public void testRuntimeExceptionsRollback() {
+        RollbackConfiguration testSubject = RollbackConfigurationType.RUNTIME_EXCEPTIONS;
+        assertTrue(testSubject.rollBackOn(new RuntimeException()));
+        assertFalse(testSubject.rollBackOn(new Exception()));
+        assertFalse(testSubject.rollBackOn(new AssertionError()));
+    }
 }

@@ -16,7 +16,7 @@
 
 package org.axonframework.upcasting;
 
-import org.axonframework.serializer.SerializedDomainEventData;
+import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
 import java.time.Instant;
@@ -80,5 +80,10 @@ public class UpcastSerializedDomainEventData<T> implements SerializedDomainEvent
     @Override
     public SerializedObject<T> getPayload() {
         return upcastPayload;
+    }
+
+    @Override
+    public String getType() {
+        return original.getType();
     }
 }

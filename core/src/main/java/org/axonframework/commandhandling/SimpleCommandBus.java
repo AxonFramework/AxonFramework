@@ -113,8 +113,7 @@ public class SimpleCommandBus implements CommandBus {
             logger.debug("Dispatching command [{}]", command.getCommandName());
         }
         UnitOfWork<CommandMessage<?>> unitOfWork = unitOfWorkFactory.createUnitOfWork(command);
-        InterceptorChain<CommandMessage<?>> chain = new DefaultInterceptorChain<>(
-                unitOfWork, handlerInterceptors, handler);
+        InterceptorChain chain = new DefaultInterceptorChain<>(unitOfWork, handlerInterceptors, handler);
         return unitOfWork.executeWithResult(chain::proceed, rollbackConfiguration);
     }
 

@@ -61,7 +61,7 @@ public class LoggingInterceptor<T extends Message<?>> implements MessageHandlerI
     }
 
     @Override
-    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain)
+    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain interceptorChain)
             throws Exception {
         T message = unitOfWork.getMessage();
         logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());

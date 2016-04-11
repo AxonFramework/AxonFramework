@@ -46,7 +46,6 @@ public abstract class CollectionUtils {
      * @param <T>          The type items in the returned List must be assignable to.
      * @return a list of objects of <code>expectedType</code>. May be empty, but never <code>null</code>.
      */
-
     public static <T> List<T> filterByType(Iterable<?> collection, Class<T> expectedType) {
         List<T> filtered = new LinkedList<>();
         if (collection != null) {

@@ -279,7 +279,7 @@ public class AsynchronousEventProcessorTest {
         Registration registration = testSubject.registerInterceptor(interceptor);
         EventMessage event = new GenericEventMessage<>(new Object());
         when(interceptor.handle(any(), any())).then(invocation -> {
-            ((InterceptorChain<EventMessage<?>>) invocation.getArguments()[1]).proceed();
+            ((InterceptorChain) invocation.getArguments()[1]).proceed();
             return null;
         });
         testSubject.handle(event, event);

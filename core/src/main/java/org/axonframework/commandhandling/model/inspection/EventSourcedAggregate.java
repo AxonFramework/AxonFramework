@@ -21,40 +21,37 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.metadata.MetaData;
 
+import java.util.Iterator;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
-    private final EventStore eventStore;
     private boolean initializing = false;
     private long lastEventSequenceNumber;
 
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
-                                                          EventBus eventBus, EventStore eventStore) {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<T>(aggregateRoot, inspector,
-                                                                          eventBus, eventStore);
+                                                          EventStore eventStore) {
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<T>(aggregateRoot, inspector, eventStore);
         aggregate.registerWithUnitOfWork();
         return aggregate;
     }
 
     public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
-                                                          EventBus eventBus, EventStore eventStore) throws Exception {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<T>(inspector, eventBus, eventStore);
+                                                          EventStore eventStore) throws Exception {
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<T>(inspector, eventStore);
         aggregate.registerWithUnitOfWork();
         aggregate.registerRoot(aggregateFactory);
         return aggregate;
     }
 
-    public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model,
-                                                           long seqNo, boolean isDeleted,
-                                                           EventBus eventBus, EventStore eventStore) {
-        EventSourcedAggregate<T> aggregate = initialize(aggregateRoot, model, eventBus, eventStore);
+    public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
+                                                           boolean isDeleted, EventStore eventStore) {
+        EventSourcedAggregate<T> aggregate = initialize(aggregateRoot, model, eventStore);
         aggregate.lastEventSequenceNumber = seqNo;
         if (isDeleted) {
             aggregate.doMarkDeleted();
@@ -62,15 +59,13 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         return aggregate;
     }
 
-    protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> inspector, EventBus eventBus, EventStore eventStore) {
-        super(aggregateRoot, inspector, eventBus);
-        this.eventStore = eventStore;
+    protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> inspector, EventStore eventStore) {
+        super(aggregateRoot, inspector, eventStore);
         this.lastEventSequenceNumber = -1;
     }
 
-    protected EventSourcedAggregate(AggregateModel<T> inspector, EventBus eventBus, EventStore eventStore) {
-        super(inspector, eventBus);
-        this.eventStore = eventStore;
+    protected EventSourcedAggregate(AggregateModel<T> inspector, EventBus eventStore) {
+        super(inspector, eventStore);
         this.lastEventSequenceNumber = -1;
     }
 
@@ -99,22 +94,19 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         if (id == null) {
             Assert.state(seq == 0, "The aggregate identifier has not been set. It must be set at the latest by the " +
                     "event sourcing handler of the creation event");
-            return new GenericDomainEventMessage<P>(null, seq, payload, metaData) {
+            return new GenericDomainEventMessage<P>(type(), null, seq, payload, metaData) {
                 @Override
                 public String getAggregateIdentifier() {
                     return identifier();
                 }
             };
         }
-        return new GenericDomainEventMessage<>(identifier(), nextSequence(), payload, metaData);
+        return new GenericDomainEventMessage<>(type(), identifier(), nextSequence(), payload, metaData);
     }
 
     @Override
     protected void publishOnEventBus(EventMessage<?> msg) {
         if (!initializing) {
-            if (msg instanceof DomainEventMessage<?>) {
-                eventStore.appendEvents((DomainEventMessage<?>) msg);
-            }
             super.publishOnEventBus(msg);
         }
     }
@@ -129,7 +121,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         return currentSequence == null ? 0 : currentSequence + 1L;
     }
 
-    public void initializeState(DomainEventStream eventStream) {
+    public void initializeState(Iterator<? extends DomainEventMessage<?>> eventStream) {
         this.initializing = true;
         try {
             while (eventStream.hasNext()) {

@@ -40,7 +40,7 @@ public class FullConcurrencyPolicyTest {
     }
 
     private DomainEventMessage newStubDomainEvent(Object aggregateIdentifier) {
-        return new GenericDomainEventMessage<>(aggregateIdentifier.toString(), (long) 0,
+        return new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), (long) 0,
                                                      new Object(), MetaData.emptyInstance());
     }
 }

@@ -48,6 +48,8 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      */
     String getAggregateIdentifier();
 
+    String getType();
+
     /**
      * Returns a copy of this DomainEventMessage with the given <code>metaData</code>. The payload, {@link
      * #getTimestamp()

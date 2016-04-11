@@ -18,8 +18,12 @@ package org.axonframework.eventstore.mongo;
 
 import com.mongodb.*;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.mongo.criteria.MongoCriteria;
-import org.axonframework.serializer.*;
+import org.axonframework.serializer.SerializedMetaData;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.Serializer;
+import org.axonframework.serializer.SimpleSerializedObject;
 import org.axonframework.upcasting.UpcasterChain;
 
 import java.time.Instant;

@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 public class BeanValidationInterceptorTest {
 
     private BeanValidationInterceptor<Message<?>> testSubject;
-    private InterceptorChain<Message<?>> mockInterceptorChain;
+    private InterceptorChain mockInterceptorChain;
     private UnitOfWork<Message<?>> uow;
 
     @Before

@@ -19,25 +19,26 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.EventUtils;
+import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
 
 /**
@@ -52,22 +53,22 @@ public class CommandHandlingTest {
     @Before
     public void setUp() {
         stubEventStore = new StubEventStore();
-        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore, stubEventStore);
+        repository = new EventSourcingRepository<>(StubAggregate.class, stubEventStore);
         aggregateIdentifier = "testAggregateIdentifier";
     }
 
     @Test
     public void testCommandHandlerLoadsSameAggregateTwice() throws Exception {
-        startAndGetUnitOfWork();
+        DefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new StubAggregate(aggregateIdentifier)).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
-        startAndGetUnitOfWork();
+        DefaultUnitOfWork.startAndGet(null);
         repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
         repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
-        DomainEventStream es = stubEventStore.readEvents(aggregateIdentifier);
+        Iterator<? extends DomainEventMessage<?>> es = stubEventStore.readEvents(aggregateIdentifier).iterator();
         assertTrue(es.hasNext());
         assertEquals((Object) 0L, es.next().getSequenceNumber());
         assertTrue(es.hasNext());
@@ -77,40 +78,23 @@ public class CommandHandlingTest {
         assertFalse(es.hasNext());
     }
 
-    private UnitOfWork<?> startAndGetUnitOfWork() {
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
-        uow.resources().put(EventBus.KEY, stubEventStore);
-        return uow;
-    }
-
     private static class StubEventStore extends AbstractEventBus implements EventStore {
 
-        private List<DomainEventMessage> storedEvents = new LinkedList<>();
-        private List<EventMessage> publishedEvents = new LinkedList<>();
+        private List<DomainEventMessage<?>> storedEvents = new LinkedList<>();
 
         @Override
-        public void appendEvents(List<DomainEventMessage<?>> events) {
-            storedEvents.addAll(events);
-        }
-
-        @Override
-        public DomainEventStream readEvents(String identifier) {
-            return new SimpleDomainEventStream(new ArrayList<>(storedEvents));
-        }
-
-        @Override
-        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
-                                            long lastSequenceNumber) {
-            return new SimpleDomainEventStream(
-                    storedEvents.stream()
-                            .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
-                                    && m.getSequenceNumber() <= lastSequenceNumber)
-                            .collect(toList()));
+        public Stream<? extends DomainEventMessage<?>> readEvents(String identifier) {
+            return new ArrayList<>(storedEvents).stream();
         }
 
         @Override
         protected void commit(List<EventMessage<?>> events) {
-            publishedEvents.addAll(events);
+            storedEvents.addAll(events.stream().map(EventUtils::asDomainEventMessage).collect(Collectors.toList()));
+        }
+
+        @Override
+        public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

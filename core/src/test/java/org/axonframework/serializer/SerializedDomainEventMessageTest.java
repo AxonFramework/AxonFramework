@@ -18,6 +18,7 @@ package org.axonframework.serializer;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Before;
@@ -112,7 +113,7 @@ public class SerializedDomainEventMessageTest {
     @Test
     public void testIdentifierStaysIdenticalWhenAddingMetaData() {
         Serializer serializer = new JavaSerializer();
-        DomainEventMessage<String> message = new GenericDomainEventMessage<>("ID", 0, "Payload",
+        DomainEventMessage<String> message = new GenericDomainEventMessage<>(type, "ID", 0, "Payload",
                                                                                      MetaData.emptyInstance());
 
         SerializedObject<byte[]> payload = serializer.serialize(message.getPayload(), byte[].class);

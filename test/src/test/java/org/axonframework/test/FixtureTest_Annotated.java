@@ -17,7 +17,6 @@
 package org.axonframework.test;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStoreException;
 import org.junit.Before;
@@ -27,9 +26,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -111,16 +108,16 @@ public class FixtureTest_Annotated {
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
         fixture.getEventStore().appendEvents(Arrays.asList(
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent(), type),
+                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent(), type)));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
         fixture.getEventStore().appendEvents(Arrays.asList(
-                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent(), type),
+                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent(), type)));
     }
 
     @Test

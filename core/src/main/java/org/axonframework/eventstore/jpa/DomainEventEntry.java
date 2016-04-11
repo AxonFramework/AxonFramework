@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
- *
+ * Copyright (c) 2010-2016. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,54 +14,33 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serializer.SerializedObject;
+import org.axonframework.eventstore.AbstractTrackedDomainEventEntry;
+import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
-import java.time.Instant;
 
 /**
- * JPA compliant wrapper around a DomainEvent. It stores a DomainEvent by extracting some of the information needed to
- * base searches on, and stores the {@link DomainEventMessage} itself as a serialized object
- * using an {@link org.axonframework.serializer.Serializer}
- *
- * @author Allard Buijze
- * @since 0.5
+ * @author Rene de Waele
  */
 @Entity
-public class DomainEventEntry extends AbstractEventEntry {
+public class DomainEventEntry extends AbstractTrackedDomainEventEntry<byte[]> {
 
-    /**
-     * Default constructor, as required by JPA specification. Do not use directly!
-     */
+    public DomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
+        super(eventMessage, serializer);
+    }
+
+    public DomainEventEntry(long globalIndex, String eventIdentifier, String type, String aggregateIdentifier,
+                            long sequenceNumber, Object timeStamp, String payloadType, String payloadRevision,
+                            byte[] payload, byte[] metaData) {
+        super(globalIndex, eventIdentifier, timeStamp, payloadType, payloadRevision, payload, metaData, type,
+              aggregateIdentifier, sequenceNumber);
+    }
+
     protected DomainEventEntry() {
     }
 
-    /**
-     * Initialize an Event entry for the given <code>event</code>.
-     *
-     * @param event    The event to store in the eventstore
-     * @param payload  The serialized version of the Event
-     * @param metaData The serialized metaData of the Event
-     */
-    public DomainEventEntry(DomainEventMessage<?> event,
-                            SerializedObject<byte[]> payload,
-                            SerializedObject<byte[]> metaData) {
-        super(event, payload, metaData);
+    @Override
+    protected Class<byte[]> getContentType() {
+        return byte[].class;
     }
-
-    /**
-     * Initialize an Event entry for the given <code>event</code>.
-     *
-     * @param event    The event to store in the eventstore
-     * @param dateTime The timestamp to store in the Event Store
-     * @param payload  The serialized version of the Event
-     * @param metaData The serialized metaData of the Event
-     */
-    public DomainEventEntry(DomainEventMessage<?> event, Instant dateTime,
-                            SerializedObject<byte[]> payload,
-                            SerializedObject<byte[]> metaData) {
-        super(event, dateTime, payload, metaData);
-    }
-
-
 }

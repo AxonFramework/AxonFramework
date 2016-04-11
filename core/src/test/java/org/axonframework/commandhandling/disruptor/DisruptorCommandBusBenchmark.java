@@ -25,7 +25,9 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
@@ -57,9 +59,8 @@ public class DisruptorCommandBusBenchmark {
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
-        inMemoryEventStore.appendEvents(singletonList(new GenericDomainEventMessage<>(aggregateIdentifier,
-                                                                                      0,
-                                                                                      new StubDomainEvent())));
+        inMemoryEventStore.appendEvents(singletonList(new GenericDomainEventMessage<>(aggregateIdentifier, 0,
+                                                                                      new StubDomainEvent(), type)));
 
         long start = System.currentTimeMillis();
         for (int i = 0; i < COMMAND_COUNT; i++) {

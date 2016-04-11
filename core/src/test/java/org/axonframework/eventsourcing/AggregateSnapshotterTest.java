@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.domain.StubAggregate;
-import org.axonframework.eventstore.SnapshotEventStore;
 import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +44,7 @@ public class AggregateSnapshotterTest {
         when(mockAggregateFactory.getAggregateType()).thenReturn(Object.class);
         testSubject = new AggregateSnapshotter();
         testSubject.setAggregateFactories(Arrays.<AggregateFactory<?>>asList(mockAggregateFactory));
-        testSubject.setEventStore(mockEventStore);
+        testSubject.setEventStorageEngine(mockEventStore);
         testSubject.setExecutor(DirectExecutor.INSTANCE);
     }
 
@@ -53,7 +52,7 @@ public class AggregateSnapshotterTest {
     @SuppressWarnings({"unchecked"})
     public void testCreateSnapshot() {
         String aggregateIdentifier = UUID.randomUUID().toString();
-        DomainEventMessage firstEvent = new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+        DomainEventMessage firstEvent = new GenericDomainEventMessage<>(type, aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(firstEvent);
         Object aggregate = new Object();
@@ -72,10 +71,10 @@ public class AggregateSnapshotterTest {
         UUID aggregateIdentifier = UUID.randomUUID();
         StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
 
-        DomainEventMessage<StubAggregate> first = new GenericDomainEventMessage<>(
-                aggregate.getIdentifier(), 0, aggregate);
+        DomainEventMessage<StubAggregate> first = new GenericDomainEventMessage<>(aggregate.getIdentifier(), 0,
+                                                                                  aggregate, type);
         DomainEventMessage second = new GenericDomainEventMessage<>(
-                aggregateIdentifier.toString(), 0, "Mock contents", MetaData.emptyInstance());
+                type, aggregateIdentifier.toString(), 0, "Mock contents", MetaData.emptyInstance());
         SimpleDomainEventStream eventStream = new SimpleDomainEventStream(first, second);
 
         when(mockAggregateFactory.createAggregate(any(), any(DomainEventMessage.class)))

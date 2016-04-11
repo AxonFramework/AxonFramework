@@ -29,7 +29,9 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
@@ -65,7 +67,7 @@ public class SynchronousLoopbackTest {
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
         eventStore.appendEvents(Collections.singletonList(
-                new GenericDomainEventMessage<>(aggregateIdentifier, 0,
+                new GenericDomainEventMessage<>(type, aggregateIdentifier, 0,
                         new AggregateCreatedEvent(aggregateIdentifier),
                         null
                 )));
@@ -97,7 +99,7 @@ public class SynchronousLoopbackTest {
     protected void initializeRepository(LockFactory lockingStrategy) {
         EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<>(
                 CountingAggregate.class, eventStore,
-                lockingStrategy, eventBus);
+                lockingStrategy);
         new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 

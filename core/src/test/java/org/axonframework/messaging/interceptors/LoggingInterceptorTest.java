@@ -45,7 +45,7 @@ public class LoggingInterceptorTest {
 
     private LoggingInterceptor<Message<?>> testSubject;
     private org.apache.log4j.Logger mockLogger;
-    private InterceptorChain<Message<?>> interceptorChain;
+    private InterceptorChain interceptorChain;
     private UnitOfWork<Message<?>> unitOfWork;
 
     @Before

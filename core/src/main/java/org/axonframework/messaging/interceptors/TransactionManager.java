@@ -13,6 +13,9 @@
 
 package org.axonframework.messaging.interceptors;
 
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+
 /**
  * Interface towards a mechanism that manages transactions
  * <p/>
@@ -29,4 +32,21 @@ public interface TransactionManager {
      * @return The object representing the transaction
      */
     Transaction startTransaction();
+
+    default void executeInTransaction(Runnable task) {
+        executeInTransaction(task, RollbackConfigurationType.RUNTIME_EXCEPTIONS);
+    }
+
+    default void executeInTransaction(Runnable task, RollbackConfiguration rollbackConfiguration) {
+        Transaction transaction = startTransaction();
+        try {
+            task.run();
+            transaction.commit();
+        } catch (Throwable e) {
+            if (rollbackConfiguration.rollBackOn(e)) {
+                transaction.rollback();
+            }
+            throw e;
+        }
+    }
 }

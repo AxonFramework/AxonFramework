@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.interceptors.TransactionManager;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.quartz.Job;
@@ -88,7 +89,7 @@ public class FireEventJob implements Job {
             eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
                                                      ((EventMessage) event).getMetaData());
         } else {
-            eventMessage = new GenericEventMessage<>(event);
+            eventMessage = new GenericEventMessage<>(event, MetaData.emptyInstance());
         }
         return eventMessage;
     }

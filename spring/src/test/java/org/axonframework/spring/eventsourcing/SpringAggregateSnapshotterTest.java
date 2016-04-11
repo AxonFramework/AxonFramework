@@ -16,8 +16,10 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.eventsourcing.*;
-import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.eventsourcing.AbstractAggregateFactory;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.spring.config.annotation.StubAggregate;
 import org.hamcrest.BaseMatcher;
@@ -61,14 +63,14 @@ public class SpringAggregateSnapshotterTest {
                                 return new StubAggregate(aggregateIdentifier);
                             }
                         }));
-        testSubject.setEventStore(mockEventStore);
+        testSubject.setEventStorageEngine(mockEventStore);
         testSubject.afterPropertiesSet();
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
-        DomainEventMessage event1 = new GenericDomainEventMessage<>(aggregateIdentifier, 0L,
+        DomainEventMessage event1 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 0L,
                                                                           "Mock contents", MetaData.emptyInstance());
-        DomainEventMessage event2 = new GenericDomainEventMessage<>(aggregateIdentifier, 1L,
+        DomainEventMessage event2 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 1L,
                                                                           "Mock contents", MetaData.emptyInstance());
         when(mockEventStore.readEvents(aggregateIdentifier))
                 .thenReturn(new SimpleDomainEventStream(event1, event2));

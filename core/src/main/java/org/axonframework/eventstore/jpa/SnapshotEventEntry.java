@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
- *
+ * Copyright (c) 2010-2016. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,35 +14,33 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serializer.SerializedObject;
+import org.axonframework.eventstore.AbstractLegacyDomainEventEntry;
+import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
 
 /**
- * JPA compatible entry that stores data required for the use of snapshot events.
- *
- * @author Allard Buijze
- * @since 0.5
+ * @author Rene de Waele
  */
 @Entity
-public class SnapshotEventEntry extends AbstractEventEntry {
+public class SnapshotEventEntry extends AbstractLegacyDomainEventEntry<byte[]> {
 
-    /**
-     * Default constructor, as required by JPA specification. Do not use directly!
-     */
+    public SnapshotEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
+        super(eventMessage, serializer);
+    }
+
+    public SnapshotEventEntry(String type, String aggregateIdentifier, long sequenceNumber, String eventIdentifier,
+                              Object timeStamp, String payloadType, String payloadRevision, byte[] payload,
+                              byte[] metaData) {
+        super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timeStamp, payloadType, payloadRevision,
+              payload, metaData);
+    }
+
     protected SnapshotEventEntry() {
     }
 
-    /**
-     * Initialize an Event entry for the given <code>event</code>.
-     *
-     * @param event    The event to store in the eventstore
-     * @param payload  The serialized version of the Event
-     * @param metaData The serialized metaData of the Event
-     */
-    public SnapshotEventEntry(DomainEventMessage event,
-                              SerializedObject<byte[]> payload,
-                              SerializedObject<byte[]> metaData) {
-        super(event, payload, metaData);
+    @Override
+    protected Class<byte[]> getContentType() {
+        return byte[].class;
     }
 }

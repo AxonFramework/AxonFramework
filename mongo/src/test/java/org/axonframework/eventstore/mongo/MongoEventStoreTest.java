@@ -20,25 +20,18 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.Mongo;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.mongoutils.MongoLauncher;
-import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.Upcaster;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
@@ -53,22 +46,11 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * <p>Beware with this test, it requires a running mongodb as specified in the configuration file, if no mongo instance
@@ -179,7 +161,7 @@ public class MongoEventStoreTest {
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents(asList(
-                new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
+                new GenericDomainEventMessage<>(type, aggregate2.getIdentifier(),
                                                 0,
                                                 new Object(),
                                                 Collections.singletonMap("key", (Object) "Value"))));
@@ -288,9 +270,9 @@ public class MongoEventStoreTest {
 
     @Test
     public void testInsertDuplicateSnapshot() throws Exception {
-        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>("id1", 1, "test"));
+        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>("id1", 1, "test", type));
         try {
-            testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>("id1", 1, "test"));
+            testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>("id1", 1, "test", type));
             fail("Expected concurrency exception");
         } catch (ConcurrencyException e) {
             assertTrue(e.getMessage().contains("Snapshot"));
@@ -308,16 +290,16 @@ public class MongoEventStoreTest {
     public void testLoadStream_UpcasterClearsAllFound() {
         testSubject.setUpcasterChain((serializedObject, upcastingContext) -> Collections.emptyList());
         final String streamId = UUID.randomUUID().toString();
-        testSubject.appendEvents(asList(new GenericDomainEventMessage<>(streamId, 0, "test")));
+        testSubject.appendEvents(asList(new GenericDomainEventMessage<>(streamId, 0, "test", type)));
         testSubject.readEvents(streamId);
     }
 
     @DirtiesContext
     @Test
     public void testStoreDuplicateAggregate() {
-        testSubject.appendEvents(asList(new GenericDomainEventMessage<>("aggregate1", 0, "payload")));
+        testSubject.appendEvents(asList(new GenericDomainEventMessage<>("aggregate1", 0, "payload", type)));
         try {
-            testSubject.appendEvents(asList(new GenericDomainEventMessage<>("aggregate1", 0, "payload")));
+            testSubject.appendEvents(asList(new GenericDomainEventMessage<>("aggregate1", 0, "payload", type)));
             fail("Expected exception to be thrown");
         } catch (ConcurrencyException e) {
             assertNotNull(e);
@@ -340,7 +322,7 @@ public class MongoEventStoreTest {
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents(createDomainEvents(10));
-        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test");
+        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test", type);
         testSubject.appendEvents(asList(eventMessage));
         testSubject.appendEvents(createDomainEvents(10));
         // we upcast the event to two instances, one of which is an unknown class
@@ -422,7 +404,7 @@ public class MongoEventStoreTest {
         final String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
-                    aggregateIdentifier, t, new StubStateChangedEvent(), null));
+                    type, aggregateIdentifier, t, new StubStateChangedEvent(), null));
         }
         return events;
     }

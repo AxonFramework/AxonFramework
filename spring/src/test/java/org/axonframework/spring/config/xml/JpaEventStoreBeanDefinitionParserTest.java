@@ -16,14 +16,11 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.eventstore.jpa.EventEntryFactory;
-import org.axonframework.eventstore.jpa.EventEntryStore;
-import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.SimpleUpcasterChain;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -36,7 +33,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})

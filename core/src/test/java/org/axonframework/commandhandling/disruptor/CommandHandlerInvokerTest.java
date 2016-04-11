@@ -7,7 +7,10 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventStreamDecorator;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
@@ -48,7 +51,7 @@ public class CommandHandlerInvokerTest {
         mockEventStore = mock(EventStore.class);
         mockEventBus = mock(EventBus.class);
         mockCache = mock(Cache.class);
-        testSubject = new CommandHandlerInvoker(mockEventStore, mockEventBus, mockCache, 0);
+        testSubject = new CommandHandlerInvoker(mockEventStore, mockCache, 0);
         aggregateIdentifier = "mockAggregate";
         mockCommandMessage = mock(CommandMessage.class);
         mockCommandHandler = mock(MessageHandler.class);
@@ -71,7 +74,7 @@ public class CommandHandlerInvokerTest {
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockEventStore.readEvents(anyObject()))
                 .thenReturn(new SimpleDomainEventStream(
-                        new GenericDomainEventMessage<>(aggregateIdentifier, 0, aggregateIdentifier)));
+                        new GenericDomainEventMessage<>(aggregateIdentifier, 0, aggregateIdentifier, type)));
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).get(aggregateIdentifier);
@@ -89,7 +92,7 @@ public class CommandHandlerInvokerTest {
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 return EventSourcedAggregate.initialize(new StubAggregate(aggregateIdentifier),
                                                         ModelInspector.inspectAggregate(StubAggregate.class),
-                                                        mockEventBus, mockEventStore);
+                                                        mockEventBus);
             }
         });
         testSubject.onEvent(commandHandlingEntry, 0, true);

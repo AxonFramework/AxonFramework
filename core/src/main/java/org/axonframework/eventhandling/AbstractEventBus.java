@@ -2,9 +2,12 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
+import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,10 @@ import java.util.function.Function;
 /**
  * Base class for the Event Bus. In case events are published while a Unit of Work is active the Unit of Work root
  * coordinates the timing and order of the publication.
+ * <p>
+ * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
+ * subscribed event processors. Event processors are expected to implement asynchronous handling themselves or
+ * alternatively open an event stream using {@link #readEvents(TrackingToken)}.
  *
  * @author Allard Buijze
  * @author René de Waele
@@ -23,14 +30,54 @@ import java.util.function.Function;
  */
 public abstract class AbstractEventBus implements EventBus {
 
-    private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
+    private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
+
     final String eventsKey = this + "_EVENTS";
+    private final Set<EventProcessor> eventProcessors = new CopyOnWriteArraySet<>();
+    private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
+    private final PublicationStrategy publicationStrategy;
+
+    /**
+     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
+     * processors.
+     */
+    public AbstractEventBus() {
+        this(new DirectTerminal());
+    }
+
+    /**
+     * Initializes an event bus with given {@link PublicationStrategy}.
+     *
+     * @param publicationStrategy The strategy used by the event bus to publish events to listeners
+     */
+    public AbstractEventBus(PublicationStrategy publicationStrategy) {
+        this.publicationStrategy = publicationStrategy;
+    }
+
+    @Override
+    public Registration subscribe(EventProcessor eventProcessor) {
+        if (this.eventProcessors.add(eventProcessor)) {
+            logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor.getName());
+        } else {
+            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor.getName());
+        }
+        return () -> {
+            if (eventProcessors.remove(eventProcessor)) {
+                logger.debug("EventListener {} unsubscribed successfully", eventProcessor.getName());
+                return true;
+            } else {
+                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor.getName());
+                return false;
+            }
+        };
+    }
 
     /**
      * {@inheritDoc}
      * <p/>
-     * In case a Unit of Work is active, the <code>preprocessor</code> is not invoked by this Event Bus until the
-     * Unit of Work root is committed.
+     * In case a Unit of Work is active, the <code>preprocessor</code> is not invoked by this Event Bus until the Unit
+     * of Work root is committed.
+     *
      * @param dispatchInterceptor
      */
     @Override
@@ -44,10 +91,10 @@ public abstract class AbstractEventBus implements EventBus {
         if (CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Assert.state(!unitOfWork.phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT),
-                    "It is not allowed to publish events when the current Unit of Work has already been committed. " +
-                    "Please start a new Unit of Work before publishing events.");
+                         "It is not allowed to publish events when the current Unit of Work has already been committed. " +
+                                 "Please start a new Unit of Work before publishing events.");
             Assert.state(!unitOfWork.root().phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT),
-                    "It is not allowed to publish events when the root Unit of Work has already been committed.");
+                         "It is not allowed to publish events when the root Unit of Work has already been committed.");
 
             unitOfWork.getOrComputeResource(eventsKey, r -> {
 
@@ -79,7 +126,7 @@ public abstract class AbstractEventBus implements EventBus {
             }).addAll(events);
 
         } else {
-            prepareCommit(events);
+            prepareCommit(intercept(events));
             commit(events);
             afterCommit(events);
         }
@@ -110,12 +157,13 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Process given <code>events</code> while the Unit of Work root is preparing for commit. The default
-     * implementation does nothing.
+     * Process given <code>events</code> while the Unit of Work root is preparing for commit. The default implementation
+     * does nothing.
      *
      * @param events Events to be published by this Event Bus
      */
     protected void prepareCommit(List<EventMessage<?>> events) {
+        publicationStrategy.publish(events, eventProcessors);
     }
 
     /**
@@ -134,5 +182,14 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void afterCommit(List<EventMessage<?>> events) {
+    }
+
+    private static class DirectTerminal implements PublicationStrategy {
+        @Override
+        public void publish(List<EventMessage<?>> events, Set<EventProcessor> eventProcessors) {
+            for (EventProcessor eventProcessor : eventProcessors) {
+                eventProcessor.handle(events);
+            }
+        }
     }
 }

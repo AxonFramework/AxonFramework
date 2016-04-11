@@ -38,7 +38,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     private final Collection<CorrelationDataProvider> correlationDataProviders = new CopyOnWriteArraySet<>();
 
     @Override
-    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception {
+    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
         correlationDataProviders.forEach(unitOfWork::registerCorrelationDataProvider);
         return interceptorChain.proceed();
     }

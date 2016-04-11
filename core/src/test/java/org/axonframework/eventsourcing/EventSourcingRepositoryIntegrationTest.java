@@ -70,7 +70,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository() throws Exception {
         eventStore = new InMemoryEventStore();
-        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore, null);
+        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore);
         EventBus mockEventBus = mock(EventBus.class);
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);

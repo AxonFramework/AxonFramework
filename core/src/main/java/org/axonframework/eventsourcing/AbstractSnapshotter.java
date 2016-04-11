@@ -18,16 +18,16 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.common.io.IOUtils;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.SnapshotEventStore;
+import org.axonframework.common.PeekingIterator;
+import org.axonframework.eventstore.EventStorageEngine;
 import org.axonframework.messaging.interceptors.NoTransactionManager;
-import org.axonframework.messaging.interceptors.Transaction;
 import org.axonframework.messaging.interceptors.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.concurrent.Executor;
+import java.util.stream.Stream;
 
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.Snapshotter} that uses a task executor to
@@ -43,16 +43,14 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSnapshotter.class);
 
-    private SnapshotEventStore eventStore;
+    private EventStorageEngine eventStorageEngine;
     private Executor executor = DirectExecutor.INSTANCE;
     private TransactionManager transactionManager = new NoTransactionManager();
 
     @Override
     public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
-        executor.execute(new SilentTask(
-                new TransactionalRunnableWrapper(transactionManager,
-                                                 createSnapshotterTask(aggregateType, aggregateIdentifier)
-                )));
+        executor.execute(() -> transactionManager
+                .executeInTransaction(new SilentTask(createSnapshotterTask(aggregateType, aggregateIdentifier))));
     }
 
     /**
@@ -62,23 +60,40 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @return the task containing snapshot creation logic
      */
-    protected Runnable createSnapshotterTask(Class<?> aggregateType,
-                                             String aggregateIdentifier) {
+    protected Runnable createSnapshotterTask(Class<?> aggregateType, String aggregateIdentifier) {
         return new CreateSnapshotTask(aggregateType, aggregateIdentifier);
     }
 
     /**
      * Creates a snapshot event for an aggregate of which passed events are available in the given
-     * <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is
-     * not necessary or appropriate for the given event stream.
+     * <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is not necessary or
+     * appropriate for the given event stream.
      *
      * @param aggregateType       The aggregate's type identifier
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @param eventStream         The event stream containing the aggregate's past events
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
-    protected abstract DomainEventMessage createSnapshot(Class<?> aggregateType,
-                                                         String aggregateIdentifier, DomainEventStream eventStream);
+    protected abstract DomainEventMessage createSnapshot(Class<?> aggregateType, String aggregateIdentifier,
+                                                         Iterator<? extends DomainEventMessage<?>> eventStream);
+
+    /**
+     * Returns the event store this snapshotter uses to load domain events and store snapshot events.
+     *
+     * @return the event store this snapshotter uses to load domain events and store snapshot events.
+     */
+    protected EventStorageEngine getEventStorageEngine() {
+        return eventStorageEngine;
+    }
+
+    /**
+     * Sets the event store where the snapshotter can load domain events and store its snapshot events.
+     *
+     * @param eventStorageEngine the event storage to use
+     */
+    public void setEventStorageEngine(EventStorageEngine eventStorageEngine) {
+        this.eventStorageEngine = eventStorageEngine;
+    }
 
     /**
      * Sets the transactionManager that wraps the snapshot creation in a transaction. By default, no transactions are
@@ -88,24 +103,6 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      */
     public void setTxManager(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
-    }
-
-    /**
-     * Returns the event store this snapshotter uses to load domain events and store snapshot events.
-     *
-     * @return the event store this snapshotter uses to load domain events and store snapshot events.
-     */
-    protected EventStore getEventStore() {
-        return eventStore;
-    }
-
-    /**
-     * Sets the event store where the snapshotter can load domain events and store its snapshot events.
-     *
-     * @param eventStore the event store to use
-     */
-    public void setEventStore(SnapshotEventStore eventStore) {
-        this.eventStore = eventStore;
     }
 
     /**
@@ -127,35 +124,11 @@ public abstract class AbstractSnapshotter implements Snapshotter {
         this.executor = executor;
     }
 
-    private static class TransactionalRunnableWrapper implements Runnable {
-
-        private final Runnable command;
-        private final TransactionManager transactionManager;
-
-        public TransactionalRunnableWrapper(TransactionManager transactionManager, Runnable command) {
-            this.command = command;
-            this.transactionManager = transactionManager;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public void run() {
-            Transaction transaction = transactionManager.startTransaction();
-            try {
-                command.run();
-                transaction.commit();
-            } catch (RuntimeException e) {
-                transaction.rollback();
-                throw e;
-            }
-        }
-    }
-
     private static class SilentTask implements Runnable {
 
         private final Runnable snapshotterTask;
 
-        public SilentTask(Runnable snapshotterTask) {
+        private SilentTask(Runnable snapshotterTask) {
             this.snapshotterTask = snapshotterTask;
         }
 
@@ -179,25 +152,23 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final class CreateSnapshotTask implements Runnable {
 
         private final Class<?> aggregateType;
-        private final String aggregateIdentifier;
+        private final String identifier;
 
-        private CreateSnapshotTask(Class<?> aggregateType, String aggregateIdentifier) {
+        private CreateSnapshotTask(Class<?> aggregateType, String identifier) {
             this.aggregateType = aggregateType;
-            this.aggregateIdentifier = aggregateIdentifier;
+            this.identifier = identifier;
         }
 
         @Override
         public void run() {
-            DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
-            try {
+            try (Stream<? extends DomainEventMessage<?>> eventStream = eventStorageEngine.readEvents(identifier)) {
+                PeekingIterator<? extends DomainEventMessage<?>> iterator = PeekingIterator.of(eventStream.iterator());
                 // a snapshot should only be stored if the snapshot replaces at least more than one event
-                long firstEventSequenceNumber = eventStream.peek().getSequenceNumber();
-                DomainEventMessage snapshotEvent = createSnapshot(aggregateType, aggregateIdentifier, eventStream);
+                long firstEventSequenceNumber = iterator.peek().getSequenceNumber();
+                DomainEventMessage snapshotEvent = createSnapshot(aggregateType, identifier, iterator);
                 if (snapshotEvent != null && snapshotEvent.getSequenceNumber() > firstEventSequenceNumber) {
-                    eventStore.appendSnapshotEvent(snapshotEvent);
+                    eventStorageEngine.storeSnapshot(snapshotEvent);
                 }
-            } finally {
-                IOUtils.closeQuietlyIfCloseable(eventStream);
             }
         }
     }

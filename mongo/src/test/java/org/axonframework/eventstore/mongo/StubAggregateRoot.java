@@ -60,7 +60,7 @@ class StubAggregateRoot {
 
     public DomainEventMessage<StubStateChangedEvent> createSnapshotEvent() {
         return new GenericDomainEventMessage<>(
-                identifier, getRegisteredEventCount() - 1, new StubStateChangedEvent(), null);
+                type, identifier, getRegisteredEventCount() - 1, new StubStateChangedEvent(), null);
     }
 
     public String getIdentifier() {

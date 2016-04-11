@@ -20,16 +20,15 @@ import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.Assert;
-import org.axonframework.common.io.IOUtils;
+import org.axonframework.common.PeekingIterator;
 import org.axonframework.common.lock.LockFactory;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventStreamNotFoundException;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -44,7 +43,6 @@ import java.util.concurrent.Callable;
 public class EventSourcingRepository<T> extends LockingRepository<T, EventSourcedAggregate<T>> {
 
     private final EventStore eventStore;
-    private final EventBus eventBus;
     private final Deque<EventStreamDecorator> eventStreamDecorators = new ArrayDeque<>();
     private final AggregateFactory<T> aggregateFactory;
 
@@ -54,11 +52,10 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      *
      * @param aggregateType The type of aggregate stored in this repository
      * @param eventStore    The event store that holds the event streams for this repository
-     * @param eventBus
      * @see LockingRepository#LockingRepository(Class)
      */
-    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore, EventBus eventBus) {
-        this(new GenericAggregateFactory<>(aggregateType), eventStore, eventBus);
+    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore) {
+        this(new GenericAggregateFactory<>(aggregateType), eventStore);
     }
 
     /**
@@ -67,13 +64,11 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
-     * @param eventBus
      * @see LockingRepository#LockingRepository(Class)
      */
-    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore, EventBus eventBus) {
+    public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore) {
         super(aggregateFactory.getAggregateType());
         Assert.notNull(eventStore, "eventStore may not be null");
-        this.eventBus = eventBus;
         this.aggregateFactory = aggregateFactory;
         this.eventStore = eventStore;
     }
@@ -84,12 +79,9 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
      * @param lockFactory      the locking strategy to apply to this repository
-     * @param eventBus
      */
-    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                   LockFactory lockFactory, EventBus eventBus) {
+    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory) {
         super(aggregateFactory.getAggregateType(), lockFactory);
-        this.eventBus = eventBus;
         Assert.notNull(eventStore, "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
@@ -102,11 +94,9 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * @param aggregateType The type of aggregate to store in this repository
      * @param eventStore    The event store that holds the event streams for this repository
      * @param lockFactory   the locking strategy to apply to this
-     * @param eventBus
      */
-    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore,
-                                   final LockFactory lockFactory, EventBus eventBus) {
-        this(new GenericAggregateFactory<>(aggregateType), eventStore, lockFactory, eventBus);
+    public EventSourcingRepository(final Class<T> aggregateType, EventStore eventStore, final LockFactory lockFactory) {
+        this(new GenericAggregateFactory<>(aggregateType), eventStore, lockFactory);
     }
 
     /**
@@ -120,37 +110,32 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      */
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
-        DomainEventStream events = null;
-        DomainEventStream originalStream = null;
+        Stream<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateIdentifier);
         try {
-            try {
-                events = eventStore.readEvents(aggregateIdentifier);
-            } catch (EventStreamNotFoundException e) {
-                throw new AggregateNotFoundException(aggregateIdentifier, "The aggregate was not found", e);
-            }
-            originalStream = events;
             for (EventStreamDecorator decorator : eventStreamDecorators) {
                 events = decorator.decorateForRead(aggregateIdentifier, events);
             }
-
-            final T aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, events.peek());
-            EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(aggregateRoot, aggregateModel(),
-                                                                                  eventBus, eventStore);
-            aggregate.initializeState(events);
+            PeekingIterator<? extends DomainEventMessage<?>> iterator = PeekingIterator.of(events.iterator());
+            if (!iterator.hasNext()) {
+                throw new AggregateNotFoundException(aggregateIdentifier,
+                                                     "The aggregate was not found in the event store");
+            }
+            EventSourcedAggregate<T> aggregate = EventSourcedAggregate
+                    .initialize(aggregateFactory.createAggregate(aggregateIdentifier, iterator.peek()),
+                                aggregateModel(), eventStore);
+            aggregate.initializeState(iterator);
             if (aggregate.isDeleted()) {
                 throw new AggregateDeletedException(aggregateIdentifier);
             }
             return aggregate;
         } finally {
-            IOUtils.closeQuietlyIfCloseable(events);
-            // if a decorator doesn't implement closeable, we still want to be sure we close the original stream
-            IOUtils.closeQuietlyIfCloseable(originalStream);
+            events.close();
         }
     }
 
     @Override
     protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
-        return EventSourcedAggregate.initialize(factoryMethod, aggregateModel(), eventBus, eventStore);
+        return EventSourcedAggregate.initialize(factoryMethod, aggregateModel(), eventStore);
     }
 
     @Override

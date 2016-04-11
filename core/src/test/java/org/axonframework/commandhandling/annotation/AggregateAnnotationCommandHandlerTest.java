@@ -40,7 +40,6 @@ import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EntityId;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
@@ -95,7 +94,7 @@ public class AggregateAnnotationCommandHandlerTest {
                         invocation ->
                                 EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                                                                  aggregateModel,
-                                                                 mock(EventBus.class), mock(EventStore.class)));
+                                                                 mock(EventBus.class)));
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),

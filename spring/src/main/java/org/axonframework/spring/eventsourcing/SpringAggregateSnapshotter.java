@@ -19,6 +19,7 @@ package org.axonframework.spring.eventsourcing;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventstore.EventStorageEngine;
 import org.axonframework.spring.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -28,19 +29,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Implementation of the {@link org.axonframework.eventsourcing.AggregateSnapshotter} that eases the configuration when
  * used within a Spring Application Context. It will automatically detect a Transaction Manager and Aggregate
  * Factories.
  * <p/>
- * The only mandatory properties to set is {@link #setEventStore(org.axonframework.eventstore.SnapshotEventStore)}. In
+ * The only mandatory properties to set is {@link #setEventStorageEngine(EventStorageEngine)}. In
  * most cases, you should also provide an executor, as the default will execute snapshotter tasks in the calling
  * thread.
  *

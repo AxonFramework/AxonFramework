@@ -17,7 +17,7 @@
 package org.axonframework.upcasting;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serializer.SerializedDomainEventData;
+import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
@@ -45,24 +45,24 @@ public abstract class UpcastUtils {
      * Upcasts and deserializes the given <code>entry</code> using the given <code>serializer</code> and
      * <code>upcasterChain</code>. This code is optimized to deserialize the meta-data only once in case it has been
      * used in the upcasting process.
-     * <p/>
+     * <p>
      * The list of events returned contains lazy deserializing events for optimization purposes. Events represented
      * with
      * unknown classes are ignored, and not returned.
      *
-     * @param entry               the entry containing the data of the serialized event
-     * @param serializer          the serializer to deserialize the event with
-     * @param upcasterChain       the chain containing the upcasters to upcast the events with
-     * @param skipUnknownTypes    whether unknown serialized types should be ignored
+     * @param entry            the entry containing the data of the serialized event
+     * @param serializer       the serializer to deserialize the event with
+     * @param upcasterChain    the chain containing the upcasters to upcast the events with
+     * @param skipUnknownTypes whether unknown serialized types should be ignored
      * @return a list of upcast and deserialized events
      */
     @SuppressWarnings("unchecked")
-    public static List<DomainEventMessage> upcastAndDeserialize(SerializedDomainEventData entry,
-                                                                Serializer serializer, UpcasterChain upcasterChain,
-                                                                boolean skipUnknownTypes) {
+    public static List<DomainEventMessage<?>> upcastAndDeserialize(SerializedDomainEventData<?> entry,
+                                                                   Serializer serializer, UpcasterChain upcasterChain,
+                                                                   boolean skipUnknownTypes) {
         SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry, serializer);
         List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload(), context);
-        List<DomainEventMessage> events = new ArrayList<>(objects.size());
+        List<DomainEventMessage<?>> events = new ArrayList<>(objects.size());
         for (SerializedObject object : objects) {
             try {
                 DomainEventMessage<Object> message = new SerializedDomainEventMessage<>(

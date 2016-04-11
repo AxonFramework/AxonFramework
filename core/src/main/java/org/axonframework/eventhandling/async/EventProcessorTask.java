@@ -269,8 +269,8 @@ public class EventProcessorTask implements Runnable {
      * @return the policy for retrying/proceeding with this event
      */
     protected ProcessingResult doHandle(EventMessage<?> event, UnitOfWork<EventMessage<?>> unitOfWork) throws Exception {
-        InterceptorChain<EventMessage<?>> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
-                interceptors, (eventMessage, uow) -> {
+        InterceptorChain interceptorChain = new DefaultInterceptorChain<>(unitOfWork, interceptors,
+                (eventMessage, uow) -> {
             eventProcessingMonitor.prepare(event);
             RuntimeException failure = null;
             for (EventListener member : listeners) {

@@ -63,7 +63,7 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
     }
 
     @Override
-    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception {
+    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
         handle(unitOfWork.getMessage());
         return interceptorChain.proceed();
     }

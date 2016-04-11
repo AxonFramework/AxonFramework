@@ -17,8 +17,6 @@
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
-import org.axonframework.eventstore.jpa.DefaultEventEntryStore;
-import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
 import org.springframework.beans.factory.config.RuntimeBeanReference;

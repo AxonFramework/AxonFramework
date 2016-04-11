@@ -29,10 +29,10 @@ import org.axonframework.common.Assert;
  */
 public class LazyDeserializingObject<T> {
 
-    private final Serializer serializer;
+    private final transient Serializer serializer;
     private final SerializedObject<?> serializedObject;
     private final Class<T> deserializedObjectType;
-    private volatile T deserializedObject;
+    private volatile transient T deserializedObject;
 
     /**
      * Creates an instance with the given <code>deserializedObject</code> object instance. Using this constructor will

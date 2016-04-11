@@ -75,6 +75,11 @@ public class SerializationAwareDomainEventMessage<T> extends SerializationAwareE
     }
 
     @Override
+    public String getType() {
+        return domainEventMessage.getType();
+    }
+
+    @Override
     public DomainEventMessage<T> withMetaData(Map<String, ?> metaData) {
         final DomainEventMessage<T> newMessage = domainEventMessage.withMetaData(metaData);
         if (domainEventMessage == newMessage) { // NOSONAR - Equal instance check on purpose

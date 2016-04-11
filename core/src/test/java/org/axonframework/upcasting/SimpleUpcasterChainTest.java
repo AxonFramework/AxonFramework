@@ -22,14 +22,14 @@ import org.axonframework.serializer.ConverterFactory;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
-
-import org.junit.*;
+import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -50,9 +50,9 @@ public class SimpleUpcasterChainTest extends UpcasterChainTest {
         List<SerializedObject> result = chain.upcast(serializedObject,
                                                      new SerializedDomainEventUpcastingContext(
                                                              new SimpleSerializedDomainEventData(
-                                                             "eventId", "aggregateId", 0, Instant.now(), "test", "0",
-                                                             "Data".getBytes(IOUtils.UTF8),
-                                                             "meta".getBytes(IOUtils.UTF8)
+                                                                     "eventId", aggregateType, "aggregateId", 0, Instant.now(), "test", "0",
+                                                                     "Data".getBytes(IOUtils.UTF8),
+                                                                     "meta".getBytes(IOUtils.UTF8)
                                                              ), mock(Serializer.class))
         );
 

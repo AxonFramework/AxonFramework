@@ -29,7 +29,10 @@ import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.messaging.InterceptorChain;
@@ -106,7 +109,7 @@ public class GivenWhenThenTestFixture<T>
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(new EventSourcingRepository<>(aggregateFactory, eventStore, eventBus));
+        return registerRepository(new EventSourcingRepository<>(aggregateFactory, eventStore));
     }
 
     @Override
@@ -179,7 +182,7 @@ public class GivenWhenThenTestFixture<T>
                     payload = ((Message) event).getPayload();
                     metaData = ((Message) event).getMetaData();
                 }
-                this.givenEvents.add(new GenericDomainEventMessage<>(aggregateIdentifier, sequenceNumber++,
+                this.givenEvents.add(new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber++,
                                                                      payload, metaData));
             }
         } catch (RuntimeException e) {
@@ -240,7 +243,7 @@ public class GivenWhenThenTestFixture<T>
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(aggregateType, eventStore, eventBus));
+            registerRepository(new EventSourcingRepository<>(aggregateType, eventStore));
         }
     }
 
@@ -503,7 +506,7 @@ public class GivenWhenThenTestFixture<T>
             givenEvents.clear();
             for (DomainEventMessage oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
-                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getIdentifier(),
+                    givenEvents.add(new GenericDomainEventMessage<>(type, oldEvent.getIdentifier(),
                                                                     oldEvent.getTimestamp(),
                                                                     aggregateIdentifier,
                                                                     oldEvent.getSequenceNumber(),

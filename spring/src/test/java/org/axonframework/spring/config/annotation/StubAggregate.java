@@ -61,7 +61,7 @@ public class StubAggregate {
     }
 
     public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<>(identifier.toString(), (long) 5,
+        return new GenericDomainEventMessage<>(type, identifier.toString(), (long) 5,
                                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 

@@ -130,6 +130,6 @@ public class SerializedEventMessage<T> implements EventMessage<T>, Serialization
      * @return the GenericEventMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericEventMessage<>(getIdentifier(), getTimestamp(), getPayload(), getMetaData());
+        return new GenericEventMessage<>(getIdentifier(), getPayload(), getMetaData(), getTimestamp());
     }
 }

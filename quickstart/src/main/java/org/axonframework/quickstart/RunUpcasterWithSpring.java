@@ -18,7 +18,6 @@ package org.axonframework.quickstart;
 
 import org.apache.commons.io.FileUtils;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
@@ -47,11 +46,14 @@ public class RunUpcasterWithSpring {
 
         // we append some events. Notice we append a "ToDoItemCreatedEvent".
         eventStore.appendEvents(Arrays.asList(
-                new GenericDomainEventMessage<Object>("todo1", 0, new ToDoItemCreatedEvent("todo1", "I need to do this today")),
-                new GenericDomainEventMessage<Object>("todo1", 1, new ToDoItemCompletedEvent("todo1"))
+                new GenericDomainEventMessage<Object>("todo1", 0,
+                                                      new ToDoItemCreatedEvent("todo1", "I need to do this today"),
+                                                      type),
+                new GenericDomainEventMessage<Object>("todo1", 1, new ToDoItemCompletedEvent("todo1"), type)
         ));
         eventStore.appendEvents(Collections.singletonList(
-                new GenericDomainEventMessage<Object>("todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
+                new GenericDomainEventMessage<Object>("todo2", 0,
+                                                      new ToDoItemCreatedEvent("todo2", "I also need to do this"), type)
         ));
 
 

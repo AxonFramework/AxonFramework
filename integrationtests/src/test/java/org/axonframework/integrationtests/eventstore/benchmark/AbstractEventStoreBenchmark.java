@@ -79,7 +79,7 @@ public abstract class AbstractEventStoreBenchmark {
         List<DomainEventMessage<?>> events = new ArrayList<>(getTransactionSize());
         for (int t = 0; t < getTransactionSize(); t++) {
             events.add(new GenericDomainEventMessage<>(
-                    aggregateId,
+                    type, aggregateId,
                     eventSequence++,
                     new StubDomainEvent(), null));
         }

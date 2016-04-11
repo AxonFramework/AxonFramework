@@ -20,24 +20,17 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.Mongo;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.EventStreamNotFoundException;
-import org.axonframework.eventstore.EventVisitor;
 import org.axonframework.eventstore.management.CriteriaBuilder;
 import org.axonframework.mongoutils.MongoLauncher;
-import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.upcasting.LazyUpcasterChain;
 import org.axonframework.upcasting.UpcasterChain;
 import org.axonframework.upcasting.UpcastingContext;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.Logger;
@@ -59,14 +52,8 @@ import java.util.UUID;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * <p>Beware with this test, it requires a running mongodb as specified in the configuration file, if no mongo instance
@@ -196,7 +183,7 @@ public class MongoEventStoreTest_DocPerCommit {
 
         // we store some more events to make sure only correct events are retrieved
         testSubject.appendEvents(singletonList(
-                new GenericDomainEventMessage<>(aggregate2.getIdentifier(),
+                new GenericDomainEventMessage<>(type, aggregate2.getIdentifier(),
                                                 0,
                                                 new Object(),
                                                 Collections.singletonMap("key", (Object) "Value"))));
@@ -224,9 +211,9 @@ public class MongoEventStoreTest_DocPerCommit {
     @Test
     public void testAppendEventsFromConcurrentProcessing() {
         testSubject.appendEvents(aggregate2.getRegisteredEvents());
-        testSubject.appendEvents(new GenericDomainEventMessage<Object>("id2", 0, "test"));
+        testSubject.appendEvents(new GenericDomainEventMessage<Object>("id2", 0, "test", type));
         try {
-            testSubject.appendEvents(new GenericDomainEventMessage<Object>("id2", 0, "test"));
+            testSubject.appendEvents(new GenericDomainEventMessage<Object>("id2", 0, "test", type));
             fail("Expected ConcurrencyException");
         } catch (final ConcurrencyException e) {
             assertNotNull(e);
@@ -292,7 +279,7 @@ public class MongoEventStoreTest_DocPerCommit {
     public void testVisitAllEvents_IncludesUnknownEventType() throws Exception {
         EventVisitor eventVisitor = mock(EventVisitor.class);
         testSubject.appendEvents(createDomainEvents(10));
-        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test");
+        final GenericDomainEventMessage eventMessage = new GenericDomainEventMessage<>("test", 0, "test", type);
         testSubject.appendEvents(singletonList(eventMessage));
         testSubject.appendEvents(createDomainEvents(10));
         // we upcast the event to two instances, one of which is an unknown class
@@ -372,7 +359,7 @@ public class MongoEventStoreTest_DocPerCommit {
         final String aggregateIdentifier = UUID.randomUUID().toString();
         for (int t = 0; t < numberOfEvents; t++) {
             events.add(new GenericDomainEventMessage<>(
-                    aggregateIdentifier, t, new StubStateChangedEvent(), null));
+                    type, aggregateIdentifier, t, new StubStateChangedEvent(), null));
         }
         return events;
     }

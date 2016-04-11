@@ -21,10 +21,12 @@ import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.common.PeekingIterator;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.metadata.MetaData;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,16 +58,16 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     @Override
     protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                 String aggregateIdentifier,
-                                                DomainEventStream eventStream) {
-
-        DomainEventMessage firstEvent = eventStream.peek();
+                                                Iterator<? extends DomainEventMessage<?>> eventStream) {
+        PeekingIterator<? extends DomainEventMessage<?>> iterator = PeekingIterator.of(eventStream);
+        DomainEventMessage firstEvent = iterator.peek();
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(aggregateType);
         aggregateModels.computeIfAbsent(aggregateType, k -> ModelInspector.inspectAggregate(k, parameterResolverFactory));
         Object aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
         SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot, aggregateModels.get(aggregateType));
         aggregate.initializeState(eventStream);
-        return new GenericDomainEventMessage<>(
-                aggregate.identifier(), aggregate.version(), aggregate.getAggregateRoot());
+        return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifier(), aggregate.version(),
+                                               aggregate.getAggregateRoot());
 
     }
 
@@ -85,8 +87,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     }
 
     private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {
-        public SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel) {
-            super(aggregateRoot, aggregateModel, null, null);
+        private SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel) {
+            super(aggregateRoot, aggregateModel, null);
         }
 
         @Override

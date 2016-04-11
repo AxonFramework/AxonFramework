@@ -16,19 +16,25 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Registration;
+import org.axonframework.eventstore.TrackingToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import java.util.Spliterators;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import static org.axonframework.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
- * Implementation of the {@link EventBus} that directly forwards all published events (in the callers' thread) to all
- * subscribed listeners.
- * <p/>
- * Listeners are expected to implement asynchronous handling themselves.
+ * Implementation of the {@link EventBus} that supports streaming of events via {@link #readEvents(TrackingToken)} but
+ * only of the most recently published events as it is not backed by a cache or event storage.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -36,16 +42,18 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class SimpleEventBus extends AbstractEventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
-    private final Set<EventProcessor> eventProcessors = new CopyOnWriteArraySet<>();
 
-    private final PublicationStrategy publicationStrategy;
+    private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
+
+    private final Collection<EventStreamSpliterator> eventReaders = new CopyOnWriteArraySet<>();
+    private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
 
     /**
      * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
      * processors.
      */
     public SimpleEventBus() {
-        this(new DirectTerminal());
+        super();
     }
 
     /**
@@ -54,42 +62,61 @@ public class SimpleEventBus extends AbstractEventBus {
      * @param publicationStrategy The strategy used by the event bus to publish events to listeners
      */
     public SimpleEventBus(PublicationStrategy publicationStrategy) {
-        this.publicationStrategy = publicationStrategy;
+        super(publicationStrategy);
+    }
+
+    @Override
+    protected void afterCommit(List<EventMessage<?>> events) {
+        eventReaders.forEach(reader -> reader.addEvents(events));
     }
 
     /**
+     * This implementation only returns a stream if the specified {@code trackingToken} is {@code null}. Otherwise it
+     * will throw a {@link UnsupportedOperationException}.
+     * <p>
+     * The returned stream will receive all events published on the bus from the moment of opening the stream. Note that
+     * the tracking tokens of {@link TrackedEventMessage TrackedEventMessages} in the stream will be {@code null};
+     * <p>
      * {@inheritDoc}
      */
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
-        if (this.eventProcessors.add(eventProcessor)) {
-            logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor.getName());
-        } else {
-            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor.getName());
+    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+        if (trackingToken != null) {
+            throw new UnsupportedOperationException("The simple event bus does not support non-null tracking tokens");
         }
-        return () -> {
-            if (eventProcessors.remove(eventProcessor)) {
-                logger.debug("EventListener {} unsubscribed successfully", eventProcessor.getName());
-                return true;
-            } else {
-                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor.getName());
-                return false;
-            }
-        };
+        EventStreamSpliterator spliterator = new EventStreamSpliterator(queueCapacity);
+        eventReaders.add(spliterator);
+        Stream<? extends TrackedEventMessage<?>> stream = StreamSupport.stream(spliterator, false);
+        stream.onClose(() -> eventReaders.remove(spliterator));
+        return stream;
     }
 
-    @Override
-    protected void prepareCommit(List<EventMessage<?>> events) {
-        publicationStrategy.publish(events, eventProcessors);
+    public void setQueueCapacity(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
     }
 
-    private static class DirectTerminal implements PublicationStrategy {
+    private static class EventStreamSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+        private final BlockingQueue<TrackedEventMessage<?>> eventQueue;
+
+        private EventStreamSpliterator(int queueCapacity) {
+            super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
+            eventQueue = new LinkedBlockingQueue<>(queueCapacity);
+        }
+
+        private void addEvents(List<EventMessage<?>> events) {
+            //add one by one because bulk operations on LinkedBlockingQueues are not thread-safe
+            events.forEach(eventMessage -> eventQueue.offer(asTrackedEventMessage(eventMessage, null)));
+        }
 
         @Override
-        public void publish(List<EventMessage<?>> events, Set<EventProcessor> eventProcessors) {
-            for (EventProcessor eventProcessor : eventProcessors) {
-                eventProcessor.handle(events);
+        public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
+            try {
+                action.accept(eventQueue.take());
+            } catch (InterruptedException e) {
+                logger.warn("Thread was interrupted while waiting for the next item on the queue", e);
+                return false;
             }
+            return true;
         }
     }
 }

@@ -21,6 +21,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * An Event Processor processes event messages from an event queue or event bus.
@@ -34,7 +35,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.2
  */
-public interface EventProcessor extends EventProcessingMonitorSupport {
+public interface EventProcessor extends EventProcessingMonitorSupport, Consumer<List<EventMessage<?>>> {
 
     /**
      * Returns the name of this event processor. This name is used to detect distributed instances of the
@@ -54,7 +55,7 @@ public interface EventProcessor extends EventProcessingMonitorSupport {
      *
      * @param events The Events to publish in the event processor
      */
-    default void handle(EventMessage... events) {
+    default void handle(EventMessage<?>... events) {
         handle(Arrays.asList(events));
     }
 
@@ -68,6 +69,11 @@ public interface EventProcessor extends EventProcessingMonitorSupport {
      * @param events The Events to publish in the event processor
      */
     void handle(List<EventMessage<?>> events);
+
+    @Override
+    default void accept(List<EventMessage<?>> eventMessages) {
+        handle(eventMessages);
+    }
 
     /**
      * Subscribe the given {@code eventListener} to this event processor. If the listener is already subscribed, nothing

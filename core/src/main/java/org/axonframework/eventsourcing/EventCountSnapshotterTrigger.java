@@ -18,15 +18,13 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.cache.Cache;
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.common.io.IOUtils;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 /**
  * Snapshotter trigger mechanism that counts the number of events to decide when to create a snapshot. This
@@ -43,33 +41,29 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     private static final int DEFAULT_TRIGGER_VALUE = 50;
     private final ConcurrentMap<String, AtomicInteger> counters = new ConcurrentHashMap<>();
     private Snapshotter snapshotter;
-    private volatile boolean clearCountersAfterAppend = true;
     private int trigger = DEFAULT_TRIGGER_VALUE;
 
     @Override
-    public DomainEventStream decorateForRead(String aggregateIdentifier,
-                                             DomainEventStream eventStream) {
+    public Stream<? extends DomainEventMessage<?>> decorateForRead(String aggregateIdentifier,
+                                                                   Stream<? extends DomainEventMessage<?>> eventStream) {
         AtomicInteger counter = new AtomicInteger(0);
         counters.put(aggregateIdentifier, counter);
-        return new CountingEventStream(eventStream, counter);
+        return eventStream.peek(eventMessage -> counter.incrementAndGet());
     }
 
     @Override
     public List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
                                                          List<DomainEventMessage<?>> eventStream) {
-        String aggregateIdentifier = aggregate.identifier();
-        counters.putIfAbsent(aggregateIdentifier, new AtomicInteger(0));
-        AtomicInteger counter = counters.get(aggregateIdentifier);
-        counter.addAndGet(eventStream.size());
-        if (counter.get() > trigger) {
-            CurrentUnitOfWork.get().onCleanup(u -> triggerSnapshotIfRequired(aggregate.rootType(),
-                                                                             aggregateIdentifier, counter));
+        AtomicInteger counter = counters.computeIfAbsent(aggregate.identifier(), id -> new AtomicInteger(0));
+        if (counter.addAndGet(eventStream.size()) > trigger) {
+            CurrentUnitOfWork.get()
+                    .onCleanup(u -> triggerSnapshotIfRequired(aggregate.rootType(), aggregate.identifier(), counter));
         }
         return eventStream;
     }
 
-    private void triggerSnapshotIfRequired(Class<?> aggregateType,
-                                           String aggregateIdentifier, final AtomicInteger eventCount) {
+    private void triggerSnapshotIfRequired(Class<?> aggregateType, String aggregateIdentifier,
+                                           final AtomicInteger eventCount) {
         if (eventCount.get() > trigger) {
             snapshotter.scheduleSnapshot(aggregateType, aggregateIdentifier);
             eventCount.set(1);
@@ -98,20 +92,6 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
     }
 
     /**
-     * Indicates whether to maintain counters for aggregates after appending events to the event store for these
-     * aggregates. Defaults to <code>true</code>.
-     * <p/>
-     * By setting this value to false, event counters are kept in memory. This is particularly useful when repositories
-     * use caches, preventing events from being loaded. Consider registering the Caches use using {@link
-     * #setAggregateCache(org.axonframework.cache.Cache)} or {@link #setAggregateCaches(java.util.List)}
-     *
-     * @param clearCountersAfterAppend indicator whether to clear counters after appending events
-     */
-    public void setClearCountersAfterAppend(boolean clearCountersAfterAppend) {
-        this.clearCountersAfterAppend = clearCountersAfterAppend;
-    }
-
-    /**
      * Sets the Cache instance used be Caching repositories. By registering them to the snapshotter trigger, it can
      * optimize memory usage by clearing counters held for aggregates that are contained in caches. When an aggregate
      * is
@@ -126,7 +106,6 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      * @see #setAggregateCaches(java.util.List)
      */
     public void setAggregateCache(Cache cache) {
-        this.clearCountersAfterAppend = false;
         cache.registerCacheEntryListener(new CacheListener());
     }
 
@@ -140,48 +119,6 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      */
     public void setAggregateCaches(List<Cache> caches) {
         caches.forEach(this::setAggregateCache);
-    }
-
-    private class CountingEventStream implements DomainEventStream, Closeable {
-
-        private final DomainEventStream delegate;
-        private final AtomicInteger counter;
-
-        public CountingEventStream(DomainEventStream delegate, AtomicInteger counter) {
-            this.delegate = delegate;
-            this.counter = counter;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return delegate.hasNext();
-        }
-
-        @Override
-        public DomainEventMessage next() {
-            DomainEventMessage next = delegate.next();
-            counter.incrementAndGet();
-            return next;
-        }
-
-        @Override
-        public DomainEventMessage peek() {
-            return delegate.peek();
-        }
-
-        /**
-         * Returns the counter containing the number of bytes read.
-         *
-         * @return the counter containing the number of bytes read
-         */
-        protected AtomicInteger getCounter() {
-            return counter;
-        }
-
-        @Override
-        public void close() throws IOException {
-            IOUtils.closeIfCloseable(delegate);
-        }
     }
 
     private final class CacheListener extends Cache.EntryListenerAdapter {

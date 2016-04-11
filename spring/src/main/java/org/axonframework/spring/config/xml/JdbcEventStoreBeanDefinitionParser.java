@@ -16,14 +16,11 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.spring.config.AutowiredBean;
-import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.eventstore.jdbc.DefaultEventEntryStore;
-import org.axonframework.eventstore.jdbc.GenericEventSqlSchema;
-import org.axonframework.eventstore.jdbc.JdbcEventStore;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.spring.config.AutowiredBean;
+import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;

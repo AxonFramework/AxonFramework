@@ -27,11 +27,13 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventStreamDecorator;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventStreamNotFoundException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -82,7 +84,7 @@ public class DisruptorCommandBusTest {
         eventBus = mock(EventBus.class);
 
         inMemoryEventStore.appendEvents(Collections.singletonList(
-                new GenericDomainEventMessage<>(aggregateIdentifier, 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>(aggregateIdentifier, 0, new StubDomainEvent(), type)));
     }
 
     @After

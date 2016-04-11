@@ -38,16 +38,16 @@ public final class IOUtils {
     }
 
     /**
-     * Closes any Closable object, while suppressing any IOExceptions it will generate. The given
+     * Closes any AutoCloseable object, while suppressing any IOExceptions it will generate. The given
      * <code>closeable</code> may be <code>null</code>, in which case nothing happens.
      *
      * @param closeable the object to be closed
      */
-    public static void closeQuietly(Closeable closeable) {
+    public static void closeQuietly(AutoCloseable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();
-            } catch (IOException e) { // NOSONAR - empty catch block on purpose
+            } catch (Exception e) { // NOSONAR - empty catch block on purpose
                 // ignore
             }
         }
@@ -60,8 +60,8 @@ public final class IOUtils {
      * @param closeable the object to be closed
      */
     public static void closeQuietlyIfCloseable(Object closeable) {
-        if (closeable instanceof Closeable) {
-            closeQuietly((Closeable) closeable);
+        if (closeable instanceof AutoCloseable) {
+            closeQuietly((AutoCloseable) closeable);
         }
     }
 
@@ -73,9 +73,9 @@ public final class IOUtils {
      * @param closeable The object to close
      * @throws IOException when an error occurs while closing the resource
      */
-    public static void closeIfCloseable(Object closeable) throws IOException {
-        if (closeable instanceof Closeable) {
-            ((Closeable) closeable).close();
+    public static void closeIfCloseable(Object closeable) throws Exception {
+        if (closeable instanceof AutoCloseable) {
+            ((AutoCloseable) closeable).close();
         }
     }
 }

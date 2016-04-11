@@ -38,7 +38,7 @@ public class SerializationAwareDomainEventMessageTest {
     @Before
     public void setUp() throws Exception {
         testSubject = new SerializationAwareDomainEventMessage<>(
-                new GenericDomainEventMessage<>("aggregate", 1, "payload", Collections.singletonMap("key", "value")));
+                new GenericDomainEventMessage<>(type, "aggregate", 1, "payload", Collections.singletonMap("key", "value")));
     }
 
     @Test

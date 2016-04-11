@@ -18,10 +18,9 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.List;
@@ -68,17 +67,14 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
                           Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
                           MultiplexingEventProcessingMonitor monitor) {
         try {
-            for (EventMessage event : events) {
-                UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
-                InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
-                        interceptors, (message, uow) -> {
-                            for (EventListener eventListener : eventListeners) {
-                                eventListener.handle(message);
-                            }
-                            return null;
-                });
-                unitOfWork.executeWithResult(interceptorChain::proceed);
-            }
+            UnitOfWork<EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(events);
+            unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(unitOfWork, interceptors,
+                    (message, uow) -> {
+                        for (EventListener eventListener : eventListeners) {
+                            eventListener.handle(message);
+                        }
+                        return null;
+                    }).proceed());
             notifyMonitors(events, monitor, null);
         } catch (Exception e) {
             notifyMonitors(events, monitor, e);

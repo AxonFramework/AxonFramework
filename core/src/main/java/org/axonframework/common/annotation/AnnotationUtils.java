@@ -40,12 +40,12 @@ public abstract class AnnotationUtils {
      * Find an annotation of given <code>annotationType</code> on the given <code>element</code>, considering that the
      * given <code>annotationType</code> may be present as a meta annotation on any other annotation on that element.
      *
+     * @param <T>            The generic type of the annotation
      * @param element        The element to inspect
      * @param annotationType The type of annotation to find
-     * @param <T>            The generic type of the annotation
-     * @return the annotation, or <code>null</code> if no such annotation is present.
+     * @return an optional that contains the annotation if it was found on the element.
      */
-    public static <T extends Annotation> T findAnnotation(AnnotatedElement element, Class<T> annotationType) {
+    public static <T extends Annotation> Optional<T> findAnnotation(AnnotatedElement element, Class<T> annotationType) {
         T ann = element.getAnnotation(annotationType);
         if (ann == null) {
             HashSet<Class<? extends Annotation>> visited = new HashSet<>();
@@ -56,7 +56,7 @@ public abstract class AnnotationUtils {
                 }
             }
         }
-        return ann;
+        return Optional.ofNullable(ann);
     }
 
     /**

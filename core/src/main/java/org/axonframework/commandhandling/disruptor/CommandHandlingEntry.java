@@ -37,8 +37,8 @@ import java.util.List;
 public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>> {
 
     private final MessageHandler<CommandMessage<?>> repeatingCommandHandler;
-    private InterceptorChain<CommandMessage<?>> invocationInterceptorChain;
-    private InterceptorChain<CommandMessage<?>> publisherInterceptorChain;
+    private InterceptorChain invocationInterceptorChain;
+    private InterceptorChain publisherInterceptorChain;
     private Exception exceptionResult;
     private Object result;
     private int publisherSegmentId;
@@ -63,7 +63,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      *
      * @return the InterceptorChain for the invocation process registered with this entry
      */
-    public InterceptorChain<CommandMessage<?>> getInvocationInterceptorChain() {
+    public InterceptorChain getInvocationInterceptorChain() {
         return invocationInterceptorChain;
     }
 

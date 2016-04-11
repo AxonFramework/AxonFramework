@@ -27,7 +27,6 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
-import org.axonframework.eventstore.jpa.JpaEventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -138,25 +137,25 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     public void testWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     public void testMinimalScenarioWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     public void testMinimalScenarioWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
         testMinimalScenario("MinimalScenarioWithCache");
     }
 

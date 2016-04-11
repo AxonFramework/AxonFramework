@@ -67,7 +67,7 @@ public class CachingEventSourcingRepositoryTest {
         ehCache = cacheManager.getCache("testCache");
         cache = spy(new EhCacheAdapter(ehCache));
 
-        testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore, eventBus, cache);
+        testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore, cache);
     }
 
     @After

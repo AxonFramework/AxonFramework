@@ -46,5 +46,5 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      *
      * @throws Exception any exception that occurs while handling the message
      */
-    Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception;
+    Object handle(UnitOfWork<T> unitOfWork, InterceptorChain interceptorChain) throws Exception;
 }

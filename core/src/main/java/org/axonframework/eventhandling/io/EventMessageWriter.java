@@ -67,7 +67,8 @@ public class EventMessageWriter {
         out.writeUTF(eventMessage.getTimestamp().toString());
         if (eventMessage instanceof DomainEventMessage) {
             DomainEventMessage domainEventMessage = (DomainEventMessage) eventMessage;
-            out.writeUTF(domainEventMessage.getAggregateIdentifier().toString());
+            out.writeUTF(domainEventMessage.getType());
+            out.writeUTF(domainEventMessage.getAggregateIdentifier());
             out.writeLong(domainEventMessage.getSequenceNumber());
         }
         SerializedObject<byte[]> serializedPayload = serializer.serializePayload(eventMessage, byte[].class);

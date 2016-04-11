@@ -26,7 +26,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
@@ -91,12 +90,12 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     public void testLoopbackScenario() throws InterruptedException {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
         eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
-                aggregateAIdentifier,
+                type, aggregateAIdentifier,
                 (long) 0,
                 new CreateEvent(aggregateAIdentifier),
                 MetaData.emptyInstance())}));
         eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
-                aggregateBIdentifier,
+                type, aggregateBIdentifier,
                 (long) 0,
                 new CreateEvent(aggregateBIdentifier),
                 MetaData.emptyInstance())}));
