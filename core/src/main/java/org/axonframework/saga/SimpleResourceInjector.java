@@ -34,8 +34,12 @@ import static org.axonframework.common.ReflectionUtils.fieldsOf;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
- * Resource injector that uses setter methods to inject resources. All methods starting with "set" are evaluated. If
- * that method has a single parameter, a Resource of that type is injected into it, if present.
+ * A resource injector that checks for {@see javax.inject.Inject} annotated fields and setter methods to inject
+ *  resources.
+ * If a field is annotated with {@see javax.inject.Inject}, a Resource of the type of that field is injected into it,
+ *  if present.
+ * If a method is annotated with {@see javax.inject.Inject}, the method is invoked with a Resource of the type of the
+ *  first parameter, if present.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -43,6 +47,9 @@ import static org.axonframework.common.ReflectionUtils.methodsOf;
 public class SimpleResourceInjector implements ResourceInjector {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleResourceInjector.class);
+
+    private static final String FULLY_QUALIFIED_CLASS_NAME_INJECT = "javax.inject.Inject";
+
     private final Iterable<?> resources;
 
     /**
@@ -71,7 +78,7 @@ public class SimpleResourceInjector implements ResourceInjector {
 
     private void injectFieldResources(Saga saga) {
         fieldsOf(saga.getClass()).forEach(field -> {
-            Optional.ofNullable(AnnotationUtils.findAnnotation(field, "javax.inject.Inject"))
+            Optional.ofNullable(AnnotationUtils.findAnnotation(field, FULLY_QUALIFIED_CLASS_NAME_INJECT))
                     .ifPresent(annotatedFields -> {
                         Class<?> requiredType = field.getType();
                         StreamSupport.stream(resources.spliterator(), false)
@@ -92,7 +99,7 @@ public class SimpleResourceInjector implements ResourceInjector {
 
     private void injectMethodResources(Saga saga) {
         methodsOf(saga.getClass()).forEach(method -> {
-            Optional.ofNullable(AnnotationUtils.findAnnotation(method, "javax.inject.Inject"))
+            Optional.ofNullable(AnnotationUtils.findAnnotation(method, FULLY_QUALIFIED_CLASS_NAME_INJECT))
                     .ifPresent(annotatedMethods -> {
                         Class<?> requiredType = method.getParameterTypes()[0];
                         StreamSupport.stream(resources.spliterator(), false)
