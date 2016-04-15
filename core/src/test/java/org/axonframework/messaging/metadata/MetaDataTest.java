@@ -108,6 +108,33 @@ public class MetaDataTest {
         return (MetaData) ois.readObject();
     }
 
+    @Test
+    public void testBuildMetaDataThroughFrom() throws Exception {
+        Map<String, String> testMetaDataMap = new HashMap<>();
+        testMetaDataMap.put("firstKey", "firstVal");
+        testMetaDataMap.put("secondKey", "secondVal");
+
+        MetaData result = MetaData.from(testMetaDataMap);
+
+        assertEquals("firstVal", result.get("firstKey"));
+        assertEquals("secondVal", result.get("secondKey"));
+    }
+
+    @Test
+    public void testBuildMetaDataThroughWith() throws Exception {
+        MetaData result = MetaData.with("key", "val");
+
+        assertEquals("val", result.get("key"));
+    }
+
+    @Test
+    public void testBuildMetaDataThroughWithAnd() throws Exception {
+        MetaData result = MetaData.with("firstKey", "firstVal").and("secondKey", "secondVal");
+
+        assertEquals("firstVal", result.get("firstKey"));
+        assertEquals("secondVal", result.get("secondKey"));
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void testMetaDataModification_Clear() {
         new MetaData(Collections.<String, Object>emptyMap()).clear();

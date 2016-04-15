@@ -91,6 +91,22 @@ public class MetaData implements Map<String, Object>, Serializable {
         return MetaData.from(Collections.singletonMap(key, value));
     }
 
+    /**
+     * Returns a MetaData instances containing the current entries, <b>and</b> the given <code>key</code> and given
+     * <code>value</code>.
+     * If <code>key</code> already existed, it's old <code>value</code> is overwritten with the given
+     * <code>value</code>.
+     *
+     * @param key   The key for the entry
+     * @param value The value of the entry
+     * @return a MetaData instance with an additional entry
+     */
+    public MetaData and(String key, Object value) {
+        HashMap<String, Object> newValues = new HashMap<>(values);
+        newValues.put(key, value);
+        return new MetaData(newValues);
+    }
+
     @Override
     public Object get(Object key) {
         return values.get(key);
