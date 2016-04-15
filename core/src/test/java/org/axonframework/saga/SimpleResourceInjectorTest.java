@@ -21,6 +21,8 @@ import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
 import org.junit.Test;
 
+import javax.inject.Inject;
+
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
@@ -32,31 +34,56 @@ public class SimpleResourceInjectorTest {
     private SimpleResourceInjector testSubject;
 
     @Test
-    public void testInjectResource() {
-        final SomeResource resource = new SomeResource();
-        testSubject = new SimpleResourceInjector(resource);
+    public void testInjectFieldResource() throws Exception {
+        SomeFieldResource expectedFieldResource = new SomeFieldResource();
+        testSubject = new SimpleResourceInjector(expectedFieldResource);
         final StubSaga saga = new StubSaga();
         testSubject.injectResources(saga);
 
-        assertNull(saga. getSomeWeirdResource());
-        assertSame(resource, saga.getSomeResource());
+        assertNull(saga.getSomeWeirdResource());
+        assertSame(expectedFieldResource, saga.getSomeFieldResource());
+    }
+
+    @Test
+    public void testInjectMethodResource() {
+        final SomeMethodResource expectedMethodResource = new SomeMethodResource();
+        testSubject = new SimpleResourceInjector(expectedMethodResource);
+        final StubSaga saga = new StubSaga();
+        testSubject.injectResources(saga);
+
+        assertNull(saga.getSomeWeirdResource());
+        assertSame(expectedMethodResource, saga.getSomeMethodResource());
+    }
+
+    @Test
+    public void testInjectFieldAndMethodResources() throws Exception {
+        final SomeFieldResource expectedFieldResource = new SomeFieldResource();
+        final SomeMethodResource expectedMethodResource = new SomeMethodResource();
+        testSubject = new SimpleResourceInjector(expectedFieldResource, expectedMethodResource);
+        final StubSaga saga = new StubSaga();
+        testSubject.injectResources(saga);
+
+        assertNull(saga.getSomeWeirdResource());
+        assertSame(expectedFieldResource, saga.getSomeFieldResource());
+        assertSame(expectedMethodResource, saga.getSomeMethodResource());
     }
 
     @Test
     public void testInjectResource_ExceptionsIgnored() {
-        final SomeResource resource = new SomeResource();
+        final SomeMethodResource resource = new SomeMethodResource();
         testSubject = new SimpleResourceInjector(resource, new SomeWeirdResource());
         final StubSaga saga = new StubSaga();
         testSubject.injectResources(saga);
 
-        assertNull(saga. getSomeWeirdResource());
-        assertSame(resource, saga.getSomeResource());
+        assertNull(saga.getSomeWeirdResource());
+        assertSame(resource, saga.getSomeMethodResource());
     }
-
 
     private static class StubSaga implements Saga {
 
-        private SomeResource someResource;
+        @Inject
+        private SomeFieldResource someFieldResource;
+        private SomeMethodResource someMethodResource;
         private SomeWeirdResource someWeirdResource;
 
         @Override
@@ -78,12 +105,17 @@ public class SimpleResourceInjectorTest {
             return true;
         }
 
-        public void setSomeResource(SomeResource someResource) {
-            this.someResource = someResource;
+        public SomeFieldResource getSomeFieldResource() {
+            return someFieldResource;
         }
 
-        public SomeResource getSomeResource() {
-            return someResource;
+        public SomeMethodResource getSomeMethodResource() {
+            return someMethodResource;
+        }
+
+        @Inject
+        public void setSomeMethodResource(SomeMethodResource someMethodResource) {
+            this.someMethodResource = someMethodResource;
         }
 
         public SomeWeirdResource getSomeWeirdResource() {
@@ -93,12 +125,16 @@ public class SimpleResourceInjectorTest {
         public void setSomeWeirdResource(SomeWeirdResource someWeirdResource) {
             throw new MockException();
         }
+
+    }
+
+    private static class SomeFieldResource {
+    }
+
+    private static class SomeMethodResource {
     }
 
     private static class SomeWeirdResource {
-
     }
-    private static class SomeResource {
 
-    }
 }

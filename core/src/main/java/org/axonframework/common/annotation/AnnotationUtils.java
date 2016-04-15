@@ -45,10 +45,24 @@ public abstract class AnnotationUtils {
      * @param <T>            The generic type of the annotation
      * @return the annotation, or <code>null</code> if no such annotation is present.
      */
+    @SuppressWarnings("unchecked")
     public static <T extends Annotation> T findAnnotation(AnnotatedElement element, Class<T> annotationType) {
-        T ann = element.getAnnotation(annotationType);
+        return (T) findAnnotation(element, annotationType.getName());
+    }
+
+    /**
+     * Find an annotation of given <code>annotationType</code> as String on the given <code>element</code>,
+     * considering that the given <code>annotationType</code> may be present as a meta annotation on any other
+     * annotation on that element.
+     *
+     * @param element        The element to inspect
+     * @param annotationType The type of annotation as String to find
+     * @return the annotation, or <code>null</code> if no such annotation is present.
+     */
+    public static Annotation findAnnotation(AnnotatedElement element, String annotationType) {
+        Annotation ann = getAnnotation(element, annotationType);
         if (ann == null) {
-            HashSet<Class<? extends Annotation>> visited = new HashSet<>();
+            Set<String> visited = new HashSet<>();
             for (Annotation metaAnn : element.getAnnotations()) {
                 ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
                 if (ann != null) {
@@ -146,10 +160,10 @@ public abstract class AnnotationUtils {
         }
     }
 
-    private static <T extends Annotation> T getAnnotation(Class<? extends Annotation> target, Class<T> annotationType,
-                                                          Set<Class<? extends Annotation>> visited) {
-        T ann = target.getAnnotation(annotationType);
-        if (ann == null && visited.add(target)) {
+    private static Annotation getAnnotation(Class<? extends Annotation> target, String annotationType,
+                                            Set<String> visited) {
+        Annotation ann = getAnnotation(target, annotationType);
+        if (ann == null && visited.add(target.getName())) {
             for (Annotation metaAnn : target.getAnnotations()) {
                 ann = getAnnotation(metaAnn.annotationType(), annotationType, visited);
                 if (ann != null) {
@@ -159,4 +173,5 @@ public abstract class AnnotationUtils {
         }
         return ann;
     }
+
 }

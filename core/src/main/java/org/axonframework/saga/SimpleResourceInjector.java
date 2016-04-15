@@ -17,15 +17,20 @@
 package org.axonframework.saga;
 
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.StreamSupport;
 
+import static org.axonframework.common.ReflectionUtils.fieldsOf;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
@@ -60,22 +65,47 @@ public class SimpleResourceInjector implements ResourceInjector {
 
     @Override
     public void injectResources(Saga saga) {
-        for (Method method : methodsOf(saga.getClass())) {
-            if (isSetter(method)) {
-                Class<?> requiredType = method.getParameterTypes()[0];
-                for (Object resource : resources) {
-                    if (requiredType.isInstance(resource)) {
-                        injectResource(saga, method, resource);
-                    }
-                }
-            }
+        injectFieldResources(saga);
+        injectMethodResources(saga);
+    }
+
+    private void injectFieldResources(Saga saga) {
+        fieldsOf(saga.getClass()).forEach(field -> {
+            Optional.ofNullable(AnnotationUtils.findAnnotation(field, "javax.inject.Inject"))
+                    .ifPresent(annotatedFields -> {
+                        Class<?> requiredType = field.getType();
+                        StreamSupport.stream(resources.spliterator(), false)
+                                .filter(requiredType::isInstance)
+                                .forEach(resource -> injectFieldResource(saga, field, resource));
+                    });
+        });
+    }
+
+    private void injectFieldResource(Saga saga, Field injectField, Object resource) {
+        try {
+            ReflectionUtils.ensureAccessible(injectField);
+            injectField.set(saga, resource);
+        } catch (IllegalAccessException e) {
+            logger.warn("Unable to inject resource. Exception while setting field: ", e);
         }
     }
 
-    private void injectResource(Saga saga, Method setterMethod, Object resource) {
+    private void injectMethodResources(Saga saga) {
+        methodsOf(saga.getClass()).forEach(method -> {
+            Optional.ofNullable(AnnotationUtils.findAnnotation(method, "javax.inject.Inject"))
+                    .ifPresent(annotatedMethods -> {
+                        Class<?> requiredType = method.getParameterTypes()[0];
+                        StreamSupport.stream(resources.spliterator(), false)
+                                .filter(requiredType::isInstance)
+                                .forEach(resource -> injectMethodResource(saga, method, resource));
+                    });
+        });
+    }
+
+    private void injectMethodResource(Saga saga, Method injectMethod, Object resource) {
         try {
-            ReflectionUtils.ensureAccessible(setterMethod);
-            setterMethod.invoke(saga, resource);
+            ReflectionUtils.ensureAccessible(injectMethod);
+            injectMethod.invoke(saga, resource);
         } catch (IllegalAccessException e) {
             logger.warn("Unable to inject resource. Exception while invoking setter: ", e);
         } catch (InvocationTargetException e) {
@@ -83,7 +113,4 @@ public class SimpleResourceInjector implements ResourceInjector {
         }
     }
 
-    private boolean isSetter(Method method) {
-        return method.getParameterTypes().length == 1 && method.getName().startsWith("set");
-    }
 }
