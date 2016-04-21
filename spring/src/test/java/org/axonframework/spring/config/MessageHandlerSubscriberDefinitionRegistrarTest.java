@@ -43,7 +43,7 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
     public void testHandlersRegisteredToEventBus() throws Exception {
         assertNotNull(eventBus);
         verify(eventBus).subscribe(eventProcessor);
-        verify(eventBus2, never()).subscribe(any());
+        verify(eventBus2, never()).subscribe(eventProcessor);
         verify(eventProcessor).subscribe(eventListener);
         verify(commandBus).subscribe(eq(String.class.getName()), eq(annotationCommandHandler));
     }

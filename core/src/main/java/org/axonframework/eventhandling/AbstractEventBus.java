@@ -33,40 +33,22 @@ public abstract class AbstractEventBus implements EventBus {
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
     final String eventsKey = this + "_EVENTS";
-    private final Set<EventProcessor> eventProcessors = new CopyOnWriteArraySet<>();
+    private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
-    private final PublicationStrategy publicationStrategy;
-
-    /**
-     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
-     * processors.
-     */
-    public AbstractEventBus() {
-        this(new DirectTerminal());
-    }
-
-    /**
-     * Initializes an event bus with given {@link PublicationStrategy}.
-     *
-     * @param publicationStrategy The strategy used by the event bus to publish events to listeners
-     */
-    public AbstractEventBus(PublicationStrategy publicationStrategy) {
-        this.publicationStrategy = publicationStrategy;
-    }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         if (this.eventProcessors.add(eventProcessor)) {
-            logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor.getName());
+            logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor);
         } else {
-            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor.getName());
+            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor);
         }
         return () -> {
             if (eventProcessors.remove(eventProcessor)) {
-                logger.debug("EventListener {} unsubscribed successfully", eventProcessor.getName());
+                logger.debug("EventListener {} unsubscribed successfully", eventProcessor);
                 return true;
             } else {
-                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor.getName());
+                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor);
                 return false;
             }
         };
@@ -163,7 +145,9 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void prepareCommit(List<EventMessage<?>> events) {
-        publicationStrategy.publish(events, eventProcessors);
+        for (Consumer<List<? extends EventMessage<?>>> eventProcessor : eventProcessors) {
+            eventProcessor.accept(events);
+        }
     }
 
     /**
@@ -182,14 +166,5 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void afterCommit(List<EventMessage<?>> events) {
-    }
-
-    private static class DirectTerminal implements PublicationStrategy {
-        @Override
-        public void publish(List<EventMessage<?>> events, Set<EventProcessor> eventProcessors) {
-            for (EventProcessor eventProcessor : eventProcessors) {
-                eventProcessor.handle(events);
-            }
-        }
     }
 }

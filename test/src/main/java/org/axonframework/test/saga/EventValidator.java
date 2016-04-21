@@ -19,7 +19,6 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
@@ -96,7 +95,7 @@ public class EventValidator implements EventListener {
      * Starts recording event published by the event bus.
      */
     public void startRecording() {
-        eventBus.subscribe(new SimpleEventProcessor("recorder", this));
+        eventBus.subscribe(eventProcessor);
     }
 
     @SuppressWarnings({"unchecked"})

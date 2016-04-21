@@ -87,7 +87,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         private int lastBatchSize;
 
         private EventStreamSpliterator(Function<T, List<T>> fetchFunction, int batchSize) {
-            super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT);
+            super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
             this.batchSize = batchSize;
         }

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -68,7 +69,7 @@ public class RecordingEventStore implements EventStore {
     }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         subscriptions.add(eventProcessor);
         return () -> subscriptions.remove(eventProcessor);
     }

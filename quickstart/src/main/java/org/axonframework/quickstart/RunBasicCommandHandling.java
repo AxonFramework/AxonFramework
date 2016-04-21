@@ -22,13 +22,10 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.SimpleEventProcessor;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.fs.FileSystemEventStore;
 import org.axonframework.eventstore.fs.SimpleEventFileResolver;
-import org.axonframework.quickstart.annotated.ToDoEventHandler;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.handler.CreateToDoCommandHandler;
@@ -68,7 +65,7 @@ public class RunBasicCommandHandling {
                 new MarkCompletedCommandHandler(repository));
 
         // We register an event listener to see which events are created
-        eventBus.subscribe(new SimpleEventProcessor("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
+        eventBus.subscribe(eventProcessor);
 
         // and let's send some Commands on the CommandBus using the special runner configured with our CommandGateway.
         CommandGenerator.sendCommands(commandGateway);

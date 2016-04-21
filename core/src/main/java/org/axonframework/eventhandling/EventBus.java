@@ -22,6 +22,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -91,7 +92,7 @@ public interface EventBus {
      * events.
      * @throws EventListenerSubscriptionFailedException if the listener could not be subscribed
      */
-    Registration subscribe(EventProcessor eventProcessor);
+    Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor);
 
     /**
      * Register the given <code>interceptor</code> with this bus. When subscribed it will intercept any event messages

@@ -27,8 +27,10 @@ import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
@@ -120,7 +122,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(new SimpleEventProcessor("test", el));
+        eventBus.subscribe(eventProcessor);
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
@@ -158,7 +160,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(new SimpleEventProcessor("test", el));
+        eventBus.subscribe(eventProcessor);
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 

@@ -23,7 +23,6 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.EventProcessorMetaData;
 import org.axonframework.eventhandling.amqp.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -41,6 +40,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQP_CONFIG_PROPERTY;
 
@@ -177,7 +177,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         EventProcessorMetaData processorMetaData = eventProcessor.getMetaData();
         AMQPConsumerConfiguration config;
         if (processorMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {

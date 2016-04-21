@@ -46,23 +46,14 @@ public class SimpleEventBus extends AbstractEventBus {
     private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
     private final Collection<EventStreamSpliterator> eventReaders = new CopyOnWriteArraySet<>();
-    private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
+    private final int queueCapacity;
 
-    /**
-     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
-     * processors.
-     */
     public SimpleEventBus() {
-        super();
+        this(DEFAULT_QUEUE_CAPACITY);
     }
 
-    /**
-     * Initializes an event bus with given {@link PublicationStrategy}.
-     *
-     * @param publicationStrategy The strategy used by the event bus to publish events to listeners
-     */
-    public SimpleEventBus(PublicationStrategy publicationStrategy) {
-        super(publicationStrategy);
+    public SimpleEventBus(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
     }
 
     @Override
@@ -91,11 +82,7 @@ public class SimpleEventBus extends AbstractEventBus {
         return stream;
     }
 
-    public void setQueueCapacity(int queueCapacity) {
-        this.queueCapacity = queueCapacity;
-    }
-
-    private static class EventStreamSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+    private class EventStreamSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
         private final BlockingQueue<TrackedEventMessage<?>> eventQueue;
 
         private EventStreamSpliterator(int queueCapacity) {
@@ -105,7 +92,14 @@ public class SimpleEventBus extends AbstractEventBus {
 
         private void addEvents(List<EventMessage<?>> events) {
             //add one by one because bulk operations on LinkedBlockingQueues are not thread-safe
-            events.forEach(eventMessage -> eventQueue.offer(asTrackedEventMessage(eventMessage, null)));
+            events.forEach(eventMessage -> {
+                try {
+                    eventQueue.put(asTrackedEventMessage(eventMessage, null));
+                } catch (InterruptedException e) {
+                    logger.warn("Event producer thread was interrupted. Shutting down.", e);
+                    Thread.currentThread().interrupt();
+                }
+            });
         }
 
         @Override
@@ -114,6 +108,7 @@ public class SimpleEventBus extends AbstractEventBus {
                 action.accept(eventQueue.take());
             } catch (InterruptedException e) {
                 logger.warn("Thread was interrupted while waiting for the next item on the queue", e);
+                Thread.currentThread().interrupt();
                 return false;
             }
             return true;

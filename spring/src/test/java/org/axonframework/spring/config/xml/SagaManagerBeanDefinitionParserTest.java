@@ -2,8 +2,8 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.saga.SagaManager;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +12,7 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -35,7 +35,7 @@ public class SagaManagerBeanDefinitionParserTest {
 
     @Test
     public void testSagaManagerSubscribedToEventBus() throws Exception {
-        verify(mockEventBus, times(2)).subscribe(any());
+        verify(mockEventBus, times(2)).subscribe(eventProcessor);
 
         assertNotNull(explicitManager.getTargetType());
         assertNotNull(autowiredManager.getTargetType());

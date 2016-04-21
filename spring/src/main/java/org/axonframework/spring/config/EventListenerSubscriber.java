@@ -85,7 +85,8 @@ public class EventListenerSubscriber implements ApplicationContextAware, SmartLi
         }
 
         if (subscribeEventProcessorsToEventBus) {
-            applicationContext.getBeansOfType(EventProcessor.class).values().forEach(eventBus::subscribe);
+            applicationContext.getBeansOfType(EventProcessor.class).values().forEach(
+                    (eventProcessor) -> eventBus.subscribe(eventProcessor));
         }
         this.started = true;
     }
@@ -95,7 +96,7 @@ public class EventListenerSubscriber implements ApplicationContextAware, SmartLi
         if (eventProcessorSelectors.isEmpty()) {
             Map<String, EventProcessor> eventProcessors = applicationContext.getBeansOfType(EventProcessor.class);
             if (eventProcessors.isEmpty()) {
-                eventBus.subscribe(defaultEventProcessor);
+                eventBus.subscribe(eventProcessor);
                 return defaultEventProcessor;
             } else if (eventProcessors.size() == 1) {
                 return eventProcessors.values().iterator().next();

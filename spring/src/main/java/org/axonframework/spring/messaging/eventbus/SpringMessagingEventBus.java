@@ -27,6 +27,7 @@ import org.springframework.messaging.support.GenericMessage;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 /**
  * {@link org.axonframework.eventhandling.EventBus} implementation that delegates all subscription and publishing
@@ -58,7 +59,7 @@ public class SpringMessagingEventBus extends AbstractEventBus {
     }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         MessageHandler messagehandler = new MessageHandlerAdapter(eventProcessor);
         MessageHandler oldHandler = handlers.putIfAbsent(eventProcessor, messagehandler);
         if (oldHandler == null) {

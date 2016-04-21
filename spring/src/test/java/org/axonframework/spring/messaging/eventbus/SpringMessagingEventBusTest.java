@@ -48,14 +48,14 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testSubscribeListener() {
-        testSubject.subscribe(mockEventProcessor);
+        testSubject.subscribe(eventProcessor);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }
 
     @Test
     public void testUnsubscribeListener() throws Exception {
-        Registration subscription = testSubject.subscribe(mockEventProcessor);
+        Registration subscription = testSubject.subscribe(eventProcessor);
         subscription.close();
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
@@ -63,7 +63,7 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testUnsubscribeListener_UnsubscribedTwice() throws Exception {
-        Registration subscription = testSubject.subscribe(mockEventProcessor);
+        Registration subscription = testSubject.subscribe(eventProcessor);
         subscription.close();
         subscription.close();
 
@@ -73,8 +73,8 @@ public class SpringMessagingEventBusTest {
     @Test
     public void testSubscribeListener_SubscribedTwice() {
 
-        testSubject.subscribe(mockEventProcessor);
-        testSubject.subscribe(mockEventProcessor);
+        testSubject.subscribe(eventProcessor);
+        testSubject.subscribe(eventProcessor);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }

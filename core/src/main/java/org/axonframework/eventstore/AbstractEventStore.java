@@ -15,7 +15,6 @@ package org.axonframework.eventstore;
 
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.PublicationStrategy;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +32,6 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     private final EventStorageEngine storageEngine;
 
     public AbstractEventStore(EventStorageEngine storageEngine) {
-        this.storageEngine = storageEngine;
-    }
-
-    public AbstractEventStore(PublicationStrategy publicationStrategy, EventStorageEngine storageEngine) {
-        super(publicationStrategy);
         this.storageEngine = storageEngine;
     }
 

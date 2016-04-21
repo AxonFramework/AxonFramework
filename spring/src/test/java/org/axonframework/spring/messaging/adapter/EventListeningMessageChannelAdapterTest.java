@@ -26,13 +26,7 @@ import org.mockito.ArgumentMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -63,9 +57,9 @@ public class EventListeningMessageChannelAdapterTest {
 
     @Test
     public void testEventListenerRegisteredOnInit() throws Exception {
-        verify(mockEventBus, never()).subscribe(any());
+        verify(mockEventBus, never()).subscribe(eventProcessor);
         testSubject.afterPropertiesSet();
-        verify(mockEventBus).subscribe(any());
+        verify(mockEventBus).subscribe(eventProcessor);
     }
 
     @SuppressWarnings({"unchecked"})

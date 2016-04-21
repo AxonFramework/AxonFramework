@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static junit.framework.TestCase.assertEquals;
@@ -216,7 +217,7 @@ public class AbstractEventBusTest {
         }
 
         @Override
-        public Registration subscribe(EventProcessor eventProcessor) {
+        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
     }

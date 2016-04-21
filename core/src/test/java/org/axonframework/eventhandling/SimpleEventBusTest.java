@@ -43,12 +43,12 @@ public class SimpleEventBusTest {
     @Test
     public void testEventIsDispatchedToSubscribedListeners() throws Exception {
         testSubject.publish(newEvent());
-        testSubject.subscribe(listener1);
+        testSubject.subscribe(eventProcessor);
         // subscribing twice should not make a difference
-        Registration subscription1 = testSubject.subscribe(listener1);
+        Registration subscription1 = testSubject.subscribe(eventProcessor);
         testSubject.publish(newEvent());
-        Registration subscription2 = testSubject.subscribe(listener2);
-        Registration subscription3 = testSubject.subscribe(listener3);
+        Registration subscription2 = testSubject.subscribe(eventProcessor);
+        Registration subscription3 = testSubject.subscribe(eventProcessor);
         testSubject.publish(newEvent());
         subscription1.close();
         testSubject.publish(newEvent());
