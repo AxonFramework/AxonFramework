@@ -72,6 +72,11 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
  * interrupted thread</li>
  * </ul>
  * <p/>
+ * <em>Effect of unchecked exceptions</em> <ul>
+ * <li>Any unchecked exception thrown during command handling will cause it to block. If the method is blocking (see below) the
+ * unchecked exception will be thrown from the method</li>
+ * </ul>
+ * <p/>
  * Finally, the {@link Timeout @Timeout} annotation can be used to define a timeout on a method. This will always cause
  * a method invocation to block until a response is available, or the timeout expires.
  * <p/>
@@ -513,6 +518,9 @@ public class GatewayProxyFactory {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
+                if(cause instanceof RuntimeException){
+                    throw (RuntimeException) cause;
+                }
                 for (Class<?> exception : declaredExceptions) {
                     if (exception.isInstance(cause)) {
                         throw cause instanceof Exception ? (Exception) cause : e;
