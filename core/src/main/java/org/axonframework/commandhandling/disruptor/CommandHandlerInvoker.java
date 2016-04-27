@@ -207,7 +207,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
                     }
                 } catch (EventStreamNotFoundException e) {
                     throw new AggregateNotFoundException(
-                            aggregateIdentifier,
+                            aggregateFactory.getAggregateType(), aggregateIdentifier,
                             "Aggregate not found. Possibly involves an aggregate being created, "
                                     + "or a command that was executed against an aggregate that did not yet "
                                     + "finish the creation process. It will be rescheduled for publication when it "

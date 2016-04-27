@@ -289,7 +289,7 @@ public class CachingEventSourcingRepositoryTest {
         public DomainEventStream readEvents(String type, Object identifier, long firstSequenceNumber,
                                             long lastSequenceNumber) {
             if (!store.containsKey(identifier)) {
-                throw new AggregateNotFoundException(identifier, "Aggregate not found");
+                throw new AggregateNotFoundException(StubAggregate.class, identifier, "Aggregate not found");
             }
             final List<DomainEventMessage> events = store.get(identifier);
             List<DomainEventMessage> filteredEvents = new ArrayList<DomainEventMessage>();
@@ -322,7 +322,7 @@ public class CachingEventSourcingRepositoryTest {
         @Override
         public DomainEventStream readEvents(String type, Object identifier) {
             if (!store.containsKey(identifier)) {
-                throw new AggregateNotFoundException(identifier, "Aggregate not found");
+                throw new AggregateNotFoundException(StubAggregate.class, identifier, "Aggregate not found");
             }
             return new SimpleDomainEventStream(store.get(identifier));
         }

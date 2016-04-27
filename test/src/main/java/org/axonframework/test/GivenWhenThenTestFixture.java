@@ -512,7 +512,7 @@ public class GivenWhenThenTestFixture<T extends EventSourcedAggregateRoot>
             List<DomainEventMessage> allEvents = new ArrayList<DomainEventMessage>(givenEvents);
             allEvents.addAll(storedEvents);
             if (allEvents.isEmpty()) {
-                throw new AggregateNotFoundException(identifier,
+                throw new AggregateNotFoundException(aggregateType, identifier,
                                                      "No 'given' events were configured for this aggregate, "
                                                              + "nor have any events been stored.");
             }
