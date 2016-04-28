@@ -33,10 +33,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.EventStoreException;
-import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -65,12 +62,13 @@ import static org.axonframework.common.ReflectionUtils.*;
  * @author Allard Buijze
  * @since 0.6
  */
-public class GivenWhenThenTestFixture<T>
-        implements FixtureConfiguration<T>, TestExecutor {
+public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, TestExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(GivenWhenThenTestFixture.class);
     private final Class<T> aggregateType;
     private final SimpleCommandBus commandBus;
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
+    private final List<MessageHandlerInterceptor<CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
     private final EventBus eventBus;
     private final EventStore eventStore;
     private Repository<T> repository;
@@ -141,11 +139,23 @@ public class GivenWhenThenTestFixture<T>
     public FixtureConfiguration<T> registerInjectableResource(Object resource) {
         if (explicitCommandHandlersSet) {
             throw new FixtureExecutionException("Cannot inject resources after command handler has been created. "
-                                                        + "Configure all resource before calling "
-                                                        + "registerCommandHandler() or "
-                                                        + "registerAnnotatedCommandHandler()");
+                    + "Configure all resource before calling "
+                    + "registerCommandHandler() or "
+                    + "registerAnnotatedCommandHandler()");
         }
         FixtureResourceParameterResolverFactory.registerResource(resource);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerCommandDispatchInterceptor(MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor) {
+        commandDispatchInterceptors.add(commandDispatchInterceptor);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>> commandHanderInterceptor) {
+        commandHandlerInterceptors.add(commandHanderInterceptor);
         return this;
     }
 
@@ -182,8 +192,9 @@ public class GivenWhenThenTestFixture<T>
                     payload = ((Message) event).getPayload();
                     metaData = ((Message) event).getMetaData();
                 }
-                this.givenEvents.add(new GenericDomainEventMessage<>(aggregateIdentifier, sequenceNumber++,
-                                                                     payload, metaData));
+                this.givenEvents.add(new GenericDomainEventMessage<>(
+                        aggregateIdentifier, sequenceNumber++, payload, metaData
+                ));
             }
         } catch (RuntimeException e) {
             FixtureResourceParameterResolverFactory.clear();
@@ -225,11 +236,10 @@ public class GivenWhenThenTestFixture<T>
     @Override
     public ResultValidator when(Object command, Map<String, ?> metaData) {
         try {
+            commandHandlerInterceptors.add(new AggregateRegisteringInterceptor());
             finalizeConfiguration();
             final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
-            ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents,
-                                                                          fieldFilter);
-            commandBus.setHandlerInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
+            ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents, fieldFilter);
 
             commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
@@ -249,17 +259,23 @@ public class GivenWhenThenTestFixture<T>
 
     private void finalizeConfiguration() {
         registerAggregateCommandHandlers();
+        registerCommandInterceptors();
         explicitCommandHandlersSet = true;
     }
 
     private void registerAggregateCommandHandlers() {
         ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
-            AggregateAnnotationCommandHandler<T> handler =
-                    new AggregateAnnotationCommandHandler<>(aggregateType, repository,
-                                                            new AnnotationCommandTargetResolver());
+            AggregateAnnotationCommandHandler<T> handler = new AggregateAnnotationCommandHandler<>(
+                    aggregateType, repository, new AnnotationCommandTargetResolver()
+            );
             handler.subscribe(commandBus);
         }
+    }
+
+    private void registerCommandInterceptors() {
+        commandBus.setDispatchInterceptors(commandDispatchInterceptors);
+        commandBus.setHandlerInterceptors(commandHandlerInterceptors);
     }
 
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {
@@ -269,21 +285,20 @@ public class GivenWhenThenTestFixture<T>
                 Aggregate<T> aggregate2 = repository.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was considered deleted, "
-                                                         + "but the Repository still contains a non-deleted copy of "
-                                                         + "the aggregate. Make sure the aggregate explicitly marks "
-                                                         + "itself as deleted in an EventHandler.");
+                            + "but the Repository still contains a non-deleted copy of "
+                            + "the aggregate. Make sure the aggregate explicitly marks "
+                            + "itself as deleted in an EventHandler.");
                 }
                 assertValidWorkingAggregateState(aggregate2, fieldFilter);
             } catch (AggregateNotFoundException notFound) {
                 if (!workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was not considered deleted, " //NOSONAR
-                                                         + "but the Repository cannot recover the state of the "
-                                                         + "aggregate, as it is considered deleted there.");
+                            + "but the Repository cannot recover the state of the "
+                            + "aggregate, as it is considered deleted there.");
                 }
             } catch (RuntimeException e) {
                 logger.warn("An Exception occurred while detecting illegal state changes in {}.",
-                            workingAggregate.getClass().getName(),
-                            e);
+                        workingAggregate.getClass().getName(), e);
             } finally {
                 // rollback to prevent changes bing pushed to event store
                 uow.rollback();
@@ -296,25 +311,24 @@ public class GivenWhenThenTestFixture<T>
         HashSet<ComparationEntry> comparedEntries = new HashSet<>();
         if (!workingAggregate.rootType().equals(eventSourcedAggregate.rootType())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
-                                                               + "be of another type than the original.\n"
-                                                               + "Working type: <%s>\nEvent Sourced type: <%s>",
-                                                       workingAggregate.rootType().getName(),
-                                                       eventSourcedAggregate.rootType().getName()));
+                            + "be of another type than the original.\n"
+                            + "Working type: <%s>\nEvent Sourced type: <%s>",
+                    workingAggregate.rootType().getName(), eventSourcedAggregate.rootType().getName()));
         }
         ensureValuesEqual(workingAggregate.invoke(Function.identity()),
-                          eventSourcedAggregate.invoke(Function.identity()),
-                          eventSourcedAggregate.rootType().getName(),
-                          comparedEntries, fieldFilter);
+                eventSourcedAggregate.invoke(Function.identity()),
+                eventSourcedAggregate.rootType().getName(),
+                comparedEntries, fieldFilter);
     }
 
     private void ensureValuesEqual(Object workingValue, Object eventSourcedValue, String propertyPath,
                                    Set<ComparationEntry> comparedEntries, FieldFilter fieldFilter) {
         if (explicitlyUnequal(workingValue, eventSourcedValue)) {
             throw new AxonAssertionError(format("Illegal state change detected! "
-                                                        + "Property \"%s\" has different value when sourcing events.\n"
-                                                        + "Working aggregate value:     <%s>\n"
-                                                        + "Value after applying events: <%s>",
-                                                propertyPath, workingValue, eventSourcedValue));
+                            + "Property \"%s\" has different value when sourcing events.\n"
+                            + "Working aggregate value:     <%s>\n"
+                            + "Value after applying events: <%s>",
+                    propertyPath, workingValue, eventSourcedValue));
         } else if (workingValue != null && comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue))
                 && !hasEqualsMethod(workingValue.getClass())) {
             for (Field field : fieldsOf(workingValue.getClass())) {
@@ -326,8 +340,8 @@ public class GivenWhenThenTestFixture<T>
 
                     Object workingFieldValue = ReflectionUtils.getFieldValue(field, workingValue);
                     Object eventSourcedFieldValue = ReflectionUtils.getFieldValue(field, eventSourcedValue);
-                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath,
-                                      comparedEntries, fieldFilter);
+                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries,
+                            fieldFilter);
                 }
             }
         }
@@ -469,12 +483,11 @@ public class GivenWhenThenTestFixture<T>
                 if (lastEvent != null) {
                     if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
                         throw new EventStoreException("Writing events for an unexpected aggregate. This could "
-                                                              + "indicate that a wrong aggregate is being triggered.");
+                                + "indicate that a wrong aggregate is being triggered.");
                     } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
                         throw new EventStoreException(format("Unexpected sequence number on stored event. "
-                                                                     + "Expected %s, but got %s.",
-                                                             lastEvent.getSequenceNumber() + 1,
-                                                             event.getSequenceNumber()));
+                                        + "Expected %s, but got %s.",
+                                lastEvent.getSequenceNumber() + 1, event.getSequenceNumber()));
                     }
                 }
                 storedEvents.add(event);
@@ -486,7 +499,7 @@ public class GivenWhenThenTestFixture<T>
                                             long lastSequenceNumber) {
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
                 throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
-                                                      + "to get the aggregate identifier to use");
+                        + "to get the aggregate identifier to use");
             } else if (aggregateIdentifier == null) {
                 aggregateIdentifier = identifier;
                 injectAggregateIdentifier();
@@ -495,8 +508,7 @@ public class GivenWhenThenTestFixture<T>
             allEvents.addAll(storedEvents);
             if (allEvents.isEmpty()) {
                 throw new AggregateNotFoundException(identifier,
-                                                     "No 'given' events were configured for this aggregate, "
-                                                             + "nor have any events been stored.");
+                        "No 'given' events were configured for this aggregate, nor have any events been stored.");
             }
             return new SimpleDomainEventStream(
                     allEvents.stream()
@@ -511,11 +523,11 @@ public class GivenWhenThenTestFixture<T>
             for (DomainEventMessage oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
                     givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getIdentifier(),
-                                                                    oldEvent.getTimestamp(),
-                                                                    aggregateIdentifier,
-                                                                    oldEvent.getSequenceNumber(),
-                                                                    oldEvent.getPayload(),
-                                                                    oldEvent.getMetaData()));
+                            oldEvent.getTimestamp(),
+                            aggregateIdentifier,
+                            oldEvent.getSequenceNumber(),
+                            oldEvent.getPayload(),
+                            oldEvent.getMetaData()));
                 } else {
                     givenEvents.add(oldEvent);
                 }
