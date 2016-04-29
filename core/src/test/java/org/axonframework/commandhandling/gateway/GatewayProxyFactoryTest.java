@@ -180,24 +180,18 @@ public class GatewayProxyFactoryTest {
         assertNull(error.get());
     }
 
-    @Test(timeout = 2000)
+    @Test
     public void testGatewayWithReturnValue_RuntimeException() throws InterruptedException {
-        final CountDownLatch cdl = new CountDownLatch(1);
         final AtomicReference<String> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
         RuntimeException runtimeException = new RuntimeException();
-        doAnswer(new Failure(cdl, runtimeException))
+        doAnswer(new Failure(null, runtimeException))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
-        Thread t = new Thread(() -> {
             try {
                 result.set(gateway.waitForReturnValue("Command"));
             } catch (Throwable e) {
                 error.set(e);
             }
-        });
-        t.start();
-        assertTrue("Expected command bus to be invoked", cdl.await(1, TimeUnit.SECONDS));
-        t.join();
         assertNull("Did not expect ReturnValue", result.get());
         assertSame("Expected exact instance of RunTimeException being propagated", runtimeException, error.get());
         verify(callback).onFailure(any(), isA(RuntimeException.class));
