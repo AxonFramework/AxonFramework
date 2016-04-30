@@ -20,12 +20,15 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.unitofwork.*;
+import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -55,10 +58,22 @@ public class SimpleCommandBus implements CommandBus {
     private UnitOfWorkFactory<?> unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
+    private MessageMonitor<? super CommandMessage<?>> messageMonitor;
+
     /**
      * Initializes the SimpleCommandBus.
      */
     public SimpleCommandBus() {
+        this(NoOpMessageMonitor.INSTANCE);
+    }
+
+    /**
+     * Initializes the SimpleCommandBus with the given <name>messageMonitor</name>
+     *
+     * @param messageMonitor the message monitor to monitor the commandbus
+     */
+    public SimpleCommandBus(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        this.messageMonitor = messageMonitor;
     }
 
     @Override
@@ -90,11 +105,14 @@ public class SimpleCommandBus implements CommandBus {
      */
     @SuppressWarnings({"unchecked"})
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
         try {
             MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command);
             Object result = doDispatch(command, handler);
+            monitorCallback.onSuccess();
             callback.onSuccess(command, (R) result);
         } catch (Exception throwable) {
+            monitorCallback.onFailure(Optional.of(throwable));
             callback.onFailure(command, throwable);
         }
     }

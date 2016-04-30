@@ -1,6 +1,6 @@
 package org.axonframework.metrics;
 
-import com.codahale.metrics.MetricSet;
+import java.util.Map;
 
 /**
  * Interface indicating that the implementation is capable of reporting state and/or usage statistics using Metrics.
@@ -19,5 +19,5 @@ public interface MetricSupport {
      *
      * @return the MetricSet containing the Metrics that report the state and/or usage statistics for this component
      */
-    MetricSet getMetricSet();
+    Map<String, Object> getMetricSet();
 }
