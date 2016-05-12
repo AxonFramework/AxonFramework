@@ -29,6 +29,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -55,7 +56,7 @@ public class DisruptorCommandBusBenchmark {
         CountingEventBus eventBus = new CountingEventBus();
         StubHandler stubHandler = new StubHandler();
         InMemoryEventStore inMemoryEventStore = new InMemoryEventStore();
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(inMemoryEventStore);
         commandBus.subscribe(StubCommand.class.getName(), stubHandler);
         stubHandler.setRepository(commandBus.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
         final String aggregateIdentifier = "MyID";
@@ -172,7 +173,7 @@ public class DisruptorCommandBusBenchmark {
         private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
 
         @Override
-        public void publish(List<EventMessage<?>> events) {
+        public void publish(List<? extends EventMessage<?>> events) {
             publisherCountDown.countDown();
         }
 

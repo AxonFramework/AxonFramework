@@ -523,7 +523,7 @@ public class GivenWhenThenTestFixture<T>
 
 
         @Override
-        protected void prepareCommit(List<EventMessage<?>> events) {
+        protected void prepareCommit(List<? extends EventMessage<?>> events) {
             publishedEvents.addAll(events);
         }
 

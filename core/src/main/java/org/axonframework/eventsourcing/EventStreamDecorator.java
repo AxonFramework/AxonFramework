@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.eventstore.DomainEventStream;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -40,8 +41,7 @@ public interface EventStreamDecorator {
      * @param eventStream         The eventStream containing the events read from the event store
      * @return the decorated event stream
      */
-    Stream<? extends DomainEventMessage<?>> decorateForRead(String aggregateIdentifier,
-                                                            Stream<? extends DomainEventMessage<?>> eventStream);
+    DomainEventStream decorateForRead(String aggregateIdentifier, DomainEventStream eventStream);
 
     /**
      * Called when an event stream is appended to the event store.

@@ -21,7 +21,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.TrackingEventStream;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
@@ -33,7 +35,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 /**
  * EventBus implementation that does not perform any actions on subscriptions or published events, but records
@@ -52,19 +53,19 @@ public class RecordingEventStore implements EventStore {
     private Collection<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new LinkedHashSet<>();
 
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
         readerTokens.add(trackingToken);
         return new ArrayBlockingQueue<TrackedEventMessage<?>>(0).stream();
     }
 
     @Override
-    public Stream<? extends DomainEventMessage<?>> readEvents(String aggregateIdentifier) {
+    public DomainEventStream readEvents(String aggregateIdentifier) {
         fetchedAggregateIds.add(aggregateIdentifier);
         return new ArrayBlockingQueue<DomainEventMessage<?>>(0).stream();
     }
 
     @Override
-    public void publish(List<EventMessage<?>> events) {
+    public void publish(List<? extends EventMessage<?>> events) {
         publishedEvents.addAll(events);
     }
 

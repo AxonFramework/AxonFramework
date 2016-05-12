@@ -13,10 +13,110 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.junit.Before;
+
+import static org.mockito.Mockito.spy;
+
 /**
  * @author Rene de Waele
  */
 public class EmbeddedEventStoreTest {
+
+    private EventStore subject;
+    private EventStorageEngine storageEngine;
+
+    @Before
+    public void setUp() {
+        storageEngine = spy(new InMemoryEventStorageEngine());
+        subject = new EmbeddedEventStore(storageEngine);
+    }
+
+//    @Test
+//    public void testExistingEventIsPassedToReader() throws InterruptedException {
+//        subject.publish(createEvent());
+//        Thread t = new Thread(() -> {
+//            Optional<? extends TrackedEventMessage<?>> first = subject.streamEvents(null).findFirst();
+//            assertTrue(first.isPresent());
+//        });
+//        t.start();
+//        t.join();
+//    }
+//
+//    @Test
+//    public void testNewEventIsPassedToReader() throws InterruptedException {
+//        Stream<? extends TrackedEventMessage<?>> stream = subject.streamEvents(null);
+//        Thread t = new Thread(() -> {
+//            Optional<? extends TrackedEventMessage<?>> first = stream.findFirst();
+//            assertTrue(first.isPresent());
+//        });
+//        t.start();
+//        subject.publish(createEvent());
+//        t.join();
+//    }
+//
+//    @Test
+//    public void testReadingIsBlockedWhenStoreIsEmpty() throws InterruptedException {
+//        CountDownLatch lock = new CountDownLatch(1);
+//        Stream<? extends TrackedEventMessage<?>> stream = subject.streamEvents(null);
+//        Thread t = new Thread(() -> {
+//            stream.findFirst();
+//            lock.countDown();
+//        });
+//        t.start();
+//        assertFalse(lock.await(100, TimeUnit.MILLISECONDS));
+//        subject.publish(createEvent());
+//        t.join();
+//        assertEquals(0, lock.getCount());
+//    }
+//
+//    @Test
+//    public void testReadingIsBlockedWhenEndOfStreamIsReached() throws InterruptedException {
+//        subject.publish(createEvent());
+//        CountDownLatch lock = new CountDownLatch(2);
+//        Stream<? extends TrackedEventMessage<?>> stream = subject.streamEvents(null);
+//        Thread t = new Thread(() -> {
+//            stream.limit(2).forEach(event -> lock.countDown());
+//        });
+//        t.start();
+//        assertFalse(lock.await(100, TimeUnit.MILLISECONDS));
+//        assertEquals(1, lock.getCount());
+//        subject.publish(createEvent());
+//        t.join();
+//        assertEquals(0, lock.getCount());
+//    }
+//
+//    @Test
+//    public void testReadingCanBeContinuedUsingLastToken() {
+//        subject.publish(createEvents(2));
+//        Optional<? extends TrackedEventMessage<?>> first = subject.streamEvents(null).findFirst();
+//        assertTrue(first.isPresent());
+//        TrackingToken firstToken = first.get().trackingToken();
+//        Optional<? extends TrackedEventMessage<?>> second = subject.streamEvents(firstToken).findFirst();
+//        assertTrue(second.isPresent());
+//        assertTrue(second.get().trackingToken().isAfter(firstToken));
+//    }
+//
+//    @Test
+//    public void testEventIsFetchedFromCacheWhenFetchedASecondTime() throws InterruptedException {
+//        CountDownLatch lock = new CountDownLatch(2);
+//        List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
+//        Thread t = new Thread(() -> {
+//            subject.streamEvents(null).limit(2).forEach(event -> {
+//                lock.countDown();
+//                events.add(event);
+//            });
+//        });
+//        t.start();
+//        subject.publish(createEvents(2));
+//
+//        t.join();
+//        Optional<? extends TrackedEventMessage<?>> secondEvent = subject
+//                .streamEvents(events.get(0).trackingToken()).findFirst();
+//        assertTrue(secondEvent.isPresent());
+//        assertEquals(events.get(1), secondEvent.get());
+//        verify(storageEngine).readEvents((TrackingToken) null);
+//    }
 
 
 //    @Test

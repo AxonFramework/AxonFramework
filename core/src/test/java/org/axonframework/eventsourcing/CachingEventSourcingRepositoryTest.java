@@ -222,7 +222,7 @@ public class CachingEventSourcingRepositoryTest {
         }
 
         @Override
-        protected void commit(List<EventMessage<?>> events) {
+        protected void commit(List<? extends EventMessage<?>> events) {
         }
 
         @Override

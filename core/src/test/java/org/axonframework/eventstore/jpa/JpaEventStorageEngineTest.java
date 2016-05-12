@@ -19,14 +19,10 @@ package org.axonframework.eventstore.jpa;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedEventData;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.UnknownSerializedTypeException;
@@ -56,11 +52,10 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static java.time.Instant.now;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
+import static org.axonframework.eventstore.EventStoreTestUtils.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -71,10 +66,7 @@ import static org.mockito.Mockito.*;
 @ContextConfiguration(locations = "classpath:/META-INF/spring/db-context.xml")
 public class JpaEventStorageEngineTest {
 
-    private static final int HUNDRED = 100;
-    private static final String PAYLOAD = "payload", AGGREGATE = "aggregate", TYPE = "type";
-    private static final MetaData METADATA = MetaData.emptyInstance();
-
+    private static final int BATCH_SIZE = 100;
     private JpaEventStorageEngine testSubject;
 
     @PersistenceContext
@@ -97,7 +89,7 @@ public class JpaEventStorageEngineTest {
         entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         testSubject = new JpaEventStorageEngine(entityManagerProvider);
         testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
-        testSubject.setBatchSize(HUNDRED);
+        testSubject.setBatchSize(BATCH_SIZE);
 
         template = new TransactionTemplate(txManager);
         template.execute(new TransactionCallbackWithoutResult() {
@@ -207,7 +199,7 @@ public class JpaEventStorageEngineTest {
     @Transactional
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void testLoad_LargeAmountOfEvents() {
-        int eventCount = HUNDRED + 10;
+        int eventCount = BATCH_SIZE + 10;
         testSubject.appendEvents(createEvents(eventCount));
         entityManager.flush();
         entityManager.clear();
@@ -223,10 +215,10 @@ public class JpaEventStorageEngineTest {
         testLoad_LargeAmountOfEvents();
     }
 
-    @Test(expected = EventStreamNotFoundException.class)
+    @Test
     @Transactional
     public void testLoadNonExistent() {
-        testSubject.readEvents(UUID.randomUUID().toString());
+        assertEquals(0L, testSubject.readEvents(UUID.randomUUID().toString()).count());
     }
 
     @Transactional
@@ -312,36 +304,6 @@ public class JpaEventStorageEngineTest {
         assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
         assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().getPayload());
         assertEquals("Payload1", testSubject.readEvents(AGGREGATE).findFirst().get().getPayload());
-    }
-
-    private List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
-        return IntStream.range(0, numberOfEvents).mapToObj(
-                (sequenceNumber) -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), AGGREGATE,
-                                                sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
-                .collect(Collectors.toList());
-    }
-
-    private DomainEventMessage<String> createEvent(long sequenceNumber) {
-        return createEvent(AGGREGATE, sequenceNumber);
-    }
-
-    private DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber) {
-        return createEvent(aggregateId, sequenceNumber, PAYLOAD);
-    }
-
-    private DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber, String payload) {
-        return createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), aggregateId, sequenceNumber,
-                           payload, METADATA);
-    }
-
-    private DomainEventMessage<String> createEvent(String eventId, String aggregateId, long sequenceNumber) {
-        return createEvent(TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
-    }
-
-    private DomainEventMessage<String> createEvent(String type, String eventId, String aggregateId, long sequenceNumber,
-                                                   String payload, MetaData metaData) {
-        return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber,
-                                               new GenericMessage<>(eventId, payload, metaData), now());
     }
 
 }

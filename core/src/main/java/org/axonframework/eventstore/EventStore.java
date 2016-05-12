@@ -14,9 +14,6 @@
 package org.axonframework.eventstore;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.DomainEventMessage;
-
-import java.util.stream.Stream;
 
 /**
  * Provides a mechanism to load events from the underlying event storage.
@@ -37,6 +34,6 @@ public interface EventStore extends EventBus {
      * @param aggregateIdentifier the identifier of the aggregate whose events to fetch
      * @return a stream of all currently stored events of the aggregate
      */
-    Stream<? extends DomainEventMessage<?>> readEvents(String aggregateIdentifier);
+    DomainEventStream readEvents(String aggregateIdentifier);
 
 }

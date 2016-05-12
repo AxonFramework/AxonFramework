@@ -21,12 +21,11 @@ import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
-import org.axonframework.common.PeekingIterator;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.messaging.metadata.MetaData;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,9 +57,8 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     @Override
     protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                 String aggregateIdentifier,
-                                                Iterator<? extends DomainEventMessage<?>> eventStream) {
-        PeekingIterator<? extends DomainEventMessage<?>> iterator = PeekingIterator.of(eventStream);
-        DomainEventMessage firstEvent = iterator.peek();
+                                                DomainEventStream eventStream) {
+        DomainEventMessage firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(aggregateType);
         aggregateModels.computeIfAbsent(aggregateType, k -> ModelInspector.inspectAggregate(k, parameterResolverFactory));
         Object aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);

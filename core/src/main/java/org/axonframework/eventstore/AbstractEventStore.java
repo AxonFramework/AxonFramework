@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * @author Rene de Waele
@@ -36,12 +35,12 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     }
 
     @Override
-    protected void commit(List<EventMessage<?>> events) {
+    protected void commit(List<? extends EventMessage<?>> events) {
         storageEngine.appendEvents(events);
     }
 
     @Override
-    public Stream<? extends DomainEventMessage<?>> readEvents(String aggregateIdentifier) {
+    public DomainEventStream readEvents(String aggregateIdentifier) {
         Optional<DomainEventMessage<?>> optionalSnapshot;
         try {
             optionalSnapshot = storageEngine.readSnapshot(aggregateIdentifier);
@@ -52,8 +51,8 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         }
         if (optionalSnapshot.isPresent()) {
             DomainEventMessage<?> snapshot = optionalSnapshot.get();
-            return Stream.concat(Stream.of(snapshot),
-                                 storageEngine.readEvents(aggregateIdentifier, snapshot.getSequenceNumber() + 1));
+            return DomainEventStream.concat(DomainEventStream.of(snapshot), storageEngine
+                    .readEvents(aggregateIdentifier, snapshot.getSequenceNumber() + 1));
         } else {
             return storageEngine.readEvents(aggregateIdentifier);
         }

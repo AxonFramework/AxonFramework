@@ -57,8 +57,13 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         return StreamSupport.stream(spliterator, false);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation produces non-blocking event streams.
+     */
     @Override
-    protected Stream<SerializedTrackedEventData<?>> readEventData(TrackingToken trackingToken) {
+    protected Stream<SerializedTrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
         EventStreamSpliterator<SerializedTrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchBatch(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
                 batchSize);

@@ -29,12 +29,13 @@ import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.TrackingEventStream;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -90,9 +91,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     @Test(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         testSubject = new DisruptorCommandBus(
-                inMemoryEventStore,
-                eventBus,
-                new DisruptorConfiguration().setBufferSize(4)
+                inMemoryEventStore, new DisruptorConfiguration().setBufferSize(4)
                         .setProducerType(ProducerType.MULTI)
                         .setWaitStrategy(new SleepingWaitStrategy())
                         .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
@@ -182,7 +181,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         private final AtomicInteger loadCounter = new AtomicInteger();
 
         @Override
-        protected void commit(List<EventMessage<?>> events) {
+        protected void commit(List<? extends EventMessage<?>> events) {
             if (events == null || events.isEmpty()) {
                 return;
             }
@@ -199,14 +198,14 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Stream<? extends DomainEventMessage<?>> readEvents(String identifier) {
+        public DomainEventStream readEvents(String identifier) {
             loadCounter.incrementAndGet();
             DomainEventMessage<?> message = storedEvents.get(identifier);
             return message == null ? Stream.empty() : Stream.of(message);
         }
 
         @Override
-        public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }
     }
@@ -290,12 +289,12 @@ public class DisruptorCommandBusTest_MultiThreaded {
         private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
 
         @Override
-        public void publish(List<EventMessage<?>> events) {
+        public void publish(List<? extends EventMessage<?>> events) {
             publisherCountDown.countDown();
         }
 
         @Override
-        public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }
 

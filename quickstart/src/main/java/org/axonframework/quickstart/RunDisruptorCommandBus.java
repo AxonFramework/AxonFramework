@@ -51,7 +51,7 @@ public class RunDisruptorCommandBus {
         eventBus.subscribe(eventProcessor);
 
         // we use default settings for the disruptor command bus
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
 
         // now, we obtain a repository from the command bus
         Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<>(ToDoItem.class));

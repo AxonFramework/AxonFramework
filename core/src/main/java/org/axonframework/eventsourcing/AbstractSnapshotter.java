@@ -18,16 +18,14 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.common.PeekingIterator;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStorageEngine;
 import org.axonframework.messaging.interceptors.NoTransactionManager;
 import org.axonframework.messaging.interceptors.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
 import java.util.concurrent.Executor;
-import java.util.stream.Stream;
 
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.Snapshotter} that uses a task executor to
@@ -75,7 +73,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
      */
     protected abstract DomainEventMessage createSnapshot(Class<?> aggregateType, String aggregateIdentifier,
-                                                         Iterator<? extends DomainEventMessage<?>> eventStream);
+                                                         DomainEventStream eventStream);
 
     /**
      * Returns the event store this snapshotter uses to load domain events and store snapshot events.
@@ -161,14 +159,12 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
         @Override
         public void run() {
-            try (Stream<? extends DomainEventMessage<?>> eventStream = eventStorageEngine.readEvents(identifier)) {
-                PeekingIterator<? extends DomainEventMessage<?>> iterator = PeekingIterator.of(eventStream.iterator());
-                // a snapshot should only be stored if the snapshot replaces at least more than one event
-                long firstEventSequenceNumber = iterator.peek().getSequenceNumber();
-                DomainEventMessage snapshotEvent = createSnapshot(aggregateType, identifier, iterator);
-                if (snapshotEvent != null && snapshotEvent.getSequenceNumber() > firstEventSequenceNumber) {
-                    eventStorageEngine.storeSnapshot(snapshotEvent);
-                }
+            DomainEventStream eventStream = eventStream = eventStorageEngine.readEvents(identifier);
+            // a snapshot should only be stored if the snapshot replaces at least more than one event
+            long firstEventSequenceNumber = eventStream.peek().getSequenceNumber();
+            DomainEventMessage snapshotEvent = createSnapshot(aggregateType, identifier, eventStream);
+            if (snapshotEvent != null && snapshotEvent.getSequenceNumber() > firstEventSequenceNumber) {
+                eventStorageEngine.storeSnapshot(snapshotEvent);
             }
         }
     }

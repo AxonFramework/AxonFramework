@@ -16,6 +16,7 @@ package org.axonframework.eventstore.inmemory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStorageEngine;
 import org.axonframework.eventstore.GlobalIndexTrackingToken;
 import org.axonframework.eventstore.TrackingToken;
@@ -56,18 +57,24 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         snapshots.put(snapshot.getAggregateIdentifier(), snapshot);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation produces non-blocking event streams.
+     */
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         return events.tailMap(trackingToken, false).values().stream();
     }
 
     @Override
-    public Stream<? extends DomainEventMessage<?>> readEvents(String aggregateIdentifier, long firstSequenceNumber) {
-        return events.values().stream()
+    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
+        Stream<? extends DomainEventMessage<?>> stream = events.values().stream()
                 .filter(event -> event instanceof DomainEventMessage<?>)
                 .map(event -> (DomainEventMessage<?>) event)
                 .filter(event -> aggregateIdentifier.equals(event.getAggregateIdentifier()) && event
                         .getSequenceNumber() >= firstSequenceNumber);
+        return DomainEventStream.of(stream.iterator());
     }
 
     @Override

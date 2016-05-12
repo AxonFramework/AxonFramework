@@ -51,7 +51,7 @@ public class SpringMessagingEventBus extends AbstractEventBus {
     private SubscribableChannel channel;
 
     @Override
-    protected void prepareCommit(List<EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage<?>> events) {
         for (EventMessage event : events) {
             channel.send(new GenericMessage<>(event.getPayload(),
                                               event.getMetaData()));

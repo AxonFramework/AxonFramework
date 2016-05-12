@@ -20,15 +20,14 @@ import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.Assert;
-import org.axonframework.common.PeekingIterator;
 import org.axonframework.common.lock.LockFactory;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
@@ -110,27 +109,22 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      */
     @Override
     protected EventSourcedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
-        Stream<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateIdentifier);
-        try {
-            for (EventStreamDecorator decorator : eventStreamDecorators) {
-                events = decorator.decorateForRead(aggregateIdentifier, events);
-            }
-            PeekingIterator<? extends DomainEventMessage<?>> iterator = PeekingIterator.of(events.iterator());
-            if (!iterator.hasNext()) {
-                throw new AggregateNotFoundException(aggregateIdentifier,
-                                                     "The aggregate was not found in the event store");
-            }
-            EventSourcedAggregate<T> aggregate = EventSourcedAggregate
-                    .initialize(aggregateFactory.createAggregate(aggregateIdentifier, iterator.peek()),
-                                aggregateModel(), eventStore);
-            aggregate.initializeState(iterator);
-            if (aggregate.isDeleted()) {
-                throw new AggregateDeletedException(aggregateIdentifier);
-            }
-            return aggregate;
-        } finally {
-            events.close();
+        DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
+        for (EventStreamDecorator decorator : eventStreamDecorators) {
+            eventStream = decorator.decorateForRead(aggregateIdentifier, eventStream);
         }
+        if (!eventStream.hasNext()) {
+            throw new AggregateNotFoundException(aggregateIdentifier,
+                                                 "The aggregate was not found in the event store");
+        }
+        EventSourcedAggregate<T> aggregate = EventSourcedAggregate
+                .initialize(aggregateFactory.createAggregate(aggregateIdentifier, eventStream.peek()),
+                            aggregateModel(), eventStore);
+        aggregate.initializeState(eventStream);
+        if (aggregate.isDeleted()) {
+            throw new AggregateDeletedException(aggregateIdentifier);
+        }
+        return aggregate;
     }
 
     @Override

@@ -27,10 +27,9 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
-import org.axonframework.common.PeekingIterator;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventStreamDecorator;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
@@ -40,7 +39,6 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 /**
  * Component of the DisruptorCommandBus that invokes the command handler. The execution is done within a Unit Of Work.
@@ -205,21 +203,16 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             if (aggregateRoot == null) {
                 logger.debug("Aggregate {} not in first level cache, loading fresh one from Event Store",
                              aggregateIdentifier);
-                Stream<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateIdentifier);
-                try {
-                    events = decorator.decorateForRead(aggregateIdentifier, events);
-                    PeekingIterator<? extends DomainEventMessage<?>> iterator = PeekingIterator.of(events.iterator());
-                    if (!iterator.hasNext()) {
-                        throw new AggregateNotFoundException(aggregateIdentifier,
-                                                             "The aggregate was not found in the event store");
-                    }
-                    aggregateRoot = EventSourcedAggregate
-                            .initialize(aggregateFactory.createAggregate(aggregateIdentifier, iterator.peek()),
-                                        model, eventStore);
-                    aggregateRoot.initializeState(iterator);
-                } finally {
-                    events.close();
+                DomainEventStream eventStream = eventStore.readEvents(aggregateIdentifier);
+                eventStream = decorator.decorateForRead(aggregateIdentifier, eventStream);
+                if (!eventStream.hasNext()) {
+                    throw new AggregateNotFoundException(aggregateIdentifier,
+                                                         "The aggregate was not found in the event store");
                 }
+                aggregateRoot = EventSourcedAggregate
+                        .initialize(aggregateFactory.createAggregate(aggregateIdentifier, eventStream.peek()),
+                                    model, eventStore);
+                aggregateRoot.initializeState(eventStream);
                 firstLevelCache.put(aggregateRoot, PLACEHOLDER_VALUE);
                 cache.put(aggregateIdentifier, aggregateRoot);
             }
@@ -228,8 +221,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
 
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
-            EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod, model,
-                                                                                  eventStore);
+            EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod, model, eventStore);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
             cache.put(aggregate.identifier(), aggregate);
             return aggregate;

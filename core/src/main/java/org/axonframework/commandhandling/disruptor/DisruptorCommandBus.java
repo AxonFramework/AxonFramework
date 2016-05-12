@@ -24,10 +24,10 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventStreamDecorator;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
 
@@ -125,8 +124,8 @@ public class DisruptorCommandBus implements CommandBus {
      *
      * @param eventStore The EventStore where generated events must be stored
      */
-    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus) {
-        this(eventStore, eventBus, new DisruptorConfiguration());
+    public DisruptorCommandBus(EventStore eventStore) {
+        this(eventStore, new DisruptorConfiguration());
     }
 
     /**
@@ -137,7 +136,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param configuration The configuration for the command bus
      */
     @SuppressWarnings("unchecked")
-    public DisruptorCommandBus(EventStore eventStore, EventBus eventBus, DisruptorConfiguration configuration) {
+    public DisruptorCommandBus(EventStore eventStore, DisruptorConfiguration configuration) {
         Assert.notNull(eventStore, "eventStore may not be null");
         Assert.notNull(configuration, "configuration may not be null");
         Executor executor = configuration.getExecutor();
@@ -157,9 +156,9 @@ public class DisruptorCommandBus implements CommandBus {
         commandTargetResolver = configuration.getCommandTargetResolver();
 
         // configure invoker Threads
-        commandHandlerInvokers = initializeInvokerThreads(eventStore, eventBus, configuration);
+        commandHandlerInvokers = initializeInvokerThreads(eventStore, configuration);
         // configure publisher Threads
-        EventPublisher[] publishers = initializePublisherThreads(eventStore, configuration, executor,
+        EventPublisher[] publishers = initializePublisherThreads(configuration, executor,
                                                                  transactionManager);
         publisherCount = publishers.length;
         disruptor.handleExceptionsWith(new ExceptionHandler());
@@ -170,8 +169,8 @@ public class DisruptorCommandBus implements CommandBus {
         disruptor.start();
     }
 
-    private EventPublisher[] initializePublisherThreads(EventStore eventStore, DisruptorConfiguration configuration,
-                                                        Executor executor, TransactionManager transactionManager) {
+    private EventPublisher[] initializePublisherThreads(DisruptorConfiguration configuration, Executor executor,
+                                                        TransactionManager transactionManager) {
         EventPublisher[] publishers = new EventPublisher[configuration.getPublisherThreadCount()];
         for (int t = 0; t < publishers.length; t++) {
             publishers[t] = new EventPublisher(executor, transactionManager,
@@ -180,8 +179,7 @@ public class DisruptorCommandBus implements CommandBus {
         return publishers;
     }
 
-    private CommandHandlerInvoker[] initializeInvokerThreads(EventStore eventStore, EventBus eventBus,
-                                                             DisruptorConfiguration configuration) {
+    private CommandHandlerInvoker[] initializeInvokerThreads(EventStore eventStore, DisruptorConfiguration configuration) {
         CommandHandlerInvoker[] invokers;
         invokers = new CommandHandlerInvoker[configuration.getInvokerThreadCount()];
         for (int t = 0; t < invokers.length; t++) {
@@ -365,8 +363,8 @@ public class DisruptorCommandBus implements CommandBus {
         public static final EventStreamDecorator INSTANCE = new NoOpEventStreamDecorator();
 
         @Override
-        public Stream<? extends DomainEventMessage<?>> decorateForRead(String aggregateIdentifier,
-                                                                       Stream<? extends DomainEventMessage<?>> eventStream) {
+        public DomainEventStream decorateForRead(String aggregateIdentifier,
+                                                 DomainEventStream eventStream) {
             return eventStream;
         }
 

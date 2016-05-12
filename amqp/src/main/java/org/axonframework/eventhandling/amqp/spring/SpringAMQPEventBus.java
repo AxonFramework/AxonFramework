@@ -71,7 +71,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     private long publisherAckTimeout;
 
     @Override
-    protected void prepareCommit(List<EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage<?>> events) {
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
             if (waitForAck) {

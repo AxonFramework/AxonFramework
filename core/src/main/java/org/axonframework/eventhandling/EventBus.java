@@ -17,13 +17,13 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.eventstore.TrackingEventStream;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
@@ -55,7 +55,7 @@ public interface EventBus {
      * @return a stream of events since the given trackingToken
      * @throws UnsupportedOperationException in case this event bus does not support streaming from given token
      */
-    Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken);
+    TrackingEventStream streamEvents(TrackingToken trackingToken);
 
     /**
      * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
@@ -79,7 +79,7 @@ public interface EventBus {
      *
      * @param events The collection of events to publish
      */
-    void publish(List<EventMessage<?>> events);
+    void publish(List<? extends EventMessage<?>> events);
 
     /**
      * Subscribe the given <code>eventProcessor</code> to this bus. When subscribed, it will receive all events

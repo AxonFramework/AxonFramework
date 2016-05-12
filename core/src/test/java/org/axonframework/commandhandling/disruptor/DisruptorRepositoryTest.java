@@ -14,7 +14,6 @@ import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
@@ -29,7 +28,7 @@ public class DisruptorRepositoryTest {
 
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
         Repository<TestAggregate> repository = commandBus
                 .createRepository(new GenericAggregateFactory<>(TestAggregate.class));
 

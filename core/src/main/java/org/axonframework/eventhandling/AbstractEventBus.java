@@ -16,13 +16,15 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
+
 /**
  * Base class for the Event Bus. In case events are published while a Unit of Work is active the Unit of Work root
  * coordinates the timing and order of the publication.
  * <p>
  * This implementation of the {@link EventBus} directly forwards all published events (in the callers' thread) to
  * subscribed event processors. Event processors are expected to implement asynchronous handling themselves or
- * alternatively open an event stream using {@link #readEvents(TrackingToken)}.
+ * alternatively open an event stream using {@link #streamEvents(TrackingToken)}.
  *
  * @author Allard Buijze
  * @author René de Waele
@@ -69,13 +71,13 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     @Override
-    public void publish(List<EventMessage<?>> events) {
+    public void publish(List<? extends EventMessage<?>> events) {
         if (CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            Assert.state(!unitOfWork.phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT),
+            Assert.state(!unitOfWork.phase().isAfter(PREPARE_COMMIT),
                          "It is not allowed to publish events when the current Unit of Work has already been committed. " +
                                  "Please start a new Unit of Work before publishing events.");
-            Assert.state(!unitOfWork.root().phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT),
+            Assert.state(!unitOfWork.root().phase().isAfter(PREPARE_COMMIT),
                          "It is not allowed to publish events when the root Unit of Work has already been committed.");
 
             unitOfWork.getOrComputeResource(eventsKey, r -> {
@@ -83,21 +85,21 @@ public abstract class AbstractEventBus implements EventBus {
                 List<EventMessage<?>> eventQueue = new ArrayList<>();
 
                 unitOfWork.onPrepareCommit(u -> {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT)) {
+                    if (u.parent().isPresent() && !u.root().phase().isAfter(PREPARE_COMMIT)) {
                         u.root().onPrepareCommit(w -> doWithEvents(this::prepareCommit, intercept(eventQueue)));
                     } else {
                         doWithEvents(this::prepareCommit, intercept(eventQueue));
                     }
                 });
                 unitOfWork.onCommit(u -> {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(UnitOfWork.Phase.COMMIT)) {
+                    if (u.parent().isPresent() && !u.root().phase().isAfter(COMMIT)) {
                         u.root().onCommit(w -> doWithEvents(this::commit, eventQueue));
                     } else {
                         doWithEvents(this::commit, eventQueue);
                     }
                 });
                 unitOfWork.afterCommit(u -> {
-                    if (u.parent().isPresent() && !u.root().phase().isAfter(UnitOfWork.Phase.AFTER_COMMIT)) {
+                    if (u.parent().isPresent() && !u.root().phase().isAfter(AFTER_COMMIT)) {
                         u.root().afterCommit(w -> doWithEvents(this::afterCommit, eventQueue));
                     } else {
                         doWithEvents(this::afterCommit, eventQueue);
@@ -120,7 +122,7 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events The original events being published
      * @return The events to actually publish
      */
-    protected List<EventMessage<?>> intercept(List<EventMessage<?>> events) {
+    protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
         for (MessageDispatchInterceptor<EventMessage<?>> preprocessor : dispatchInterceptors) {
             Function<Integer, EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
@@ -131,7 +133,7 @@ public abstract class AbstractEventBus implements EventBus {
         return preprocessedEvents;
     }
 
-    private void doWithEvents(Consumer<List<EventMessage<?>>> eventsConsumer, List<EventMessage<?>> events) {
+    private void doWithEvents(Consumer<List<? extends EventMessage<?>>> eventsConsumer, List<? extends EventMessage<?>> events) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().resources().remove(eventsKey);
         }
@@ -140,11 +142,11 @@ public abstract class AbstractEventBus implements EventBus {
 
     /**
      * Process given <code>events</code> while the Unit of Work root is preparing for commit. The default implementation
-     * does nothing.
+     * passes the events to each registered event processor.
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void prepareCommit(List<EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage<?>> events) {
         for (Consumer<List<? extends EventMessage<?>>> eventProcessor : eventProcessors) {
             eventProcessor.accept(events);
         }
@@ -156,7 +158,7 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void commit(List<EventMessage<?>> events) {
+    protected void commit(List<? extends EventMessage<?>> events) {
     }
 
     /**
@@ -165,6 +167,6 @@ public abstract class AbstractEventBus implements EventBus {
      *
      * @param events Events to be published by this Event Bus
      */
-    protected void afterCommit(List<EventMessage<?>> events) {
+    protected void afterCommit(List<? extends EventMessage<?>> events) {
     }
 }

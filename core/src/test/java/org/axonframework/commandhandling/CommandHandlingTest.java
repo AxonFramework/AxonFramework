@@ -20,12 +20,9 @@ import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventUtils;
-import org.axonframework.eventstore.TrackingToken;
+import org.axonframework.eventstore.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.Before;
@@ -37,7 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -83,17 +79,17 @@ public class CommandHandlingTest {
         private List<DomainEventMessage<?>> storedEvents = new LinkedList<>();
 
         @Override
-        public Stream<? extends DomainEventMessage<?>> readEvents(String identifier) {
+        public DomainEventStream readEvents(String identifier) {
             return new ArrayList<>(storedEvents).stream();
         }
 
         @Override
-        protected void commit(List<EventMessage<?>> events) {
+        protected void commit(List<? extends EventMessage<?>> events) {
             storedEvents.addAll(events.stream().map(EventUtils::asDomainEventMessage).collect(Collectors.toList()));
         }
 
         @Override
-        public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }
 

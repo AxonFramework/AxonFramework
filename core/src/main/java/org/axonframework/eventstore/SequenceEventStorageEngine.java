@@ -46,20 +46,20 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
     }
 
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
-        return Stream.concat(historicStorage.readEvents(trackingToken), activeStorage.readEvents(trackingToken));
+    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
+        return Stream.concat(historicStorage.readEvents(trackingToken, mayBlock),
+                             activeStorage.readEvents(trackingToken, mayBlock));
     }
 
     @Override
-    public Stream<? extends DomainEventMessage<?>> readEvents(String aggregateIdentifier, long firstSequenceNumber) {
-        return Stream.concat(historicStorage.readEvents(aggregateIdentifier, firstSequenceNumber),
-                             activeStorage.readEvents(aggregateIdentifier, firstSequenceNumber));
+    public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
+        return DomainEventStream.concat(historicStorage.readEvents(aggregateIdentifier, firstSequenceNumber),
+                                        activeStorage.readEvents(aggregateIdentifier, firstSequenceNumber));
     }
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return Optional.ofNullable(activeStorage.readSnapshot(aggregateIdentifier)
-                                           .orElseGet(() -> historicStorage.readSnapshot(
-                                                   aggregateIdentifier).orElse(null)));
+        return Optional.ofNullable(activeStorage.readSnapshot(aggregateIdentifier).orElseGet(
+                () -> historicStorage.readSnapshot(aggregateIdentifier).orElse(null)));
     }
 }

@@ -39,13 +39,13 @@ public interface EventStorageEngine {
      */
     void storeSnapshot(DomainEventMessage<?> snapshot);
 
-    Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken);
+    Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock);
 
-    default Stream<? extends DomainEventMessage<?>> readEvents(String aggregateIdentifier) {
+    default DomainEventStream readEvents(String aggregateIdentifier) {
         return readEvents(aggregateIdentifier, 0);
     }
 
-    Stream<? extends DomainEventMessage<?>> readEvents(String aggregateIdentifier, long firstSequenceNumber);
+    DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber);
 
     Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier);
 }

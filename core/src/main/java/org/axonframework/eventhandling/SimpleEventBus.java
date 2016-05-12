@@ -16,24 +16,22 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventstore.TrackingEventStream;
 import org.axonframework.eventstore.TrackingToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Spliterators;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.concurrent.TimeUnit;
 
 import static org.axonframework.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
- * Implementation of the {@link EventBus} that supports streaming of events via {@link #readEvents(TrackingToken)} but
+ * Implementation of the {@link EventBus} that supports streaming of events via {@link #streamEvents(TrackingToken)} but
  * only of the most recently published events as it is not backed by a cache or event storage.
  *
  * @author Allard Buijze
@@ -45,7 +43,7 @@ public class SimpleEventBus extends AbstractEventBus {
 
     private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
-    private final Collection<EventStreamSpliterator> eventReaders = new CopyOnWriteArraySet<>();
+    private final Collection<EventConsumer> eventStreams = new CopyOnWriteArraySet<>();
     private final int queueCapacity;
 
     public SimpleEventBus() {
@@ -57,8 +55,8 @@ public class SimpleEventBus extends AbstractEventBus {
     }
 
     @Override
-    protected void afterCommit(List<EventMessage<?>> events) {
-        eventReaders.forEach(reader -> reader.addEvents(events));
+    protected void afterCommit(List<? extends EventMessage<?>> events) {
+        eventStreams.forEach(reader -> reader.addEvents(events));
     }
 
     /**
@@ -71,26 +69,24 @@ public class SimpleEventBus extends AbstractEventBus {
      * {@inheritDoc}
      */
     @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken) {
+    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
         if (trackingToken != null) {
             throw new UnsupportedOperationException("The simple event bus does not support non-null tracking tokens");
         }
-        EventStreamSpliterator spliterator = new EventStreamSpliterator(queueCapacity);
-        eventReaders.add(spliterator);
-        Stream<? extends TrackedEventMessage<?>> stream = StreamSupport.stream(spliterator, false);
-        stream.onClose(() -> eventReaders.remove(spliterator));
-        return stream;
+        EventConsumer eventStream = new EventConsumer(queueCapacity);
+        eventStreams.add(eventStream);
+        return eventStream;
     }
 
-    private class EventStreamSpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+    private class EventConsumer implements TrackingEventStream {
         private final BlockingQueue<TrackedEventMessage<?>> eventQueue;
+        private TrackedEventMessage<?> peekEvent;
 
-        private EventStreamSpliterator(int queueCapacity) {
-            super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
+        private EventConsumer(int queueCapacity) {
             eventQueue = new LinkedBlockingQueue<>(queueCapacity);
         }
 
-        private void addEvents(List<EventMessage<?>> events) {
+        private void addEvents(List<? extends EventMessage<?>> events) {
             //add one by one because bulk operations on LinkedBlockingQueues are not thread-safe
             events.forEach(eventMessage -> {
                 try {
@@ -103,15 +99,32 @@ public class SimpleEventBus extends AbstractEventBus {
         }
 
         @Override
-        public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
             try {
-                action.accept(eventQueue.take());
+                return peekEvent != null || (peekEvent = eventQueue.poll(timeout, unit)) != null;
             } catch (InterruptedException e) {
-                logger.warn("Thread was interrupted while waiting for the next item on the queue", e);
+                logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
                 Thread.currentThread().interrupt();
                 return false;
             }
-            return true;
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            try {
+                return peekEvent == null ? eventQueue.take() : peekEvent;
+            } catch (InterruptedException e) {
+                logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+                Thread.currentThread().interrupt();
+                return null;
+            } finally {
+                peekEvent = null;
+            }
+        }
+
+        @Override
+        public void close() {
+            eventStreams.remove(this);
         }
     }
 }

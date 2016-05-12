@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.metadata.MetaData;
@@ -40,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -260,8 +260,8 @@ public class EventSourcingRepositoryTest {
         private DomainEventStream lastSpy;
 
         @Override
-        public Stream<? extends DomainEventMessage<?>> decorateForRead(String aggregateIdentifier,
-                                                                       Stream<? extends DomainEventMessage<?>> eventStream) {
+        public DomainEventStream decorateForRead(String aggregateIdentifier,
+                                                 DomainEventStream eventStream) {
             createSpy(eventStream);
             return lastSpy;
         }

@@ -174,21 +174,21 @@ public class AbstractEventBusTest {
         }
 
         @Override
-        protected void prepareCommit(List<EventMessage<?>> events) {
+        protected void prepareCommit(List<? extends EventMessage<?>> events) {
             if (publicationPhase == UnitOfWork.Phase.PREPARE_COMMIT) {
                 onEvents(events);
             }
         }
 
         @Override
-        protected void commit(List<EventMessage<?>> events) {
+        protected void commit(List<? extends EventMessage<?>> events) {
             if (publicationPhase == UnitOfWork.Phase.COMMIT) {
                 onEvents(events);
             }
         }
 
         @Override
-        protected void afterCommit(List<EventMessage<?>> events) {
+        protected void afterCommit(List<? extends EventMessage<?>> events) {
             if (publicationPhase == UnitOfWork.Phase.AFTER_COMMIT) {
                 onEvents(events);
             }
