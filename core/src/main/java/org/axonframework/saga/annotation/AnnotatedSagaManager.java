@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,16 @@
 
 package org.axonframework.saga.annotation;
 
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.saga.AbstractSagaManager;
-import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.GenericSagaFactory;
-import org.axonframework.saga.Saga;
-import org.axonframework.saga.SagaCreationPolicy;
-import org.axonframework.saga.SagaFactory;
-import org.axonframework.saga.SagaInitializationPolicy;
-import org.axonframework.saga.SagaRepository;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.saga.*;
+import org.axonframework.saga.metamodel.DefaultSagaMetaModelFactory;
+import org.axonframework.saga.metamodel.SagaModel;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike
@@ -39,79 +34,35 @@ import java.util.Set;
  * @author Allard Buijze
  * @since 0.7
  */
-public class AnnotatedSagaManager extends AbstractSagaManager {
+public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
 
-    private final ParameterResolverFactory parameterResolverFactory;
+    private final SagaModel<T> sagaMetaModel;
 
     /**
      * Initialize the AnnotatedSagaManager using given <code>repository</code> to load sagas and supporting given
      * annotated <code>sagaClasses</code>.
      *
      * @param sagaRepository The repository providing access to the Saga instances
-     * @param sagaClasses    The types of Saga that this instance should manage
      */
-    @SafeVarargs
-    public AnnotatedSagaManager(SagaRepository sagaRepository,
-                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        this(sagaRepository,
-             ClasspathParameterResolverFactory.forClass(sagaClasses.length > 0 ? sagaClasses[0] : sagaRepository.getClass()),
-             sagaClasses);
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,Callable<T> sagaFactory,
+                                RollbackConfiguration rollbackConfiguration) {
+        this(sagaType, sagaRepository, sagaFactory,
+             new DefaultSagaMetaModelFactory().modelOf(sagaType), rollbackConfiguration);
     }
 
     /**
-     * Initialize the AnnotatedSagaManager using given <code>repository</code> to load sagas and supporting given
-     * annotated <code>sagaClasses</code>.
-     *
-     * @param sagaRepository           The repository providing access to the Saga instances
-     * @param parameterResolverFactory The parameterResolverFactory to resolve parameters with for the saga instance's
-     *                                 handler methods
-     * @param sagaClasses              The types of Saga that this instance should manage
+     * TODO: Javadoc
      */
-    @SafeVarargs
-    public AnnotatedSagaManager(SagaRepository sagaRepository, ParameterResolverFactory parameterResolverFactory,
-                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        this(sagaRepository, new GenericSagaFactory(), parameterResolverFactory, sagaClasses);
-    }
-
-    /**
-     * Initialize the AnnotatedSagaManager using the given resources.
-     *
-     * @param sagaRepository The repository providing access to the Saga instances
-     * @param sagaFactory    The factory creating new instances of a Saga
-     * @param sagaClasses    The types of Saga that this instance should manage
-     */
-    @SafeVarargs
-    public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
-                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        this(sagaRepository, sagaFactory,
-             ClasspathParameterResolverFactory.forClass(sagaClasses.length > 0 ? sagaClasses[0] : sagaRepository.getClass()),
-             sagaClasses);
-    }
-
-    /**
-     * Initialize the AnnotatedSagaManager using the given resources.
-     *
-     * @param sagaRepository           The repository providing access to the Saga instances
-     * @param sagaFactory              The factory creating new instances of a Saga
-     * @param parameterResolverFactory The parameterResolverFactory to resolve parameters with for the saga instance's
-     *                                 handler methods
-     * @param sagaClasses              The types of Saga that this instance should manage
-     */
-    @SafeVarargs
-    public AnnotatedSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
-                                ParameterResolverFactory parameterResolverFactory,
-                                Class<? extends AbstractAnnotatedSaga>... sagaClasses) {
-        super(sagaRepository, sagaFactory, sagaClasses);
-        this.parameterResolverFactory = parameterResolverFactory;
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
+                                SagaModel<T> sagaMetaModel, RollbackConfiguration rollbackConfiguration) {
+        super(sagaType, sagaRepository, sagaFactory, rollbackConfiguration);
+        this.sagaMetaModel = sagaMetaModel;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    protected SagaInitializationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
-        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
-                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType,
-                                                              parameterResolverFactory);
-        final List<SagaMethodMessageHandler> handlers = inspector.getMessageHandlers(event);
+    protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
+        List<SagaMethodMessageHandler<T>> handlers = sagaMetaModel.findHandlerMethods(event);
         for (SagaMethodMessageHandler handler : handlers) {
             if (handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
                 return new SagaInitializationPolicy(handler.getCreationPolicy(), handler.getAssociationValue(event));
@@ -122,31 +73,13 @@ public class AnnotatedSagaManager extends AbstractSagaManager {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected Set<AssociationValue> extractAssociationValues(Class<? extends Saga> sagaType,
-                                                                    EventMessage event) {
-        SagaMethodMessageHandlerInspector<? extends AbstractAnnotatedSaga> inspector =
-                SagaMethodMessageHandlerInspector.getInstance((Class<? extends AbstractAnnotatedSaga>) sagaType,
-                                                              parameterResolverFactory);
-        final List<SagaMethodMessageHandler> handlers = inspector.getMessageHandlers(event);
-        Set<AssociationValue> values = new HashSet<>(handlers.size());
-        for (SagaMethodMessageHandler handler : handlers) {
-            values.add(handler.getAssociationValue(event));
-        }
-        return values;
+    protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
+        List<SagaMethodMessageHandler<T>> handlers = sagaMetaModel.findHandlerMethods(event);
+        return handlers.stream().map(handler -> handler.getAssociationValue(event)).collect(Collectors.toSet());
     }
 
     @Override
-    protected void preProcessSaga(Saga saga) {
-        if (parameterResolverFactory != null) {
-            ((AbstractAnnotatedSaga) saga).registerParameterResolverFactory(parameterResolverFactory);
-        }
-    }
-
-    @Override
-    public Class<?> getTargetType() {
-        if (getManagedSagaTypes().isEmpty()) {
-            return Void.TYPE;
-        }
-        return getManagedSagaTypes().iterator().next();
+    protected boolean hasHandler(EventMessage<?> event) {
+        return !sagaMetaModel.findHandlerMethods(event).isEmpty();
     }
 }

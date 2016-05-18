@@ -423,11 +423,9 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private static class IdentifierValidatingRepository<T> implements Repository<T> {
 
         private final Repository<T> delegate;
-        private final EventBus eventBus;
 
         public IdentifierValidatingRepository(Repository<T> delegate, EventBus eventBus) {
             this.delegate = delegate;
-            this.eventBus = eventBus;
         }
 
         @Override
@@ -552,10 +550,10 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private class AggregateRegisteringInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
         @Override
-        public Object handle(UnitOfWork<CommandMessage<?>> unitOfWork, InterceptorChain<CommandMessage<?>> interceptorChain)
-                throws Exception {
+        public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                             InterceptorChain<? extends CommandMessage<?>> interceptorChain) throws Exception {
             unitOfWork.onPrepareCommit(u -> {
-                Set<Aggregate> aggregates = u.getResource("ManagedAggregates");
+                Set<Aggregate<T>> aggregates = u.getResource("ManagedAggregates");
                 if (aggregates != null && aggregates.size() == 1) {
                     workingAggregate = aggregates.iterator().next();
                 }

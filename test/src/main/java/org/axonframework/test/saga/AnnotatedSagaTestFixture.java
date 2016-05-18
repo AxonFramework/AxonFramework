@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.saga.GenericSagaFactory;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
+import org.axonframework.saga.SagaRepository;
 import org.axonframework.saga.annotation.AnnotatedSagaManager;
-import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.FixtureResourceParameterResolverFactory;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
@@ -51,14 +51,14 @@ import java.util.concurrent.TimeUnit;
  * @author Allard Buijze
  * @since 1.1
  */
-public class AnnotatedSagaTestFixture implements FixtureConfiguration, ContinuedGivenState {
+public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
 
     private final StubEventScheduler eventScheduler;
-    private final AnnotatedSagaManager sagaManager;
+    private final AnnotatedSagaManager<T> sagaManager;
     private final List<Object> registeredResources = new LinkedList<>();
 
     private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
-    private final FixtureExecutionResultImpl fixtureExecutionResult;
+    private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
 
@@ -68,13 +68,12 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
      * @param sagaType The type of saga under test
      */
     @SuppressWarnings({"unchecked"})
-    public AnnotatedSagaTestFixture(Class<? extends AbstractAnnotatedSaga> sagaType) {
+    public AnnotatedSagaTestFixture(Class<T> sagaType) {
         eventScheduler = new StubEventScheduler();
-        GenericSagaFactory genericSagaFactory = new GenericSagaFactory();
-        genericSagaFactory.setResourceInjector(new AutowiredResourceInjector(registeredResources));
         EventBus eventBus = new SimpleEventBus();
-        InMemorySagaRepository sagaRepository = new InMemorySagaRepository();
-        sagaManager = new AnnotatedSagaManager(sagaRepository, genericSagaFactory, sagaType);
+        InMemorySagaStore sagaStore = new InMemorySagaStore();
+        SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore, new AutowiredResourceInjector(registeredResources));
+        sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, sagaType::newInstance, t -> true);
         sagaManager.setSuppressExceptions(false);
 
         registeredResources.add(eventBus);
@@ -82,7 +81,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(new DefaultCommandGateway(commandBus));
-        fixtureExecutionResult = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus, commandBus,
+        fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
                                                                 sagaType, fieldFilters);
         FixtureResourceParameterResolverFactory.clear();
         registeredResources.forEach(FixtureResourceParameterResolverFactory::registerResource);
@@ -185,15 +184,15 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public <T> T registerCommandGateway(Class<T> gatewayInterface) {
+    public <I> I registerCommandGateway(Class<I> gatewayInterface) {
         return registerCommandGateway(gatewayInterface, null);
     }
 
     @Override
-    public <T> T registerCommandGateway(Class<T> gatewayInterface, final T stubImplementation) {
+    public <I> I registerCommandGateway(Class<I> gatewayInterface, final I stubImplementation) {
         GatewayProxyFactory factory = new StubAwareGatewayProxyFactory(stubImplementation,
                                                                        AnnotatedSagaTestFixture.this.commandBus);
-        final T gateway = factory.createGateway(gatewayInterface);
+        final I gateway = factory.createGateway(gatewayInterface);
         registerResource(gateway);
         return gateway;
     }

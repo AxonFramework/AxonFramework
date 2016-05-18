@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
+import org.axonframework.saga.annotation.AnnotatedSaga;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 
 import java.nio.charset.Charset;
@@ -137,7 +137,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
 
         // Configuration to enhance Saga serialization
         xStream.addDefaultImplementation(AssociationValuesImpl.class, AssociationValues.class);
-        xStream.aliasField("associations", AbstractAnnotatedSaga.class, "associationValues");
+        xStream.aliasField("associations", AnnotatedSaga.class, "associationValues");
         xStream.alias("association", AssociationValue.class);
         xStream.aliasField("key", AssociationValue.class, "propertyKey");
         xStream.aliasField("value", AssociationValue.class, "propertyValue");

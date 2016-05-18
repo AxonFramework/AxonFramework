@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.axonframework.saga.repository.jdbc;
 
+import org.axonframework.saga.AssociationValue;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.SimpleSerializedObject;
 
@@ -22,6 +23,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Generic SagaSqlSchema implementation, for use in most databases. This implementation can be overridden to account
@@ -104,6 +107,32 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     }
 
     @Override
+    public PreparedStatement sql_findAssociations(Connection connection, String sagaIdentifier, String sagaType) throws SQLException {
+        final String sql = "SELECT associationKey, associationValue FROM " + schemaConfiguration.assocValueEntryTable()
+                + " WHERE sagaId = ?"
+                + " AND sagaType = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setString(1, sagaIdentifier);
+        preparedStatement.setString(2, sagaType);
+        return preparedStatement;
+    }
+
+    @Override
+    public String readToken(ResultSet resultSet) throws SQLException {
+        // tokens not supported by this implementation
+        return null;
+    }
+
+    @Override
+    public Set<AssociationValue> readAssociationValues(ResultSet resultSet) throws SQLException {
+        Set<AssociationValue> associationValues = new HashSet<>();
+        while (resultSet.next()) {
+            associationValues.add(new AssociationValue(resultSet.getString(1), resultSet.getString(2)));
+        }
+        return associationValues;
+    }
+
+    @Override
     public PreparedStatement sql_deleteSagaEntry(Connection connection, String sagaIdentifier) throws SQLException {
         final String sql = "DELETE FROM " + schemaConfiguration.sagaEntryTable() + " WHERE sagaId = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -122,7 +151,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
 
     @Override
     public PreparedStatement sql_updateSaga(Connection connection, String sagaIdentifier, byte[] serializedSaga,
-            String sagaType, String revision) throws SQLException {
+                                            String sagaType, String revision) throws SQLException {
         final String sql = "UPDATE " + schemaConfiguration.sagaEntryTable()
                 + " SET serializedSaga = ?, revision = ? WHERE sagaId = ? AND sagaType = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -135,8 +164,8 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
 
     @Override
     public PreparedStatement sql_storeSaga(Connection connection, String sagaIdentifier, String revision,
-            String sagaType,
-            byte[] serializedSaga) throws SQLException {
+                                           String sagaType,
+                                           byte[] serializedSaga) throws SQLException {
         final String sql = "INSERT INTO " + schemaConfiguration.sagaEntryTable() + "(sagaId, revision, sagaType, serializedSaga) VALUES(?,?,?,?)";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, sagaIdentifier);
@@ -162,18 +191,18 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     @Override
     public PreparedStatement sql_createTableSagaEntry(Connection conn) throws SQLException {
         return conn.prepareStatement("create table " + schemaConfiguration.sagaEntryTable() + " (\n" +
-                "        sagaId varchar(255) not null,\n" +
-                "        revision varchar(255),\n" +
-                "        sagaType varchar(255),\n" +
-                "        serializedSaga blob,\n" +
-                "        primary key (sagaId)\n" +
-                "    );");
+                                             "        sagaId varchar(255) not null,\n" +
+                                             "        revision varchar(255),\n" +
+                                             "        sagaType varchar(255),\n" +
+                                             "        serializedSaga blob,\n" +
+                                             "        primary key (sagaId)\n" +
+                                             "    );");
     }
 
     @Override
     public SerializedObject<byte[]> readSerializedSaga(ResultSet resultSet) throws SQLException {
         return new SimpleSerializedObject<>(resultSet.getBytes(1), byte[].class,
-                                                  resultSet.getString(2),
-                                                  resultSet.getString(3));
+                                            resultSet.getString(2),
+                                            resultSet.getString(3));
     }
 }

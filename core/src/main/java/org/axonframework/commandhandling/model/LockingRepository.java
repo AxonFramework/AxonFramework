@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
         Lock lock = lockFactory.obtainLock(aggregateIdentifier);
         try {
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
-        } catch (RuntimeException ex) {
+        } catch (Exception ex) {
             if (lock != null) {
                 logger.debug("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
                 lock.release();

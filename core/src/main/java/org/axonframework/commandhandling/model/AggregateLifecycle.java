@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.function.Supplier;
 
 public abstract class AggregateLifecycle {
 
@@ -45,7 +44,7 @@ public abstract class AggregateLifecycle {
         getInstance().doMarkDeleted();
     }
 
-    public static AggregateLifecycle getInstance() {
+    protected static AggregateLifecycle getInstance() {
         AggregateLifecycle instance = CURRENT.get();
         if (instance == null && CurrentUnitOfWork.isStarted()) {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
@@ -70,32 +69,30 @@ public abstract class AggregateLifecycle {
 
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
 
-    protected <V> V executeWithResultOrException(Callable<V> callable) throws Exception {
-        AggregateLifecycle existing = CURRENT.get();
-        CURRENT.set(this);
-        try {
-            return callable.call();
-        } finally {
-            if (existing == null) {
-                CURRENT.remove();
-            } else {
-                CURRENT.set(existing);
+    protected <V> V executeWithResult(Callable<V> task) throws Exception {
+            AggregateLifecycle existing = CURRENT.get();
+            CURRENT.set(this);
+            try {
+                return task.call();
+            } finally {
+                if (existing == null) {
+                    CURRENT.remove();
+                } else {
+                    CURRENT.set(existing);
+                }
             }
-        } 
-    }
-    
-    protected <V> V executeWithResult(Supplier<V> task) {
-        try {
-            return executeWithResultOrException(task::get);
-        } catch (Exception e) {
-            throw (RuntimeException) e;
-        }
     }
 
     protected void execute(Runnable task) {
-        executeWithResult(() -> {
-            task.run();
-            return null;
-        });
+        try {
+            executeWithResult(() -> {
+                task.run();
+                return null;
+            });
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AggregateInvocationException("Exception while invoking a task for an aggregate", e);
+        }
     }
 }

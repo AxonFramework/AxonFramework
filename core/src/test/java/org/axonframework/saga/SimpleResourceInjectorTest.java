@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,14 @@
 package org.axonframework.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
 import org.junit.Test;
 
 import javax.inject.Inject;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -79,7 +82,7 @@ public class SimpleResourceInjectorTest {
         assertSame(resource, saga.getSomeMethodResource());
     }
 
-    private static class StubSaga implements Saga {
+    private static class StubSaga implements Saga<StubSaga> {
 
         @Inject
         private SomeFieldResource someFieldResource;
@@ -97,12 +100,28 @@ public class SimpleResourceInjectorTest {
         }
 
         @Override
-        public void handle(EventMessage event) {
+        public <R> R invoke(Function<StubSaga, R> invocation) {
+            return invocation.apply(this);
+        }
+
+        @Override
+        public void execute(Consumer<StubSaga> invocation) {
+            invocation.accept(this);
+        }
+
+        @Override
+        public boolean handle(EventMessage event) {
+            return true;
         }
 
         @Override
         public boolean isActive() {
             return true;
+        }
+
+        @Override
+        public ProcessingToken processingToken() {
+            return null;
         }
 
         public SomeFieldResource getSomeFieldResource() {

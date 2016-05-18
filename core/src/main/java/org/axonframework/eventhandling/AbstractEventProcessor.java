@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,13 +32,12 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * @author Allard Buijze
  * @since 1.2
  */
-public abstract class AbstractEventProcessor implements EventProcessor {
+public abstract class AbstractEventProcessor implements EventProcessor, EventProcessingMonitorSupport {
 
     private final String name;
     private final Set<EventListener> eventListeners;
     private final Set<EventListener> immutableEventListeners;
     private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors;
-    private final EventProcessorMetaData processorMetaData = new DefaultEventProcessorMetaData();
     private final EventProcessingMonitorCollection subscribedMonitors = new EventProcessingMonitorCollection();
     private final MultiplexingEventProcessingMonitor eventProcessingMonitor = new MultiplexingEventProcessingMonitor(subscribedMonitors);
 
@@ -142,11 +141,6 @@ public abstract class AbstractEventProcessor implements EventProcessor {
             }
             return false;
         };
-    }
-
-    @Override
-    public EventProcessorMetaData getMetaData() {
-        return processorMetaData;
     }
 
     @Override

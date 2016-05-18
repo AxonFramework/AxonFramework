@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2015. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -1489,7 +1489,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>
+                    <tool:exports type="org.axonframework.saga.repository.jpa.JpaSagaStore"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -1584,7 +1584,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.saga.repository.jdbc.JdbcSagaRepository"/>
+                    <tool:exports type="org.axonframework.saga.repository.jdbc.JdbcSagaStore"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>

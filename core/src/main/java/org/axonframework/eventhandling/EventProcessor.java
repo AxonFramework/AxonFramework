@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import java.util.List;
  * @author Allard Buijze
  * @since 1.2
  */
-public interface EventProcessor extends EventProcessingMonitorSupport {
+public interface EventProcessor {
 
     /**
      * Returns the name of this event processor. This name is used to detect distributed instances of the
@@ -54,7 +54,7 @@ public interface EventProcessor extends EventProcessingMonitorSupport {
      *
      * @param events The Events to publish in the event processor
      */
-    default void handle(EventMessage... events) {
+    default void handle(EventMessage<?>... events) {
         handle(Arrays.asList(events));
     }
 
@@ -80,13 +80,6 @@ public interface EventProcessor extends EventProcessingMonitorSupport {
      * When unsubscribed it will no longer receive events from this event processor.
      */
     Registration subscribe(EventListener eventListener);
-
-    /**
-     * Returns the MetaData of this event processor.
-     *
-     * @return the MetaData of this event processor
-     */
-    EventProcessorMetaData getMetaData();
 
     /**
      * Registers the given <code>interceptor</code> to this event processor. The <code>interceptor</code> will

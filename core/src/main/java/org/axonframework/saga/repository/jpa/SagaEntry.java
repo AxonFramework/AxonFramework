@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package org.axonframework.saga.repository.jpa;
 
-import org.axonframework.saga.Saga;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
-import javax.persistence.Transient;
 
 /**
  * Java Persistence Entity allowing sagas to be stored in a relational database.
@@ -34,7 +31,7 @@ import javax.persistence.Transient;
  * @since 0.7
  */
 @Entity
-public class SagaEntry {
+public class SagaEntry<T> {
 
     @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
     @Id
@@ -47,9 +44,6 @@ public class SagaEntry {
     @Lob
     private byte[] serializedSaga;
 
-    @Transient
-    private transient Saga saga;
-
     /**
      * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
      * saga is not modified by this operation.
@@ -57,33 +51,18 @@ public class SagaEntry {
      * @param saga       The saga to store
      * @param serializer The serialization mechanism to convert the Saga to a byte stream
      */
-    public SagaEntry(Saga saga, Serializer serializer) {
-        this.sagaId = saga.getSagaIdentifier();
+    public SagaEntry(T saga, String sagaIdentifier, Serializer serializer) {
+        this.sagaId = sagaIdentifier;
         SerializedObject<byte[]> serialized = serializer.serialize(saga, byte[].class);
         this.serializedSaga = serialized.getData();
         this.sagaType = serialized.getType().getName();
         this.revision = serialized.getType().getRevision();
-        this.saga = saga;
-    }
-
-    /**
-     * Returns the Saga instance stored in this entry.
-     *
-     * @param serializer The serializer to decode the Saga
-     * @return the Saga instance stored in this entry
-     */
-    public Saga getSaga(Serializer serializer) {
-        if (saga != null) {
-            return saga;
-        }
-        return (Saga) serializer.deserialize(new SimpleSerializedObject<>(serializedSaga, byte[].class,
-                                                                                sagaType, revision));
     }
 
     /**
      * Constructor required by JPA. Do not use.
      *
-     * @see #SagaEntry(org.axonframework.saga.Saga, org.axonframework.serializer.Serializer)
+     * @see #SagaEntry(Object, String, Serializer)
      */
     protected SagaEntry() {
         // required by JPA

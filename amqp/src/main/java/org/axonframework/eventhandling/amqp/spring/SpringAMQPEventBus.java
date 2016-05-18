@@ -24,7 +24,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.EventProcessorMetaData;
 import org.axonframework.eventhandling.amqp.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serializer.Serializer;
@@ -41,8 +40,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-
-import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQP_CONFIG_PROPERTY;
 
 /**
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
@@ -180,13 +177,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
 
     @Override
     public Registration subscribe(EventProcessor eventProcessor) {
-        EventProcessorMetaData processorMetaData = eventProcessor.getMetaData();
-        AMQPConsumerConfiguration config;
-        if (processorMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
-            config = (AMQPConsumerConfiguration) processorMetaData.getProperty(AMQP_CONFIG_PROPERTY);
-        } else {
-            config = new DefaultAMQPConsumerConfiguration(eventProcessor.getName());
-        }
+        AMQPConsumerConfiguration config = new DefaultAMQPConsumerConfiguration(eventProcessor.getName());
         return getListenerContainerLifecycleManager().registerEventProcessor(eventProcessor, config, messageConverter);
     }
 

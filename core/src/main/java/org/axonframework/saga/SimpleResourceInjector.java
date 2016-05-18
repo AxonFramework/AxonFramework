@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,12 +71,12 @@ public class SimpleResourceInjector implements ResourceInjector {
     }
 
     @Override
-    public void injectResources(Saga saga) {
+    public void injectResources(Object saga) {
         injectFieldResources(saga);
         injectMethodResources(saga);
     }
 
-    private void injectFieldResources(Saga saga) {
+    private void injectFieldResources(Object saga) {
         fieldsOf(saga.getClass()).forEach(field -> {
             Optional.ofNullable(AnnotationUtils.findAnnotation(field, FULLY_QUALIFIED_CLASS_NAME_INJECT))
                     .ifPresent(annotatedFields -> {
@@ -88,7 +88,7 @@ public class SimpleResourceInjector implements ResourceInjector {
         });
     }
 
-    private void injectFieldResource(Saga saga, Field injectField, Object resource) {
+    private void injectFieldResource(Object saga, Field injectField, Object resource) {
         try {
             ReflectionUtils.ensureAccessible(injectField);
             injectField.set(saga, resource);
@@ -97,7 +97,7 @@ public class SimpleResourceInjector implements ResourceInjector {
         }
     }
 
-    private void injectMethodResources(Saga saga) {
+    private void injectMethodResources(Object saga) {
         methodsOf(saga.getClass()).forEach(method -> {
             Optional.ofNullable(AnnotationUtils.findAnnotation(method, FULLY_QUALIFIED_CLASS_NAME_INJECT))
                     .ifPresent(annotatedMethods -> {
@@ -109,7 +109,7 @@ public class SimpleResourceInjector implements ResourceInjector {
         });
     }
 
-    private void injectMethodResource(Saga saga, Method injectMethod, Object resource) {
+    private void injectMethodResource(Object saga, Method injectMethod, Object resource) {
         try {
             ReflectionUtils.ensureAccessible(injectMethod);
             injectMethod.invoke(saga, resource);

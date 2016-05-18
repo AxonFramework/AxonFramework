@@ -20,6 +20,8 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 public class ChildForwardingCommandMessageHandler<P, C> implements CommandMessageHandler<P> {
@@ -77,17 +79,17 @@ public class ChildForwardingCommandMessageHandler<P, C> implements CommandMessag
     }
 
     @Override
-    public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
-        return childHandler.getAnnotation(annotationClass);
+    public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+        return childHandler.unwrap(handlerType);
     }
 
     @Override
-    public Annotation[] getAnnotations() {
-        return childHandler.getAnnotations();
+    public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
+        return childHandler.annotationAttributes(annotationType);
     }
 
     @Override
-    public Annotation[] getDeclaredAnnotations() {
-        return childHandler.getDeclaredAnnotations();
+    public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+        return childHandler.hasAnnotation(annotationType);
     }
 }

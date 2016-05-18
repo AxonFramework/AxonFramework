@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ public class SynchronousLoopbackTest {
 
             @Override
             public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                assertEquals("Mock exception", cause.getMessage());
+                assertEquals("Mock exception", cause.getCause().getMessage());
             }
         };
     }

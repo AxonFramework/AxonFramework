@@ -22,8 +22,10 @@ import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.util.Map;
+import java.util.Optional;
 
-public abstract class AbstractMessageHandler<T> implements MessageHandler<T>, AnnotatedElement {
+public abstract class AbstractMessageHandler<T> implements MessageHandler<T> {
 
     private final Class<?> payloadType;
     private final int parameterCount;
@@ -105,38 +107,22 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T>, An
     }
 
     @Override
-    public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
-        return executable.getAnnotation(annotationClass);
+    public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
+        return AnnotationUtils.findAnnotationAttributes(executable, annotationType);
     }
 
     @Override
-    public Annotation[] getAnnotations() {
-        return executable.getAnnotations();
+    public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+        return AnnotationUtils.findAnnotation(executable, annotationType) != null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Annotation[] getDeclaredAnnotations() {
-        return executable.getDeclaredAnnotations();
-    }
-
-    @Override
-    public <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) {
-        return executable.getDeclaredAnnotationsByType(annotationClass);
-    }
-
-    @Override
-    public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
-        return executable.getDeclaredAnnotation(annotationClass);
-    }
-
-    @Override
-    public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass) {
-        return executable.getAnnotationsByType(annotationClass);
-    }
-
-    @Override
-    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
-        return executable.isAnnotationPresent(annotationClass);
+    public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+        if (handlerType.isInstance(executable)) {
+            return (Optional<HT>) Optional.of(executable);
+        }
+        return Optional.empty();
     }
 
     @Override
