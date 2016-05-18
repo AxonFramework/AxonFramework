@@ -13,54 +13,23 @@
 
 package org.axonframework.eventstore.jdbc;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
 /**
  * @author Rene de Waele
  */
-public class MySqlEventSchemaFactory implements EventSchemaFactory {
+public class MySqlEventSchemaFactory extends AbstractEventSchemaFactory {
+    public static final MySqlEventSchemaFactory INSTANCE = new MySqlEventSchemaFactory();
 
-    @Override
-    public PreparedStatement createDomainEventTable(Connection connection,
-                                                    EventSchemaConfiguration configuration) throws SQLException {
-        String sql = " create table " + configuration.domainEventTable() + " (\n" +
-                configuration.globalIndexColumn() + " bigint NOT NULL AUTO_INCREMENT,\n" +
-                configuration.aggregateIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.sequenceNumberColumn() + " bigint not null,\n" +
-                configuration.typeColumn() + " varchar(255) not null,\n" +
-                configuration.eventIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.metaDataColumn() + " blob,\n" +
-                configuration.payloadColumn() + " blob not null,\n" +
-                configuration.payloadRevisionColumn() + " varchar(255),\n" +
-                configuration.payloadTypeColumn() + " varchar(255) not null,\n" +
-                configuration.timestampColumn() + " varchar(255) not null,\n" +
-                "constraint primary key (" + configuration.globalIndexColumn() + "),\n" +
-                "constraint unique (" + configuration.aggregateIdentifierColumn() + ", " +
-                configuration.sequenceNumberColumn() + "),\n" +
-                "constraint unique (eventIdentifier)\n" +
-                ")";
-        return connection.prepareStatement(sql);
+    protected MySqlEventSchemaFactory() {
     }
 
     @Override
-    public PreparedStatement createSnapshotEventTable(Connection connection,
-                                                      EventSchemaConfiguration configuration) throws SQLException {
-        String sql = " create table " + configuration.snapshotTable() + " (\n" +
-                configuration.aggregateIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.sequenceNumberColumn() + " bigint not null,\n" +
-                configuration.typeColumn() + " varchar(255) not null,\n" +
-                configuration.eventIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.metaDataColumn() + " blob,\n" +
-                configuration.payloadColumn() + " blob not null,\n" +
-                configuration.payloadRevisionColumn() + " varchar(255),\n" +
-                configuration.payloadTypeColumn() + " varchar(255) not null,\n" +
-                configuration.timestampColumn() + " varchar(255) not null,\n" +
-                "constraint primary key (" + configuration.aggregateIdentifierColumn() + ", " +
-                configuration.sequenceNumberColumn() + ")\n" +
-                ")";
-        return connection.prepareStatement(sql);
+    protected String autoIncrement() {
+        return "AUTO_INCREMENT";
+    }
+
+    @Override
+    protected String payloadType() {
+        return "blob";
     }
 
 }

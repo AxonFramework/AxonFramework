@@ -13,6 +13,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -59,22 +60,23 @@ public class CommandHandlerInvokerTest {
         commandHandlingEntry.reset(mockCommandMessage, mockCommandHandler, 0, 0, null,
                                    Collections.<MessageHandlerInterceptor<CommandMessage<?>>>emptyList(),
                                    Collections.<MessageHandlerInterceptor<CommandMessage<?>>>emptyList());
-        commandHandlingEntry.resources().put(EventBus.KEY, mock(EventBus.class));
         eventStreamDecorator = mock(EventStreamDecorator.class);
-        when(eventStreamDecorator.decorateForAppend(any(), any()))
-                .thenAnswer(new ReturnsArgumentAt(1));
+        when(eventStreamDecorator.decorateForAppend(any(), any())).thenAnswer(new ReturnsArgumentAt(1));
         when(eventStreamDecorator.decorateForRead(any(), any(DomainEventStream.class)))
                 .thenAnswer(new ReturnsArgumentAt(1));
     }
 
     @Test
     public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
-        final Repository<StubAggregate> repository = testSubject.createRepository(
-                new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
-        when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
-        when(mockEventStore.readEvents(anyObject()))
-                .thenReturn(new SimpleDomainEventStream(
-                        new GenericDomainEventMessage<>(aggregateIdentifier, 0, aggregateIdentifier, type)));
+        final Repository<StubAggregate> repository = testSubject
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
+        when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class)))
+                .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
+        when(mockEventStore.readEvents(anyObject())).thenReturn(DomainEventStream
+                                                                        .of(new GenericDomainEventMessage<>("type",
+                                                                                                            aggregateIdentifier,
+                                                                                                            0,
+                                                                                                            aggregateIdentifier)));
         testSubject.onEvent(commandHandlingEntry, 0, true);
 
         verify(mockCache).get(aggregateIdentifier);
@@ -84,15 +86,16 @@ public class CommandHandlerInvokerTest {
 
     @Test
     public void testLoadFromRepositoryLoadsFromCache() throws Exception {
-        final Repository<StubAggregate> repository = testSubject.createRepository(
-                new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
-        when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
+        final Repository<StubAggregate> repository = testSubject
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
+        when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class)))
+                .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockCache.get(aggregateIdentifier)).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 return EventSourcedAggregate.initialize(new StubAggregate(aggregateIdentifier),
                                                         ModelInspector.inspectAggregate(StubAggregate.class),
-                                                        mockEventBus);
+                                                        mockEventStore);
             }
         });
         testSubject.onEvent(commandHandlingEntry, 0, true);
@@ -103,8 +106,8 @@ public class CommandHandlerInvokerTest {
 
     @Test
     public void testAddToRepositoryAddsInCache() throws Exception {
-        final Repository<StubAggregate> repository = testSubject.createRepository(
-                new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
+        final Repository<StubAggregate> repository = testSubject
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
         when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> {
             Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(aggregateIdentifier));
             aggregate.execute(StubAggregate::doSomething);
@@ -115,7 +118,7 @@ public class CommandHandlerInvokerTest {
 
         verify(mockCache).put(eq(aggregateIdentifier), isA(EventSourcedAggregate.class));
         verify(mockEventStore, never()).readEvents(eq(aggregateIdentifier));
-        verify(mockEventStore).appendEvents(Matchers.<DomainEventMessage<?>[]>anyVararg());
+        verify(mockEventStore).publish(Matchers.<DomainEventMessage<?>[]>anyVararg());
     }
 
     @Test
@@ -129,10 +132,10 @@ public class CommandHandlerInvokerTest {
 
     @Test
     public void testCreateRepositoryReturnsSameInstanceOnSecondInvocation() {
-        final Repository<StubAggregate> repository1 = testSubject.createRepository(
-                new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
-        final Repository<StubAggregate> repository2= testSubject.createRepository(
-                new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
+        final Repository<StubAggregate> repository1 = testSubject
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
+        final Repository<StubAggregate> repository2 = testSubject
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
 
         assertSame(repository1, repository2);
     }

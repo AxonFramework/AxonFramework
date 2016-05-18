@@ -16,7 +16,10 @@ package org.axonframework.eventstore;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.Serializer;
 
+import javax.persistence.Basic;
 import javax.persistence.MappedSuperclass;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * @author Rene de Waele
@@ -24,21 +27,34 @@ import javax.persistence.MappedSuperclass;
 @MappedSuperclass
 public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> implements SerializedDomainEventData<T> {
 
+    @Basic(optional = false)
     private String type;
+    @Basic(optional = false)
     private String aggregateIdentifier;
+    @Basic(optional = false)
     private long sequenceNumber;
+    @Basic(optional = false)
+    private Long timeStamp;
 
-    public AbstractDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
-        super(eventMessage, serializer);
+    public AbstractDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
+        super(eventMessage, serializer, contentType);
+        timeStamp = eventMessage.getTimestamp().toEpochMilli();
         type = eventMessage.getType();
         aggregateIdentifier = eventMessage.getAggregateIdentifier();
         sequenceNumber = eventMessage.getSequenceNumber();
     }
 
     public AbstractDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
-                                    String eventIdentifier, Object timeStamp, String payloadType,
+                                    String eventIdentifier, Object timestamp, String payloadType,
                                     String payloadRevision, T payload, T metaData) {
-        super(eventIdentifier, timeStamp, payloadType, payloadRevision, payload, metaData);
+        super(eventIdentifier, payloadType, payloadRevision, payload, metaData);
+        if (timestamp instanceof TemporalAccessor) {
+            this.timeStamp = Instant.from((TemporalAccessor) timestamp).toEpochMilli();
+        } else if (timestamp instanceof CharSequence) {
+            this.timeStamp = Instant.parse((CharSequence) timestamp).toEpochMilli();
+        } else {
+            this.timeStamp = (Long) timestamp;
+        }
         this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -60,5 +76,10 @@ public abstract class AbstractDomainEventEntry<T> extends AbstractEventEntry<T> 
     @Override
     public long getSequenceNumber() {
         return sequenceNumber;
+    }
+
+    @Override
+    public Instant getTimestamp() {
+        return Instant.ofEpochMilli(timeStamp);
     }
 }

@@ -13,9 +13,7 @@
 
 package org.axonframework.eventstore.jpa;
 
-import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.Assert;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -32,7 +30,6 @@ import static org.axonframework.eventstore.EventUtils.asDomainEventMessage;
  */
 public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     private final EntityManagerProvider entityManagerProvider;
-    private PersistenceExceptionResolver persistenceExceptionResolver;
 
     public JpaEventStorageEngine(EntityManagerProvider entityManagerProvider) {
         this.entityManagerProvider = entityManagerProvider;
@@ -43,12 +40,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     protected List<SerializedTrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
                       String.format("Token %s is of the wrong type", lastToken));
-        return entityManager().createQuery("SELECT new org.axonframework.eventstore.jpa.DomainEventEntry(" +
+        return entityManager().createQuery("SELECT new org.axonframework.eventstore.GenericTrackedDomainEventEntry(" +
                                                    "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                                    "e.eventIdentifier, e.timeStamp, e.payloadType, " +
                                                    "e.payloadRevision, e.payload, e.metaData) " +
                                                    "FROM " + domainEventEntryEntityName() + " e " +
-                                                   "WHERE e.trackingToken > :token " + "ORDER BY e.trackingToken ASC")
+                                                   "WHERE e.globalIndex > :token " + "ORDER BY e.globalIndex ASC")
                 .setParameter("token", lastToken == null ? -1 : ((GlobalIndexTrackingToken) lastToken).getGlobalIndex())
                 .setMaxResults(batchSize).getResultList();
     }
@@ -57,8 +54,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @SuppressWarnings("unchecked")
     protected List<SerializedDomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
                                                             int batchSize) {
-        return entityManager().createQuery("SELECT new org.axonframework.eventstore.jpa.DomainEventEntry(" +
-                                                   "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+        return entityManager().createQuery("SELECT new org.axonframework.eventstore.GenericDomainEventEntry(" +
+                                                   "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                                    "e.eventIdentifier, e.timeStamp, e.payloadType, " +
                                                    "e.payloadRevision, e.payload, e.metaData) " +
                                                    "FROM " + domainEventEntryEntityName() + " e " +
@@ -72,12 +69,13 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @SuppressWarnings("unchecked")
     protected SerializedDomainEventData<?> readSnapshotData(String aggregateIdentifier) {
         return (SerializedDomainEventData<?>) entityManager()
-                .createQuery("SELECT new org.axonframework.eventstore.jpa.SnapshotEventEntry(" +
+                .createQuery("SELECT new org.axonframework.eventstore.GenericDomainEventEntry(" +
                                      "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
                                      "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " +
                                      "FROM " + snapshotEventEntryEntityName() + " e " +
                                      "WHERE e.aggregateIdentifier = :id " +
-                                     "ORDER BY e.sequenceNumber DESC").setParameter("id", aggregateIdentifier)
+                                     "ORDER BY e.sequenceNumber DESC")
+                .setParameter("id", aggregateIdentifier)
                 .setMaxResults(1).setFirstResult(0).getResultList().stream().findFirst().orElse(null);
     }
 
@@ -89,7 +87,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         try {
             events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
             entityManager().flush();
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             handlePersistenceException(e, events.get(0));
         }
     }
@@ -100,8 +98,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         try {
             entityManager().persist(createSnapshotEntity(snapshot, serializer));
             entityManager().flush();
-        } catch (RuntimeException exception) {
-            handlePersistenceException(exception, snapshot);
+        } catch (Exception e) {
+            handlePersistenceException(e, snapshot);
         }
     }
 
@@ -109,18 +107,6 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         entityManager().createQuery("DELETE FROM " + snapshotEventEntryEntityName() +
                                             " e WHERE e.aggregateIdentifier = :aggregateIdentifier")
                 .setParameter("aggregateIdentifier", aggregateIdentifier).executeUpdate();
-    }
-
-    protected void handlePersistenceException(RuntimeException exception, EventMessage<?> failedEvent) {
-        if (failedEvent instanceof SerializedDomainEventData<?> && persistenceExceptionResolver != null &&
-                persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
-            SerializedDomainEventData<?> failedDomainEvent = (SerializedDomainEventData<?>) failedEvent;
-            throw new ConcurrencyException(
-                    String.format("An event for aggregate [%s] at sequence: [%s] was already inserted",
-                                  failedDomainEvent.getAggregateIdentifier(), failedDomainEvent.getSequenceNumber()),
-                    exception);
-        }
-        throw exception;
     }
 
     protected Object createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
@@ -141,15 +127,5 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     protected EntityManager entityManager() {
         return entityManagerProvider.getEntityManager();
-    }
-
-    /**
-     * Sets the persistenceExceptionResolver that will help detect concurrency exceptions from the backing database.
-     *
-     * @param persistenceExceptionResolver the persistenceExceptionResolver that will help detect concurrency
-     *                                     exceptions
-     */
-    public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
-        this.persistenceExceptionResolver = persistenceExceptionResolver;
     }
 }

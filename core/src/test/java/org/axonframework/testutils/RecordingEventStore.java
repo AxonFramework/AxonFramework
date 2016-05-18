@@ -20,7 +20,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.eventstore.TrackingEventStream;
@@ -34,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * EventBus implementation that does not perform any actions on subscriptions or published events, but records
@@ -55,13 +54,28 @@ public class RecordingEventStore implements EventStore {
     @Override
     public TrackingEventStream streamEvents(TrackingToken trackingToken) {
         readerTokens.add(trackingToken);
-        return new ArrayBlockingQueue<TrackedEventMessage<?>>(0).stream();
+        return new TrackingEventStream() {
+            @Override
+            public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+                return false;
+            }
+
+            @Override
+            public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+                return new ArrayBlockingQueue<TrackedEventMessage<?>>(0).take();
+            }
+
+            @Override
+            public void close() {
+
+            }
+        };
     }
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier) {
         fetchedAggregateIds.add(aggregateIdentifier);
-        return new ArrayBlockingQueue<DomainEventMessage<?>>(0).stream();
+        return DomainEventStream.of();
     }
 
     @Override
@@ -70,7 +84,7 @@ public class RecordingEventStore implements EventStore {
     }
 
     @Override
-    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+    public Registration subscribe(EventProcessor eventProcessor) {
         subscriptions.add(eventProcessor);
         return () -> subscriptions.remove(eventProcessor);
     }

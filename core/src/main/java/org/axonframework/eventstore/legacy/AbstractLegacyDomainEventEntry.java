@@ -11,15 +11,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore;
+package org.axonframework.eventstore.legacy;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventstore.AbstractEventEntry;
+import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.serializer.Serializer;
 
+import javax.persistence.Basic;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.MappedSuperclass;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 import java.util.Objects;
 
 /**
@@ -35,18 +40,27 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
     private String aggregateIdentifier;
     @Id
     private long sequenceNumber;
+    @Basic(optional = false)
+    private String timeStamp;
 
-    public AbstractLegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
-        super(eventMessage, serializer);
+    public AbstractLegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
+                                          Class<T> contentType) {
+        super(eventMessage, serializer, contentType);
+        timeStamp = eventMessage.getTimestamp().toString();
         type = eventMessage.getType();
         aggregateIdentifier = eventMessage.getAggregateIdentifier();
         sequenceNumber = eventMessage.getSequenceNumber();
     }
 
     public AbstractLegacyDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
-                                          String eventIdentifier, Object timeStamp, String payloadType,
+                                          String eventIdentifier, Object timestamp, String payloadType,
                                           String payloadRevision, T payload, T metaData) {
-        super(eventIdentifier, timeStamp, payloadType, payloadRevision, payload, metaData);
+        super(eventIdentifier, payloadType, payloadRevision, payload, metaData);
+        if (timestamp instanceof TemporalAccessor) {
+            this.timeStamp = Instant.from((TemporalAccessor) timestamp).toString();
+        } else {
+            this.timeStamp = (String) timestamp;
+        }
         this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
@@ -70,6 +84,11 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
         return sequenceNumber;
     }
 
+    @Override
+    public Instant getTimestamp() {
+        return Instant.parse(timeStamp);
+    }
+
     /**
      * Primary key definition of the AbstractEventEntry class. Is used by JPA to support composite primary keys.
      */
@@ -78,8 +97,8 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
 
         private static final long serialVersionUID = 9182347799552520594L;
 
-        private String type;
         private String aggregateIdentifier;
+        private String type;
         private long sequenceNumber;
 
         /**

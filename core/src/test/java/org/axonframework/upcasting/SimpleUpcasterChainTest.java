@@ -17,7 +17,7 @@
 package org.axonframework.upcasting;
 
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.eventstore.jpa.SimpleSerializedDomainEventData;
+import org.axonframework.eventstore.GenericDomainEventEntry;
 import org.axonframework.serializer.ConverterFactory;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
@@ -49,11 +49,10 @@ public class SimpleUpcasterChainTest extends UpcasterChainTest {
                                                                                            "test", "0");
         List<SerializedObject> result = chain.upcast(serializedObject,
                                                      new SerializedDomainEventUpcastingContext(
-                                                             new SimpleSerializedDomainEventData(
-                                                                     "eventId", aggregateType, "aggregateId", 0, Instant.now(), "test", "0",
+                                                             new GenericDomainEventEntry<>(
+                                                                     "type", "aggregateId", 0, "eventId", Instant.now(), "test", "0",
                                                                      "Data".getBytes(IOUtils.UTF8),
-                                                                     "meta".getBytes(IOUtils.UTF8)
-                                                             ), mock(Serializer.class))
+                                                                     "meta".getBytes(IOUtils.UTF8)), mock(Serializer.class))
         );
 
         assertEquals(Collections.<SerializedObject>singletonList(serializedObject), result);

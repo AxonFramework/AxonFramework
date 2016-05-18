@@ -13,91 +13,83 @@
 
 package org.axonframework.eventstore;
 
-import org.axonframework.domain.IdentifierFactory;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.upcasting.UpcasterChain;
+import org.axonframework.upcasting.UpcastingContext;
 import org.junit.Test;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.mockito.stubbing.Answer;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import static java.time.Instant.now;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static org.axonframework.eventstore.EventStoreTestUtils.*;
+import static org.axonframework.eventstore.EventUtils.asStream;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Rene de Waele
  */
-public abstract class AbstractEventStorageEngineTest {
+@Transactional
+public abstract class AbstractEventStorageEngineTest extends EventStorageEngineTest {
 
-    protected static final String PAYLOAD = "payload", AGGREGATE = "aggregate", TYPE = "type";
-    protected static final MetaData METADATA = MetaData.emptyInstance();
+    private AbstractEventStorageEngine testSubject;
+    private final Serializer serializer = new XStreamSerializer();
 
-    private EventStorageEngine testSubject;
-
-    @Test(expected = UnknownSerializedTypeException.class)
-    @SuppressWarnings("unchecked")
-    public void testUnknownSerializedTypeCausesException() {
-        Serializer serializer = Mockito.spy(new XStreamSerializer());
-        Mockito.when(serializer.serialize(Matchers.anyString(), Matchers
-                .any())).thenAnswer((Answer<SerializedObject>) invocation -> {
-            SerializedObject<?> serializedObject = (SerializedObject<?>) invocation.callRealMethod();
-            return new SimpleSerializedObject(serializedObject.getData(), serializedObject.getContentType(),
-                                                "unknown", serializedObject.getType().getRevision());
-        });
-        setSerializer(serializer);
-        testSubject.appendEvents(createEvents(1));
-        testSubject.readEvents(AGGREGATE);
+    @Test(expected = ConcurrencyException.class)
+    public void testUniqueKeyConstraintOnEventIdentifier() {
+        testSubject.appendEvents(createEvent("id", AGGREGATE, 0), createEvent("id", "otherAggregate", 0));
     }
 
+    @Test
+    @DirtiesContext
+    public void testStoreAndLoadEventsWithUpcaster() {
+        UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
+        when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
+                .thenAnswer(invocation -> {
+                    SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
+                    return asList(serializedObject, serializedObject);
+                });
+        testSubject.setUpcasterChain(mockUpcasterChain);
 
+        testSubject.appendEvents(createEvents(4));
+        List<DomainEventMessage> upcastedEvents = asStream(testSubject.readEvents(AGGREGATE)).collect(toList());
+        assertEquals(8, upcastedEvents.size());
 
-    protected List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
-        return IntStream.range(0, numberOfEvents).mapToObj(
-                (sequenceNumber) -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), AGGREGATE,
-                                                sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
-                .collect(Collectors.toList());
+        Iterator<DomainEventMessage> iterator = upcastedEvents.iterator();
+        while (iterator.hasNext()) {
+            DomainEventMessage event1 = iterator.next(), event2 = iterator.next();
+            assertEquals(event1.getAggregateIdentifier(), event2.getAggregateIdentifier());
+            assertEquals(event1.getSequenceNumber(), event2.getSequenceNumber());
+            assertEquals(event1.getPayload(), event2.getPayload());
+            assertEquals(event1.getMetaData(), event2.getMetaData());
+        }
     }
 
-    protected DomainEventMessage<String> createEvent(long sequenceNumber) {
-        return createEvent(AGGREGATE, sequenceNumber);
+    @Test(expected = ConcurrencyException.class)
+    public void testStoreDuplicateEventWithExceptionTranslator() {
+        testSubject.appendEvents(createEvent(0), createEvent(0));
     }
 
-    protected DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber) {
-        return createEvent(aggregateId, sequenceNumber, PAYLOAD);
+    @DirtiesContext
+    @Test(expected = EventStoreException.class)
+    public void testStoreDuplicateEventWithoutExceptionResolver() {
+        testSubject.setPersistenceExceptionResolver(null);
+        testSubject.appendEvents(createEvent(0), createEvent(0));
     }
 
-    protected DomainEventMessage<String> createEvent(String aggregateId, long sequenceNumber, String payload) {
-        return createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), aggregateId, sequenceNumber,
-                           payload, METADATA);
+    protected void setTestSubject(AbstractEventStorageEngine testSubject) {
+        super.setTestSubject(this.testSubject = testSubject);
+        testSubject.setSerializer(serializer);
     }
 
-    protected DomainEventMessage<String> createEvent(String eventId, String aggregateId, long sequenceNumber) {
-        return createEvent(TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
-    }
-
-    protected DomainEventMessage<String> createEvent(String type, String eventId, String aggregateId,
-                                                     long sequenceNumber, String payload, MetaData metaData) {
-        return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber,
-                                               new GenericMessage<>(eventId, payload, metaData), now());
-    }
-
-    protected abstract void setSerializer(Serializer serializer);
-
-    protected EventStorageEngine testSubject() {
-        return testSubject;
-    }
-
-    protected void setTestSubject(EventStorageEngine testSubject) {
-        this.testSubject = testSubject;
-    }
 }

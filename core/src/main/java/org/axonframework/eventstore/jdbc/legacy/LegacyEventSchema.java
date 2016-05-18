@@ -14,17 +14,20 @@
 package org.axonframework.eventstore.jdbc.legacy;
 
 import org.axonframework.common.Assert;
-import org.axonframework.eventstore.LegacyTrackingToken;
 import org.axonframework.eventstore.SerializedDomainEventData;
 import org.axonframework.eventstore.SerializedTrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.eventstore.jdbc.DefaultEventSchema;
 import org.axonframework.eventstore.jdbc.EventSchemaConfiguration;
+import org.axonframework.eventstore.legacy.GenericLegacyDomainEventEntry;
+import org.axonframework.eventstore.legacy.LegacyTrackingToken;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * @author Rene de Waele
@@ -48,7 +51,9 @@ public class LegacyEventSchema extends DefaultEventSchema {
         Assert.isTrue(lastToken == null || lastToken instanceof LegacyTrackingToken,
                       String.format("Token %s is of the wrong type", lastToken));
         String selectFrom = "SELECT " + trackedEventFields() + " FROM " + config().domainEventTable();
-        String orderBy = " ORDER BY " + config().globalIndexColumn() + " ASC";
+        String orderBy =
+                " ORDER BY " + config().timestampColumn() + " ASC, " + config().sequenceNumberColumn() + " ASC, " +
+                        config().aggregateIdentifierColumn() + " ASC";
         if (lastToken == null) {
             return connection.prepareStatement(selectFrom + orderBy);
         } else {
@@ -78,12 +83,23 @@ public class LegacyEventSchema extends DefaultEventSchema {
                                                    resultSet.getString(config().payloadTypeColumn()),
                                                    resultSet.getString(config().payloadRevisionColumn()),
                                                    readPayload(resultSet, config().payloadColumn()),
-                                                   readPayload(resultSet, config().metaDataColumn()), dataType());
+                                                   readPayload(resultSet, config().metaDataColumn()));
     }
 
     @Override
     public SerializedDomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
         return (SerializedDomainEventData<?>) getTrackedEventData(resultSet);
+    }
+
+    @Override
+    protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
+        return resultSet.getString(columnName);
+    }
+
+    @Override
+    protected void writeTimestamp(PreparedStatement preparedStatement, int position,
+                                  TemporalAccessor input) throws SQLException {
+        preparedStatement.setString(position, Instant.from(input).toString());
     }
 
     @Override

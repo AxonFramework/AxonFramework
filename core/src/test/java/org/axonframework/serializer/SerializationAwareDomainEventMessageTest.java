@@ -22,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
@@ -38,7 +37,7 @@ public class SerializationAwareDomainEventMessageTest {
     @Before
     public void setUp() throws Exception {
         testSubject = new SerializationAwareDomainEventMessage<>(
-                new GenericDomainEventMessage<>(type, "aggregate", 1, "payload", Collections.singletonMap("key", "value")));
+                new GenericDomainEventMessage<>("type", "aggregate", 1L, "payload", MetaData.with("key", "value")));
     }
 
     @Test

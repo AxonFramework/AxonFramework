@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.eventstore.TrackingEventStream;
+import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -27,7 +29,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static junit.framework.TestCase.assertEquals;
@@ -194,7 +195,7 @@ public class AbstractEventBusTest {
             }
         }
 
-        private void onEvents(List<EventMessage<?>> events) {
+        private void onEvents(List<? extends EventMessage<?>> events) {
             //if the event payload is a number > 0, a new number is published that is 1 smaller than the first number
             Object payload = events.get(0).getPayload();
             if (payload instanceof Integer) {
@@ -217,7 +218,12 @@ public class AbstractEventBusTest {
         }
 
         @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Registration subscribe(EventProcessor eventProcessor) {
             throw new UnsupportedOperationException();
         }
     }

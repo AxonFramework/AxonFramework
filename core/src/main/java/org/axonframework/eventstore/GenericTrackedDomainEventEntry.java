@@ -11,28 +11,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.jdbc;
-
-import org.axonframework.eventstore.AbstractTrackedDomainEventEntry;
+package org.axonframework.eventstore;
 
 /**
  * @author Rene de Waele
  */
 public class GenericTrackedDomainEventEntry<T> extends AbstractTrackedDomainEventEntry<T> {
 
-    private final Class<T> contentType;
-
     public GenericTrackedDomainEventEntry(long globalIndex, String type, String aggregateIdentifier,
                                           long sequenceNumber, String eventIdentifier, Object timeStamp,
-                                          String payloadType, String payloadRevision, T payload, T metaData,
-                                          Class<T> contentType) {
+                                          String payloadType, String payloadRevision, T payload, T metaData) {
         super(globalIndex, eventIdentifier, timeStamp, payloadType, payloadRevision, payload, metaData, type,
               aggregateIdentifier, sequenceNumber);
-        this.contentType = contentType;
-    }
-
-    @Override
-    protected Class<T> getContentType() {
-        return contentType;
     }
 }

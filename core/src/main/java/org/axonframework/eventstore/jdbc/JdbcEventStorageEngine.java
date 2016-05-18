@@ -13,9 +13,7 @@
 
 package org.axonframework.eventstore.jdbc;
 
-import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.jdbc.ConnectionProvider;
-import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.*;
@@ -28,6 +26,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -40,7 +39,6 @@ import static org.axonframework.common.io.IOUtils.closeQuietly;
 public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     private final ConnectionProvider connectionProvider;
     private final EventSchema schema;
-    private PersistenceExceptionResolver persistenceExceptionResolver;
 
     public JdbcEventStorageEngine(ConnectionProvider connectionProvider) {
         this(connectionProvider, new DefaultEventSchema());
@@ -57,8 +55,9 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @throws EventStoreException when an error occurs executing SQL statements
      */
     public void createSchema(EventSchemaFactory schemaFactory) {
-        executeUpdates(e -> new EventStoreException("Failed to create event tables", e),
-                       connection -> schemaFactory.createDomainEventTable(connection, schema.schemaConfiguration()),
+        executeUpdates(e -> {
+                           throw new EventStoreException("Failed to create event tables", e);
+                       }, connection -> schemaFactory.createDomainEventTable(connection, schema.schemaConfiguration()),
                        connection -> schemaFactory.createSnapshotEventTable(connection, schema.schemaConfiguration()));
     }
 
@@ -91,19 +90,13 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         }
         executeUpdates(events.stream().map(EventUtils::asDomainEventMessage)
                                .map(event -> connection -> schema.appendEvent(connection, event, serializer)), e -> {
-            DomainEventMessage<?> failedEvent = EventUtils.asDomainEventMessage(events.get(0));
-            return handlePersistenceException(e, format("Failed to store snapshot for aggregate [%s] at sequence [%d]",
-                                                        failedEvent.getAggregateIdentifier(),
-                                                        failedEvent.getSequenceNumber()));
+            handlePersistenceException(e, events.get(0));
         });
     }
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        executeUpdates(e -> handlePersistenceException(e,
-                                                       format("Failed to store snapshot for aggregate [%s] at sequence [%d]",
-                                                              snapshot.getAggregateIdentifier(),
-                                                              snapshot.getSequenceNumber())),
+        executeUpdates(e -> handlePersistenceException(e, snapshot),
                        connection -> schema.deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
                        connection -> schema.storeSnapshot(connection, snapshot, serializer));
     }
@@ -116,12 +109,11 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         return result.isEmpty() ? null : result.get(0);
     }
 
-    protected void executeUpdates(Function<SQLException, RuntimeException> errorHandler, SqlFunction... sqlFunctions) {
+    protected void executeUpdates(Consumer<SQLException> errorHandler, SqlFunction... sqlFunctions) {
         executeUpdates(Arrays.stream(sqlFunctions), errorHandler);
     }
 
-    protected void executeUpdates(Stream<SqlFunction> sqlFunctions,
-                                  Function<SQLException, RuntimeException> errorHandler) {
+    protected void executeUpdates(Stream<SqlFunction> sqlFunctions, Consumer<SQLException> errorHandler) {
         Connection connection = getConnection();
         try {
             sqlFunctions.forEach(sqlFunction -> {
@@ -129,7 +121,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                 try {
                     preparedStatement.executeUpdate();
                 } catch (SQLException e) {
-                    throw errorHandler.apply(e);
+                    errorHandler.accept(e);
                 } finally {
                     closeQuietly(preparedStatement);
                 }
@@ -137,13 +129,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         } finally {
             closeQuietly(connection);
         }
-    }
-
-    protected RuntimeException handlePersistenceException(SQLException exception, String description) {
-        if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
-            return new ConcurrencyException(description, exception);
-        }
-        return new EventStoreException(description, exception);
     }
 
     protected <R> List<R> executeQuery(SqlFunction sqlFunction, SqlResultConverter<R> sqlResultConverter,
@@ -191,10 +176,6 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         } catch (SQLException e) {
             throw new EventStoreException("Failed to create a SQL statement", e);
         }
-    }
-
-    public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
-        this.persistenceExceptionResolver = persistenceExceptionResolver;
     }
 
     @FunctionalInterface

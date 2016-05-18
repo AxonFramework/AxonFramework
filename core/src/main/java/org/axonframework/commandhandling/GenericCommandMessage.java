@@ -34,6 +34,10 @@ public class GenericCommandMessage<T> extends MessageDecorator<T> implements Com
         return new GenericCommandMessage<>((C) command, MetaData.emptyInstance());
     }
 
+    public GenericCommandMessage(T payload) {
+        this(payload, MetaData.emptyInstance());
+    }
+
     public GenericCommandMessage(T payload, Map<String, ?> metaData) {
         this(new GenericMessage<>(payload, metaData), payload.getClass().getName());
     }

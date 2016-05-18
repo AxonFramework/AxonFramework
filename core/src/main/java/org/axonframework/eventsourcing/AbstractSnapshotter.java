@@ -140,8 +140,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
                 if (logger.isDebugEnabled()) {
                     logger.warn("An attempt to create and store a snapshot resulted in an exception:", e);
                 } else {
-                    logger.warn("An attempt to create and store a snapshot resulted in an exception. "
-                                        + "Exception summary: {}", e.getMessage());
+                    logger.warn("An attempt to create and store a snapshot resulted in an exception. " +
+                                        "Exception summary: {}", e.getMessage());
                 }
             }
         }

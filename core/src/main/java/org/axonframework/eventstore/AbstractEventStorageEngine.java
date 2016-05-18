@@ -13,6 +13,8 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.commandhandling.model.ConcurrencyException;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -24,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static java.lang.String.format;
+
 /**
  * @author Rene de Waele
  */
@@ -31,6 +35,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     private Serializer serializer;
     private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
+    private PersistenceExceptionResolver persistenceExceptionResolver;
 
     protected Serializer serializer() {
         return serializer;
@@ -70,6 +75,23 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         storeSnapshot(snapshot, serializer);
     }
 
+    protected void handlePersistenceException(Exception exception, EventMessage<?> failedEvent) {
+        String eventDescription;
+        if (failedEvent instanceof DomainEventMessage<?>) {
+            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
+            eventDescription = format("An event for aggregate [%s] at sequence [%d]",
+                                      failedDomainEvent.getAggregateIdentifier(),
+                                      failedDomainEvent.getSequenceNumber());
+        } else {
+            eventDescription = format("An event with identifier [%s]", failedEvent.getIdentifier());
+        }
+        if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
+            throw new ConcurrencyException(eventDescription + " was already inserted", exception);
+        } else {
+            throw new EventStoreException(eventDescription + " could not be persisted", exception);
+        }
+    }
+
     protected abstract void appendEvents(List<? extends EventMessage<?>> events, Serializer serializer);
 
     protected abstract void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer);
@@ -92,6 +114,16 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     public void setUpcasterChain(UpcasterChain upcasterChain) {
         this.upcasterChain = upcasterChain;
+    }
+
+    /**
+     * Sets the persistenceExceptionResolver that will help detect concurrency exceptions from the backing database.
+     *
+     * @param persistenceExceptionResolver the persistenceExceptionResolver that will help detect concurrency
+     *                                     exceptions
+     */
+    public void setPersistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+        this.persistenceExceptionResolver = persistenceExceptionResolver;
     }
 
 }

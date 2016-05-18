@@ -113,13 +113,10 @@ public class SerializedDomainEventMessageTest {
     @Test
     public void testIdentifierStaysIdenticalWhenAddingMetaData() {
         Serializer serializer = new JavaSerializer();
-        DomainEventMessage<String> message = new GenericDomainEventMessage<>(type, "ID", 0, "Payload",
+        DomainEventMessage<String> message = new GenericDomainEventMessage<>("type", "ID", 0, "Payload",
                                                                                      MetaData.emptyInstance());
 
-        SerializedObject<byte[]> payload = serializer.serialize(message.getPayload(), byte[].class);
-        SerializedObject<byte[]> metaData = serializer.serialize(message.getMetaData(), byte[].class);
-
-        SerializedDomainEventData data = new DomainEventEntry(message, payload, metaData);
+        SerializedDomainEventData data = new DomainEventEntry(message, serializer);
 
         SerializedDomainEventMessage<String> sdem = new SerializedDomainEventMessage<>(data, serializer);
 

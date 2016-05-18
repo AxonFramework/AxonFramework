@@ -167,7 +167,7 @@ public class AsynchronousEventProcessor extends AbstractEventProcessor {
     }
 
     @Override
-    protected void doPublish(final List<EventMessage<?>> events, Set<EventListener> eventListeners,
+    protected void doPublish(final List<? extends EventMessage<?>> events, Set<EventListener> eventListeners,
                              Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
                              final MultiplexingEventProcessingMonitor eventProcessingMonitor) {
         if (CurrentUnitOfWork.isStarted()) {

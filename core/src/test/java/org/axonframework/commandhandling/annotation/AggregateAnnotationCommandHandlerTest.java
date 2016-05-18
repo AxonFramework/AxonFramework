@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.LoggingCallback;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
@@ -35,11 +34,11 @@ import org.axonframework.common.annotation.FixedValueParameterResolver;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.domain.IdentifierFactory;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EntityId;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
@@ -82,9 +81,7 @@ public class AggregateAnnotationCommandHandlerTest {
             @Override
             @SuppressWarnings("unchecked")
             public UnitOfWork<CommandMessage<?>> createUnitOfWork(Message<?> message) {
-                UnitOfWork  unitOfWork = DefaultUnitOfWork.startAndGet(message);
-                unitOfWork.resources().put(EventBus.KEY, mock(EventBus.class));
-                return unitOfWork;
+                return DefaultUnitOfWork.startAndGet((CommandMessage<?>) message);
             }
         });
         commandBus = spy(commandBus);
@@ -94,7 +91,7 @@ public class AggregateAnnotationCommandHandlerTest {
                         invocation ->
                                 EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                                                                  aggregateModel,
-                                                                 mock(EventBus.class)));
+                                                                 mock(EventStore.class)));
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
@@ -181,7 +178,7 @@ public class AggregateAnnotationCommandHandlerTest {
     public void testCommandHandlerCreatesAggregateInstance() throws Exception {
 
         final CommandCallback callback = spy(LoggingCallback.INSTANCE);
-        final CommandMessage<Object> message = GenericCommandMessage.asCommandMessage(new CreateCommand("id", "Hi"));
+        final CommandMessage<Object> message = asCommandMessage(new CreateCommand("id", "Hi"));
         commandBus.dispatch(message, callback);
         verify(mockRepository).newInstance(any());
         // make sure the identifier was invoked in the callback
@@ -193,7 +190,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(createAggregate(aggregateIdentifier));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
+        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedMethod("abc123")),
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage, Object result) {
@@ -216,7 +213,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(createAggregate(aggregateIdentifier));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateCommandWithAnnotatedMethodAndVersion("abc123", 12L)),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -254,7 +251,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(createAggregate(aggregateIdentifier));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateCommandWithAnnotatedMethodAndVersion("abc123", null)),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -278,7 +275,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(createAggregate(aggregateIdentifier));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
+        commandBus.dispatch(asCommandMessage(new UpdateCommandWithAnnotatedField("abc123")),
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage, Object result) {
@@ -301,7 +298,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(createAggregate(aggregateIdentifier));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateCommandWithAnnotatedFieldAndVersion("abc123", 321L)),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -325,7 +322,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(createAggregate(aggregateIdentifier));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateCommandWithAnnotatedFieldAndIntegerVersion("abc123", 321)),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -349,7 +346,7 @@ public class AggregateAnnotationCommandHandlerTest {
         String aggregateIdentifier = "abc123";
         when(mockRepository.load(any(String.class), anyLong()))
                 .thenReturn(createAggregate(aggregateIdentifier));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityStateCommand("abc123")),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -376,7 +373,7 @@ public class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate aggregate = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         aggregate.initializeEntity("1");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(aggregate));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityStateCommand("abc123")),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -403,7 +400,7 @@ public class AggregateAnnotationCommandHandlerTest {
         root.initializeEntity("2");
         root.initializeEntity("3");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -428,7 +425,7 @@ public class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromCollectionStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -452,7 +449,7 @@ public class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromCollectionStateCommand("abc123", null)),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -477,7 +474,7 @@ public class AggregateAnnotationCommandHandlerTest {
         root.initializeEntity("1");
         root.initializeEntity("2");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(new GenericCommandMessage<Object>(new UpdateNestedEntityStateCommand("abc123")),
+        commandBus.dispatch(asCommandMessage(new UpdateNestedEntityStateCommand("abc123")),
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage, Object result) {
@@ -509,7 +506,7 @@ public class AggregateAnnotationCommandHandlerTest {
         root.initializeEntity("2");
         root.initializeEntity("3");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromMapStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -534,7 +531,7 @@ public class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromMapStateCommand("abc123", "2")),
                             new CommandCallback<Object, Object>() {
                                 @Override
@@ -558,7 +555,7 @@ public class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(GenericCommandMessage.asCommandMessage(
+        commandBus.dispatch(asCommandMessage(
                 new UpdateEntityFromMapStateCommand("abc123", null)),
                             new CommandCallback<Object, Object>() {
                                 @Override

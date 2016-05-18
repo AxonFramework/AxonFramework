@@ -13,111 +13,173 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
-import static org.mockito.Mockito.spy;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.fail;
+import static org.axonframework.eventstore.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventstore.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventstore.EventUtils.asStream;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
  */
 public class EmbeddedEventStoreTest {
 
-    private EventStore subject;
+    private static final int CACHED_EVENTS = 10;
+    private static final long FETCH_DELAY = 1000;
+    private static final long CLEANUP_DELAY = 10000;
+
+    private EmbeddedEventStore testSubject;
     private EventStorageEngine storageEngine;
 
     @Before
     public void setUp() {
         storageEngine = spy(new InMemoryEventStorageEngine());
-        subject = new EmbeddedEventStore(storageEngine);
+        newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY);
     }
 
-//    @Test
-//    public void testExistingEventIsPassedToReader() throws InterruptedException {
-//        subject.publish(createEvent());
-//        Thread t = new Thread(() -> {
-//            Optional<? extends TrackedEventMessage<?>> first = subject.streamEvents(null).findFirst();
-//            assertTrue(first.isPresent());
-//        });
-//        t.start();
-//        t.join();
-//    }
-//
-//    @Test
-//    public void testNewEventIsPassedToReader() throws InterruptedException {
-//        Stream<? extends TrackedEventMessage<?>> stream = subject.streamEvents(null);
-//        Thread t = new Thread(() -> {
-//            Optional<? extends TrackedEventMessage<?>> first = stream.findFirst();
-//            assertTrue(first.isPresent());
-//        });
-//        t.start();
-//        subject.publish(createEvent());
-//        t.join();
-//    }
-//
-//    @Test
-//    public void testReadingIsBlockedWhenStoreIsEmpty() throws InterruptedException {
-//        CountDownLatch lock = new CountDownLatch(1);
-//        Stream<? extends TrackedEventMessage<?>> stream = subject.streamEvents(null);
-//        Thread t = new Thread(() -> {
-//            stream.findFirst();
-//            lock.countDown();
-//        });
-//        t.start();
-//        assertFalse(lock.await(100, TimeUnit.MILLISECONDS));
-//        subject.publish(createEvent());
-//        t.join();
-//        assertEquals(0, lock.getCount());
-//    }
-//
-//    @Test
-//    public void testReadingIsBlockedWhenEndOfStreamIsReached() throws InterruptedException {
-//        subject.publish(createEvent());
-//        CountDownLatch lock = new CountDownLatch(2);
-//        Stream<? extends TrackedEventMessage<?>> stream = subject.streamEvents(null);
-//        Thread t = new Thread(() -> {
-//            stream.limit(2).forEach(event -> lock.countDown());
-//        });
-//        t.start();
-//        assertFalse(lock.await(100, TimeUnit.MILLISECONDS));
-//        assertEquals(1, lock.getCount());
-//        subject.publish(createEvent());
-//        t.join();
-//        assertEquals(0, lock.getCount());
-//    }
-//
-//    @Test
-//    public void testReadingCanBeContinuedUsingLastToken() {
-//        subject.publish(createEvents(2));
-//        Optional<? extends TrackedEventMessage<?>> first = subject.streamEvents(null).findFirst();
-//        assertTrue(first.isPresent());
-//        TrackingToken firstToken = first.get().trackingToken();
-//        Optional<? extends TrackedEventMessage<?>> second = subject.streamEvents(firstToken).findFirst();
-//        assertTrue(second.isPresent());
-//        assertTrue(second.get().trackingToken().isAfter(firstToken));
-//    }
-//
-//    @Test
-//    public void testEventIsFetchedFromCacheWhenFetchedASecondTime() throws InterruptedException {
-//        CountDownLatch lock = new CountDownLatch(2);
-//        List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
-//        Thread t = new Thread(() -> {
-//            subject.streamEvents(null).limit(2).forEach(event -> {
-//                lock.countDown();
-//                events.add(event);
-//            });
-//        });
-//        t.start();
-//        subject.publish(createEvents(2));
-//
-//        t.join();
-//        Optional<? extends TrackedEventMessage<?>> secondEvent = subject
-//                .streamEvents(events.get(0).trackingToken()).findFirst();
-//        assertTrue(secondEvent.isPresent());
-//        assertEquals(events.get(1), secondEvent.get());
-//        verify(storageEngine).readEvents((TrackingToken) null);
-//    }
+    private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
+        Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::destroy);
+        testSubject = new EmbeddedEventStore(storageEngine, cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
+        testSubject.initialize();
+    }
 
+    @After
+    public void tearDown() {
+        testSubject.destroy();
+    }
+
+    @Test
+    public void testExistingEventIsPassedToReader() throws Exception {
+        DomainEventMessage<?> expected = createEvent();
+        testSubject.publish(expected);
+        TrackingEventStream stream = testSubject.streamEvents(null);
+        assertTrue(stream.hasNextAvailable());
+        TrackedEventMessage<?> actual = stream.nextAvailable();
+        assertEquals(expected.getIdentifier(), actual.getIdentifier());
+        assertEquals(expected.getPayload(), actual.getPayload());
+        assertTrue(actual instanceof DomainEventMessage<?>);
+        assertEquals(expected.getAggregateIdentifier(), ((DomainEventMessage<?>) actual).getAggregateIdentifier());
+    }
+
+    @Test(timeout = FETCH_DELAY / 10)
+    public void testEventPublishedAfterOpeningStreamIsPassedToReaderImmediately() throws Exception {
+        TrackingEventStream stream = testSubject.streamEvents(null);
+        assertFalse(stream.hasNextAvailable());
+        DomainEventMessage<?> expected = createEvent();
+        Thread t = new Thread(() -> {
+            try {
+                assertEquals(expected.getIdentifier(), stream.nextAvailable().getIdentifier());
+            } catch (InterruptedException e) {
+                fail();
+            }
+        });
+        t.start();
+        testSubject.publish(expected);
+        t.join();
+    }
+
+    @Test(timeout = 1000)
+    public void testReadingIsBlockedWhenStoreIsEmpty() throws Exception {
+        CountDownLatch lock = new CountDownLatch(1);
+        TrackingEventStream stream = testSubject.streamEvents(null);
+        Thread t = new Thread(() -> asStream(stream).findFirst().ifPresent(event -> lock.countDown()));
+        t.start();
+        assertFalse(lock.await(100, MILLISECONDS));
+        testSubject.publish(createEvent());
+        t.join();
+        assertEquals(0, lock.getCount());
+    }
+
+    @Test(timeout = 1000)
+    public void testReadingIsBlockedWhenEndOfStreamIsReached() throws Exception {
+        testSubject.publish(createEvent());
+        CountDownLatch lock = new CountDownLatch(2);
+        TrackingEventStream stream = testSubject.streamEvents(null);
+        Thread t = new Thread(() -> asStream(stream).limit(2).forEach(event -> lock.countDown()));
+        t.start();
+        assertFalse(lock.await(100, MILLISECONDS));
+        assertEquals(1, lock.getCount());
+        testSubject.publish(createEvent());
+        t.join();
+        assertEquals(0, lock.getCount());
+    }
+
+    @Test(timeout = 1000)
+    public void testReadingCanBeContinuedUsingLastToken() throws Exception {
+        testSubject.publish(createEvents(2));
+        TrackedEventMessage<?> first = testSubject.streamEvents(null).nextAvailable();
+        TrackingToken firstToken = first.trackingToken();
+        TrackedEventMessage<?> second = testSubject.streamEvents(firstToken).nextAvailable();
+        assertTrue(second.trackingToken().isAfter(firstToken));
+    }
+
+    @Test(timeout = 1000)
+    public void testEventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
+        CountDownLatch lock = new CountDownLatch(2);
+        List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
+        Thread t = new Thread(() -> {
+            asStream(testSubject.streamEvents(null)).limit(2).forEach(event -> {
+                lock.countDown();
+                events.add(event);
+            });
+        });
+        t.start();
+        assertFalse(lock.await(100, MILLISECONDS));
+        testSubject.publish(createEvents(2));
+        t.join();
+        reset(storageEngine);
+        TrackedEventMessage<?> second = testSubject.streamEvents(events.get(0).trackingToken()).nextAvailable();
+        assertSame(events.get(1), second);
+        verifyNoMoreInteractions(storageEngine);
+    }
+
+    @Test(timeout = 1000)
+    public void testPeriodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
+        newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY);
+        TrackingEventStream stream = testSubject.streamEvents(null);
+        CountDownLatch lock = new CountDownLatch(1);
+        Thread t = new Thread(() -> asStream(stream).findFirst().ifPresent(event -> lock.countDown()));
+        t.start();
+        assertFalse(lock.await(100, MILLISECONDS));
+        storageEngine.appendEvents(createEvent());
+        t.join();
+        assertTrue(lock.await(100, MILLISECONDS));
+    }
+
+    @Test(timeout = 1000)
+    public void testConsumerStopsTailingWhenItFallsBehindTheCache() throws Exception {
+        newTestSubject(CACHED_EVENTS, FETCH_DELAY, 20);
+        TrackingEventStream stream = testSubject.streamEvents(null);
+        assertFalse(stream.hasNextAvailable()); //now we should be tailing
+        testSubject.publish(createEvents(CACHED_EVENTS)); //triggers event producer to open a stream
+        Thread.sleep(100);
+        reset(storageEngine);
+        assertTrue(stream.hasNextAvailable());
+        TrackedEventMessage<?> firstEvent = stream.nextAvailable();
+        verifyZeroInteractions(storageEngine);
+        testSubject.publish(createEvent(CACHED_EVENTS), createEvent(CACHED_EVENTS + 1));
+        Thread.sleep(100); //allow the cleaner thread to evict the consumer
+        reset(storageEngine);
+        assertTrue(stream.hasNextAvailable());
+        verify(storageEngine).readEvents(firstEvent.trackingToken(), false);
+    }
+
+    //TODO test non-tracking features of event store
 
 //    @Test
 //    @Transactional

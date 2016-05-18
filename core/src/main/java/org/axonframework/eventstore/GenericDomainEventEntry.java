@@ -17,18 +17,10 @@ package org.axonframework.eventstore;
  * @author Rene de Waele
  */
 public class GenericDomainEventEntry<T> extends AbstractDomainEventEntry<T> {
-    private final Class<T> contentType;
-
     public GenericDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber, String eventIdentifier,
-                                   Object timeStamp, String payloadType, String payloadRevision, T payload, T metaData,
-                                   Class<T> contentType) {
+                                   Object timeStamp, String payloadType, String payloadRevision, T payload,
+                                   T metaData) {
         super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timeStamp, payloadType, payloadRevision,
               payload, metaData);
-        this.contentType = contentType;
-    }
-
-    @Override
-    protected Class<T> getContentType() {
-        return contentType;
     }
 }

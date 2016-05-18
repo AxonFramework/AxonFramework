@@ -11,10 +11,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.jdbc.legacy;
+package org.axonframework.eventstore.legacy;
 
-import org.axonframework.eventstore.AbstractLegacyDomainEventEntry;
-import org.axonframework.eventstore.LegacyTrackingToken;
 import org.axonframework.eventstore.SerializedTrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 
@@ -22,19 +20,11 @@ import org.axonframework.eventstore.TrackingToken;
  * @author Rene de Waele
  */
 public class GenericLegacyDomainEventEntry<T> extends AbstractLegacyDomainEventEntry<T> implements SerializedTrackedEventData<T> {
-    private final Class<T> contentType;
-
     public GenericLegacyDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
                                          String eventIdentifier, Object timeStamp, String payloadType,
-                                         String payloadRevision, T payload, T metaData, Class<T> contentType) {
+                                         String payloadRevision, T payload, T metaData) {
         super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timeStamp, payloadType, payloadRevision,
               payload, metaData);
-        this.contentType = contentType;
-    }
-
-    @Override
-    protected Class<T> getContentType() {
-        return contentType;
     }
 
     @Override

@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -85,7 +86,7 @@ public class AnnotationCommandHandlerAdapterTest {
 
     @Test
     public void testHandlerDispatching_WithCustomCommandName() throws Exception {
-        Object actualReturnValue = testSubject.handle(new GenericCommandMessage<>("almostLong", 1L, MetaData.emptyInstance()),
+        Object actualReturnValue = testSubject.handle(new GenericCommandMessage<>(new GenericMessage<>(1L), "almostLong"),
                                                       mockUnitOfWork);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);

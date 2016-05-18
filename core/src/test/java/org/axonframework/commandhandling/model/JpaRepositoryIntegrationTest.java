@@ -140,8 +140,6 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     }
 
     private UnitOfWork<?> startAndGetUnitOfWork() {
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
-        uow.resources().put(EventBus.KEY, eventBus);
-        return uow;
+        return DefaultUnitOfWork.startAndGet(null);
     }
 }

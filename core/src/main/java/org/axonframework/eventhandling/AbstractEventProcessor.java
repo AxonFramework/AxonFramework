@@ -84,7 +84,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     @Override
-    public void handle(List<EventMessage<?>> events) {
+    public void handle(List<? extends EventMessage<?>> events) {
         doPublish(events, immutableEventListeners, interceptors, eventProcessingMonitor);
     }
 
@@ -110,13 +110,12 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * org.axonframework.eventhandling.EventProcessingMonitor#onEventProcessingCompleted(java.util.List)} or the {@link
      * org.axonframework.eventhandling.EventProcessingMonitor#onEventProcessingFailed(java.util.List, Throwable)}
      * method.
-     *
      * @param events                 The events to publish
      * @param eventListeners         Immutable real-time view on subscribed event listeners
      * @param interceptors           Registered interceptors that need to intercept each event before it's handled
      * @param eventProcessingMonitor The monitor to notify after completion.
      */
-    protected abstract void doPublish(List<EventMessage<?>> events, Set<EventListener> eventListeners,
+    protected abstract void doPublish(List<? extends EventMessage<?>> events, Set<EventListener> eventListeners,
                                       Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
                                       MultiplexingEventProcessingMonitor eventProcessingMonitor) ;
 

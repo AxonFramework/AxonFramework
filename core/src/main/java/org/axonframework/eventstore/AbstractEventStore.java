@@ -35,8 +35,9 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     }
 
     @Override
-    protected void commit(List<? extends EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage<?>> events) {
         storageEngine.appendEvents(events);
+        super.prepareCommit(events);
     }
 
     @Override

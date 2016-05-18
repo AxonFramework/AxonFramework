@@ -21,22 +21,20 @@ import org.axonframework.eventstore.AbstractTrackedDomainEventEntry;
 import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Table;
 
 /**
  * @author Allard Buijze
  */
 @Entity
+@Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber,type", unique = true))
 public class CustomDomainEventEntry extends AbstractTrackedDomainEventEntry<String> {
 
     public CustomDomainEventEntry(DomainEventMessage event, Serializer serializer) {
-        super(event, serializer);
+        super(event, serializer, String.class);
     }
 
     protected CustomDomainEventEntry() {
-    }
-
-    @Override
-    protected Class<String> getContentType() {
-        return String.class;
     }
 }

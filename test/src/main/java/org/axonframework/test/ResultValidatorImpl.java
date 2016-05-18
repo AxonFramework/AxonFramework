@@ -29,9 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * Implementation of the ResultValidator. It also acts as a CommandCallback, and registers the actual result.
@@ -41,8 +39,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
  */
 public class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Object> {
 
-    private final Collection<DomainEventMessage> storedEvents;
-    private final Collection<EventMessage> publishedEvents;
+    private final Collection<DomainEventMessage<?>> storedEvents;
+    private final Collection<EventMessage<?>> publishedEvents;
 
     private Object actualReturnValue;
     private Throwable actualException;
@@ -52,12 +50,11 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
 
     /**
      * Initialize the ResultValidatorImpl with the given <code>storedEvents</code> and <code>publishedEvents</code>.
-     *
-     * @param storedEvents    The events that were stored during command execution
+     *  @param storedEvents    The events that were stored during command execution
      * @param publishedEvents The events that were published during command execution
      * @param fieldFilter     The filter describing which fields to include in the comparison
      */
-    public ResultValidatorImpl(Collection<DomainEventMessage> storedEvents, Collection<EventMessage> publishedEvents,
+    public ResultValidatorImpl(Collection<DomainEventMessage<?>> storedEvents, Collection<EventMessage<?>> publishedEvents,
                                FieldFilter fieldFilter) {
         this.storedEvents = storedEvents;
         this.publishedEvents = publishedEvents;
@@ -87,7 +84,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
         }
 
-        Iterator<EventMessage> iterator = publishedEvents.iterator();
+        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             EventMessage actualEvent = iterator.next();
             if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
@@ -116,7 +113,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         if (expectedEvents.length != storedEvents.size()) {
             reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
         }
-        Iterator<DomainEventMessage> iterator = storedEvents.iterator();
+        Iterator<DomainEventMessage<?>> iterator = storedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             DomainEventMessage actualEvent = iterator.next();
             if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {

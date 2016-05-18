@@ -35,6 +35,8 @@ import org.slf4j.Logger;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import static org.axonframework.eventstore.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventstore.EventStoreTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 /**
@@ -79,11 +81,7 @@ public class AbstractSnapshotterTest {
     public void testScheduleSnapshot() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStorageEngine.readEvents(aggregateIdentifier))
-                .thenReturn(DomainEventStream.of(
-                        new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
-                                                        "Mock contents", MetaData.emptyInstance()),
-                        new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 1,
-                                                        "Mock contents", MetaData.emptyInstance())));
+                .thenReturn(DomainEventStream.of(createEvents(2).iterator()));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStorageEngine).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
     }
@@ -94,17 +92,13 @@ public class AbstractSnapshotterTest {
         final String aggregateIdentifier = "aggregateIdentifier";
         doNothing()
                 .doThrow(new ConcurrencyException("Mock"))
-                .when(mockEventStorageEngine).appendSnapshotEvent(isA(DomainEventMessage.class));
+                .when(mockEventStorageEngine).storeSnapshot(isA(DomainEventMessage.class));
         when(mockEventStorageEngine.readEvents(aggregateIdentifier))
-                .thenAnswer(invocationOnMock -> new SimpleDomainEventStream(
-                        new GenericDomainEventMessage<>(type, aggregateIdentifier, (long) 0,
-                                                        "Mock contents", MetaData.emptyInstance()),
-                        new GenericDomainEventMessage<>(type, aggregateIdentifier, (long) 1,
-                                                        "Mock contents", MetaData.emptyInstance())));
+                .thenAnswer(invocationOnMock -> DomainEventStream.of(createEvents(2).iterator()));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
 
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
-        verify(mockEventStorageEngine, times(2)).appendSnapshotEvent(argThat(event(aggregateIdentifier, 1)));
+        verify(mockEventStorageEngine, times(2)).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
         verify(logger, never()).warn(anyString());
         verify(logger, never()).error(anyString());
     }
@@ -112,31 +106,24 @@ public class AbstractSnapshotterTest {
     @Test
     public void testScheduleSnapshot_SnapshotIsNull() {
         String aggregateIdentifier = "aggregateIdentifier";
-        when(mockEventStorageEngine.readEvents(aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(
-                        new GenericDomainEventMessage<>(type, aggregateIdentifier, (long) 0,
-                                                        "Mock contents", MetaData.emptyInstance())));
+        when(mockEventStorageEngine.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent()));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
-        verify(mockEventStorageEngine, never()).appendSnapshotEvent(any(DomainEventMessage.class));
+        verify(mockEventStorageEngine, never()).storeSnapshot(any(DomainEventMessage.class));
     }
 
     @Test
     public void testScheduleSnapshot_SnapshotReplacesOneEvent() {
         String aggregateIdentifier = "aggregateIdentifier";
-        when(mockEventStorageEngine.readEvents(aggregateIdentifier))
-                .thenReturn(new SimpleDomainEventStream(
-                        new GenericDomainEventMessage<>(type, aggregateIdentifier, (long) 2,
-                                                        "Mock contents", MetaData.emptyInstance())));
+        when(mockEventStorageEngine.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvent(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
-        verify(mockEventStorageEngine, never()).appendSnapshotEvent(any(DomainEventMessage.class));
+        verify(mockEventStorageEngine, never()).storeSnapshot(any(DomainEventMessage.class));
     }
 
     @SuppressWarnings("unchecked")
     @Test
     public void testScheduleSnapshot_WithTransaction() {
-        final TransactionManager txManager = mock(TransactionManager.class);
         Transaction mockTransaction = mock(Transaction.class);
-        when(txManager.startTransaction()).thenReturn(mockTransaction);
+        TransactionManager txManager = spy(new StubTransactionManager(mockTransaction));
         testSubject.setTxManager(txManager);
 
         testScheduleSnapshot();
@@ -144,7 +131,7 @@ public class AbstractSnapshotterTest {
         InOrder inOrder = inOrder(mockEventStorageEngine, txManager, mockTransaction);
         inOrder.verify(txManager).startTransaction();
         inOrder.verify(mockEventStorageEngine).readEvents(anyString());
-        inOrder.verify(mockEventStorageEngine).appendSnapshotEvent(isA(DomainEventMessage.class));
+        inOrder.verify(mockEventStorageEngine).storeSnapshot(isA(DomainEventMessage.class));
         inOrder.verify(mockTransaction).commit();
     }
 
@@ -180,5 +167,19 @@ public class AbstractSnapshotterTest {
         Logger originalLogger = (Logger) loggerField.get(null);
         loggerField.set(null, mockLogger);
         return originalLogger;
+    }
+
+    private static class StubTransactionManager implements TransactionManager {
+
+        private final Transaction transaction;
+
+        private StubTransactionManager(Transaction transaction) {
+            this.transaction = transaction;
+        }
+
+        @Override
+        public Transaction startTransaction() {
+            return transaction;
+        }
     }
 }

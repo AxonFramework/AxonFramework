@@ -23,6 +23,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventstore.DomainEventStream;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.metadata.MetaData;
@@ -35,7 +36,6 @@ import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -51,13 +51,13 @@ public class EventSourcingRepositoryTest {
     @Before
     public void setUp() throws Exception {
         eventStore = Mockito.mock(EventStore.class);
-        Mockito.when(eventStore.readEvents(Matchers.anyString())).thenAnswer(invocationOnMock -> Arrays
-                .asList(new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class),
-                                                              1, "Test1"),
-                        new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class),
-                                                              2, "Test2"),
-                        new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class),
-                                                              3, "Test3")).stream());
+        Mockito.when(eventStore.readEvents(Matchers.anyString())).thenAnswer(invocationOnMock -> DomainEventStream
+                .of(new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 1,
+                                                          "Test1"),
+                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 2,
+                                                          "Test2"),
+                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 3,
+                                                          "Test3")));
         repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
         DefaultUnitOfWork.startAndGet(asCommandMessage("Stub"));
     }

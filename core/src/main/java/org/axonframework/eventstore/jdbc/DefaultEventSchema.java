@@ -115,7 +115,7 @@ public class DefaultEventSchema implements EventSchema {
 
     @Override
     public PreparedStatement readSnapshotData(Connection connection, String identifier) throws SQLException {
-        final String s = "SELECT " + domainEventFields() + " FROM " + config.domainEventTable() + " WHERE " +
+        final String s = "SELECT " + domainEventFields() + " FROM " + config.snapshotTable() + " WHERE " +
                 config.aggregateIdentifierColumn() + " = ? ORDER BY " + config.sequenceNumberColumn() + " DESC";
         PreparedStatement statement = connection.prepareStatement(s);
         statement.setString(1, identifier);
@@ -133,7 +133,7 @@ public class DefaultEventSchema implements EventSchema {
                                                     resultSet.getString(config.payloadTypeColumn()),
                                                     resultSet.getString(config.payloadRevisionColumn()),
                                                     readPayload(resultSet, config.payloadColumn()),
-                                                    readPayload(resultSet, config.metaDataColumn()), dataType);
+                                                    readPayload(resultSet, config.metaDataColumn()));
     }
 
     @Override
@@ -146,7 +146,7 @@ public class DefaultEventSchema implements EventSchema {
                                              resultSet.getString(config.payloadTypeColumn()),
                                              resultSet.getString(config.payloadRevisionColumn()),
                                              readPayload(resultSet, config.payloadColumn()),
-                                             readPayload(resultSet, config.metaDataColumn()), dataType);
+                                             readPayload(resultSet, config.metaDataColumn()));
     }
 
     @Override

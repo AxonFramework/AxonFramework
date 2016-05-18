@@ -35,8 +35,8 @@ public class EventStoreTestUtils {
 
     public static List<DomainEventMessage<?>> createEvents(int numberOfEvents) {
         return IntStream.range(0, numberOfEvents).mapToObj(
-                (sequenceNumber) -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), AGGREGATE,
-                                                sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
+                sequenceNumber -> createEvent(TYPE, IdentifierFactory.getInstance().generateIdentifier(), AGGREGATE,
+                                              sequenceNumber, PAYLOAD + sequenceNumber, METADATA))
                 .collect(Collectors.toList());
     }
 
@@ -61,12 +61,13 @@ public class EventStoreTestUtils {
         return createEvent(TYPE, eventId, aggregateId, sequenceNumber, PAYLOAD, METADATA);
     }
 
-    public static DomainEventMessage<String> createEvent(String type, String eventId, String aggregateId, long sequenceNumber,
-                                                   String payload, MetaData metaData) {
+    public static DomainEventMessage<String> createEvent(String type, String eventId, String aggregateId,
+                                                         long sequenceNumber, String payload, MetaData metaData) {
         return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber,
                                                new GenericMessage<>(eventId, payload, metaData), now());
     }
 
-    private EventStoreTestUtils() {}
+    private EventStoreTestUtils() {
+    }
 
 }

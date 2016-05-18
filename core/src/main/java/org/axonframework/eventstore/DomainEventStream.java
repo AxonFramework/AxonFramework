@@ -17,6 +17,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 /**
@@ -77,7 +78,10 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
 
             @Override
             public DomainEventMessage<?> peek() {
-                return hasNext ? event : null;
+                if (hasNext) {
+                    return event;
+                }
+                throw new NoSuchElementException();
             }
 
             @Override
@@ -91,7 +95,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
                     hasNext = false;
                     return event;
                 }
-                return null;
+                throw new NoSuchElementException();
             }
         };
     }
@@ -105,9 +109,6 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
             @Override
             public DomainEventMessage<?> peek() {
                 if (!hasPeeked) {
-                    if (!hasNext()) {
-                        return null;
-                    }
                     peekEvent = iterator.next();
                     hasPeeked = true;
                 }

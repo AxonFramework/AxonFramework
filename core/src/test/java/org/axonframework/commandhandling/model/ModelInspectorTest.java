@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.model;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
@@ -31,6 +32,7 @@ import java.lang.annotation.*;
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertEquals;
 
 public class ModelInspectorTest {
@@ -39,9 +41,9 @@ public class ModelInspectorTest {
     public void testDetectAllAnnotatedHandlers() throws Exception {
         AggregateModel<SomeAnnotatedHandlers> inspector = ModelInspector.inspectAggregate(SomeAnnotatedHandlers.class);
 
-        GenericCommandMessage<?> message = new GenericCommandMessage<>("ok");
+        CommandMessage<?> message = asCommandMessage("ok");
         assertEquals(true, inspector.commandHandler(message.getCommandName()).handle(message, new SomeAnnotatedHandlers()));
-        assertEquals(false, inspector.commandHandler(message.getCommandName()).handle(new GenericCommandMessage<>("ko"), new SomeAnnotatedHandlers()));
+        assertEquals(false, inspector.commandHandler(message.getCommandName()).handle(asCommandMessage("ko"), new SomeAnnotatedHandlers()));
     }
 
     @Test
@@ -49,16 +51,16 @@ public class ModelInspectorTest {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
 
         SomeSubclass target = new SomeSubclass();
-        GenericCommandMessage<?> message = new GenericCommandMessage<>("sub");
+        CommandMessage<?> message = asCommandMessage("sub");
         assertEquals(true, inspector.commandHandler(message.getCommandName()).handle(message, target));
-        assertEquals(false, inspector.commandHandler(message.getCommandName()).handle(new GenericCommandMessage<>("ok"), target));
+        assertEquals(false, inspector.commandHandler(message.getCommandName()).handle(asCommandMessage("ok"), target));
     }
 
     @Test
     public void testEventIsPublishedThroughoutHierarchy() throws Exception {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
 
-        GenericCommandMessage<?> message = new GenericCommandMessage<>("sub");
+        CommandMessage<?> message = asCommandMessage("sub");
         AtomicLong payload = new AtomicLong();
 
         inspector.publish(new GenericEventMessage<>(payload), new SomeSubclass());

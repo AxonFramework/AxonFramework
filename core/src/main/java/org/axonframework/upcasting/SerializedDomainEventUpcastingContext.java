@@ -46,7 +46,7 @@ public class SerializedDomainEventUpcastingContext implements UpcastingContext {
      *                        upcast
      * @param serializer      The serializer that can be used to deserialize the meta data
      */
-    public SerializedDomainEventUpcastingContext(SerializedDomainEventData domainEventData, Serializer serializer) {
+    public SerializedDomainEventUpcastingContext(SerializedDomainEventData<?> domainEventData, Serializer serializer) {
         this.messageIdentifier = domainEventData.getEventIdentifier();
         this.aggregateIdentifier = domainEventData.getAggregateIdentifier();
         this.sequenceNumber = domainEventData.getSequenceNumber();

@@ -29,6 +29,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  * @author Rene de Waele
  */
@@ -60,14 +62,21 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     @PostConstruct
-    public void initialize() {
-        threadFactory.newThread(producer::tryFetch).start();
+    protected void initialize() {
+        threadFactory.newThread(() -> {
+            try {
+                producer.run();
+            } catch (InterruptedException e) {
+                logger.warn("Producer thread was interrupted. Shutting down event store.", e);
+                Thread.currentThread().interrupt();
+            }
+        }).start();
         cleanupService
                 .scheduleWithFixedDelay(new Cleaner(), cleanupDelayMillis, cleanupDelayMillis, TimeUnit.MILLISECONDS);
     }
 
     @PreDestroy
-    public void destroy() {
+    protected void destroy() {
         tailingConsumers.forEach(IOUtils::closeQuietly);
         IOUtils.closeQuietly(producer);
         cleanupService.shutdownNow();
@@ -93,7 +102,14 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
     private Node findNode(TrackingToken trackingToken) {
         Node oldest = this.oldest;
-        return oldest == null ? null : oldest.find(trackingToken);
+        if (trackingToken == null || oldest == null || oldest.event.trackingToken().isAfter(trackingToken)) {
+            return null;
+        }
+        Node node = oldest;
+        while (node != null && !node.event.trackingToken().equals(trackingToken)) {
+            node = node.next;
+        }
+        return node;
     }
 
     private class EventProducer implements AutoCloseable {
@@ -101,13 +117,38 @@ public class EmbeddedEventStore extends AbstractEventStore {
         private final Condition dataAvailableCondition = lock.newCondition();
         private final long fetchDelayNanos;
         private final int cachedEvents;
-        private volatile boolean fetching, shouldFetch;
+        private volatile boolean fetching, shouldFetch, closed;
         private Stream<? extends TrackedEventMessage<?>> eventStream;
         private Node newest;
 
         private EventProducer(long fetchDelayNanos, int cachedEvents) {
             this.fetchDelayNanos = fetchDelayNanos;
             this.cachedEvents = cachedEvents;
+        }
+
+        private void run() throws InterruptedException {
+            while (!closed) {
+                shouldFetch = true;
+                fetching = true;
+                while (shouldFetch) {
+                    shouldFetch = false;
+                    fetchData();
+                }
+                fetching = false;
+                if (tailingConsumers.isEmpty()) {
+                    newest = null;
+                }
+                waitForData();
+            }
+        }
+
+        private void waitForData() throws InterruptedException {
+            lock.lock();
+            try {
+                dataAvailableCondition.awaitNanos(fetchDelayNanos);
+            } finally {
+                lock.unlock();
+            }
         }
 
         private void fetchIfWaiting() {
@@ -122,37 +163,28 @@ public class EmbeddedEventStore extends AbstractEventStore {
             }
         }
 
-        private void tryFetch() {
-            shouldFetch = true;
-            fetching = true;
-            while (shouldFetch) {
-                shouldFetch = false;
-                if (!tailingConsumers.isEmpty()) {
-                    (eventStream = storageEngine().readEvents(lastToken(), true)).forEach(event -> {
-                        Node node = new Node(nextIndex(), event);
-                        if (newest != null) {
-                            newest.next = node;
-                        }
-                        newest = node;
-                        if (oldest == null) {
-                            oldest = node;
-                        }
-                        notifyConsumers();
-                    });
-                    trimCache();
-                }
+        private void fetchData() {
+            if (!tailingConsumers.isEmpty()) {
+                (eventStream = storageEngine().readEvents(lastToken(), true)).forEach(event -> {
+                    Node node = new Node(nextIndex(), lastToken(), event);
+                    if (newest != null) {
+                        newest.next = node;
+                    }
+                    newest = node;
+                    if (oldest == null) {
+                        oldest = node;
+                    }
+                    notifyConsumers();
+                });
+                trimCache();
             }
-            fetching = false;
-            if (tailingConsumers.isEmpty()) {
-                newest = null;
-            }
-            delayedFetch();
         }
 
         private TrackingToken lastToken() {
             if (newest == null) {
-                return tailingConsumers.stream().map(EventConsumer::lastToken)
-                        .min(Comparator.nullsFirst(Comparator.naturalOrder())).orElse(null);
+                List<TrackingToken> sortedTokens = tailingConsumers.stream().map(EventConsumer::lastToken)
+                        .sorted(Comparator.nullsFirst(Comparator.naturalOrder())).collect(toList());
+                return sortedTokens.isEmpty() ? null : sortedTokens.get(0);
             } else {
                 return newest.event.trackingToken();
             }
@@ -160,20 +192,6 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         private long nextIndex() {
             return newest == null ? 0 : newest.index + 1;
-        }
-
-        private void delayedFetch() {
-            lock.lock();
-            try {
-                dataAvailableCondition.awaitNanos(fetchDelayNanos);
-            } catch (InterruptedException e) {
-                logger.warn("Producer thread was interrupted. Shutting down event store.", e);
-                Thread.currentThread().interrupt();
-                return;
-            } finally {
-                lock.unlock();
-            }
-            tryFetch();
         }
 
         private void notifyConsumers() {
@@ -186,13 +204,14 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private void trimCache() {
-            while (newest != null && newest.index - oldest.index > cachedEvents) {
+            while (newest != null && newest.index - oldest.index >= cachedEvents) {
                 oldest = oldest.next;
             }
         }
 
         @Override
         public void close() {
+            closed = true;
             oldest = null;
             if (eventStream != null) {
                 eventStream.close();
@@ -232,59 +251,57 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            if (tailingConsumers.contains(this)) {
-                Node nextNode;
-                if ((nextNode = nextNode()) == null && timeout > 0) {
-                    consumerLock.lock();
-                    try {
-                        if (!tailingConsumers.contains(this)) {
-                            return peek(timeout, timeUnit); //consumer was removed by cleaner: open a new private stream
-                        }
-                        consumableEventsCondition.await(timeout, timeUnit);
-                        if (isBehindCache()) { //consumer is behind the cache: open a new private stream
-                            tailingConsumers.remove(this);
-                            return peek(timeout, timeUnit);
-                        }
-                        nextNode = nextNode();
-                    } finally {
-                        consumerLock.unlock();
-                    }
+            return tailingConsumers.contains(this) ? peekGlobalStream(timeout, timeUnit) :
+                    peekPrivateStream(timeout, timeUnit);
+        }
+
+        private TrackedEventMessage<?> peekGlobalStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
+            Node nextNode;
+            if ((nextNode = nextNode()) == null && timeout > 0) {
+                consumerLock.lock();
+                try {
+                    consumableEventsCondition.await(timeout, timeUnit);
+                    nextNode = nextNode();
+                } finally {
+                    consumerLock.unlock();
                 }
-                if (nextNode != null) {
-                    lastNode = nextNode;
-                    lastToken = peekedEvent.trackingToken();
-                    return nextNode.event;
-                } else {
-                    return null;
-                }
+            }
+            if (nextNode != null) {
+                lastNode = nextNode;
+                lastToken = nextNode.event.trackingToken();
+                return nextNode.event;
             } else {
-                if (privateIterator == null) {
-                    privateStream = storageEngine().readEvents(lastToken, false);
-                    privateIterator = privateStream.iterator();
-                }
-                if (privateIterator.hasNext()) {
-                    TrackedEventMessage<?> nextEvent = privateIterator.next();
-                    lastToken = nextEvent.trackingToken();
-                    return nextEvent;
-                } else {
-                    closePrivateStream();
-                    tailingConsumers.add(this);
-                    return timeout > 0 ? peek(timeout, timeUnit) : null;
-                }
+                return null;
+            }
+        }
+
+        private TrackedEventMessage<?> peekPrivateStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
+            if (privateIterator == null) {
+                privateStream = storageEngine().readEvents(lastToken, false);
+                privateIterator = privateStream.iterator();
+            }
+            if (privateIterator.hasNext()) {
+                TrackedEventMessage<?> nextEvent = privateIterator.next();
+                lastToken = nextEvent.trackingToken();
+                return nextEvent;
+            } else {
+                closePrivateStream();
+                lastNode = findNode(lastToken);
+                tailingConsumers.add(this);
+                return timeout > 0 ? peek(timeout, timeUnit) : null;
             }
         }
 
         private Node nextNode() {
-            Node current;
-            if ((current = lastNode) == null && (current = lastNode = findNode(lastToken)) == null) {
-                return null;
+            Node node = lastNode;
+            if (node != null) {
+                return node.next;
             }
-            return current.next;
-        }
-
-        private boolean isBehindCache() {
-            return lastToken == null || (oldest != null && oldest.event.trackingToken().isAfter(lastToken) &&
-                    (lastNode == null || lastNode.next == null));
+            node = oldest;
+            while (node != null && !Objects.equals(node.previousToken, lastToken)) {
+                node = node.next;
+            }
+            return node;
         }
 
         private TrackingToken lastToken() {
@@ -309,41 +326,30 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private class Cleaner implements Runnable {
         @Override
         public void run() {
-            Node currentOldest = oldest;
-            if (currentOldest == null) {
+            Node oldestCachedNode = oldest;
+            if (oldestCachedNode == null || oldestCachedNode.previousToken == null) {
                 return;
             }
-            Iterator<EventConsumer> iterator = tailingConsumers.iterator();
-            while (iterator.hasNext()) {
-                EventConsumer consumer = iterator.next();
-                Node lastNode = consumer.lastNode;
-                if (lastNode != null && currentOldest.index > lastNode.index) {
-                    iterator.remove();
-                    consumer.lastNode = null; //make old nodes garbage collectable
-                }
-            }
+            tailingConsumers.stream().filter(consumer -> consumer.lastToken == null ||
+                    oldestCachedNode.previousToken.isAfter(consumer.lastToken)).forEach(consumer -> {
+                logger.warn("An event processor fell behind the tail end of the event store cache. " +
+                                    "This usually indicates a badly performing event processor.");
+                tailingConsumers.remove(consumer);
+                consumer.lastNode = null; //make old nodes garbage collectable
+            });
         }
     }
 
     private static class Node {
         private final long index;
+        private final TrackingToken previousToken;
         private final TrackedEventMessage<?> event;
         private volatile Node next;
 
-        private Node(long index, TrackedEventMessage<?> event) {
+        private Node(long index, TrackingToken previousToken, TrackedEventMessage<?> event) {
             this.index = index;
+            this.previousToken = previousToken;
             this.event = event;
-        }
-
-        private Node find(TrackingToken trackingToken) {
-            if (event.trackingToken().isAfter(trackingToken)) {
-                return null;
-            }
-            Node node = this;
-            while (node != null && !node.event.trackingToken().equals(trackingToken)) {
-                node = node.next;
-            }
-            return node;
         }
     }
 }

@@ -40,8 +40,7 @@ public class GenericAggregateFactoryTest {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
         try {
-            factory.createAggregate(UUID.randomUUID().toString(), new GenericDomainEventMessage<>("", 0, new Object(),
-                                                                                                  type));
+            factory.createAggregate(UUID.randomUUID().toString(), new GenericDomainEventMessage<>("type", "", 0, new Object()));
             fail("Expected IncompatibleAggregateException");
         } catch (IncompatibleAggregateException e) {
             // we got it
@@ -51,8 +50,8 @@ public class GenericAggregateFactoryTest {
     @Test
     public void testInitializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
-        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(aggregate.getIdentifier(),
-                                                                                            2, aggregate, type);
+        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>("type", aggregate.getIdentifier(),
+                                                                                            2, aggregate);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
         assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshotMessage));
     }

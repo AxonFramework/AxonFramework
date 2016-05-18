@@ -20,6 +20,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.*;
@@ -32,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -64,7 +64,7 @@ public class CommandHandlingTest {
         repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
-        Iterator<? extends DomainEventMessage<?>> es = stubEventStore.readEvents(aggregateIdentifier).iterator();
+        Iterator<? extends DomainEventMessage<?>> es = stubEventStore.readEvents(aggregateIdentifier);
         assertTrue(es.hasNext());
         assertEquals((Object) 0L, es.next().getSequenceNumber());
         assertTrue(es.hasNext());
@@ -80,7 +80,7 @@ public class CommandHandlingTest {
 
         @Override
         public DomainEventStream readEvents(String identifier) {
-            return new ArrayList<>(storedEvents).stream();
+            return DomainEventStream.of(new ArrayList<>(storedEvents).iterator());
         }
 
         @Override
@@ -94,7 +94,7 @@ public class CommandHandlingTest {
         }
 
         @Override
-        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        public Registration subscribe(EventProcessor eventProcessor) {
             throw new UnsupportedOperationException();
         }
     }

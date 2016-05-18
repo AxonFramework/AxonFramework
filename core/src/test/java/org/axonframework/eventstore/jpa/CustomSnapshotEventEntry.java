@@ -17,7 +17,7 @@
 package org.axonframework.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventstore.AbstractLegacyDomainEventEntry;
+import org.axonframework.eventstore.legacy.AbstractLegacyDomainEventEntry;
 import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
@@ -29,14 +29,9 @@ import javax.persistence.Entity;
 public class CustomSnapshotEventEntry extends AbstractLegacyDomainEventEntry<String> {
 
     public CustomSnapshotEventEntry(DomainEventMessage event, Serializer serializer) {
-        super(event, serializer);
+        super(event, serializer, String.class);
     }
 
     protected CustomSnapshotEventEntry() {
-    }
-
-    @Override
-    protected Class<String> getContentType() {
-        return String.class;
     }
 }

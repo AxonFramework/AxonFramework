@@ -18,9 +18,12 @@ package org.axonframework.eventstore.jpa;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.io.IOUtils;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.EntityExistsException;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -29,8 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import javax.persistence.EntityExistsException;
-import javax.sql.DataSource;
 
 /**
  * SQLErrorCodesResolver is an implementation of PersistenceExceptionResolver used to resolve sql error codes to see if
@@ -54,7 +55,7 @@ import javax.sql.DataSource;
  * @author Allard Buijze
  * @since 0.7
  */
-public class SQLErrorCodesResolver implements org.axonframework.common.jdbc.PersistenceExceptionResolver {
+public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
 
     private static final Logger logger = LoggerFactory.getLogger(SQLErrorCodesResolver.class);
     private static final String SQL_ERROR_CODES_PROPERTIES = "SQLErrorCode.properties";

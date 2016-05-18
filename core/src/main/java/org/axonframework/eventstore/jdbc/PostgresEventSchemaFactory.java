@@ -13,54 +13,22 @@
 
 package org.axonframework.eventstore.jdbc;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-
 /**
  * @author Rene de Waele
  */
-public class PostgresEventSchemaFactory implements EventSchemaFactory {
+public class PostgresEventSchemaFactory extends AbstractEventSchemaFactory {
+    public static final PostgresEventSchemaFactory INSTANCE = new PostgresEventSchemaFactory();
 
-    @Override
-    public PreparedStatement createDomainEventTable(Connection connection,
-                                                    EventSchemaConfiguration configuration) throws SQLException {
-        String sql = " create table " + configuration.domainEventTable() + " (\n" +
-                configuration.globalIndexColumn() + " bigint NOT NULL SERIAL,\n" +
-                configuration.aggregateIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.sequenceNumberColumn() + " bigint not null,\n" +
-                configuration.typeColumn() + " varchar(255) not null,\n" +
-                configuration.eventIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.metaDataColumn() + " bytea,\n" +
-                configuration.payloadColumn() + " bytea not null,\n" +
-                configuration.payloadRevisionColumn() + " varchar(255),\n" +
-                configuration.payloadTypeColumn() + " varchar(255) not null,\n" +
-                configuration.timestampColumn() + " varchar(255) not null,\n" +
-                "constraint primary key (" + configuration.globalIndexColumn() + "),\n" +
-                "constraint unique (" + configuration.aggregateIdentifierColumn() + ", " +
-                configuration.sequenceNumberColumn() + "),\n" +
-                "constraint unique (eventIdentifier)\n" +
-                ")";
-        return connection.prepareStatement(sql);
+    protected PostgresEventSchemaFactory() {
     }
 
     @Override
-    public PreparedStatement createSnapshotEventTable(Connection connection,
-                                                      EventSchemaConfiguration configuration) throws SQLException {
-        String sql = " create table " + configuration.snapshotTable() + " (\n" +
-                configuration.aggregateIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.sequenceNumberColumn() + " bigint not null,\n" +
-                configuration.typeColumn() + " varchar(255) not null,\n" +
-                configuration.eventIdentifierColumn() + " varchar(255) not null,\n" +
-                configuration.metaDataColumn() + " bytea,\n" +
-                configuration.payloadColumn() + " bytea not null,\n" +
-                configuration.payloadRevisionColumn() + " varchar(255),\n" +
-                configuration.payloadTypeColumn() + " varchar(255) not null,\n" +
-                configuration.timestampColumn() + " varchar(255) not null,\n" +
-                "constraint primary key (" + configuration.aggregateIdentifierColumn() + ", " +
-                configuration.sequenceNumberColumn() + ")\n" +
-                ")";
-        return connection.prepareStatement(sql);
+    protected String autoIncrement() {
+        return "SERIAL";
     }
 
+    @Override
+    protected String payloadType() {
+        return "bytea";
+    }
 }

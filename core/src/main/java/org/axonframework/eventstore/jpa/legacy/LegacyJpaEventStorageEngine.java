@@ -15,15 +15,19 @@ package org.axonframework.eventstore.jpa.legacy;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.eventstore.LegacyTrackingToken;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventstore.SerializedTrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventstore.legacy.LegacyTrackingToken;
+import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.axonframework.eventstore.EventUtils.asDomainEventMessage;
 
 /**
  * @author Rene de Waele
@@ -40,7 +44,7 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
                       String.format("Token %s is of the wrong type", lastToken));
         Map<String, Object> paramRegistry = new HashMap<>();
         Query query = entityManager().createQuery(
-                String.format("SELECT new org.axonframework.eventstore.jpa.legacy.LegacyDomainEventEntry("
+                String.format("SELECT new org.axonframework.eventstore.legacy.GenericLegacyDomainEventEntry("
                                       + "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
                                       + "e.timeStamp, e.payloadType, e.payloadRevision, e.metaData, e.payload)"
                                       + "FROM %s e %s"
@@ -56,7 +60,7 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
         if (lastItem == null) {
             return "";
         }
-        paramRegistry.put("timestamp", lastItem.getTimestamp());
+        paramRegistry.put("timestamp", lastItem.getTimestamp().toString());
         paramRegistry.put("sequenceNumber", lastItem.getSequenceNumber());
         paramRegistry.put("aggregateIdentifier", lastItem.getAggregateIdentifier());
 
@@ -65,5 +69,15 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
                 "OR (e.timeStamp = :timestamp AND e.sequenceNumber > :sequenceNumber) " +
                 "OR (e.timeStamp = :timestamp AND e.sequenceNumber = :sequenceNumber " +
                 "AND e.aggregateIdentifier > :aggregateIdentifier))";
+    }
+
+    @Override
+    protected Object createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
+        return new LegacyDomainEventEntry(asDomainEventMessage(eventMessage), serializer);
+    }
+
+    @Override
+    protected String domainEventEntryEntityName() {
+        return LegacyDomainEventEntry.class.getSimpleName();
     }
 }

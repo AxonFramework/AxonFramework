@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 public class TransactionManagingInterceptorTest {
 
     private Message<?> message;
-    private InterceptorChain<Message<?>> interceptorChain;
+    private InterceptorChain interceptorChain;
     private UnitOfWork<Message<?>> unitOfWork;
     private TransactionManager transactionManager;
     private Transaction transaction;

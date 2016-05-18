@@ -14,10 +14,10 @@
 package org.axonframework.eventstore.jpa.legacy;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventstore.AbstractLegacyDomainEventEntry;
-import org.axonframework.eventstore.LegacyTrackingToken;
 import org.axonframework.eventstore.SerializedTrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
+import org.axonframework.eventstore.legacy.AbstractLegacyDomainEventEntry;
+import org.axonframework.eventstore.legacy.LegacyTrackingToken;
 import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
@@ -27,27 +27,15 @@ import javax.persistence.Table;
 /**
  * @author Rene de Waele
  */
-@Table(name = "DomainEventEntry", indexes = {@Index(columnList = "timeStamp,sequenceNumber,aggregateIdentifier")})
 @Entity
+@Table(name = "DomainEventEntry", indexes = {@Index(columnList = "timeStamp,sequenceNumber,aggregateIdentifier")})
 public class LegacyDomainEventEntry extends AbstractLegacyDomainEventEntry<byte[]> implements SerializedTrackedEventData<byte[]> {
 
     public LegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
-        super(eventMessage, serializer);
-    }
-
-    public LegacyDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber, String eventIdentifier,
-                                  Object timeStamp, String payloadType, String payloadRevision, byte[] payload,
-                                  byte[] metaData) {
-        super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timeStamp, payloadType, payloadRevision,
-              payload, metaData);
+        super(eventMessage, serializer, byte[].class);
     }
 
     protected LegacyDomainEventEntry() {
-    }
-
-    @Override
-    protected Class<byte[]> getContentType() {
-        return byte[].class;
     }
 
     @Override

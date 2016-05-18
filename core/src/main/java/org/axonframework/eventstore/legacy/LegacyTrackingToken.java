@@ -11,7 +11,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore;
+package org.axonframework.eventstore.legacy;
+
+import org.axonframework.eventstore.TrackingToken;
 
 import java.time.Instant;
 import java.util.Comparator;

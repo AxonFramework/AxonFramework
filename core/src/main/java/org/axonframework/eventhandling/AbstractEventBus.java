@@ -35,11 +35,11 @@ public abstract class AbstractEventBus implements EventBus {
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
     final String eventsKey = this + "_EVENTS";
-    private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
+    private final Set<EventProcessor> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
 
     @Override
-    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+    public Registration subscribe(EventProcessor eventProcessor) {
         if (this.eventProcessors.add(eventProcessor)) {
             logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor);
         } else {
@@ -147,9 +147,7 @@ public abstract class AbstractEventBus implements EventBus {
      * @param events Events to be published by this Event Bus
      */
     protected void prepareCommit(List<? extends EventMessage<?>> events) {
-        for (Consumer<List<? extends EventMessage<?>>> eventProcessor : eventProcessors) {
-            eventProcessor.accept(events);
-        }
+        eventProcessors.forEach(eventProcessor -> eventProcessor.handle(events));
     }
 
     /**

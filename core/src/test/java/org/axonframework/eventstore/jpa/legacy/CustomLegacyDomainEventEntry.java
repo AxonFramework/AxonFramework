@@ -11,10 +11,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventstore.jpa;
+package org.axonframework.eventstore.jpa.legacy;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventstore.AbstractTrackedDomainEventEntry;
+import org.axonframework.eventstore.legacy.AbstractLegacyDomainEventEntry;
 import org.axonframework.serializer.Serializer;
 
 import javax.persistence.Entity;
@@ -25,13 +25,13 @@ import javax.persistence.Table;
  * @author Rene de Waele
  */
 @Entity
-@Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber,type", unique = true))
-public class DomainEventEntry extends AbstractTrackedDomainEventEntry<byte[]> {
+@Table(indexes = {@Index(columnList = "timeStamp,sequenceNumber,aggregateIdentifier")})
+public class CustomLegacyDomainEventEntry extends AbstractLegacyDomainEventEntry<byte[]> {
 
-    public DomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
+    public CustomLegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
         super(eventMessage, serializer, byte[].class);
     }
 
-    protected DomainEventEntry() {
+    protected CustomLegacyDomainEventEntry() {
     }
 }

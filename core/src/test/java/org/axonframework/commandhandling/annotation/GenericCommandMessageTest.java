@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.annotation;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.*;
 
 /**
@@ -33,7 +35,7 @@ public class GenericCommandMessageTest {
     @Test
     public void testConstructor() {
         Object payload = new Object();
-        GenericCommandMessage<Object> message1 = new GenericCommandMessage<>(payload);
+        CommandMessage<Object> message1 = asCommandMessage(payload);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", (Object) "value");
         MetaData metaData = MetaData.from(metaDataMap);
         GenericCommandMessage<Object> message2 = new GenericCommandMessage<>(payload, metaData);

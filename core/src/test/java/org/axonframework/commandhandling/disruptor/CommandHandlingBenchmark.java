@@ -23,10 +23,11 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.AbstractRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventstore.EmbeddedEventStore;
+import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -45,12 +46,9 @@ public class CommandHandlingBenchmark {
     private static final UUID aggregateIdentifier = UUID.randomUUID();
 
     public static void main(String[] args) {
-        EventBus eventBus = new SimpleEventBus();
+        EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         CommandBus cb = new SimpleCommandBus();
-
-        InMemoryEventStore eventStore = new InMemoryEventStore();
-        eventStore.appendInitialEvent(new SimpleDomainEventStream(
-                new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), 0, new SomeEvent())));
+        eventStore.publish(new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), 0, new SomeEvent()));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
         Repository<MyAggregate> repository = new AbstractRepository<MyAggregate, AnnotatedAggregate<MyAggregate>>(
@@ -67,7 +65,7 @@ public class CommandHandlingBenchmark {
 
             @Override
             protected AnnotatedAggregate<MyAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
-                return new AnnotatedAggregate<>(myAggregate, aggregateModel(), eventBus);
+                return new AnnotatedAggregate<>(myAggregate, aggregateModel(), eventStore);
             }
 
             @Override

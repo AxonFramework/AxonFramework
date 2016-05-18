@@ -64,6 +64,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
      */
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
+        if (trackingToken == null) {
+            return events.values().stream();
+        }
         return events.tailMap(trackingToken, false).values().stream();
     }
 

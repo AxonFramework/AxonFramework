@@ -41,12 +41,12 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     }
 
     public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload,
-                                     MetaData metaData) {
+                                     Map<String, ?> metaData) {
         this(type, aggregateIdentifier, sequenceNumber, new GenericMessage<>(payload, metaData), Instant.now());
     }
 
     public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload,
-                                     MetaData metaData, String messageIdentifier, Instant timestamp) {
+                                     Map<String, ?> metaData, String messageIdentifier, Instant timestamp) {
         this(type, aggregateIdentifier, sequenceNumber, new GenericMessage<>(messageIdentifier, payload, metaData),
              timestamp);
     }

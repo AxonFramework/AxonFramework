@@ -18,9 +18,10 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.annotation.MessageHandlerInvocationException;
 import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.List;
@@ -63,18 +64,21 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
     }
 
     @Override
-    public void doPublish(List<EventMessage<?>> events, Set<EventListener> eventListeners,
+    public void doPublish(List<? extends EventMessage<?>> events, Set<EventListener> eventListeners,
                           Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors,
                           MultiplexingEventProcessingMonitor monitor) {
         try {
-            UnitOfWork<EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(events);
-            unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(unitOfWork, interceptors,
-                    (message, uow) -> {
-                        for (EventListener eventListener : eventListeners) {
-                            eventListener.handle(message);
-                        }
-                        return null;
-                    }).proceed());
+            for (EventMessage event : events) {
+                UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
+                InterceptorChain interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
+                                                                                  interceptors, (message, uow) -> {
+                    for (EventListener eventListener : eventListeners) {
+                        eventListener.handle(message);
+                    }
+                    return null;
+                });
+                unitOfWork.executeWithResult(interceptorChain::proceed);
+            }
             notifyMonitors(events, monitor, null);
         } catch (Exception e) {
             notifyMonitors(events, monitor, e);
@@ -83,7 +87,7 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    private void notifyMonitors(List<EventMessage<?>> events, EventProcessingMonitor monitor, Exception exception) {
+    private void notifyMonitors(List<? extends EventMessage<?>> events, EventProcessingMonitor monitor, Exception exception) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(u -> monitor.onEventProcessingCompleted(events));
             CurrentUnitOfWork.get().onRollback(u -> monitor.onEventProcessingFailed(events, exception == null

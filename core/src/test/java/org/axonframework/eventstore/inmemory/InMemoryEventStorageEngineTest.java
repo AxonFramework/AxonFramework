@@ -13,11 +13,19 @@
 
 package org.axonframework.eventstore.inmemory;
 
+import org.axonframework.eventstore.EventStorageEngineTest;
+import org.junit.Before;
+
+import java.sql.SQLException;
+
 /**
  * @author Rene de Waele
  */
-public class InMemoryEventStorageEngineTest {
+public class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
-    //todo
+    @Before
+    public void setUp() throws SQLException {
+        setTestSubject(new InMemoryEventStorageEngine());
+    }
 
 }

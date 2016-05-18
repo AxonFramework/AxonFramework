@@ -20,8 +20,6 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
-import java.time.Instant;
-import java.time.temporal.TemporalAccessor;
 
 /**
  * @author Rene de Waele
@@ -31,8 +29,6 @@ public abstract class AbstractEventEntry<T> implements SerializedEventData<T> {
 
     @Column(nullable = false, unique = true)
     private String eventIdentifier;
-    @Basic(optional = false)
-    private Long timeStamp;
     @Basic(optional = false)
     private String payloadType;
     @Basic
@@ -44,27 +40,19 @@ public abstract class AbstractEventEntry<T> implements SerializedEventData<T> {
     @Lob
     private T metaData;
 
-    public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer) {
-        SerializedObject<T> payload = serializer.serialize(eventMessage.getPayload(), getContentType());
-        SerializedObject<T> metaData = serializer.serialize(eventMessage.getMetaData(), getContentType());
+    public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
+        SerializedObject<T> payload = serializer.serialize(eventMessage.getPayload(), contentType);
+        SerializedObject<T> metaData = serializer.serialize(eventMessage.getMetaData(), contentType);
         this.eventIdentifier = eventMessage.getIdentifier();
-        this.timeStamp = eventMessage.getTimestamp().toEpochMilli();
         this.payloadType = payload.getType().getName();
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
         this.metaData = metaData.getData();
     }
 
-    public AbstractEventEntry(String eventIdentifier, Object timestamp, String payloadType, String payloadRevision,
-                              T payload, T metaData) {
+    public AbstractEventEntry(String eventIdentifier, String payloadType, String payloadRevision, T payload,
+                              T metaData) {
         this.eventIdentifier = eventIdentifier;
-        if (timestamp instanceof TemporalAccessor) {
-            this.timeStamp = Instant.from((TemporalAccessor) timestamp).toEpochMilli();
-        } else if (timestamp instanceof CharSequence) {
-            this.timeStamp = Instant.parse((CharSequence) timestamp).toEpochMilli();
-        } else {
-            this.timeStamp = (Long) timestamp;
-        }
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
         this.payload = payload;
@@ -80,23 +68,18 @@ public abstract class AbstractEventEntry<T> implements SerializedEventData<T> {
     }
 
     @Override
-    public Instant getTimestamp() {
-        return Instant.ofEpochMilli(timeStamp);
-    }
-
-    @Override
+    @SuppressWarnings("unchecked")
     public SerializedObject<T> getMetaData() {
-        return new SerializedMetaData<>(metaData, getContentType());
+        return new SerializedMetaData<>(metaData, (Class<T>) metaData.getClass());
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public SerializedObject<T> getPayload() {
-        return new SimpleSerializedObject<>(payload, getContentType(), getPayloadType());
+        return new SimpleSerializedObject<>(payload, (Class<T>) payload.getClass(), getPayloadType());
     }
 
     protected SerializedType getPayloadType() {
         return new SimpleSerializedType(payloadType, payloadRevision);
     }
-
-    protected abstract Class<T> getContentType();
 }

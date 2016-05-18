@@ -16,21 +16,24 @@ package org.axonframework.eventstore;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serializer.Serializer;
 
-import javax.persistence.*;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 /**
  * @author Rene de Waele
  */
 @MappedSuperclass
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"type", "aggregateIdentifier", "sequenceNumber"})})
 public abstract class AbstractTrackedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements SerializedTrackedEventData<T> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private long globalIndex;
 
-    public AbstractTrackedDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
-        super(eventMessage, serializer);
+    public AbstractTrackedDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
+                                           Class<T> contentType) {
+        super(eventMessage, serializer, contentType);
     }
 
     public AbstractTrackedDomainEventEntry(long globalIndex, String eventIdentifier, Object timeStamp,
