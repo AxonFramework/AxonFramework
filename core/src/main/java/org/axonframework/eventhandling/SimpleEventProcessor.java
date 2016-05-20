@@ -51,6 +51,13 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
         this(name, NoOpMessageMonitor.INSTANCE);
     }
 
+    /**
+     * Initializes the event processor with given <code>name</code>. Uses the given <code>messageMonitor</code>
+     * to report ingested messages.
+     *
+     * @param name The name of this event processor
+     * @param messageMonitor The monitor used to monitor the ingested messages and report their outcome
+     */
     public SimpleEventProcessor(String name, MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(name);
         this.messageMonitor = messageMonitor;
@@ -69,15 +76,40 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
         this(name, orderResolver, NoOpMessageMonitor.INSTANCE);
     }
 
+    /**
+     * Initializes the event processor with given <code>name</code>, using given <code>orderResolver</code> to define
+     * the order in which listeners need to be invoked. Uses the given <code>messageMonitor</code> to report incoming messages to
+     * and reports the processing result.
+     * <p/>
+     * Listeners are invoked with the lowest order first.
+     *
+     * @param name           The name of this event processor
+     * @param orderResolver  The resolver defining the order in which listeners need to be invoked
+     * @param messageMonitor The monitor used to monitor the ingested messages and report their outcome
+     */
     public SimpleEventProcessor(String name, OrderResolver orderResolver, MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(name, new EventListenerOrderComparator(orderResolver));
         this.messageMonitor = messageMonitor;
     }
 
+    /**
+     * Initializes the event processor with given <code>name</code> and <code>initialListeners</code>
+     *
+     * @param name             The name of this event processor
+     * @param initialListeners The event listeners to invoke
+     */
     public SimpleEventProcessor(String name, EventListener... initialListeners) {
         this(name, NoOpMessageMonitor.INSTANCE, initialListeners);
     }
 
+    /**
+     * Initializes the event processor with given <code>name</code> and <code>initialListeners</code>. Uses the given <code>messageMonitor</code>
+     * to report ingested messages.
+     *
+     * @param name             The name of this event processor
+     * @param messageMonitor   The monitor used to monitor the ingested messages and report their outcome
+     * @param initialListeners The event listeners to invoke
+     */
     public SimpleEventProcessor(String name, MessageMonitor<? super EventMessage<?>> messageMonitor, EventListener... initialListeners) {
         super(name, initialListeners);
         this.messageMonitor = messageMonitor;
@@ -92,8 +124,8 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
                 MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(event);
                 UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
 
-                unitOfWork.afterCommit(u -> monitorCallback.onSuccess());
-                unitOfWork.onRollback(u -> monitorCallback.onFailure(Optional.of(u.getExecutionResult().getExceptionResult())));
+                unitOfWork.afterCommit(u -> monitorCallback.reportSuccess());
+                unitOfWork.onRollback(u -> monitorCallback.reportFailure(u.getExecutionResult().getExceptionResult()));
 
                 InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
                         interceptors, (message, uow) -> {

@@ -2,8 +2,6 @@ package org.axonframework.metrics;
 
 import org.axonframework.messaging.Message;
 
-import java.util.Optional;
-
 /**
  * Specifies a mechanism to monitor message processing. When a message is supplied to
  * a message monitor it returns a callback which should be used to notify the message monitor
@@ -34,11 +32,12 @@ public interface MessageMonitor<T extends Message<?>> {
         /**
          * Notify the monitor that the message was handled successfully
          */
-        void onSuccess();
+        void reportSuccess();
 
         /**
          * Notify the monitor that a failure occurred during processing of the message
+         * @param cause or <code>null</code> if unknown
          */
-        void onFailure(Optional<Throwable> cause);
+        void reportFailure(Throwable cause);
     }
 }

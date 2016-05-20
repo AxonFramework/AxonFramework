@@ -12,21 +12,33 @@ public class MessageMonitorBuilder {
 
     public MessageMonitor<EventMessage<?>> buildEventProcessorMonitor(MetricRegistry globalRegistry){
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
-        EventBusRelativeLatencyMonitor eventBusRelativeLatencyMonitor = new EventBusRelativeLatencyMonitor();
+        EventProcessorLatencyMonitor eventProcessorLatencyMonitor = new EventProcessorLatencyMonitor();
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
         MessageCountingMonitor messageCountingMonitor = new MessageCountingMonitor();
 
         MetricRegistry eventProcessingRegistry = new MetricRegistry();
         eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
-        eventProcessingRegistry.register("eventProcessorLatency", eventBusRelativeLatencyMonitor);
+        eventProcessingRegistry.register("latency", eventProcessorLatencyMonitor);
         eventProcessingRegistry.register("messageCounter", messageCountingMonitor);
         globalRegistry.register("eventProcessing", eventProcessingRegistry);
 
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(messageTimerMonitor);
-        monitors.add(eventBusRelativeLatencyMonitor);
+        monitors.add(eventProcessorLatencyMonitor);
         monitors.add(capacityMonitor);
         monitors.add(messageCountingMonitor);
+        return new DelegatingMessageMonitor<>(monitors);
+    }
+
+    public MessageMonitor<EventMessage<?>> buildEventBusMonitor(MetricRegistry globalRegistry){
+        MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
+
+        MetricRegistry eventProcessingRegistry = new MetricRegistry();
+        eventProcessingRegistry.register("messageTimer", messageTimerMonitor);
+        globalRegistry.register("eventBus", eventProcessingRegistry);
+
+        List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
+        monitors.add(messageTimerMonitor);
         return new DelegatingMessageMonitor<>(monitors);
     }
 

@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +42,8 @@ public class SimpleEventBus extends AbstractEventBus {
 
     private final PublicationStrategy publicationStrategy;
 
+    private final MessageMonitor<? super EventMessage<?>> messageMonitor;
+
     /**
      * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
      * processors.
@@ -54,7 +58,27 @@ public class SimpleEventBus extends AbstractEventBus {
      * @param publicationStrategy The strategy used by the event bus to publish events to listeners
      */
     public SimpleEventBus(PublicationStrategy publicationStrategy) {
+        this(publicationStrategy, NoOpMessageMonitor.INSTANCE);
+    }
+
+    /**
+     * Initializes an event bus. Uses the given <code>messageMonitor</code>
+     * to report ingested messages and report the result of processing the message.
+     *
+     * @param messageMonitor The monitor used to monitor the ingested messages
+     */
+    public SimpleEventBus(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        this(new DirectTerminal(), messageMonitor);
+    }
+
+    /**
+     * Initializes an event bus with given {@link PublicationStrategy}.
+     *
+     * @param publicationStrategy The strategy used by the event bus to publish events to listeners
+     */
+    public SimpleEventBus(PublicationStrategy publicationStrategy, MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this.publicationStrategy = publicationStrategy;
+        this.messageMonitor = messageMonitor;
     }
 
     /**
@@ -80,6 +104,7 @@ public class SimpleEventBus extends AbstractEventBus {
 
     @Override
     protected void prepareCommit(List<EventMessage<?>> events) {
+        events.forEach(eventMessage -> messageMonitor.onMessageIngested(eventMessage));
         publicationStrategy.publish(events, eventProcessors);
     }
 

@@ -109,10 +109,10 @@ public class SimpleCommandBus implements CommandBus {
         try {
             MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command);
             Object result = doDispatch(command, handler);
-            monitorCallback.onSuccess();
+            monitorCallback.reportSuccess();
             callback.onSuccess(command, (R) result);
         } catch (Exception throwable) {
-            monitorCallback.onFailure(Optional.of(throwable));
+            monitorCallback.reportFailure(throwable);
             callback.onFailure(command, throwable);
         }
     }

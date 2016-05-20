@@ -67,7 +67,8 @@ public class RunBasicCommandHandlingWithMetrics {
         EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(new File("./events")));
 
         // a Simple Event Bus will do
-        EventBus eventBus = new SimpleEventBus();
+        MessageMonitor<EventMessage<?>> eventBusMessageMonitor = new MessageMonitorBuilder().buildEventBusMonitor(mr);
+        EventBus eventBus = new SimpleEventBus(eventBusMessageMonitor);
 
         // we need to configure the repository
         EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class, eventStore, eventBus);

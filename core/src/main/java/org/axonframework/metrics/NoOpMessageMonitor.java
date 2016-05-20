@@ -12,8 +12,11 @@ public enum NoOpMessageMonitor implements MessageMonitor<Message<?>> {
 
     INSTANCE;
 
+    private final static NoOpMessageMonitorCallback NO_OP_MESSAGE_MONITOR_CALLBACK = new NoOpMessageMonitorCallback();
+
     @Override
-    public MonitorCallback onMessageIngested(Message message) {
-        return new NoOpMessageMonitorCallback();
+    public MonitorCallback onMessageIngested(Message<?> message) {
+        return NO_OP_MESSAGE_MONITOR_CALLBACK;
     }
+
 }

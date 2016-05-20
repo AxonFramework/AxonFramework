@@ -7,7 +7,6 @@ import org.axonframework.messaging.Message;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Counts the number of ingested, successful, failed and processed messages
@@ -27,13 +26,13 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>>, Metri
         ingestedCounter.inc();
         return new MessageMonitor.MonitorCallback() {
             @Override
-            public void onSuccess() {
+            public void reportSuccess() {
                 processedCounter.inc();
                 successCounter.inc();
             }
 
             @Override
-            public void onFailure(Optional<Throwable> cause) {
+            public void reportFailure(Throwable cause) {
                 processedCounter.inc();
                 failureCounter.inc();
             }

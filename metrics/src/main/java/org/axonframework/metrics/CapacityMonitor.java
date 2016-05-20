@@ -5,7 +5,6 @@ import org.axonframework.messaging.Message;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,19 +27,40 @@ public class CapacityMonitor implements MessageMonitor<Message<?>>, MetricSet {
     private final TimeUnit timeUnit;
     private final long window;
     private final Clock clock;
-    private final Metric ratio;
+    private final Metric capacity;
 
+    /**
+     * Creates a capacity monitor with the default time window 10 minutes
+     */
+    public CapacityMonitor() {
+        this(10, TimeUnit.MINUTES);
+    }
+
+    /**
+     * Creates a capacity monitor with the default time window 10 minutes
+     *
+     * @param window The length of the window to measure the capacity over
+     * @param timeUnit The time unit of the time window
+     */
     public CapacityMonitor(long window, TimeUnit timeUnit) {
         this(window, timeUnit, Clock.defaultClock());
     }
 
-    CapacityMonitor(long window, TimeUnit timeUnit, Clock clock) {
+    /**
+     * Creates a capacity monitor with the given time window. Uses the provided clock
+     * to measure process time per message.
+     *
+     * @param window The length of the window to measure the capacity over
+     * @param timeUnit The time unit of the time window
+     * @param clock The clock used to measure the process time per message
+     */
+    public CapacityMonitor(long window, TimeUnit timeUnit, Clock clock) {
         SlidingTimeWindowReservoir slidingTimeWindowReservoir = new SlidingTimeWindowReservoir(window, timeUnit, clock);
         this.processedDurationHistogram = new Histogram(slidingTimeWindowReservoir);
         this.timeUnit = timeUnit;
         this.window = window;
         this.clock = clock;
-        this.ratio = new RatioGauge();
+        this.capacity = new CapacityGauge();
     }
 
     @Override
@@ -48,12 +68,12 @@ public class CapacityMonitor implements MessageMonitor<Message<?>>, MetricSet {
         final long start = clock.getTime();
         return new MonitorCallback() {
             @Override
-            public void onSuccess() {
+            public void reportSuccess() {
                 processedDurationHistogram.update(clock.getTime() - start);
             }
 
             @Override
-            public void onFailure(Optional<Throwable> cause) {
+            public void reportFailure(Throwable cause) {
                 processedDurationHistogram.update(clock.getTime() - start);
             }
         };
@@ -62,11 +82,11 @@ public class CapacityMonitor implements MessageMonitor<Message<?>>, MetricSet {
     @Override
     public Map<String, Metric> getMetrics() {
         Map<String, Metric> metrics = new HashMap<>();
-        metrics.put("ratio", ratio);
+        metrics.put("capacity", capacity);
         return metrics;
     }
 
-    private class RatioGauge implements Gauge<Double> {
+    private class CapacityGauge implements Gauge<Double> {
         @Override
         public Double getValue() {
             Snapshot snapshot = processedDurationHistogram.getSnapshot();

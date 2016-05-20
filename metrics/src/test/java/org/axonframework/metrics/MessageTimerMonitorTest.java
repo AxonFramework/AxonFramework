@@ -16,7 +16,7 @@ public class MessageTimerMonitorTest {
         MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
-        monitorCallback.onSuccess();
+        monitorCallback.reportSuccess();
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 
@@ -35,7 +35,7 @@ public class MessageTimerMonitorTest {
         MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
-        monitorCallback.onFailure(null);
+        monitorCallback.reportFailure(null);
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 

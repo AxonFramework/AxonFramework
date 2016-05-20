@@ -14,8 +14,8 @@ public class MessageCountingMonitorTest {
     public void testMessages(){
         MessageCountingMonitor testSubject = new MessageCountingMonitor();
 
-        testSubject.onMessageIngested(null).onSuccess();
-        testSubject.onMessageIngested(null).onFailure(null);
+        testSubject.onMessageIngested(null).reportSuccess();
+        testSubject.onMessageIngested(null).reportFailure(null);
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 

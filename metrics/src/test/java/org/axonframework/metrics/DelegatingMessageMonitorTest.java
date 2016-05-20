@@ -25,11 +25,11 @@ public class DelegatingMessageMonitorTest {
         when(messageMonitorMock.onMessageIngested(messageMock)).thenReturn(callback);
 
         MessageMonitor.MonitorCallback monitorCallback = delegatingMessageMonitor.onMessageIngested(messageMock);
-        Optional<Throwable> runtimeException = Optional.of(new RuntimeException());
-        monitorCallback.onFailure(runtimeException);
+        Throwable throwable = new Throwable();
+        monitorCallback.reportFailure(throwable);
 
         verify(messageMonitorMock).onMessageIngested(same(messageMock));
-        verify(callback).onFailure(same(runtimeException));
+        verify(callback).reportFailure(same(throwable));
     }
 
     @Test
@@ -41,10 +41,10 @@ public class DelegatingMessageMonitorTest {
         when(messageMonitorMock.onMessageIngested(messageMock)).thenReturn(callback);
 
         MessageMonitor.MonitorCallback monitorCallback = delegatingMessageMonitor.onMessageIngested(messageMock);
-        monitorCallback.onSuccess();
+        monitorCallback.reportSuccess();
 
         verify(messageMonitorMock).onMessageIngested(same(messageMock));
-        verify(callback).onSuccess();
+        verify(callback).reportSuccess();
     }
 
     @Test
@@ -58,11 +58,11 @@ public class DelegatingMessageMonitorTest {
         when(messageMonitorMock1.onMessageIngested(messageMock)).thenReturn(callback1);
         when(messageMonitorMock2.onMessageIngested(messageMock)).thenReturn(callback2);
 
-        delegatingMessageMonitor.onMessageIngested(messageMock).onSuccess();
+        delegatingMessageMonitor.onMessageIngested(messageMock).reportSuccess();
 
         verify(messageMonitorMock1).onMessageIngested(same(messageMock));
-        verify(callback1).onSuccess();
+        verify(callback1).reportSuccess();
         verify(messageMonitorMock2).onMessageIngested(same(messageMock));
-        verify(callback2).onSuccess();
+        verify(callback2).reportSuccess();
     }
 }

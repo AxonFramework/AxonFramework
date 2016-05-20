@@ -7,34 +7,35 @@ import org.axonframework.eventhandling.EventMessage;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Measures the difference in message timestamps between the last ingesting and the last processed message.
+ * Measures the difference in message timestamps between the last ingested and the last processed message.
  *
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class EventBusRelativeLatencyMonitor implements MessageMonitor<EventMessage<?>>, MetricSet {
+public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage<?>>, MetricSet {
 
     private final AtomicLong lastReceivedTime = new AtomicLong(-1);
     private final AtomicLong lastProcessedTime = new AtomicLong(-1);
 
+    private final static NoOpMessageMonitorCallback NO_OP_MESSAGE_MONITOR_CALLBACK = new NoOpMessageMonitorCallback();
+
     @Override
     public MonitorCallback onMessageIngested(EventMessage<?> message) {
         if(message == null){
-            return new NoOpMessageMonitorCallback();
+            return NO_OP_MESSAGE_MONITOR_CALLBACK;
         }
         updateIfMaxValue(lastReceivedTime, message.getTimestamp().toEpochMilli());
         return new MonitorCallback() {
             @Override
-            public void onSuccess() {
+            public void reportSuccess() {
                 update();
             }
 
             @Override
-            public void onFailure(Optional<Throwable> cause) {
+            public void reportFailure(Throwable cause) {
                 update();
             }
 

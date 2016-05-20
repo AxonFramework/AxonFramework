@@ -12,18 +12,19 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class EventBusRelativeLatencyMonitorTest {
+@SuppressWarnings("unchecked")
+public class EventProcessorLatencyMonitorTest {
 
     @Test
     public void testMessages(){
-        EventBusRelativeLatencyMonitor testSubject = new EventBusRelativeLatencyMonitor();
+        EventProcessorLatencyMonitor testSubject = new EventProcessorLatencyMonitor();
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
 
         EventMessage<?> secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
 
-        testSubject.onMessageIngested(firstEventMessage).onSuccess();
+        testSubject.onMessageIngested(firstEventMessage).reportSuccess();
         testSubject.onMessageIngested(secondEventMessage);
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
@@ -35,14 +36,14 @@ public class EventBusRelativeLatencyMonitorTest {
 
     @Test
     public void testFailureMessage(){
-        EventBusRelativeLatencyMonitor testSubject = new EventBusRelativeLatencyMonitor();
+        EventProcessorLatencyMonitor testSubject = new EventProcessorLatencyMonitor();
         EventMessage<?> firstEventMessage = mock(EventMessage.class);
         when(firstEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(0));
 
         EventMessage<?> secondEventMessage = mock(EventMessage.class);
         when(secondEventMessage.getTimestamp()).thenReturn(Instant.ofEpochMilli(1000));
 
-        testSubject.onMessageIngested(firstEventMessage).onFailure(null);
+        testSubject.onMessageIngested(firstEventMessage).reportFailure(null);
         testSubject.onMessageIngested(secondEventMessage);
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
@@ -54,9 +55,9 @@ public class EventBusRelativeLatencyMonitorTest {
 
     @Test
     public void testNullMessage(){
-        EventBusRelativeLatencyMonitor testSubject = new EventBusRelativeLatencyMonitor();
+        EventProcessorLatencyMonitor testSubject = new EventProcessorLatencyMonitor();
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
-        monitorCallback.onSuccess();
+        monitorCallback.reportSuccess();
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 

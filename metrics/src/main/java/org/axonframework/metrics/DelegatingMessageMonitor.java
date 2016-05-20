@@ -5,7 +5,6 @@ import org.axonframework.messaging.Message;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -43,12 +42,12 @@ public class DelegatingMessageMonitor<T extends Message<?>> implements MessageMo
 
         return new MonitorCallback() {
             @Override
-            public void onSuccess() {
-                monitorCallbacks.forEach(MonitorCallback::onSuccess);
+            public void reportSuccess() {
+                monitorCallbacks.forEach(MonitorCallback::reportSuccess);
             }
             @Override
-            public void onFailure(Optional<Throwable> cause) {
-                monitorCallbacks.forEach(resultCallback -> resultCallback.onFailure(cause));
+            public void reportFailure(Throwable cause) {
+                monitorCallbacks.forEach(resultCallback -> resultCallback.reportFailure(cause));
             }
         };
     }

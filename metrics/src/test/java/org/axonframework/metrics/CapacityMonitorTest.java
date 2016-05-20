@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("unchecked")
 public class CapacityMonitorTest {
 
     @Test
@@ -17,10 +18,10 @@ public class CapacityMonitorTest {
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         testClock.increase(1000);
-        monitorCallback.onSuccess();
+        monitorCallback.reportSuccess();
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("ratio");
+        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
         assertEquals(1, capacityGauge.getValue(), 0);
     }
 
@@ -31,11 +32,11 @@ public class CapacityMonitorTest {
         MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
         MessageMonitor.MonitorCallback monitorCallback2 = testSubject.onMessageIngested(null);
         testClock.increase(1000);
-        monitorCallback.onSuccess();
-        monitorCallback2.onFailure(null);
+        monitorCallback.reportSuccess();
+        monitorCallback2.reportFailure(null);
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("ratio");
+        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
         assertEquals(2, capacityGauge.getValue(), 0);
     }
 
@@ -44,7 +45,7 @@ public class CapacityMonitorTest {
         TestClock testClock = new TestClock();
         CapacityMonitor testSubject = new CapacityMonitor(1, TimeUnit.SECONDS, testClock);
         Map<String, Metric> metricSet = testSubject.getMetrics();
-        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("ratio");
+        Gauge<Double> capacityGauge = (Gauge<Double>) metricSet.get("capacity");
         assertEquals(0, capacityGauge.getValue(), 0);
     }
 
