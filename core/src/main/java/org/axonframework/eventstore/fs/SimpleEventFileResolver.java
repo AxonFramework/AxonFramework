@@ -46,7 +46,7 @@ public class SimpleEventFileResolver implements EventFileResolver {
      */
     public static final String FILE_EXTENSION_SNAPSHOTS = "snapshots";
 
-    private final File baseDir;
+    protected final File baseDir;
 
     /**
      * Initialize the SimpleEventFileResolver with the given <code>baseDir</code>.
