@@ -27,7 +27,6 @@ import org.axonframework.metrics.MessageMonitor;
 import org.axonframework.metrics.NoOpMessageMonitor;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -124,8 +123,8 @@ public class SimpleEventProcessor extends AbstractEventProcessor {
                 MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(event);
                 UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(event);
 
-                unitOfWork.afterCommit(u -> monitorCallback.reportSuccess());
-                unitOfWork.onRollback(u -> monitorCallback.reportFailure(u.getExecutionResult().getExceptionResult()));
+                unitOfWork.afterCommit(u -> u.onCleanup(i -> monitorCallback.reportSuccess()));
+                unitOfWork.onRollback(u -> u.onCleanup(i -> monitorCallback.reportFailure(u.getExecutionResult().getExceptionResult())));
 
                 InterceptorChain<?> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
                         interceptors, (message, uow) -> {

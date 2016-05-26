@@ -16,6 +16,7 @@ public class MessageCountingMonitorTest {
 
         testSubject.onMessageIngested(null).reportSuccess();
         testSubject.onMessageIngested(null).reportFailure(null);
+        testSubject.onMessageIngested(null).reportIgnored();
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 
@@ -23,10 +24,12 @@ public class MessageCountingMonitorTest {
         Counter processedCounter = (Counter) metricSet.get("processedCounter");
         Counter successCounter = (Counter) metricSet.get("successCounter");
         Counter failureCounter = (Counter) metricSet.get("failureCounter");
+        Counter ignoredCounter = (Counter) metricSet.get("ignoredCounter");
 
-        assertEquals(2, ingestedCounter.getCount());
+        assertEquals(3, ingestedCounter.getCount());
         assertEquals(2, processedCounter.getCount());
         assertEquals(1, successCounter.getCount());
         assertEquals(1, failureCounter.getCount());
+        assertEquals(1, ignoredCounter.getCount());
     }
 }

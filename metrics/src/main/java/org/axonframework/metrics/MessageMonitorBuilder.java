@@ -27,7 +27,7 @@ public class MessageMonitorBuilder {
         monitors.add(eventProcessorLatencyMonitor);
         monitors.add(capacityMonitor);
         monitors.add(messageCountingMonitor);
-        return new DelegatingMessageMonitor<>(monitors);
+        return new MultiMessageMonitor<>(monitors);
     }
 
     public MessageMonitor<EventMessage<?>> buildEventBusMonitor(MetricRegistry globalRegistry){
@@ -39,7 +39,7 @@ public class MessageMonitorBuilder {
 
         List<MessageMonitor<? super EventMessage<?>>> monitors = new ArrayList<>();
         monitors.add(messageTimerMonitor);
-        return new DelegatingMessageMonitor<>(monitors);
+        return new MultiMessageMonitor<>(monitors);
     }
 
     public MessageMonitor<CommandMessage<?>> buildCommandBusMonitor(MetricRegistry globalRegistry){
@@ -57,7 +57,7 @@ public class MessageMonitorBuilder {
         monitors.add(messageTimerMonitor);
         monitors.add(capacityMonitor);
         monitors.add(messageCountingMonitor);
-        return new DelegatingMessageMonitor<>(monitors);
+        return new MultiMessageMonitor<>(monitors);
     }
 }
 

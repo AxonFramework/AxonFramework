@@ -20,6 +20,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>>, Metri
     private final Counter successCounter = new Counter();
     private final Counter failureCounter = new Counter();
     private final Counter processedCounter = new Counter();
+    private final Counter ignoredCounter = new Counter();
 
     @Override
     public MonitorCallback onMessageIngested(Message<?> message) {
@@ -36,6 +37,11 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>>, Metri
                 processedCounter.inc();
                 failureCounter.inc();
             }
+
+            @Override
+            public void reportIgnored() {
+                ignoredCounter.inc();
+            }
         };
     }
 
@@ -46,6 +52,7 @@ public class MessageCountingMonitor implements MessageMonitor<Message<?>>, Metri
         metricSet.put("processedCounter", processedCounter);
         metricSet.put("successCounter", successCounter);
         metricSet.put("failureCounter", failureCounter);
+        metricSet.put("ignoredCounter", ignoredCounter);
         return metricSet;
     }
 

@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
  * @author Marijn van Zelst
  * @since 3.0
  */
-public class DelegatingMessageMonitor<T extends Message<?>> implements MessageMonitor<T> {
+public class MultiMessageMonitor<T extends Message<?>> implements MessageMonitor<T> {
 
     private final List<MessageMonitor<? super T>> messageMonitors;
 
@@ -22,7 +22,7 @@ public class DelegatingMessageMonitor<T extends Message<?>> implements MessageMo
      *
      * @param messageMonitors the list of event monitors to delegate to
      */
-    public DelegatingMessageMonitor(List<MessageMonitor<? super T>> messageMonitors) {
+    public MultiMessageMonitor(List<MessageMonitor<? super T>> messageMonitors) {
         Assert.notNull(messageMonitors, "MessageMonitor list may not be null");
         this.messageMonitors = new ArrayList<>(messageMonitors);
     }
@@ -45,9 +45,15 @@ public class DelegatingMessageMonitor<T extends Message<?>> implements MessageMo
             public void reportSuccess() {
                 monitorCallbacks.forEach(MonitorCallback::reportSuccess);
             }
+
             @Override
             public void reportFailure(Throwable cause) {
                 monitorCallbacks.forEach(resultCallback -> resultCallback.reportFailure(cause));
+            }
+
+            @Override
+            public void reportIgnored() {
+                monitorCallbacks.forEach(MonitorCallback::reportIgnored);
             }
         };
     }

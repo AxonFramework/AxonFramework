@@ -39,5 +39,10 @@ public interface MessageMonitor<T extends Message<?>> {
          * @param cause or <code>null</code> if unknown
          */
         void reportFailure(Throwable cause);
+
+        /**
+         * Notify the monitor that the message was ignored
+         */
+        void reportIgnored();
     }
 }

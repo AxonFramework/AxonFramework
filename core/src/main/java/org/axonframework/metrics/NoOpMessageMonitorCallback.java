@@ -15,4 +15,9 @@ class NoOpMessageMonitorCallback implements MessageMonitor.MonitorCallback {
     @Override
     public void reportFailure(Throwable cause) {
     }
+
+    @Override
+    public void reportIgnored() {
+
+    }
 }

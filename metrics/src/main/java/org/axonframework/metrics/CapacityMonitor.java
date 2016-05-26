@@ -76,6 +76,11 @@ public class CapacityMonitor implements MessageMonitor<Message<?>>, MetricSet {
             public void reportFailure(Throwable cause) {
                 processedDurationHistogram.update(clock.getTime() - start);
             }
+
+            @Override
+            public void reportIgnored() {
+                processedDurationHistogram.update(clock.getTime() - start);
+            }
         };
     }
 

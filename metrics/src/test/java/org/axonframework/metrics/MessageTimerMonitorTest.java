@@ -20,13 +20,15 @@ public class MessageTimerMonitorTest {
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 
-        Timer all = (Timer) metricSet.get("all");
+        Timer all = (Timer) metricSet.get("allTimer");
         Timer successTimer = (Timer) metricSet.get("successTimer");
         Timer failureTimer = (Timer) metricSet.get("failureTimer");
+        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
 
         assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
         assertArrayEquals(new long[]{1000000}, successTimer.getSnapshot().getValues());
         assertArrayEquals(new long[]{}, failureTimer.getSnapshot().getValues());
+        assertArrayEquals(new long[]{}, ignoredTimer.getSnapshot().getValues());
     }
 
     @Test
@@ -39,13 +41,36 @@ public class MessageTimerMonitorTest {
 
         Map<String, Metric> metricSet = testSubject.getMetrics();
 
-        Timer all = (Timer) metricSet.get("all");
+        Timer all = (Timer) metricSet.get("allTimer");
         Timer successTimer = (Timer) metricSet.get("successTimer");
         Timer failureTimer = (Timer) metricSet.get("failureTimer");
+        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
 
         assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
         assertArrayEquals(new long[]{}, successTimer.getSnapshot().getValues());
+        assertArrayEquals(new long[]{}, ignoredTimer.getSnapshot().getValues());
         assertArrayEquals(new long[]{1000000}, failureTimer.getSnapshot().getValues());
+    }
+
+    @Test
+    public void testIgnoredMessage(){
+        TestClock testClock = new TestClock();
+        MessageTimerMonitor testSubject = new MessageTimerMonitor(testClock);
+        MessageMonitor.MonitorCallback monitorCallback = testSubject.onMessageIngested(null);
+        testClock.increase(1000);
+        monitorCallback.reportIgnored();
+
+        Map<String, Metric> metricSet = testSubject.getMetrics();
+
+        Timer all = (Timer) metricSet.get("allTimer");
+        Timer successTimer = (Timer) metricSet.get("successTimer");
+        Timer failureTimer = (Timer) metricSet.get("failureTimer");
+        Timer ignoredTimer = (Timer) metricSet.get("ignoredTimer");
+
+        assertArrayEquals(new long[]{1000000}, all.getSnapshot().getValues());
+        assertArrayEquals(new long[]{}, successTimer.getSnapshot().getValues());
+        assertArrayEquals(new long[]{1000000}, ignoredTimer.getSnapshot().getValues());
+        assertArrayEquals(new long[]{}, failureTimer.getSnapshot().getValues());
     }
 
 }

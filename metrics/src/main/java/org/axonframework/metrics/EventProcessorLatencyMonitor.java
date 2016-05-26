@@ -39,6 +39,11 @@ public class EventProcessorLatencyMonitor implements MessageMonitor<EventMessage
                 update();
             }
 
+            @Override
+            public void reportIgnored() {
+                update();
+            }
+
             private void update(){
                 updateIfMaxValue(lastProcessedTime, message.getTimestamp().toEpochMilli());
             }
