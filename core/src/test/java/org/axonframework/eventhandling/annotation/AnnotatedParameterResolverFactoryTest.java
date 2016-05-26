@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,8 @@
 package org.axonframework.eventhandling.annotation;
 
 import org.axonframework.common.annotation.ParameterResolver;
-
 import org.junit.Test;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.time.Instant;
 
@@ -34,21 +32,21 @@ public class AnnotatedParameterResolverFactoryTest {
     public void testTimestampParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithTimestampParameter", Instant.class, Long.class, Instant.class);
         testMethod(new TimestampParameterResolverFactory(), method,
-                new Class<?>[]{TimestampParameterResolverFactory.TimestampParameterResolver.class, null, null});
+                   new Class<?>[]{TimestampParameterResolverFactory.TimestampParameterResolver.class, null, null});
     }
 
     @Test
     public void testSequenceNumberParameterResolverIsReturnedOnlyWhenAppropriate() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithSequenceNumberParameter", Long.class, Instant.class);
         testMethod(new SequenceNumberParameterResolverFactory(), method,
-                new Class<?>[]{ SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class, null});
+                   new Class<?>[]{SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class, null});
     }
 
     @Test
     public void testSequenceNumberParameterResolverHandlesPrimitive() throws NoSuchMethodException {
         Method method = TestClass.class.getMethod("methodWithPrimitiveParameter", long.class);
         testMethod(new SequenceNumberParameterResolverFactory(), method,
-                new Class<?>[]{ SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class});
+                   new Class<?>[]{SequenceNumberParameterResolverFactory.SequenceNumberParameterResolver.class});
     }
 
     @SuppressWarnings("unused")
@@ -66,12 +64,10 @@ public class AnnotatedParameterResolverFactoryTest {
         }
     }
 
-    private static void testMethod(AbstractAnnotatedParameterResolverFactory<?,?> factory, Method method, Class<?>[] expectedResolvers) {
+    private static void testMethod(AbstractAnnotatedParameterResolverFactory<?, ?> factory, Method method, Class<?>[] expectedResolvers) {
         Class<?>[] parameterTypes = method.getParameterTypes();
-        Annotation[][] annotations = method.getParameterAnnotations();
-        for(int param = 0; param < parameterTypes.length; param++) {
-            ParameterResolver resolver = factory.createInstance(
-                    new Annotation[]{}, parameterTypes[param], annotations[param]);
+        for (int param = 0; param < parameterTypes.length; param++) {
+            ParameterResolver resolver = factory.createInstance(method, method.getParameters(), param);
             assertEquals("Result incorrect for param: " + param, expectedResolvers[param], resolver != null ? resolver.getClass() : null);
         }
     }

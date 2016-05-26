@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import org.axonframework.common.annotation.ParameterResolver;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.Message;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,10 +31,10 @@ import static org.axonframework.common.Priority.LAST;
 /**
  * ParameterResolverFactory implementation that is aware of test-specific use cases. It uses a ThreadLocal to keep
  * track of injectable resources.
- * <p/>
+ * <p>
  * Although all access to this fixture should be done using the static accessor methods, creation of an instance is
  * still possible to comply with the ServiceLoader specification.
- * <p/>
+ * <p>
  * Furthermore, this factory creates lazy parameter resolver, which mean that unsupported parameters are only detected
  * when a specific handler is invoked. This ensures that only the resources that are actually used inside a test need
  * to be configured.
@@ -47,9 +48,8 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
     private static final ThreadLocal<List<Object>> RESOURCES = new ThreadLocal<>();
 
     @Override
-    public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                            Annotation[] parameterAnnotations) {
-        return new LazyParameterResolver(parameterType);
+    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+        return new LazyParameterResolver(parameters[parameterIndex].getType());
     }
 
     /**
@@ -83,6 +83,11 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
 
         @Override
         public Object resolveParameterValue(Message message) {
+            // since this ParameterResolver barges in on the payload parameter, we need to check if we should inject
+            // the payload, instead of a resource
+            if (parameterType.isAssignableFrom(message.getPayloadType())) {
+                return message.getPayload();
+            }
             final List<Object> objects = RESOURCES.get();
             if (objects != null) {
                 for (Object resource : objects) {
@@ -97,7 +102,7 @@ public final class FixtureResourceParameterResolverFactory implements ParameterR
 
         @Override
         public boolean matches(Message message) {
-            return RESOURCES.get() != null;
+            return parameterType.isAssignableFrom(message.getPayloadType()) || RESOURCES.get() != null;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,7 +166,8 @@ public interface UnitOfWork<T extends Message<?>> {
      * @return the root of this Unit of Work
      */
     default UnitOfWork<?> root() {
-        return parent().map(UnitOfWork::root).orElse(this);
+        //noinspection unchecked // cast is used to remove inspection error in IDE
+        return parent().map(UnitOfWork::root).orElse((UnitOfWork)this);
     }
 
     /**

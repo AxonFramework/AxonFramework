@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 
 package org.axonframework.test;
 
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.IncompatibleAggregateException;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,6 +47,15 @@ public class FixtureTest_Generic {
                 .thenReturn(new StandardAggregate("id1"));
     }
 
+    @After
+    public void tearDown() throws Exception {
+        while (CurrentUnitOfWork.isStarted()) {
+            fail("Test failed to close Unit of Work!!");
+            CurrentUnitOfWork.get().rollback();
+        }
+
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testConfigureCustomAggregateFactory() {
@@ -55,7 +63,7 @@ public class FixtureTest_Generic {
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
 
         fixture.given(new MyEvent("id1", 1))
-               .when(new TestCommand("id1"));
+                .when(new TestCommand("id1"));
 
         verify(mockAggregateFactory).createAggregate(eq("id1"), isA(DomainEventMessage.class));
     }
@@ -77,7 +85,7 @@ public class FixtureTest_Generic {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.givenNoPriorActivity()
-               .when(new CreateAggregateCommand());
+                .when(new CreateAggregateCommand());
     }
 
     @Test
@@ -85,8 +93,8 @@ public class FixtureTest_Generic {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.given(new MyEvent("aggregateId", 1))
-               .when(new CreateAggregateCommand("aggregateId"))
-               .expectException(EventStoreException.class);
+                .when(new CreateAggregateCommand("aggregateId"))
+                .expectException(EventStoreException.class);
     }
 
     @Test(expected = FixtureExecutionException.class)
@@ -101,8 +109,8 @@ public class FixtureTest_Generic {
         fixture.registerAggregateFactory(mockAggregateFactory);
         fixture.registerAnnotatedCommandHandler(new MyCommandHandler(fixture.getRepository(), fixture.getEventBus()));
         fixture.given(new MyEvent("AggregateId", 1), new MyEvent("AggregateId", 2))
-               .when(new TestCommand("AggregateId"))
-               .expectEvents(new MyEvent("AggregateId", 3));
+                .when(new TestCommand("AggregateId"))
+                .expectEvents(new MyEvent("AggregateId", 3));
 
         DomainEventStream events = fixture.getEventStore().readEvents("AggregateId");
         for (int t = 0; t < 3; t++) {

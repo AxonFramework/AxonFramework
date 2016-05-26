@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package org.axonframework.common.annotation;
 
-import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 
-import java.lang.annotation.Annotation;
-
-import static org.axonframework.common.CollectionUtils.getAnnotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
 
 /**
  * Factory for the default parameter resolvers. This factory is capable for providing parameter resolvers for Message,
@@ -35,17 +33,21 @@ import static org.axonframework.common.CollectionUtils.getAnnotation;
 public class DefaultParameterResolverFactory implements ParameterResolverFactory {
 
     @Override
-    public ParameterResolver createInstance(Annotation[] methodAnnotations, Class<?> parameterType,
-                                            Annotation[] parameterAnnotations) {
+    public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+
+        Class<?> parameterType = parameters[parameterIndex].getType();
         if (Message.class.isAssignableFrom(parameterType)) {
             return new MessageParameterResolver(parameterType);
         }
-        if (getAnnotation(parameterAnnotations, MetaData.class) != null) {
-            return new AnnotatedMetaDataParameterResolver(CollectionUtils.getAnnotation(parameterAnnotations,
-                                                                                        MetaData.class), parameterType);
+        MetaData metaDataAnnotation = AnnotationUtils.findAnnotation(parameters[parameterIndex], MetaData.class);
+        if (metaDataAnnotation != null) {
+            return new AnnotatedMetaDataParameterResolver(metaDataAnnotation, parameterType);
         }
         if (org.axonframework.messaging.metadata.MetaData.class.isAssignableFrom(parameterType)) {
             return MetaDataParameterResolver.INSTANCE;
+        }
+        if (parameterIndex == 0) {
+            return new PayloadParameterResolver(parameterType);
         }
         return null;
     }

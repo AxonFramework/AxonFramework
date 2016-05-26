@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,26 +19,31 @@ package org.axonframework.saga.annotation;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Default implementation of the AssociationValues interface. This implementation is fully serializable.
+ * Default implementation of the AssociationValues interface.
  *
  * @author Allard Buijze
  * @since 0.7
  */
-public class AssociationValuesImpl implements AssociationValues, Serializable {
+public class AssociationValuesImpl implements AssociationValues {
 
     private static final long serialVersionUID = 8273718165811296962L;
 
-    private final Set<AssociationValue> values = new CopyOnWriteArraySet<>();
-    private transient Set<AssociationValue> addedValues = new HashSet<>();
-    private transient Set<AssociationValue> removedValues = new HashSet<>();
+    private final Set<AssociationValue> values = new HashSet<>();
+    private final Set<AssociationValue> addedValues = new HashSet<>();
+    private final Set<AssociationValue> removedValues = new HashSet<>();
+
+    public AssociationValuesImpl() {
+    }
+
+    public AssociationValuesImpl(Set<AssociationValue> initialValues) {
+        this.values.addAll(initialValues);
+    }
 
     @Override
     public int size() {
@@ -59,7 +64,6 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
     public boolean add(AssociationValue associationValue) {
         final boolean added = values.add(associationValue);
         if (added) {
-                initializeChangeTrackers();
                 if (!removedValues.remove(associationValue)) {
                     addedValues.add(associationValue);
                 }
@@ -71,21 +75,11 @@ public class AssociationValuesImpl implements AssociationValues, Serializable {
     public boolean remove(AssociationValue associationValue) {
         final boolean removed = values.remove(associationValue);
         if (removed) {
-                initializeChangeTrackers();
                 if (!addedValues.remove(associationValue)) {
                     removedValues.add(associationValue);
             }
         }
         return removed;
-    }
-
-    private void initializeChangeTrackers() {
-        if (removedValues == null) {
-            removedValues = new HashSet<>();
-        }
-        if (addedValues == null) {
-            addedValues = new HashSet<>();
-        }
     }
 
     @Override

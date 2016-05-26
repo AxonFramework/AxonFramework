@@ -62,7 +62,7 @@ public abstract class ReflectionUtils {
         ensureAccessible(field);
         try {
             return field.get(object);
-        } catch (IllegalAccessException ex) {
+        } catch (IllegalArgumentException | IllegalAccessException ex) {
             throw new IllegalStateException("Unable to access field.", ex);
         }
     }

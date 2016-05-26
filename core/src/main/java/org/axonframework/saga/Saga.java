@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@
 package org.axonframework.saga;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.ProcessingToken;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Interface describing an implementation of a Saga. Sagas are instances that handle events and may possibly produce
@@ -30,7 +34,7 @@ import org.axonframework.eventhandling.EventMessage;
  * @author Allard Buijze
  * @since 0.7
  */
-public interface Saga {
+public interface Saga<T> {
 
     /**
      * Returns the unique identifier of this saga.
@@ -46,14 +50,20 @@ public interface Saga {
      */
     AssociationValues getAssociationValues();
 
+    <R> R invoke(Function<T, R> invocation);
+
+    void execute(Consumer<T> invocation);
+
+
     /**
      * Handle the given event. The actual result of processing depends on the implementation of the saga.
      * <p/>
      * Implementations are highly discouraged from throwing exceptions.
      *
      * @param event the event to handle
+     * @return {@code true} if the event was handled by the Saga, otherwise {@code false}
      */
-    void handle(EventMessage event) throws Exception;
+    boolean handle(EventMessage<?> event);
 
     /**
      * Indicates whether or not this saga is active. A Saga is active when its life cycle has not been ended.
@@ -61,4 +71,6 @@ public interface Saga {
      * @return <code>true</code> if this saga is active, <code>false</code> otherwise.
      */
     boolean isActive();
+
+    ProcessingToken processingToken();
 }

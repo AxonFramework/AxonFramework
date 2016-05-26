@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -24,12 +26,9 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -38,17 +37,24 @@ import static org.mockito.Mockito.mock;
 public class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     private CurrentUnitOfWorkParameterResolverFactory testSubject;
-    private Annotation[] noAnnotations = new Annotation[]{};
+    private Method method;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new CurrentUnitOfWorkParameterResolverFactory();
+        method = getClass().getMethod("equals", Object.class);
+    }
+
+    @SuppressWarnings("unused")
+    public void someMethod(UnitOfWork unitOfWork) {
     }
 
     @Test
     public void testCreateInstance() throws Exception {
-        assertNull(testSubject.createInstance(noAnnotations, Object.class, noAnnotations));
-        assertSame(testSubject, testSubject.createInstance(noAnnotations, UnitOfWork.class, noAnnotations));
+        Method someMethod = getClass().getMethod("someMethod", UnitOfWork.class);
+
+        assertNull(testSubject.createInstance(method, method.getParameters(), 0));
+        assertSame(testSubject, testSubject.createInstance(someMethod, someMethod.getParameters(), 0));
     }
 
     @Test
@@ -66,7 +72,9 @@ public class CurrentUnitOfWorkParameterResolverFactoryTest {
         assertFalse(testSubject.matches(mock(GenericCommandMessage.class)));
         DefaultUnitOfWork.startAndGet(null);
         try {
-            assertFalse(testSubject.matches(mock(Message.class)));
+            assertTrue(testSubject.matches(mock(Message.class)));
+            assertTrue(testSubject.matches(mock(EventMessage.class)));
+            assertTrue(testSubject.matches(mock(GenericEventMessage.class)));
             assertTrue(testSubject.matches(mock(GenericCommandMessage.class)));
         } finally {
             CurrentUnitOfWork.get().rollback();

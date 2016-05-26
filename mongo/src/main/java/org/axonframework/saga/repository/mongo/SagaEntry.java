@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DBObject;
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.Saga;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.SimpleSerializedObject;
@@ -36,7 +35,7 @@ import java.util.Set;
  * @author Jettro Coenradie
  * @since 2.0
  */
-public class SagaEntry {
+public class SagaEntry<T> {
 
     private static final String SAGA_IDENTIFIER = "sagaIdentifier";
     private static final String SERIALIZED_SAGA = "serializedSaga";
@@ -50,7 +49,7 @@ public class SagaEntry {
 
     private byte[] serializedSaga;
 
-    private volatile Saga saga;
+    private volatile T saga;
     private final Set<AssociationValue> associationValues;
 
     /**
@@ -60,13 +59,13 @@ public class SagaEntry {
      * @param saga       The saga to store
      * @param serializer The serialization mechanism to convert the Saga to a byte stream
      */
-    public SagaEntry(Saga saga, Serializer serializer) {
-        this.sagaId = saga.getSagaIdentifier();
+    public SagaEntry(String identifier, T saga, Set<AssociationValue> associationValues, Serializer serializer) {
+        this.sagaId = identifier;
         SerializedObject<byte[]> serialized = serializer.serialize(saga, byte[].class);
         this.serializedSaga = serialized.getData();
         this.sagaType = serializer.typeForClass(saga.getClass()).getName();
         this.saga = saga;
-        this.associationValues = new HashSet<>(this.saga.getAssociationValues().asSet());
+        this.associationValues = new HashSet<>(associationValues);
     }
 
     /**
@@ -87,12 +86,20 @@ public class SagaEntry {
      * @param serializer The serializer to decode the Saga
      * @return the Saga instance stored in this entry
      */
-    public Saga getSaga(Serializer serializer) {
+    public T getSaga(Serializer serializer) {
         if (saga != null) {
             return saga;
         }
-        return (Saga) serializer.deserialize(new SimpleSerializedObject<>(serializedSaga, byte[].class,
+        return serializer.deserialize(new SimpleSerializedObject<>(serializedSaga, byte[].class,
                                                                                 sagaType, ""));
+    }
+
+    public String getSagaId() {
+        return sagaId;
+    }
+
+    public Set<AssociationValue> getAssociationValues() {
+        return associationValues;
     }
 
     /**

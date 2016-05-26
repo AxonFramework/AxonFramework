@@ -24,7 +24,9 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.test.matchers.FieldFilter;
 
 import java.util.List;
@@ -148,6 +150,24 @@ public interface FixtureConfiguration<T> {
      * @return the current FixtureConfiguration, for fluent interfacing
      */
     FixtureConfiguration<T> registerInjectableResource(Object resource);
+
+    /**
+     * Register a command dispatch interceptor which will always be invoked before a command is dispatched on the
+     * command bus to perform a task specified in the interceptor. For example by adding
+     * {@link org.axonframework.messaging.metadata.MetaData} or throwing an exception based on the command.
+     * @param commandDispatchInterceptor the command dispatch interceptor to be added to the commandbus
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerCommandDispatchInterceptor(MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor);
+
+    /**
+     * Register a command handler interceptor which may be invoked before or after the command has been dispatched on
+     * the command bus to perform a task specified in the interceptor. It could for example block the command for
+     * security reasons or add auditing to the command bus
+     * @param commandHanderInterceptor the command handler interceptor to be added to the commandbus
+     * @return the current FixtureConfiguration, for fluent interfacing
+     */
+    FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>>  commandHanderInterceptor);
 
     /**
      * Registers the given <code>fieldFilter</code>, which is used to define which Fields are used when comparing

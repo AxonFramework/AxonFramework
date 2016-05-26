@@ -68,7 +68,7 @@ public class AnnotationEventListenerBeanPostProcessorTest_DoubleAnnotated {
     }
 
     @Test
-    public void testInitializeProxiedInstance() {
+    public void testInitializeProxiedInstance() throws Exception {
         assertNotNull(transactionalListener);
         eventBus.publish(new GenericEventMessage<>(new Object()));
 

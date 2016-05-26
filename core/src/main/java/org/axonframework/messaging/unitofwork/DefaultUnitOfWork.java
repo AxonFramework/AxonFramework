@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     /**
      * Starts a new DefaultUnitOfWork instance, registering it a CurrentUnitOfWork. This methods returns the started
      * UnitOfWork instance.
-     * <p/>
+     * <p>
      * Note that this Unit Of Work type is not meant to be shared among different Threads. A single DefaultUnitOfWork
      * instance should be used exclusively by the Thread that created it.
      *
@@ -64,7 +64,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         R result;
         try {
             result = task.call();
-        } catch (Exception e) {
+        } catch (Error | Exception e) {
             if (rollbackConfiguration.rollBackOn(e)) {
                 rollback(e);
             } else {

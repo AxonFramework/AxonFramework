@@ -51,7 +51,9 @@ public class MethodCommandHandlerDefinition implements HandlerDefinition {
 
         public MethodCommandMessageHandler(Executable executable, Map<String, Object> annotationAttributes,
                                            ParameterResolverFactory parameterResolverFactory) {
-            super(executable, parameterResolverFactory);
+            super(executable,
+                  (Class<?>) annotationAttributes.getOrDefault("payloadType", Object.class),
+                  parameterResolverFactory);
             this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null : (String) annotationAttributes.get("routingKey");
             if ("".equals(annotationAttributes.get("commandName"))) {
                 commandName = executable.getParameters()[0].getType().getName();

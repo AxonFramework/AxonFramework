@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import java.util.concurrent.Callable;
  */
 public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
-    final String aggregatesKey = this + "_AGGREGATES";
+    private final String aggregatesKey = this + "_AGGREGATES";
     private final Class<T> aggregateType;
     private final AggregateModel<T> aggregateModel;
 

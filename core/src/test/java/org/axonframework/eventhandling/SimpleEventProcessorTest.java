@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -71,11 +70,6 @@ public class SimpleEventProcessorTest {
         testSubject.subscribe(eventListener).cancel();
         testSubject.handle(new GenericEventMessage<>("Some event"));
         verifyZeroInteractions(eventListener);
-    }
-
-    @Test
-    public void testMetaDataAvailable() {
-        assertNotNull(testSubject.getMetaData());
     }
 
     @Test

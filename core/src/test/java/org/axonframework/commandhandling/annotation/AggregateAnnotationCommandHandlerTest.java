@@ -37,7 +37,6 @@ import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EntityId;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -95,8 +94,8 @@ public class AggregateAnnotationCommandHandlerTest {
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),
-                (memberAnnotations, parameterType, parameterAnnotations) -> {
-                    if (String.class.equals(parameterType)) {
+                (member, params, index) -> {
+                    if (String.class.equals(params[index].getType())) {
                         return new FixedValueParameterResolver<>("It works");
                     }
                     return null;
@@ -576,7 +575,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
     private abstract static class AbstractStubCommandAnnotatedAggregate {
 
-        @AggregateIdentifier(routingKey="aggregateIdentifier")
+        @AggregateIdentifier(routingKey = "aggregateIdentifier")
         private final String identifier;
 
         public AbstractStubCommandAnnotatedAggregate(String identifier) {
@@ -653,10 +652,6 @@ public class AggregateAnnotationCommandHandlerTest {
             throw new RuntimeException(updateCommand.getMessage());
         }
 
-        @EventSourcingHandler
-        public void on(StubDomainEvent event, String value) {
-        }
-
         public void initializeEntity(String id) {
             if (this.entity == null) {
                 this.entity = new StubCommandAnnotatedEntity();
@@ -701,7 +696,7 @@ public class AggregateAnnotationCommandHandlerTest {
 
     private static class StubCommandAnnotatedCollectionEntity {
 
-        @EntityId(routingKey="entityId")
+        @EntityId(routingKey = "entityId")
         private String id;
 
         private StubCommandAnnotatedCollectionEntity(String id) {

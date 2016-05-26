@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,15 @@
 package org.axonframework.saga;
 
 import org.apache.commons.collections.set.ListOrderedSet;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -44,20 +38,17 @@ import static org.mockito.Mockito.*;
 public class SagaManagerTest {
 
     private AbstractSagaManager testSubject;
-    private EventBus mockEventBus;
-    private SagaRepository mockSagaRepository;
-    private Saga mockSaga1;
-    private Saga mockSaga2;
-    private Saga mockSaga3;
+    private SagaRepository<Object> mockSagaRepository;
+    private Saga<Object> mockSaga1;
+    private Saga<Object> mockSaga2;
+    private Saga<Object> mockSaga3;
     private SagaCreationPolicy sagaCreationPolicy;
     private AssociationValue associationValue;
-    private SagaFactory mockSagaFactory;
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws Exception {
-        mockEventBus = mock(EventBus.class);
         mockSagaRepository = mock(SagaRepository.class);
-        mockSagaFactory = mock(SagaFactory.class);
         mockSaga1 = mock(Saga.class);
         mockSaga2 = mock(Saga.class);
         mockSaga3 = mock(Saga.class);
@@ -70,29 +61,28 @@ public class SagaManagerTest {
         when(mockSagaRepository.load("saga1")).thenReturn(mockSaga1);
         when(mockSagaRepository.load("saga2")).thenReturn(mockSaga2);
         when(mockSagaRepository.load("saga3")).thenReturn(mockSaga3);
+        when(mockSagaRepository.load("noSaga")).thenReturn(null);
         associationValue = new AssociationValue("association", "value");
-        for (Saga saga : setOf(mockSaga1, mockSaga2, mockSaga3)) {
-            final AssociationValuesImpl associationValues = new AssociationValuesImpl();
-            associationValues.add(associationValue);
-            when(saga.getAssociationValues()).thenReturn(associationValues);
-        }
-        when(mockSagaRepository.find(isA(Class.class), eq(associationValue)))
-                .thenReturn(setOf("saga1", "saga2", "saga3"));
+        final AssociationValuesImpl associationValues = new AssociationValuesImpl(singleton(associationValue));
+        when(mockSaga1.getAssociationValues()).thenReturn(associationValues);
+        when(mockSaga2.getAssociationValues()).thenReturn(associationValues);
+        when(mockSaga3.getAssociationValues()).thenReturn(associationValues);
+
+        when(mockSagaRepository.find(eq(associationValue)))
+                .thenReturn(setOf("saga1", "saga2", "saga3", "noSaga"));
         sagaCreationPolicy = SagaCreationPolicy.NONE;
 
-        testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockSagaFactory, Saga.class);
+        testSubject = new TestableAbstractSagaManager(mockSagaRepository);
     }
 
     @Test
-    public void testSagasLoadedAndCommitted() throws Exception {
+    public void testSagasLoaded() throws Exception {
         EventMessage event = new GenericEventMessage<>(new Object());
         testSubject.handle(event);
+        verify(mockSagaRepository).find(associationValue);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
-        verify(mockSaga3, never()).handle(isA(EventMessage.class));
-        verify(mockSagaRepository).commit(mockSaga1);
-        verify(mockSagaRepository).commit(mockSaga2);
-        verify(mockSagaRepository, never()).commit(mockSaga3);
+        verify(mockSaga3, never()).handle(event);
     }
 
     @Test
@@ -104,16 +94,15 @@ public class SagaManagerTest {
             testSubject.handle(event);
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
+            e.printStackTrace();
             assertEquals("Mock", e.getMessage());
         }
-        verify(mockSaga1).handle(event);
-        verify(mockSaga2, never()).handle(event);
-        verify(mockSagaRepository).commit(mockSaga1);
-        verify(mockSagaRepository, never()).commit(mockSaga2);
+        verify(mockSaga1, times(1)).handle(event);
     }
 
     @Test
     public void testExceptionSuppressed() throws Exception {
+        testSubject.setSuppressExceptions(true);
         EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
 
@@ -121,68 +110,32 @@ public class SagaManagerTest {
 
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
-        verify(mockSagaRepository).commit(mockSaga1);
-        verify(mockSagaRepository).commit(mockSaga2);
+        verify(mockSaga3, never()).handle(event);
     }
-
-    @Test
-    public synchronized void testAccessToSagaWhileInCreation() throws Exception {
-        when(mockSagaFactory.createSaga(isA(Class.class))).thenReturn(mockSaga1);
-        reset(mockSagaRepository);
-        when(mockSagaRepository.find(isA(Class.class), isA(AssociationValue.class)))
-                .thenReturn(Collections.<String>emptySet())
-                .thenReturn(singleton("saga1"));
-
-        sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
-        final AtomicInteger nestingCounter = new AtomicInteger(20);
-        final EventMessage event = GenericEventMessage.asEventMessage(new Object());
-
-        doAnswer(invocationOnMock -> {
-            if (nestingCounter.decrementAndGet() > 0) {
-                UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet((Message<?>) invocationOnMock.getArguments()[0]);
-                try {
-                    testSubject.handle(event);
-                } finally {
-                    uow.commit();
-                }
-            }
-            return null;
-        }).when(mockSaga1).handle(isA(EventMessage.class));
-
-        testSubject.handle(event);
-
-        verify(mockSagaRepository).add(mockSaga1);
-        verify(mockSagaRepository, times(19)).commit(mockSaga1);
-
-        verify(mockSagaRepository, never()).load("saga1");
-    }
-
 
     @SuppressWarnings({"unchecked"})
     private <T> Set<T> setOf(T... items) {
         return ListOrderedSet.decorate(Arrays.asList(items));
     }
 
-    private class TestableAbstractSagaManager extends AbstractSagaManager {
+    private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
 
-        @SafeVarargs
-        private TestableAbstractSagaManager(SagaRepository sagaRepository, SagaFactory sagaFactory,
-                                            Class<? extends Saga>... sagaTypes) {
-            super(sagaRepository, sagaFactory, sagaTypes);
+        private TestableAbstractSagaManager(SagaRepository<Object> sagaRepository) {
+            super(Object.class, sagaRepository, Object::new, t -> true);
         }
 
         @Override
-        public Class<?> getTargetType() {
-            return Saga.class;
+        protected boolean hasHandler(EventMessage<?> event) {
+            return true;
         }
 
         @Override
-        protected SagaInitializationPolicy getSagaCreationPolicy(Class<? extends Saga> sagaType, EventMessage event) {
+        protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
             return new SagaInitializationPolicy(sagaCreationPolicy, associationValue);
         }
 
         @Override
-        protected Set<AssociationValue> extractAssociationValues(Class<? extends Saga> sagaType, EventMessage event) {
+        protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
             return singleton(associationValue);
         }
     }

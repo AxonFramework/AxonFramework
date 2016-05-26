@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,11 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.temporal.Temporal;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze
@@ -39,19 +35,35 @@ public class TimestampParameterResolverFactoryTest {
 
     private TimestampParameterResolverFactory testSubject;
     private Timestamp annotation;
+    private Method instantMethod;
+    private Method temporalMethod;
+    private Method stringMethod;
+    private Method nonAnnotatedInstantMethod;
 
     @Before
     public void setUp() throws Exception {
         testSubject = new TimestampParameterResolverFactory();
-        annotation = mock(Timestamp.class);
-        when (annotation.annotationType()).thenAnswer(invocationOnMock -> Timestamp.class);
+        instantMethod = getClass().getMethod("someInstantMethod", Instant.class);
+        nonAnnotatedInstantMethod = getClass().getMethod("someNonAnnotatedInstantMethod", Instant.class);
+        temporalMethod = getClass().getMethod("someTemporalMethod", Temporal.class);
+        stringMethod = getClass().getMethod("someStringMethod", String.class);
+    }
+
+    public void someInstantMethod(@Timestamp Instant timestamp) {
+    }
+
+    public void someNonAnnotatedInstantMethod(Instant timestamp) {
+    }
+
+    public void someTemporalMethod(@Timestamp Temporal timestamp) {
+    }
+
+    public void someStringMethod(@Timestamp String timestamp) {
     }
 
     @Test
     public void testResolvesToDateTimeWhenAnnotated() throws Exception {
-        ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                Instant.class,
-                                                                new Annotation[]{annotation});
+        ParameterResolver resolver = testSubject.createInstance(instantMethod, instantMethod.getParameters(), 0);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
@@ -59,9 +71,9 @@ public class TimestampParameterResolverFactoryTest {
 
     @Test
     public void testResolvesToReadableInstantWhenAnnotated() throws Exception {
-        ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                Temporal.class,
-                                                                new Annotation[]{annotation});
+        ParameterResolver resolver = testSubject.createInstance(temporalMethod,
+                                                                temporalMethod.getParameters(),
+                                                                0);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
         assertTrue(resolver.matches(message));
         assertEquals(message.getTimestamp(), resolver.resolveParameterValue(message));
@@ -69,17 +81,15 @@ public class TimestampParameterResolverFactoryTest {
 
     @Test
     public void testIgnoredWhenNotAnnotated() throws Exception {
-        ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                Instant.class,
-                                                                new Annotation[0]);
+        ParameterResolver resolver = testSubject.createInstance(nonAnnotatedInstantMethod,
+                                                                nonAnnotatedInstantMethod.getParameters(),
+                                                                0);
         assertNull(resolver);
     }
 
     @Test
     public void testIgnoredWhenWrongType() throws Exception {
-        ParameterResolver resolver = testSubject.createInstance(new Annotation[0],
-                                                                String.class,
-                                                                new Annotation[]{annotation});
+        ParameterResolver resolver = testSubject.createInstance(stringMethod, stringMethod.getParameters(), 0);
         assertNull(resolver);
     }
 }

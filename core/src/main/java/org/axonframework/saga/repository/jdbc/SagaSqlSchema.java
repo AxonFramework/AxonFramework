@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package org.axonframework.saga.repository.jdbc;
 
+import org.axonframework.saga.AssociationValue;
 import org.axonframework.serializer.SerializedObject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 
 /**
  * Interface describing the SQL statements that the JdbcSagaRepository needs to execute against the underlying
@@ -39,7 +41,6 @@ public interface SagaSqlSchema {
      * @param sagaId     The identifier of the Saga to return
      * @return a statement, that creates a result set to be processed by {@link #readSerializedSaga(java.sql.ResultSet)},
      * when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_loadSaga(Connection connection, String sagaId) throws SQLException;
@@ -54,7 +55,6 @@ public interface SagaSqlSchema {
      * @param sagaType       The type of saga to remove the association for
      * @param sagaIdentifier The identifier of the Saga to remove the association for
      * @return a statement that removes the association value, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_removeAssocValue(Connection connection, String key, String value, String sagaType,
@@ -70,7 +70,6 @@ public interface SagaSqlSchema {
      * @param sagaType       The type of saga to create the association for
      * @param sagaIdentifier The identifier of the Saga to create the association for
      * @return a statement that inserts the association value, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_storeAssocValue(Connection connection, String key, String value, String sagaType,
@@ -85,10 +84,12 @@ public interface SagaSqlSchema {
      * @param value      The value of the association
      * @param sagaType   The type of saga to find associations for
      * @return a PreparedStatement that creates a ResultSet containing only saga identifiers when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_findAssocSagaIdentifiers(Connection connection, String key, String value, String sagaType)
+            throws SQLException;
+
+    PreparedStatement sql_findAssociations(Connection connection, String sagaIdentifier, String sagaType)
             throws SQLException;
 
     /**
@@ -97,7 +98,6 @@ public interface SagaSqlSchema {
      * @param connection     The connection to create the PreparedStatement for
      * @param sagaIdentifier The identifier of the Saga to remove
      * @return a statement that deletes the Saga, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_deleteSagaEntry(Connection connection, String sagaIdentifier) throws SQLException;
@@ -109,7 +109,6 @@ public interface SagaSqlSchema {
      * @param connection     The connection to create the PreparedStatement for
      * @param sagaIdentifier The identifier of the Saga to remove associations for
      * @return a statement that deletes the associations, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_deleteAssociationEntries(Connection connection, String sagaIdentifier) throws SQLException;
@@ -124,7 +123,6 @@ public interface SagaSqlSchema {
      * @param sagaType       The serialized type of the saga
      * @param revision       The revision identifier of the serialized form
      * @return a statement that updates a Saga entry, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_updateSaga(Connection connection, String sagaIdentifier, byte[] serializedSaga,
@@ -140,7 +138,6 @@ public interface SagaSqlSchema {
      * @param sagaType       The serialized type of the saga
      * @param revision       The revision identifier of the serialized form
      * @return a statement that inserts a Saga entry, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_storeSaga(Connection connection, String sagaIdentifier, String revision, String sagaType,
@@ -151,7 +148,6 @@ public interface SagaSqlSchema {
      *
      * @param connection The connection to create the PreparedStatement for
      * @return a Prepared statement that created the Association Value table, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_createTableAssocValueEntry(Connection connection) throws SQLException;
@@ -161,7 +157,6 @@ public interface SagaSqlSchema {
      *
      * @param connection The connection to create the PreparedStatement for
      * @return a Prepared statement that created the Saga table, when executed
-     *
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
     PreparedStatement sql_createTableSagaEntry(Connection connection) throws SQLException;
@@ -174,8 +169,11 @@ public interface SagaSqlSchema {
      *
      * @param resultSet The result set to read data from.
      * @return a SerializedObject, containing the serialized data from the resultSet
-     *
      * @throws SQLException when an exception occurs reading from the resultSet
      */
     SerializedObject<?> readSerializedSaga(ResultSet resultSet) throws SQLException;
+
+    Set<AssociationValue> readAssociationValues(ResultSet resultSet) throws SQLException;
+
+    String readToken(ResultSet resultSet) throws SQLException;
 }

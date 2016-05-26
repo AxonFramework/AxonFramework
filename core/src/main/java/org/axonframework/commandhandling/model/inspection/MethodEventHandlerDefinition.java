@@ -47,7 +47,7 @@ public class MethodEventHandlerDefinition implements HandlerDefinition {
 
         public MethodMessageHandler(Executable executable, Class<?> expectedPayloadType,
                                     ParameterResolverFactory parameterResolverFactory) {
-            super(executable, parameterResolverFactory);
+            super(executable, expectedPayloadType, parameterResolverFactory);
             this.expectedPayloadType = expectedPayloadType;
         }
 

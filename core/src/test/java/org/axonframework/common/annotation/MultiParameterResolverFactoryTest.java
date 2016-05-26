@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,19 +25,13 @@ import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Matchers;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -60,43 +54,47 @@ public class MultiParameterResolverFactoryTest {
         mockResolver1 = mock(ParameterResolver.class);
         mockResolver2 = mock(ParameterResolver.class);
 
-        when(mockFactory1.createInstance(Matchers.<Annotation[]>anyObject(),
-                                         any(Class.class),
-                                         Matchers.<Annotation[]>any())).thenReturn(mockResolver1);
-        when(mockFactory2.createInstance(Matchers.<Annotation[]>anyObject(),
-                                         any(Class.class),
-                                         Matchers.<Annotation[]>any())).thenReturn(mockResolver2);
+        when(mockFactory1.createInstance(Matchers.any(Executable.class),
+                                         Matchers.<Parameter[]>any(),
+                                         Matchers.anyInt())).thenReturn(mockResolver1);
+        when(mockFactory2.createInstance(Matchers.any(Executable.class),
+                                         Matchers.<Parameter[]>any(),
+                                         Matchers.anyInt())).thenReturn(mockResolver2);
 
         testSubject = new MultiParameterResolverFactory(mockFactory1, mockFactory2);
     }
 
     @Test
     public void testResolversQueriedInOrderProvided() throws Exception {
-        ParameterResolver factory = testSubject.createInstance(new Annotation[0], String.class, new Annotation[0]);
+        Method equals = getClass().getMethod("equals", Object.class);
+        ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
         assertFalse(factory.matches(null));
 
         InOrder inOrder = inOrder(mockFactory1, mockFactory2, mockResolver1, mockResolver2);
-        inOrder.verify(mockFactory1).createInstance(Matchers.<Annotation[]>anyObject(),
-                                                    eq(String.class),
-                                                    Matchers.<Annotation[]>any());
+        inOrder.verify(mockFactory1).createInstance(Matchers.any(Executable.class),
+                                                    Matchers.<Parameter[]>any(),
+                                                    Matchers.anyInt());
         inOrder.verify(mockResolver1).matches(any(Message.class));
 
-        verify(mockFactory2, never()).createInstance(Matchers.<Annotation[]>anyObject(),
-                                                     eq(String.class),
-                                                     Matchers.<Annotation[]>any());
+        verify(mockFactory2, never()).createInstance(Matchers.any(Executable.class),
+                                                     Matchers.<Parameter[]>any(),
+                                                     Matchers.anyInt());
 
         verify(mockResolver2, never()).matches(any(Message.class));
     }
 
     @Test
     public void testFirstMatchingResolverMayReturnValue() throws Exception {
+        Method equals = getClass().getMethod("equals", Object.class);
         final EventMessage<Object> message = GenericEventMessage.asEventMessage("test");
-        when(mockFactory1.createInstance(Matchers.<Annotation[]>any(), any(Class.class), Matchers.<Annotation[]>any()))
+        when(mockFactory1.createInstance(Matchers.any(Executable.class),
+                                         Matchers.<Parameter[]>any(),
+                                         Matchers.anyInt()))
                 .thenReturn(null);
         when(mockResolver2.matches(message)).thenReturn(true);
         when(mockResolver2.resolveParameterValue(message)).thenReturn("Resolved");
 
-        ParameterResolver factory = testSubject.createInstance(new Annotation[0], String.class, new Annotation[0]);
+        ParameterResolver factory = testSubject.createInstance(equals, equals.getParameters(), 0);
         assertTrue(factory.matches(message));
         assertEquals("Resolved", factory.resolveParameterValue(message));
 
@@ -108,8 +106,8 @@ public class MultiParameterResolverFactoryTest {
         final LowPrioParameterResolverFactory lowPrio = new LowPrioParameterResolverFactory();
         final HighPrioParameterResolverFactory highPrio = new HighPrioParameterResolverFactory();
         testSubject = MultiParameterResolverFactory.ordered(mockFactory1,
-                                                        new MultiParameterResolverFactory(lowPrio, mockFactory2),
-                                                        new MultiParameterResolverFactory(highPrio));
+                                                            new MultiParameterResolverFactory(lowPrio, mockFactory2),
+                                                            new MultiParameterResolverFactory(highPrio));
 
         assertEquals(Arrays.asList(highPrio, mockFactory1, mockFactory2, lowPrio), testSubject.getDelegates());
     }
@@ -127,8 +125,7 @@ public class MultiParameterResolverFactoryTest {
     private static class AbstractNoopParameterResolverFactory implements ParameterResolverFactory {
 
         @Override
-        public ParameterResolver createInstance(Annotation[] memberAnnotations, Class<?> parameterType,
-                                                Annotation[] parameterAnnotations) {
+        public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
             return null;
         }
     }

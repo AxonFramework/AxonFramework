@@ -71,20 +71,36 @@ public class AnnotatedHandlerInspector<T> {
     private void initializeMessageHandlers(ParameterResolverFactory parameterResolverFactory) {
         List<HandlerDefinition> definitions = new ArrayList<>();
         ServiceLoader.load(HandlerDefinition.class).forEach(definitions::add);
+        List<HandlerEnhancerDefinition> wrapperDefinitions = new ArrayList<>();
+        ServiceLoader.load(HandlerEnhancerDefinition.class).forEach(wrapperDefinitions::add);
         for (Method method : inspectedType.getDeclaredMethods()) {
             definitions.forEach(definition ->
                                         definition.createHandler(inspectedType,
                                                                  method, parameterResolverFactory)
-                                                .ifPresent(this::registerHandler));
+                                                .ifPresent(handler ->
+                                                                   registerHandler(wrapped(handler, wrapperDefinitions))
+                                                ));
         }
         for (Constructor<?> constructor : inspectedType.getDeclaredConstructors()) {
             definitions.forEach(definition ->
                                         definition.createHandler(inspectedType,
                                                                  constructor, parameterResolverFactory)
-                                                .ifPresent(this::registerHandler));
+                                                .ifPresent(handler ->
+                                                                   registerHandler(wrapped(handler, wrapperDefinitions))
+                                                ));
         }
         superClassInspectors.forEach(sci -> handlers.addAll(sci.getHandlers()));
         Collections.sort(handlers, HandlerComparator.instance());
+    }
+
+    private MessageHandler<T> wrapped(MessageHandler<T> handler, Iterable<HandlerEnhancerDefinition> wrapperDefinitions) {
+        MessageHandler<T> wrappedHandler = handler;
+        if (wrapperDefinitions != null) {
+            for (HandlerEnhancerDefinition definition : wrapperDefinitions) {
+                wrappedHandler = definition.wrapHandler(wrappedHandler);
+            }
+        }
+        return wrappedHandler;
     }
 
     private void registerHandler(MessageHandler<T> handler) {

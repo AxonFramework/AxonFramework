@@ -54,7 +54,7 @@ public interface WhenState {
      * @param event the event to publish
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenPublishingA(Object event);
+    FixtureExecutionResult whenPublishingA(Object event) throws Exception;
 
     /**
      * Mimic an elapsed time with no relevant activity for the Saga. If any Events are scheduled to be published within
@@ -67,7 +67,7 @@ public interface WhenState {
      * @param elapsedTime The amount of time to elapse
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenTimeElapses(Duration elapsedTime);
+    FixtureExecutionResult whenTimeElapses(Duration elapsedTime) throws Exception;
 
     /**
      * Mimic an elapsed time with no relevant activity for the Saga. If any Events are scheduled to be published within
@@ -80,5 +80,5 @@ public interface WhenState {
      * @param newDateTime The time to advance the clock to
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime);
+    FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception;
 }

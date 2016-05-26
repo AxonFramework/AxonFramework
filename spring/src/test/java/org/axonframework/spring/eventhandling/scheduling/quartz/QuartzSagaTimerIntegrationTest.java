@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class QuartzSagaTimerIntegrationTest {
     private EventBus eventBus;
 
     @Autowired
-    private SagaRepository repository;
+    private SagaRepository<SimpleTimingSaga> repository;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -118,8 +118,7 @@ public class QuartzSagaTimerIntegrationTest {
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         eventBus.publish(new GenericEventMessage<>(new StartingEvent(randomAssociationValue)));
                         Set<String> actualResult =
-                                repository.find(SimpleTimingSaga.class,
-                                                new AssociationValue("association", randomAssociationValue));
+                                repository.find(new AssociationValue("association", randomAssociationValue));
                         assertEquals(1, actualResult.size());
                     }
                 });
@@ -131,8 +130,7 @@ public class QuartzSagaTimerIntegrationTest {
                 fail("Saga not triggered within 1000 milliseconds");
             }
             Set<String> actualResult;
-            actualResult = repository.find(SimpleTimingSaga.class,
-                                           new AssociationValue("association", randomAssociationValue));
+            actualResult = repository.find(new AssociationValue("association", randomAssociationValue));
             assertEquals(1, actualResult.size());
             saga = (SimpleTimingSaga) repository.load(actualResult.iterator().next());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateInvocationException;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.common.annotation.MessageHandler;
@@ -55,10 +56,13 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     public void registerRoot(Callable<T> aggregateFactory) throws Exception {
-        this.aggregateRoot = executeWithResultOrException(aggregateFactory::call);
-        while (!delayedTasks.isEmpty()) {
-            delayedTasks.poll().run();
-        }
+        this.aggregateRoot = executeWithResult(aggregateFactory);
+        execute(() -> {
+            while (!delayedTasks.isEmpty()) {
+                delayedTasks.poll().run();
+            }
+        });
+
     }
 
     @Override
@@ -78,7 +82,13 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     @Override
     public <R> R invoke(Function<T, R> invocation) {
-        return executeWithResult(() -> invocation.apply(aggregateRoot));
+        try {
+            return executeWithResult(() -> invocation.apply(aggregateRoot));
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AggregateInvocationException("Exception occurred while invoking an aggregate", e);
+        }
     }
 
     @Override
@@ -118,7 +128,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @SuppressWarnings("unchecked")
     @Override
     public Object handle(CommandMessage<?> msg) throws Exception {
-        return executeWithResultOrException(() -> {
+        return executeWithResult(() -> {
             MessageHandler<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
             Object result = handler.handle(msg, aggregateRoot);
             if (aggregateRoot == null) {

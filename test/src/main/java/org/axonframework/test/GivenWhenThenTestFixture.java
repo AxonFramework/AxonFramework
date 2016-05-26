@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,18 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResol
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.*;
+import org.axonframework.eventsourcing.*;
+import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventstore.EventStoreException;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.test.matchers.FieldFilter;
@@ -47,6 +47,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
@@ -64,6 +65,8 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private static final Logger logger = LoggerFactory.getLogger(GivenWhenThenTestFixture.class);
     private final Class<T> aggregateType;
     private final SimpleCommandBus commandBus;
+    private final List<MessageDispatchInterceptor<CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
+    private final List<MessageHandlerInterceptor<CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
     private final EventStore eventStore;
     private Repository<T> repository;
     private String aggregateIdentifier;
@@ -71,7 +74,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private Deque<DomainEventMessage<?>> storedEvents;
     private List<EventMessage<?>> publishedEvents;
     private long sequenceNumber = 0;
-    private Aggregate workingAggregate;
+    private Aggregate<T> workingAggregate;
     private boolean reportIllegalStateChange = true;
     private boolean explicitCommandHandlersSet;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
@@ -133,12 +136,24 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     @Override
     public FixtureConfiguration<T> registerInjectableResource(Object resource) {
         if (explicitCommandHandlersSet) {
-            throw new FixtureExecutionException("Cannot inject resources after command handler has been created. " +
-                                                        "Configure all resource before calling " +
-                                                        "registerCommandHandler() or " +
-                                                        "registerAnnotatedCommandHandler()");
+            throw new FixtureExecutionException("Cannot inject resources after command handler has been created. "
+                    + "Configure all resource before calling "
+                    + "registerCommandHandler() or "
+                    + "registerAnnotatedCommandHandler()");
         }
         FixtureResourceParameterResolverFactory.registerResource(resource);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerCommandDispatchInterceptor(MessageDispatchInterceptor<CommandMessage<?>> commandDispatchInterceptor) {
+        commandDispatchInterceptors.add(commandDispatchInterceptor);
+        return this;
+    }
+
+    @Override
+    public FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>> commandHanderInterceptor) {
+        commandHandlerInterceptors.add(commandHanderInterceptor);
         return this;
     }
 
@@ -175,8 +190,9 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                     payload = ((Message) event).getPayload();
                     metaData = ((Message) event).getMetaData();
                 }
-                this.givenEvents.add(new GenericDomainEventMessage<>(workingAggregate.type(), aggregateIdentifier,
-                                                                     sequenceNumber++, payload, metaData));
+                this.givenEvents.add(new GenericDomainEventMessage<>(
+                        aggregateIdentifier, sequenceNumber++, payload, metaData
+                ));
             }
         } catch (RuntimeException e) {
             FixtureResourceParameterResolverFactory.clear();
@@ -218,10 +234,10 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     @Override
     public ResultValidator when(Object command, Map<String, ?> metaData) {
         try {
+            commandHandlerInterceptors.add(new AggregateRegisteringInterceptor());
             finalizeConfiguration();
             final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
             ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents, fieldFilter);
-            commandBus.setHandlerInterceptors(Collections.singletonList(new AggregateRegisteringInterceptor()));
 
             commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
@@ -241,6 +257,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
     private void finalizeConfiguration() {
         registerAggregateCommandHandlers();
+        registerCommandInterceptors();
         explicitCommandHandlersSet = true;
     }
 
@@ -250,8 +267,16 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
             AggregateAnnotationCommandHandler<T> handler = new AggregateAnnotationCommandHandler<>(aggregateType,
                                                                                                    repository,
                                                                                                    new AnnotationCommandTargetResolver());
+            AggregateAnnotationCommandHandler<T> handler = new AggregateAnnotationCommandHandler<>(
+                    aggregateType, repository, new AnnotationCommandTargetResolver()
+            );
             handler.subscribe(commandBus);
         }
+    }
+
+    private void registerCommandInterceptors() {
+        commandBus.setDispatchInterceptors(commandDispatchInterceptors);
+        commandBus.setHandlerInterceptors(commandHandlerInterceptors);
     }
 
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {
@@ -260,21 +285,21 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
             try {
                 Aggregate<T> aggregate2 = repository.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
-                    throw new AxonAssertionError("The working aggregate was considered deleted, " +
-                                                         "but the Repository still contains a non-deleted copy of " +
-                                                         "the aggregate. Make sure the aggregate explicitly marks " +
-                                                         "itself as deleted in an EventHandler.");
+                    throw new AxonAssertionError("The working aggregate was considered deleted, "
+                            + "but the Repository still contains a non-deleted copy of "
+                            + "the aggregate. Make sure the aggregate explicitly marks "
+                            + "itself as deleted in an EventHandler.");
                 }
                 assertValidWorkingAggregateState(aggregate2, fieldFilter);
             } catch (AggregateNotFoundException notFound) {
                 if (!workingAggregate.isDeleted()) {
                     throw new AxonAssertionError("The working aggregate was not considered deleted, " //NOSONAR
-                                                         + "but the Repository cannot recover the state of the " +
-                                                         "aggregate, as it is considered deleted there.");
+                            + "but the Repository cannot recover the state of the "
+                            + "aggregate, as it is considered deleted there.");
                 }
             } catch (RuntimeException e) {
                 logger.warn("An Exception occurred while detecting illegal state changes in {}.",
-                            workingAggregate.getClass().getName(), e);
+                        workingAggregate.getClass().getName(), e);
             } finally {
                 // rollback to prevent changes bing pushed to event store
                 uow.rollback();
@@ -285,40 +310,37 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private void assertValidWorkingAggregateState(Aggregate<T> eventSourcedAggregate, MatchAllFieldFilter fieldFilter) {
         HashSet<ComparationEntry> comparedEntries = new HashSet<>();
         if (!workingAggregate.rootType().equals(eventSourcedAggregate.rootType())) {
-            throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to " +
-                                                               "be of another type than the original.\n" +
-                                                               "Working type: <%s>\nEvent Sourced type: <%s>",
-                                                       workingAggregate.rootType().getName(),
-                                                       eventSourcedAggregate.rootType().getName()));
+            throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
+                            + "be of another type than the original.\n"
+                            + "Working type: <%s>\nEvent Sourced type: <%s>",
+                    workingAggregate.rootType().getName(), eventSourcedAggregate.rootType().getName()));
         }
-        ensureValuesEqual(workingAggregate, eventSourcedAggregate, eventSourcedAggregate.rootType().getName(),
-                          comparedEntries, fieldFilter);
+        ensureValuesEqual(workingAggregate.invoke(Function.identity()),
+                eventSourcedAggregate.invoke(Function.identity()),
+                eventSourcedAggregate.rootType().getName(),
+                comparedEntries, fieldFilter);
     }
 
     private void ensureValuesEqual(Object workingValue, Object eventSourcedValue, String propertyPath,
                                    Set<ComparationEntry> comparedEntries, FieldFilter fieldFilter) {
         if (explicitlyUnequal(workingValue, eventSourcedValue)) {
-            throw new AxonAssertionError(format("Illegal state change detected! " +
-                                                        "Property \"%s\" has different value when sourcing events.\n" +
-                                                        "Working aggregate value:     <%s>\n" +
-                                                        "Value after applying events: <%s>", propertyPath, workingValue,
-                                                eventSourcedValue));
-        } else if (workingValue != null && comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue)) &&
-                !hasEqualsMethod(workingValue.getClass())) {
+            throw new AxonAssertionError(format("Illegal state change detected! "
+                            + "Property \"%s\" has different value when sourcing events.\n"
+                            + "Working aggregate value:     <%s>\n"
+                            + "Value after applying events: <%s>",
+                    propertyPath, workingValue, eventSourcedValue));
+        } else if (workingValue != null && comparedEntries.add(new ComparationEntry(workingValue, eventSourcedValue))
+                && !hasEqualsMethod(workingValue.getClass())) {
             for (Field field : fieldsOf(workingValue.getClass())) {
                 if (fieldFilter.accept(field) &&
                         !Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
                     ensureAccessible(field);
                     String newPropertyPath = propertyPath + "." + field.getName();
-                    try {
-                        Object workingFieldValue = field.get(workingValue);
-                        Object eventSourcedFieldValue = field.get(eventSourcedValue);
-                        ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries,
-                                          fieldFilter);
-                    } catch (IllegalAccessException e) {
-                        logger.warn("Could not access field \"{}\". Unable to detect inappropriate state changes.",
-                                    newPropertyPath);
-                    }
+
+                    Object workingFieldValue = ReflectionUtils.getFieldValue(field, workingValue);
+                    Object eventSourcedFieldValue = ReflectionUtils.getFieldValue(field, eventSourcedValue);
+                    ensureValuesEqual(workingFieldValue, eventSourcedFieldValue, newPropertyPath, comparedEntries,
+                            fieldFilter);
                 }
             }
         }
@@ -401,11 +423,9 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private static class IdentifierValidatingRepository<T> implements Repository<T> {
 
         private final Repository<T> delegate;
-        private final EventBus eventBus;
 
         public IdentifierValidatingRepository(Repository<T> delegate, EventBus eventBus) {
             this.delegate = delegate;
-            this.eventBus = eventBus;
         }
 
         @Override
@@ -461,6 +481,14 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
         @Override
         public void publish(List<? extends EventMessage<?>> events) {
+            if (CurrentUnitOfWork.isStarted()) {
+                CurrentUnitOfWork.get().onPrepareCommit(u -> doAppendEvents(events));
+            } else {
+                doAppendEvents(events);
+            }
+        }
+
+        protected void doAppendEvents(List<DomainEventMessage<?>> events) {
             publishedEvents.addAll(events);
             events.stream().map(e -> (DomainEventMessage<?>) e).forEach(event -> {
                 if (aggregateIdentifier == null) {
@@ -506,31 +534,26 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
         @Override
         public Registration subscribe(EventProcessor eventProcessor) {
-            throw new UnsupportedOperationException();
+            return () -> true;
         }
 
         @Override
         public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
-            throw new UnsupportedOperationException();
+            return () -> true;
         }
     }
 
     private class AggregateRegisteringInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
         @Override
-        public Object handle(UnitOfWork<CommandMessage<?>> unitOfWork,
+        public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
                              InterceptorChain interceptorChain) throws Exception {
-            // TODO: Fix
-//            unitOfWork.onPrepareCommit(new UnitOfWorkListenerAdapter() {
-//                @Override
-//                public void onPrepareCommit(UnitOfWork unitOfWork, Set<AggregateRoot> aggregateRoots,
-//                                            List<EventMessage> events) {
-//                    Iterator<AggregateRoot> iterator = aggregateRoots.iterator();
-//                    if (iterator.hasNext()) {
-//                        workingAggregate = iterator.next();
-//                    }
-//                }
-//            });
+            unitOfWork.onPrepareCommit(u -> {
+                Set<Aggregate<T>> aggregates = u.getResource("ManagedAggregates");
+                if (aggregates != null && aggregates.size() == 1) {
+                    workingAggregate = aggregates.iterator().next();
+                }
+            });
             return interceptorChain.proceed();
         }
     }

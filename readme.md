@@ -4,11 +4,11 @@ A CQRS Framework for Scalable, High-Performance Java Applications
 
 ## Introduction
 
-For more information, visit our website: [http://www.axonframework.org](www.axonframework.org).
+For more information, visit our website: [http://www.axonframework.org](http://www.axonframework.org).
 
 ## Issue tracker
 
-If you're looking for the issue tracker, visit [http://issues.axonframework.org](issues.axonframework.org).
+If you're looking for the issue tracker, visit [http://issues.axonframework.org](http://issues.axonframework.org).
 
 ## Changelog
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,15 @@
 package org.axonframework.saga.repository;
 
 import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
+import org.axonframework.saga.annotation.SagaLifecycle;
+
+import static org.axonframework.saga.annotation.SagaLifecycle.associateWith;
+import static org.axonframework.saga.annotation.SagaLifecycle.removeAssociationWith;
 
 /**
 * @author Allard Buijze
 */
-public class StubSaga extends AbstractAnnotatedSaga {
-
-    private static final long serialVersionUID = -1562911263884220240L;
-    private int counter = 0;
-
-    public StubSaga(String identifier) {
-        super(identifier);
-    }
+public class StubSaga {
 
     public void registerAssociationValue(AssociationValue associationValue) {
         associateWith(associationValue);
@@ -39,9 +35,8 @@ public class StubSaga extends AbstractAnnotatedSaga {
         removeAssociationWith(key, value);
     }
 
-    @Override
     public void end() {
-        super.end();
+        SagaLifecycle.end();
     }
 
     public void associate(String key, String value) {
