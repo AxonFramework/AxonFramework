@@ -28,16 +28,16 @@ import com.mongodb.DBCollection;
 public interface MongoTemplate {
 
     /**
-     * Returns a reference to the collection containing the domain events.
+     * Returns a reference to the collection containing the events.
      *
      * @return DBCollection containing the domain events
      */
-    DBCollection domainEventCollection();
+    DBCollection eventCollection();
 
     /**
      * Returns a reference to the collection containing the snapshot events.
      *
      * @return DBCollection containing the snapshot events
      */
-    DBCollection snapshotEventCollection();
+    DBCollection snapshotCollection();
 }

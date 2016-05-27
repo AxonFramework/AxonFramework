@@ -13,16 +13,18 @@
 
 package org.axonframework.eventstore;
 
+import org.axonframework.upcasting.UpcastDomainEventData;
+
 /**
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
  * their storage entries implement this interface.
  *
  * @param <T> The content type of the serialized data
  * @author Allard Buijze
- * @see org.axonframework.upcasting.UpcastSerializedDomainEventData
+ * @see UpcastDomainEventData
  * @since 2.0
  */
-public interface SerializedDomainEventData<T> extends SerializedEventData<T> {
+public interface DomainEventData<T> extends EventData<T> {
 
     /**
      * Returns the type identifier of the aggregate.

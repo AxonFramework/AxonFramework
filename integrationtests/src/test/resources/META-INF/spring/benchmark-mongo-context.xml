@@ -26,7 +26,7 @@
         <constructor-arg index="1" ref="eventStore"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore">
+    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStorageEngine">
         <constructor-arg>
             <bean class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
                 <constructor-arg ref="mongoDb"/>

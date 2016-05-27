@@ -25,7 +25,7 @@ import javax.persistence.MappedSuperclass;
  * @author Rene de Waele
  */
 @MappedSuperclass
-public abstract class AbstractTrackedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements SerializedTrackedEventData<T> {
+public abstract class AbstractTrackedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements TrackedEventData<T> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)

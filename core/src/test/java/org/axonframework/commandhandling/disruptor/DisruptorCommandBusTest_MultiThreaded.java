@@ -29,7 +29,6 @@ import org.axonframework.domain.IdentifierFactory;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
@@ -52,6 +51,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertEquals;
@@ -298,7 +298,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
-        public Registration subscribe(EventProcessor eventProcessor) {
+        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 

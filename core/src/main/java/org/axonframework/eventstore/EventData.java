@@ -24,7 +24,7 @@ import java.time.Instant;
  * @param <T> The content type of the serialized data
  * @author Rene de Waele
  */
-public interface SerializedEventData<T> {
+public interface EventData<T> {
 
     /**
      * Returns the identifier of the serialized event.

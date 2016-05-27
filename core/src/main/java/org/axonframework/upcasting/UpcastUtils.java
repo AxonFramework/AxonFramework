@@ -17,7 +17,7 @@
 package org.axonframework.upcasting;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.eventstore.DomainEventData;
 import org.axonframework.serializer.SerializedDomainEventMessage;
 import org.axonframework.serializer.SerializedObject;
 import org.axonframework.serializer.Serializer;
@@ -57,7 +57,7 @@ public abstract class UpcastUtils {
      * @return a list of upcast and deserialized events
      */
     @SuppressWarnings("unchecked")
-    public static List<DomainEventMessage<?>> upcastAndDeserialize(SerializedDomainEventData<?> entry,
+    public static List<DomainEventMessage<?>> upcastAndDeserialize(DomainEventData<?> entry,
                                                                    Serializer serializer, UpcasterChain upcasterChain,
                                                                    boolean skipUnknownTypes) {
         SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry, serializer);
@@ -66,9 +66,9 @@ public abstract class UpcastUtils {
         for (SerializedObject object : objects) {
             try {
                 DomainEventMessage<Object> message = new SerializedDomainEventMessage<>(
-                        new UpcastSerializedDomainEventData(entry,
-                                                            entry.getAggregateIdentifier(),
-                                                            object),
+                        new UpcastDomainEventData(entry,
+                                                  entry.getAggregateIdentifier(),
+                                                  object),
                         serializer);
 
                 // prevents duplicate deserialization of meta data when it has already been access during upcasting

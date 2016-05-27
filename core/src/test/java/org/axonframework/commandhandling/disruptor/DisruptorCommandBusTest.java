@@ -26,7 +26,6 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
@@ -387,7 +386,7 @@ public class DisruptorCommandBusTest {
         }
 
         @Override
-        public Registration subscribe(EventProcessor eventProcessor) {
+        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 

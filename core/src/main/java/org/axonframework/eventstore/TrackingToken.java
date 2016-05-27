@@ -21,7 +21,7 @@ public interface TrackingToken extends Comparable<TrackingToken> {
     boolean isGuaranteedNext(TrackingToken otherToken);
 
     default boolean isAfter(TrackingToken otherToken) {
-        return this.compareTo(otherToken) > 0;
+        return otherToken == null || this.compareTo(otherToken) > 0;
     }
 
 }

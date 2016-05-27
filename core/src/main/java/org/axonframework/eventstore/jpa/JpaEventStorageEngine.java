@@ -22,6 +22,7 @@ import org.axonframework.serializer.Serializer;
 
 import javax.persistence.EntityManager;
 import java.util.List;
+import java.util.Optional;
 
 import static org.axonframework.eventstore.EventUtils.asDomainEventMessage;
 
@@ -37,7 +38,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<SerializedTrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
+    protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
                       String.format("Token %s is of the wrong type", lastToken));
         return entityManager().createQuery("SELECT new org.axonframework.eventstore.GenericTrackedDomainEventEntry(" +
@@ -52,7 +53,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<SerializedDomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
+    protected List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
                                                             int batchSize) {
         return entityManager().createQuery("SELECT new org.axonframework.eventstore.GenericDomainEventEntry(" +
                                                    "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
@@ -67,8 +68,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected SerializedDomainEventData<?> readSnapshotData(String aggregateIdentifier) {
-        return (SerializedDomainEventData<?>) entityManager()
+    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+        return entityManager()
                 .createQuery("SELECT new org.axonframework.eventstore.GenericDomainEventEntry(" +
                                      "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
                                      "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " +
@@ -76,7 +77,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                      "WHERE e.aggregateIdentifier = :id " +
                                      "ORDER BY e.sequenceNumber DESC")
                 .setParameter("id", aggregateIdentifier)
-                .setMaxResults(1).setFirstResult(0).getResultList().stream().findFirst().orElse(null);
+                .setMaxResults(1).setFirstResult(0).getResultList().stream().findFirst();
     }
 
     @Override

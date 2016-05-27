@@ -28,7 +28,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -49,6 +48,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.String.format;
@@ -531,7 +531,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
         }
 
         @Override
-        public Registration subscribe(EventProcessor eventProcessor) {
+        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             return () -> true;
         }
 

@@ -21,15 +21,15 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <!-- Axon Event store -->
-    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore" lazy-init="true">
-        <constructor-arg>
+    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStorageEngine" lazy-init="true">
+        <constructor-arg ref="template"/>
+        <property name="serializer">
             <bean class="org.axonframework.serializer.bson.DBObjectXStreamSerializer"/>
-        </constructor-arg>
-        <constructor-arg ref="mongoTemplate"/>
+        </property>
     </bean>
 
     <!-- Infrastructure Mongo -->
-    <bean id="mongoTemplate" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
+    <bean id="template" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
         <constructor-arg ref="mongoDb"/>
     </bean>
 

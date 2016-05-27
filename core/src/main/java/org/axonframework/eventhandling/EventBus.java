@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
@@ -89,9 +90,8 @@ public interface EventBus {
      * @param eventProcessor The event processor to subscribe
      * @return a handle to unsubscribe the {@code eventProcessor}. When unsubscribed it will no longer receive
      * events.
-     * @throws EventListenerSubscriptionFailedException if the listener could not be subscribed
      */
-    Registration subscribe(EventProcessor eventProcessor);
+    Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor);
 
     /**
      * Register the given {@code interceptor} with this bus. When subscribed it will intercept any event messages

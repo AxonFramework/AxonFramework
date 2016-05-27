@@ -33,7 +33,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     /**
      * The returned iterator will be closed if the resulting stream is closed.
      */
-    protected abstract List<SerializedTrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize);
+    protected abstract List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize);
 
     /**
      * Fetch a batch of events published by an aggregate with given {@code aggregateIdentifier}.
@@ -45,12 +45,12 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * If the returned number of entries is smaller than the given {@code batchSize} it is assumed that the storage
      * holds no further applicable entries.
      */
-    protected abstract List<SerializedDomainEventData<?>> fetchBatch(String aggregateIdentifier,
+    protected abstract List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier,
                                                                      long firstSequenceNumber, int batchSize);
 
     @Override
-    protected Stream<SerializedDomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
-        EventStreamSpliterator<SerializedDomainEventData<?>> spliterator = new EventStreamSpliterator<>(
+    protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
+        EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchBatch(identifier,
                                        lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
                                        batchSize), batchSize);
@@ -63,8 +63,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * This implementation produces non-blocking event streams.
      */
     @Override
-    protected Stream<SerializedTrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
-        EventStreamSpliterator<SerializedTrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
+    protected Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
+        EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
                 lastItem -> fetchBatch(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
                 batchSize);
         return StreamSupport.stream(spliterator, false);
@@ -85,13 +85,13 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
 
     private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
 
-        private final Function<T, List<T>> fetchFunction;
+        private final Function<T, List<? extends T>> fetchFunction;
         private final int batchSize;
-        private Iterator<T> iterator;
+        private Iterator<? extends T> iterator;
         private T lastItem;
         private int lastBatchSize;
 
-        private EventStreamSpliterator(Function<T, List<T>> fetchFunction, int batchSize) {
+        private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction, int batchSize) {
             super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
             this.batchSize = batchSize;
@@ -104,7 +104,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
                 if (iterator != null && batchSize > lastBatchSize) {
                     return false;
                 }
-                List<T> items = fetchFunction.apply(lastItem);
+                List<? extends T> items = fetchFunction.apply(lastItem);
                 iterator = items.iterator();
                 if ((lastBatchSize = items.size()) == 0) {
                     return false;

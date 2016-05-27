@@ -19,7 +19,6 @@ package org.axonframework.spring.messaging.eventbus;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventstore.TrackingEventStream;
 import org.axonframework.eventstore.TrackingToken;
 import org.springframework.messaging.MessageHandler;
@@ -29,6 +28,7 @@ import org.springframework.messaging.support.GenericMessage;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 /**
  * {@link org.axonframework.eventhandling.EventBus} implementation that delegates all subscription and publishing
@@ -47,7 +47,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SpringMessagingEventBus extends AbstractEventBus {
 
-    private final ConcurrentMap<EventProcessor, MessageHandler> handlers =
+    private final ConcurrentMap<Consumer<List<? extends EventMessage<?>>>, MessageHandler> handlers =
             new ConcurrentHashMap<>();
     private SubscribableChannel channel;
 
@@ -65,7 +65,7 @@ public class SpringMessagingEventBus extends AbstractEventBus {
     }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         MessageHandler messagehandler = new MessageHandlerAdapter(eventProcessor);
         MessageHandler oldHandler = handlers.putIfAbsent(eventProcessor, messagehandler);
         if (oldHandler == null) {

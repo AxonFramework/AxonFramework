@@ -18,7 +18,7 @@ package org.axonframework.serializer;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.eventstore.DomainEventData;
 import org.axonframework.eventstore.jpa.DomainEventEntry;
 import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Before;
@@ -48,7 +48,7 @@ public class SerializedDomainEventMessageTest {
     private Object deserializedPayload = new Object();
     private MetaData deserializedMetaData = MetaData.emptyInstance();
     private Serializer serializer = mock(Serializer.class);
-    private SerializedDomainEventData domainEventData = mock(SerializedDomainEventData.class);
+    private DomainEventData domainEventData = mock(DomainEventData.class);
 
     @Before
     public void setUp() {
@@ -116,7 +116,7 @@ public class SerializedDomainEventMessageTest {
         DomainEventMessage<String> message = new GenericDomainEventMessage<>("type", "ID", 0, "Payload",
                                                                                      MetaData.emptyInstance());
 
-        SerializedDomainEventData data = new DomainEventEntry(message, serializer);
+        DomainEventData data = new DomainEventEntry(message, serializer);
 
         SerializedDomainEventMessage<String> sdem = new SerializedDomainEventMessage<>(data, serializer);
 

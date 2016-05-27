@@ -16,7 +16,7 @@ package org.axonframework.eventstore.jpa.legacy;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventstore.SerializedTrackedEventData;
+import org.axonframework.eventstore.TrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventstore.legacy.LegacyTrackingToken;
@@ -39,7 +39,7 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<SerializedTrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
+    protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof LegacyTrackingToken,
                       String.format("Token %s is of the wrong type", lastToken));
         Map<String, Object> paramRegistry = new HashMap<>();

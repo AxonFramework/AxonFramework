@@ -60,7 +60,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return Optional.ofNullable(readSnapshotData(aggregateIdentifier))
+        return readSnapshotData(aggregateIdentifier)
                 .map(entry -> EventUtils.upcastAndDeserialize(entry, serializer, upcasterChain, false).stream()
                         .findFirst().orElse(null));
     }
@@ -96,12 +96,12 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     protected abstract void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer);
 
-    protected abstract Stream<SerializedDomainEventData<?>> readEventData(String identifier, long firstSequenceNumber);
+    protected abstract Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber);
 
-    protected abstract Stream<SerializedTrackedEventData<?>> readEventData(TrackingToken trackingToken,
+    protected abstract Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken,
                                                                            boolean mayBlock);
 
-    protected abstract SerializedDomainEventData<?> readSnapshotData(String aggregateIdentifier);
+    protected abstract Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier);
 
     public void setSerializer(Serializer serializer) {
         this.serializer = serializer;

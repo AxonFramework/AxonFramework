@@ -105,7 +105,7 @@ public class DefaultMongoTemplate extends AuthenticatingMongoTemplate implements
      * {@inheritDoc}
      */
     @Override
-    public DBCollection domainEventCollection() {
+    public DBCollection eventCollection() {
         return database().getCollection(domainEventsCollectionName);
     }
 
@@ -113,7 +113,7 @@ public class DefaultMongoTemplate extends AuthenticatingMongoTemplate implements
      * {@inheritDoc}
      */
     @Override
-    public DBCollection snapshotEventCollection() {
+    public DBCollection snapshotCollection() {
         return database().getCollection(snapshotEventsCollectionName);
     }
 }

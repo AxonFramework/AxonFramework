@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
@@ -41,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.axonframework.eventstore.EventUtils.asStream;
@@ -109,7 +109,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Registration subscribe(EventProcessor eventProcessor) {
+        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 

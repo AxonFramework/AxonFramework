@@ -25,7 +25,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -117,17 +116,17 @@ public class FixtureTest_Annotated {
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().publish(Arrays.asList(
+        fixture.getEventStore().publish(
                 new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        fixture.getEventStore().publish(Arrays.asList(
+        fixture.getEventStore().publish(
                 new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent())));
+                new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()));
     }
 
     @Test

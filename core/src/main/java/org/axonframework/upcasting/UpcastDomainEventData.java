@@ -16,7 +16,7 @@
 
 package org.axonframework.upcasting;
 
-import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.eventstore.DomainEventData;
 import org.axonframework.serializer.SerializedObject;
 
 import java.time.Instant;
@@ -30,9 +30,9 @@ import java.time.Instant;
  * @author Allard Buijze
  * @since 2.0
  */
-public class UpcastSerializedDomainEventData<T> implements SerializedDomainEventData<T> {
+public class UpcastDomainEventData<T> implements DomainEventData<T> {
 
-    private final SerializedDomainEventData<T> original;
+    private final DomainEventData<T> original;
     private final String identifier;
     private final SerializedObject<T> upcastPayload;
 
@@ -45,8 +45,8 @@ public class UpcastSerializedDomainEventData<T> implements SerializedDomainEvent
      * @param aggregateIdentifier The aggregate identifier instance
      * @param upcastPayload       The replacement payload
      */
-    public UpcastSerializedDomainEventData(SerializedDomainEventData<T> original, String aggregateIdentifier,
-                                           SerializedObject<T> upcastPayload) {
+    public UpcastDomainEventData(DomainEventData<T> original, String aggregateIdentifier,
+                                 SerializedObject<T> upcastPayload) {
         this.original = original;
         this.identifier = aggregateIdentifier;
         this.upcastPayload = upcastPayload;

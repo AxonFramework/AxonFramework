@@ -14,7 +14,7 @@
 package org.axonframework.eventstore.jpa.legacy;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventstore.SerializedTrackedEventData;
+import org.axonframework.eventstore.TrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.eventstore.legacy.AbstractLegacyDomainEventEntry;
 import org.axonframework.eventstore.legacy.LegacyTrackingToken;
@@ -29,7 +29,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(name = "DomainEventEntry", indexes = {@Index(columnList = "timeStamp,sequenceNumber,aggregateIdentifier")})
-public class LegacyDomainEventEntry extends AbstractLegacyDomainEventEntry<byte[]> implements SerializedTrackedEventData<byte[]> {
+public class LegacyDomainEventEntry extends AbstractLegacyDomainEventEntry<byte[]> implements TrackedEventData<byte[]> {
 
     public LegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
         super(eventMessage, serializer, byte[].class);

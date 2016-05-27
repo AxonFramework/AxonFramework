@@ -34,6 +34,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * EventBus implementation that does not perform any actions on subscriptions or published events, but records
@@ -45,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class RecordingEventStore implements EventStore {
 
-    private Collection<EventProcessor> subscriptions = new CopyOnWriteArraySet<>();
+    private Collection<Consumer<List<? extends EventMessage<?>>>> subscriptions = new CopyOnWriteArraySet<>();
     private Collection<TrackingToken> readerTokens = new CopyOnWriteArrayList<>();
     private Collection<String> fetchedAggregateIds = new CopyOnWriteArrayList<>();
     private List<EventMessage<?>> publishedEvents = new ArrayList<>();
@@ -84,7 +85,7 @@ public class RecordingEventStore implements EventStore {
     }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         subscriptions.add(eventProcessor);
         return () -> subscriptions.remove(eventProcessor);
     }
@@ -121,7 +122,7 @@ public class RecordingEventStore implements EventStore {
      *
      * @return a Collection of all subscribed EventProcessors
      */
-    public Collection<EventProcessor> getSubscriptions() {
+    public Collection<Consumer<List<? extends EventMessage<?>>>> getSubscriptions() {
         return subscriptions;
     }
 

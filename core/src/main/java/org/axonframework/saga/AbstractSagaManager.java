@@ -128,7 +128,7 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
     }
 
     @Override
-    public void handle(List<? extends EventMessage<?>> events) {
+    public void accept(List<? extends EventMessage<?>> events) {
         for (EventMessage<?> sourceEvent : events) {
             if (hasHandler(sourceEvent)) {
                 DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(sourceEvent);

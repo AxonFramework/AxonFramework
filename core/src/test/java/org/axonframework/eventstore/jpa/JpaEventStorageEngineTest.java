@@ -21,8 +21,8 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventstore.SerializedDomainEventData;
-import org.axonframework.eventstore.SerializedEventData;
+import org.axonframework.eventstore.DomainEventData;
+import org.axonframework.eventstore.EventData;
 import org.axonframework.serializer.Serializer;
 import org.axonframework.serializer.UnknownSerializedTypeException;
 import org.axonframework.serializer.xml.XStreamSerializer;
@@ -100,13 +100,13 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         testSubject = new JpaEventStorageEngine(entityManagerProvider) {
 
             @Override
-            protected SerializedEventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
+            protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
                 return new CustomDomainEventEntry((DomainEventMessage<?>) eventMessage, serializer);
             }
 
             @Override
-            protected SerializedDomainEventData<?> createSnapshotEntity(DomainEventMessage<?> snapshot,
-                                                                        Serializer serializer) {
+            protected DomainEventData<?> createSnapshotEntity(DomainEventMessage<?> snapshot,
+                                                              Serializer serializer) {
                 return new CustomSnapshotEventEntry(snapshot, serializer);
             }
 

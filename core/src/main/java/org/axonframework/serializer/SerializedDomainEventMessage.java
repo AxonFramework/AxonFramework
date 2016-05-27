@@ -18,7 +18,7 @@ package org.axonframework.serializer;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.eventstore.DomainEventData;
 import org.axonframework.messaging.metadata.MetaData;
 
 import java.time.Instant;
@@ -54,7 +54,7 @@ public class SerializedDomainEventMessage<T> implements DomainEventMessage<T>, S
      * @param domainEventData The SerializedDomainEventData providing access to this message's data
      * @param serializer      The Serializer to deserialize the meta data and payload with
      */
-    public SerializedDomainEventMessage(SerializedDomainEventData domainEventData, Serializer serializer) {
+    public SerializedDomainEventMessage(DomainEventData domainEventData, Serializer serializer) {
         eventMessage = new SerializedEventMessage<>(domainEventData.getEventIdentifier(),
                                                     domainEventData.getTimestamp(), domainEventData.getPayload(),
                                                     domainEventData.getMetaData(), serializer);

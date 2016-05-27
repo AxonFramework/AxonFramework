@@ -21,7 +21,7 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
-import org.axonframework.eventstore.mongo.MongoEventStore;
+import org.axonframework.eventstore.mongo.MongoEventStorageEngine;
 import org.axonframework.mongoutils.MongoLauncher;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.AssociationValues;
@@ -88,7 +88,7 @@ public class MongoSagaStoreTest {
     public void setUp() throws Exception {
         try {
             context.getBean(Mongo.class);
-            context.getBean(MongoEventStore.class);
+            context.getBean(MongoEventStorageEngine.class);
         } catch (Exception e) {
             logger.error("No Mongo instance found. Ignoring test.");
             Assume.assumeNoException(e);

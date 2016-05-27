@@ -39,7 +39,7 @@ public class DefaultEventSchema implements EventSchema {
     }
 
     public DefaultEventSchema(Class<?> dataType) {
-        this(new GenericEventSchemaConfiguration(), dataType);
+        this(new EventSchemaConfiguration(), dataType);
     }
 
     public DefaultEventSchema(EventSchemaConfiguration config, Class<?> dataType) {
@@ -54,8 +54,8 @@ public class DefaultEventSchema implements EventSchema {
     }
 
     @Override
-    public PreparedStatement storeSnapshot(Connection connection, DomainEventMessage<?> snapshot,
-                                           Serializer serializer) throws SQLException {
+    public PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
+                                            Serializer serializer) throws SQLException {
         return insertEvent(connection, config.snapshotTable(), snapshot, serializer);
     }
 
@@ -123,7 +123,7 @@ public class DefaultEventSchema implements EventSchema {
     }
 
     @Override
-    public SerializedTrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException {
+    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException {
         return new GenericTrackedDomainEventEntry<>(resultSet.getLong(config.globalIndexColumn()),
                                                     resultSet.getString(config.typeColumn()),
                                                     resultSet.getString(config.aggregateIdentifierColumn()),
@@ -137,7 +137,7 @@ public class DefaultEventSchema implements EventSchema {
     }
 
     @Override
-    public SerializedDomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
+    public DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
         return new GenericDomainEventEntry<>(resultSet.getString(config.typeColumn()),
                                              resultSet.getString(config.aggregateIdentifierColumn()),
                                              resultSet.getLong(config.sequenceNumberColumn()),
@@ -164,7 +164,7 @@ public class DefaultEventSchema implements EventSchema {
      * @throws SQLException when an exception occurs reading from the resultSet.
      */
     protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
-        return resultSet.getLong(columnName);
+        return resultSet.getString(columnName);
     }
 
     /**
@@ -174,7 +174,7 @@ public class DefaultEventSchema implements EventSchema {
      */
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,
                                   TemporalAccessor input) throws SQLException {
-        preparedStatement.setLong(position, Instant.from(input).toEpochMilli());
+        preparedStatement.setString(position, Instant.from(input).toString());
     }
 
     /**

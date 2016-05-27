@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
 import org.axonframework.messaging.axon3.SerializedMessage;
 import org.axonframework.serializer.*;
 import org.axonframework.upcasting.SerializedDomainEventUpcastingContext;
-import org.axonframework.upcasting.UpcastSerializedDomainEventData;
+import org.axonframework.upcasting.UpcastDomainEventData;
 import org.axonframework.upcasting.UpcasterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +44,6 @@ import static java.util.stream.StreamSupport.stream;
  */
 public abstract class EventUtils {
 
-    private static final String applicationEventType = "Application";
     private static final Logger logger = LoggerFactory.getLogger(EventUtils.class);
 
     public static <T> TrackedEventMessage<T> asTrackedEventMessage(EventMessage<T> eventMessage,
@@ -59,7 +58,7 @@ public abstract class EventUtils {
         if (eventMessage instanceof DomainEventMessage<?>) {
             return (DomainEventMessage<?>) eventMessage;
         }
-        return new GenericDomainEventMessage<>(applicationEventType, eventMessage.getIdentifier(), 0L, eventMessage,
+        return new GenericDomainEventMessage<>(null, eventMessage.getIdentifier(), 0L, eventMessage,
                                                eventMessage.getTimestamp());
     }
 
@@ -78,7 +77,7 @@ public abstract class EventUtils {
      * @return a list of upcast and deserialized events
      */
     @SuppressWarnings("unchecked")
-    public static List<DomainEventMessage<?>> upcastAndDeserialize(SerializedDomainEventData<?> entry,
+    public static List<DomainEventMessage<?>> upcastAndDeserialize(DomainEventData<?> entry,
                                                                    Serializer serializer, UpcasterChain upcasterChain,
                                                                    boolean skipUnknownTypes) {
         SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry, serializer);
@@ -87,7 +86,7 @@ public abstract class EventUtils {
         for (SerializedObject object : objects) {
             try {
                 DomainEventMessage<Object> message = new SerializedDomainEventMessage<>(
-                        new UpcastSerializedDomainEventData(entry, entry.getAggregateIdentifier(), object), serializer);
+                        new UpcastDomainEventData(entry, entry.getAggregateIdentifier(), object), serializer);
 
                 // prevents duplicate deserialization of meta data when it has already been access during upcasting
                 if (context.getSerializedMetaData().isDeserialized()) {
@@ -106,7 +105,7 @@ public abstract class EventUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<TrackedEventMessage<?>> upcastAndDeserialize(SerializedTrackedEventData<?> entry,
+    public static List<TrackedEventMessage<?>> upcastAndDeserialize(TrackedEventData<?> entry,
                                                                     Serializer serializer, UpcasterChain upcasterChain,
                                                                     boolean skipUnknownTypes) {
         //todo replace when new upcaster API is ready

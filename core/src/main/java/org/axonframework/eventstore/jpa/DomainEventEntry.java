@@ -25,7 +25,7 @@ import javax.persistence.Table;
  * @author Rene de Waele
  */
 @Entity
-@Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber,type", unique = true))
+@Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber", unique = true))
 public class DomainEventEntry extends AbstractTrackedDomainEventEntry<byte[]> {
 
     public DomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {

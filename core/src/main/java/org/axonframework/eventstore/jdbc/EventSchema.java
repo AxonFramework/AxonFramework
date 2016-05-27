@@ -14,8 +14,8 @@
 package org.axonframework.eventstore.jdbc;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventstore.SerializedDomainEventData;
-import org.axonframework.eventstore.SerializedTrackedEventData;
+import org.axonframework.eventstore.DomainEventData;
+import org.axonframework.eventstore.TrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.serializer.Serializer;
 
@@ -29,21 +29,24 @@ import java.sql.SQLException;
  */
 public interface EventSchema {
 
-    PreparedStatement appendEvent(Connection connection, DomainEventMessage<?> event, Serializer serializer) throws SQLException;
+    PreparedStatement appendEvent(Connection connection, DomainEventMessage<?> event,
+                                  Serializer serializer) throws SQLException;
+
+    PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
+                                     Serializer serializer) throws SQLException;
 
     PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier) throws SQLException;
 
-    PreparedStatement storeSnapshot(Connection connection, DomainEventMessage<?> snapshot, Serializer serializer) throws SQLException;
-
-    PreparedStatement readEventData(Connection connection, String identifier, long firstSequenceNumber) throws SQLException;
+    PreparedStatement readEventData(Connection connection, String identifier,
+                                    long firstSequenceNumber) throws SQLException;
 
     PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException;
 
     PreparedStatement readSnapshotData(Connection connection, String identifier) throws SQLException;
 
-    SerializedTrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException;
+    TrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException;
 
-    SerializedDomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException;
+    DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException;
 
     EventSchemaConfiguration schemaConfiguration();
 

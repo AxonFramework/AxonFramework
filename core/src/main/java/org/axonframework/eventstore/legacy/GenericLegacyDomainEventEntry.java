@@ -13,13 +13,13 @@
 
 package org.axonframework.eventstore.legacy;
 
-import org.axonframework.eventstore.SerializedTrackedEventData;
+import org.axonframework.eventstore.TrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 
 /**
  * @author Rene de Waele
  */
-public class GenericLegacyDomainEventEntry<T> extends AbstractLegacyDomainEventEntry<T> implements SerializedTrackedEventData<T> {
+public class GenericLegacyDomainEventEntry<T> extends AbstractLegacyDomainEventEntry<T> implements TrackedEventData<T> {
     public GenericLegacyDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
                                          String eventIdentifier, Object timeStamp, String payloadType,
                                          String payloadRevision, T payload, T metaData) {

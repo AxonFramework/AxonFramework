@@ -56,7 +56,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     public void testCustomSchemaConfig() throws Exception {
-        EventSchemaConfiguration customConfiguration = GenericEventSchemaConfiguration.builder()
+        EventSchemaConfiguration customConfiguration = EventSchemaConfiguration.builder()
                 .withEventTable("CustomDomainEvent").withPayloadColumn("eventData").build();
 
         JDBCDataSource dataSource = new JDBCDataSource();

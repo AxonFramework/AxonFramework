@@ -29,7 +29,6 @@ import org.junit.Test;
 
 import java.util.UUID;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -141,17 +140,17 @@ public class FixtureTest_Generic {
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().publish(asList(
+        fixture.getEventStore().publish(
                 new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent())));
+                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        fixture.getEventStore().publish(asList(
+        fixture.getEventStore().publish(
                 new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent())));
+                new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()));
     }
 
     private class StubDomainEvent {

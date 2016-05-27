@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -62,7 +63,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    protected List<SerializedTrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
+    protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
         return executeQuery(connection -> {
                                 PreparedStatement statement = schema.readEventData(connection, lastToken);
                                 statement.setMaxRows(batchSize);
@@ -73,7 +74,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    protected List<SerializedDomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
+    protected List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
                                                             int batchSize) {
         return executeQuery(connection -> {
             PreparedStatement statement = schema.readEventData(connection, aggregateIdentifier, firstSequenceNumber);
@@ -98,15 +99,15 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
         executeUpdates(e -> handlePersistenceException(e, snapshot),
                        connection -> schema.deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
-                       connection -> schema.storeSnapshot(connection, snapshot, serializer));
+                       connection -> schema.appendSnapshot(connection, snapshot, serializer));
     }
 
     @Override
-    protected SerializedDomainEventData<?> readSnapshotData(String aggregateIdentifier) {
-        List<SerializedDomainEventData<?>> result = executeQuery(
+    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+        List<DomainEventData<?>> result = executeQuery(
                 connection -> schema.readSnapshotData(connection, aggregateIdentifier), schema::getDomainEventData,
                 e -> new EventStoreException(format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
-        return result.isEmpty() ? null : result.get(0);
+        return result.stream().findFirst();
     }
 
     protected void executeUpdates(Consumer<SQLException> errorHandler, SqlFunction... sqlFunctions) {

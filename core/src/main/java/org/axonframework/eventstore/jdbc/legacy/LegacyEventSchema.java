@@ -14,8 +14,8 @@
 package org.axonframework.eventstore.jdbc.legacy;
 
 import org.axonframework.common.Assert;
-import org.axonframework.eventstore.SerializedDomainEventData;
-import org.axonframework.eventstore.SerializedTrackedEventData;
+import org.axonframework.eventstore.DomainEventData;
+import org.axonframework.eventstore.TrackedEventData;
 import org.axonframework.eventstore.TrackingToken;
 import org.axonframework.eventstore.jdbc.DefaultEventSchema;
 import org.axonframework.eventstore.jdbc.EventSchemaConfiguration;
@@ -74,7 +74,7 @@ public class LegacyEventSchema extends DefaultEventSchema {
     }
 
     @Override
-    public SerializedTrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException {
+    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException {
         return new GenericLegacyDomainEventEntry<>(resultSet.getString(config().typeColumn()),
                                                    resultSet.getString(config().aggregateIdentifierColumn()),
                                                    resultSet.getLong(config().sequenceNumberColumn()),
@@ -87,8 +87,8 @@ public class LegacyEventSchema extends DefaultEventSchema {
     }
 
     @Override
-    public SerializedDomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
-        return (SerializedDomainEventData<?>) getTrackedEventData(resultSet);
+    public DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
+        return (DomainEventData<?>) getTrackedEventData(resultSet);
     }
 
     @Override

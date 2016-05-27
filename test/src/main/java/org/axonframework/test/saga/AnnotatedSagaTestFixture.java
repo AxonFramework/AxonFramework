@@ -72,7 +72,9 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         eventScheduler = new StubEventScheduler();
         EventBus eventBus = new SimpleEventBus();
         InMemorySagaStore sagaStore = new InMemorySagaStore();
-        SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore, new AutowiredResourceInjector(registeredResources));
+        SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
+                                                                         new AutowiredResourceInjector(
+                                                                                 registeredResources));
         sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, sagaType::newInstance, t -> true);
         sagaManager.setSuppressExceptions(false);
 
@@ -82,7 +84,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         registeredResources.add(eventScheduler);
         registeredResources.add(new DefaultCommandGateway(commandBus));
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
-                                                                sagaType, fieldFilters);
+                                                                  sagaType, fieldFilters);
         FixtureResourceParameterResolverFactory.clear();
         registeredResources.forEach(FixtureResourceParameterResolverFactory::registerResource);
     }
@@ -233,14 +235,14 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(
-                InvocationHandler<Future<R>> delegate, long timeout, TimeUnit timeUnit) {
+        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<Future<R>> delegate,
+                                                                        long timeout, TimeUnit timeUnit) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
-                InvocationHandler<Future<R>> delegate, int timeoutIndex, int timeUnitIndex) {
+        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(InvocationHandler<Future<R>> delegate,
+                                                                              int timeoutIndex, int timeUnitIndex) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
     }
@@ -278,11 +280,12 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
-        private final String aggregateIdentifier;
+        private final String aggregateIdentifier, type;
         private int sequenceNumber = 0;
 
         public AggregateEventPublisherImpl(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
+            this.type = "typeOf_" + aggregateIdentifier;
         }
 
         @Override
@@ -302,21 +305,23 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         }
 
         private void publish(Object... events) throws Exception {
-            GenericEventMessage.clock = Clock.fixed(currentTime().toInstant(),currentTime().getZone());
-
             try {
+                Clock.fixed(currentTime().toInstant(), currentTime().getZone());
                 for (Object event : events) {
-                    if (event instanceof EventMessage) {
-                        EventMessage<?> eventMessage = (EventMessage) event;
-                        sagaManager.handle(new GenericDomainEventMessage<>("test", aggregateIdentifier,
-                                                                           sequenceNumber++,
-                                                                           eventMessage));
+                    if (event instanceof EventMessage<?>) {
+                        EventMessage<?> eventMessage = (EventMessage<?>) event;
+                        sagaManager.handle(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                                                                           sequenceNumber++, eventMessage.getPayload(),
+                                                                           eventMessage.getMetaData(),
+                                                                           eventMessage.getIdentifier(),
+                                                                           eventMessage.getTimestamp()));
                     } else {
-                        sagaManager.handle(new GenericDomainEventMessage<>("test", aggregateIdentifier, sequenceNumber++, event));
+                        sagaManager.handle(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                                                                           sequenceNumber++, event));
                     }
                 }
             } finally {
-                GenericEventMessage.clock = Clock.systemDefaultZone();
+                Clock.systemDefaultZone();
             }
         }
     }

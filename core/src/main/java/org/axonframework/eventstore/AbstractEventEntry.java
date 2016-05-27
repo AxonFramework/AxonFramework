@@ -20,15 +20,19 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * @author Rene de Waele
  */
 @MappedSuperclass
-public abstract class AbstractEventEntry<T> implements SerializedEventData<T> {
+public abstract class AbstractEventEntry<T> implements EventData<T> {
 
     @Column(nullable = false, unique = true)
     private String eventIdentifier;
+    @Basic(optional = false)
+    private String timeStamp;
     @Basic(optional = false)
     private String payloadType;
     @Basic
@@ -48,11 +52,17 @@ public abstract class AbstractEventEntry<T> implements SerializedEventData<T> {
         this.payloadRevision = payload.getType().getRevision();
         this.payload = payload.getData();
         this.metaData = metaData.getData();
+        this.timeStamp = eventMessage.getTimestamp().toString();
     }
 
-    public AbstractEventEntry(String eventIdentifier, String payloadType, String payloadRevision, T payload,
-                              T metaData) {
+    public AbstractEventEntry(String eventIdentifier, Object timestamp, String payloadType, String payloadRevision,
+                              T payload, T metaData) {
         this.eventIdentifier = eventIdentifier;
+        if (timestamp instanceof TemporalAccessor) {
+            this.timeStamp = Instant.from((TemporalAccessor) timestamp).toString();
+        } else {
+            this.timeStamp = timestamp.toString();
+        }
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
         this.payload = payload;
@@ -65,6 +75,11 @@ public abstract class AbstractEventEntry<T> implements SerializedEventData<T> {
     @Override
     public String getEventIdentifier() {
         return eventIdentifier;
+    }
+
+    @Override
+    public Instant getTimestamp() {
+        return Instant.parse(timeStamp);
     }
 
     @Override

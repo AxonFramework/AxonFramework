@@ -16,7 +16,7 @@
 
 package org.axonframework.upcasting;
 
-import org.axonframework.eventstore.SerializedDomainEventData;
+import org.axonframework.eventstore.DomainEventData;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.serializer.LazyDeserializingObject;
 import org.axonframework.serializer.Serializer;
@@ -46,7 +46,7 @@ public class SerializedDomainEventUpcastingContext implements UpcastingContext {
      *                        upcast
      * @param serializer      The serializer that can be used to deserialize the meta data
      */
-    public SerializedDomainEventUpcastingContext(SerializedDomainEventData<?> domainEventData, Serializer serializer) {
+    public SerializedDomainEventUpcastingContext(DomainEventData<?> domainEventData, Serializer serializer) {
         this.messageIdentifier = domainEventData.getEventIdentifier();
         this.aggregateIdentifier = domainEventData.getAggregateIdentifier();
         this.sequenceNumber = domainEventData.getSequenceNumber();

@@ -18,7 +18,8 @@ package org.axonframework.eventstore.mongo;
 
 import com.mongodb.DB;
 import com.mongodb.Mongo;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.mockito.Mockito.*;
 
@@ -41,7 +42,7 @@ public class DefaultMongoTemplateTest {
 
     @Test
     public void testDomainEvents() throws Exception {
-        mongoTemplate.domainEventCollection();
+        mongoTemplate.eventCollection();
 
         verify(mockMongo).getDB("axonframework");
         verify(mockDb).getCollection("domainevents");
@@ -50,7 +51,7 @@ public class DefaultMongoTemplateTest {
     @Test
     public void testSnapshotEvents() throws Exception {
 
-        mongoTemplate.snapshotEventCollection();
+        mongoTemplate.snapshotCollection();
 
         verify(mockMongo).getDB("axonframework");
         verify(mockDb).getCollection("snapshotevents");
@@ -60,7 +61,7 @@ public class DefaultMongoTemplateTest {
     public void testAuthentication() {
         char[] password = "pw".toCharArray();
         mongoTemplate = new DefaultMongoTemplate(mockMongo, "dbName", "events", "snapshots", "username", password);
-        mongoTemplate.domainEventCollection();
+        mongoTemplate.eventCollection();
 
         verify(mockDb).authenticate("username", password);
     }
@@ -74,10 +75,10 @@ public class DefaultMongoTemplateTest {
                                                  null,
                                                  null);
 
-        mongoTemplate.domainEventCollection();
+        mongoTemplate.eventCollection();
         verify(mockDb).getCollection("customevents");
 
-        mongoTemplate.snapshotEventCollection();
+        mongoTemplate.snapshotCollection();
         verify(mockDb).getCollection("customevents");
     }
 }

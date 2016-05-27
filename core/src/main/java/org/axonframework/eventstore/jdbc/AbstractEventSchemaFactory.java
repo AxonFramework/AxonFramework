@@ -37,8 +37,7 @@ public abstract class AbstractEventSchemaFactory implements EventSchemaFactory {
                 configuration.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
                 "PRIMARY KEY (" + configuration.globalIndexColumn() + "),\n" +
                 "UNIQUE (" + configuration.aggregateIdentifierColumn() + ", " +
-                configuration.sequenceNumberColumn() + ", " +
-                configuration.typeColumn() + "),\n" +
+                configuration.sequenceNumberColumn()+ "),\n" +
                 "UNIQUE (" + configuration.eventIdentifierColumn() + ")\n" +
                 ")";
         return connection.prepareStatement(sql);
@@ -58,8 +57,7 @@ public abstract class AbstractEventSchemaFactory implements EventSchemaFactory {
                 configuration.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 configuration.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
                 "PRIMARY KEY (" + configuration.aggregateIdentifierColumn() + ", " +
-                configuration.sequenceNumberColumn() + ", " +
-                configuration.typeColumn() + "),\n" +
+                configuration.sequenceNumberColumn() + "),\n" +
                 "UNIQUE (" + configuration.eventIdentifierColumn() + ")\n" +
                 ")";
         return connection.prepareStatement(sql);
