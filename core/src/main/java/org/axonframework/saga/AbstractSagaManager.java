@@ -59,11 +59,14 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
     private final RollbackConfiguration rollbackConfiguration;
 
     /**
-     * Initializes the SagaManager with the given <code>sagaRepository</code>.
+     * Initializes the SagaManager with the given {@code sagaRepository}.
      *
-     * @param sagaRepository The repository providing the saga instances.
+     * @param sagaType              The type of Saga Managed by this instance
+     * @param sagaRepository        The repository providing the saga instances.
+     * @param sagaFactory           The factory responsible for creating new Saga instances
+     * @param rollbackConfiguration The configuration of the exceptions that lead to a Unit of Work rollback
      */
-    public AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
+    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
                                RollbackConfiguration rollbackConfiguration) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
@@ -131,7 +134,7 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
                 DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(sourceEvent);
                 try {
                     unitOfWork.executeWithResult(() -> handle(sourceEvent, unitOfWork), rollbackConfiguration);
-                } catch (RuntimeException | Error e) {
+                } catch (RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new SagaExecutionException("Exception while processing an event in a Saga", e);

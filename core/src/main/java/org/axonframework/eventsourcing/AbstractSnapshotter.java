@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,6 @@ import java.util.concurrent.Executor;
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.Snapshotter} that uses a task executor to
  * creates snapshots. Actual snapshot creation logic should be provided by a subclass.
- * <p/>
- * By default, this implementations uses a {@link org.axonframework.common.DirectExecutor} to process snapshot taking
- * tasks. In production environments, it is recommended to use asynchronous executors instead.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -41,9 +38,47 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSnapshotter.class);
 
-    private EventStorageEngine eventStorageEngine;
-    private Executor executor = DirectExecutor.INSTANCE;
-    private TransactionManager transactionManager = new NoTransactionManager();
+    private final EventStorageEngine eventStorageEngine;
+    private final Executor executor;
+    private final TransactionManager transactionManager;
+
+    /**
+     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will
+     * create the snapshots in the process that triggers them, and save them into the Event Store without any
+     * transaction.
+     *
+     * @param eventStorageEngine the EventStore instance to store snapshots in
+     */
+    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine) {
+        this(eventStorageEngine, new NoTransactionManager());
+    }
+
+    /**
+     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create
+     * the snapshots in the process that triggers them, and save them into the Event Store in a transaction managed by
+     * the given {@code transactionManager}.
+     *
+     * @param eventStorageEngine         the EventStore instance to store snapshots in
+     * @param transactionManager The transaction manager to create the surrounding transaction with
+     */
+    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine, TransactionManager transactionManager) {
+        this(eventStorageEngine, DirectExecutor.INSTANCE, transactionManager);
+    }
+
+    /**
+     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create
+     * the snapshots in the process provided by the given {@code executor}, and save them into the Event Store in a
+     * transaction managed by the given {@code transactionManager}.
+     *
+     * @param eventStorageEngine         The EventStore instance to store snapshots in
+     * @param executor           The executor that handles the actual snapshot creation process
+     * @param transactionManager The transaction manager to create the surrounding transaction with
+     */
+    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine, Executor executor, TransactionManager transactionManager) {
+        this.eventStorageEngine = eventStorageEngine;
+        this.executor = executor;
+        this.transactionManager = transactionManager;
+    }
 
     @Override
     public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
@@ -64,13 +99,13 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     /**
      * Creates a snapshot event for an aggregate of which passed events are available in the given
-     * <code>eventStream</code>. May return <code>null</code> to indicate a snapshot event is not necessary or
+     * {@code eventStream}. May return {@code null} to indicate a snapshot event is not necessary or
      * appropriate for the given event stream.
      *
      * @param aggregateType       The aggregate's type identifier
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
      * @param eventStream         The event stream containing the aggregate's past events
-     * @return the snapshot event for the given events, or <code>null</code> if none should be stored.
+     * @return the snapshot event for the given events, or {@code null} if none should be stored.
      */
     protected abstract DomainEventMessage createSnapshot(Class<?> aggregateType, String aggregateIdentifier,
                                                          DomainEventStream eventStream);
@@ -85,41 +120,12 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     /**
-     * Sets the event store where the snapshotter can load domain events and store its snapshot events.
-     *
-     * @param eventStorageEngine the event storage to use
-     */
-    public void setEventStorageEngine(EventStorageEngine eventStorageEngine) {
-        this.eventStorageEngine = eventStorageEngine;
-    }
-
-    /**
-     * Sets the transactionManager that wraps the snapshot creation in a transaction. By default, no transactions are
-     * created.
-     *
-     * @param transactionManager the transactionManager to create transactions with
-     */
-    public void setTxManager(TransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
-    /**
      * Returns the executor that executes snapshot taking tasks.
      *
      * @return the executor that executes snapshot taking tasks.
      */
     protected Executor getExecutor() {
         return executor;
-    }
-
-    /**
-     * Sets the executor that should process actual snapshot taking. Defaults to an instance that runs all actions in
-     * the calling thread (i.e. synchronous execution).
-     *
-     * @param executor the executor to execute snapshotting tasks
-     */
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
     }
 
     private static class SilentTask implements Runnable {

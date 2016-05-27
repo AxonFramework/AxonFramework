@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
 
     /**
      * Initializes a repository with the default locking strategy, using a GenericAggregateFactory to create new
-     * aggregate instances of given <code>aggregateType</code>.
+     * aggregate instances of given {@code aggregateType}.
      *
      * @param aggregateType The type of aggregate stored in this repository
      * @param eventStore    The event store that holds the event streams for this repository
@@ -58,7 +58,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     }
 
     /**
-     * Initializes a repository with the default locking strategy, using the given <code>aggregateFactory</code> to
+     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
      * create new aggregate instances.
      *
      * @param aggregateFactory The factory for new aggregate instances
@@ -118,7 +118,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
                                                  "The aggregate was not found in the event store");
         }
         EventSourcedAggregate<T> aggregate = EventSourcedAggregate
-                .initialize(aggregateFactory.createAggregate(aggregateIdentifier, eventStream.peek()),
+                .initialize(aggregateFactory.createAggregateRoot(aggregateIdentifier, eventStream.peek()),
                             aggregateModel(), eventStore);
         aggregate.initializeState(eventStream);
         if (aggregate.isDeleted()) {

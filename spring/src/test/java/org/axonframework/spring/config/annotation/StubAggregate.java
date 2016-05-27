@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class StubAggregate {
     }
 
     public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<>(type, identifier.toString(), (long) 5,
+        return new GenericDomainEventMessage<>("test", identifier.toString(), (long) 5,
                                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 

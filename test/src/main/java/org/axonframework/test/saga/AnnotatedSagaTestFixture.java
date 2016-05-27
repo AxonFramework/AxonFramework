@@ -307,16 +307,12 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
             try {
                 for (Object event : events) {
                     if (event instanceof EventMessage) {
-                        EventMessage eventMessage = (EventMessage) event;
-                        sagaManager.handle(new GenericDomainEventMessage<>(type, eventMessage.getIdentifier(),
-                                                                           eventMessage.getTimestamp(),
-                                                                           aggregateIdentifier,
+                        EventMessage<?> eventMessage = (EventMessage) event;
+                        sagaManager.handle(new GenericDomainEventMessage<>("test", aggregateIdentifier,
                                                                            sequenceNumber++,
-                                                                           eventMessage.getPayload(),
-                                                                           eventMessage.getMetaData()));
+                                                                           eventMessage));
                     } else {
-                        sagaManager.handle(new GenericDomainEventMessage<>(aggregateIdentifier, sequenceNumber++, event,
-                                                                           type));
+                        sagaManager.handle(new GenericDomainEventMessage<>("test", aggregateIdentifier, sequenceNumber++, event));
                     }
                 }
             } finally {

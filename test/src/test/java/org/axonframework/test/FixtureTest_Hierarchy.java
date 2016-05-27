@@ -35,7 +35,7 @@ public class FixtureTest_Hierarchy {
         Fixtures.newGivenWhenThenFixture(AbstractAggregate.class)
                 .registerAggregateFactory(new AggregateFactory<AbstractAggregate>() {
                     @Override
-                    public AbstractAggregate createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+                    public AbstractAggregate createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
                         return new ConcreteAggregate();
                     }
 

@@ -48,6 +48,22 @@ public class SpringBeanParameterResolverFactory implements ParameterResolverFact
 
     private ApplicationContext applicationContext;
 
+    /**
+     * Default constructor, which relies on Spring to inject the application context.
+     */
+    public SpringBeanParameterResolverFactory() {
+    }
+
+    /**
+     * Convenience constructor to use when an instance is not managed by Spring, but an application context is
+     * available.
+     *
+     * @param applicationContext The application context providing access to beans that may be used as parameters
+     */
+    public SpringBeanParameterResolverFactory(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
     @Override
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         if (applicationContext == null) {

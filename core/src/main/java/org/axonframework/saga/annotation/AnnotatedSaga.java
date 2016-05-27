@@ -29,11 +29,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Implementation of the {@link Saga interface} that delegates incoming events to {@link
- * org.axonframework.saga.annotation.SagaEventHandler @SagaEventHandler} annotated methods.
+ * Implementation of the {@link Saga interface} that allows for a POJO instance with annotated message handlers to act
+ * as a Saga. The POJO instance can access static methods on {@link SagaLifecycle} as long as it is access via the
+ * {@link #execute(Consumer)} or {@link #invoke(Function)} methods.
  *
  * @author Allard Buijze
- * @since 0.7
+ * @since 3.0
  */
 public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
@@ -46,9 +47,14 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private ProcessingToken processingToken;
 
     /**
-     * Initialize the saga with a random identifier. The identifier used is provided by {@link
-     * org.axonframework.domain.IdentifierFactory#generateIdentifier()}, which defaults to a randomly generated {@link
-     * java.util.UUID}.
+     * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
+     * {@code sagaId} and associated with the given {@code associationValues}. The {@code metaModel} provides the
+     * description of the structure of the Saga.
+     *
+     * @param sagaId            The identifier of this Saga instance
+     * @param associationValues The current associations of this Saga
+     * @param annotatedSaga     The object instance representing the Saga
+     * @param metaModel         The model describing Saga structure
      */
     public AnnotatedSaga(String sagaId, Set<AssociationValue> associationValues,
                          T annotatedSaga, SagaModel<T> metaModel) {
@@ -120,6 +126,12 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
         return processingToken;
     }
 
+    /**
+     * Returns the (annotated) Saga instance. This method should not be used to modify the Saga's state, as it doesn't
+     * allow the instance to access the static methods on {@link SagaLifecycle}.
+     *
+     * @return the Saga instance
+     */
     public T root() {
         return sagaInstance;
     }

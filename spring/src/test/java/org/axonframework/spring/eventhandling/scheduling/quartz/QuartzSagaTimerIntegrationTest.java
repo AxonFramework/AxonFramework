@@ -19,6 +19,7 @@ package org.axonframework.spring.eventhandling.scheduling.quartz;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.saga.AssociationValue;
 import org.axonframework.saga.SagaRepository;
 import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;
@@ -110,7 +111,7 @@ public class QuartzSagaTimerIntegrationTest {
         assertNotNull(eventBus);
         final String randomAssociationValue = UUID.randomUUID().toString();
         EventListener listener = mock(EventListener.class);
-        eventBus.subscribe(eventProcessor);
+        eventBus.subscribe(new SimpleEventProcessor("test", listener));
 
         new TransactionTemplate(transactionManager)
                 .execute(new TransactionCallbackWithoutResult() {

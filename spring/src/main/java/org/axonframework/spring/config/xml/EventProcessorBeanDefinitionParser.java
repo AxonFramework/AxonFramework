@@ -91,7 +91,7 @@ public class EventProcessorBeanDefinitionParser extends AbstractBeanDefinitionPa
                         .addIndexedArgumentValue(0, resolveId(element, innerProcessor, parserContext));
             Element orderedElement = DomUtils.getChildElementByTagName(element, "ordered");
             if (orderedElement != null) {
-                innerProcessor.getConstructorArgumentValues().addGenericArgumentValue(parseOrderElement(orderedElement));
+                innerProcessor.getConstructorArgumentValues().addIndexedArgumentValue(1, parseOrderElement(orderedElement));
             }
         }
         Map metaData = parseMetaData(element, parserContext);

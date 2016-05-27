@@ -29,7 +29,7 @@ import java.util.function.Function;
  * Multiple instances of a single type of Saga may exist. In that case, each Saga will be managing a different
  * transaction. Sagas need to be associated with concepts in order to receive specific events. These associations are
  * managed through AssociationValues. For example, to associate a saga with an Order with ID 1234, this saga needs an
- * association value with key <code>"orderId"</code> and value <code>"1234"</code>.
+ * association value with key <code>"orderId"</code> and value {@code "1234"}.
  *
  * @author Allard Buijze
  * @since 0.7
@@ -50,8 +50,21 @@ public interface Saga<T> {
      */
     AssociationValues getAssociationValues();
 
+    /**
+     * Execute the given {@code invocation} against the root object of this Saga instance.
+     *
+     * @param invocation the function to invoke. The root object of the Saga is input to the function, the result is
+     *                   the result of the execution.
+     * @param <R>        The type of return value expected
+     * @return The result of the invocation on the Saga.
+     */
     <R> R invoke(Function<T, R> invocation);
 
+    /**
+     * Execute the given {@code invocation} against the root object of this Saga instance.
+     *
+     * @param invocation the function to invoke. The root object of the Saga is input to the function.
+     */
     void execute(Consumer<T> invocation);
 
 
@@ -68,9 +81,16 @@ public interface Saga<T> {
     /**
      * Indicates whether or not this saga is active. A Saga is active when its life cycle has not been ended.
      *
-     * @return <code>true</code> if this saga is active, <code>false</code> otherwise.
+     * @return {@code true} if this saga is active, {@code false} otherwise.
      */
     boolean isActive();
 
+    /**
+     * Returns the ProcessingToken belonging to the EventMessage last processed by this instance, or {@code null} if
+     * this instance never handled an EventMessage, or if it received an EventMessage that doesn't carry a
+     * ProcessingToken.
+     *
+     * @return the ProcessingToken of the last processed EventMessage, if present.
+     */
     ProcessingToken processingToken();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,20 +52,7 @@ public class AbstractSnapshotterTest {
     @Before
     public void setUp() throws Exception {
         mockEventStorageEngine = mock(EventStorageEngine.class);
-        testSubject = new AbstractSnapshotter() {
-            @Override
-            protected DomainEventMessage createSnapshot(Class<?> aggregateType,
-                                                        String aggregateIdentifier, DomainEventStream eventStream) {
-                long lastIdentifier = getLastIdentifierFrom(eventStream);
-                if (lastIdentifier <= 0) {
-                    return null;
-                }
-                return new GenericDomainEventMessage<>("type", aggregateIdentifier, lastIdentifier,
-                                                       "Mock contents", MetaData.emptyInstance());
-            }
-        };
-        testSubject.setEventStorageEngine(mockEventStorageEngine);
-        testSubject.setExecutor(DirectExecutor.INSTANCE);
+        testSubject = new TestSnapshotter(mockEventStorageEngine);
         logger = mock(Logger.class);
         originalLogger = replaceLogger(logger);
     }
@@ -124,7 +111,9 @@ public class AbstractSnapshotterTest {
     public void testScheduleSnapshot_WithTransaction() {
         Transaction mockTransaction = mock(Transaction.class);
         TransactionManager txManager = spy(new StubTransactionManager(mockTransaction));
-        testSubject.setTxManager(txManager);
+        when(txManager.startTransaction()).thenReturn(mockTransaction);
+
+        testSubject = new TestSnapshotter(mockEventStorageEngine, txManager);
 
         testScheduleSnapshot();
 
@@ -167,6 +156,27 @@ public class AbstractSnapshotterTest {
         Logger originalLogger = (Logger) loggerField.get(null);
         loggerField.set(null, mockLogger);
         return originalLogger;
+    }
+
+    private class TestSnapshotter extends AbstractSnapshotter {
+        public TestSnapshotter(EventStorageEngine eventStorageEngine) {
+            super(eventStorageEngine);
+        }
+
+        public TestSnapshotter(EventStorageEngine eventStorageEngine, TransactionManager transactionManager) {
+            super(eventStorageEngine, DirectExecutor.INSTANCE, transactionManager);
+        }
+
+        @Override
+        protected DomainEventMessage createSnapshot(Class<?> aggregateType,
+                                                    String aggregateIdentifier, DomainEventStream eventStream) {
+            long lastIdentifier = getLastIdentifierFrom(eventStream);
+            if (lastIdentifier <= 0) {
+                return null;
+            }
+            return new GenericDomainEventMessage<>("test", aggregateIdentifier, lastIdentifier,
+                                                   "Mock contents", MetaData.emptyInstance());
+        }
     }
 
     private static class StubTransactionManager implements TransactionManager {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.common.annotation.ParameterResolverFactory;
-
 /**
  * Abstract AggregateFactory implementation that is aware of snapshot events. If an incoming event is not a snapshot
  * event, creation is delegated to the subclass.
@@ -30,13 +28,20 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
 
     private final Class<T> aggregateBaseType;
 
-    public AbstractAggregateFactory(Class<T> aggregateBaseType) {
+    /**
+     * Initialize an aggregateFactory for the given {@code aggregateBaseType}. If a first event is and instance of this
+     * {@code aggregateBaseType}, it is recognised as a snapshot event. Otherwise, the subclass is asked to instantiate
+     * a new aggregate root instance based on the first event.
+     *
+     * @param aggregateBaseType The base type of the aggregate roots created by this instance.
+     */
+    protected AbstractAggregateFactory(Class<T> aggregateBaseType) {
         this.aggregateBaseType = aggregateBaseType;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public final T createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+    public final T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
         T aggregate;
         if (aggregateBaseType.isAssignableFrom(firstEvent.getPayloadType())) {
             aggregate = (T) firstEvent.getPayload();
@@ -60,10 +65,10 @@ public abstract class AbstractAggregateFactory<T> implements AggregateFactory<T>
     }
 
     /**
-     * Create an uninitialized Aggregate instance with the given <code>aggregateIdentifier</code>. The given
-     * <code>firstEvent</code> can be used to define the requirements of the aggregate to create.
+     * Create an uninitialized Aggregate instance with the given {@code aggregateIdentifier}. The given
+     * {@code firstEvent} can be used to define the requirements of the aggregate to create.
      * <p/>
-     * The given <code>firstEvent</code> is never a snapshot event.
+     * The given {@code firstEvent} is never a snapshot event.
      *
      * @param aggregateIdentifier The identifier of the aggregate to create
      * @param firstEvent          The first event in the Event Stream of the Aggregate

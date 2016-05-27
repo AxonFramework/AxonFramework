@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.spring.messaging.eventbus;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,14 +49,14 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testSubscribeListener() {
-        testSubject.subscribe(eventProcessor);
+        testSubject.subscribe(new SimpleEventProcessor("test"));
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }
 
     @Test
     public void testUnsubscribeListener() throws Exception {
-        Registration subscription = testSubject.subscribe(eventProcessor);
+        Registration subscription = testSubject.subscribe(new SimpleEventProcessor("test"));
         subscription.close();
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
@@ -63,7 +64,7 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testUnsubscribeListener_UnsubscribedTwice() throws Exception {
-        Registration subscription = testSubject.subscribe(eventProcessor);
+        Registration subscription = testSubject.subscribe(new SimpleEventProcessor("test"));
         subscription.close();
         subscription.close();
 
@@ -73,6 +74,7 @@ public class SpringMessagingEventBusTest {
     @Test
     public void testSubscribeListener_SubscribedTwice() {
 
+        SimpleEventProcessor eventProcessor = new SimpleEventProcessor("test");
         testSubject.subscribe(eventProcessor);
         testSubject.subscribe(eventProcessor);
 

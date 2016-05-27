@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
 import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
@@ -41,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -51,7 +51,6 @@ import static org.mockito.Mockito.*;
 public class EventSourcingRepositoryTest {
 
     private EventStore mockEventStore;
-    private EventBus mockEventBus;
     private EventSourcingRepository<TestAggregate> testSubject;
     private UnitOfWork<?> unitOfWork;
     private StubAggregateFactory stubAggregateFactory;
@@ -59,7 +58,6 @@ public class EventSourcingRepositoryTest {
     @Before
     public void setUp() {
         mockEventStore = mock(EventStore.class);
-        mockEventBus = mock(EventBus.class);
         stubAggregateFactory = new StubAggregateFactory();
         testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore);
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
@@ -72,8 +70,6 @@ public class EventSourcingRepositoryTest {
         }
     }
 
-    //todo fix test
-    @Ignore
     @Test
     @SuppressWarnings("unchecked")
     public void testLoadAndSaveAggregate() {
@@ -97,10 +93,7 @@ public class EventSourcingRepositoryTest {
 
         CurrentUnitOfWork.commit();
 
-        verify(mockEventBus).publish(isA(DomainEventMessage.class));
-        verify(mockEventBus, never()).publish(event1);
-        verify(mockEventBus, never()).publish(event2);
-        verify(mockEventStore, times(1)).publish(anyList());
+        verify(mockEventStore, times(1)).publish((EventMessage)anyVararg());
     }
 
     @Test
@@ -172,13 +165,9 @@ public class EventSourcingRepositoryTest {
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
         // loading them in...
         InOrder inOrder = Mockito.inOrder(decorator1.lastSpy, decorator2.lastSpy);
-        inOrder.verify(decorator2.lastSpy).next();
+        inOrder.verify(decorator2.lastSpy).forEachRemaining(any());
         inOrder.verify(decorator1.lastSpy).next();
-
-        inOrder.verify(decorator2.lastSpy).next();
         inOrder.verify(decorator1.lastSpy).next();
-
-        inOrder.verify(decorator2.lastSpy).next();
         inOrder.verify(decorator1.lastSpy).next();
         aggregate.execute(r -> r.apply(new StubDomainEvent()));
         aggregate.execute(r -> r.apply(new StubDomainEvent()));
@@ -276,6 +265,13 @@ public class EventSourcingRepositoryTest {
             when(lastSpy.next()).thenAnswer(invocation -> eventStream.next());
             when(lastSpy.hasNext()).thenAnswer(invocation -> eventStream.hasNext());
             when(lastSpy.peek()).thenAnswer(invocation -> eventStream.peek());
+            doAnswer(invocation -> {
+                Consumer c = (Consumer) invocation.getArguments()[0];
+                while (eventStream.hasNext()) {
+                    c.accept(eventStream.next());
+                }
+                return null;
+            }).when(lastSpy).forEachRemaining(any());
         }
     }
 }

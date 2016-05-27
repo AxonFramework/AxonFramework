@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.eventsourcing.AbstractSnapshotter;
+import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -31,7 +31,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:contexts/axon-namespace-support-context.xml"})
@@ -52,7 +53,7 @@ public class SnapshotterBeanDefinitionParserTest {
     public void testSnapshotterInitialization() throws NoSuchFieldException, IllegalAccessException {
         BeanDefinition definition = beanFactory.getBeanDefinition("snapshotter");
         assertNotNull("BeanDefinition not created", definition);
-        assertEquals("Wrong bean class", SpringAggregateSnapshotter.class.getName(), definition.getBeanClassName());
+        assertEquals("Wrong bean class", AggregateSnapshotter.class.getName(), definition.getBeanClassName());
 
         assertNotNull("snapshotter not configured properly", snapshotter);
         assertNotNull("inThreadsnapshotter not configured properly", inThreadSnapshotter);
@@ -68,7 +69,7 @@ public class SnapshotterBeanDefinitionParserTest {
 
     private Object getTransactionManagerFrom(Snapshotter snapshotter)
             throws NoSuchFieldException, IllegalAccessException {
-        Field snapshotterField = SpringAggregateSnapshotter.class.getDeclaredField("transactionManager");
+        Field snapshotterField = AggregateSnapshotter.class.getDeclaredField("transactionManager");
         snapshotterField.setAccessible(true);
         return snapshotterField.get(snapshotter);
     }

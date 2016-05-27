@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventstore.TrackingEventStream;
+import org.axonframework.eventstore.TrackingToken;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -55,6 +57,11 @@ public class SpringMessagingEventBus extends AbstractEventBus {
             channel.send(new GenericMessage<>(event.getPayload(),
                                               event.getMetaData()));
         }
+    }
+
+    @Override
+    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        throw new UnsupportedOperationException("This implementation does not support Event Stream tracking");
     }
 
     @Override

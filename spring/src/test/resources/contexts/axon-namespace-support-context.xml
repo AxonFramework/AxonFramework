@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2014. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@
 
     <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 
+<!--
     <axon:saga-manager id="sagaManagerNotSuppressingExceptions" saga-factory="sagaFactory" suppress-exceptions="false">
         <axon:types>org.axonframework.spring.config.xml.StubSaga</axon:types>
     </axon:saga-manager>
@@ -55,6 +56,7 @@
                     transaction-manager="transactionManager"/>
         <axon:types>org.axonframework.spring.config.xml.StubSaga</axon:types>
     </axon:saga-manager>
+-->
 
     <axon:aggregate-command-handler id="aggregateCommandHandlerWithoutTargetResolver"
                                     aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"

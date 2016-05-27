@@ -29,9 +29,11 @@ import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventsourcing.*;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventstore.*;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -80,7 +82,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
 
     /**
-     * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
+     * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
      *
      * @param aggregateType The aggregate to initialize the test fixture for
      */
@@ -96,7 +98,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
     @Override
     public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
-        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository, eventStore);
+        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository);
         return this;
     }
 
@@ -191,8 +193,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                     metaData = ((Message) event).getMetaData();
                 }
                 this.givenEvents.add(new GenericDomainEventMessage<>(
-                        aggregateIdentifier, sequenceNumber++, payload, metaData
-                ));
+                        aggregateType.getSimpleName(), aggregateIdentifier, sequenceNumber++, payload, metaData));
             }
         } catch (RuntimeException e) {
             FixtureResourceParameterResolverFactory.clear();
@@ -264,9 +265,6 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private void registerAggregateCommandHandlers() {
         ensureRepositoryConfiguration();
         if (!explicitCommandHandlersSet) {
-            AggregateAnnotationCommandHandler<T> handler = new AggregateAnnotationCommandHandler<>(aggregateType,
-                                                                                                   repository,
-                                                                                                   new AnnotationCommandTargetResolver());
             AggregateAnnotationCommandHandler<T> handler = new AggregateAnnotationCommandHandler<>(
                     aggregateType, repository, new AnnotationCommandTargetResolver()
             );
@@ -363,7 +361,6 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
         return commandBus;
     }
 
-    //todo remove this method?
     @Override
     public EventBus getEventBus() {
         return eventStore;
@@ -424,7 +421,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
         private final Repository<T> delegate;
 
-        public IdentifierValidatingRepository(Repository<T> delegate, EventBus eventBus) {
+        public IdentifierValidatingRepository(Repository<T> delegate) {
             this.delegate = delegate;
         }
 
@@ -488,9 +485,10 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
             }
         }
 
-        protected void doAppendEvents(List<DomainEventMessage<?>> events) {
+        protected void doAppendEvents(List<? extends EventMessage<?>> events) {
             publishedEvents.addAll(events);
-            events.stream().map(e -> (DomainEventMessage<?>) e).forEach(event -> {
+            events.stream().filter(DomainEventMessage.class::isInstance)
+                    .map(e -> (DomainEventMessage<?>) e).forEach(event -> {
                 if (aggregateIdentifier == null) {
                     aggregateIdentifier = event.getAggregateIdentifier();
                     injectAggregateIdentifier();

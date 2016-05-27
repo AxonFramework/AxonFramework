@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ public class SpringPrototypeAggregateFactory<T> implements AggregateFactory<T>, 
     private AggregateFactory<T> delegate;
 
     @Override
-    public T createAggregate(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
-        return delegate.createAggregate(aggregateIdentifier, firstEvent);
+    public T createAggregateRoot(String aggregateIdentifier, DomainEventMessage<?> firstEvent) {
+        return delegate.createAggregateRoot(aggregateIdentifier, firstEvent);
     }
 
     @SuppressWarnings("unchecked")
