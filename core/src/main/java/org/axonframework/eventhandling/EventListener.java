@@ -24,7 +24,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
  * @author Allard Buijze
  * @see EventBus
  * @see DomainEventMessage
- * @see org.axonframework.eventhandling.annotation.EventHandler
+ * @see EventHandler
  * @since 0.1
  */
 @FunctionalInterface

@@ -18,8 +18,9 @@ package org.axonframework.commandhandling.callbacks;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.testutils.MockException;
-import org.junit.*;
+import org.axonframework.common.MockException;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;

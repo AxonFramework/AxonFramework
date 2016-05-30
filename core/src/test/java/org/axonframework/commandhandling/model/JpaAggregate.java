@@ -16,9 +16,9 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.domain.IdentifierFactory;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.AggregateVersion;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.eventsourcing.AggregateIdentifier;
+import org.axonframework.eventsourcing.AggregateVersion;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;

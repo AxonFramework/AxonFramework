@@ -122,7 +122,7 @@
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.serializer.Serializer"/>
+                                            type="org.axonframework.serialization.Serializer"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>

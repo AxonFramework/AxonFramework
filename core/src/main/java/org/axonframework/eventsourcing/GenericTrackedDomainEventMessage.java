@@ -14,7 +14,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventstore.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
 import java.time.Instant;

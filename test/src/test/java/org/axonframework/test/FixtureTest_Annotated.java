@@ -18,8 +18,8 @@ package org.axonframework.test;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.DomainEventStream;
-import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.After;
 import org.junit.Before;

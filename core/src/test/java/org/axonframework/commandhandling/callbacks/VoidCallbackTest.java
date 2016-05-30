@@ -16,14 +16,10 @@
 
 package org.axonframework.commandhandling.callbacks;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.junit.*;
+import org.axonframework.commandhandling.*;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 /**
  * @author Allard Buijze

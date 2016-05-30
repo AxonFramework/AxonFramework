@@ -15,9 +15,9 @@ package org.axonframework.messaging.axon3;
 
 import org.axonframework.messaging.AbstractMessage;
 import org.axonframework.messaging.metadata.MetaData;
-import org.axonframework.serializer.LazyDeserializingObject;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
 
 import java.util.Map;
 

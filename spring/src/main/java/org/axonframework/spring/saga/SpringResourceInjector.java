@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.saga;
 
-import org.axonframework.saga.ResourceInjector;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;

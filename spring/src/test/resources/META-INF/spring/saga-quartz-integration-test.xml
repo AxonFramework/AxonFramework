@@ -25,7 +25,7 @@
 
     <axon:annotation-config />
 
-    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
+    <bean id="eventStore" class="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStore">
         <constructor-arg ref="entityManagerProvider"/>
         <property name="dataSource" ref="dataSource"/>
     </bean>

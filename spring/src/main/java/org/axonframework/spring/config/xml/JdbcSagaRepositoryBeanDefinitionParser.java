@@ -16,11 +16,11 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.cache.NoCache;
+import org.axonframework.caching.NoCache;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.saga.repository.CachingSagaStore;
-import org.axonframework.saga.repository.jdbc.GenericSagaSqlSchema;
-import org.axonframework.saga.repository.jdbc.JdbcSagaStore;
+import org.axonframework.eventhandling.saga.repository.CachingSagaStore;
+import org.axonframework.eventhandling.saga.repository.jdbc.GenericSagaSqlSchema;
+import org.axonframework.eventhandling.saga.repository.jdbc.JdbcSagaStore;
 import org.axonframework.spring.config.AutowiredBean;
 import org.axonframework.spring.jdbc.SpringDataSourceConnectionProvider;
 import org.axonframework.spring.saga.SpringResourceInjector;

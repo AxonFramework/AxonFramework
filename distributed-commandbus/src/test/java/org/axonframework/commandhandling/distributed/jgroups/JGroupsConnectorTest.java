@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.R
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.stack.IpAddress;

@@ -16,4 +16,4 @@
 
 org.axonframework.commandhandling.model.inspection.MethodCommandHandlerDefinition
 org.axonframework.commandhandling.model.inspection.MethodEventHandlerDefinition
-#org.axonframework.saga.annotation.SagaMethodMessageHandlerDefinition
+#org.axonframework.eventhandling.saga.SagaMethodMessageHandlerDefinition

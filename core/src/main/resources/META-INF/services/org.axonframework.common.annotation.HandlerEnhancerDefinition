@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-org.axonframework.saga.annotation.SagaMethodMessageHandlerDefinition
+org.axonframework.eventhandling.saga.SagaMethodMessageHandlerDefinition

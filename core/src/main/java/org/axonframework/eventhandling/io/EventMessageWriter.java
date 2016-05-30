@@ -19,9 +19,9 @@ package org.axonframework.eventhandling.io;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serializer.MessageSerializer;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serialization.MessageSerializer;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
 
 import java.io.DataOutput;
 import java.io.IOException;

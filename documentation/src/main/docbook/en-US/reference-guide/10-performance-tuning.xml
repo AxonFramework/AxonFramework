@@ -265,7 +265,7 @@
         <para>IdentifierFactory is an abstract factory that uses Java's ServiceLoader (since Java 6)
             mechanism to find the implementation to use. This means you can create your own
             implementation of the factory and put the name of the implementation in a file called
-            "<code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>". Java's
+            "<code>/META-INF/services/org.axonframework.common.IdentifierFactory</code>". Java's
             ServiceLoader mechanism will detect that file and attempt to create an instance of the
             class named inside.
         </para>
@@ -273,7 +273,7 @@
             implementation must <itemizedlist>
                 <listitem>
                     <para>have its fully qualified class name as the contents of the
-                            <code>/META-INF/services/org.axonframework.domain.IdentifierFactory</code>
+                            <code>/META-INF/services/org.axonframework.common.IdentifierFactory</code>
                         file on the classpath, </para>
                 </listitem>
                 <listitem>

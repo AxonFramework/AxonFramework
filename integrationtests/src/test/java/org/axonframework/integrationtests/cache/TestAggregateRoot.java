@@ -16,10 +16,10 @@
 
 package org.axonframework.integrationtests.cache;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 

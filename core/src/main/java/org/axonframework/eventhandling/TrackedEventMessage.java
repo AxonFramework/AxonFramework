@@ -13,7 +13,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.eventstore.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 /**
  * @author Rene de Waele

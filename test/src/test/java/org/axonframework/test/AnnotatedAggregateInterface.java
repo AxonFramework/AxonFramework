@@ -1,6 +1,6 @@
 package org.axonframework.test;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
 
 /**
  * @author Allard Buijze

@@ -27,7 +27,7 @@
     </bean>
 
     <bean id="mockEventStore" class="org.mockito.Mockito" factory-method="mock">
-        <constructor-arg value="org.axonframework.eventstore.EventStore"/>
+        <constructor-arg value="org.axonframework.eventsourcing.eventstore.EventStore"/>
     </bean>
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>

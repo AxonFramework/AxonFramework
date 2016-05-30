@@ -18,8 +18,7 @@ package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventsourcing.*;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.PropertyValue;

@@ -16,7 +16,7 @@
 
 package org.axonframework.quickstart.api;
 
-import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
 
 /**
  * Command used to mark an existing ToDoItem as completed.

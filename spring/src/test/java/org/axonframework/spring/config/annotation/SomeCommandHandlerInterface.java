@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
 
 /**
  * @author Allard Buijze

@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.Assert;
 import org.axonframework.common.lock.LockFactory;
-import org.axonframework.eventstore.DomainEventStream;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -32,11 +32,11 @@ import java.util.concurrent.Callable;
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
  * automatically publish new events to the given {@link org.axonframework.eventhandling.EventBus} and delegate event
- * storage to the provided {@link org.axonframework.eventstore.EventStore}.
+ * storage to the provided {@link org.axonframework.eventsourcing.eventstore.EventStore}.
  *
  * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
- * @see org.axonframework.eventstore.EventStore
+ * @see org.axonframework.eventsourcing.eventstore.EventStore
  * @since 0.1
  */
 public class EventSourcingRepository<T> extends LockingRepository<T, EventSourcedAggregate<T>> {

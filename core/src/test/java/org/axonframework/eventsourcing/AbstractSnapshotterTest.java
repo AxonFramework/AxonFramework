@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.eventstore.DomainEventStream;
-import org.axonframework.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.interceptors.Transaction;
 import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.metadata.MetaData;
@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-import static org.axonframework.eventstore.EventStoreTestUtils.createEvent;
-import static org.axonframework.eventstore.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
 import static org.mockito.Mockito.*;
 
 /**

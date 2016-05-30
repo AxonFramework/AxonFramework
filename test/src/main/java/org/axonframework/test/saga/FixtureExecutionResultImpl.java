@@ -17,7 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;

@@ -16,7 +16,7 @@
 
 package org.axonframework.test;
 
-import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
 
 /**
  * @author Allard Buijze

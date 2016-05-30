@@ -19,8 +19,8 @@ package org.axonframework.eventhandling.interceptors;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.serializer.SerializationAwareDomainEventMessage;
-import org.axonframework.serializer.SerializationAwareEventMessage;
+import org.axonframework.serialization.SerializationAwareDomainEventMessage;
+import org.axonframework.serialization.SerializationAwareEventMessage;
 
 import java.util.List;
 import java.util.function.Function;

@@ -18,16 +18,18 @@ package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
-import org.axonframework.serializer.UnknownSerializedTypeException;
+import org.axonframework.serialization.UnknownSerializedTypeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageListener;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 /**
  * MessageListener implementation that deserializes incoming messages and forwards them to one or more event processors.
@@ -40,12 +42,12 @@ public class EventProcessorMessageListener implements MessageListener {
 
     private static final Logger logger = LoggerFactory.getLogger(EventProcessorMessageListener.class);
 
-    private final List<EventProcessor> eventProcessors = new CopyOnWriteArrayList<>();
+    private final List<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArrayList<>();
     private final AMQPMessageConverter messageConverter;
 
     /**
-     * Initializes a EventProcessorMessageListener with given <code>serializer</code> to deserialize the message's contents
-     * into an EventMessage.
+     * Initializes a EventProcessorMessageListener with given <code>serializer</code> to deserialize the message's
+     * contents into an EventMessage.
      *
      * @param messageConverter The message converter to use to convert AMQP Messages to Event Messages
      */
@@ -55,20 +57,15 @@ public class EventProcessorMessageListener implements MessageListener {
 
     @Override
     public void onMessage(Message message) {
-        if (eventProcessors.isEmpty()) {
-            return;
-        }
-
-        try {
-            EventMessage eventMessage = messageConverter.readAMQPMessage(message.getBody(),
-                                                                         message.getMessageProperties().getHeaders());
-            if (eventMessage != null) {
-                for (EventProcessor eventProcessor : eventProcessors) {
-                    eventProcessor.handle(eventMessage);
-                }
+        if (!eventProcessors.isEmpty()) {
+            try {
+                EventMessage<?> event = messageConverter
+                        .readAMQPMessage(message.getBody(), message.getMessageProperties().getHeaders());
+                Optional.ofNullable(event).map(Collections::singletonList)
+                        .ifPresent(events -> eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events)));
+            } catch (UnknownSerializedTypeException e) {
+                logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
             }
-        } catch (UnknownSerializedTypeException e) {
-            logger.warn("Unable to deserialize an incoming message. Ignoring it. {}", e.toString());
         }
     }
 
@@ -76,9 +73,10 @@ public class EventProcessorMessageListener implements MessageListener {
      * Registers an additional event processor. This processor will receive messages once registered.
      *
      * @param eventProcessor the event processor to add to the listener
-     * @return a handle to unsubscribe the <code>eventProcessor</code>. When unsubscribed it will no longer receive messages.
+     * @return a handle to unsubscribe the <code>eventProcessor</code>. When unsubscribed it will no longer receive
+     * messages.
      */
-    public Registration addEventProcessor(EventProcessor eventProcessor) {
+    public Registration addEventProcessor(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         eventProcessors.add(eventProcessor);
         return () -> eventProcessors.remove(eventProcessor);
     }

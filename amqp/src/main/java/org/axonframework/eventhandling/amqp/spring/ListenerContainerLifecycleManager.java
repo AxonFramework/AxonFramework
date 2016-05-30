@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.slf4j.Logger;
@@ -28,13 +28,15 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.SmartLifecycle;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 /**
- * Manages the lifecycle of the SimpleMessageListenerContainers that have been created to receive messages for
- * Event Processors. The ListenerContainerLifecycleManager starts each of the Listener Containers when the context is started
+ * Manages the lifecycle of the SimpleMessageListenerContainers that have been created to receive messages for Event
+ * Processors. The ListenerContainerLifecycleManager starts each of the Listener Containers when the context is started
  * and will stop each of them when the context is being shut down.
  * <p/>
  * This class must be defined as a top-level Spring bean.
@@ -42,14 +44,14 @@ import java.util.concurrent.ConcurrentMap;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ListenerContainerLifecycleManager extends ListenerContainerFactory
-        implements SmartLifecycle, DisposableBean {
+public class ListenerContainerLifecycleManager extends ListenerContainerFactory implements SmartLifecycle, DisposableBean {
 
     private static final Logger logger = LoggerFactory.getLogger(ListenerContainerLifecycleManager.class);
 
     // guarded by "this"
     private final Map<String, SimpleMessageListenerContainer> containerPerQueue = new HashMap<>();
-    private final ConcurrentMap<EventProcessor, SimpleMessageListenerContainer> containerPerProcessor = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Consumer<List<? extends EventMessage<?>>>, SimpleMessageListenerContainer>
+            containerPerProcessor = new ConcurrentHashMap<>();
     // guarded by "this"
     private boolean started = false;
     private SpringAMQPConsumerConfiguration defaultConfiguration;
@@ -64,29 +66,31 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
      * @param eventProcessor   The event processor to forward messages to
      * @param config           The configuration object for the event processor
      * @param messageConverter The message converter to use to convert the AMQP Message to an Event Message
-     * @return a handle to unsubscribe the <code>eventProcessor</code>. When unsubscribed it will no longer receive messages.
+     * @return a handle to unsubscribe the <code>eventProcessor</code>. When unsubscribed it will no longer receive
+     * messages.
      */
-    public synchronized Registration registerEventProcessor(EventProcessor eventProcessor, AMQPConsumerConfiguration config,
+    public synchronized Registration registerEventProcessor(Consumer<List<? extends EventMessage<?>>> eventProcessor,
+                                                            AMQPConsumerConfiguration config,
                                                             AMQPMessageConverter messageConverter) {
         SpringAMQPConsumerConfiguration amqpConfig = SpringAMQPConsumerConfiguration.wrap(config);
         amqpConfig.setDefaults(defaultConfiguration);
         String queueName = amqpConfig.getQueueName();
         if (queueName == null) {
-            throw new AxonConfigurationException("The EventProcessor does not define a Queue Name, "
-                                                         + "nor is there a default Queue Name configured in the "
-                                                         + "ListenerContainerLifeCycleManager");
+            throw new AxonConfigurationException("The EventProcessor does not define a Queue Name, " +
+                                                         "nor is there a default Queue Name configured in the " +
+                                                         "ListenerContainerLifeCycleManager");
         }
         Registration registration;
         if (containerPerQueue.containsKey(queueName)) {
             final SimpleMessageListenerContainer container = containerPerQueue.get(queueName);
-            EventProcessorMessageListener existingListener = (EventProcessorMessageListener) container.getMessageListener();
+            EventProcessorMessageListener existingListener =
+                    (EventProcessorMessageListener) container.getMessageListener();
             registration = existingListener.addEventProcessor(eventProcessor);
             containerPerProcessor.put(eventProcessor, container);
             if (started && logger.isWarnEnabled()) {
-                logger.warn("An EventProcessor was configured on queue [{}], "
-                                    + "while the Container for that queue was already processing events. "
-                                    + "This may lead to Events not being published to all EventProcessors",
-                            queueName);
+                logger.warn("An EventProcessor was configured on queue [{}], " +
+                                    "while the Container for that queue was already processing events. " +
+                                    "This may lead to Events not being published to all EventProcessors", queueName);
             }
         } else {
             SimpleMessageListenerContainer newContainer = createContainer(amqpConfig);
@@ -103,7 +107,8 @@ public class ListenerContainerLifecycleManager extends ListenerContainerFactory
         return () -> {
             if (registration.cancel()) {
                 SimpleMessageListenerContainer container = containerPerProcessor.get(eventProcessor);
-                final EventProcessorMessageListener listener = (EventProcessorMessageListener) container.getMessageListener();
+                final EventProcessorMessageListener listener =
+                        (EventProcessorMessageListener) container.getMessageListener();
                 if (listener.isEmpty()) {
                     container.stop();
                 }

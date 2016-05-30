@@ -23,6 +23,11 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.SagaRepository;
+import org.axonframework.eventhandling.saga.SimpleResourceInjector;
+import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
@@ -31,11 +36,6 @@ import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 import org.axonframework.quickstart.saga.ToDoSaga;
-import org.axonframework.saga.SagaRepository;
-import org.axonframework.saga.SimpleResourceInjector;
-import org.axonframework.saga.annotation.AnnotatedSagaManager;
-import org.axonframework.saga.repository.AnnotatedSagaRepository;
-import org.axonframework.saga.repository.inmemory.InMemorySagaStore;
 
 import java.util.concurrent.ScheduledExecutorService;
 

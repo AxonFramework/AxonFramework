@@ -46,5 +46,5 @@
         <axon-amqp:default-configuration prefetch="100"/>
     </axon-amqp:eventBus>
 
-    <bean id="serializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
+    <bean id="serializer" class="org.axonframework.serialization.xml.XStreamSerializer"/>
 </beans>

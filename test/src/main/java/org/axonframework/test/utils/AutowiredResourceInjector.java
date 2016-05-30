@@ -17,7 +17,7 @@
 package org.axonframework.test.utils;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.saga.ResourceInjector;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.test.FixtureExecutionException;
 
 import java.lang.reflect.InvocationTargetException;

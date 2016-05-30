@@ -16,9 +16,9 @@
 
 package org.axonframework.spring.eventhandling.scheduling;
 
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.StartSaga;
 
 import javax.inject.Inject;
 import java.time.Duration;

@@ -16,11 +16,11 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.serializer.ChainingConverterFactory;
-import org.axonframework.serializer.ConverterFactory;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.upcasting.LazyUpcasterChain;
-import org.axonframework.upcasting.SimpleUpcasterChain;
+import org.axonframework.serialization.ChainingConverterFactory;
+import org.axonframework.serialization.ConverterFactory;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.LazyUpcasterChain;
+import org.axonframework.serialization.upcasting.SimpleUpcasterChain;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;

@@ -16,7 +16,7 @@
 
 package org.axonframework.test;
 
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 
 /**
  *

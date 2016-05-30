@@ -28,7 +28,7 @@
 
     <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus">
         <property name="transactionManager">
-            <bean class="org.axonframework.spring.unitofwork.SpringTransactionManager">
+            <bean class="org.axonframework.spring.messaging.unitofwork.SpringTransactionManager">
                 <property name="transactionManager" ref="transactionManager"/>
             </bean>
         </property>
@@ -36,7 +36,7 @@
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
+    <bean id="eventStore" class="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStore">
         <constructor-arg>
             <bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
         </constructor-arg>

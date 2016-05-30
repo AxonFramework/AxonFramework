@@ -16,13 +16,13 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.cache.Cache;
+import org.axonframework.caching.Cache;
+import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Registration;
-import org.axonframework.domain.StubAggregate;
-import org.axonframework.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;

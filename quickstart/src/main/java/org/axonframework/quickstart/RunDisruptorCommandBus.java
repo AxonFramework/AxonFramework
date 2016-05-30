@@ -16,7 +16,7 @@
 
 package org.axonframework.quickstart;
 
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -24,9 +24,9 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventstore.EmbeddedEventStore;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.quickstart.annotated.ToDoItem;
 
 /**
