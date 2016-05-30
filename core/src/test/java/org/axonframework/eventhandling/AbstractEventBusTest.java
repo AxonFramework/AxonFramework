@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventstore.TrackingEventStream;
-import org.axonframework.eventstore.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;

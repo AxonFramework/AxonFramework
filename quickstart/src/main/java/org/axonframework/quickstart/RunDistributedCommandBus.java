@@ -16,18 +16,18 @@
 
 package org.axonframework.quickstart;
 
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
 

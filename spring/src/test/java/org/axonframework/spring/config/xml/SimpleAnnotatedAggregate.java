@@ -16,9 +16,9 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.domain.IdentifierFactory;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 
 /**
  * @author Allard Buijze

@@ -16,11 +16,11 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.cache.NoCache;
+import org.axonframework.caching.NoCache;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
-import org.axonframework.saga.repository.CachingSagaStore;
-import org.axonframework.saga.repository.jpa.JpaSagaStore;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.eventhandling.saga.repository.CachingSagaStore;
+import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.saga.SpringResourceInjector;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;

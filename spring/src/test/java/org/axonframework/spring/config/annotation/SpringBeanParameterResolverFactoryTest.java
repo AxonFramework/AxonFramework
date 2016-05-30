@@ -18,8 +18,8 @@ package org.axonframework.spring.config.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,23 +27,15 @@ import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportResource;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.*;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.junit.Assert.*;
 
 /**
  * @author Allard Buijze

@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.loopbacktest;
 
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 
 import java.util.UUID;
 

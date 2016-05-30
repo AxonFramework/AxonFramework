@@ -1,6 +1,6 @@
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.cache.WeakReferenceCache;
+import org.axonframework.caching.WeakReferenceCache;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;

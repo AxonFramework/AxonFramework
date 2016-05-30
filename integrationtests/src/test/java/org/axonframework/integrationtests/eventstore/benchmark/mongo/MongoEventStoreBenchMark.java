@@ -17,9 +17,11 @@
 package org.axonframework.integrationtests.eventstore.benchmark.mongo;
 
 import com.mongodb.Mongo;
-import org.axonframework.domain.IdentifierFactory;
-import org.axonframework.eventstore.mongo.DefaultMongoTemplate;
-import org.axonframework.eventstore.mongo.MongoEventStorageEngine;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.mongo.DefaultMongoTemplate;
+import org.axonframework.eventsourcing.eventstore.mongo.MongoEventStorageEngine;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 
 /**
@@ -28,7 +30,7 @@ import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStor
 public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
     private static final IdentifierFactory IDENTIFIER_FACTORY = IdentifierFactory.getInstance();
-    private MongoEventStorageEngine mongoEventStorageEngine;
+    private EventStore eventStore;
 
     private Mongo mongoDb;
 
@@ -39,7 +41,7 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
     public MongoEventStoreBenchMark(Mongo mongoDb, MongoEventStorageEngine mongoEventStorageEngine) {
         this.mongoDb = mongoDb;
-        this.mongoEventStorageEngine = mongoEventStorageEngine;
+        this.eventStore = new EmbeddedEventStore(mongoEventStorageEngine);
     }
 
     @Override
@@ -61,7 +63,7 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
             final String aggregateId = IDENTIFIER_FACTORY.generateIdentifier();
             int eventSequence = 0;
             for (int t = 0; t < getTransactionCount(); t++) {
-                eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, mongoEventStorageEngine, eventSequence);
+                eventSequence = saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence);
             }
         }
     }

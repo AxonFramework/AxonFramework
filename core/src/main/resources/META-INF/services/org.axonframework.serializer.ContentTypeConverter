@@ -1,5 +1,0 @@
-org.axonframework.serializer.converters.ByteArrayToInputStreamConverter
-org.axonframework.serializer.converters.BlobToInputStreamConverter
-org.axonframework.serializer.converters.InputStreamToByteArrayConverter
-org.axonframework.serializer.converters.ByteArrayToStringConverter
-org.axonframework.serializer.converters.StringToByteArrayConverter

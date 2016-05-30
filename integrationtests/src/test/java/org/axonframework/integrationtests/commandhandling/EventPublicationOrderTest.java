@@ -16,16 +16,16 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Before;

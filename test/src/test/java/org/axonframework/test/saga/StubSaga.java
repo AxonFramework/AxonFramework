@@ -19,12 +19,12 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.saga.EndSaga;
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.SagaLifecycle;
+import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.saga.annotation.EndSaga;
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.SagaLifecycle;
-import org.axonframework.saga.annotation.StartSaga;
 
 import java.time.Duration;
 import java.util.ArrayList;

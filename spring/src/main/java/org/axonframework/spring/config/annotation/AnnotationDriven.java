@@ -16,18 +16,16 @@
 
 package org.axonframework.spring.config.annotation;
 
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventhandling.EventHandler;
 import org.springframework.context.annotation.Import;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Annotation for {@link org.springframework.context.annotation.Configuration @Configuration} that will automatically
- * subscribe {@link org.axonframework.commandhandling.annotation.CommandHandler @CommandHandler} and {@link
- * org.axonframework.eventhandling.annotation.EventHandler @EventHandler} annotated beans with the CommandBus and
+ * subscribe {@link CommandHandler @CommandHandler} and {@link
+ * EventHandler @EventHandler} annotated beans with the CommandBus and
  * EventBus, respectively.
  * <p/>
  * If a context contains multiple EventBus or CommandBus implementations, you must indicate the isntance to use as

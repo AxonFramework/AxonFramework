@@ -16,13 +16,13 @@
 
 package org.axonframework.eventhandling.async;
 
+import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.Transaction;
 import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
-import org.axonframework.testutils.MockException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;

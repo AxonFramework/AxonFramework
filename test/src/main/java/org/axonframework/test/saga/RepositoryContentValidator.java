@@ -16,8 +16,8 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.repository.inmemory.InMemorySagaStore;
+import org.axonframework.eventhandling.saga.AssociationValue;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.AxonAssertionError;
 
 import java.util.Set;

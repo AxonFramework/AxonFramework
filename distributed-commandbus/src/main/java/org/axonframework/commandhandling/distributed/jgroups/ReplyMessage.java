@@ -16,17 +16,12 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.jgroups.util.Streamable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 
 /**
  * JGroups Message representing a reply to a dispatched command.

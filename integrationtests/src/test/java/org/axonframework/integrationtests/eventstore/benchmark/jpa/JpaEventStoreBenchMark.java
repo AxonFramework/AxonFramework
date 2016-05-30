@@ -16,6 +16,9 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark.jpa;
 
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -34,7 +37,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
-    private JpaEventStore jpaEventStore;
+    private EventStore eventStore;
     private PlatformTransactionManager transactionManager;
 
     @PersistenceContext
@@ -45,8 +48,8 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
         benchmark.startBenchMark();
     }
 
-    public JpaEventStoreBenchMark(JpaEventStore jpaEventStore, PlatformTransactionManager transactionManager) {
-        this.jpaEventStore = jpaEventStore;
+    public JpaEventStoreBenchMark(JpaEventStorageEngine storageEngine, PlatformTransactionManager transactionManager) {
+        this.eventStore = new EmbeddedEventStore(storageEngine);
         this.transactionManager = transactionManager;
     }
 
@@ -80,9 +83,8 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
                     @Override
                     protected void doInTransactionWithoutResult(TransactionStatus status) {
                         assertFalse(status.isRollbackOnly());
-                        eventSequence.set(saveAndLoadLargeNumberOfEvents(aggregateId,
-                                                                         jpaEventStore,
-                                                                         eventSequence.get()));
+                        eventSequence
+                                .set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get()));
                     }
                 });
             }

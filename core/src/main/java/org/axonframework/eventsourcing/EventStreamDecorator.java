@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 
 import java.util.List;
 import java.util.stream.Stream;

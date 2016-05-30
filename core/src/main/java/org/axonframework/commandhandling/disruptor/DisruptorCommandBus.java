@@ -23,12 +23,13 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventstore.DomainEventStream;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -89,7 +90,7 @@ import static java.lang.String.format;
  * DisruptorCommandBus is operational. At least one additional thread is required to invoke callbacks and initiate a
  * recovery process in the case of exceptions.
  * <p>
- * Consider providing an alternative {@link org.axonframework.domain.IdentifierFactory} implementation. The default
+ * Consider providing an alternative {@link IdentifierFactory} implementation. The default
  * implementation used {@link java.util.UUID#randomUUID()} to generated identifier for Events. The poor performance of
  * this method severely impacts overall performance of the DisruptorCommandBus. A better performing alternative is, for
  * example, <a href="http://johannburkard.de/software/uuid/" target="_blank"><code>com.eaio.uuid.UUID</code></a>

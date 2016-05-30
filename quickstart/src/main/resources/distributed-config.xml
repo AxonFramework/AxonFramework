@@ -50,5 +50,5 @@
     <bean class="org.axonframework.quickstart.RunDistributedCommandBus$ToDoLoggingCommandHandler"/>
 
     <!-- Serializer used by the jgroups connector -->
-    <bean class="org.axonframework.serializer.xml.XStreamSerializer"/>
+    <bean class="org.axonframework.serialization.xml.XStreamSerializer"/>
 </beans>

@@ -17,10 +17,9 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.common.DirectExecutor;
+import org.axonframework.common.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.*;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.Transaction;
@@ -29,7 +28,6 @@ import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.testutils.MockException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -248,6 +246,7 @@ public class AsynchronousEventProcessorTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private List<EventMessage> listenForAcknowledgedMessages() {
         final EventProcessingMonitor monitor = mock(EventProcessingMonitor.class);
         testSubject.subscribeEventProcessingMonitor(monitor);
@@ -259,6 +258,7 @@ public class AsynchronousEventProcessorTest {
         return ackedMessages;
     }
 
+    @SuppressWarnings("unchecked")
     private List<EventMessage> listenForFailedMessages() {
         final EventProcessingMonitor monitor = mock(EventProcessingMonitor.class);
         testSubject.subscribeEventProcessingMonitor(monitor);

@@ -89,6 +89,7 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testInternalRepositoryContainsDecorator() {
         GenericBeanDefinition beanDefinition = (GenericBeanDefinition)
                 beanFactory.getBeanDefinition("myAggregateRepository");
@@ -103,7 +104,7 @@ public class DisruptorCommandBusBeanDefinitionParserTest {
 
         PropertyValue decoratorsValue = beanDefinition.getPropertyValues().getPropertyValue("eventStreamDecorators");
         assertNotNull(decoratorsValue);
-        final List<BeanDefinitionHolder> decorators = (List) decoratorsValue.getValue();
+        final List<BeanDefinitionHolder> decorators = (List<BeanDefinitionHolder>) decoratorsValue.getValue();
         assertEquals(1, decorators.size());
         assertEquals("org.axonframework.spring.testutils.MockitoMockFactoryBean",
                      decorators.get(0).getBeanDefinition().getBeanClassName());

@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;

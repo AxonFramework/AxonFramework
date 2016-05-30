@@ -17,8 +17,8 @@
 package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.eventsourcing.*;
-import org.axonframework.eventstore.DomainEventStream;
-import org.axonframework.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.spring.config.annotation.StubAggregate;
 import org.hamcrest.BaseMatcher;

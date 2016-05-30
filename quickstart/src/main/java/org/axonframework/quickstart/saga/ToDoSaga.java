@@ -17,15 +17,15 @@
 package org.axonframework.quickstart.saga;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventhandling.saga.EndSaga;
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 import org.axonframework.quickstart.api.ToDoItemDeadlineExpiredEvent;
-import org.axonframework.saga.annotation.EndSaga;
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.StartSaga;
 
 import javax.inject.Inject;
 import java.time.Duration;

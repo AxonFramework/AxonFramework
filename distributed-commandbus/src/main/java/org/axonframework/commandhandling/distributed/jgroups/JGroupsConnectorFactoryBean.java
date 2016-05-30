@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serialization.Serializer;
 import org.jgroups.JChannel;
 import org.jgroups.util.Util;
 import org.springframework.beans.BeansException;

@@ -16,15 +16,15 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.cache.Cache;
-import org.axonframework.cache.NoCache;
+import org.axonframework.caching.Cache;
+import org.axonframework.caching.NoCache;
 import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.io.Serializable;

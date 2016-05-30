@@ -16,9 +16,9 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.cache.NoCache;
-import org.axonframework.saga.repository.CachingSagaStore;
-import org.axonframework.saga.repository.jdbc.JdbcSagaStore;
+import org.axonframework.caching.NoCache;
+import org.axonframework.eventhandling.saga.repository.CachingSagaStore;
+import org.axonframework.eventhandling.saga.repository.jdbc.JdbcSagaStore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

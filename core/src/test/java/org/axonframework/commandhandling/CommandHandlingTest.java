@@ -17,12 +17,11 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.domain.StubAggregate;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.Before;

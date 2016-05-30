@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.jpa;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 
 import javax.persistence.Basic;
 import javax.persistence.Entity;

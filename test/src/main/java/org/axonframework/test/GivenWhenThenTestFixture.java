@@ -17,9 +17,6 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
@@ -32,7 +29,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;

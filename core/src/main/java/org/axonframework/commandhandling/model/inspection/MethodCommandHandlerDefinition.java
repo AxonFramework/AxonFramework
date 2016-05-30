@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling.model.inspection;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.model.AbstractMessageHandler;
 import org.axonframework.common.annotation.HandlerDefinition;
 import org.axonframework.common.annotation.MessageHandler;

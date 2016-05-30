@@ -1,20 +1,15 @@
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.cache.Cache;
+import org.axonframework.caching.Cache;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.DomainEventStream;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;

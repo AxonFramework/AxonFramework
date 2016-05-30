@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.Iterator;

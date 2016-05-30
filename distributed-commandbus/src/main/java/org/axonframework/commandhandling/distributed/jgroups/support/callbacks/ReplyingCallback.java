@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.jgroups.CommandResponseProcessingFailedException;
 import org.axonframework.commandhandling.distributed.jgroups.ReplyMessage;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serialization.Serializer;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.slf4j.Logger;

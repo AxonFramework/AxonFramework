@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.StartSaga;
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.StartSaga;
 
 /**
  * @author Allard Buijze

@@ -21,8 +21,8 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.annotation.HandlerDefinition;
 import org.axonframework.common.annotation.MessageHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Executable;

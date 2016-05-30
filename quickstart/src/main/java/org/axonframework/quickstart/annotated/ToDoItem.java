@@ -16,9 +16,9 @@
 
 package org.axonframework.quickstart.annotated;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.AggregateIdentifier;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;

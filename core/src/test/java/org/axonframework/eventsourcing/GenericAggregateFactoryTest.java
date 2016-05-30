@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.StubAggregate;
-import org.axonframework.testutils.MockException;
+import org.axonframework.commandhandling.StubAggregate;
+import org.axonframework.common.MockException;
 import org.junit.Test;
 
 import java.util.UUID;
