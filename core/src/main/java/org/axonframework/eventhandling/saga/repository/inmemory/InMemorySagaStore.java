@@ -16,10 +16,10 @@
 
 package org.axonframework.eventhandling.saga.repository.inmemory;
 
-import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.Map;
 import java.util.Set;
@@ -58,12 +58,12 @@ public class InMemorySagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
         managedSagas.put(sagaIdentifier, new ManagedSaga(saga, associationValues));
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
         managedSagas.put(sagaIdentifier, new ManagedSaga(saga, associationValues.asSet()));
     }
 
@@ -88,7 +88,7 @@ public class InMemorySagaStore implements SagaStore<Object> {
         }
 
         @Override
-        public ProcessingToken processingToken() {
+        public TrackingToken trackingToken() {
             return null;
         }
 

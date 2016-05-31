@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ProcessingToken;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -86,11 +86,11 @@ public interface Saga<T> {
     boolean isActive();
 
     /**
-     * Returns the ProcessingToken belonging to the EventMessage last processed by this instance, or {@code null} if
+     * Returns the TrackingToken belonging to the EventMessage last processed by this instance, or {@code null} if
      * this instance never handled an EventMessage, or if it received an EventMessage that doesn't carry a
-     * ProcessingToken.
+     * TrackingToken.
      *
-     * @return the ProcessingToken of the last processed EventMessage, if present.
+     * @return the TrackingToken of the last processed EventMessage, if present.
      */
-    ProcessingToken processingToken();
+    TrackingToken trackingToken();
 }

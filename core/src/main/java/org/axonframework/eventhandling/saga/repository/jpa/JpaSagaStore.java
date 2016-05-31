@@ -18,11 +18,11 @@ package org.axonframework.eventhandling.saga.repository.jpa;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
@@ -198,7 +198,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         if (logger.isDebugEnabled()) {
@@ -227,7 +227,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         entityManager.persist(entry);
@@ -282,7 +282,7 @@ public class JpaSagaStore implements SagaStore<Object> {
         }
 
         @Override
-        public ProcessingToken processingToken() {
+        public TrackingToken trackingToken() {
             return null;
         }
 

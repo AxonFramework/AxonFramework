@@ -19,12 +19,12 @@ package org.axonframework.eventhandling.saga.repository.jdbc;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.DataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.SagaStorageException;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.jpa.SagaEntry;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -188,7 +188,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         if (logger.isDebugEnabled()) {
             logger.debug("Updating saga id {} as {}", sagaIdentifier, new String(entry.getSerializedSaga(),
@@ -242,7 +242,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
         SagaEntry<?> entry = new SagaEntry<>(saga, sagaIdentifier, serializer);
         if (logger.isDebugEnabled()) {
             logger.debug("Storing saga id {} as {}", sagaIdentifier, new String(entry.getSerializedSaga(),
@@ -312,7 +312,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
         }
 
         @Override
-        public ProcessingToken processingToken() {
+        public TrackingToken trackingToken() {
             return null;
         }
 

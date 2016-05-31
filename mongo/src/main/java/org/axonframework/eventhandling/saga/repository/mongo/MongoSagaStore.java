@@ -20,10 +20,10 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import org.axonframework.common.Assert;
-import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
@@ -65,7 +65,7 @@ public class MongoSagaStore implements SagaStore<Object> {
         S loadedSaga = sagaEntry.getSaga(serializer);
         return new Entry<S>() {
             @Override
-            public ProcessingToken processingToken() {
+            public TrackingToken trackingToken() {
                 return null;
             }
 
@@ -111,7 +111,7 @@ public class MongoSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, AssociationValues associationValues) {
+    public void updateSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, AssociationValues associationValues) {
         SagaEntry<?> sagaEntry = new SagaEntry<>(sagaIdentifier, saga, associationValues.asSet(), serializer);
         mongoTemplate.sagaCollection().findAndModify(
                 SagaEntry.queryByIdentifier(sagaIdentifier),
@@ -119,7 +119,7 @@ public class MongoSagaStore implements SagaStore<Object> {
     }
 
     @Override
-    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, ProcessingToken token, Set<AssociationValue> associationValues) {
+    public void insertSaga(Class<?> sagaType, String sagaIdentifier, Object saga, TrackingToken token, Set<AssociationValue> associationValues) {
         SagaEntry<?> sagaEntry = new SagaEntry<>(sagaIdentifier, saga, associationValues, serializer);
         DBObject sagaObject = sagaEntry.asDBObject();
         mongoTemplate.sagaCollection().save(sagaObject);

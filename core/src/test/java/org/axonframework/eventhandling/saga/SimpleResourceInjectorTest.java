@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ProcessingToken;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.junit.Test;
 
 import javax.inject.Inject;
@@ -119,7 +119,7 @@ public class SimpleResourceInjectorTest {
         }
 
         @Override
-        public ProcessingToken processingToken() {
+        public TrackingToken trackingToken() {
             return null;
         }
 

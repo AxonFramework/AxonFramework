@@ -66,7 +66,7 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
      * @param rollbackConfiguration The configuration of the exceptions that lead to a Unit of Work rollback
      */
     protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
-                               RollbackConfiguration rollbackConfiguration) {
+                                  RollbackConfiguration rollbackConfiguration) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
         this.rollbackConfiguration = rollbackConfiguration;
@@ -98,19 +98,17 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
             return doHandle(event, unitOfWork);
         } else {
             return new DefaultInterceptorChain<>(unitOfWork, interceptors,
-                                                 (MessageHandler<EventMessage<?>>) this::doHandle)
-                    .proceed();
+                                                 (MessageHandler<EventMessage<?>>) this::doHandle).proceed();
         }
     }
 
-    protected Object doHandle(EventMessage<?> event, UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
+    protected Object doHandle(EventMessage<?> event,
+                              UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event);
-        Set<Saga<T>> sagas = associationValues.stream()
-                .flatMap(associationValue -> sagaRepository.find(associationValue).stream())
-                .map(sagaRepository::load)
-                .filter(s -> s != null)
-                .filter(Saga::isActive)
-                .collect(Collectors.toCollection(HashSet<Saga<T>>::new));
+        Set<Saga<T>> sagas =
+                associationValues.stream().flatMap(associationValue -> sagaRepository.find(associationValue).stream())
+                        .map(sagaRepository::load).filter(s -> s != null).filter(Saga::isActive)
+                        .collect(Collectors.toCollection(HashSet<Saga<T>>::new));
         boolean sagaOfTypeInvoked = false;
         for (Saga<T> saga : sagas) {
             if (doInvokeSaga(event, saga)) {
@@ -118,9 +116,8 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
             }
         }
         SagaInitializationPolicy initializationPolicy = getSagaCreationPolicy(event);
-        if (initializationPolicy.getCreationPolicy() == SagaCreationPolicy.ALWAYS
-                || (!sagaOfTypeInvoked
-                && initializationPolicy.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)) {
+        if (initializationPolicy.getCreationPolicy() == SagaCreationPolicy.ALWAYS ||
+                (!sagaOfTypeInvoked && initializationPolicy.getCreationPolicy() == SagaCreationPolicy.IF_NONE_FOUND)) {
             startNewSaga(event, initializationPolicy.getInitialAssociationValue());
         }
         return null;
@@ -149,9 +146,8 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
     }
 
     /**
-     * Returns the Saga Initialization Policy for a Saga of the given <code>sagaType</code> and <code>event</code>.
-     * This policy provides the conditions to create new Saga instance, as well as the initial association of that
-     * saga.
+     * Returns the Saga Initialization Policy for a Saga of the given <code>sagaType</code> and <code>event</code>. This
+     * policy provides the conditions to create new Saga instance, as well as the initial association of that saga.
      *
      * @param event The Event that is being dispatched to Saga instances
      * @return the initialization policy for the Saga
@@ -175,9 +171,7 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
         } catch (Exception e) {
             if (suppressExceptions) {
                 logger.error(format("An exception occurred while a Saga [%s] was handling an Event [%s]:",
-                                    saga.getClass().getSimpleName(),
-                                    event.getPayloadType().getSimpleName()),
-                             e);
+                                    saga.getClass().getSimpleName(), event.getPayloadType().getSimpleName()), e);
                 return true;
             } else {
                 throw e;

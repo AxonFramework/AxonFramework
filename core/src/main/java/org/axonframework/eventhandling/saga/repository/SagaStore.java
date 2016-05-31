@@ -16,9 +16,9 @@
 
 package org.axonframework.eventhandling.saga.repository;
 
-import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.Set;
 
@@ -31,16 +31,16 @@ public interface SagaStore<T> {
     void deleteSaga(Class<? extends T> sagaType, String sagaIdentifier, Set<AssociationValue> associationValues);
 
     void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga,
-                    ProcessingToken token,
+                    TrackingToken token,
                     Set<AssociationValue> associationValues);
 
     void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga,
-                    ProcessingToken token,
+                    TrackingToken token,
                     AssociationValues associationValues);
 
     interface Entry<T> {
 
-        ProcessingToken processingToken();
+        TrackingToken trackingToken();
 
         Set<AssociationValue> associationValues();
 

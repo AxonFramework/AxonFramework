@@ -159,7 +159,7 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
      * @param saga The saga that has been modified and needs to be updated in the storage
      */
     protected void updateSaga(AnnotatedSaga<T> saga) {
-        sagaStore.updateSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.processingToken(), saga.getAssociationValues());
+        sagaStore.updateSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(), saga.getAssociationValues());
     }
 
     /**
@@ -168,7 +168,7 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
      * @param saga The newly created Saga instance to store.
      */
     protected void storeSaga(AnnotatedSaga<T> saga) {
-        sagaStore.insertSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.processingToken(), saga.getAssociationValues().asSet());
+        sagaStore.insertSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(), saga.getAssociationValues().asSet());
     }
 
     protected AnnotatedSaga<T> doLoadSaga(String sagaIdentifier) {

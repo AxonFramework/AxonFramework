@@ -15,8 +15,8 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.Set;
 import java.util.function.Consumer;
@@ -38,7 +38,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private volatile boolean isActive = true;
     private final String sagaId;
     private final T sagaInstance;
-    private ProcessingToken processingToken;
+    private TrackingToken trackingToken;
 
     /**
      * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
@@ -116,8 +116,8 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     }
 
     @Override
-    public ProcessingToken processingToken() {
-        return processingToken;
+    public TrackingToken trackingToken() {
+        return trackingToken;
     }
 
     /**
