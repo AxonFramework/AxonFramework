@@ -261,7 +261,7 @@
                          event-bus="eventBus" lock-factory="nullLockFactory"
                          aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"/>
 
-    <bean id="mockCache" class="org.axonframework.caching.JCacheAdapter">
+    <bean id="mockCache" class="org.axonframework.common.caching.JCacheAdapter">
         <constructor-arg>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
                 <property name="mockType" value="javax.cache.Cache"/>

@@ -20,4 +20,4 @@
  * @author Allard Buijze
  * @since 2.1.2
  */
-package org.axonframework.caching;
+package org.axonframework.common.caching;

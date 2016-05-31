@@ -1,12 +1,11 @@
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.caching.Cache;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -34,7 +33,6 @@ public class CommandHandlerInvokerTest {
 
     private CommandHandlerInvoker testSubject;
     private EventStore mockEventStore;
-    private EventBus mockEventBus;
     private Cache mockCache;
     private CommandHandlingEntry commandHandlingEntry;
     private String aggregateIdentifier;
@@ -45,7 +43,6 @@ public class CommandHandlerInvokerTest {
     @Before
     public void setUp() throws Exception {
         mockEventStore = mock(EventStore.class);
-        mockEventBus = mock(EventBus.class);
         mockCache = mock(Cache.class);
         testSubject = new CommandHandlerInvoker(mockEventStore, mockCache, 0);
         aggregateIdentifier = "mockAggregate";
@@ -62,6 +59,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
@@ -80,6 +78,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testLoadFromRepositoryLoadsFromCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
@@ -100,6 +99,7 @@ public class CommandHandlerInvokerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testAddToRepositoryAddsInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);

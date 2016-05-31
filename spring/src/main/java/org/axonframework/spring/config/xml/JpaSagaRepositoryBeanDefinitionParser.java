@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.caching.NoCache;
+import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.eventhandling.saga.repository.CachingSagaStore;
 import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;

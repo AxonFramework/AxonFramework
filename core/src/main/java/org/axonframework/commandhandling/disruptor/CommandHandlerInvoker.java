@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.disruptor;
 
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
-import org.axonframework.caching.Cache;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.ConflictingAggregateVersionException;
@@ -27,6 +26,7 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
+import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;

@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.caching.NoCache;
+import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.eventhandling.saga.repository.CachingSagaStore;
 import org.axonframework.eventhandling.saga.repository.jdbc.GenericSagaSqlSchema;

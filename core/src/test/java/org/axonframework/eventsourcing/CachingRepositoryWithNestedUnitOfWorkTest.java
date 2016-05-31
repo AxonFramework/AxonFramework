@@ -17,10 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
-import org.axonframework.caching.Cache;
-import org.axonframework.caching.EhCacheAdapter;
-import org.axonframework.caching.NoCache;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.EhCacheAdapter;
+import org.axonframework.common.caching.NoCache;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;

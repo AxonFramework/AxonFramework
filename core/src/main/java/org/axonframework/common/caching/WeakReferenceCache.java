@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.caching;
+package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 

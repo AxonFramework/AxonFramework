@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.caching.Cache;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.common.caching.Cache;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
@@ -101,7 +101,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      * <p/>
      * By setting this value to false, event counters are kept in memory. This is particularly useful when repositories
      * use caches, preventing events from being loaded. Consider registering the Caches use using {@link
-     * #setAggregateCache(org.axonframework.caching.Cache)} or {@link #setAggregateCaches(java.util.List)}
+     * #setAggregateCache(org.axonframework.common.caching.Cache)} or {@link #setAggregateCaches(java.util.List)}
      *
      * @param clearCountersAfterAppend indicator whether to clear counters after appending events
      */

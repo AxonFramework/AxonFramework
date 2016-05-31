@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.saga.repository;
 
-import org.axonframework.caching.Cache;
 import org.axonframework.common.Assert;
+import org.axonframework.common.caching.Cache;
 import org.axonframework.eventhandling.ProcessingToken;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;

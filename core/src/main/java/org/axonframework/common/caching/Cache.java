@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.caching;
+package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 
@@ -102,7 +102,7 @@ public interface Cache {
 
         /**
          * Invoked when an item was removed from the cache, either following an expiry, or by explicitly calling {@link
-         * org.axonframework.caching.Cache#remove(Object)}.
+         * org.axonframework.common.caching.Cache#remove(Object)}.
          *
          * @param key The key of the entry that was removed
          */

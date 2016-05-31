@@ -16,10 +16,10 @@
 
 package org.axonframework.integrationtests.cache;
 
-import org.axonframework.caching.Cache;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.caching.Cache;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.util.Transactional;

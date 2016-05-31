@@ -64,7 +64,7 @@
         </axon:upcasters>
     </axon:jdbc-event-store>
 
-    <bean id="nocache" class="org.axonframework.caching.NoCache"/>
+    <bean id="nocache" class="org.axonframework.common.caching.NoCache"/>
 
     <bean id="connectionProvider" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.common.jdbc.ConnectionProvider"/>

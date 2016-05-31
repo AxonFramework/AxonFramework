@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.saga.repository;
 
 import net.sf.ehcache.CacheManager;
-import org.axonframework.caching.Cache;
-import org.axonframework.caching.EhCacheAdapter;
+import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.junit.After;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 public class CachingSagaStoreTest {
 
     private Cache associationsCache;
-    private org.axonframework.caching.Cache sagaCache;
+    private org.axonframework.common.caching.Cache sagaCache;
     private CachingSagaStore<StubSaga> testSubject;
     private CacheManager cacheManager;
     private net.sf.ehcache.Cache ehCache;
