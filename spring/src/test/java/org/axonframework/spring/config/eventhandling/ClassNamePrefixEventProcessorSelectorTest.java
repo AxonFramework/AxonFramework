@@ -17,7 +17,6 @@
 package org.axonframework.spring.config.eventhandling;
 
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.junit.Test;
 
 import java.util.HashMap;

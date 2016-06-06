@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.amqp.DefaultAMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.serialization.Serializer;

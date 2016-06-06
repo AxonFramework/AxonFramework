@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessingMonitor;
+import org.axonframework.messaging.Message;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,7 +26,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
+import static java.util.Collections.singletonList;
 import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -37,40 +39,22 @@ import static org.junit.Assert.assertTrue;
 public class AsynchronousEventProcessorConcurrencyTest {
 
     private ExecutorService executor;
-    private AsynchronousEventProcessor testSubject;
+    private AsynchronousEventProcessingStrategy testSubject;
 
     @Before
     public void setUp() throws Exception {
         executor = Executors.newCachedThreadPool();
-        testSubject = new AsynchronousEventProcessor("async", executor, new SequencingPolicy<EventMessage<?>>() {
-            @Override
-            public Object getSequenceIdentifierFor(EventMessage<?> event) {
-                return event.getPayload();
-            }
-        });
+        testSubject = new AsynchronousEventProcessingStrategy(executor, Message::getPayload);
     }
 
     @Test(timeout = EventsPublisher.EVENTS_COUNT)
     public void testHandleEvents() throws InterruptedException {
         final AtomicInteger counter = new AtomicInteger();
-        final AtomicInteger completed = new AtomicInteger();
-        final AtomicInteger failed = new AtomicInteger();
-        testSubject.subscribe(event -> counter.incrementAndGet());
-        testSubject.subscribeEventProcessingMonitor(new EventProcessingMonitor() {
-            @Override
-            public void onEventProcessingCompleted(List<? extends EventMessage> eventMessages) {
-                completed.addAndGet(eventMessages.size());
-            }
-
-            @Override
-            public void onEventProcessingFailed(List<? extends EventMessage> eventMessages, Throwable cause) {
-                failed.incrementAndGet();
-            }
-        });
+        Consumer<List<? extends EventMessage<?>>> processor = eventMessages -> counter.addAndGet(eventMessages.size());
 
         int threadCount = 50;
         for (int i = 0; i < threadCount; i++) {
-            executor.submit(new EventsPublisher());
+            executor.submit(new EventsPublisher(processor));
         }
         while (counter.get() < threadCount * EventsPublisher.EVENTS_COUNT) {
             Thread.sleep(10);
@@ -80,22 +64,25 @@ public class AsynchronousEventProcessorConcurrencyTest {
         assertTrue("Executor not closed within a reasonable timeframe", executor.awaitTermination(10,
                                                                                                   TimeUnit.SECONDS));
 
-        assertEquals(0, failed.get());
         assertEquals(threadCount * EventsPublisher.EVENTS_COUNT, counter.get());
-        assertEquals(threadCount * EventsPublisher.EVENTS_COUNT, completed.get());
     }
 
     private class EventsPublisher implements Runnable {
 
         private static final int ITERATIONS = 10000;
         private static final int EVENTS_COUNT = ITERATIONS * 3;
+        private final Consumer<List<? extends EventMessage<?>>> processor;
+
+        public EventsPublisher(Consumer<List<? extends EventMessage<?>>> processor) {
+            this.processor = processor;
+        }
 
         @Override
         public void run() {
             for (int i = 0; i < ITERATIONS; i++) {
-                testSubject.handle(asEventMessage("1"));
-                testSubject.handle(asEventMessage("2"));
-                testSubject.handle(asEventMessage("3"));
+                testSubject.handle(singletonList(asEventMessage("1")), processor);
+                testSubject.handle(singletonList(asEventMessage("2")), processor);
+                testSubject.handle(singletonList(asEventMessage("3")), processor);
             }
         }
     }

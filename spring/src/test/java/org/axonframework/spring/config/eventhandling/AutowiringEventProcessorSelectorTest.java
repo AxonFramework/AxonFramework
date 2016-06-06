@@ -19,7 +19,6 @@ package org.axonframework.spring.config.eventhandling;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

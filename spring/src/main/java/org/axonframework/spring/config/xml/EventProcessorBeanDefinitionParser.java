@@ -19,7 +19,7 @@ package org.axonframework.spring.config.xml;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
 import org.axonframework.eventhandling.SpringAnnotationOrderResolver;
 import org.axonframework.spring.config.eventhandling.*;
 import org.springframework.beans.factory.FactoryBean;
@@ -85,7 +85,7 @@ public class EventProcessorBeanDefinitionParser extends AbstractBeanDefinitionPa
             if (StringUtils.hasText(processorType)) {
                 innerProcessor.setBeanClassName(processorType);
             } else {
-                innerProcessor.setBeanClass(SimpleEventProcessor.class);
+                innerProcessor.setBeanClass(PublishingEventProcessor.class);
             }
             innerProcessor.getConstructorArgumentValues()
                         .addIndexedArgumentValue(0, resolveId(element, innerProcessor, parserContext));

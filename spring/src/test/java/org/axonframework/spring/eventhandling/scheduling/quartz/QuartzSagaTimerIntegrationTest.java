@@ -19,7 +19,6 @@ package org.axonframework.spring.eventhandling.scheduling.quartz;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;

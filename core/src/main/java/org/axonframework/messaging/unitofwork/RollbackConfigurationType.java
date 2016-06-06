@@ -25,6 +25,16 @@ package org.axonframework.messaging.unitofwork;
 public enum RollbackConfigurationType implements RollbackConfiguration {
 
     /**
+     * Configuration that never performs a rollback of the unit of work.
+     */
+    NEVER {
+        @Override
+        public boolean rollBackOn(Throwable throwable) {
+            return false;
+        }
+    },
+
+    /**
      * Configuration that prescribes a rollback on any sort of exception or error.
      */
     ANY_THROWABLE {

@@ -19,7 +19,6 @@ package org.axonframework.spring.messaging.eventbus;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;

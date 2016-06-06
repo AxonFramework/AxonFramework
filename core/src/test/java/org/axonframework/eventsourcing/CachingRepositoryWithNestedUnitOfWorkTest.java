@@ -24,7 +24,7 @@ import org.axonframework.common.caching.NoCache;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -53,18 +53,9 @@ import static org.junit.Assert.*;
  * aggregates into the cache via a postCommit listener registered with the unit of work.
  * <p/>
  * Committing a unit of work may result in additional units of work being created -- typically as part of the 'publish
- * event' phase:
- * <ol>
- * <li>A Command is dispatched.
- * <li>A UOW is created, started.
- * <li>The command completes. Aggregate(s) have been loaded and events have been applied.
- * <li>The UOW is comitted:
- * <ol>
- * <li>The aggregate is saved.
- * <li>Events are published on the event bus.
- * <li>Inner UOWs are comitted.
- * <li>AfterCommit listeners are notified.
- * </ol>
+ * event' phase: <ol> <li>A Command is dispatched. <li>A UOW is created, started. <li>The command completes.
+ * Aggregate(s) have been loaded and events have been applied. <li>The UOW is comitted: <ol> <li>The aggregate is saved.
+ * <li>Events are published on the event bus. <li>Inner UOWs are comitted. <li>AfterCommit listeners are notified. </ol>
  * </ol>
  * <p/>
  * When the events are published, an @EventHandler may dispatch an additional command, which creates its own UOW
@@ -77,8 +68,7 @@ import static org.junit.Assert.*;
  * into the cache, exposing it to subsequent UOWs. The state of the aggregate in any UOW is not guaranteed to be
  * up-to-date. Depending on how UOWs are nested, it may be 'behind' by several events;
  * <p/>
- * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests
- * itself
+ * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests itself
  * primarily by events being assigned duplicate sequence numbers. The {@link JpaEventStore} detects this and throws an
  * exception noting that an 'identical' entity has already been persisted. The {@link FileSystemEventStore} corrupts
  * data silently.
@@ -86,18 +76,15 @@ import static org.junit.Assert.*;
  * <p/>
  * <h2>Possible solutions and workarounds contemplated include:</h2>
  * <p/>
- * <ul>
- * <li>Workaround: Disable Caching. Aggregates are always loaded from the event store for each UOW.
- * <li>Defer 'afterCommit' listener notification until the parent UOW completes.
- * <li>Prevent nesting of UOWs more than one level -- Attach all new UOWs to the 'root' UOW and let it manage event
- * publication while watching for newly created UOWs.
+ * <ul> <li>Workaround: Disable Caching. Aggregates are always loaded from the event store for each UOW. <li>Defer
+ * 'afterCommit' listener notification until the parent UOW completes. <li>Prevent nesting of UOWs more than one level
+ * -- Attach all new UOWs to the 'root' UOW and let it manage event publication while watching for newly created UOWs.
  * <li>Place Aggregates in the cache immediately. Improves performance by avoiding multiple loads of an aggregate (once
  * per UOW) and ensures that UOWs work on the same, up-to-date instance of the aggregate. Not desirable with a
- * distributed cache w/o global locking.
- * <li>Maintain a 'Session' of aggregates used in a UOW -- similar to adding aggregates to the cache immediately, but
- * explicitly limiting the scope/visibility to a UOW (or group of UOWs). Similar idea to a JPA/Hibernate session:
- * provide quick and canonical access to aggregates already touched somewhere in this UOW.
- * </ul>
+ * distributed cache w/o global locking. <li>Maintain a 'Session' of aggregates used in a UOW -- similar to adding
+ * aggregates to the cache immediately, but explicitly limiting the scope/visibility to a UOW (or group of UOWs).
+ * Similar idea to a JPA/Hibernate session: provide quick and canonical access to aggregates already touched somewhere
+ * in this UOW. </ul>
  *
  * @author patrickh
  */
@@ -109,7 +96,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     private final List<String> events = new ArrayList<>();
 
-    private EventProcessor eventProcessor;
     private AggregateFactory<TestAggregate> aggregateFactory;
     private EventStore eventStore;
 
@@ -120,8 +106,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
 
         eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        eventProcessor = new SimpleEventProcessor("logging");
-        eventProcessor.subscribe(new LoggingEventListener(events));
+        EventProcessor eventProcessor = new PublishingEventProcessor("logging", new LoggingEventListener(events));
         eventStore.subscribe(eventProcessor);
         events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
@@ -156,8 +141,9 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     public void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventProcessor.subscribe(new CommandExecutingEventListener("1", null, true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("2", null, true));
+        eventStore.subscribe(
+                new PublishingEventProcessor("commandExecutor", new CommandExecutingEventListener("1", null, true),
+                                             new CommandExecutingEventListener("2", null, true)));
 
         UnitOfWork<?> uow = uowFactory.createUnitOfWork(null);
         repository.newInstance(() -> new TestAggregate(id));
@@ -182,17 +168,18 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         //
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW4", null, true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW5", null, true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW3", null, true));
+        eventStore.subscribe(
+                new PublishingEventProcessor("commandExecution", new CommandExecutingEventListener("UOW4", null, true),
+                                             new CommandExecutingEventListener("UOW5", null, true),
+                                             new CommandExecutingEventListener("UOW3", null, true),
 
-        // Execute commands to update after the previous update has been performed
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW7", "UOW6", true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW6", "UOW3", true));
+                                             // Execute commands to update after the previous update has been performed
+                                             new CommandExecutingEventListener("UOW7", "UOW6", true),
+                                             new CommandExecutingEventListener("UOW6", "UOW3", true),
 
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW10", "UOW8", false)); // roll back
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW9", "UOW4", true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW8", "UOW4", true));
+                                             new CommandExecutingEventListener("UOW10", "UOW8", false),
+                                             new CommandExecutingEventListener("UOW9", "UOW4", true),
+                                             new CommandExecutingEventListener("UOW8", "UOW4", true)));
 
 
         // First command: Create Aggregate

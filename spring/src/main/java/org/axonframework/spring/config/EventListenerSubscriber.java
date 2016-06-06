@@ -20,7 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
 import org.axonframework.spring.config.eventhandling.EventProcessorSelector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,8 @@ public class EventListenerSubscriber implements ApplicationContextAware, SmartLi
 
     private ApplicationContext applicationContext;
     private boolean started;
-    private EventProcessor defaultEventProcessor = new SimpleEventProcessor("defaultEventProcessor");
+
+    private EventProcessor defaultEventProcessor = new PublishingEventProcessor("defaultEventProcessor");
     private Collection<EventListener> eventListeners;
     private EventBus eventBus;
     private boolean subscribeListenersToEventProcessor = true;

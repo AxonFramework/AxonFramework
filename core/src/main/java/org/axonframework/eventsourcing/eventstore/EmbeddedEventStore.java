@@ -62,7 +62,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     @PostConstruct
-    protected void initialize() {
+    public void initialize() {
         threadFactory.newThread(() -> {
             try {
                 producer.run();
@@ -76,7 +76,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     }
 
     @PreDestroy
-    protected void destroy() {
+    public void shutDown() {
         tailingConsumers.forEach(IOUtils::closeQuietly);
         IOUtils.closeQuietly(producer);
         cleanupService.shutdownNow();
@@ -165,17 +165,21 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         private void fetchData() {
             if (!tailingConsumers.isEmpty()) {
-                (eventStream = storageEngine().readEvents(lastToken(), true)).forEach(event -> {
-                    Node node = new Node(nextIndex(), lastToken(), event);
-                    if (newest != null) {
-                        newest.next = node;
-                    }
-                    newest = node;
-                    if (oldest == null) {
-                        oldest = node;
-                    }
-                    notifyConsumers();
-                });
+                try {
+                    (eventStream = storageEngine().readEvents(lastToken(), true)).forEach(event -> {
+                        Node node = new Node(nextIndex(), lastToken(), event);
+                        if (newest != null) {
+                            newest.next = node;
+                        }
+                        newest = node;
+                        if (oldest == null) {
+                            oldest = node;
+                        }
+                        notifyConsumers();
+                    });
+                } catch (Exception e) {
+                    logger.error("Failed to read events from the underlying event storage", e);
+                }
                 trimCache();
             }
         }

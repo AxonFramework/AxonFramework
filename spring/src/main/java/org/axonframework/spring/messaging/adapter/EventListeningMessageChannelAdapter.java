@@ -19,7 +19,7 @@ package org.axonframework.spring.messaging.adapter;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.MessageChannel;
@@ -75,7 +75,7 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
      */
     @Override
     public void afterPropertiesSet() {
-        eventBus.subscribe(new SimpleEventProcessor(beanName, this));
+        eventBus.subscribe(new PublishingEventProcessor(beanName, this));
     }
 
     /**

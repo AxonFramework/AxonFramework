@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  */
 public class SagaManagerTest {
 
-    private AbstractSagaManager testSubject;
+    private AbstractSagaManager<Object> testSubject;
     private SagaRepository<Object> mockSagaRepository;
     private Saga<Object> mockSaga1;
     private Saga<Object> mockSaga2;
@@ -76,8 +76,8 @@ public class SagaManagerTest {
 
     @Test
     public void testSagasLoaded() throws Exception {
-        EventMessage event = new GenericEventMessage<>(new Object());
-        testSubject.handle(event);
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
+        testSubject.accept(event);
         verify(mockSagaRepository).find(associationValue);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
@@ -90,7 +90,7 @@ public class SagaManagerTest {
         EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
         try {
-            testSubject.handle(event);
+            testSubject.accept(event);
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -105,7 +105,7 @@ public class SagaManagerTest {
         EventMessage event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
 
-        testSubject.handle(event);
+        testSubject.accept(event);
 
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);

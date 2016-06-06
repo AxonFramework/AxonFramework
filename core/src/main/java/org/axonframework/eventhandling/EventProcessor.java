@@ -55,21 +55,8 @@ public interface EventProcessor extends Consumer<List<? extends EventMessage<?>>
      *
      * @param events The Events to publish in the event processor
      */
-    default void handle(EventMessage<?>... events) {
-        handle(Arrays.asList(events));
-    }
-
-    /**
-     * Publishes the given Events to the members of this event processor.
-     * <p/>
-     * Implementations may do this synchronously or asynchronously. Although {@link EventListener EventListeners} are
-     * discouraged to throw exceptions, it is possible that they are propagated through this method invocation. In that
-     * case, no guarantees can be given about the delivery of Events at all EventProcessor members.
-     *
-     * @param events The Events to publish in the event processor
-     */
-    default void handle(List<? extends EventMessage<?>> events) {
-        accept(events);
+    default void accept(EventMessage<?>... events) {
+        accept(Arrays.asList(events));
     }
 
     /**
@@ -83,18 +70,6 @@ public interface EventProcessor extends Consumer<List<? extends EventMessage<?>>
      */
     @Override
     void accept(List<? extends EventMessage<?>> events);
-
-    /**
-     * Subscribe the given {@code eventListener} to this event processor. If the listener is already subscribed, nothing
-     * happens.
-     * <p/>
-     * While the Event Listeners is subscribed, it will receive all messages published to the event processor.
-     *
-     * @param eventListener the Event Listener instance to subscribe
-     * @return a handle to unsubscribe the <code>eventListener</code>.
-     * When unsubscribed it will no longer receive events from this event processor.
-     */
-    Registration subscribe(EventListener eventListener);
 
     /**
      * Registers the given <code>interceptor</code> to this event processor. The <code>interceptor</code> will

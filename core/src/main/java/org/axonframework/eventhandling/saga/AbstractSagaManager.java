@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.messaging.DefaultInterceptorChain;
@@ -77,11 +76,6 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
     @Override
     public String getName() {
         return "SagaManager[" + sagaType.getName() + "]";
-    }
-
-    @Override
-    public Registration subscribe(EventListener eventListener) {
-        throw new UnsupportedOperationException("This implementation doesn't support registering listeners");
     }
 
     @Override

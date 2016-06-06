@@ -51,7 +51,7 @@ public class EventProcessorMessageListenerTest {
         outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
         testSubject.onMessage(new Message(baos.toByteArray(), new MessageProperties()));
 
-        verify(eventProcessor).handle(argThat(new TypeSafeMatcher<EventMessage>() {
+        verify(eventProcessor).accept(argThat(new TypeSafeMatcher<EventMessage>() {
             @Override
             public boolean matchesSafely(EventMessage item) {
                 return "Event".equals(item.getPayload());
@@ -78,6 +78,6 @@ public class EventProcessorMessageListenerTest {
                                                          .getBytes(Charset.forName("UTF-8"));
         testSubject.onMessage(new Message(body, new MessageProperties()));
 
-        verify(eventProcessor, never()).handle(any(EventMessage.class));
+        verify(eventProcessor, never()).accept(any(EventMessage.class));
     }
 }

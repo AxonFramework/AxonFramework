@@ -77,7 +77,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                      "WHERE e.aggregateIdentifier = :id " +
                                      "ORDER BY e.sequenceNumber DESC")
                 .setParameter("id", aggregateIdentifier)
-                .setMaxResults(1).setFirstResult(0).getResultList().stream().findFirst();
+                .setMaxResults(1).getResultList().stream().findFirst();
     }
 
     @Override

@@ -53,14 +53,14 @@ public class EmbeddedEventStoreTest {
     }
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
-        Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::destroy);
+        Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
         testSubject = new EmbeddedEventStore(storageEngine, cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
         testSubject.initialize();
     }
 
     @After
     public void tearDown() {
-        testSubject.destroy();
+        testSubject.shutDown();
     }
 
     @Test

@@ -54,28 +54,28 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testCreationPolicy_NoneExists() throws Exception {
-        manager.handle(new GenericEventMessage<>(new StartingEvent("123")));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     public void testCreationPolicy_OneAlreadyExists() throws Exception {
-        manager.handle(new GenericEventMessage<>(new StartingEvent("123")));
-        manager.handle(new GenericEventMessage<>(new StartingEvent("123")));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("123")));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("123")));
         assertEquals(1, repositoryContents("123").size());
     }
 
     @Test
     public void testHandleUnrelatedEvent() throws Exception {
-        manager.handle(new GenericEventMessage<>("Unrelated"));
+        manager.accept(new GenericEventMessage<>("Unrelated"));
         verify(sagaRepository, never()).find(isNull(AssociationValue.class));
     }
 
     @Test
     public void testCreationPolicy_CreationForced() throws Exception {
         StartingEvent startingEvent = new StartingEvent("123");
-        manager.handle(new GenericEventMessage<>(startingEvent));
-        manager.handle(new GenericEventMessage<>(new ForcingStartEvent("123")));
+        manager.accept(new GenericEventMessage<>(startingEvent));
+        manager.accept(new GenericEventMessage<>(new ForcingStartEvent("123")));
         Collection<MyTestSaga> sagas = repositoryContents("123");
         assertEquals(2, sagas.size());
         for (MyTestSaga saga : sagas) {
@@ -88,58 +88,58 @@ public class AnnotatedSagaManagerTest {
 
     @Test
     public void testCreationPolicy_SagaNotCreated() throws Exception {
-        manager.handle(new GenericEventMessage<>(new MiddleEvent("123")));
+        manager.accept(new GenericEventMessage<>(new MiddleEvent("123")));
         assertEquals(0, repositoryContents("123").size());
     }
 
     @Test
     public void testMostSpecificHandlerEvaluatedFirst() throws Exception {
-        manager.handle(new GenericEventMessage<>(new StartingEvent("12")));
-        manager.handle(new GenericEventMessage<>(new StartingEvent("23")));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("12")));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("23")));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("23").size());
 
-        manager.handle(new GenericEventMessage<>(new MiddleEvent("12")));
-        manager.handle(new GenericEventMessage<>(new MiddleEvent("23"), singletonMap("catA", "value")));
+        manager.accept(new GenericEventMessage<>(new MiddleEvent("12")));
+        manager.accept(new GenericEventMessage<>(new MiddleEvent("23"), singletonMap("catA", "value")));
         assertEquals(0, (int) repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
         assertEquals(1, (int) repositoryContents("23").iterator().next().getSpecificHandlerInvocations());
     }
 
     @Test
     public void testLifecycle_DestroyedOnEnd() throws Exception {
-        manager.handle(new GenericEventMessage<>(new StartingEvent("12")));
-        manager.handle(new GenericEventMessage<>(new StartingEvent("23")));
-        manager.handle(new GenericEventMessage<>(new MiddleEvent("12")));
-        manager.handle(new GenericEventMessage<>(new MiddleEvent("23"), singletonMap("catA",
-                                                                                                "value")));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("12")));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("23")));
+        manager.accept(new GenericEventMessage<>(new MiddleEvent("12")));
+        manager.accept(new GenericEventMessage<>(new MiddleEvent("23"), singletonMap("catA",
+                                                                                     "value")));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, (int) repositoryContents("12").iterator().next().getSpecificHandlerInvocations());
         assertEquals(1, (int) repositoryContents("23").iterator().next().getSpecificHandlerInvocations());
-        manager.handle(new GenericEventMessage<>(new EndingEvent("12")));
+        manager.accept(new GenericEventMessage<>(new EndingEvent("12")));
         assertEquals(1, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
-        manager.handle(new GenericEventMessage<>(new EndingEvent("23")));
+        manager.accept(new GenericEventMessage<>(new EndingEvent("23")));
         assertEquals(0, repositoryContents("23").size());
         assertEquals(0, repositoryContents("12").size());
     }
 
     @Test
     public void testNullAssociationValueDoesNotThrowNullPointer() throws Exception {
-        manager.handle(asEventMessage(new StartingEvent(null)));
+        manager.accept(asEventMessage(new StartingEvent(null)));
     }
 
     @Test
     public void testLifeCycle_ExistingInstanceIgnoresEvent() throws Exception {
-        manager.handle(new GenericEventMessage<>(new StartingEvent("12")));
-        manager.handle(new GenericEventMessage<>(new StubDomainEvent()));
+        manager.accept(new GenericEventMessage<>(new StartingEvent("12")));
+        manager.accept(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(1, repositoryContents("12").size());
         assertEquals(1, repositoryContents("12").iterator().next().getCapturedEvents().size());
     }
 
     @Test
     public void testLifeCycle_IgnoredEventDoesNotCreateInstance() throws Exception {
-        manager.handle(new GenericEventMessage<>(new StubDomainEvent()));
+        manager.accept(new GenericEventMessage<>(new StubDomainEvent()));
         assertEquals(0, repositoryContents("12").size());
     }
 
@@ -291,7 +291,7 @@ public class AnnotatedSagaManagerTest {
         @Override
         public void run() {
             try {
-                manager.handle(eventMessage);
+                manager.accept(eventMessage);
             } catch (RuntimeException e) {
                 throw e;
             } catch (Exception e) {
