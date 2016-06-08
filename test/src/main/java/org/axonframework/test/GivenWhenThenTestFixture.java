@@ -196,7 +196,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                         aggregateIdentifier, sequenceNumber++, payload, metaData
                 ));
             }
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             FixtureResourceParameterResolverFactory.clear();
         }
         return this;
@@ -220,7 +220,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                 storedEvents.clear();
             }
             publishedEvents.clear();
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             FixtureResourceParameterResolverFactory.clear();
             throw e;
         }
@@ -296,7 +296,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                             + "but the Repository cannot recover the state of the "
                             + "aggregate, as it is considered deleted there.");
                 }
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 logger.warn("An Exception occurred while detecting illegal state changes in {}.",
                         workingAggregate.getClass().getName(), e);
             } finally {

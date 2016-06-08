@@ -157,7 +157,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
                 eventEntryStore.persistEvent(event, serializedPayload, serializedMetaData, entityManager);
             }
             entityManager.flush();
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             if (!events.isEmpty()
                     && persistenceExceptionResolver != null
                     && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
@@ -187,7 +187,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
                         serializer.deserialize(lastSnapshotEvent.getPayload()),
                         (Map<String, Object>) serializer.deserialize(lastSnapshotEvent.getMetaData()));
                 snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
-            } catch (RuntimeException | LinkageError ex) {
+            } catch (Exception | LinkageError ex) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
@@ -236,7 +236,7 @@ public class JpaEventStore implements SnapshotEventStore, EventStoreManagement, 
             }
 
             entityManager.flush();
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             if (snapshotEvent != null
                     && persistenceExceptionResolver != null
                     && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {

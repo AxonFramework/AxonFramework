@@ -150,7 +150,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
                 SerializedObject serializedMetaData = serializer.serializeMetaData(event, dataType);
                 eventEntryStore.persistEvent(event, serializedPayload, serializedMetaData);
             }
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             if (persistenceExceptionResolver != null
                     && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
                 //noinspection ConstantConditions
@@ -182,7 +182,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
                         serializer.deserialize(lastSnapshotEvent.getPayload()),
                         (Map<String, Object>) serializer.deserialize(lastSnapshotEvent.getMetaData()));
                 snapshotSequenceNumber = snapshotEvent.getSequenceNumber();
-            } catch (RuntimeException | LinkageError ex) {
+            } catch (Exception | LinkageError ex) {
                 logger.warn("Error while reading snapshot event entry. "
                                     + "Reconstructing aggregate on entire event stream. Caused by: {} {}",
                             ex.getClass().getName(),
@@ -228,7 +228,7 @@ public class JdbcEventStore implements SnapshotEventStore, EventStoreManagement,
         SerializedObject serializedMetaData = serializer.serializeMetaData(snapshotEvent, dataType);
         try {
             eventEntryStore.persistSnapshot(snapshotEvent, serializedPayload, serializedMetaData);
-        } catch (RuntimeException exception) {
+        } catch (Exception exception) {
             if (persistenceExceptionResolver != null
                     && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
                 //noinspection ConstantConditions

@@ -397,7 +397,7 @@ public class JGroupsConnector implements CommandBusConnector {
                 } else {
                     localSegment.dispatch(commandMessage);
                 }
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 if (message.isExpectReply()) {
                     final String commandIdentifier = message.getCommandIdentifier();
                     try {

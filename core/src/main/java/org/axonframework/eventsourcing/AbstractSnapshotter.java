@@ -144,7 +144,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
             try {
                 command.run();
                 transaction.commit();
-            } catch (RuntimeException e) {
+            } catch (Throwable e) {
                 transaction.rollback();
                 throw e;
             }
@@ -165,7 +165,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
                 snapshotterTask.run();
             } catch (ConcurrencyException e) {
                 logger.info("An up-to-date snapshot entry already exists, ignoring this attempt.");
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 if (logger.isDebugEnabled()) {
                     logger.warn("An attempt to create and store a snapshot resulted in an exception:", e);
                 } else {

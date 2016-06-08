@@ -272,12 +272,12 @@ public class EventProcessorTask implements Runnable {
         InterceptorChain<EventMessage<?>> interceptorChain = new DefaultInterceptorChain<>(unitOfWork,
                 interceptors, (eventMessage, uow) -> {
             eventProcessingMonitor.prepare(event);
-            RuntimeException failure = null;
+            Exception failure = null;
             for (EventListener member : listeners) {
                 try {
                     eventProcessingMonitor.prepareForInvocation(event, member);
                     member.handle(event);
-                } catch (RuntimeException e) {
+                } catch (Exception e) {
                     RetryPolicy policy = errorHandler.handleError(e, event, member);
                     if (policy.requiresRescheduleEvent() || policy.requiresRollback()) {
                         return new ProcessingResult(policy, e);
