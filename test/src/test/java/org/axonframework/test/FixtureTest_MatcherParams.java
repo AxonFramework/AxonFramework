@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Before;
@@ -33,7 +32,8 @@ import java.util.List;
 
 import static org.axonframework.test.matchers.Matchers.sequenceOf;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Allard Buijze
@@ -162,7 +162,7 @@ public class FixtureTest_MatcherParams {
                 .when(new StrangeCommand("aggregateId"), Collections.singletonMap("meta", "value"));
 
         final ArgumentCaptor<CommandMessage> captor = ArgumentCaptor.forClass(CommandMessage.class);
-        verify(mockCommandHandler).handle(captor.capture(), isA(UnitOfWork.class));
+        verify(mockCommandHandler).handle(captor.capture());
         List<CommandMessage> dispatched = captor.getAllValues();
         assertEquals(1, dispatched.size());
         assertEquals(1, dispatched.get(0).getMetaData().size());

@@ -11,7 +11,6 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -63,7 +62,7 @@ public class CommandHandlerInvokerTest {
     public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
-        when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class)))
+        when(mockCommandHandler.handle(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockEventStore.readEvents(anyObject())).thenReturn(DomainEventStream
                                                                         .of(new GenericDomainEventMessage<>("type",
@@ -82,7 +81,7 @@ public class CommandHandlerInvokerTest {
     public void testLoadFromRepositoryLoadsFromCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
-        when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class)))
+        when(mockCommandHandler.handle(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
         when(mockCache.get(aggregateIdentifier)).thenAnswer(new Answer<Object>() {
             @Override
@@ -103,7 +102,7 @@ public class CommandHandlerInvokerTest {
     public void testAddToRepositoryAddsInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
                 .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator);
-        when(mockCommandHandler.handle(eq(mockCommandMessage), isA(UnitOfWork.class))).thenAnswer(invocationOnMock -> {
+        when(mockCommandHandler.handle(eq(mockCommandMessage))).thenAnswer(invocationOnMock -> {
             Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(aggregateIdentifier));
             aggregate.execute(StubAggregate::doSomething);
             return aggregate.invoke(Function.identity());

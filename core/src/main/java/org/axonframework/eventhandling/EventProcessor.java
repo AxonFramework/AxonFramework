@@ -19,10 +19,6 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
-
 /**
  * An Event Processor processes event messages from an event queue or event bus.
  * <p/>
@@ -35,7 +31,7 @@ import java.util.function.Consumer;
  * @author Allard Buijze
  * @since 1.2
  */
-public interface EventProcessor extends Consumer<List<? extends EventMessage<?>>> {
+public interface EventProcessor {
 
     /**
      * Returns the name of this event processor. This name is used to detect distributed instances of the
@@ -45,31 +41,6 @@ public interface EventProcessor extends Consumer<List<? extends EventMessage<?>>
      * @return the name of this event processor
      */
     String getName();
-
-    /**
-     * Publishes the given Events to the members of this event processor.
-     * <p/>
-     * Implementations may do this synchronously or asynchronously. Although {@link EventListener EventListeners} are
-     * discouraged to throw exceptions, it is possible that they are propagated through this method invocation. In that
-     * case, no guarantees can be given about the delivery of Events at all EventProcessor members.
-     *
-     * @param events The Events to publish in the event processor
-     */
-    default void accept(EventMessage<?>... events) {
-        accept(Arrays.asList(events));
-    }
-
-    /**
-     * Publishes the given Events to the members of this event processor.
-     * <p/>
-     * Implementations may do this synchronously or asynchronously. Although {@link EventListener EventListeners} are
-     * discouraged to throw exceptions, it is possible that they are propagated through this method invocation. In that
-     * case, no guarantees can be given about the delivery of Events at all EventProcessor members.
-     *
-     * @param events The Events to publish in the event processor
-     */
-    @Override
-    void accept(List<? extends EventMessage<?>> events);
 
     /**
      * Registers the given <code>interceptor</code> to this event processor. The <code>interceptor</code> will

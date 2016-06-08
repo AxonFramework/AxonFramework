@@ -29,7 +29,6 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -118,8 +117,7 @@ public class CommandHandlingBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<?> command,
-                             UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command) throws Exception {
             repository.load(aggregateIdentifier.toString()).execute(MyAggregate::doSomething);
             return null;
         }

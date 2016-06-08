@@ -30,7 +30,6 @@ import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
@@ -82,7 +81,7 @@ public class RunSaga {
                                                                             resourceInjector);
 
         // Sagas instances are managed and tracked by a SagaManager.
-        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(ToDoSaga.class, repository, ToDoSaga::new, RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
+        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(ToDoSaga.class, repository, ToDoSaga::new);
 
         // and we need to subscribe the Saga Manager to the Event Bus
         eventBus.subscribe(sagaManager);

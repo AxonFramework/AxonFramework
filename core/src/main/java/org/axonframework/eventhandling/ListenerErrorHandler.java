@@ -16,7 +16,7 @@ package org.axonframework.eventhandling;
 /**
  * @author Rene de Waele
  */
-public interface ErrorHandler {
+public interface ListenerErrorHandler {
 
     /**
      * Invoked after given <code>eventListener</code> failed to handle given <code>event</code>. Implementations have a
@@ -24,17 +24,15 @@ public interface ErrorHandler {
      * <p>
      * <ul> <li>To ignore this error no special action is required. Processing will continue for this and subsequent
      * events.</li> <li>To retry processing the event, implementations can re-invoke {@link
-     * EventListener#handle(EventMessage)} on the eventListener once or multiple times.</li> <li>To retry processing at
-     * a later time schedule a task to re-invoke the eventListener.</li> <li>To terminate event processing altogether
-     * implementations may throw an exception. Given default configuration this will roll back the Unit of Work involved
-     * in the processing of this event and events that are processed in the same batch.</li></ul>
+     * EventListener#handle(EventMessage)} on the eventListener once or multiple times.</li> <li>To terminate event
+     * handling altogether and stop propagating the event to other listeners implementations may throw an
+     * exception.</li></ul>
      *
-     * @param exception
-     * @param event
-     * @param eventListener
-     * @param eventProcessor
-     * @throws Exception
+     * @param exception     The exception thrown by the given eventListener
+     * @param event         The event that triggered the exception
+     * @param eventListener The listener that failed to handle given event
+     * @throws Exception    To stop further handling of the event
      */
-    void onError(Exception exception, EventMessage<?> event, EventListener eventListener, String eventProcessor) throws Exception;
+    void onError(Exception exception, EventMessage<?> event, EventListener eventListener) throws Exception;
 
 }

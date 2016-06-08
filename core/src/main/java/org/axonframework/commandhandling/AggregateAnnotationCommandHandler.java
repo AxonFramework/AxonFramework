@@ -22,7 +22,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.*;
 
@@ -141,8 +140,8 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     @Override
-    public Object handle(CommandMessage<?> commandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
-        return handlers.get(commandMessage.getCommandName()).handle(commandMessage, unitOfWork);
+    public Object handle(CommandMessage<?> commandMessage) throws Exception {
+        return handlers.get(commandMessage.getCommandName()).handle(commandMessage);
     }
 
     /**
@@ -174,7 +173,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
 
         @SuppressWarnings("unchecked")
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command) throws Exception {
             Aggregate<T> aggregate = repository.newInstance(() -> (T) handler.handle(command, null));
             return resolveReturnValue(command, aggregate);
         }
@@ -184,7 +183,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
 
         @SuppressWarnings("unchecked")
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command) throws Exception {
             VersionedAggregateIdentifier iv = commandTargetResolver.resolveTarget(command);
             return repository.load(iv.getIdentifier(), iv.getVersion()).handle(command);
         }

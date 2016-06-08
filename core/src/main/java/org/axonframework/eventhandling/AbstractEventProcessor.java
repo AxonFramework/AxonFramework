@@ -14,35 +14,35 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * @author Rene de Waele
  */
-public abstract class AbstractEventProcessor implements EventProcessor {
-    private final String name;
-    private final EventProcessingStrategy processingStrategy;
+public abstract class AbstractEventProcessor implements EventProcessor, Consumer<List<? extends EventMessage<?>>> {
     private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
+    private final EventHandlerInvoker eventHandlerInvoker;
+    private final RollbackConfiguration rollbackConfiguration;
 
-    public AbstractEventProcessor(String name, EventProcessingStrategy processingStrategy) {
-        this.name = requireNonNull(name);
-        this.processingStrategy = requireNonNull(processingStrategy);
+    public AbstractEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration) {
+        this.eventHandlerInvoker = eventHandlerInvoker;
+        this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
     }
 
     @Override
     public String getName() {
-        return name;
-    }
-
-    @Override
-    public void accept(List<? extends EventMessage<?>> events) {
-        processingStrategy.handle(events, this::doHandle);
+        return eventHandlerInvoker.getName();
     }
 
     @Override
@@ -51,9 +51,22 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         return () -> interceptors.remove(interceptor);
     }
 
-    protected abstract void doHandle(List<? extends EventMessage<?>> eventMessages);
+    @Override
+    public String toString() {
+        return getName();
+    }
 
-    protected Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors() {
-        return interceptors;
+    @Override
+    public void accept(List<? extends EventMessage<?>> eventMessages) {
+        UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
+        try {
+            unitOfWork.executeWithResult(
+                    () -> new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed(),
+                    rollbackConfiguration);
+        } catch (Exception e) {
+            throw new EventProcessingException(
+                    String.format("An exception occurred while processing events in EventProcessor [%s].%s", getName(),
+                                  unitOfWork.isRolledBack() ? " Unit of Work has been rolled back." : ""), e);
+        }
     }
 }

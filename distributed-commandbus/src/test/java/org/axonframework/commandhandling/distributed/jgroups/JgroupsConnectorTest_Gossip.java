@@ -26,7 +26,6 @@ import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hamcrest.Description;
@@ -162,7 +161,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> stringCommandMessage) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }

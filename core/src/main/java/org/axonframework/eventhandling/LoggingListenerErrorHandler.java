@@ -13,25 +13,20 @@
 
 package org.axonframework.eventhandling;
 
-import javax.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Supplies events to an event processor by subscribing the processor to the event bus.
- *
  * @author Rene de Waele
  */
-public class SubscribingEventSupplier {
+public class LoggingListenerErrorHandler implements ListenerErrorHandler {
 
-    private final EventBus eventBus;
-    private final EventProcessor eventProcessor;
+    private static final Logger logger = LoggerFactory.getLogger(LoggingListenerErrorHandler.class);
 
-    public SubscribingEventSupplier(EventBus eventBus, EventProcessor eventProcessor) {
-        this.eventBus = eventBus;
-        this.eventProcessor = eventProcessor;
-    }
-
-    @PostConstruct
-    public void initialize() {
-        eventBus.subscribe(eventProcessor);
+    @Override
+    public void onError(Exception exception, EventMessage<?> event, EventListener eventListener) {
+        logger.error(String.format("EventListener [%s] failed to handle an event of type [%s]. " +
+                                           "Continuing processing with next listener", eventListener,
+                                   event.getPayloadType().getName()), exception);
     }
 }

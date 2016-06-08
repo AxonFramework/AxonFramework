@@ -84,7 +84,7 @@ public class RecordingCommandBusTest {
 
     @Test
     public void testRegisterHandler() {
-        MessageHandler<? super CommandMessage<?>> handler = (command, unitOfWork) -> {
+        MessageHandler<? super CommandMessage<?>> handler = command -> {
             fail("Did not expect handler to be invoked");
             return null;
         };

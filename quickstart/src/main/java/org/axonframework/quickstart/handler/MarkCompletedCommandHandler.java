@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 
 import java.util.function.Function;
@@ -37,7 +36,7 @@ public class MarkCompletedCommandHandler implements MessageHandler<CommandMessag
     }
 
     @Override
-    public Object handle(CommandMessage<?> commandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> commandMessage) throws Exception {
         MarkCompletedCommand command = (MarkCompletedCommand) commandMessage.getPayload();
         Aggregate<ToDoItem> toDoItem = repository.load(command.getTodoId());
         toDoItem.execute(ToDoItem::markCompleted);

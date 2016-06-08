@@ -74,7 +74,7 @@ public class AsynchronousCommandBusTest {
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(CommandMessage.class), isA(UnitOfWork.class));
+        inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
         inOrder.verify(mockCallback).onSuccess(eq(command), isNull());
     }
 
@@ -89,7 +89,7 @@ public class AsynchronousCommandBusTest {
         inOrder.verify(dispatchInterceptor).handle(isA(CommandMessage.class));
         inOrder.verify(executorService).execute(isA(Runnable.class));
         inOrder.verify(handlerInterceptor).handle(isA(UnitOfWork.class), isA(InterceptorChain.class));
-        inOrder.verify(commandHandler).handle(isA(CommandMessage.class), isA(UnitOfWork.class));
+        inOrder.verify(commandHandler).handle(isA(CommandMessage.class));
     }
 
     @Test

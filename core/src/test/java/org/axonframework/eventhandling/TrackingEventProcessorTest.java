@@ -37,12 +37,12 @@ import static org.mockito.Mockito.*;
 /**
  * @author Rene de Waele
  */
-public class TrackingEventSupplierTest {
+public class TrackingEventProcessorTest {
 
-    private TrackingEventSupplier testSubject;
+    private TrackingEventProcessor testSubject;
     private EmbeddedEventStore eventBus;
     private TokenStore tokenStore;
-    private EventProcessor eventProcessor;
+    private EventHandlerInvoker eventHandlerInvoker;
     private EventListener mockListener;
 
     @Before
@@ -50,8 +50,8 @@ public class TrackingEventSupplierTest {
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
-        eventProcessor = new PublishingEventProcessor("test", mockListener);
-        testSubject = new TrackingEventSupplier(eventBus, tokenStore, eventProcessor, 0);
+        eventHandlerInvoker = new SimpleEventHandlerInvoker("test", mockListener);
+        testSubject = new TrackingEventProcessor(eventHandlerInvoker, eventBus, tokenStore);
 
         eventBus.initialize();
         testSubject.initialize();
@@ -59,8 +59,8 @@ public class TrackingEventSupplierTest {
 
     @After
     public void tearDown() throws Exception {
-        eventBus.shutDown();
         testSubject.shutDown();
+        eventBus.shutDown();
     }
 
     @Test
@@ -77,33 +77,33 @@ public class TrackingEventSupplierTest {
     @Test
     public void testTokenIsStoredWhenEventIsRead() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        eventProcessor.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
         eventBus.publish(createEvent());
         assertTrue(countDownLatch.await(100, TimeUnit.MILLISECONDS));
         verify(tokenStore).storeToken(any(), anyInt(), any());
-        assertNotNull(tokenStore.fetchToken(eventProcessor.getName(), 0));
+        assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
     @Test
     public void testTokenIsNotStoredWhenUnitOfWorkIsRolledBack() throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        eventProcessor.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {
                 throw new MockException();
             });
             return interceptorChain.proceed();
         }));
-        eventProcessor.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCleanup(uow -> countDownLatch.countDown());
             return interceptorChain.proceed();
         }));
         eventBus.publish(createEvent());
         assertTrue(countDownLatch.await(100, TimeUnit.MILLISECONDS));
         verify(tokenStore).storeToken(any(), anyInt(), any());
-        assertNull(tokenStore.fetchToken(eventProcessor.getName(), 0));
+        assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
     @Test
@@ -113,8 +113,8 @@ public class TrackingEventSupplierTest {
 
         eventBus.publish(createEvents(10));
         TrackedEventMessage<?> firstEvent = eventBus.streamEvents(null).nextAvailable();
-        tokenStore.storeToken(eventProcessor.getName(), 0, firstEvent.trackingToken());
-        assertEquals(firstEvent.trackingToken(), tokenStore.fetchToken(eventProcessor.getName(), 0));
+        tokenStore.storeToken(testSubject.getName(), 0, firstEvent.trackingToken());
+        assertEquals(firstEvent.trackingToken(), tokenStore.fetchToken(testSubject.getName(), 0));
 
         List<EventMessage<?>> ackedEvents = new ArrayList<>();
         CountDownLatch countDownLatch = new CountDownLatch(9);
@@ -124,7 +124,7 @@ public class TrackingEventSupplierTest {
             return null;
         }).when(mockListener).handle(any());
 
-        testSubject = new TrackingEventSupplier(eventBus, tokenStore, eventProcessor, 0);
+        testSubject = new TrackingEventProcessor(eventHandlerInvoker, eventBus, tokenStore);
         testSubject.initialize();
         assertTrue(countDownLatch.await(100, TimeUnit.MILLISECONDS));
         assertEquals(9, ackedEvents.size());

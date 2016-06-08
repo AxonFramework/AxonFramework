@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.eventhandling;
 
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventProcessor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,29 +27,29 @@ import static org.mockito.Mockito.mock;
 /**
  * @author Allard Buijze
  */
-public class DefaultEventProcessorSelectorTest {
+public class DefaultEventHandlerManagerSelectorTest {
 
-    private DefaultEventProcessorSelector testSubject;
+    private DefaultEventHandlerManagerSelector testSubject;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new DefaultEventProcessorSelector();
+        testSubject = new DefaultEventHandlerManagerSelector();
     }
 
     @Test
     public void testSameInstanceIsReturned() {
-        EventProcessor eventProcessor1 = testSubject.selectEventProcessor(mock(EventListener.class));
-        EventProcessor eventProcessor2 = testSubject.selectEventProcessor(mock(EventListener.class));
-        EventProcessor eventProcessor3 = testSubject.selectEventProcessor(mock(EventListener.class));
+        EventHandlerInvoker handlerManager1 = testSubject.selectHandlerManager(mock(EventListener.class));
+        EventHandlerInvoker handlerManager2 = testSubject.selectHandlerManager(mock(EventListener.class));
+        EventHandlerInvoker handlerManager3 = testSubject.selectHandlerManager(mock(EventListener.class));
 
-        assertSame(eventProcessor1, eventProcessor2);
-        assertSame(eventProcessor2, eventProcessor3);
+        assertSame(handlerManager1, handlerManager2);
+        assertSame(handlerManager2, handlerManager3);
     }
 
     @Test
     public void testProvidedInstanceIsReturned() {
-        EventProcessor mock = mock(EventProcessor.class);
-        testSubject = new DefaultEventProcessorSelector(mock);
-        assertSame(mock, testSubject.selectEventProcessor(mock(EventListener.class)));
+        EventHandlerInvoker mock = mock(EventHandlerInvoker.class);
+        testSubject = new DefaultEventHandlerManagerSelector(mock);
+        assertSame(mock, testSubject.selectHandlerManager(mock(EventListener.class)));
     }
 }

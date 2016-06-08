@@ -22,7 +22,6 @@ import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -235,7 +234,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private class RepeatingCommandHandler implements MessageHandler<CommandMessage<?>> {
 
         @Override
-        public Object handle(CommandMessage<?> message, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> message) throws Exception {
             if (exceptionResult != null) {
                 throw exceptionResult;
             }

@@ -17,23 +17,14 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
-import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -45,16 +36,14 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 0.7
  */
-public abstract class AbstractSagaManager<T> implements EventProcessor, MessageHandler<EventMessage<?>> {
+public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSagaManager.class);
 
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private volatile boolean suppressExceptions = true;
-    private final List<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
     private final Callable<T> sagaFactory;
-    private final RollbackConfiguration rollbackConfiguration;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
@@ -62,13 +51,10 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
      * @param sagaType              The type of Saga Managed by this instance
      * @param sagaRepository        The repository providing the saga instances.
      * @param sagaFactory           The factory responsible for creating new Saga instances
-     * @param rollbackConfiguration The configuration of the exceptions that lead to a Unit of Work rollback
      */
-    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
-                                  RollbackConfiguration rollbackConfiguration) {
+    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
-        this.rollbackConfiguration = rollbackConfiguration;
         Assert.notNull(sagaRepository, "sagaRepository may not be null");
         this.sagaRepository = sagaRepository;
     }
@@ -79,25 +65,7 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
     }
 
     @Override
-    public Registration registerInterceptor(MessageHandlerInterceptor<EventMessage<?>> interceptor) {
-        if (!interceptors.contains(interceptor)) {
-            interceptors.add(interceptor);
-        }
-        return () -> interceptors.remove(interceptor);
-    }
-
-    @Override
-    public Object handle(EventMessage<?> event, UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
-        if (interceptors.isEmpty()) {
-            return doHandle(event, unitOfWork);
-        } else {
-            return new DefaultInterceptorChain<>(unitOfWork, interceptors,
-                                                 (MessageHandler<EventMessage<?>>) this::doHandle).proceed();
-        }
-    }
-
-    protected Object doHandle(EventMessage<?> event,
-                              UnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
+    public Object handle(EventMessage<?> event) throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event);
         Set<Saga<T>> sagas =
                 associationValues.stream().flatMap(associationValue -> sagaRepository.find(associationValue).stream())
@@ -115,22 +83,6 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
             startNewSaga(event, initializationPolicy.getInitialAssociationValue());
         }
         return null;
-    }
-
-    @Override
-    public void accept(List<? extends EventMessage<?>> events) {
-        for (EventMessage<?> sourceEvent : events) {
-            if (hasHandler(sourceEvent)) {
-                DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(sourceEvent);
-                try {
-                    unitOfWork.executeWithResult(() -> handle(sourceEvent, unitOfWork), rollbackConfiguration);
-                } catch (RuntimeException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new SagaExecutionException("Exception while processing an event in a Saga", e);
-                }
-            }
-        }
     }
 
     private void startNewSaga(EventMessage event, AssociationValue associationValue) throws Exception {
@@ -156,8 +108,6 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
      * @return the AssociationValues indicating which Sagas should handle given event
      */
     protected abstract Set<AssociationValue> extractAssociationValues(EventMessage<?> event);
-
-    protected abstract boolean hasHandler(EventMessage<?> event);
 
     private boolean doInvokeSaga(EventMessage event, Saga<T> saga) {
         try {

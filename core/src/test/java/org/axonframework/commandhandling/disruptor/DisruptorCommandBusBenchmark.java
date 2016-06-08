@@ -29,7 +29,6 @@ import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.HashMap;
 import java.util.List;
@@ -156,8 +155,7 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
-        public Object handle(CommandMessage<?> message,
-                             UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> message) throws Exception {
             StubCommand payload = (StubCommand) message.getPayload();
             repository.load(payload.getAggregateIdentifier()).execute(StubAggregate::doSomething);
             return null;

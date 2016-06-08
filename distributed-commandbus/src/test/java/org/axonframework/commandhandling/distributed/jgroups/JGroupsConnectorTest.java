@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
@@ -349,7 +348,7 @@ public class JGroupsConnectorTest {
         }
 
         @Override
-        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> stringCommandMessage) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }

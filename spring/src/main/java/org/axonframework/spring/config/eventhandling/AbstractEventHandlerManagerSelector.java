@@ -16,30 +16,30 @@
 
 package org.axonframework.spring.config.eventhandling;
 
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerProxy;
-import org.axonframework.eventhandling.EventProcessor;
 
 /**
  * Abstract implementation of the EventProcessorSelector interface that detects proxies and passes the actual Class of the
  * Event Listener implementation. Typically, this occurs when annotated event handlers are used. The {@link
- * #doSelectEventProcessor(org.axonframework.eventhandling.EventListener, Class)} method, in such case, returns the Class of
+ * #doSelectEventHandlerManager(EventListener, Class)} method, in such case, returns the Class of
  * the annotated listener.
  *
  * @author Allard Buijze
  * @since 2.0
  */
-public abstract class AbstractEventProcessorSelector implements EventProcessorSelector {
+public abstract class AbstractEventHandlerManagerSelector implements EventHandlerManagerSelector {
 
     @Override
-    public EventProcessor selectEventProcessor(EventListener eventListener) {
+    public EventHandlerInvoker selectHandlerManager(EventListener eventListener) {
         Class<?> listenerType;
         if (eventListener instanceof EventListenerProxy) {
             listenerType = ((EventListenerProxy) eventListener).getTargetType();
         } else {
             listenerType = eventListener.getClass();
         }
-        return doSelectEventProcessor(eventListener, listenerType);
+        return doSelectEventHandlerManager(eventListener, listenerType);
     }
 
     /**
@@ -51,5 +51,5 @@ public abstract class AbstractEventProcessorSelector implements EventProcessorSe
      * @param listenerType  The actual type of the Event Listener
      * @return the event processor to assign the Event Listener to
      */
-    protected abstract EventProcessor doSelectEventProcessor(EventListener eventListener, Class<?> listenerType);
+    protected abstract EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType);
 }

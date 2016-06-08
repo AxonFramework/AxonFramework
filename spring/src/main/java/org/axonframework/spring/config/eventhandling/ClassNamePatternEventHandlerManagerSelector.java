@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.eventhandling;
 
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventProcessor;
 
 import java.util.regex.Pattern;
 
@@ -35,25 +35,24 @@ import java.util.regex.Pattern;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ClassNamePatternEventProcessorSelector extends AbstractEventProcessorSelector {
+public class ClassNamePatternEventHandlerManagerSelector extends AbstractEventHandlerManagerSelector {
 
     private final Pattern pattern;
-    private final EventProcessor eventProcessor;
+    private final EventHandlerInvoker eventProcessor;
 
     /**
      * Initializes the ClassNamePrefixEventProcessorSelector using the given <code>mappings</code>. If a name does not have a
      * prefix defined, the Event Processor Selector returns the given <code>defaultEventProcessor</code>.
-     *
-     * @param pattern The pattern to match an Event Listener's class name against
-     * @param eventProcessor The eventProcessor to choose when the pattern matches
+     *  @param pattern The pattern to match an Event Listener's class name against
+     * @param eventHandlerInvoker The eventProcessor to choose when the pattern matches
      */
-    public ClassNamePatternEventProcessorSelector(Pattern pattern, EventProcessor eventProcessor) {
+    public ClassNamePatternEventHandlerManagerSelector(Pattern pattern, EventHandlerInvoker eventHandlerInvoker) {
         this.pattern = pattern;
-        this.eventProcessor = eventProcessor;
+        this.eventProcessor = eventHandlerInvoker;
     }
 
     @Override
-    public EventProcessor doSelectEventProcessor(EventListener eventListener, Class listenerType) {
+    public EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class listenerType) {
         String listenerName = listenerType.getName();
         if (pattern.matcher(listenerName).matches()) {
             return eventProcessor;

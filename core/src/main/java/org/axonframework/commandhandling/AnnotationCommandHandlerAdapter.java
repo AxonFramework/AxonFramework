@@ -20,7 +20,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -84,7 +83,6 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      * Invokes the @CommandHandler annotated method that accepts the given <code>command</code>.
      *
      * @param command    The command to handle
-     * @param unitOfWork The UnitOfWork the command is processed in
      * @return the result of the command handling. Is <code>null</code> when the annotated handler has a
      * <code>void</code> return value.
      *
@@ -92,7 +90,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
      * @throws Exception any exception occurring while handling the command
      */
     @Override
-    public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+    public Object handle(CommandMessage<?> command) throws Exception {
         return modelInspector.commandHandler(command.getCommandName()).handle(command, target);
     }
 

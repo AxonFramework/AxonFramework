@@ -20,7 +20,7 @@ public class MessageHandlerSubscriberDefinitionRegistrar implements ImportBeanDe
         if (Boolean.TRUE.equals(attributes.getFirst("subscribeEventProcessors"))
                 || Boolean.TRUE.equals(attributes.getFirst("subscribeEventListeners"))) {
             final GenericBeanDefinition definition = new GenericBeanDefinition();
-            definition.setBeanClass(EventListenerSubscriber.class);
+            //definition.setBeanClass(EventListenerSubscriber.class);
             final Object eventBusRef = attributes.getFirst("eventBus");
             if (!"".equals(eventBusRef)) {
                 definition.getPropertyValues().add("eventBus",

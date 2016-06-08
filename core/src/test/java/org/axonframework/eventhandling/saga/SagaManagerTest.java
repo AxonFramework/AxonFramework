@@ -20,6 +20,8 @@ import org.apache.commons.collections.set.ListOrderedSet;
 import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -77,7 +79,8 @@ public class SagaManagerTest {
     @Test
     public void testSagasLoaded() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new Object());
-        testSubject.accept(event);
+        UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
+        unitOfWork.executeWithResult(() -> testSubject.handle(event));
         verify(mockSagaRepository).find(associationValue);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
@@ -87,10 +90,11 @@ public class SagaManagerTest {
     @Test
     public void testExceptionPropagated() throws Exception {
         testSubject.setSuppressExceptions(false);
-        EventMessage event = new GenericEventMessage<>(new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
         try {
-            testSubject.accept(event);
+            UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
+            unitOfWork.executeWithResult(() -> testSubject.handle(event));
             fail("Expected exception to be propagated");
         } catch (RuntimeException e) {
             e.printStackTrace();
@@ -102,11 +106,9 @@ public class SagaManagerTest {
     @Test
     public void testExceptionSuppressed() throws Exception {
         testSubject.setSuppressExceptions(true);
-        EventMessage event = new GenericEventMessage<>(new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new Object());
         doThrow(new MockException()).when(mockSaga1).handle(event);
-
-        testSubject.accept(event);
-
+        testSubject.handle(event);
         verify(mockSaga1).handle(event);
         verify(mockSaga2).handle(event);
         verify(mockSaga3, never()).handle(event);
@@ -120,11 +122,11 @@ public class SagaManagerTest {
     private class TestableAbstractSagaManager extends AbstractSagaManager<Object> {
 
         private TestableAbstractSagaManager(SagaRepository<Object> sagaRepository) {
-            super(Object.class, sagaRepository, Object::new, t -> true);
+            super(Object.class, sagaRepository, Object::new);
         }
 
         @Override
-        protected boolean hasHandler(EventMessage<?> event) {
+        public boolean hasHandler(EventMessage<?> event) {
             return true;
         }
 

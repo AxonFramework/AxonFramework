@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.eventhandling;
 
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventProcessor;
 
 import java.lang.annotation.Annotation;
 
@@ -28,49 +28,47 @@ import java.lang.annotation.Annotation;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AnnotationEventProcessorSelector extends AbstractEventProcessorSelector {
+public class AnnotationEventHandlerManagerSelector extends AbstractEventHandlerManagerSelector {
 
     private final Class<? extends Annotation> annotationType;
-    private final EventProcessor eventProcessor;
+    private final EventHandlerInvoker eventHandlerInvoker;
     private final boolean inspectSuperClasses;
 
     /**
-     * Initializes a EventProcessorSelector instance that selects the given <code>eventProcessor</code> for Event Listeners that are
+     * Initializes a EventProcessorSelector instance that selects the given <code>eventHandlerManager</code> for Event Listeners that are
      * annotated with the given <code>annotationType</code>.
      * <p/>
      * Note that this instance will <em>not</em> search superclasses for annotations by default. If annotation on
      * classes should also reflect on their subclasses, make sure to use the
      * {@link java.lang.annotation.Inherited @Inherited} Meta-Annotation, or use {@link
-     * #AnnotationEventProcessorSelector(Class, EventProcessor, boolean)}.
-     *
-     * @param annotationType The type of annotation to find on the Event Listeners
-     * @param eventProcessor The event processor to select if the annotation was found
+     * #AnnotationEventHandlerManagerSelector(Class, EventHandlerInvoker, boolean)}.
+     *  @param annotationType The type of annotation to find on the Event Listeners
+     * @param eventHandlerInvoker The event processor to select if the annotation was found
      */
-    public AnnotationEventProcessorSelector(Class<? extends Annotation> annotationType, EventProcessor eventProcessor) {
-        this(annotationType, eventProcessor, false);
+    public AnnotationEventHandlerManagerSelector(Class<? extends Annotation> annotationType, EventHandlerInvoker eventHandlerInvoker) {
+        this(annotationType, eventHandlerInvoker, false);
     }
 
     /**
-     * Initializes a EventProcessorSelector instance that selects the given <code>eventProcessor</code> for Event Listeners that are
+     * Initializes a EventProcessorSelector instance that selects the given <code>eventHandlerManager</code> for Event Listeners that are
      * annotated with the given <code>annotationType</code>. If <code>inspectSuperClasses</code> is <code>true</code>,
      * super classes will be searched for the annotation, regardless if the annotation is marked as {@link
      * java.lang.annotation.Inherited @Inherited}
-     *
-     * @param annotationType      The type of annotation to find on the Event Listeners
-     * @param eventProcessor      The event processor to select if the annotation was found
+     *  @param annotationType      The type of annotation to find on the Event Listeners
+     * @param eventHandlerInvoker      The event processor to select if the annotation was found
      * @param inspectSuperClasses Whether or not to inspect super classes as well
      */
-    public AnnotationEventProcessorSelector(Class<? extends Annotation> annotationType, EventProcessor eventProcessor,
-                                            boolean inspectSuperClasses) {
+    public AnnotationEventHandlerManagerSelector(Class<? extends Annotation> annotationType, EventHandlerInvoker eventHandlerInvoker,
+                                                 boolean inspectSuperClasses) {
         this.annotationType = annotationType;
-        this.eventProcessor = eventProcessor;
+        this.eventHandlerInvoker = eventHandlerInvoker;
         this.inspectSuperClasses = inspectSuperClasses;
     }
 
 
     @Override
-    protected EventProcessor doSelectEventProcessor(EventListener eventListener, Class<?> listenerType) {
-        return annotationPresent(listenerType) ? eventProcessor : null;
+    protected EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType) {
+        return annotationPresent(listenerType) ? eventHandlerInvoker : null;
     }
 
     private boolean annotationPresent(Class<?> listenerType) {

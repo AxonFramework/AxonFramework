@@ -23,8 +23,8 @@ import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.PublishingEventProcessor;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -106,8 +106,10 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
 
         eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        EventProcessor eventProcessor = new PublishingEventProcessor("logging", new LoggingEventListener(events));
-        eventStore.subscribe(eventProcessor);
+        SubscribingEventProcessor eventProcessor =
+                new SubscribingEventProcessor(new SimpleEventHandlerInvoker("test", new LoggingEventListener(events)),
+                                              eventStore);
+        eventProcessor.start();
         events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
 
@@ -139,11 +141,13 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
 
+    @SuppressWarnings("unchecked")
     public void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventStore.subscribe(
-                new PublishingEventProcessor("commandExecutor", new CommandExecutingEventListener("1", null, true),
-                                             new CommandExecutingEventListener("2", null, true)));
+        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
+                new SimpleEventHandlerInvoker("test", new CommandExecutingEventListener("1", null, true),
+                                              new CommandExecutingEventListener("2", null, true)), eventStore);
+        eventProcessor.start();
 
         UnitOfWork<?> uow = uowFactory.createUnitOfWork(null);
         repository.newInstance(() -> new TestAggregate(id));
@@ -154,6 +158,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         assertTrue(verify.tokens.containsAll(asList("1", "2")));
     }
 
+    @SuppressWarnings("unchecked")
     private void executeComplexScenario(String id) throws Exception {
         // Unit Of Work hierarchy:
         // root ("2")
@@ -168,19 +173,19 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         //
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventStore.subscribe(
-                new PublishingEventProcessor("commandExecution", new CommandExecutingEventListener("UOW4", null, true),
-                                             new CommandExecutingEventListener("UOW5", null, true),
-                                             new CommandExecutingEventListener("UOW3", null, true),
+        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
+                new SimpleEventHandlerInvoker("test", new CommandExecutingEventListener("UOW4", null, true),
+                                              new CommandExecutingEventListener("UOW5", null, true),
+                                              new CommandExecutingEventListener("UOW3", null, true),
 
-                                             // Execute commands to update after the previous update has been performed
-                                             new CommandExecutingEventListener("UOW7", "UOW6", true),
-                                             new CommandExecutingEventListener("UOW6", "UOW3", true),
+                                              // Execute commands to update after the previous update has been performed
+                                              new CommandExecutingEventListener("UOW7", "UOW6", true),
+                                              new CommandExecutingEventListener("UOW6", "UOW3", true),
 
-                                             new CommandExecutingEventListener("UOW10", "UOW8", false),
-                                             new CommandExecutingEventListener("UOW9", "UOW4", true),
-                                             new CommandExecutingEventListener("UOW8", "UOW4", true)));
-
+                                              new CommandExecutingEventListener("UOW10", "UOW8", false),
+                                              new CommandExecutingEventListener("UOW9", "UOW4", true),
+                                              new CommandExecutingEventListener("UOW8", "UOW4", true)), eventStore);
+        eventProcessor.start();
 
         // First command: Create Aggregate
         UnitOfWork<?> uow1 = uowFactory.createUnitOfWork(null);
@@ -200,6 +205,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private TestAggregate loadAggregate(String id) {
         UnitOfWork<?> uow = uowFactory.createUnitOfWork(null);
         Aggregate<TestAggregate> verify = repository.load(id);
@@ -210,7 +216,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     /**
      * Capture information about events that are published
      */
-    static final class LoggingEventListener implements EventListener {
+    private static final class LoggingEventListener implements EventListener {
 
         private final List<String> events;
 
@@ -241,7 +247,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         final String previousToken;
         private final boolean commit;
 
-        public CommandExecutingEventListener(String token, String previousToken, boolean commit) {
+        private CommandExecutingEventListener(String token, String previousToken, boolean commit) {
             this.token = token;
             this.previousToken = previousToken;
             this.commit = commit;

@@ -18,7 +18,8 @@ package org.axonframework.spring.config.eventhandling;
 
 import org.axonframework.eventhandling.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventHandlerInvoker;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.spring.config.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,47 +32,47 @@ import static org.junit.Assert.assertSame;
 /**
  * @author Allard Buijze
  */
-public class AnnotationEventProcessorSelectorTest {
+public class AnnotationEventHandlerManagerSelectorTest {
 
-    private AnnotationEventProcessorSelector testSubject;
-    private SimpleEventProcessor eventProcessor;
+    private AnnotationEventHandlerManagerSelector testSubject;
+    private EventHandlerInvoker eventHandlerInvoker;
 
     @Before
     public void setUp() throws Exception {
-        eventProcessor = new SimpleEventProcessor("eventProcessor");
-        testSubject = new AnnotationEventProcessorSelector(MyInheritedAnnotation.class, eventProcessor);
+        eventHandlerInvoker = new SimpleEventHandlerInvoker("eventHandlerManager");
+        testSubject = new AnnotationEventHandlerManagerSelector(MyInheritedAnnotation.class, eventHandlerInvoker);
     }
 
     @Test
     public void testSelectEventProcessorForAnnotatedHandler() {
-        EventProcessor actual = testSubject.selectEventProcessor(new AnnotationEventListenerAdapter(new AnnotatedEventHandler()));
-        assertSame(eventProcessor, actual);
+        EventHandlerInvoker actual = testSubject.selectHandlerManager(new AnnotationEventListenerAdapter(new AnnotatedEventHandler()));
+        assertSame(eventHandlerInvoker, actual);
     }
 
     @Test
     public void testSelectEventProcessorForAnnotatedHandlerSubClass() {
-        EventProcessor actual = testSubject.selectEventProcessor(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
-        assertSame(eventProcessor, actual);
+        EventHandlerInvoker actual = testSubject.selectHandlerManager(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
+        assertSame(eventHandlerInvoker, actual);
     }
 
     @Test
     public void testReturnNullWhenNoAnnotationFound() {
-        EventProcessor actual = testSubject.selectEventProcessor(new AnnotationEventListenerAdapter(new NonAnnotatedEventHandler()));
-        assertNull("EventProcessorSelector should not have selected a eventProcessor", actual);
+        EventHandlerInvoker actual = testSubject.selectHandlerManager(new AnnotationEventListenerAdapter(new NonAnnotatedEventHandler()));
+        assertNull("Selector should not have selected a eventHandlerManager", actual);
     }
 
     @Test
     public void testSelectEventProcessorForNonInheritedHandlerSubClassWhenSuperClassInspectionIsEnabled() {
-        testSubject = new AnnotationEventProcessorSelector(MyAnnotation.class, eventProcessor, true);
-        EventProcessor actual = testSubject.selectEventProcessor(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
-        assertSame(eventProcessor, actual);
+        testSubject = new AnnotationEventHandlerManagerSelector(MyAnnotation.class, eventHandlerInvoker, true);
+        EventHandlerInvoker actual = testSubject.selectHandlerManager(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
+        assertSame(eventHandlerInvoker, actual);
     }
 
     @Test
     public void testReturnNullForNonInheritedHandlerSubClassWhenSuperClassInspectionIsDisabled() {
-        testSubject = new AnnotationEventProcessorSelector(MyAnnotation.class, eventProcessor);
-        EventProcessor actual = testSubject.selectEventProcessor(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
-        assertNull("EventProcessorSelector should not have selected a eventProcessor", actual);
+        testSubject = new AnnotationEventHandlerManagerSelector(MyAnnotation.class, eventHandlerInvoker);
+        EventHandlerInvoker actual = testSubject.selectHandlerManager(new AnnotationEventListenerAdapter(new AnnotatedSubEventHandler()));
+        assertNull("Selector should not have selected a eventHandlerManager", actual);
     }
 
     @MyInheritedAnnotation

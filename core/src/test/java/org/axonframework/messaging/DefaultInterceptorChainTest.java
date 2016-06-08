@@ -40,7 +40,7 @@ public class DefaultInterceptorChainTest {
     public void setUp() throws Exception {
         unitOfWork = new DefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
-        when(mockHandler.handle(isA(Message.class), isA(UnitOfWork.class))).thenReturn("Result");
+        when(mockHandler.handle(isA(Message.class))).thenReturn("Result");
     }
 
     @Test
@@ -71,6 +71,6 @@ public class DefaultInterceptorChainTest {
             public void describeTo(Description description) {
                 description.appendText("Message with 'testing' payload");
             }
-        }), isA(UnitOfWork.class));
+        }));
     }
 }

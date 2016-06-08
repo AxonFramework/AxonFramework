@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.eventhandling;
 
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventProcessor;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -45,22 +45,21 @@ import java.util.TreeMap;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ClassNamePrefixEventProcessorSelector extends AbstractEventProcessorSelector {
+public class ClassNamePrefixEventHandlerManagerSelector extends AbstractEventHandlerManagerSelector {
 
-    private final Map<String, EventProcessor> mappings;
-    private final EventProcessor defaultEventProcessor;
+    private final Map<String, EventHandlerInvoker> mappings;
+    private final EventHandlerInvoker defaultEventHandlerInvoker;
 
     /**
      * Initializes the ClassNamePrefixEventProcessorSelector where classes starting with the given <code>prefix</code> will be
      * mapped to the given <code>eventProcessor</code>.
      * <p/>
-     * This method is identical to {@link #ClassNamePrefixEventProcessorSelector(java.util.Map)} with only a single mapping.
-     *
-     * @param prefix  The prefix of the fully qualified classname to match against
-     * @param eventProcessor The event processor to choose if a match is found
+     * This method is identical to {@link #ClassNamePrefixEventHandlerManagerSelector(java.util.Map)} with only a single mapping.
+     *  @param prefix  The prefix of the fully qualified classname to match against
+     * @param eventHandlerInvoker The event processor to choose if a match is found
      */
-    public ClassNamePrefixEventProcessorSelector(String prefix, EventProcessor eventProcessor) {
-        this(Collections.singletonMap(prefix, eventProcessor));
+    public ClassNamePrefixEventHandlerManagerSelector(String prefix, EventHandlerInvoker eventHandlerInvoker) {
+        this(Collections.singletonMap(prefix, eventHandlerInvoker));
     }
 
     /**
@@ -69,32 +68,30 @@ public class ClassNamePrefixEventProcessorSelector extends AbstractEventProcesso
      *
      * @param mappings the mappings defining an event processor for each Class Name prefix
      */
-    public ClassNamePrefixEventProcessorSelector(Map<String, EventProcessor> mappings) {
+    public ClassNamePrefixEventHandlerManagerSelector(Map<String, EventHandlerInvoker> mappings) {
         this(mappings, null);
     }
 
     /**
      * Initializes the ClassNamePrefixEventProcessorSelector using the given <code>mappings</code>. If a name does not have a
      * prefix defined, the Event Processor Selector returns the given <code>defaultEventProcessor</code>.
-     *
-     * @param mappings       the mappings defining an event processor for each Class Name prefix
-     * @param defaultEventProcessor The event processor to use when no mapping is present
-     */
-    public ClassNamePrefixEventProcessorSelector(Map<String, EventProcessor> mappings, EventProcessor defaultEventProcessor) {
-        this.defaultEventProcessor = defaultEventProcessor;
+     *  @param mappings       the mappings defining an event processor for each Class Name prefix
+     * @param defaultEventHandlerInvoker The event processor to use when no mapping is present*/
+    public ClassNamePrefixEventHandlerManagerSelector(Map<String, EventHandlerInvoker> mappings, EventHandlerInvoker defaultEventHandlerInvoker) {
+        this.defaultEventHandlerInvoker = defaultEventHandlerInvoker;
         this.mappings = new TreeMap<>(new ReverseStringComparator());
         this.mappings.putAll(mappings);
     }
 
     @Override
-    public EventProcessor doSelectEventProcessor(EventListener eventListener, Class<?> listenerType) {
+    public EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType) {
         String listenerName = listenerType.getName();
-        for (Map.Entry<String, EventProcessor> entry : mappings.entrySet()) {
+        for (Map.Entry<String, EventHandlerInvoker> entry : mappings.entrySet()) {
             if (listenerName.startsWith(entry.getKey())) {
                 return entry.getValue();
             }
         }
-        return defaultEventProcessor;
+        return defaultEventHandlerInvoker;
     }
 
     private static class ReverseStringComparator implements Comparator<String>, Serializable {

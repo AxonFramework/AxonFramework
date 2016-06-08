@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.eventhandling;
 
+import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventProcessor;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -31,9 +31,9 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.0
  */
-public class CompositeEventProcessorSelector implements EventProcessorSelector {
+public class CompositeEventHandlerManagerSelector implements EventHandlerManagerSelector {
 
-    private final List<EventProcessorSelector> delegates;
+    private final List<EventHandlerManagerSelector> delegates;
 
     /**
      * Initializes the CompositeEventProcessorSelector with the given List of <code>delegates</code>. The delegates are
@@ -41,16 +41,16 @@ public class CompositeEventProcessorSelector implements EventProcessorSelector {
      *
      * @param delegates the delegates to evaluate
      */
-    public CompositeEventProcessorSelector(List<EventProcessorSelector> delegates) {
+    public CompositeEventHandlerManagerSelector(List<EventHandlerManagerSelector> delegates) {
         this.delegates = new ArrayList<>(delegates);
     }
 
     @Override
-    public EventProcessor selectEventProcessor(EventListener eventListener) {
-        EventProcessor selected = null;
-        Iterator<EventProcessorSelector> iterator = delegates.iterator();
+    public EventHandlerInvoker selectHandlerManager(EventListener eventListener) {
+        EventHandlerInvoker selected = null;
+        Iterator<EventHandlerManagerSelector> iterator = delegates.iterator();
         while (selected == null && iterator.hasNext()) {
-            selected = iterator.next().selectEventProcessor(eventListener);
+            selected = iterator.next().selectHandlerManager(eventListener);
         }
         return selected;
     }

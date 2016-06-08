@@ -75,7 +75,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
                                                                          new AutowiredResourceInjector(
                                                                                  registeredResources));
-        sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, sagaType::newInstance, t -> true);
+        sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, sagaType::newInstance);
         sagaManager.setSuppressExceptions(false);
 
         registeredResources.add(eventBus);
@@ -93,7 +93,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(elapsedTime, sagaManager::accept);
+            eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -104,7 +104,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     public FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(newDateTime, sagaManager::accept);
+            eventScheduler.advanceTime(newDateTime, sagaManager::handle);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -130,7 +130,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
     @Override
     public ContinuedGivenState givenAPublished(Object event) throws Exception {
-        sagaManager.accept(GenericEventMessage.asEventMessage(event));
+        sagaManager.handle(GenericEventMessage.asEventMessage(event));
         return this;
     }
 
@@ -146,19 +146,19 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
     @Override
     public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) throws Exception {
-        eventScheduler.advanceTime(elapsedTime, sagaManager::accept);
+        eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
         return this;
     }
 
     @Override
     public ContinuedGivenState andThenTimeAdvancesTo(final ZonedDateTime newDateTime) throws Exception {
-        eventScheduler.advanceTime(newDateTime, sagaManager::accept);
+        eventScheduler.advanceTime(newDateTime, sagaManager::handle);
         return this;
     }
 
     @Override
     public ContinuedGivenState andThenAPublished(Object event) throws Exception {
-        sagaManager.accept(GenericEventMessage.asEventMessage(event));
+        sagaManager.handle(GenericEventMessage.asEventMessage(event));
         return this;
     }
 
@@ -172,7 +172,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     public FixtureExecutionResult whenPublishingA(Object event) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
-            sagaManager.accept(GenericEventMessage.asEventMessage(event));
+            sagaManager.handle(GenericEventMessage.asEventMessage(event));
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -310,13 +310,13 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
                 for (Object event : events) {
                     if (event instanceof EventMessage<?>) {
                         EventMessage<?> eventMessage = (EventMessage<?>) event;
-                        sagaManager.accept(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                        sagaManager.handle(new GenericDomainEventMessage<>(type, aggregateIdentifier,
                                                                            sequenceNumber++, eventMessage.getPayload(),
                                                                            eventMessage.getMetaData(),
                                                                            eventMessage.getIdentifier(),
                                                                            eventMessage.getTimestamp()));
                     } else {
-                        sagaManager.accept(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                        sagaManager.handle(new GenericDomainEventMessage<>(type, aggregateIdentifier,
                                                                            sequenceNumber++, event));
                     }
                 }

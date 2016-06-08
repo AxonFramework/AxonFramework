@@ -52,7 +52,7 @@ public class FixtureTest_Annotated {
     @Test
     public void testAggregateCommandHandlersOverwrittenByCustomHandlers() {
         final AtomicBoolean invoked = new AtomicBoolean(false);
-        fixture.registerCommandHandler(CreateAggregateCommand.class, (commandMessage, unitOfWork) -> {
+        fixture.registerCommandHandler(CreateAggregateCommand.class, commandMessage -> {
             invoked.set(true);
             return null;
         });

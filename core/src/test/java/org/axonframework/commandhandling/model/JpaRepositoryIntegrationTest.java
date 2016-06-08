@@ -41,8 +41,7 @@ import static org.junit.Assert.*;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"/META-INF/spring/jpa-repository-context.xml",
-        "/META-INF/spring/db-context.xml"})
+@ContextConfiguration(locations = {"/META-INF/spring/jpa-repository-context.xml", "/META-INF/spring/db-context.xml"})
 @Transactional
 public class JpaRepositoryIntegrationTest implements EventListener {
 
@@ -57,15 +56,17 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     private EntityManager entityManager;
 
     private final List<EventMessage> capturedEvents = new ArrayList<>();
-    private final EventProcessor eventProcessor = new PublishingEventProcessor("test", this);
+    private SubscribingEventProcessor eventProcessor;
 
     @Before
     public void setUp() {
-        eventBus.subscribe(eventProcessor);
+        eventProcessor = new SubscribingEventProcessor(new SimpleEventHandlerInvoker("test", this), eventBus);
+        eventProcessor.start();
     }
 
     @After
     public void tearDown() {
+        eventProcessor.shutDown();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }

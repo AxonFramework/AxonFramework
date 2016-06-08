@@ -16,7 +16,6 @@ package org.axonframework.eventhandling.saga;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.metamodel.DefaultSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 
 import java.util.List;
 import java.util.Set;
@@ -24,8 +23,8 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 /**
- * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike
- * the SimpleSagaManager, this implementation can manage several types of Saga in a single AnnotatedSagaManager.
+ * Implementation of the SagaManager that uses annotations on the Sagas to describe the lifecycle management. Unlike the
+ * SimpleSagaManager, this implementation can manage several types of Saga in a single AnnotatedSagaManager.
  *
  * @author Allard Buijze
  * @since 0.7
@@ -40,18 +39,16 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
      *
      * @param sagaRepository The repository providing access to the Saga instances
      */
-    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository,Callable<T> sagaFactory,
-                                RollbackConfiguration rollbackConfiguration) {
-        this(sagaType, sagaRepository, sagaFactory,
-             new DefaultSagaMetaModelFactory().modelOf(sagaType), rollbackConfiguration);
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory) {
+        this(sagaType, sagaRepository, sagaFactory, new DefaultSagaMetaModelFactory().modelOf(sagaType));
     }
 
     /**
      * TODO: Javadoc
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
-                                SagaModel<T> sagaMetaModel, RollbackConfiguration rollbackConfiguration) {
-        super(sagaType, sagaRepository, sagaFactory, rollbackConfiguration);
+                                SagaModel<T> sagaMetaModel) {
+        super(sagaType, sagaRepository, sagaFactory);
         this.sagaMetaModel = sagaMetaModel;
     }
 
@@ -75,7 +72,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     }
 
     @Override
-    protected boolean hasHandler(EventMessage<?> event) {
+    public boolean hasHandler(EventMessage<?> event) {
         return !sagaMetaModel.findHandlerMethods(event).isEmpty();
     }
 }

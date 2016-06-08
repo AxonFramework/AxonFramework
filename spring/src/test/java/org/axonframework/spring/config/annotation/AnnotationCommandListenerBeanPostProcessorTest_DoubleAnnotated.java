@@ -88,7 +88,7 @@ public class AnnotationCommandListenerBeanPostProcessorTest_DoubleAnnotated {
         Assert.assertEquals(1, transactionalHandler.getInvocations());
 
         assertTrue("Bean doesn't implement MessageHandler", MessageHandler.class.isInstance(transactionalHandler));
-        ((MessageHandler<CommandMessage<?>>) transactionalHandler).handle(GenericCommandMessage.asCommandMessage(12), null);
+        ((MessageHandler<CommandMessage<?>>) transactionalHandler).handle(GenericCommandMessage.asCommandMessage(12));
         Assert.assertEquals(2, transactionalHandler.getInvocations());
 
         commandBus.dispatch(GenericCommandMessage.asCommandMessage(new Object()), new VoidCallback<Object>() {
