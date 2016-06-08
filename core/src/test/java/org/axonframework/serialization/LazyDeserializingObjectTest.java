@@ -57,7 +57,7 @@ public class LazyDeserializingObjectTest {
         assertTrue(testSubject.isDeserialized());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = Exception.class)
     public void testLazilyDeserialized_NullObject() {
         new LazyDeserializingObject<>(null, mockSerializer);
     }

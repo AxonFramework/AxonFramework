@@ -31,7 +31,7 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
              delegate, delegate.getTimestamp());
     }
 
-    private GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
+    public GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
                                              long sequenceNumber, Message<T> delegate, Instant timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
         this.trackingToken = trackingToken;

@@ -44,7 +44,8 @@ public class GenericMessage<T> extends AbstractMessage<T> {
      * @param metaData The meta data for the message
      */
     public GenericMessage(T payload, Map<String, ?> metaData) {
-        this(IdentifierFactory.getInstance().generateIdentifier(), payload, MetaData.from(metaData));
+        this(IdentifierFactory.getInstance().generateIdentifier(), payload,
+             CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData)));
     }
 
     /**
@@ -57,7 +58,7 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     @SuppressWarnings("unchecked")
     public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
         super(identifier);
-        this.metaData = CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData));
+        this.metaData = MetaData.from(metaData);
         this.payload = payload;
         this.payloadType = (Class<T>) payload.getClass();
     }

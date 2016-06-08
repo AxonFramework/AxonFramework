@@ -19,8 +19,7 @@ package org.axonframework.spring.config.xml;
 import org.axonframework.serialization.ChainingConverterFactory;
 import org.axonframework.serialization.ConverterFactory;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.LazyUpcasterChain;
-import org.axonframework.serialization.upcasting.SimpleUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -65,11 +64,7 @@ public class UpcasterChainBeanDefinitionParser {
      * @return The BeanDefinition representing the UpcasterChainBean
      */
     public BeanDefinition parse(Element element, ParserContext parserContext, Object defaultSerializer) {
-        String strategy = element.getAttribute(STRATEGY_ATTRIBUTE);
-        Class<?> chainType = LazyUpcasterChain.class;
-        if (STRATEGY_EAGER.equals(strategy)) {
-            chainType = SimpleUpcasterChain.class;
-        }
+        Class<?> chainType = EventUpcasterChain.class;
         BeanDefinition bd = BeanDefinitionBuilder.genericBeanDefinition(chainType)
                                                  .getBeanDefinition();
         bd.getConstructorArgumentValues().addIndexedArgumentValue(1, parserContext.getDelegate()

@@ -14,16 +14,22 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.serialization.SerializationAware;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedObjectHolder;
+import org.axonframework.serialization.Serializer;
 
 /**
  * @author Rene de Waele
  */
-public abstract class MessageDecorator<T> implements Message<T> {
+public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
 
     private final Message<T> delegate;
+    private transient final SerializedObjectHolder serializedObjectHolder;
 
     public MessageDecorator(Message<T> delegate) {
         this.delegate = delegate;
+        serializedObjectHolder = new SerializedObjectHolder(delegate);
     }
 
     @Override
@@ -44,6 +50,22 @@ public abstract class MessageDecorator<T> implements Message<T> {
     @Override
     public Class<T> getPayloadType() {
         return delegate.getPayloadType();
+    }
+
+    @Override
+    public <S> SerializedObject<S> serializePayload(Serializer serializer, Class<S> expectedRepresentation) {
+        if (delegate instanceof SerializationAware) {
+            return ((SerializationAware) delegate).serializePayload(serializer, expectedRepresentation);
+        }
+        return serializedObjectHolder.serializePayload(serializer, expectedRepresentation);
+    }
+
+    @Override
+    public <S> SerializedObject<S> serializeMetaData(Serializer serializer, Class<S> expectedRepresentation) {
+        if (delegate instanceof SerializationAware) {
+            return ((SerializationAware) delegate).serializeMetaData(serializer, expectedRepresentation);
+        }
+        return serializedObjectHolder.serializeMetaData(serializer, expectedRepresentation);
     }
 
     protected Message<T> getDelegate() {

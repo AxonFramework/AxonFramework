@@ -11,15 +11,20 @@
  * limitations under the License.
  */
 
-package org.axonframework.serialization.upcasting;
-
-import java.util.stream.Stream;
+package org.axonframework.serialization.upcasting.event;
 
 /**
  * @author Rene de Waele
  */
-public interface UpcasterChain<T> {
+public class StubEvent {
 
-    Stream<T> upcast(Stream<T> intermediateRepresentations);
+    private final String name;
 
+    public StubEvent(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

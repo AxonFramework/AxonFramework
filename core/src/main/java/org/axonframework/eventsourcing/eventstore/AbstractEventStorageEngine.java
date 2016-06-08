@@ -19,8 +19,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.SimpleUpcasterChain;
-import org.axonframework.serialization.upcasting.UpcasterChain;
+import org.axonframework.serialization.upcasting.event.DefaultEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,35 +34,27 @@ import static java.lang.String.format;
 public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     private Serializer serializer;
-    private UpcasterChain upcasterChain = SimpleUpcasterChain.EMPTY;
+    private EventUpcasterChain upcasterChain = new DefaultEventUpcasterChain();
     private PersistenceExceptionResolver persistenceExceptionResolver;
-
-    protected Serializer serializer() {
-        return serializer;
-    }
-
-    protected UpcasterChain upcasterChain() {
-        return upcasterChain;
-    }
 
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
-        return readEventData(trackingToken, mayBlock)
-                .flatMap(entry -> EventUtils.upcastAndDeserialize(entry, serializer, upcasterChain, false).stream());
+        Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
+        return EventUtils.upcastAndDeserializeTrackedEvents(input, serializer, upcasterChain, false);
     }
 
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
-        Stream<? extends DomainEventMessage<?>> stream = readEventData(aggregateIdentifier, firstSequenceNumber)
-                .flatMap(entry -> EventUtils.upcastAndDeserialize(entry, serializer, upcasterChain, false).stream());
-        return DomainEventStream.of(stream.iterator());
+        Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
+        return DomainEventStream
+                .of(EventUtils.upcastAndDeserializeDomainEvents(input, serializer, upcasterChain, false).iterator());
     }
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier)
-                .map(entry -> EventUtils.upcastAndDeserialize(entry, serializer, upcasterChain, false).stream()
-                        .findFirst().orElse(null));
+        return readSnapshotData(aggregateIdentifier).map(entry -> EventUtils
+                .upcastAndDeserializeDomainEvents(Stream.of(entry), serializer, upcasterChain, false).findFirst()
+                .orElse(null));
     }
 
     @Override
@@ -79,9 +71,9 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         String eventDescription;
         if (failedEvent instanceof DomainEventMessage<?>) {
             DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
-            eventDescription = format("An event for aggregate [%s] at sequence [%d]",
-                                      failedDomainEvent.getAggregateIdentifier(),
-                                      failedDomainEvent.getSequenceNumber());
+            eventDescription =
+                    format("An event for aggregate [%s] at sequence [%d]", failedDomainEvent.getAggregateIdentifier(),
+                           failedDomainEvent.getSequenceNumber());
         } else {
             eventDescription = format("An event with identifier [%s]", failedEvent.getIdentifier());
         }
@@ -112,7 +104,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      *
      * @param upcasterChain the upcaster chain providing the upcasting capabilities
      */
-    public void setUpcasterChain(UpcasterChain upcasterChain) {
+    public void setUpcasterChain(EventUpcasterChain upcasterChain) {
         this.upcasterChain = upcasterChain;
     }
 

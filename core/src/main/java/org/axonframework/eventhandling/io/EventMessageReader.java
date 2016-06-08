@@ -17,16 +17,21 @@
 package org.axonframework.eventhandling.io;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.serialization.*;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.SerializedMetaData;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.time.Instant;
 
 /**
- * Reader that reads EventMessage instances written to the underlying input. Typically, these messages have been
- * written using a {@link EventMessageWriter}. This reader distinguishes between DomainEventMessage and regular
- * EventMessage implementations and will reconstruct an instance implementing that same interface when reading.
+ * Reader that reads EventMessage instances written to the underlying input. Typically, these messages have been written
+ * using a {@link EventMessageWriter}. This reader distinguishes between DomainEventMessage and regular EventMessage
+ * implementations and will reconstruct an instance implementing that same interface when reading.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -54,12 +59,13 @@ public class EventMessageReader {
      *
      * @param <T> The type of payload expected to be in the returned EventMessage. This is not checked at runtime!
      * @return an EventMessage representing the message originally written, or <code>null</code> if the stream has
-     *         reached the end
-     *
-     * @throws IOException          when an error occurs reading from the underlying input
-     * @throws java.io.EOFException when the end of the stream was reached before the message was entirely read
-     * @throws org.axonframework.serialization.UnknownSerializedTypeException
-     *                              if the type of the serialized object cannot be resolved to a class
+     * reached the end
+     * @throws IOException                                                    when an error occurs reading from the
+     *                                                                        underlying input
+     * @throws java.io.EOFException                                           when the end of the stream was reached
+     *                                                                        before the message was entirely read
+     * @throws org.axonframework.serialization.UnknownSerializedTypeException if the type of the serialized object
+     *                                                                        cannot be resolved to a class
      */
     public <T> EventMessage<T> readEventMessage() throws IOException {
         final int firstByte = in.read();
@@ -85,18 +91,19 @@ public class EventMessageReader {
         int metaDataSize = in.readInt();
         byte[] metaData = new byte[metaDataSize];
         in.readFully(metaData);
-        SimpleSerializedObject<byte[]> serializedPayload = new SimpleSerializedObject<>(payload,
-                                                                                              byte[].class,
-                                                                                              payloadType,
-                                                                                              payloadRevision);
+        SimpleSerializedObject<byte[]> serializedPayload =
+                new SimpleSerializedObject<>(payload, byte[].class, payloadType, payloadRevision);
         SerializedMetaData<byte[]> serializedMetaData = new SerializedMetaData<>(metaData, byte[].class);
 
-        SerializedEventMessage<T> message = new SerializedEventMessage<>(identifier, Instant.parse(timestamp),
-                                                                          serializedPayload, serializedMetaData,
-                                                                          serializer);
         if (messageType == EventMessageType.DOMAIN_EVENT_MESSAGE) {
-            return new SerializedDomainEventMessage<>(message, type, aggregateIdentifier, sequenceNumber);
+            return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
+                                                   new SerializedMessage<>(identifier, serializedPayload,
+                                                                           serializedMetaData, serializer),
+                                                   Instant.parse(timestamp));
+        } else {
+            return new GenericEventMessage<>(
+                    new SerializedMessage<>(identifier, serializedPayload, serializedMetaData, serializer),
+                    Instant.parse(timestamp));
         }
-        return message;
     }
 }

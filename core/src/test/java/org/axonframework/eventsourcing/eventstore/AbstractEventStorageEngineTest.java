@@ -15,10 +15,8 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.UpcasterChain;
-import org.axonframework.serialization.upcasting.UpcastingContext;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
@@ -26,8 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
@@ -52,12 +50,13 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
 
     @Test
     @DirtiesContext
+    @SuppressWarnings({"unchecked", "OptionalGetWithoutIsPresent"})
     public void testStoreAndLoadEventsWithUpcaster() {
-        UpcasterChain mockUpcasterChain = mock(UpcasterChain.class);
-        when(mockUpcasterChain.upcast(isA(SerializedObject.class), isA(UpcastingContext.class)))
+        EventUpcasterChain mockUpcasterChain = mock(EventUpcasterChain.class);
+        when(mockUpcasterChain.upcast(isA(Stream.class)))
                 .thenAnswer(invocation -> {
-                    SerializedObject serializedObject = (SerializedObject) invocation.getArguments()[0];
-                    return asList(serializedObject, serializedObject);
+                    Stream<?> inputStream = (Stream) invocation.getArguments()[0];
+                    return inputStream.flatMap(e -> Stream.of(e, e));
                 });
         testSubject.setUpcasterChain(mockUpcasterChain);
 

@@ -62,7 +62,7 @@ public class TrackingEventSupplier {
 
     @PostConstruct
     public void initialize() {
-        eventProcessor.registerInterceptor(((unitOfWork, interceptorChain) -> {
+        eventProcessor.registerInterceptor((unitOfWork, interceptorChain) -> {
             unitOfWork.onPrepareCommit(uow -> {
                 EventMessage<?> event = uow.getMessage();
                 if (event instanceof TrackedEventMessage<?> &&
@@ -78,7 +78,7 @@ public class TrackingEventSupplier {
                 }
             });
             return interceptorChain.proceed();
-        }));
+        });
         supplyNextEvent();
     }
 

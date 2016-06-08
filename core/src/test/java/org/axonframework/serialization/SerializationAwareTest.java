@@ -16,28 +16,27 @@
 
 package org.axonframework.serialization;
 
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.metadata.MetaData;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
+import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class SerializationAwareDomainEventMessageTest {
+public class SerializationAwareTest {
 
-    private SerializationAwareEventMessage<String> testSubject;
+    private GenericEventMessage<String> testSubject;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new SerializationAwareDomainEventMessage<>(
-                new GenericDomainEventMessage<>("type", "aggregate", 1L, "payload", MetaData.with("key", "value")));
+        testSubject = new GenericEventMessage<>("payload", Collections.singletonMap("key", "value"));
     }
 
     @Test
@@ -48,7 +47,7 @@ public class SerializationAwareDomainEventMessageTest {
         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
         Object read = ois.readObject();
 
-        assertEquals(GenericDomainEventMessage.class, read.getClass());
+        assertEquals(GenericEventMessage.class, read.getClass());
     }
 
     @Test
@@ -57,21 +56,10 @@ public class SerializationAwareDomainEventMessageTest {
         final SimpleSerializedObject<byte[]> serializedObject =
                 new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
         when(serializer.serialize("payload", byte[].class)).thenReturn(serializedObject);
-        testSubject.serializePayload(serializer, byte[].class);
-        testSubject.serializePayload(serializer, byte[].class);
+        SerializedObject<byte[]> actual1 = testSubject.serializePayload(serializer, byte[].class);
+        SerializedObject<byte[]> actual2 = testSubject.serializePayload(serializer, byte[].class);
+        assertSame(actual1, actual2);
         verify(serializer, times(1)).serialize("payload", byte[].class);
-        verifyNoMoreInteractions(serializer);
-    }
-
-    @Test
-    public void testSerializeMetaDataTwice() {
-        Serializer serializer = mock(Serializer.class);
-        final SimpleSerializedObject<byte[]> serializedObject =
-                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
-        when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
-        testSubject.serializeMetaData(serializer, byte[].class);
-        testSubject.serializeMetaData(serializer, byte[].class);
-        verify(serializer, times(1)).serialize(isA(MetaData.class), eq(byte[].class));
         verifyNoMoreInteractions(serializer);
     }
 
@@ -87,6 +75,18 @@ public class SerializationAwareDomainEventMessageTest {
         assertNotSame(actual1, actual2);
         assertEquals(String.class, actual2.getContentType());
         verify(serializer, times(1)).serialize("payload", byte[].class);
+        verifyNoMoreInteractions(serializer);
+    }
+
+    @Test
+    public void testSerializeMetaDataTwice() {
+        Serializer serializer = mock(Serializer.class);
+        final SimpleSerializedObject<byte[]> serializedObject =
+                new SimpleSerializedObject<>("payload".getBytes(), byte[].class, "String", "0");
+        when(serializer.serialize(isA(MetaData.class), eq(byte[].class))).thenReturn(serializedObject);
+        testSubject.serializeMetaData(serializer, byte[].class);
+        testSubject.serializeMetaData(serializer, byte[].class);
+        verify(serializer, times(1)).serialize(isA(MetaData.class), eq(byte[].class));
         verifyNoMoreInteractions(serializer);
     }
 

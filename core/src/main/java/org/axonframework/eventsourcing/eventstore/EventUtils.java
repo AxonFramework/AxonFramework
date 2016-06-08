@@ -19,22 +19,21 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
-import org.axonframework.messaging.axon3.SerializedMessage;
-import org.axonframework.serialization.*;
-import org.axonframework.serialization.upcasting.SerializedDomainEventUpcastingContext;
-import org.axonframework.serialization.upcasting.UpcastDomainEventData;
-import org.axonframework.serialization.upcasting.UpcasterChain;
+import org.axonframework.serialization.LazyDeserializingObject;
+import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.UnknownSerializedTypeException;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static java.util.Collections.singletonList;
 import static java.util.Spliterator.*;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
@@ -63,61 +62,89 @@ public abstract class EventUtils {
     }
 
     /**
-     * Upcasts and deserializes the given <code>entry</code> using the given <code>serializer</code> and
-     * <code>upcasterChain</code>. This code is optimized to deserialize the meta-data only once in case it has been
-     * used in the upcasting process.
+     * Upcasts and deserializes the given <code>eventEntryStream</code> using the given <code>serializer</code> and
+     * <code>upcasterChain</code>.
      * <p>
      * The list of events returned contains lazy deserializing events for optimization purposes. Events represented with
-     * unknown classes are ignored, and not returned.
+     * unknown classes are ignored if <code>skipUnknownTypes</code> is <code>true</code>
      *
-     * @param entry            the entry containing the data of the serialized event
+     * @param eventEntryStream the stream of entries containing the data of the serialized event
      * @param serializer       the serializer to deserialize the event with
      * @param upcasterChain    the chain containing the upcasters to upcast the events with
      * @param skipUnknownTypes whether unknown serialized types should be ignored
-     * @return a list of upcast and deserialized events
+     * @return a stream of lazy deserializing events
      */
-    @SuppressWarnings("unchecked")
-    public static List<DomainEventMessage<?>> upcastAndDeserialize(DomainEventData<?> entry,
-                                                                   Serializer serializer, UpcasterChain upcasterChain,
-                                                                   boolean skipUnknownTypes) {
-        SerializedDomainEventUpcastingContext context = new SerializedDomainEventUpcastingContext(entry, serializer);
-        List<SerializedObject> objects = upcasterChain.upcast(entry.getPayload(), context);
-        List<DomainEventMessage<?>> events = new ArrayList<>(objects.size());
-        for (SerializedObject object : objects) {
-            try {
-                DomainEventMessage<Object> message = new SerializedDomainEventMessage<>(
-                        new UpcastDomainEventData(entry, entry.getAggregateIdentifier(), object), serializer);
-
-                // prevents duplicate deserialization of meta data when it has already been access during upcasting
-                if (context.getSerializedMetaData().isDeserialized()) {
-                    message = message.withMetaData(context.getSerializedMetaData().getObject());
-                }
-                events.add(message);
-            } catch (UnknownSerializedTypeException e) {
-                if (!skipUnknownTypes) {
-                    throw e;
-                }
-                logger.info("Ignoring event of unknown type {} (rev. {}), as it cannot be resolved to a Class",
-                            object.getType().getName(), object.getType().getRevision());
-            }
-        }
-        return events;
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    public static Stream<DomainEventMessage<?>> upcastAndDeserializeDomainEvents(
+            Stream<? extends DomainEventData<?>> eventEntryStream, Serializer serializer,
+            EventUpcasterChain upcasterChain, boolean skipUnknownTypes) {
+        Stream<IntermediateEventRepresentation> upcastResult =
+                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes);
+        return upcastResult.map(ir -> {
+            SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
+                                                                             new LazyDeserializingObject<>(ir::getOutputData,
+                                                                                                     ir.getOutputType(),
+                                                                                                     serializer),
+                                                                             ir.getMetaData());
+            return new GenericDomainEventMessage<>(ir.getAggregateType().get(), ir.getAggregateIdentifier().get(),
+                                                   ir.getSequenceNumber().get(), serializedMessage, ir.getTimestamp());
+        });
     }
 
-    @SuppressWarnings("unchecked")
-    public static List<TrackedEventMessage<?>> upcastAndDeserialize(TrackedEventData<?> entry,
-                                                                    Serializer serializer, UpcasterChain upcasterChain,
-                                                                    boolean skipUnknownTypes) {
-        //todo replace when new upcaster API is ready
-        return singletonList(new GenericTrackedEventMessage<>(entry.trackingToken(),
-                                                              new SerializedMessage<>(entry.getEventIdentifier(),
-                                                                                      new LazyDeserializingObject<>(
-                                                                                              entry.getPayload(),
-                                                                                              serializer),
-                                                                                      new LazyDeserializingObject<>(
-                                                                                              entry.getMetaData(),
-                                                                                              serializer)),
-                                                              entry.getTimestamp()));
+    /**
+     * Upcasts and deserializes the given <code>eventEntryStream</code> using the given <code>serializer</code> and
+     * <code>upcasterChain</code>.
+     * <p>
+     * The list of events returned contains lazy deserializing events for optimization purposes. Events represented with
+     * unknown classes are ignored if <code>skipUnknownTypes</code> is <code>true</code>
+     *
+     * @param eventEntryStream the stream of entries containing the data of the serialized event
+     * @param serializer       the serializer to deserialize the event with
+     * @param upcasterChain    the chain containing the upcasters to upcast the events with
+     * @param skipUnknownTypes whether unknown serialized types should be ignored
+     * @return a stream of lazy deserializing events
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    public static Stream<TrackedEventMessage<?>> upcastAndDeserializeTrackedEvents(
+            Stream<? extends TrackedEventData<?>> eventEntryStream, Serializer serializer,
+            EventUpcasterChain upcasterChain, boolean skipUnknownTypes) {
+        Stream<IntermediateEventRepresentation> upcastResult =
+                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes);
+        return upcastResult.map(ir -> {
+            SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
+                                                                             new LazyDeserializingObject<>(ir::getOutputData,
+                                                                                                     ir.getOutputType(),
+                                                                                                     serializer),
+                                                                             ir.getMetaData());
+            if (ir.getAggregateIdentifier().isPresent()) {
+                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().get(),
+                                                              ir.getAggregateIdentifier().get(),
+                                                              ir.getSequenceNumber().get(), serializedMessage,
+                                                              ir.getTimestamp());
+            } else {
+                return new GenericTrackedEventMessage<>(ir.getTrackingToken().get(), serializedMessage,
+                                                        ir.getTimestamp());
+            }
+        });
+    }
+
+    private static Stream<IntermediateEventRepresentation> upcastAndDeserialize(
+            Stream<? extends EventData<?>> eventEntryStream, Serializer serializer, EventUpcasterChain upcasterChain,
+            boolean skipUnknownTypes) {
+        Stream<IntermediateEventRepresentation> upcastResult =
+                eventEntryStream.map(entry -> new InitialEventRepresentation(entry, serializer));
+        upcastResult = upcasterChain.upcast(upcastResult);
+        if (skipUnknownTypes) {
+            upcastResult.filter(ir -> {
+                try {
+                    serializer.classForType(ir.getOutputType());
+                    return true;
+                } catch (UnknownSerializedTypeException e) {
+                    return false;
+                }
+            });
+        }
+        return upcastResult;
     }
 
     public static Stream<? extends DomainEventMessage<?>> asStream(DomainEventStream domainEventStream) {
@@ -125,20 +152,21 @@ public abstract class EventUtils {
     }
 
     public static Stream<? extends TrackedEventMessage<?>> asStream(TrackingEventStream trackingEventStream) {
-        Spliterator<? extends TrackedEventMessage<?>> spliterator = new Spliterators.AbstractSpliterator<TrackedEventMessage<?>>(
-                Long.MAX_VALUE, DISTINCT | NONNULL | ORDERED) {
-            @Override
-            public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
-                try {
-                    action.accept(trackingEventStream.nextAvailable());
-                } catch (InterruptedException e) {
-                    logger.warn("Event stream interrupted", e);
-                    Thread.currentThread().interrupt();
-                    return false;
-                }
-                return true;
-            }
-        };
+        Spliterator<? extends TrackedEventMessage<?>> spliterator =
+                new Spliterators.AbstractSpliterator<TrackedEventMessage<?>>(Long.MAX_VALUE,
+                                                                             DISTINCT | NONNULL | ORDERED) {
+                    @Override
+                    public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
+                        try {
+                            action.accept(trackingEventStream.nextAvailable());
+                        } catch (InterruptedException e) {
+                            logger.warn("Event stream interrupted", e);
+                            Thread.currentThread().interrupt();
+                            return false;
+                        }
+                        return true;
+                    }
+                };
         return stream(spliterator, false);
     }
 

@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2010-2013. Axon Framework
- *
+ * Copyright (c) 2010-2016. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,90 +13,46 @@
 
 package org.axonframework.serialization.upcasting;
 
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 
 /**
- * @author Allard Buijze
+ * @author Rene de Waele
  */
 public class AbstractSingleEntryUpcasterTest {
 
     @Test
-    public void testUpcastSerializedType() {
-        final SimpleSerializedType upcastType = new SimpleSerializedType("newString", "2");
-        AbstractSingleEntryUpcaster<String> testSubject = new StubUpcaster("did it", upcastType);
-
-        List<SerializedType> actual = testSubject.upcast(new SimpleSerializedType("string", "1"));
-        assertEquals(1, actual.size());
-        assertEquals(upcastType, actual.get(0));
+    public void testUpcastingToNullResultsInEmptyStream() {
+        Upcaster<Object> toNullUpcaster = new ToNullUpcaster();
+        Stream<?> result = toNullUpcaster.upcast(new Object());
+        assertFalse(result.findAny().isPresent());
     }
 
     @Test
-    public void testUpcastSerializedType_Null() {
-        AbstractSingleEntryUpcaster<String> testSubject = new StubUpcaster("value", null);
-
-        List<SerializedType> actual = testSubject.upcast(new SimpleSerializedType("string", "1"));
-        assertEquals(0, actual.size());
+    public void testRemainderMethodReturnsEmptyStreamByDefault() {
+        Upcaster<Object> toNullUpcaster = new ObjectUpcaster();
+        Stream<?> result = toNullUpcaster.upcast("some object");
+        assertTrue(result.findAny().isPresent());
+        Stream<?> remainder = toNullUpcaster.remainder();
+        assertFalse(remainder.findAny().isPresent());
     }
 
-    @Test
-    public void testUpcastSerializedObject() {
-        final SerializedType upcastType = new SimpleSerializedType("newString", "2");
-        AbstractSingleEntryUpcaster<String> testSubject = new StubUpcaster("did it", upcastType);
-
-        List<SerializedObject<?>> actual = testSubject.upcast(
-                new SimpleSerializedObject<>("string", String.class, "string", "1"),
-                Collections.singletonList(upcastType), null);
-        assertEquals(1, actual.size());
-        assertEquals(upcastType, actual.get(0).getType());
-        assertEquals("did it", actual.get(0).getData());
+    private static class ToNullUpcaster extends AbstractSingleEntryUpcaster<Object> {
+        @Override
+        protected Object doUpcast(Object intermediateRepresentation) {
+            return null;
+        }
     }
 
-    @Test
-    public void testUpcastSerializedObject_Null() {
-        AbstractSingleEntryUpcaster<String> testSubject = new StubUpcaster(null, null);
-
-        List<SerializedObject<?>> actual = testSubject.upcast(
-                new SimpleSerializedObject<>("string", String.class, "string", "1"), null, null);
-        assertEquals(0, actual.size());
+    private static class ObjectUpcaster extends AbstractSingleEntryUpcaster<Object> {
+        @Override
+        protected Object doUpcast(Object intermediateRepresentation) {
+            return new Object();
+        }
     }
 
-    private static class StubUpcaster extends AbstractSingleEntryUpcaster<String> {
-
-        private final String upcastValue;
-        private final SerializedType upcastType;
-
-        public StubUpcaster(String upcastValue, SerializedType upcastType) {
-            this.upcastValue = upcastValue;
-            this.upcastType = upcastType;
-        }
-
-        @Override
-        protected String doUpcast(SerializedObject intermediateRepresentation, UpcastingContext context) {
-            return upcastValue;
-        }
-
-        @Override
-        protected SerializedType doUpcast(SerializedType serializedType) {
-            return upcastType;
-        }
-
-        @Override
-        public boolean canUpcast(SerializedType serializedType) {
-            return true;
-        }
-
-        @Override
-        public Class<String> expectedRepresentationType() {
-            return String.class;
-        }
-    }
 }

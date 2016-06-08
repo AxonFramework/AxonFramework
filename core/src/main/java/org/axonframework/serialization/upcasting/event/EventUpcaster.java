@@ -11,15 +11,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.serialization.upcasting;
+package org.axonframework.serialization.upcasting.event;
 
-import java.util.stream.Stream;
+import org.axonframework.serialization.upcasting.Upcaster;
 
 /**
  * @author Rene de Waele
  */
-public interface UpcasterChain<T> {
-
-    Stream<T> upcast(Stream<T> intermediateRepresentations);
-
-}
+public interface EventUpcaster extends Upcaster<IntermediateEventRepresentation> {}

@@ -18,6 +18,8 @@ package org.axonframework.serialization;
 
 import org.axonframework.common.Assert;
 
+import java.util.function.Supplier;
+
 /**
  * Represents a serialized object that can be deserializedObjects upon request. Typically used as a wrapper class for
  * keeping a SerializedObject and its Serializer together.
@@ -30,7 +32,7 @@ import org.axonframework.common.Assert;
 public class LazyDeserializingObject<T> {
 
     private final transient Serializer serializer;
-    private final SerializedObject<?> serializedObject;
+    private final Supplier<SerializedObject<?>> serializedObject;
     private final Class<T> deserializedObjectType;
     private volatile transient T deserializedObject;
 
@@ -50,17 +52,37 @@ public class LazyDeserializingObject<T> {
     }
 
     /**
+     * Creates an instance which will deserialize given <code>serializedObject</code> upon request. Use this constructor
+     * if the <code>serializedObject</code> is already available and does not need to undergo a process of e.g.
+     * upcasting.
+     *
      * @param serializedObject The serialized payload of the message
      * @param serializer       The serializer to deserialize the payload data with
      * @throws UnknownSerializedTypeException if the type of the serialized object cannot be resolved to a class
      */
-    @SuppressWarnings("unchecked")
     public LazyDeserializingObject(SerializedObject<?> serializedObject, Serializer serializer) {
-        Assert.notNull(serializedObject, "The given serializedObject may not be null");
+        this(() -> serializedObject, serializedObject.getType(), serializer);
+    }
+
+    /**
+     * Creates an instance which will get the supplied SerializedObject and deserialize it upon request. Use this
+     * constructor if getting the SerializedObject is an 'expensive operation', e.g. if the SerializedObject still needs
+     * to be upcasted.
+     *
+     * @param serializedObjectSupplier The supplier of the serialized object
+     * @param serializedType           The type of the serialized object
+     * @param serializer               The serializer to deserialize the payload data with
+     * @throws UnknownSerializedTypeException if the type of the serialized object cannot be resolved to a class
+     */
+    @SuppressWarnings("unchecked")
+    public LazyDeserializingObject(Supplier<SerializedObject<?>> serializedObjectSupplier,
+                                   SerializedType serializedType, Serializer serializer) {
+        Assert.notNull(serializedObjectSupplier, "The given serializedObjectSupplier may not be null");
+        Assert.notNull(serializedType, "The given serializedType may not be null");
         Assert.notNull(serializer, "The given serializer may not be null");
-        this.serializedObject = serializedObject;
+        this.serializedObject = serializedObjectSupplier;
         this.serializer = serializer;
-        this.deserializedObjectType = serializer.classForType(serializedObject.getType());
+        this.deserializedObjectType = serializer.classForType(serializedType);
     }
 
     /**
@@ -75,12 +97,11 @@ public class LazyDeserializingObject<T> {
     /**
      * De-serializes the object and returns the result.
      *
-     * @return the deserialized objects
+     * @return the deserialized object
      */
-    @SuppressWarnings("unchecked")
     public T getObject() {
         if (!isDeserialized()) {
-            deserializedObject = serializer.deserialize(serializedObject);
+            deserializedObject = serializer.deserialize(serializedObject.get());
         }
         return deserializedObject;
     }
@@ -110,6 +131,6 @@ public class LazyDeserializingObject<T> {
      * @return the serialized object to deserialize upon request
      */
     public SerializedObject<?> getSerializedObject() {
-        return serializedObject;
+        return serializedObject.get();
     }
 }
