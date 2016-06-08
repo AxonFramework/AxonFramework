@@ -21,6 +21,8 @@ import com.thoughtworks.xstream.io.ExtendedHierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import org.axonframework.common.Assert;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Stack;
 
 /**
@@ -32,7 +34,7 @@ import java.util.Stack;
  */
 public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStreamWriter {
 
-    private final Stack<BSONNode> itemStack = new Stack<>();
+    private final Deque<BSONNode> itemStack = new ArrayDeque<>();
     private final DBObject root;
 
     /**
@@ -50,7 +52,7 @@ public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStr
     @SuppressWarnings("unchecked")
     @Override
     public void startNode(String name) {
-        if (itemStack.empty()) {
+        if (itemStack.isEmpty()) {
             itemStack.push(new BSONNode(name));
         } else {
             itemStack.push(itemStack.peek().addChildNode(name));
