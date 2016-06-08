@@ -78,7 +78,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
         Lock lock = lockFactory.obtainLock(aggregateIdentifier);
         try {
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             if (lock != null) {
                 logger.debug("Exception occurred while trying to add an aggregate. Releasing lock.", ex);
                 lock.release();
@@ -105,7 +105,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
             final A aggregate = doLoadWithLock(aggregateIdentifier, expectedVersion);
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
             return new LockAwareAggregate<>(aggregate, lock);
-        } catch (RuntimeException ex) {
+        } catch (Throwable ex) {
             logger.debug("Exception occurred while trying to load an aggregate. Releasing lock.", ex);
             lock.release();
             throw ex;
