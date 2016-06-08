@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config.xml;
+package org.axonframework.spring.trial;
 
-import org.axonframework.eventhandling.saga.SagaEventHandler;
-import org.axonframework.eventhandling.saga.StartSaga;
+import org.axonframework.spring.stereotype.Saga;
 
-/**
- * @author Allard Buijze
- */
-public class StubSaga {
-    private static final long serialVersionUID = 2637060466154370943L;
-
-    @StartSaga(forceNew = true)
-    @SagaEventHandler(associationProperty = "aggregateIdentifier")
-    public void handleAll(SimpleEvent event) {
-        // do nothing
-    }
+@Saga
+public class MyOtherSaga {
 }

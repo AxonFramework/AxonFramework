@@ -183,4 +183,7 @@ public abstract class AbstractSagaManager<T> implements EventProcessor, MessageH
         this.suppressExceptions = suppressExceptions;
     }
 
+    public Class<T> getSagaType() {
+        return sagaType;
+    }
 }

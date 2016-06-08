@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config.xml;
+package org.axonframework.spring.trial;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.spring.stereotype.Saga;
 
-import java.util.List;
-import java.util.function.Function;
-
-/**
- * @author Allard Buijze
- */
-public class StubDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
-
-    @Override
-    public Function<Integer, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
-        return messages::get;
-    }
+@Saga
+public class MySaga {
 }

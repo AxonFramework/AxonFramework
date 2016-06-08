@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config.annotation;
+package org.axonframework.spring.config;
 
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.AnnotationEventListenerAdapter;

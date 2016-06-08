@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,63 +14,46 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config.xml;
+package org.axonframework.spring.config;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
-import org.axonframework.spring.config.annotation.AnnotationDriven;
-import org.axonframework.spring.config.annotation.AnnotationEventListenerBeanPostProcessor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = AnnotationDrivenConfigurationTest_CustomValues.Context.class)
-public class AnnotationDrivenConfigurationTest_CustomValues {
+@ContextConfiguration(classes = AnnotationDrivenConfigurationTest_DefaultValues.Context.class)
+public class AnnotationDrivenConfigurationTest_DefaultValues {
 
     @Autowired
     private ApplicationContext applicationContext;
 
-    @Autowired
-    private DefaultListableBeanFactory beanFactory;
 
     @Test
     public void testAnnotationConfigurationAnnotationWrapsBeans() throws Exception {
         Object eventHandler = applicationContext.getBean("eventHandler");
         Object commandHandler = applicationContext.getBean("commandHandler");
 
+
         assertTrue(eventHandler instanceof EventListener);
         assertTrue(commandHandler instanceof MessageHandler<?>);
-    }
-
-    @Test
-    public void testEventListenerPostProcessorBeanDefinitionContainCustomValues() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition(
-                "__axon-annotation-event-listener-bean-post-processor");
-        assertEquals(AnnotationEventListenerBeanPostProcessor.class.getName(), beanDefinition.getBeanClassName());
-    }
-
-    @Test
-    public void testCommandHandlerPostProcessorBeanDefinitionContainCustomValues() {
-        BeanDefinition beanDefinition =  beanFactory.getBeanDefinition(
-                "__axon-annotation-command-handler-bean-post-processor");
-        assertEquals(AnnotationCommandHandlerBeanPostProcessor.class.getName(), beanDefinition.getBeanClassName());
     }
 
     @AnnotationDriven
@@ -87,6 +70,15 @@ public class AnnotationDrivenConfigurationTest_CustomValues {
             return new AnnotatedCommandHandler();
         }
 
+        @Bean
+        public CommandBus commandBus() {
+            return new SimpleCommandBus();
+        }
+
+        @Bean
+        public EventBus eventBus() {
+            return new SimpleEventBus();
+        }
     }
 
     public static class AnnotatedEventHandler {

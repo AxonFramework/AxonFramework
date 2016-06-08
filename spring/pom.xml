@@ -108,7 +108,7 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-config</artifactId>
-            <version>3.2.0.RELEASE</version>
+            <version>4.0.3.RELEASE</version>
             <scope>test</scope>
         </dependency>
         <dependency>

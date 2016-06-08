@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.spring.config.AnnotationEventListenerBeanPostProcessor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

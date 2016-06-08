@@ -20,6 +20,7 @@ package org.axonframework.eventhandling.saga.metamodel;
 import org.axonframework.common.annotation.AnnotatedHandlerInspector;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MessageHandler;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.SagaMethodMessageHandler;
@@ -35,6 +36,16 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
 
     private final Map<Class<?>, SagaModel<?>> registry = new ConcurrentHashMap<>();
 
+    private final ParameterResolverFactory parameterResolverFactory;
+
+    public DefaultSagaMetaModelFactory() {
+        parameterResolverFactory = ClasspathParameterResolverFactory.forClassLoader(getClass().getClassLoader());
+    }
+
+    public DefaultSagaMetaModelFactory(ParameterResolverFactory parameterResolverFactory) {
+        this.parameterResolverFactory = parameterResolverFactory;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> SagaModel<T> modelOf(Class<T> sagaType) {
@@ -42,7 +53,7 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
     }
 
     private <T> SagaModel<T> doCreateModel(Class<T> sagaType) {
-        AnnotatedHandlerInspector<T> handlerInspector = AnnotatedHandlerInspector.inspectType(sagaType, ClasspathParameterResolverFactory.forClass(sagaType));
+        AnnotatedHandlerInspector<T> handlerInspector = AnnotatedHandlerInspector.inspectType(sagaType, parameterResolverFactory);
 
         return new InspectedSagaModel<>(handlerInspector.getHandlers());
     }

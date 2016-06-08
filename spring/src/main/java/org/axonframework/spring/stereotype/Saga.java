@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.config.xml;
+package org.axonframework.spring.stereotype;
 
-/**
- * @author Allard Buijze
- */
-public class SimpleEvent {
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
-    private String aggregateIdentifier;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-
-    public SimpleEvent(Object aggregateIdentifier) {
-        this.aggregateIdentifier = aggregateIdentifier.toString();
-    }
-
-    public String getAggregateIdentifier() {
-        return aggregateIdentifier;
-    }
+@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Component
+@Scope("prototype")
+public @interface Saga {
 }
