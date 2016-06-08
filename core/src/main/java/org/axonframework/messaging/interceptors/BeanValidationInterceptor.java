@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
     }
 
     @Override
-    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception {
+    public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
         handle(unitOfWork.getMessage());
         return interceptorChain.proceed();
     }

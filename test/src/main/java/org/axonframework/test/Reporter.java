@@ -43,13 +43,12 @@ public class Reporter {
 
     /**
      * Report a failed assertion due to a difference in the stored versus the published events.
-     *
-     * @param storedEvents    The events that were stored
+     *  @param storedEvents    The events that were stored
      * @param publishedEvents The events that were published
      * @param probableCause   An exception that might be the cause of the failure
      */
-    public void reportDifferenceInStoredVsPublished(Collection<DomainEventMessage> storedEvents,
-                                                    Collection<EventMessage> publishedEvents, Throwable probableCause) {
+    public void reportDifferenceInStoredVsPublished(Collection<DomainEventMessage<?>> storedEvents,
+                                                    Collection<EventMessage<?>> publishedEvents, Throwable probableCause) {
         StringBuilder sb = new StringBuilder(
                 "The stored events do not match the published events.");
         appendEventOverview(sb, storedEvents, publishedEvents, "Stored events", "Published events");

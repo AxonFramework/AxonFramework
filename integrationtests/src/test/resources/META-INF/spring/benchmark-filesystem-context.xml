@@ -25,7 +25,7 @@
         <constructor-arg ref="fsEventStore"/>
     </bean>
 
-    <bean id="fsEventStore" class="org.axonframework.eventstore.fs.FileSystemEventStore">
+    <bean id="fsEventStore" class="org.axonframework.eventsourcing.eventstore.fs.FileSystemEventStore">
         <constructor-arg ref="cachingEventFileResolver"/>
     </bean>
 

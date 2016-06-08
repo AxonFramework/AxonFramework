@@ -18,8 +18,9 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
-import org.junit.*;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
@@ -33,7 +33,7 @@ public class StubAggregateCommandHandler {
     private EventBus eventBus;
 
     @CommandHandler
-    public void handleStubAggregateCreated(CreateStubAggregateCommand command) {
+    public void handleStubAggregateCreated(CreateStubAggregateCommand command) throws Exception {
         repository.newInstance(() -> new StubAggregate(command.getAggregateId()));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,17 @@
 
 package org.axonframework.quickstart;
 
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.SimpleEventProcessor;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.fs.FileSystemEventStore;
-import org.axonframework.eventstore.fs.SimpleEventFileResolver;
-import org.axonframework.quickstart.annotated.ToDoEventHandler;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.quickstart.annotated.ToDoItem;
-
-import java.io.File;
 
 /**
  * Setting up the basic ToDoItem sample with a simple command and event bus and a file based event store. The
@@ -49,21 +43,18 @@ public class RunAnnotatedAggregate {
         // the CommandGateway provides a friendlier API to send commands
         CommandGateway commandGateway = new DefaultCommandGateway(commandBus);
 
-        // we'll store Events on the FileSystem, in the "events" folder
-        EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(new File("./events")));
-
-        // a Simple Event Bus will do
-        EventBus eventBus = new SimpleEventBus();
+        // we'll store Events in memory
+        EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
 
         // we need to configure the repository
-        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class,
-                                                                                     eventStore, eventBus);
+        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class, eventStore);
 
         // Axon needs to know that our ToDoItem Aggregate can handle commands
         new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);
 
         // We register an event listener to see which events are created
-        eventBus.subscribe(new SimpleEventProcessor("logging", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
+        eventStore.subscribe(new SimpleEventProcessor("processor",
+                                                      (EventListener) event -> System.out.println(event.getPayload())));
 
         // and let's send some Commands on the CommandBus.
         CommandGenerator.sendCommands(commandGateway);

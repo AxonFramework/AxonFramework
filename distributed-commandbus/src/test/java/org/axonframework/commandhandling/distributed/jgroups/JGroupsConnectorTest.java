@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,10 @@ import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.jgroups.support.callbacks.ReplyingCallback;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.stack.IpAddress;
@@ -284,13 +285,11 @@ public class JGroupsConnectorTest {
             String message = "message" + t;
             if ((t % 3) == 0) {
                 connector1.send(message,
-                                new GenericCommandMessage<>("myCommand1", message,
-                                                            Collections.<String, Object>emptyMap()),
+                                new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand1"),
                                 callback);
             } else {
                 connector2.send(message,
-                                new GenericCommandMessage<>("myCommand2", message,
-                                                            Collections.<String, Object>emptyMap()),
+                                new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand2"),
                                 callback);
             }
             callbacks.add(callback);

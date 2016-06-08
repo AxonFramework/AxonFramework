@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,28 +18,29 @@ package org.axonframework.quickstart;
 
 import org.apache.commons.io.FileUtils;
 import org.axonframework.common.io.IOUtils;
-import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.common.jdbc.DataSourceConnectionProvider;
+import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.fs.FileSystemEventStore;
-import org.axonframework.eventstore.fs.SimpleEventFileResolver;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventSchemaFactory;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.SerializedType;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedType;
-import org.axonframework.serializer.xml.XStreamSerializer;
-import org.axonframework.upcasting.AbstractSingleEntryUpcaster;
-import org.axonframework.upcasting.LazyUpcasterChain;
-import org.axonframework.upcasting.Upcaster;
-import org.axonframework.upcasting.UpcastingContext;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
+import org.axonframework.serialization.SimpleSerializedType;
+import org.axonframework.serialization.upcasting.AbstractSingleEntryUpcaster;
+import org.axonframework.serialization.upcasting.LazyUpcasterChain;
+import org.axonframework.serialization.upcasting.UpcastingContext;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.dom4j.Document;
 import org.dom4j.Element;
+import org.hsqldb.jdbc.JDBCDataSource;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 
@@ -54,22 +55,33 @@ public class RunUpcaster {
         FileUtils.deleteDirectory(eventsDir);
 
         // we create a serializer, so we can ensure the event store and the upcasters use the same configuration
-        Serializer serializer = new XStreamSerializer();
-        // initialize a FileSystem Event Store
-        FileSystemEventStore eventStore = new FileSystemEventStore(serializer, new SimpleEventFileResolver(eventsDir));
+        XStreamSerializer serializer = new XStreamSerializer();
+
+        // initialize an in-memory database
+        JDBCDataSource dataSource = new JDBCDataSource();
+        dataSource.setUrl("jdbc:hsqldb:mem:temp");
+
+        // configure EventStorage to use this database
+        JdbcEventStorageEngine storageEngine = new JdbcEventStorageEngine(
+                new UnitOfWorkAwareConnectionProviderWrapper(new DataSourceConnectionProvider(dataSource)));
+        storageEngine.createSchema(HsqlEventSchemaFactory.INSTANCE);
+        storageEngine.setSerializer(serializer);
         // initialize the upcaster chain with our upcaster
-        eventStore.setUpcasterChain(new LazyUpcasterChain(serializer,
-                                                          Collections.<Upcaster>singletonList(new ToDoItemUpcaster())));
+        storageEngine.setUpcasterChain(new LazyUpcasterChain(serializer,
+                                                             Collections.singletonList(new ToDoItemUpcaster())));
+
+        // create an EmdeddedEventStore (we don't want to run a separate server)
+        EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngine);
+
 
         // we append some events. Notice we append a "ToDoItemCreatedEvent".
-        eventStore.appendEvents(
-                new GenericDomainEventMessage<>("todo1", 0,
+        eventStore.publish(
+                new GenericDomainEventMessage<>("type", "todo1", 0,
                                                 new ToDoItemCreatedEvent("todo1", "I need to do this today")),
-                new GenericDomainEventMessage<>("todo1", 1, new ToDoItemCompletedEvent("todo1"))
+                new GenericDomainEventMessage<>("type", "todo1", 1, new ToDoItemCompletedEvent("todo1"))
         );
-        eventStore.appendEvents(
-                new GenericDomainEventMessage<>("todo2", 0,
-                                                new ToDoItemCreatedEvent("todo2", "I also need to do this"))
+        eventStore.publish(
+                new GenericDomainEventMessage<>("type", "todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
         );
 
         // now, we read the events from the "todo1" stream
@@ -131,12 +143,13 @@ public class RunUpcaster {
 
         private final String todoId;
         private final String description;
-        private final Instant deadline;
+        // XStream doesn't support Instant out of the box, so we store as text
+        private final String deadline;
 
         public NewToDoItemWithDeadlineCreatedEvent(String todoId, String description, Instant deadline) {
             this.todoId = todoId;
             this.description = description;
-            this.deadline = deadline;
+            this.deadline = deadline.toString();
         }
 
         public String getTodoId() {
@@ -148,14 +161,13 @@ public class RunUpcaster {
         }
 
         public Instant getDeadline() {
-            return deadline;
+            return Instant.parse(deadline);
         }
 
         @Override
         public String toString() {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-YYYY' at 'HH:mm");
             return "NewToDoItemWithDeadlineCreatedEvent(" + todoId + ", '" + description + "' before "
-                    + formatter.format(deadline) + ")";
+                    + deadline + ")";
         }
     }
 }

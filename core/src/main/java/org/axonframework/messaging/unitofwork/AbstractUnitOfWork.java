@@ -24,6 +24,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     private final Collection<CorrelationDataProvider> correlationDataProviders = new LinkedHashSet<>();
     private UnitOfWork<?> parentUnitOfWork;
     private Phase phase = Phase.NOT_STARTED;
+    private boolean rolledBack;
 
     @Override
     public void start() {
@@ -31,6 +32,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
             logger.debug("Starting Unit Of Work");
         }
         Assert.state(Phase.NOT_STARTED.equals(phase()), "UnitOfWork is already started");
+        onRollback(u -> rolledBack = true);
         if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
             this.parentUnitOfWork = CurrentUnitOfWork.get();
@@ -115,6 +117,11 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     @Override
     public Map<String, Object> resources() {
         return resources;
+    }
+
+    @Override
+    public boolean isRolledBack() {
+        return rolledBack;
     }
 
     @Override

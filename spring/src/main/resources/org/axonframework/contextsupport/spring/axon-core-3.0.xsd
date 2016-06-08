@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2015. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -137,7 +137,7 @@
                                 <xsd:appinfo>
                                     <tool:annotation kind="ref">
                                         <tool:expected-type
-                                                type="org.axonframework.eventstore.EventStoreManagement"/>
+                                                type="org.axonframework.eventsourcing.eventstore.EventStoreManagement"/>
                                     </tool:annotation>
                                 </xsd:appinfo>
                             </xsd:annotation>
@@ -402,7 +402,7 @@
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.eventstore.EventStore"/>
+                                            type="org.axonframework.eventsourcing.eventstore.EventStore"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -429,7 +429,7 @@
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
                                     <tool:expected-type
-                                            type="org.axonframework.serializer.Serializer"/>
+                                            type="org.axonframework.serialization.Serializer"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -712,7 +712,7 @@
                         </xsd:documentation>
                         <xsd:appinfo>
                             <tool:annotation kind="ref">
-                                <tool:expected-type type="org.axonframework.serializer.Serializer"/>
+                                <tool:expected-type type="org.axonframework.serialization.Serializer"/>
                             </tool:annotation>
                         </xsd:appinfo>
                     </xsd:annotation>
@@ -731,7 +731,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.eventstore.fs.FileSystemEventStore"/>
+                    <tool:exports type="org.axonframework.eventsourcing.eventstore.fs.FileSystemEventStore"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -770,7 +770,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.eventstore.jpa.JpaEventStore"/>
+                    <tool:exports type="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStore"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -878,7 +878,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventstore.jpa.EventEntryStore"/>
+                                    <tool:expected-type type="org.axonframework.eventsourcing.eventstore.jpa.EventEntryStore"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -892,7 +892,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventstore.jpa.EventEntryFactory"/>
+                                    <tool:expected-type type="org.axonframework.eventsourcing.eventstore.jpa.EventEntryFactory"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -912,7 +912,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.eventstore.jdbc.JdbcEventStore"/>
+                    <tool:exports type="org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStore"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -1008,7 +1008,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventstore.jdbc.EventSqlSchema"/>
+                                    <tool:expected-type type="org.axonframework.eventsourcing.eventstore.jdbc.EventSqlSchema"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1021,7 +1021,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventstore.jdbc.EventEntryStore"/>
+                                    <tool:expected-type type="org.axonframework.eventsourcing.eventstore.jdbc.EventEntryStore"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1054,7 +1054,7 @@
                         <xsd:appinfo>
                             <tool:annotation kind="ref">
                                 <tool:expected-type
-                                        type="org.axonframework.serializer.ConverterFactory"/>
+                                        type="org.axonframework.serialization.ConverterFactory"/>
                             </tool:annotation>
                         </xsd:appinfo>
                     </xsd:annotation>
@@ -1121,7 +1121,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventstore.EventStore"/>
+                                    <tool:expected-type type="org.axonframework.eventsourcing.eventstore.EventStore"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1248,7 +1248,7 @@
                             <xsd:documentation>Reference to the EventStore used by this repository.</xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventstore.EventStore"/>
+                                    <tool:expected-type type="org.axonframework.eventsourcing.eventstore.EventStore"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1279,7 +1279,7 @@
                             <xsd:documentation>Reference to the cache that stores aggregates.</xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.cache.Cache"/>
+                                    <tool:expected-type type="org.axonframework.common.caching.Cache"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1332,7 +1332,7 @@
             <xsd:documentation>Definition of the saga manager</xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.saga.annotation.SagaManager"/>
+                    <tool:exports type="org.axonframework.eventhandling.saga.annotation.SagaManager"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -1422,7 +1422,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.saga.SagaFactory"/>
+                                    <tool:expected-type type="org.axonframework.eventhandling.saga.SagaFactory"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1435,7 +1435,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
+                                    <tool:expected-type type="org.axonframework.eventhandling.saga.ResourceInjector"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1461,7 +1461,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.saga.SagaRepository"/>
+                                    <tool:expected-type type="org.axonframework.eventhandling.saga.SagaRepository"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1489,7 +1489,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.saga.repository.jpa.JpaSagaRepository"/>
+                    <tool:exports type="org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -1504,7 +1504,7 @@
                                         <xsd:documentation>Reference to the cache that stores Sagas.</xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.common.caching.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>
@@ -1515,7 +1515,7 @@
                                         </xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.common.caching.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>
@@ -1530,7 +1530,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
+                                    <tool:expected-type type="org.axonframework.eventhandling.saga.ResourceInjector"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1542,7 +1542,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.serializer.Serializer"/>
+                                    <tool:expected-type type="org.axonframework.serialization.Serializer"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1584,7 +1584,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.saga.repository.jdbc.JdbcSagaRepository"/>
+                    <tool:exports type="org.axonframework.eventhandling.saga.repository.jdbc.JdbcSagaStore"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>
@@ -1599,7 +1599,7 @@
                                         <xsd:documentation>Reference to the cache that stores Sagas.</xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.common.caching.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>
@@ -1610,7 +1610,7 @@
                                         </xsd:documentation>
                                         <xsd:appinfo>
                                             <tool:annotation kind="ref">
-                                                <tool:expected-type type="org.axonframework.cache.Cache"/>
+                                                <tool:expected-type type="org.axonframework.common.caching.Cache"/>
                                             </tool:annotation>
                                         </xsd:appinfo>
                                     </xsd:annotation>
@@ -1625,7 +1625,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.saga.ResourceInjector"/>
+                                    <tool:expected-type type="org.axonframework.eventhandling.saga.ResourceInjector"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1637,7 +1637,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.serializer.Serializer"/>
+                                    <tool:expected-type type="org.axonframework.serialization.Serializer"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1671,7 +1671,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.saga.repository.jdbc.SagaSqlSchema"/>
+                                    <tool:expected-type type="org.axonframework.eventhandling.saga.repository.jdbc.SagaSqlSchema"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1706,7 +1706,7 @@
                             </xsd:documentation>
                             <xsd:appinfo>
                                 <tool:annotation kind="ref">
-                                    <tool:expected-type type="org.axonframework.eventstore.EventStore"/>
+                                    <tool:expected-type type="org.axonframework.eventsourcing.eventstore.EventStore"/>
                                 </tool:annotation>
                             </xsd:appinfo>
                         </xsd:annotation>
@@ -1753,7 +1753,7 @@
             <xsd:appinfo>
                 <tool:annotation>
                     <tool:exports
-                            type="org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler"/>
+                            type="org.axonframework.commandhandling.AggregateAnnotationCommandHandler"/>
                 </tool:annotation>
             </xsd:appinfo>
         </xsd:annotation>

@@ -17,12 +17,13 @@
 package org.axonframework.eventhandling.scheduling.java;
 
 import org.axonframework.common.Assert;
-import org.axonframework.domain.IdentifierFactory;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
+import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
@@ -149,7 +150,7 @@ public class SimpleEventScheduler implements EventScheduler {
                 eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
                                                                ((EventMessage) event).getMetaData());
             } else {
-                eventMessage = new GenericEventMessage<>(event);
+                eventMessage = new GenericEventMessage<>(event, MetaData.emptyInstance());
             }
             return eventMessage;
         }

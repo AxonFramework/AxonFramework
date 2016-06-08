@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.spring.messaging.adapter;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.MessageChannel;
@@ -27,7 +27,7 @@ import org.springframework.messaging.support.GenericMessage;
 
 /**
  * Adapter class that sends Events from an event bus to a Spring Messaging Message Channel. All events are wrapped in
- * GenericMessage instances. The adapter automatically subscribes itself to the provided <code>EventBus</code>.
+ * GenericMessage instances. The adapter automatically subscribes itself to the provided {@code EventBus}.
  * <p/>
  * Optionally, this adapter can be configured with a filter, which can block or accept messages based on their type.
  *
@@ -42,8 +42,8 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
     private String beanName;
 
     /**
-     * Initialize an adapter to forward messages from the given <code>eventBus</code> to the given
-     * <code>channel</code>.
+     * Initialize an adapter to forward messages from the given {@code eventBus} to the given
+     * {@code channel}.
      * Messages are not filtered; all messages are forwarded to the MessageChannel
      *
      * @param eventBus The event bus to subscribe to.
@@ -56,9 +56,9 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
     }
 
     /**
-     * Initialize an adapter to forward messages from the given <code>eventBus</code> to the given
-     * <code>channel</code>.
-     * Messages are filtered using the given <code>filter</code>
+     * Initialize an adapter to forward messages from the given {@code eventBus} to the given
+     * {@code channel}.
+     * Messages are filtered using the given {@code filter}
      *
      * @param eventBus The event bus to subscribe to.
      * @param channel  The channel to send event messages to.
@@ -75,11 +75,11 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
      */
     @Override
     public void afterPropertiesSet() {
-        eventBus.subscribe(new SimpleEventProcessor(beanName, this));
+        eventBus.subscribe(new PublishingEventProcessor(beanName, this));
     }
 
     /**
-     * If allows by the filter, wraps the given <code>event</code> in a {@link GenericMessage} ands sends it to the
+     * If allows by the filter, wraps the given {@code event} in a {@link GenericMessage} ands sends it to the
      * configured {@link MessageChannel}.
      *
      * @param event the event to handle

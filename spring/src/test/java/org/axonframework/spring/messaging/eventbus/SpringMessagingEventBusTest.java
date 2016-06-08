@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,14 +48,14 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testSubscribeListener() {
-        testSubject.subscribe(mockEventProcessor);
+        testSubject.subscribe(new SimpleEventProcessor("test"));
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }
 
     @Test
     public void testUnsubscribeListener() throws Exception {
-        Registration subscription = testSubject.subscribe(mockEventProcessor);
+        Registration subscription = testSubject.subscribe(new SimpleEventProcessor("test"));
         subscription.close();
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
@@ -63,7 +63,7 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testUnsubscribeListener_UnsubscribedTwice() throws Exception {
-        Registration subscription = testSubject.subscribe(mockEventProcessor);
+        Registration subscription = testSubject.subscribe(new SimpleEventProcessor("test"));
         subscription.close();
         subscription.close();
 
@@ -73,8 +73,9 @@ public class SpringMessagingEventBusTest {
     @Test
     public void testSubscribeListener_SubscribedTwice() {
 
-        testSubject.subscribe(mockEventProcessor);
-        testSubject.subscribe(mockEventProcessor);
+        SimpleEventProcessor eventProcessor = new SimpleEventProcessor("test");
+        testSubject.subscribe(eventProcessor);
+        testSubject.subscribe(eventProcessor);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }

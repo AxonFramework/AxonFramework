@@ -471,7 +471,7 @@
             similar, but the <code>JpaEventStore</code> needs a way to get a hold of an
             EntityManager. In general, applications use a Container Managed EntityManager:</para>
         <para>
-            <programlisting language="xml"><![CDATA[<bean id="eventStore" class="org.axonframework.eventstore.jpa.JpaEventStore">
+            <programlisting language="xml"><![CDATA[<bean id="eventStore" class="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStore">
     <constructor-arg>
         <bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
     </constructor-arg>

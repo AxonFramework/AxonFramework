@@ -26,9 +26,9 @@
         <constructor-arg index="1" ref="eventStore"/>
     </bean>
 
-    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore">
+    <bean id="eventStore" class="org.axonframework.eventsourcing.eventstore.mongo.MongoEventStorageEngine">
         <constructor-arg>
-            <bean class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
+            <bean class="org.axonframework.eventsourcing.eventstore.mongo.DefaultMongoTemplate">
                 <constructor-arg ref="mongoDb"/>
             </bean>
         </constructor-arg>
@@ -37,7 +37,7 @@
     <!-- Infrastructure configuration -->
     <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongo"/>
 
-    <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory">
+    <bean id="mongoFactoryBean" class="org.axonframework.eventsourcing.eventstore.mongo.MongoFactory">
         <property name="mongoOptions">
             <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
                   factory-method="createMongoOptions"/>
@@ -52,7 +52,7 @@
         </property>
     </bean>
 
-    <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
+    <bean id="mongoOptionsFactory" class="org.axonframework.eventsourcing.eventstore.mongo.MongoOptionsFactory">
         <property name="connectionsPerHost" value="100"/>
         <property name="threadsAllowedToBlockForConnectionMultiplier" value="20"/>
     </bean>

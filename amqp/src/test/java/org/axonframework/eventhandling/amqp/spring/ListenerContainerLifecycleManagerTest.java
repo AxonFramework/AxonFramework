@@ -17,11 +17,10 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.SimpleEventProcessor;
 import org.axonframework.eventhandling.amqp.DefaultAMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.internal.util.MockUtil;

@@ -16,10 +16,14 @@
 
 package org.axonframework.spring.messaging.eventbus;
 
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Adapter that allows an EventListener to be registered as a Spring Messaging {@link MessageHandler}.
@@ -29,14 +33,14 @@ import org.springframework.messaging.MessageHandler;
  */
 public class MessageHandlerAdapter implements MessageHandler {
 
-    private final EventProcessor eventProcessor;
+    private final Consumer<List<? extends EventMessage<?>>> eventProcessor;
 
     /**
-     * Initialize an adapter for the given <code>eventListener</code>.
+     * Initialize an adapter for the given <code>eventProcessor</code>.
      *
      * @param eventProcessor the event processor to adapt
      */
-    public MessageHandlerAdapter(EventProcessor eventProcessor) {
+    public MessageHandlerAdapter(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         this.eventProcessor = eventProcessor;
     }
 
@@ -45,6 +49,7 @@ public class MessageHandlerAdapter implements MessageHandler {
      */
     @Override
     public void handleMessage(Message<?> message) {
-        eventProcessor.handle(new GenericEventMessage<>(message.getPayload(), message.getHeaders()));
+        eventProcessor.accept(Collections.singletonList(
+                new GenericEventMessage<>(message.getPayload(), message.getHeaders())));
     }
 }

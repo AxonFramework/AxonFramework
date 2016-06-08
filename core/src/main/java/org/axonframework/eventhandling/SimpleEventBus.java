@@ -16,19 +16,23 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.Registration;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 
 /**
- * Implementation of the {@link EventBus} that directly forwards all published events (in the callers' thread) to all
- * subscribed listeners.
- * <p/>
- * Listeners are expected to implement asynchronous handling themselves.
+ * Implementation of the {@link EventBus} that supports streaming of events via {@link #streamEvents(TrackingToken)} but
+ * only of the most recently published events as it is not backed by a cache or event storage.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -36,60 +40,91 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class SimpleEventBus extends AbstractEventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(SimpleEventBus.class);
-    private final Set<EventProcessor> eventProcessors = new CopyOnWriteArraySet<>();
 
-    private final PublicationStrategy publicationStrategy;
+    private static final int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
 
-    /**
-     * Initializes an event bus with a {@link PublicationStrategy} that forwards events to all subscribed event
-     * processors.
-     */
+    private final Collection<EventConsumer> eventStreams = new CopyOnWriteArraySet<>();
+    private final int queueCapacity;
+
     public SimpleEventBus() {
-        this(new DirectTerminal());
+        this(DEFAULT_QUEUE_CAPACITY);
+    }
+
+    public SimpleEventBus(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
+    }
+
+    @Override
+    protected void afterCommit(List<? extends EventMessage<?>> events) {
+        eventStreams.forEach(reader -> reader.addEvents(events));
     }
 
     /**
-     * Initializes an event bus with given {@link PublicationStrategy}.
-     *
-     * @param publicationStrategy The strategy used by the event bus to publish events to listeners
-     */
-    public SimpleEventBus(PublicationStrategy publicationStrategy) {
-        this.publicationStrategy = publicationStrategy;
-    }
-
-    /**
+     * This implementation only returns a stream if the specified {@code trackingToken} is {@code null}. Otherwise it
+     * will throw a {@link UnsupportedOperationException}.
+     * <p>
+     * The returned stream will receive all events published on the bus from the moment of opening the stream. Note that
+     * the tracking tokens of {@link TrackedEventMessage TrackedEventMessages} in the stream will be {@code null};
+     * <p>
      * {@inheritDoc}
      */
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
-        if (this.eventProcessors.add(eventProcessor)) {
-            logger.debug("EventProcessor [{}] subscribed successfully", eventProcessor.getName());
-        } else {
-            logger.info("EventProcessor [{}] not added. It was already subscribed", eventProcessor.getName());
+    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        if (trackingToken != null) {
+            throw new UnsupportedOperationException("The simple event bus does not support non-null tracking tokens");
         }
-        return () -> {
-            if (eventProcessors.remove(eventProcessor)) {
-                logger.debug("EventListener {} unsubscribed successfully", eventProcessor.getName());
-                return true;
-            } else {
-                logger.info("EventListener {} not removed. It was already unsubscribed", eventProcessor.getName());
-                return false;
-            }
-        };
+        EventConsumer eventStream = new EventConsumer(queueCapacity);
+        eventStreams.add(eventStream);
+        return eventStream;
     }
 
-    @Override
-    protected void prepareCommit(List<EventMessage<?>> events) {
-        publicationStrategy.publish(events, eventProcessors);
-    }
+    private class EventConsumer implements TrackingEventStream {
+        private final BlockingQueue<TrackedEventMessage<?>> eventQueue;
+        private TrackedEventMessage<?> peekEvent;
 
-    private static class DirectTerminal implements PublicationStrategy {
+        private EventConsumer(int queueCapacity) {
+            eventQueue = new LinkedBlockingQueue<>(queueCapacity);
+        }
+
+        private void addEvents(List<? extends EventMessage<?>> events) {
+            //add one by one because bulk operations on LinkedBlockingQueues are not thread-safe
+            events.forEach(eventMessage -> {
+                try {
+                    eventQueue.put(asTrackedEventMessage(eventMessage, null));
+                } catch (InterruptedException e) {
+                    logger.warn("Event producer thread was interrupted. Shutting down.", e);
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }
 
         @Override
-        public void publish(List<EventMessage<?>> events, Set<EventProcessor> eventProcessors) {
-            for (EventProcessor eventProcessor : eventProcessors) {
-                eventProcessor.handle(events);
+        public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
+            try {
+                return peekEvent != null || (peekEvent = eventQueue.poll(timeout, unit)) != null;
+            } catch (InterruptedException e) {
+                logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+                Thread.currentThread().interrupt();
+                return false;
             }
+        }
+
+        @Override
+        public TrackedEventMessage<?> nextAvailable() throws InterruptedException {
+            try {
+                return peekEvent == null ? eventQueue.take() : peekEvent;
+            } catch (InterruptedException e) {
+                logger.warn("Consumer thread was interrupted. Returning thread to event processor.", e);
+                Thread.currentThread().interrupt();
+                return null;
+            } finally {
+                peekEvent = null;
+            }
+        }
+
+        @Override
+        public void close() {
+            eventStreams.remove(this);
         }
     }
 }

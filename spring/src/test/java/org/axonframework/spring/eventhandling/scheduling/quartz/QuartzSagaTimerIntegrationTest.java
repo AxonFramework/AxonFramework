@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ package org.axonframework.spring.eventhandling.scheduling.quartz;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.SimpleEventProcessor;
-import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.SagaRepository;
+import org.axonframework.eventhandling.saga.AssociationValue;
+import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.spring.eventhandling.scheduling.SimpleTimingSaga;
 import org.axonframework.spring.eventhandling.scheduling.StartingEvent;
 import org.junit.Before;
@@ -58,7 +57,7 @@ public class QuartzSagaTimerIntegrationTest {
     private EventBus eventBus;
 
     @Autowired
-    private SagaRepository repository;
+    private SagaRepository<SimpleTimingSaga> repository;
 
     @Autowired
     private PlatformTransactionManager transactionManager;
@@ -111,7 +110,7 @@ public class QuartzSagaTimerIntegrationTest {
         assertNotNull(eventBus);
         final String randomAssociationValue = UUID.randomUUID().toString();
         EventListener listener = mock(EventListener.class);
-        eventBus.subscribe(new SimpleEventProcessor("quartz", listener));
+        eventBus.subscribe(new SimpleEventProcessor("test", listener));
 
         new TransactionTemplate(transactionManager)
                 .execute(new TransactionCallbackWithoutResult() {
@@ -119,8 +118,7 @@ public class QuartzSagaTimerIntegrationTest {
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         eventBus.publish(new GenericEventMessage<>(new StartingEvent(randomAssociationValue)));
                         Set<String> actualResult =
-                                repository.find(SimpleTimingSaga.class,
-                                                new AssociationValue("association", randomAssociationValue));
+                                repository.find(new AssociationValue("association", randomAssociationValue));
                         assertEquals(1, actualResult.size());
                     }
                 });
@@ -132,8 +130,7 @@ public class QuartzSagaTimerIntegrationTest {
                 fail("Saga not triggered within 1000 milliseconds");
             }
             Set<String> actualResult;
-            actualResult = repository.find(SimpleTimingSaga.class,
-                                           new AssociationValue("association", randomAssociationValue));
+            actualResult = repository.find(new AssociationValue("association", randomAssociationValue));
             assertEquals(1, actualResult.size());
             saga = (SimpleTimingSaga) repository.load(actualResult.iterator().next());
         }

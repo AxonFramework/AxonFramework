@@ -1,20 +1,19 @@
 package org.axonframework.commandhandling.disruptor;
 
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventsourcing.AggregateIdentifier;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
@@ -29,7 +28,7 @@ public class DisruptorRepositoryTest {
 
     @Test
     public void testDisruptorCommandBusRepositoryNotAvailableOutsideOfInvokerThread() {
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
         Repository<TestAggregate> repository = commandBus
                 .createRepository(new GenericAggregateFactory<>(TestAggregate.class));
 

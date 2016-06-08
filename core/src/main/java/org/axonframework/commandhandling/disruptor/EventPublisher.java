@@ -19,7 +19,6 @@ package org.axonframework.commandhandling.disruptor;
 import com.lmax.disruptor.EventHandler;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventstore.EventStore;
 import org.axonframework.messaging.interceptors.Transaction;
 import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
@@ -42,7 +41,6 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
 
     private static final Logger logger = LoggerFactory.getLogger(DisruptorCommandBus.class);
 
-    private final EventStore eventStore;
     private final Executor executor;
     private final RollbackConfiguration rollbackConfiguration;
     private final int segmentId;
@@ -53,30 +51,26 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
      * Initializes the EventPublisher to publish Events to the given <code>eventStore</code> and <code>eventBus</code>
      * for aggregate of given <code>aggregateType</code>.
      *
-     * @param eventStore            The EventStore persisting the generated events
      * @param executor              The executor which schedules response reporting
      * @param transactionManager    The transaction manager that manages the transaction around event storage and
      *                              publication
      * @param rollbackConfiguration The configuration that indicates which exceptions should result in a UnitOfWork
      * @param segmentId             The ID of the segment this publisher should handle
      */
-    public EventPublisher(EventStore eventStore, Executor executor, TransactionManager transactionManager,
+    public EventPublisher(Executor executor, TransactionManager transactionManager,
                           RollbackConfiguration rollbackConfiguration, int segmentId) {
-        this.eventStore = eventStore;
         this.executor = executor;
         this.transactionManager = transactionManager;
         this.rollbackConfiguration = rollbackConfiguration;
         this.segmentId = segmentId;
     }
 
-    @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
     @Override
     public void onEvent(CommandHandlingEntry entry, long sequence, boolean endOfBatch) throws Exception {
         if (entry.isRecoverEntry()) {
             recoverAggregate(entry);
         } else if (entry.getPublisherId() == segmentId) {
             entry.resume();
-            entry.onPrepareCommit(u -> eventStore.appendEvents(entry.getMessagesToPublish()));
             String aggregateIdentifier = entry.getAggregateIdentifier();
             if (aggregateIdentifier != null && blackListedAggregates.contains(aggregateIdentifier)) {
                 rejectExecution(entry, aggregateIdentifier);
@@ -187,7 +181,7 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
         private final R result;
         private final Throwable exceptionResult;
 
-        public ReportResultTask(CommandMessage<C> commandMessage, CommandCallback<C, R> callback,
+        private ReportResultTask(CommandMessage<C> commandMessage, CommandCallback<C, R> callback,
                                 R result, Throwable exceptionResult) {
             this.commandMessage = commandMessage;
             this.callback = callback;

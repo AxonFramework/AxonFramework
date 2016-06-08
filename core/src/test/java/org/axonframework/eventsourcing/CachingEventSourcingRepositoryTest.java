@@ -17,32 +17,28 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
-import org.axonframework.cache.Cache;
-import org.axonframework.cache.EhCacheAdapter;
+import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
-import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
-import org.axonframework.common.Registration;
-import org.axonframework.domain.StubAggregate;
-import org.axonframework.eventhandling.AbstractEventBus;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.common.MockException;
+import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.testutils.MockException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -53,21 +49,19 @@ import static org.mockito.Mockito.*;
 public class CachingEventSourcingRepositoryTest {
 
     private CachingEventSourcingRepository<StubAggregate> testSubject;
-    private EventBus eventBus;
-    private InMemoryEventStore mockEventStore;
+    private EventStore mockEventStore;
     private Cache cache;
     private net.sf.ehcache.Cache ehCache;
 
     @Before
     public void setUp() {
-        mockEventStore = spy(new InMemoryEventStore());
-        eventBus = mockEventStore;
+        mockEventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
 
         final CacheManager cacheManager = CacheManager.getInstance();
         ehCache = cacheManager.getCache("testCache");
         cache = spy(new EhCacheAdapter(ehCache));
 
-        testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore, eventBus, cache);
+        testSubject = new CachingEventSourcingRepository<>(new StubAggregateFactory(), mockEventStore, cache);
     }
 
     @After
@@ -151,7 +145,7 @@ public class CachingEventSourcingRepositoryTest {
     @SuppressWarnings("unchecked")
     public void testCacheClearedAfterRollbackOfAddedAggregate() throws Exception {
         UnitOfWork<?> uow = startAndGetUnitOfWork();
-        doThrow(new MockException()).when(mockEventStore).appendEvents(anyList());
+        doThrow(new MockException()).when(mockEventStore).publish(anyList());
         try {
             testSubject.newInstance(() -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
             fail("Applied aggregate should have caused an exception");
@@ -163,7 +157,6 @@ public class CachingEventSourcingRepositoryTest {
 
     private UnitOfWork<?> startAndGetUnitOfWork() {
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
-        uow.resources().put(EventBus.KEY, eventBus);
         return uow;
     }
 
@@ -181,53 +174,6 @@ public class CachingEventSourcingRepositoryTest {
         @Override
         public Class<StubAggregate> getAggregateType() {
             return StubAggregate.class;
-        }
-    }
-
-    private class InMemoryEventStore extends AbstractEventBus implements EventStore {
-
-        protected Map<String, List<DomainEventMessage>> store = new HashMap<>();
-
-        @Override
-        public void appendEvents(List<DomainEventMessage<?>> events) {
-            events.stream().forEach(event -> {
-                DomainEventMessage next = (DomainEventMessage) event;
-                if (!store.containsKey(next.getAggregateIdentifier())) {
-                    store.put(next.getAggregateIdentifier(), new ArrayList<>());
-                }
-                List<DomainEventMessage> eventList = store.get(next.getAggregateIdentifier());
-                eventList.add(next);
-            });
-        }
-
-        @Override
-        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
-                                            long lastSequenceNumber) {
-            if (!store.containsKey(identifier)) {
-                throw new AggregateNotFoundException(identifier, "Aggregate not found");
-            }
-            final List<DomainEventMessage> events = store.get(identifier);
-            List<DomainEventMessage> filteredEvents = new ArrayList<>();
-            for (DomainEventMessage message : events) {
-                if (message.getSequenceNumber() >= firstSequenceNumber
-                        && message.getSequenceNumber() <= lastSequenceNumber) {
-                    filteredEvents.add(message);
-                }
-            }
-            return new SimpleDomainEventStream(filteredEvents);
-        }
-
-        public List<DomainEventMessage> readEventsAsList(String identifier) {
-            return store.get(identifier);
-        }
-
-        @Override
-        protected void commit(List<EventMessage<?>> events) {
-        }
-
-        @Override
-        public Registration subscribe(EventProcessor eventProcessor) {
-            throw new UnsupportedOperationException();
         }
     }
 }

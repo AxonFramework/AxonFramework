@@ -20,7 +20,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
          http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
 
-    <bean id="cacheAdapter" class="org.axonframework.cache.EhCacheAdapter">
+    <bean id="cacheAdapter" class="org.axonframework.common.caching.EhCacheAdapter">
         <constructor-arg ref="cache">
         </constructor-arg>
     </bean>

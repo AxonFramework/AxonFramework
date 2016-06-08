@@ -17,15 +17,14 @@
 package org.axonframework.test;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -117,17 +116,17 @@ public class FixtureTest_Annotated {
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().appendEvents(Arrays.asList(
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
+        fixture.getEventStore().publish(
+                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        fixture.getEventStore().appendEvents(Arrays.asList(
-                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
+        fixture.getEventStore().publish(
+                new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()));
     }
 
     @Test

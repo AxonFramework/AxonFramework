@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,18 @@
 
 package org.axonframework.integrationtests.loopbacktest.synchronous;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.*;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,7 +60,7 @@ public class SynchronousLoopbackTest {
         eventBus = new SimpleEventBus();
         eventStore = spy(new InMemoryEventStore());
         eventStore.appendEvents(Collections.singletonList(
-                new GenericDomainEventMessage<>(aggregateIdentifier, 0,
+                new GenericDomainEventMessage<>(type, aggregateIdentifier, 0,
                         new AggregateCreatedEvent(aggregateIdentifier),
                         null
                 )));
@@ -89,7 +84,7 @@ public class SynchronousLoopbackTest {
 
             @Override
             public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                assertEquals("Mock exception", cause.getMessage());
+                assertEquals("Mock exception", cause.getCause().getMessage());
             }
         };
     }
@@ -97,7 +92,7 @@ public class SynchronousLoopbackTest {
     protected void initializeRepository(LockFactory lockingStrategy) {
         EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<>(
                 CountingAggregate.class, eventStore,
-                lockingStrategy, eventBus);
+                lockingStrategy);
         new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
@@ -118,7 +113,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(new SimpleEventProcessor("test", el));
+        eventBus.subscribe(eventProcessor);
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
@@ -156,7 +151,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        eventBus.subscribe(new SimpleEventProcessor("test", el));
+        eventBus.subscribe(eventProcessor);
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 

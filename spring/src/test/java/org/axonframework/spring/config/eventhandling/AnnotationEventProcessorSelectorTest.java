@@ -16,10 +16,9 @@
 
 package org.axonframework.spring.config.eventhandling;
 
+import org.axonframework.eventhandling.AnnotationEventListenerAdapter;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.spring.config.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;

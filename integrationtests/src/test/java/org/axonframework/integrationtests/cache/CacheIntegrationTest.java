@@ -16,12 +16,12 @@
 
 package org.axonframework.integrationtests.cache;
 
-import org.axonframework.cache.Cache;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.common.caching.Cache;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.util.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;

@@ -1,15 +1,17 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.junit.*;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.AggregateIdentifier;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.concurrent.Executor;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**

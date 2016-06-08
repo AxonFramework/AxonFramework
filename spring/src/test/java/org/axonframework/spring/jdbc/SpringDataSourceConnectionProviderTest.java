@@ -20,7 +20,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.spring.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

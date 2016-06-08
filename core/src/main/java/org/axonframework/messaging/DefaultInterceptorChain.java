@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ import java.util.Iterator;
  * @author Allard Buijze
  * @since 0.5
  */
-public class DefaultInterceptorChain<T extends Message<?>> implements InterceptorChain<T> {
+public class DefaultInterceptorChain<T extends Message<?>> implements InterceptorChain {
 
     private final MessageHandler<? super T> handler;
     private final Iterator<? extends MessageHandlerInterceptor<T>> chain;
-    private final UnitOfWork<T> unitOfWork;
+    private final UnitOfWork<? extends T> unitOfWork;
 
     /**
      * Initialize the default interceptor chain to dispatch the given <code>message</code>, through the
@@ -41,7 +41,7 @@ public class DefaultInterceptorChain<T extends Message<?>> implements Intercepto
      * @param interceptors  The interceptors composing the chain
      * @param handler       The handler for the message
      */
-    public DefaultInterceptorChain(UnitOfWork<T> unitOfWork,
+    public DefaultInterceptorChain(UnitOfWork<? extends T> unitOfWork,
                                    Iterable<? extends MessageHandlerInterceptor<T>> interceptors,
                                    MessageHandler<? super T> handler) {
         this.handler = handler;

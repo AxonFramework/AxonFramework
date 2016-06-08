@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,12 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.RecordingCommandBus;
 import org.hamcrest.Matcher;
-
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -39,9 +37,9 @@ import static org.hamcrest.CoreMatchers.any;
  * @author Allard Buijze
  * @since 1.1
  */
-public class FixtureExecutionResultImpl implements FixtureExecutionResult {
+public class FixtureExecutionResultImpl<T> implements FixtureExecutionResult {
 
-    private final RepositoryContentValidator repositoryContentValidator;
+    private final RepositoryContentValidator<T> repositoryContentValidator;
     private final EventValidator eventValidator;
     private final EventSchedulerValidator eventSchedulerValidator;
     private final CommandValidator commandValidator;
@@ -50,19 +48,19 @@ public class FixtureExecutionResultImpl implements FixtureExecutionResult {
     /**
      * Initializes an instance and make it monitor the given infrastructure classes.
      *
-     * @param sagaRepository The repository to monitor
+     * @param sagaStore      The SagaStore to monitor
      * @param eventScheduler The scheduler to monitor
      * @param eventBus       The event bus to monitor
      * @param commandBus     The command bus to monitor
      * @param sagaType       The type of Saga under test
      * @param fieldFilter    The FieldFilter describing the fields to include in equality checks
      */
-    FixtureExecutionResultImpl(InMemorySagaRepository sagaRepository, StubEventScheduler eventScheduler,
+    FixtureExecutionResultImpl(InMemorySagaStore sagaStore, StubEventScheduler eventScheduler,
                                EventBus eventBus, RecordingCommandBus commandBus,
-                               Class<? extends AbstractAnnotatedSaga> sagaType, FieldFilter fieldFilter) {
+                               Class<T> sagaType, FieldFilter fieldFilter) {
         this.fieldFilter = fieldFilter;
         commandValidator = new CommandValidator(commandBus, fieldFilter);
-        repositoryContentValidator = new RepositoryContentValidator(sagaRepository, sagaType);
+        repositoryContentValidator = new RepositoryContentValidator<>(sagaType, sagaStore);
         eventValidator = new EventValidator(eventBus, fieldFilter);
         eventSchedulerValidator = new EventSchedulerValidator(eventScheduler);
     }

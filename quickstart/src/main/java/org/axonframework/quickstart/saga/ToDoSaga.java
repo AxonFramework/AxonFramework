@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,29 @@
 package org.axonframework.quickstart.saga;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.eventhandling.saga.EndSaga;
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 import org.axonframework.quickstart.api.ToDoItemDeadlineExpiredEvent;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.annotation.EndSaga;
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.StartSaga;
 
-import javax.annotation.Resource;
+import javax.inject.Inject;
 import java.time.Duration;
 
 /**
  * @author Allard Buijze
  */
-public class ToDoSaga extends AbstractAnnotatedSaga {
+public class ToDoSaga {
 
     private static final long serialVersionUID = 1798051388403504162L;
 
+    @Inject
     private transient CommandGateway commandGateway;
+    @Inject
     private transient EventScheduler eventScheduler;
 
     private ScheduleToken deadline;
@@ -63,13 +64,4 @@ public class ToDoSaga extends AbstractAnnotatedSaga {
         }
     }
 
-    @Resource
-    public void setCommandGateway(CommandGateway commandGateway) {
-        this.commandGateway = commandGateway;
-    }
-
-    @Resource
-    public void setEventScheduler(EventScheduler eventScheduler) {
-        this.eventScheduler = eventScheduler;
-    }
 }

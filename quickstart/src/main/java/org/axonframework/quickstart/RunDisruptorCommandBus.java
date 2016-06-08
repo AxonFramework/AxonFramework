@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,17 @@
 
 package org.axonframework.quickstart;
 
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.SimpleEventProcessor;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
+import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.fs.FileSystemEventStore;
-import org.axonframework.eventstore.fs.SimpleEventFileResolver;
-import org.axonframework.quickstart.annotated.ToDoEventHandler;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.quickstart.annotated.ToDoItem;
-
-import java.io.File;
 
 /**
  * Setting up the basic ToDoItem sample with a disruptor command and event bus and a file based event store. The
@@ -43,18 +37,17 @@ import java.io.File;
 public class RunDisruptorCommandBus {
 
     public static void main(String[] args) throws InterruptedException {
-        // we'll store Events on the FileSystem, in the "events" folder
-        EventStore eventStore = new FileSystemEventStore(new SimpleEventFileResolver(new File("./events")));
-
-        // a Simple Event Bus will do
-        EventBus eventBus = new SimpleEventBus();
+        // we'll store Events in memory
+        EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
 
         // TODO: Listeners should subscribe to Event Store instead of Event Bus
-        // we register the event handlers
-        eventBus.subscribe(new SimpleEventProcessor("handler", new AnnotationEventListenerAdapter(new ToDoEventHandler())));
+        // we register the event handler
+        eventStore.subscribe(new SimpleEventProcessor("processor", (EventListener) event -> {
+            System.out.println(event.getPayload());
+        }));
 
         // we use default settings for the disruptor command bus
-        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore, eventBus);
+        DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);
 
         // now, we obtain a repository from the command bus
         Repository<ToDoItem> repository = commandBus.createRepository(new GenericAggregateFactory<>(ToDoItem.class));

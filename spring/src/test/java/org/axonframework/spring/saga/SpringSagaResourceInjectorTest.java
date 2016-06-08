@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package org.axonframework.spring.saga;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.saga.ResourceInjector;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.junit.*;
+import org.axonframework.eventhandling.saga.ResourceInjector;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -29,7 +29,8 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Allard Buijze
@@ -59,7 +60,7 @@ public class SpringSagaResourceInjectorTest {
         testSubject.injectResources(injectableSaga);
     }
 
-    public static class InjectableSaga extends AbstractAnnotatedSaga {
+    public static class InjectableSaga {
 
         private static final long serialVersionUID = 6273830321273396327L;
 

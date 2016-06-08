@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
 import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.UUID;
@@ -61,7 +61,7 @@ public class StubAggregate {
     }
 
     public DomainEventMessage createSnapshotEvent() {
-        return new GenericDomainEventMessage<>(identifier.toString(), (long) 5,
+        return new GenericDomainEventMessage<>("test", identifier.toString(), (long) 5,
                                                               new StubDomainEvent(), MetaData.emptyInstance());
     }
 

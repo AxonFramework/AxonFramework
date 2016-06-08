@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,17 @@
 
 package org.axonframework.spring.eventhandling.scheduling;
 
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.StartSaga;
-import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.inject.Inject;
 import java.time.Duration;
 
 /**
  * @author Allard Buijze
  */
-public class SimpleTimingSaga extends AbstractAnnotatedSaga {
-
-    private static final long serialVersionUID = -3190758648834280201L;
+public class SimpleTimingSaga {
 
     private transient EventScheduler timer;
     private volatile boolean triggered = false;
@@ -51,7 +48,7 @@ public class SimpleTimingSaga extends AbstractAnnotatedSaga {
         return triggered;
     }
 
-    @Autowired
+    @Inject
     public void setTimer(EventScheduler timer) {
         this.timer = timer;
     }

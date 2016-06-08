@@ -48,7 +48,7 @@ public class SequentialPerAggregatePolicyTest {
     }
 
     private DomainEventMessage newStubDomainEvent(String aggregateIdentifier) {
-        return new GenericDomainEventMessage<>(aggregateIdentifier, (long) 0,
+        return new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                      new Object(), MetaData.emptyInstance());
     }
 }

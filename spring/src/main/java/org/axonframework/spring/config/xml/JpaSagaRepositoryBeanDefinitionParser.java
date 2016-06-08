@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.cache.NoCache;
+import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
-import org.axonframework.saga.repository.CachingSagaRepository;
-import org.axonframework.saga.repository.jpa.JpaSagaRepository;
+import org.axonframework.eventhandling.saga.repository.CachingSagaStore;
+import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.saga.SpringResourceInjector;
-import org.axonframework.serializer.xml.XStreamSerializer;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -50,7 +50,7 @@ public class JpaSagaRepositoryBeanDefinitionParser extends AbstractBeanDefinitio
 
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
-        BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(JpaSagaRepository.class);
+        BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(JpaSagaStore.class);
         parseResourceInjectorAttribute(element, builder);
         parseExplicitFlushAttribute(element, builder);
         parseSagaSerializerAttribute(element, builder);
@@ -62,7 +62,7 @@ public class JpaSagaRepositoryBeanDefinitionParser extends AbstractBeanDefinitio
         final Element cacheConfigElement = DomUtils.getChildElementByTagName(element, ELEMENT_CACHE_CONFIG);
         if (cacheConfigElement != null) {
             GenericBeanDefinition cachedRepoDef = new GenericBeanDefinition();
-            cachedRepoDef.setBeanClass(CachingSagaRepository.class);
+            cachedRepoDef.setBeanClass(CachingSagaStore.class);
             final Object sagaCacheReference = cacheConfigElement.hasAttribute(ATTRIBUTE_SAGA_CACHE)
                     ? new RuntimeBeanReference(cacheConfigElement.getAttribute(ATTRIBUTE_SAGA_CACHE))
                     : NoCache.INSTANCE;

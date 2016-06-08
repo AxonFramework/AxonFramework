@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.disruptor;
 
 import com.eaio.uuid.UUID;
-import org.axonframework.domain.IdentifierFactory;
+import org.axonframework.common.IdentifierFactory;
 
 /**
  * @author Allard Buijze

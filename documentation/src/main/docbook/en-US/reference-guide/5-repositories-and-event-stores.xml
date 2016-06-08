@@ -284,7 +284,7 @@
             <para>By default, the event store needs you to configure your persistence context
                 (defined in <code>META-INF/persistence.xml</code> file) to contain the classes
                     <code>DomainEventEntry</code> and <code>SnapshotEventEntry</code> (both in the
-                    <code>org.axonframework.eventstore.jpa</code> package). </para>
+                    <code>org.axonframework.eventsourcing.eventstore.jpa</code> package). </para>
             <para>Below is an example configuration of a persistence context configuration:</para>
             <programlistingco>
                 <areaspec units="linecolumn">

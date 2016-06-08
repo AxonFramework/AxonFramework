@@ -82,6 +82,13 @@
 
         <!-- Test dependencies -->
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>axon-core</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>de.flapdoodle.embed</groupId>
             <artifactId>de.flapdoodle.embed.mongo</artifactId>
             <version>1.41</version>
@@ -105,6 +112,17 @@
             <version>1.0.0.Final</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-orm</artifactId>
+            <version>${spring.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.eaio.uuid</groupId>
+            <artifactId>uuid</artifactId>
+            <version>3.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -442,7 +442,7 @@ public class GatewayProxyFactoryTest {
         try {
             gateway.fireAndWaitAndInvokeCallbacks("Command", callback1, callback2);
             fail("Expected exception");
-        } catch (CommandExecutionException e) {
+        } catch (RuntimeException e) {
             verify(callback1).onFailure(any(), eq(exception));
             verify(callback2).onFailure(any(), eq(exception));
         }

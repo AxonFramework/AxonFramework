@@ -16,16 +16,15 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.cache.Cache;
-import org.axonframework.cache.NoCache;
 import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
+import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.io.Serializable;
@@ -47,7 +46,6 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
 
     private Cache cache = NoCache.INSTANCE;
     private final EventStore eventStore;
-    private final EventBus eventBus;
 
     /**
      * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
@@ -56,9 +54,8 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @param eventStore       The event store that holds the event streams for this repository
      * @see LockingRepository#LockingRepository(Class)
      */
-    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                          EventBus eventBus, Cache cache) {
-        this(aggregateFactory, eventStore, new PessimisticLockFactory(), eventBus, cache);
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache) {
+        this(aggregateFactory, eventStore, new PessimisticLockFactory(), cache);
     }
 
     /**
@@ -72,11 +69,10 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                          LockFactory lockFactory, EventBus eventBus, Cache cache) {
-        super(aggregateFactory, eventStore, lockFactory, eventBus);
+                                          LockFactory lockFactory, Cache cache) {
+        super(aggregateFactory, eventStore, lockFactory);
         this.cache = cache;
         this.eventStore = eventStore;
-        this.eventBus = eventBus;
     }
 
     @Override
@@ -120,7 +116,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         EventSourcedAggregate<T> aggregate = null;
         CacheEntry<T> cacheEntry = cache.get(aggregateIdentifier);
         if (cacheEntry != null) {
-            aggregate = cacheEntry.recreateAggregate(aggregateModel(), eventBus, eventStore);
+            aggregate = cacheEntry.recreateAggregate(aggregateModel(), eventStore);
         }
         if (aggregate == null) {
             aggregate = super.doLoadWithLock(aggregateIdentifier, expectedVersion);
@@ -146,12 +142,11 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
             this.deleted = aggregate.isDeleted();
         }
 
-        public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model,
-                                                          EventBus eventBus, EventStore eventStore) {
+        public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore) {
             if (aggregate != null) {
                 return aggregate;
             }
-            return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventBus, eventStore);
+            return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore);
         }
     }
 }

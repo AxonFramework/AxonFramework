@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package org.axonframework.test.utils;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.saga.ResourceInjector;
-import org.axonframework.saga.Saga;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.test.FixtureExecutionException;
 
 import java.lang.reflect.InvocationTargetException;
@@ -47,7 +46,7 @@ public class AutowiredResourceInjector implements ResourceInjector {
     }
 
     @Override
-    public void injectResources(Saga saga) {
+    public void injectResources(Object saga) {
         for (Method method : methodsOf(saga.getClass())) {
             if (isSetter(method)) {
                 Class<?> requiredType = method.getParameterTypes()[0];
@@ -60,7 +59,7 @@ public class AutowiredResourceInjector implements ResourceInjector {
         }
     }
 
-    private void injectResource(Saga saga, Method setterMethod, Object resource) {
+    private void injectResource(Object saga, Method setterMethod, Object resource) {
         try {
             ReflectionUtils.ensureAccessible(setterMethod);
             setterMethod.invoke(saga, resource);

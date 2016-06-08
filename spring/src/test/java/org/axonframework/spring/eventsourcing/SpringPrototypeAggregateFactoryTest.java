@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.spring.domain.SpringWiredAggregate;
 import org.junit.Assert;
@@ -39,9 +38,6 @@ public class SpringPrototypeAggregateFactoryTest {
     @Autowired
     private SpringPrototypeAggregateFactory<SpringWiredAggregate> testSubject;
 
-    @Autowired
-    private ParameterResolverFactory parameterResolverFactory;
-
     @Test
     public void testContextStarts() throws Exception {
         assertNotNull(testSubject);
@@ -49,8 +45,8 @@ public class SpringPrototypeAggregateFactoryTest {
 
     @Test
     public void testCreateNewAggregateInstance() {
-        SpringWiredAggregate aggregate = testSubject.createAggregate("id2", new GenericDomainEventMessage<>(
-                "id2", 0, "FirstEvent"));
+        SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2", new GenericDomainEventMessage<>("type", "id2", 0,
+                                                                                                            "FirstEvent"));
         assertTrue("Aggregate's init method not invoked", aggregate.isInitialized());
         assertNotNull("ContextAware method not invoked", aggregate.getContext());
         Assert.assertEquals("it's here", aggregate.getSpringConfiguredName());
@@ -58,9 +54,9 @@ public class SpringPrototypeAggregateFactoryTest {
 
     @Test
     public void testProcessSnapshotAggregateInstance() {
-        SpringWiredAggregate aggregate = testSubject.createAggregate("id2",
-                                                                     new GenericDomainEventMessage<>(
-                                                                             "id2", 5, new SpringWiredAggregate()));
+        SpringWiredAggregate aggregate = testSubject.createAggregateRoot("id2",
+                                                                     new GenericDomainEventMessage<>("type", "id2", 5,
+                                                                                                     new SpringWiredAggregate()));
         assertTrue("Aggregate's init method not invoked", aggregate.isInitialized());
         assertNotNull("ContextAware method not invoked", aggregate.getContext());
         Assert.assertEquals("it's here", aggregate.getSpringConfiguredName());

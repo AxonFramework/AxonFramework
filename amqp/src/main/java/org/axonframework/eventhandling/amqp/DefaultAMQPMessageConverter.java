@@ -21,13 +21,9 @@ import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.io.EventMessageReader;
 import org.axonframework.eventhandling.io.EventMessageWriter;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serialization.Serializer;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Map;
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.junit.Test;
 
 import java.lang.annotation.Annotation;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -107,18 +109,18 @@ public class HandlerComparatorTest {
         }
 
         @Override
-        public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-            return null;
+        public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+            return Optional.empty();
         }
 
         @Override
-        public Annotation[] getAnnotations() {
-            return new Annotation[0];
+        public Optional<Map<String, Object>> annotationAttributes(Class<? extends Annotation> annotationType) {
+            return Optional.empty();
         }
 
         @Override
-        public Annotation[] getDeclaredAnnotations() {
-            return new Annotation[0];
+        public boolean hasAnnotation(Class<? extends Annotation> annotationType) {
+            return false;
         }
     }
 }

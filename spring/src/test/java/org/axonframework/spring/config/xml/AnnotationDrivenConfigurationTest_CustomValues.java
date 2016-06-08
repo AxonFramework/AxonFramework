@@ -16,9 +16,9 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.axonframework.spring.config.annotation.AnnotationDriven;

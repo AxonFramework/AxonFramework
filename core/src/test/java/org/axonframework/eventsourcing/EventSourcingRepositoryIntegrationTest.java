@@ -21,9 +21,10 @@ import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Test;
@@ -34,7 +35,6 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -69,12 +69,11 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     private void initializeRepository() throws Exception {
-        eventStore = new InMemoryEventStore();
-        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore, null);
+        eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        repository = new EventSourcingRepository<>(new SimpleAggregateFactory(), eventStore);
         EventBus mockEventBus = mock(EventBus.class);
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
-        uow.resources().put(EventBus.KEY, mockEventBus);
         Aggregate<SimpleAggregateRoot> aggregate = repository.newInstance(SimpleAggregateRoot::new);
         uow.commit();
 
@@ -189,31 +188,5 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
                                                      DomainEventMessage firstEvent) {
             return new SimpleAggregateRoot(aggregateIdentifier);
         }
-    }
-
-    private class InMemoryEventStore implements EventStore {
-
-        private List<DomainEventMessage> domainEvents = new ArrayList<>();
-
-        @Override
-        public void appendEvents(List<DomainEventMessage<?>> events) {
-            domainEvents.addAll(events);
-        }
-
-        @Override
-        public synchronized DomainEventStream readEvents(String identifier) {
-            List<DomainEventMessage> relevant = domainEvents.stream()
-                    .filter(event -> event.getAggregateIdentifier().equals(identifier))
-                    .collect(Collectors.toList());
-
-            return new SimpleDomainEventStream(relevant);
-        }
-
-        @Override
-        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
-                                            long lastSequenceNumber) {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
     }
 }

@@ -89,6 +89,6 @@
         <property name="dataSource" ref="dataSource"/>
     </bean>
 
-    <bean id="eventSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
+    <bean id="eventSerializer" class="org.axonframework.serialization.xml.XStreamSerializer"/>
 
 </beans>

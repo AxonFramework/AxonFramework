@@ -16,10 +16,10 @@
 
 package org.axonframework.spring.config.xml;
 
+import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
+import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
-import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;
 import org.junit.Test;

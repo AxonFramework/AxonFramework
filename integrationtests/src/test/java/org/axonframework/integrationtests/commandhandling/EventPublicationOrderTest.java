@@ -16,17 +16,16 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Before;
@@ -35,13 +34,7 @@ import org.junit.Test;
 import java.util.UUID;
 
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.mockito.Mockito.argThat;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -58,7 +51,7 @@ public class EventPublicationOrderTest {
         this.commandBus = new SimpleCommandBus();
         this.eventBus = spy(new SimpleEventBus());
         eventStore = mock(EventStore.class);
-        this.repository = new EventSourcingRepository<>(StubAggregate.class, eventStore, eventBus);
+        this.repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventBus);
@@ -71,7 +64,7 @@ public class EventPublicationOrderTest {
         when(eventStore.readEvents(aggregateId))
                 .thenReturn(new SimpleDomainEventStream(
                         new GenericDomainEventMessage<Object>(aggregateId, 0,
-                                                              new StubAggregateCreatedEvent(aggregateId))));
+                                                              new StubAggregateCreatedEvent(aggregateId), type)));
         doAnswer(invocation -> {
             System.out.println("Published event: " + invocation.getArguments()[0].toString());
             return Void.class;

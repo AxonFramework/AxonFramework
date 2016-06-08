@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2010-2012. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -29,17 +29,17 @@
 
     <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
 
-    <bean id="sagaRepository" class="org.axonframework.saga.repository.jpa.JpaSagaRepository">
+    <bean id="sagaRepository" class="org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore">
         <constructor-arg>
             <bean class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
         </constructor-arg>
         <property name="resourceInjector" ref="resourceInjector"/>
     </bean>
 
-    <bean id="sagaManager" class="org.axonframework.saga.annotation.AnnotatedSagaManager">
+    <bean id="sagaManager" class="org.axonframework.eventhandling.saga.AnnotatedSagaManager">
         <constructor-arg index="0" ref="sagaRepository"/>
         <constructor-arg index="1">
-            <bean class="org.axonframework.saga.GenericSagaFactory">
+            <bean class="org.axonframework.eventhandling.saga.GenericSagaFactory">
                 <property name="resourceInjector" ref="resourceInjector"/>
             </bean>
         </constructor-arg>

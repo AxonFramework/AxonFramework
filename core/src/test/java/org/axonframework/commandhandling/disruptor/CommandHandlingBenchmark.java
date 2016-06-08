@@ -23,18 +23,14 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.AbstractRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
@@ -50,15 +46,13 @@ public class CommandHandlingBenchmark {
     private static final UUID aggregateIdentifier = UUID.randomUUID();
 
     public static void main(String[] args) {
-        EventBus eventBus = new SimpleEventBus();
+        EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         CommandBus cb = new SimpleCommandBus();
-
-        InMemoryEventStore eventStore = new InMemoryEventStore();
-        eventStore.appendInitialEvent(new SimpleDomainEventStream(new GenericDomainEventMessage<>(
-                aggregateIdentifier.toString(), 0, new SomeEvent())));
+        eventStore.publish(new GenericDomainEventMessage<>("type", aggregateIdentifier.toString(), 0, new SomeEvent()));
 
         final MyAggregate myAggregate = new MyAggregate(aggregateIdentifier);
-        Repository<MyAggregate> repository = new AbstractRepository<MyAggregate, AnnotatedAggregate<MyAggregate>>(MyAggregate.class) {
+        Repository<MyAggregate> repository = new AbstractRepository<MyAggregate, AnnotatedAggregate<MyAggregate>>(
+                MyAggregate.class) {
 
             @Override
             protected AnnotatedAggregate<MyAggregate> doCreateNew(Callable<MyAggregate> factoryMethod) {
@@ -71,7 +65,7 @@ public class CommandHandlingBenchmark {
 
             @Override
             protected AnnotatedAggregate<MyAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
-                return new AnnotatedAggregate<>(myAggregate, aggregateModel(), eventBus);
+                return new AnnotatedAggregate<>(myAggregate, aggregateModel(), eventStore);
             }
 
             @Override
@@ -102,15 +96,13 @@ public class CommandHandlingBenchmark {
             this(UUID.randomUUID());
         }
 
-        protected MyAggregate(UUID identifier) {
+        private MyAggregate(UUID identifier) {
             this.identifier = identifier;
         }
-
 
         public void doSomething() {
             apply(new SomeEvent());
         }
-
     }
 
     private static class SomeEvent {
@@ -121,44 +113,15 @@ public class CommandHandlingBenchmark {
 
         private final Repository<MyAggregate> repository;
 
-        public MyCommandHandler(Repository<MyAggregate> repository) {
+        private MyCommandHandler(Repository<MyAggregate> repository) {
             this.repository = repository;
         }
 
         @Override
-        public Object handle(CommandMessage<?> command, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
+        public Object handle(CommandMessage<?> command,
+                             UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             repository.load(aggregateIdentifier.toString()).execute(MyAggregate::doSomething);
             return null;
         }
-    }
-
-    private static class InMemoryEventStore implements EventStore {
-
-        private DomainEventStream storedEvents;
-
-        public void appendInitialEvent(DomainEventStream events) {
-            storedEvents = events;
-        }
-
-        @Override
-        public void appendEvents(List<DomainEventMessage<?>> events) {
-            //todo fix
-//            while (events.hasNext()) {
-//                storedEvents.add(events.next());
-//            }
-        }
-
-        @Override
-        public DomainEventStream readEvents(String identifier) {
-            System.out.println(".");
-            return storedEvents;
-        }
-
-        @Override
-        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
-                                            long lastSequenceNumber) {
-            throw new UnsupportedOperationException("Not implemented");
-        }
-
     }
 }

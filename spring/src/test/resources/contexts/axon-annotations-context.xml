@@ -41,7 +41,7 @@
     </axon:saga-manager>
 
     <bean id="eventStore" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventstore.EventStore"/>
+        <property name="mockType" value="org.axonframework.eventsourcing.eventstore.EventStore"/>
     </bean>
 
     <!-- This is a resource that may be injected in @EventHandler methods -->

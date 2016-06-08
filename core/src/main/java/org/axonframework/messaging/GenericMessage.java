@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
- *
+ * Copyright (c) 2010-2016. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,26 +13,18 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.domain.IdentifierFactory;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.Map;
 
 /**
- * Generic implementation of the Message interface.
- *
- * @param <T> The type of payload contained in this message
- * @author Allard Buijze
- * @since 2.0
+ * @author Rene de Waele
  */
-public class GenericMessage<T> implements Message<T> {
+public class GenericMessage<T> extends AbstractMessage<T> {
 
-    private static final long serialVersionUID = 4672240170797058482L;
-
-    private final String identifier;
     private final MetaData metaData;
-    // payloadType is stored separately, because of Object.getClass() performance
     private final Class<T> payloadType;
     private final T payload;
 
@@ -55,7 +44,8 @@ public class GenericMessage<T> implements Message<T> {
      * @param metaData The meta data for the message
      */
     public GenericMessage(T payload, Map<String, ?> metaData) {
-        this(IdentifierFactory.getInstance().generateIdentifier(), payload, MetaData.from(metaData));
+        this(IdentifierFactory.getInstance().generateIdentifier(), payload,
+             CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData)));
     }
 
     /**
@@ -67,22 +57,17 @@ public class GenericMessage<T> implements Message<T> {
      */
     @SuppressWarnings("unchecked")
     public GenericMessage(String identifier, T payload, Map<String, ?> metaData) {
-        this.identifier = identifier;
-        this.metaData = CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData));
+        super(identifier);
+        this.metaData = MetaData.from(metaData);
         this.payload = payload;
         this.payloadType = (Class<T>) payload.getClass();
     }
 
-    private GenericMessage(GenericMessage<T> original, Map<String, ?> metaData) {
-        this.identifier = original.getIdentifier();
+    private GenericMessage(GenericMessage<T> original, MetaData metaData) {
+        super(original.getIdentifier());
         this.payload = original.getPayload();
         this.payloadType = original.getPayloadType();
-        this.metaData = MetaData.from(metaData);
-    }
-
-    @Override
-    public String getIdentifier() {
-        return identifier;
+        this.metaData = metaData;
     }
 
     @Override
@@ -100,20 +85,8 @@ public class GenericMessage<T> implements Message<T> {
         return payloadType;
     }
 
-    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     @Override
-    public GenericMessage<T> withMetaData(Map<String, ?> newMetaData) {
-        if (this.metaData.equals(newMetaData)) {
-            return this;
-        }
-        return new GenericMessage<>(this, newMetaData);
-    }
-
-    @Override
-    public GenericMessage<T> andMetaData(Map<String, ?> additionalMetaData) {
-        if (additionalMetaData.isEmpty()) {
-            return this;
-        }
-        return new GenericMessage<>(this, this.metaData.mergedWith(additionalMetaData));
+    protected Message<T> withMetaData(MetaData metaData) {
+        return new GenericMessage<>(this, metaData);
     }
 }

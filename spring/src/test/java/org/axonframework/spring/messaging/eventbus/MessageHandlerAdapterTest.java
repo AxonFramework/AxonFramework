@@ -41,7 +41,7 @@ public class MessageHandlerAdapterTest {
         adapter.handleMessage(new GenericMessage<>(payload));
         adapter.handleMessage(new GenericMessage<>(new StubDomainEvent()));
 
-        verify(mockEventProcessor, times(1)).handle(argThat(new BaseMatcher<EventMessage>() {
+        verify(mockEventProcessor, times(1)).accept(argThat(new BaseMatcher<EventMessage>() {
             @Override
             public boolean matches(Object o) {
                 return ((o instanceof EventMessage) && ((EventMessage) o).getPayload().equals(payload));

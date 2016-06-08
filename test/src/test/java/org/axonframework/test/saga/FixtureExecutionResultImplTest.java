@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.eventhandling.saga.AssociationValue;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.AllFieldsFilter;
@@ -31,13 +32,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.axonframework.test.matchers.Matchers.andNoMore;
-import static org.axonframework.test.matchers.Matchers.equalTo;
-import static org.axonframework.test.matchers.Matchers.exactSequenceOf;
-import static org.axonframework.test.matchers.Matchers.payloadsMatching;
+import static org.axonframework.test.matchers.Matchers.*;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -46,11 +45,11 @@ import static org.junit.Assert.fail;
  */
 public class FixtureExecutionResultImplTest {
 
-    private FixtureExecutionResultImpl testSubject;
+    private FixtureExecutionResultImpl<StubSaga> testSubject;
     private RecordingCommandBus commandBus;
     private SimpleEventBus eventBus;
     private StubEventScheduler eventScheduler;
-    private InMemorySagaRepository sagaRepository;
+    private InMemorySagaStore sagaStore;
     private TimerTriggeredEvent applicationEvent;
     private String identifier;
 
@@ -59,8 +58,8 @@ public class FixtureExecutionResultImplTest {
         commandBus = new RecordingCommandBus();
         eventBus = new SimpleEventBus();
         eventScheduler = new StubEventScheduler();
-        sagaRepository = new InMemorySagaRepository();
-        testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,
+        sagaStore = new InMemorySagaStore();
+        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus,
                                                      commandBus, StubSaga.class, AllFieldsFilter.instance());
         testSubject.startRecording();
         identifier = UUID.randomUUID().toString();
@@ -69,7 +68,7 @@ public class FixtureExecutionResultImplTest {
 
     @Test
     public void testStartRecording() {
-        testSubject = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus,
+        testSubject = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus,
                                                      commandBus, StubSaga.class, AllFieldsFilter.instance());
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("First"));
         eventBus.publish(new GenericEventMessage<>(new TriggerSagaStartEvent(identifier)));
@@ -260,71 +259,58 @@ public class FixtureExecutionResultImplTest {
 
     @Test(expected = AxonAssertionError.class)
     public void testAssociationWith_WrongValue() {
-        StubSaga saga = new StubSaga();
-        saga.associateWith("key", "value");
-        sagaRepository.add(saga);
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key", "value2");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testAssociationWith_WrongKey() {
-        StubSaga saga = new StubSaga();
-        saga.associateWith("key", "value");
-        sagaRepository.add(saga);
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key2", "value");
     }
 
     @Test
     public void testAssociationWith_Present() {
-        StubSaga saga = new StubSaga();
-        saga.associateWith("key", "value");
-        sagaRepository.add(saga);
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectAssociationWith("key", "value");
     }
 
     @Test
     public void testNoAssociationWith_WrongValue() {
-        StubSaga saga = new StubSaga();
-        saga.associateWith("key", "value");
-        sagaRepository.add(saga);
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key", "value2");
     }
 
     @Test
     public void testNoAssociationWith_WrongKey() {
-        StubSaga saga = new StubSaga();
-        saga.associateWith("key", "value");
-        sagaRepository.add(saga);
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key2", "value");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testNoAssociationWith_Present() {
-        StubSaga saga = new StubSaga();
-        saga.associateWith("key", "value");
-        sagaRepository.add(saga);
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.singleton(new AssociationValue("key", "value")));
 
         testSubject.expectNoAssociationWith("key", "value");
     }
 
     @Test(expected = AxonAssertionError.class)
     public void testExpectActiveSagas_WrongCount() {
-        sagaRepository.add(new StubSaga());
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.emptySet());
 
         testSubject.expectActiveSagas(2);
     }
 
     @Test
     public void testExpectActiveSagas_CorrectCount() {
-        sagaRepository.add(new StubSaga());
-        StubSaga saga = new StubSaga();
-        saga.end();
-        sagaRepository.add(saga);
+        sagaStore.insertSaga(StubSaga.class, "test", new StubSaga(), null, Collections.emptySet());
+        sagaStore.deleteSaga(StubSaga.class, "test", Collections.emptySet());
+        sagaStore.insertSaga(StubSaga.class, "test2", new StubSaga(), null, Collections.emptySet());
 
         testSubject.expectActiveSagas(1);
     }

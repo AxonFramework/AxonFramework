@@ -23,11 +23,11 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.EventProcessorMetaData;
 import org.axonframework.eventhandling.amqp.*;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Exchange;
@@ -41,8 +41,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-
-import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQP_CONFIG_PROPERTY;
+import java.util.function.Consumer;
 
 /**
  * EventBusTerminal implementation that uses an AMQP 0.9 compatible Message Broker to dispatch event messages. All
@@ -54,6 +53,8 @@ import static org.axonframework.eventhandling.amqp.AMQPConsumerConfiguration.AMQ
  * @since 2.0
  */
 public class SpringAMQPEventBus extends AbstractEventBus implements InitializingBean, ApplicationContextAware {
+
+    //todo turn this into an event processor
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAMQPEventBus.class);
     private static final String DEFAULT_EXCHANGE_NAME = "Axon.EventBus";
@@ -71,7 +72,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     private long publisherAckTimeout;
 
     @Override
-    protected void prepareCommit(List<EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage<?>> events) {
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
             if (isTransactional) {
@@ -179,14 +180,14 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
-        EventProcessorMetaData processorMetaData = eventProcessor.getMetaData();
-        AMQPConsumerConfiguration config;
-        if (processorMetaData.getProperty(AMQP_CONFIG_PROPERTY) instanceof AMQPConsumerConfiguration) {
-            config = (AMQPConsumerConfiguration) processorMetaData.getProperty(AMQP_CONFIG_PROPERTY);
-        } else {
-            config = new DefaultAMQPConsumerConfiguration(eventProcessor.getName());
-        }
+    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        //todo can be removed when this is modified to be an event processor
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+        AMQPConsumerConfiguration config = new DefaultAMQPConsumerConfiguration(eventProcessor.toString());
         return getListenerContainerLifecycleManager().registerEventProcessor(eventProcessor, config, messageConverter);
     }
 

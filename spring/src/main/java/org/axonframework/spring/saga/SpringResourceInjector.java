@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,7 @@
 
 package org.axonframework.spring.saga;
 
-import org.axonframework.saga.ResourceInjector;
-import org.axonframework.saga.Saga;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -41,7 +40,7 @@ public class SpringResourceInjector implements ResourceInjector, ApplicationCont
     private AutowireCapableBeanFactory autowireCapableBeanFactory;
 
     @Override
-    public void injectResources(Saga saga) {
+    public void injectResources(Object saga) {
         autowireCapableBeanFactory.autowireBeanProperties(saga, AutowireCapableBeanFactory.AUTOWIRE_NO, false);
     }
 

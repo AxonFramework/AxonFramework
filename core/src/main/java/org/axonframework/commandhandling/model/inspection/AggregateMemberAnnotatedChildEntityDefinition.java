@@ -27,6 +27,7 @@ import java.util.Optional;
 public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntityDefinition {
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
         Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
         if (attributes == null
@@ -37,7 +38,6 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
 
         EntityModel entityModel = declaringEntity.modelOf(field.getType());
         String parentRoutingKey = declaringEntity.routingKey();
-        //noinspection unchecked
         return Optional.of(new AnnotatedChildEntity<>(parentRoutingKey, field, entityModel,
                                                       (Boolean) attributes.get("forwardCommands"),
                                                       (Boolean) attributes.get("forwardEvents"),

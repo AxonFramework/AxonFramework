@@ -1,9 +1,9 @@
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.cache.WeakReferenceCache;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
+import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.springframework.beans.PropertyValue;

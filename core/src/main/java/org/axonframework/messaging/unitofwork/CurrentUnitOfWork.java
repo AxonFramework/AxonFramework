@@ -98,7 +98,10 @@ public abstract class CurrentUnitOfWork {
      *                               indicates a potentially wrong nesting of Units Of Work.
      */
     public static void clear(UnitOfWork<?> unitOfWork) {
-        if (isStarted() && CURRENT.get().peek() == unitOfWork) {
+        if (!isStarted()) {
+            throw new IllegalStateException("Could not clear this UnitOfWork. There is no UnitOfWork active.");
+        }
+        if (CURRENT.get().peek() == unitOfWork) {
             CURRENT.get().pop();
             if (CURRENT.get().isEmpty()) {
                 CURRENT.remove();

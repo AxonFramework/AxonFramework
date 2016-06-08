@@ -22,9 +22,9 @@ import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
 import org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration;
 import org.axonframework.eventhandling.amqp.spring.SpringAMQPEventBus;
-import org.axonframework.serializer.Serializer;
-import org.junit.*;
-import org.junit.runner.*;
+import org.axonframework.serialization.Serializer;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.PropertyValue;
@@ -44,7 +44,7 @@ import org.springframework.util.ErrorHandler;
 import java.util.concurrent.Executor;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze

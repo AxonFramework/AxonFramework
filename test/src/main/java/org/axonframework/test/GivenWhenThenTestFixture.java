@@ -17,22 +17,19 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.*;
-import org.axonframework.commandhandling.annotation.AggregateAnnotationCommandHandler;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventsourcing.*;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -48,10 +45,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ReflectionUtils.*;
 
 /**
@@ -69,13 +66,12 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private final SimpleCommandBus commandBus;
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> commandDispatchInterceptors = new ArrayList<>();
     private final List<MessageHandlerInterceptor<CommandMessage<?>>> commandHandlerInterceptors = new ArrayList<>();
-    private final EventBus eventBus;
     private final EventStore eventStore;
     private Repository<T> repository;
     private String aggregateIdentifier;
-    private Deque<DomainEventMessage> givenEvents;
-    private Deque<DomainEventMessage> storedEvents;
-    private List<EventMessage> publishedEvents;
+    private Deque<DomainEventMessage<?>> givenEvents;
+    private Deque<DomainEventMessage<?>> storedEvents;
+    private List<EventMessage<?>> publishedEvents;
     private long sequenceNumber = 0;
     private Aggregate<T> workingAggregate;
     private boolean reportIllegalStateChange = true;
@@ -83,16 +79,14 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
 
     /**
-     * Initializes a new given-when-then style test fixture for the given <code>aggregateType</code>.
+     * Initializes a new given-when-then style test fixture for the given {@code aggregateType}.
      *
      * @param aggregateType The aggregate to initialize the test fixture for
      */
     public GivenWhenThenTestFixture(Class<T> aggregateType) {
-        eventBus = new RecordingEventBus();
         commandBus = new SimpleCommandBus();
         eventStore = new RecordingEventStore();
         FixtureResourceParameterResolverFactory.clear();
-        FixtureResourceParameterResolverFactory.registerResource(eventBus);
         FixtureResourceParameterResolverFactory.registerResource(commandBus);
         FixtureResourceParameterResolverFactory.registerResource(eventStore);
         this.aggregateType = aggregateType;
@@ -101,33 +95,36 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
     @Override
     public FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> eventSourcingRepository) {
-        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository, eventBus);
+        this.repository = new IdentifierValidatingRepository<>(eventSourcingRepository);
         return this;
     }
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(new EventSourcingRepository<>(aggregateFactory, eventStore, eventBus));
+        return registerRepository(new EventSourcingRepository<>(aggregateFactory, eventStore));
     }
 
     @Override
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(
-                annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(aggregateType));
+        AnnotationCommandHandlerAdapter adapter = new AnnotationCommandHandlerAdapter(annotatedCommandHandler,
+                                                                                      ClasspathParameterResolverFactory
+                                                                                              .forClass(aggregateType));
         adapter.subscribe(commandBus);
         return this;
     }
 
     @Override
-    public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage<?>> commandHandler) {
+    public FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType,
+                                                          MessageHandler<CommandMessage<?>> commandHandler) {
         return registerCommandHandler(payloadType.getName(), commandHandler);
     }
 
     @Override
     @SuppressWarnings({"unchecked"})
-    public FixtureConfiguration<T> registerCommandHandler(String commandName, MessageHandler<CommandMessage<?>> commandHandler) {
+    public FixtureConfiguration<T> registerCommandHandler(String commandName,
+                                                          MessageHandler<CommandMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         commandBus.subscribe(commandName, commandHandler);
@@ -193,8 +190,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                     metaData = ((Message) event).getMetaData();
                 }
                 this.givenEvents.add(new GenericDomainEventMessage<>(
-                        aggregateIdentifier, sequenceNumber++, payload, metaData
-                ));
+                        aggregateType.getSimpleName(), aggregateIdentifier, sequenceNumber++, payload, metaData));
             }
         } catch (Exception e) {
             FixtureResourceParameterResolverFactory.clear();
@@ -253,7 +249,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
     private void ensureRepositoryConfiguration() {
         if (repository == null) {
-            registerRepository(new EventSourcingRepository<>(aggregateType, eventStore, eventBus));
+            registerRepository(new EventSourcingRepository<>(aggregateType, eventStore));
         }
     }
 
@@ -306,8 +302,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
         }
     }
 
-    private void assertValidWorkingAggregateState(Aggregate<T> eventSourcedAggregate,
-                                                  MatchAllFieldFilter fieldFilter) {
+    private void assertValidWorkingAggregateState(Aggregate<T> eventSourcedAggregate, MatchAllFieldFilter fieldFilter) {
         HashSet<ComparationEntry> comparedEntries = new HashSet<>();
         if (!workingAggregate.rootType().equals(eventSourcedAggregate.rootType())) {
             throw new AxonAssertionError(String.format("The aggregate loaded based on the generated events seems to "
@@ -333,8 +328,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                 && !hasEqualsMethod(workingValue.getClass())) {
             for (Field field : fieldsOf(workingValue.getClass())) {
                 if (fieldFilter.accept(field) &&
-                        !Modifier.isStatic(field.getModifiers())
-                        && !Modifier.isTransient(field.getModifiers())) {
+                        !Modifier.isStatic(field.getModifiers()) && !Modifier.isTransient(field.getModifiers())) {
                     ensureAccessible(field);
                     String newPropertyPath = propertyPath + "." + field.getName();
 
@@ -366,7 +360,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
     @Override
     public EventBus getEventBus() {
-        return eventBus;
+        return eventStore;
     }
 
     @Override
@@ -423,11 +417,9 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private static class IdentifierValidatingRepository<T> implements Repository<T> {
 
         private final Repository<T> delegate;
-        private final EventBus eventBus;
 
-        public IdentifierValidatingRepository(Repository<T> delegate, EventBus eventBus) {
+        public IdentifierValidatingRepository(Repository<T> delegate) {
             this.delegate = delegate;
-            this.eventBus = eventBus;
         }
 
         @Override
@@ -452,9 +444,9 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
         private void validateIdentifier(String aggregateIdentifier, Aggregate<T> aggregate) {
             if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.identifier())) {
                 throw new AssertionError(String.format(
-                        "The aggregate used in this fixture was initialized with an identifier different than "
-                                + "the one used to load it. Loaded [%s], but actual identifier is [%s].\n"
-                                + "Make sure the identifier passed in the Command matches that of the given Events.",
+                        "The aggregate used in this fixture was initialized with an identifier different than " +
+                                "the one used to load it. Loaded [%s], but actual identifier is [%s].\n" +
+                                "Make sure the identifier passed in the Command matches that of the given Events.",
                         aggregateIdentifier, aggregate.identifier()));
             }
         }
@@ -463,7 +455,26 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private class RecordingEventStore implements EventStore {
 
         @Override
-        public void appendEvents(List<DomainEventMessage<?>> events) {
+        public DomainEventStream readEvents(String identifier) {
+            if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
+                throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture " +
+                                                      "to get the aggregate identifier to use");
+            } else if (aggregateIdentifier == null) {
+                aggregateIdentifier = identifier;
+                injectAggregateIdentifier();
+            }
+            List<DomainEventMessage<?>> allEvents = new ArrayList<>(givenEvents);
+            allEvents.addAll(storedEvents);
+            if (allEvents.isEmpty()) {
+                throw new AggregateNotFoundException(identifier,
+                                                     "No 'given' events were configured for this aggregate, " +
+                                                             "nor have any events been stored.");
+            }
+            return DomainEventStream.of(allEvents.iterator());
+        }
+
+        @Override
+        public void publish(List<? extends EventMessage<?>> events) {
             if (CurrentUnitOfWork.isStarted()) {
                 CurrentUnitOfWork.get().onPrepareCommit(u -> doAppendEvents(events));
             } else {
@@ -471,8 +482,10 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
             }
         }
 
-        protected void doAppendEvents(List<DomainEventMessage<?>> events) {
-            for (DomainEventMessage event : events) {
+        protected void doAppendEvents(List<? extends EventMessage<?>> events) {
+            publishedEvents.addAll(events);
+            events.stream().filter(DomainEventMessage.class::isInstance)
+                    .map(e -> (DomainEventMessage<?>) e).forEach(event -> {
                 if (aggregateIdentifier == null) {
                     aggregateIdentifier = event.getAggregateIdentifier();
                     injectAggregateIdentifier();
@@ -482,39 +495,16 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
 
                 if (lastEvent != null) {
                     if (!lastEvent.getAggregateIdentifier().equals(event.getAggregateIdentifier())) {
-                        throw new EventStoreException("Writing events for an unexpected aggregate. This could "
-                                + "indicate that a wrong aggregate is being triggered.");
+                        throw new EventStoreException("Writing events for an unexpected aggregate. This could " +
+                                                              "indicate that a wrong aggregate is being triggered.");
                     } else if (lastEvent.getSequenceNumber() != event.getSequenceNumber() - 1) {
-                        throw new EventStoreException(format("Unexpected sequence number on stored event. "
-                                        + "Expected %s, but got %s.",
-                                lastEvent.getSequenceNumber() + 1, event.getSequenceNumber()));
+                        throw new EventStoreException(
+                                format("Unexpected sequence number on stored event. " + "Expected %s, but got %s.",
+                                       lastEvent.getSequenceNumber() + 1, event.getSequenceNumber()));
                     }
                 }
                 storedEvents.add(event);
-            }
-        }
-
-        @Override
-        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
-                                            long lastSequenceNumber) {
-            if (aggregateIdentifier != null && !aggregateIdentifier.equals(identifier)) {
-                throw new EventStoreException("You probably want to use aggregateIdentifier() on your fixture "
-                        + "to get the aggregate identifier to use");
-            } else if (aggregateIdentifier == null) {
-                aggregateIdentifier = identifier;
-                injectAggregateIdentifier();
-            }
-            List<DomainEventMessage> allEvents = new ArrayList<>(givenEvents);
-            allEvents.addAll(storedEvents);
-            if (allEvents.isEmpty()) {
-                throw new AggregateNotFoundException(identifier,
-                        "No 'given' events were configured for this aggregate, nor have any events been stored.");
-            }
-            return new SimpleDomainEventStream(
-                    allEvents.stream()
-                            .filter(m -> m.getSequenceNumber() >= firstSequenceNumber
-                                    && m.getSequenceNumber() <= lastSequenceNumber)
-                            .collect(toList()));
+            });
         }
 
         private void injectAggregateIdentifier() {
@@ -522,29 +512,28 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
             givenEvents.clear();
             for (DomainEventMessage oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
-                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getIdentifier(),
-                            oldEvent.getTimestamp(),
-                            aggregateIdentifier,
-                            oldEvent.getSequenceNumber(),
-                            oldEvent.getPayload(),
-                            oldEvent.getMetaData()));
+                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(), aggregateIdentifier,
+                                                                    oldEvent.getSequenceNumber(), oldEvent.getPayload(),
+                                                                    oldEvent.getMetaData(), oldEvent.getIdentifier(),
+                                                                    oldEvent.getTimestamp()));
                 } else {
                     givenEvents.add(oldEvent);
                 }
             }
         }
-    }
-
-    private class RecordingEventBus extends AbstractEventBus {
-
 
         @Override
-        protected void prepareCommit(List<EventMessage<?>> events) {
-            publishedEvents.addAll(events);
+        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public Registration subscribe(EventProcessor eventListener) {
+        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
+            return () -> true;
+        }
+
+        @Override
+        public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
             return () -> true;
         }
     }
@@ -552,10 +541,10 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     private class AggregateRegisteringInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
         @Override
-        public Object handle(UnitOfWork<CommandMessage<?>> unitOfWork, InterceptorChain<CommandMessage<?>> interceptorChain)
-                throws Exception {
+        public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                             InterceptorChain interceptorChain) throws Exception {
             unitOfWork.onPrepareCommit(u -> {
-                Set<Aggregate> aggregates = u.getResource("ManagedAggregates");
+                Set<Aggregate<T>> aggregates = u.getResource("ManagedAggregates");
                 if (aggregates != null && aggregates.size() == 1) {
                     workingAggregate = aggregates.iterator().next();
                 }

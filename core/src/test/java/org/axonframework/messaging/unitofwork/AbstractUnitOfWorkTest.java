@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.testutils.MockException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

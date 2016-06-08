@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -64,7 +64,7 @@ public class MessageStreamTest {
         XStreamSerializer serializer = new XStreamSerializer();
         EventMessageWriter out = new EventMessageWriter(new DataOutputStream(baos), serializer);
         GenericDomainEventMessage<String> message = new GenericDomainEventMessage<>(
-                "AggregateID", 1L, "This is the payload", Collections.<String, Object>singletonMap("metaKey",
+                "type", "AggregateID", 1L, "This is the payload", Collections.<String, Object>singletonMap("metaKey",
                                                                                                    "MetaValue"));
         out.writeEventMessage(message);
         EventMessageReader in = new EventMessageReader(

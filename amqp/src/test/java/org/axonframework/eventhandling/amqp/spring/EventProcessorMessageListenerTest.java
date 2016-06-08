@@ -21,8 +21,8 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.io.EventMessageWriter;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class EventProcessorMessageListenerTest {
         outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
         testSubject.onMessage(new Message(baos.toByteArray(), new MessageProperties()));
 
-        verify(eventProcessor).handle(argThat(new TypeSafeMatcher<EventMessage>() {
+        verify(eventProcessor).accept(argThat(new TypeSafeMatcher<EventMessage>() {
             @Override
             public boolean matchesSafely(EventMessage item) {
                 return "Event".equals(item.getPayload());
@@ -78,6 +78,6 @@ public class EventProcessorMessageListenerTest {
                                                          .getBytes(Charset.forName("UTF-8"));
         testSubject.onMessage(new Message(body, new MessageProperties()));
 
-        verify(eventProcessor, never()).handle(any(EventMessage.class));
+        verify(eventProcessor, never()).accept(any(EventMessage.class));
     }
 }

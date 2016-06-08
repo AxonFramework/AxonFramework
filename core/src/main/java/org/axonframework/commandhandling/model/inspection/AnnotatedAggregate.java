@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateInvocationException;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.common.annotation.MessageHandler;
@@ -34,6 +35,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * Implementation of the {@link Aggregate} interface that allows for an aggregate root to be a POJO with annotations on
+ * its Command and Event Handler methods.
+ * <p>
+ * This wrapper ensures that aggregate members can use the {@link AggregateLifecycle#apply(Object)} method in a static
+ * context, as long as access to the instance is done via the {@link #execute(Consumer)} or {@link #invoke(Function)}
+ * methods.
+ *
+ * @param <T> The type of the aggregate root object
+ * @see AggregateLifecycle#apply(Object)
+ * @see AggregateLifecycle#markDeleted()
+ */
 public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggregate<T>, ApplyMore {
 
     private final AggregateModel<T> inspector;
@@ -43,25 +56,46 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     private boolean isDeleted = false;
     private final EventBus eventBus;
 
-    public AnnotatedAggregate(T aggregateRoot, AggregateModel<T> inspector, EventBus eventBus) {
+    /**
+     * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given
+     * {@code aggregateModel} that will publish events to the given {@code eventBus}.
+     *
+     * @param aggregateRoot The aggregate root instance
+     * @param model         The model describing the aggregate structure
+     * @param eventBus      The Event Bus to publish generated events on
+     */
+    public AnnotatedAggregate(T aggregateRoot, AggregateModel<T> model, EventBus eventBus) {
         this.aggregateRoot = aggregateRoot;
+        this.inspector = model;
+        this.eventBus = eventBus;
+    }
+
+    /**
+     * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given
+     * {@code aggregateModel} that will publish events to the given {@code eventBus}.
+     *
+     * @param aggregateRoot The aggregate root instance
+     * @param model         The model describing the aggregate structure
+     * @param eventBus      The Event Bus to publish generated events on
+     */
+    protected AnnotatedAggregate(AggregateModel<T> inspector, EventBus eventBus) {
         this.inspector = inspector;
         this.eventBus = eventBus;
     }
 
-    public AnnotatedAggregate(AggregateModel<T> inspector, EventBus eventBus) {
-        this.inspector = inspector;
-        this.eventBus = eventBus;
-    }
-
-    public void registerRoot(Callable<T> aggregateFactory) throws Exception {
-        this.aggregateRoot = executeWithResultOrException(aggregateFactory::call);
+    protected void registerRoot(Callable<T> aggregateFactory) throws Exception {
+        this.aggregateRoot = executeWithResult(aggregateFactory);
         execute(() -> {
             while (!delayedTasks.isEmpty()) {
                 delayedTasks.poll().run();
             }
         });
 
+    }
+
+    @Override
+    public String type() {
+        return inspector.type();
     }
 
     @Override
@@ -76,7 +110,13 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     @Override
     public <R> R invoke(Function<T, R> invocation) {
-        return executeWithResult(() -> invocation.apply(aggregateRoot));
+        try {
+            return executeWithResult(() -> invocation.apply(aggregateRoot));
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AggregateInvocationException("Exception occurred while invoking an aggregate", e);
+        }
     }
 
     @Override
@@ -116,7 +156,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @SuppressWarnings("unchecked")
     @Override
     public Object handle(CommandMessage<?> msg) throws Exception {
-        return executeWithResultOrException(() -> {
+        return executeWithResult(() -> {
             MessageHandler<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
             Object result = handler.handle(msg, aggregateRoot);
             if (aggregateRoot == null) {

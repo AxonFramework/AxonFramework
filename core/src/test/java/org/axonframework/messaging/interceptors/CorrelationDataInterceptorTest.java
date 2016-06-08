@@ -30,7 +30,7 @@ public class CorrelationDataInterceptorTest {
 
     private CorrelationDataInterceptor<Message<?>> subject;
     private UnitOfWork<Message<?>> mockUnitOfWork;
-    private InterceptorChain<Message<?>> mockInterceptorChain;
+    private InterceptorChain mockInterceptorChain;
 
     @Before
     @SuppressWarnings("unchecked")

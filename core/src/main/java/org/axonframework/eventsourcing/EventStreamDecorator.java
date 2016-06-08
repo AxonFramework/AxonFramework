@@ -17,8 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Interface describing a class that can decorates DomainEventStreams when events for aggregates are read or appended.
@@ -31,13 +33,12 @@ public interface EventStreamDecorator {
     /**
      * Called when an event stream is read from the event store.
      * <p/>
-     * Note that a stream is read-once, similar to InputStream. If you read from the stream, make sure to store the
-     * read
-     * events and pass them to the chain. Usually, it is best to decorate the given <code>eventStream</code> and pass
-     * that to the chain.
+     * It is encouraged that decorators do not consume the input stream but only apply intermediate operations. In case
+     * a decorator needs to consume the input stream, that decorator is responsible for calling {@link Stream#close()}
+     * on the input stream when the output stream is closed.
      *
      * @param aggregateIdentifier The identifier of the aggregate events are loaded for
-     * @param eventStream         The eventStream containing the events to append to the event store
+     * @param eventStream         The eventStream containing the events read from the event store
      * @return the decorated event stream
      */
     DomainEventStream decorateForRead(String aggregateIdentifier, DomainEventStream eventStream);
@@ -45,10 +46,9 @@ public interface EventStreamDecorator {
     /**
      * Called when an event stream is appended to the event store.
      *
-     * @param aggregate     The aggregate for which the events are being stored
-     * @param events        The events to append to the event store
+     * @param aggregate The aggregate for which the events are being stored
+     * @param events    The events to append to the event store
      * @return the decorated event stream
      */
-    List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
-                                                  List<DomainEventMessage<?>> events);
+    List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate, List<DomainEventMessage<?>> events);
 }

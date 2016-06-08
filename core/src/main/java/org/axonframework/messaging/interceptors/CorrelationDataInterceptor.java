@@ -1,9 +1,12 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,7 +41,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     private final Collection<CorrelationDataProvider> correlationDataProviders = new CopyOnWriteArraySet<>();
 
     @Override
-    public Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception {
+    public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
         correlationDataProviders.forEach(unitOfWork::registerCorrelationDataProvider);
         return interceptorChain.proceed();
     }

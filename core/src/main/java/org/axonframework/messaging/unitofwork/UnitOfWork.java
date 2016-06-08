@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import java.util.function.UnaryOperator;
 /**
  * This class represents a Unit of Work that monitors the processing of a {@link Message}.
  * <p/>
- * Before processing begins a Unit of Work is bound to the active thread by registering it with the
- * {@link CurrentUnitOfWork}. After processing, the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
+ * Before processing begins a Unit of Work is bound to the active thread by registering it with the {@link
+ * CurrentUnitOfWork}. After processing, the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
  * <p/>
  * Handlers can be notified about the state of the processing of the Message by registering with this Unit of Work.
  *
@@ -49,21 +49,21 @@ public interface UnitOfWork<T extends Message<?>> {
      * Commits the Unit of Work. This should be invoked after the Unit of Work Message has been processed. Handlers
      * registered to the Unit of Work will be notified.
      * <p/>
-     * After the commit (successful or not), any registered clean-up handlers ({@link #onCleanup(Consumer)}}) will
-     * be invoked and the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
+     * After the commit (successful or not), any registered clean-up handlers ({@link #onCleanup(Consumer)}}) will be
+     * invoked and the Unit of Work is unregistered from the {@link CurrentUnitOfWork}.
      * <p/>
-     * If the Unit of Work fails to commit, e.g. because an exception is raised by one of its handlers, the Unit of
-     * Work is rolled back.
+     * If the Unit of Work fails to commit, e.g. because an exception is raised by one of its handlers, the Unit of Work
+     * is rolled back.
      *
-     * @throws IllegalStateException if the UnitOfWork wasn't started or if the Unit of Work is not the 'current'
-     * Unit of Work returned by {@link CurrentUnitOfWork#get()}.
+     * @throws IllegalStateException if the UnitOfWork wasn't started or if the Unit of Work is not the 'current' Unit
+     *                               of Work returned by {@link CurrentUnitOfWork#get()}.
      */
     void commit();
 
     /**
-     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer)
-     * and clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered
-     * from the {@link CurrentUnitOfWork}.
+     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer) and
+     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered from the
+     * {@link CurrentUnitOfWork}.
      * <p/>
      * If the rollback is a result of an exception, consider using {@link #rollback(Throwable)} instead.
      *
@@ -74,9 +74,9 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
-     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer)
-     * and clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered
-     * from the {@link CurrentUnitOfWork}.
+     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer) and
+     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered from the
+     * {@link CurrentUnitOfWork}.
      *
      * @param cause The cause of the rollback. May be <code>null</code>.
      * @throws IllegalStateException if the Unit of Work is not in a compatible phase.
@@ -84,8 +84,8 @@ public interface UnitOfWork<T extends Message<?>> {
     void rollback(Throwable cause);
 
     /**
-     * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called,
-     * and if the UnitOfWork has not been committed or rolled back.
+     * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called, and
+     * if the UnitOfWork has not been committed or rolled back.
      *
      * @return <code>true</code> if this UnitOfWork is started, <code>false</code> otherwise.
      */
@@ -101,50 +101,50 @@ public interface UnitOfWork<T extends Message<?>> {
     Phase phase();
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
-     * the Unit of Work changes to {@link Phase#PREPARE_COMMIT}.
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Unit of Work changes to {@link Phase#PREPARE_COMMIT}.
      *
      * @param handler the handler to register with the Unit of Work
      */
     void onPrepareCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
-     * the Unit of Work changes to {@link Phase#COMMIT}.
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Unit of Work changes to {@link Phase#COMMIT}.
      *
      * @param handler the handler to register with the Unit of Work
      */
     void onCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
-     * the Unit of Work changes to {@link Phase#AFTER_COMMIT}.
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Unit of Work changes to {@link Phase#AFTER_COMMIT}.
      *
      * @param handler the handler to register with the Unit of Work
      */
     void afterCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
-     * the Unit of Work changes to {@link Phase#ROLLBACK}. On rollback, the cause for the rollback can obtained from
-     * the supplied
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Unit of Work changes to {@link Phase#ROLLBACK}. On rollback, the cause for the rollback can obtained from the
+     * supplied
      *
      * @param handler the handler to register with the Unit of Work
      */
     void onRollback(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of
-     * the Unit of Work changes to {@link Phase#CLEANUP}.
+     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Unit of Work changes to {@link Phase#CLEANUP}.
      *
      * @param handler the handler to register with the Unit of Work
      */
     void onCleanup(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Returns an optional for the parent of this Unit of Work. The optional holds the Unit of Work that was active
-     * when this Unit of Work was started. In case no other Unit of Work was active when this Unit of Work was started
-     * the optional is empty, indicating that this is the Unit of Work root.
+     * Returns an optional for the parent of this Unit of Work. The optional holds the Unit of Work that was active when
+     * this Unit of Work was started. In case no other Unit of Work was active when this Unit of Work was started the
+     * optional is empty, indicating that this is the Unit of Work root.
      *
      * @return an optional parent Unit of Work
      */
@@ -166,7 +166,8 @@ public interface UnitOfWork<T extends Message<?>> {
      * @return the root of this Unit of Work
      */
     default UnitOfWork<?> root() {
-        return parent().map(UnitOfWork::root).orElse(this);
+        //noinspection unchecked // cast is used to remove inspection error in IDE
+        return parent().map(UnitOfWork::root).orElse((UnitOfWork) this);
     }
 
     /**
@@ -188,8 +189,8 @@ public interface UnitOfWork<T extends Message<?>> {
     /**
      * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.
      * <p/>
-     * By default this correlation data will be copied to other {@link Message messages} created in the context of
-     * this Unit of Work, so long as these messages extend from {@link org.axonframework.messaging.GenericMessage}.
+     * By default this correlation data will be copied to other {@link Message messages} created in the context of this
+     * Unit of Work, so long as these messages extend from {@link org.axonframework.messaging.GenericMessage}.
      *
      * @return The correlation data contained in the message processed by this Unit of Work
      */
@@ -197,8 +198,8 @@ public interface UnitOfWork<T extends Message<?>> {
 
     /**
      * Register given <code>correlationDataProvider</code> with this Unit of Work. Correlation data providers are used
-     * to provide meta data based on this Unit of Work's {@link #getMessage() Message} when
-     * {@link #getCorrelationData()} is invoked.
+     * to provide meta data based on this Unit of Work's {@link #getMessage() Message} when {@link
+     * #getCorrelationData()} is invoked.
      *
      * @param correlationDataProvider the Correlation Data Provider to register
      */
@@ -212,8 +213,8 @@ public interface UnitOfWork<T extends Message<?>> {
     Map<String, Object> resources();
 
     /**
-     * Returns the resource attached under given <code>name</code>, or <code>null</code> if no such resource
-     * is available.
+     * Returns the resource attached under given <code>name</code>, or <code>null</code> if no such resource is
+     * available.
      *
      * @param name The name under which the resource was attached
      * @param <R>  The type of resource
@@ -225,11 +226,11 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
-     * Returns the resource attached under given <code>name</code>. If there is no resource mapped to the given key
-     * yet the <code>mappingFunction</code> is invoked to provide the mapping.
+     * Returns the resource attached under given <code>name</code>. If there is no resource mapped to the given key yet
+     * the <code>mappingFunction</code> is invoked to provide the mapping.
      *
-     * @param key  The name under which the resource was attached
-     * @param <R>  The type of resource
+     * @param key The name under which the resource was attached
+     * @param <R> The type of resource
      * @return The resource mapped to the given <code>key</code>, or the resource returned by the
      * <code>mappingFunction</code> if no resource was found.
      */
@@ -242,8 +243,8 @@ public interface UnitOfWork<T extends Message<?>> {
      * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
-     * If the task executes successfully the Unit of Work is committed. If any exception is raised
-     * while executing the task, the Unit of Work is rolled back and the exception is thrown.
+     * If the task executes successfully the Unit of Work is committed. If any exception is raised while executing the
+     * task, the Unit of Work is rolled back and the exception is thrown.
      *
      * @param task the task to execute
      */
@@ -255,13 +256,13 @@ public interface UnitOfWork<T extends Message<?>> {
      * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
-     * If the task executes successfully the Unit of Work is committed. If an exception is raised
-     * while executing the task, the <code>rollbackConfiguration</code> determines if the Unit of Work should be
-     * rolled back or committed, and the exception is thrown.
+     * If the task executes successfully the Unit of Work is committed. If an exception is raised while executing the
+     * task, the <code>rollbackConfiguration</code> determines if the Unit of Work should be rolled back or committed,
+     * and the exception is thrown.
      *
      * @param task                  the task to execute
-     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when
-     *                              task execution fails
+     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when task
+     *                              execution fails
      */
     default void execute(Runnable task, RollbackConfiguration rollbackConfiguration) {
         try {
@@ -281,8 +282,8 @@ public interface UnitOfWork<T extends Message<?>> {
      * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If any
      * exception is raised while executing the task, the Unit of Work is rolled back and the exception is thrown.
      *
-     * @param <R>                   the type of result that is returned after successful execution
-     * @param task                  the task to execute
+     * @param <R>  the type of result that is returned after successful execution
+     * @param task the task to execute
      */
     default <R> R executeWithResult(Callable<R> task) throws Exception {
         return executeWithResult(task, RollbackConfigurationType.ANY_THROWABLE);
@@ -293,24 +294,35 @@ public interface UnitOfWork<T extends Message<?>> {
      * it will be started.
      * <p/>
      * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If
-     * execution fails, the <code>rollbackConfiguration</code> determines if the Unit of Work should be rolled back
-     * or committed.
+     * execution fails, the <code>rollbackConfiguration</code> determines if the Unit of Work should be rolled back or
+     * committed.
      *
      * @param <R>                   the type of result that is returned after successful execution
      * @param task                  the task to execute
-     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when
-     *                              task execution fails
+     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when task
+     *                              execution fails
      */
     <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception;
 
     /**
      * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task
      * to execute this method returns <code>null</code>.
+     * <p>
+     * Note that the value of the returned ExecutionResult's {@link ExecutionResult#isExceptionResult()} does not
+     * determine whether or not the UnitOfWork has been rolled back. To check whether or not the UnitOfWork was rolled
+     * back check {@link #isRolledBack}.
      *
      * @return The result of the task executed by this Unit of Work, or <code>null</code> if the Unit of Work has not
      * been given a task to execute.
      */
     ExecutionResult getExecutionResult();
+
+    /**
+     * Check if the Unit of Work has been rolled back.
+     *
+     * @return <code>true</code> if the unit of work was rolled back, <code>false</code> otherwise.
+     */
+    boolean isRolledBack();
 
     /**
      * Check if the Unit of Work is the 'currently' active Unit of Work returned by {@link CurrentUnitOfWork#get()}.
@@ -327,8 +339,8 @@ public interface UnitOfWork<T extends Message<?>> {
     enum Phase {
 
         /**
-         * Indicates that the unit of work has been created but has not been registered with the
-         * {@link CurrentUnitOfWork} yet.
+         * Indicates that the unit of work has been created but has not been registered with the {@link
+         * CurrentUnitOfWork} yet.
          */
         NOT_STARTED(false, false),
 
@@ -344,8 +356,8 @@ public interface UnitOfWork<T extends Message<?>> {
          * processed.
          * <p/>
          * All handlers registered to be notified before commit {@link #onPrepareCommit} will be invoked. If no
-         * exception is raised by any of the handlers the Unit of Work will go into the {@link #COMMIT} phase,
-         * otherwise it will be rolled back.
+         * exception is raised by any of the handlers the Unit of Work will go into the {@link #COMMIT} phase, otherwise
+         * it will be rolled back.
          */
         PREPARE_COMMIT(true, false),
 
@@ -355,20 +367,20 @@ public interface UnitOfWork<T extends Message<?>> {
         COMMIT(true, false),
 
         /**
-         * Indicates that the Unit of Work is being rolled back. Generally this is because an exception was raised
-         * while processing the {@link #getMessage() message} or while the Unit of Work was being committed.
+         * Indicates that the Unit of Work is being rolled back. Generally this is because an exception was raised while
+         * processing the {@link #getMessage() message} or while the Unit of Work was being committed.
          */
         ROLLBACK(true, true),
 
         /**
-         * Indicates that the Unit of Work is after a successful commit. In this phase the Unit of Work cannot be
-         * rolled back anymore.
+         * Indicates that the Unit of Work is after a successful commit. In this phase the Unit of Work cannot be rolled
+         * back anymore.
          */
         AFTER_COMMIT(true, true),
 
         /**
-         * Indicates that the Unit of Work is after a successful commit or after a rollback. Any resources tied to
-         * this Unit of Work should be released.
+         * Indicates that the Unit of Work is after a successful commit or after a rollback. Any resources tied to this
+         * Unit of Work should be released.
          */
         CLEANUP(false, true),
 
@@ -386,8 +398,8 @@ public interface UnitOfWork<T extends Message<?>> {
         }
 
         /**
-         * Check if a Unit of Work in this phase has been started, i.e. is registered with the
-         * {@link CurrentUnitOfWork}.
+         * Check if a Unit of Work in this phase has been started, i.e. is registered with the {@link
+         * CurrentUnitOfWork}.
          *
          * @return <code>true</code> if the Unit of Work is started when in this phase, <code>false</code> otherwise
          */
@@ -400,8 +412,8 @@ public interface UnitOfWork<T extends Message<?>> {
          * registered handler is invoked first) or in the reverse order of registration (last registered handler is
          * invoked first).
          *
-         * @return <code>true</code> if the order of invoking handlers in this phase should be in the reverse order
-         * of registration, <code>false</code> otherwise.
+         * @return <code>true</code> if the order of invoking handlers in this phase should be in the reverse order of
+         * registration, <code>false</code> otherwise.
          */
         public boolean isReverseCallbackOrder() {
             return reverseCallbackOrder;

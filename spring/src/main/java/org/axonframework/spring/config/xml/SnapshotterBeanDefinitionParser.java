@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.spring.config.xml;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotterFactoryBean;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -27,9 +27,9 @@ import org.w3c.dom.Element;
 import static org.axonframework.spring.config.AutowiredBean.createAutowiredBean;
 
 /**
- * The SnapshotterBeanDefinitionParser is responsible for parsing the <code>snapshotter</code> element form the Axon
+ * The SnapshotterBeanDefinitionParser is responsible for parsing the {@code snapshotter} element form the Axon
  * namespace. It creates a {@link org.springframework.beans.factory.config.BeanDefinition} based either on a {@link
- * SpringAggregateSnapshotter}.
+ * SpringAggregateSnapshotterFactoryBean}.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -45,7 +45,7 @@ public class SnapshotterBeanDefinitionParser extends AbstractSingleBeanDefinitio
      */
     @Override
     protected Class<?> getBeanClass(Element element) {
-        return SpringAggregateSnapshotter.class;
+        return SpringAggregateSnapshotterFactoryBean.class;
     }
 
     /**

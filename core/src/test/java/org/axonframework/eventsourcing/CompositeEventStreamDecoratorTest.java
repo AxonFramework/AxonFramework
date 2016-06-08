@@ -17,8 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
-import org.axonframework.commandhandling.model.inspection.ModelInspector;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -28,12 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class CompositeEventStreamDecoratorTest {
 
@@ -58,7 +52,7 @@ public class CompositeEventStreamDecoratorTest {
 
     @Test
     public void testDecorateForRead() throws Exception {
-        final SimpleDomainEventStream eventStream = new SimpleDomainEventStream();
+        DomainEventStream eventStream = mock(DomainEventStream.class);
         testSubject.decorateForRead("id", eventStream);
 
         InOrder inOrder = inOrder(decorator1, decorator2);

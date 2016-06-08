@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,15 @@ import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**
@@ -44,11 +48,52 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private final Map<Class, AggregateModel> aggregateModels = new ConcurrentHashMap<>();
     private final ParameterResolverFactory parameterResolverFactory;
 
-    public AggregateSnapshotter() {
-        this(ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
+    /**
+     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
+     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
+     * which represent the snapshots.
+     *
+     * @param eventStorageEngine         The Event Store to store snapshots in
+     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
+     * @see ClasspathParameterResolverFactory
+     */
+    public AggregateSnapshotter(EventStorageEngine eventStorageEngine, List<AggregateFactory<?>> aggregateFactories) {
+        this(eventStorageEngine, aggregateFactories, ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
     }
 
-    public AggregateSnapshotter(ParameterResolverFactory parameterResolverFactory) {
+    /**
+     * Initializes a snapshotter using the given {@code parameterResolverFactory}. The given {@code aggregateFactories}
+     * are used to instantiate the relevant Aggregate Root instances, which represent the snapshots. Snapshots are
+     * stores in the given {@code eventStore}.
+     *
+     * @param eventStorageEngine               The Event Store to store snapshots in
+     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
+     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
+     *                                 handlers with
+     */
+    public AggregateSnapshotter(EventStorageEngine eventStorageEngine, List<AggregateFactory<?>> aggregateFactories,
+                                ParameterResolverFactory parameterResolverFactory) {
+        super(eventStorageEngine);
+        aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
+        this.parameterResolverFactory = parameterResolverFactory;
+    }
+
+    /**
+     * Initializes a snapshotter that stores snapshots using the given {@code executor}.
+     *
+     * @param eventStore               The Event Store to store snapshots in
+     * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
+     * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
+     *                                 handlers with
+     * @param executor                 The executor to process the actual snapshot creation with
+     * @param transactionManager       The transaction manager to handle the transactions around the snapshot creation
+     *                                 process with
+     */
+    public AggregateSnapshotter(EventStorageEngine eventStore, List<AggregateFactory<?>> aggregateFactories,
+                                ParameterResolverFactory parameterResolverFactory, Executor executor,
+                                TransactionManager transactionManager) {
+        super(eventStore, executor, transactionManager);
+        aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
     }
 
@@ -57,36 +102,20 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     protected DomainEventMessage createSnapshot(Class<?> aggregateType,
                                                 String aggregateIdentifier,
                                                 DomainEventStream eventStream) {
-
         DomainEventMessage firstEvent = eventStream.peek();
         AggregateFactory<?> aggregateFactory = aggregateFactories.get(aggregateType);
         aggregateModels.computeIfAbsent(aggregateType, k -> ModelInspector.inspectAggregate(k, parameterResolverFactory));
-        Object aggregateRoot = aggregateFactory.createAggregate(aggregateIdentifier, firstEvent);
+        Object aggregateRoot = aggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent);
         SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot, aggregateModels.get(aggregateType));
         aggregate.initializeState(eventStream);
-        return new GenericDomainEventMessage<>(
-                aggregate.identifier(), aggregate.version(), aggregate.getAggregateRoot());
+        return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifier(), aggregate.version(),
+                                               aggregate.getAggregateRoot());
 
-    }
-
-    /**
-     * Sets the aggregate factory to use. The aggregate factory is responsible for creating the aggregates stores
-     * inside the snapshot events.
-     *
-     * @param aggregateFactories The list of aggregate factories creating the aggregates to store. May not be
-     *                           <code>null</code> or contain any <code>null</code> values.
-     * @throws NullPointerException if <code>aggregateFactories</code> is <code>null</code> or if contains any
-     *                              <code>null</code> values.
-     */
-    public void setAggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
-        for (AggregateFactory<?> factory : aggregateFactories) {
-            this.aggregateFactories.put(factory.getAggregateType(), factory);
-        }
     }
 
     private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {
-        public SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel) {
-            super(aggregateRoot, aggregateModel, null, null);
+        private SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel) {
+            super(aggregateRoot, aggregateModel, null);
         }
 
         @Override

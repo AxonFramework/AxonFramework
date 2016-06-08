@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,8 @@ public class AxonNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("disruptor-command-bus", new DisruptorCommandBusBeanDefinitionParser());
         registerBeanDefinitionParser("disruptor-repository", new DisruptorRepositoryBeanDefinitionParser());
         registerBeanDefinitionParser("event-bus", new EventBusBeanDefinitionParser());
-        registerBeanDefinitionParser("jpa-event-store", new JpaEventStoreBeanDefinitionParser());
-        registerBeanDefinitionParser("jdbc-event-store", new JdbcEventStoreBeanDefinitionParser());
         registerBeanDefinitionParser("jpa-repository", new JpaRepositoryBeanDefinitionParser());
-        registerBeanDefinitionParser("filesystem-event-store", new FileSystemEventStoreBeanDefinitionParser());
         registerBeanDefinitionParser("event-sourcing-repository", new RepositoryBeanDefinitionParser());
-        registerBeanDefinitionParser("saga-manager", new SagaManagerBeanDefinitionParser());
         registerBeanDefinitionParser("jpa-saga-repository", new JpaSagaRepositoryBeanDefinitionParser());
         registerBeanDefinitionParser("jdbc-saga-repository", new JdbcSagaRepositoryBeanDefinitionParser());
         registerBeanDefinitionParser("aggregate-command-handler", new AggregateCommandHandlerBeanDefinitionParser());

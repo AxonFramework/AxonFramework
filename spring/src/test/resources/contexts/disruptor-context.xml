@@ -99,10 +99,10 @@
     </bean>
 
     <bean id="eventStore" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventstore.EventStore"/>
+        <property name="mockType" value="org.axonframework.eventsourcing.eventstore.EventStore"/>
     </bean>
 
-    <bean id="mockCache" class="org.axonframework.cache.JCacheAdapter">
+    <bean id="mockCache" class="org.axonframework.common.caching.JCacheAdapter">
         <constructor-arg>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
                 <property name="mockType" value="javax.cache.Cache"/>
@@ -111,7 +111,7 @@
     </bean>
 
     <bean id="mockSerializer" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.serializer.Serializer"/>
+        <property name="mockType" value="org.axonframework.serialization.Serializer"/>
     </bean>
 
 </beans>

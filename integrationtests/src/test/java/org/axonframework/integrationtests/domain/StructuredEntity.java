@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.domain;
 
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 
 /**
  * @author Allard Buijze

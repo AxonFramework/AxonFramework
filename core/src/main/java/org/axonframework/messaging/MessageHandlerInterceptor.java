@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,5 +46,5 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      *
      * @throws Exception any exception that occurs while handling the message
      */
-    Object handle(UnitOfWork<T> unitOfWork, InterceptorChain<T> interceptorChain) throws Exception;
+    Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception;
 }

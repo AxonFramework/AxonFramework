@@ -1,6 +1,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventListener;
@@ -43,7 +44,7 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
     public void testHandlersRegisteredToEventBus() throws Exception {
         assertNotNull(eventBus);
         verify(eventBus).subscribe(eventProcessor);
-        verify(eventBus2, never()).subscribe(any());
+        verify(eventBus2, never()).subscribe(eventProcessor);
         verify(eventProcessor).subscribe(eventListener);
         verify(commandBus).subscribe(eq(String.class.getName()), eq(annotationCommandHandler));
     }
@@ -93,7 +94,7 @@ public class MessageHandlerSubscriberDefinitionRegistrarTest {
 
     public static class AnnotatedCommandHandler {
 
-        @org.axonframework.commandhandling.annotation.CommandHandler
+        @CommandHandler
         public void handle(String command) {
 
         }

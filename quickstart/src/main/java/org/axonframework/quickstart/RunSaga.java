@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,19 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.SagaRepository;
+import org.axonframework.eventhandling.saga.SimpleResourceInjector;
+import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 import org.axonframework.quickstart.saga.ToDoSaga;
-import org.axonframework.saga.GenericSagaFactory;
-import org.axonframework.saga.SimpleResourceInjector;
-import org.axonframework.saga.annotation.AnnotatedSagaManager;
-import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -73,19 +74,18 @@ public class RunSaga {
         final ScheduledExecutorService executorService = newSingleThreadScheduledExecutor();
         EventScheduler eventScheduler = new SimpleEventScheduler(executorService, eventBus);
 
-        // we need to store a Saga somewhere. Let's do that in memory for now
-        InMemorySagaRepository sagaRepository = new InMemorySagaRepository();
-
-        // we want to inject resources in our Saga, so we need to tweak the GenericSagaFactory
-        GenericSagaFactory sagaFactory = new GenericSagaFactory();
         // this will allow the eventScheduler and commandGateway to be injected in our Saga
-        sagaFactory.setResourceInjector(new SimpleResourceInjector(eventScheduler, commandGateway));
+        SimpleResourceInjector resourceInjector = new SimpleResourceInjector(eventScheduler, commandGateway);
+
+        // we need to store a Saga somewhere. Let's do that in memory for now
+        SagaRepository<ToDoSaga> repository = new AnnotatedSagaRepository<>(ToDoSaga.class, new InMemorySagaStore(),
+                                                                            resourceInjector);
 
         // Sagas instances are managed and tracked by a SagaManager.
-        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(sagaRepository, sagaFactory, ToDoSaga.class);
+        AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(ToDoSaga.class, repository, ToDoSaga::new, RollbackConfigurationType.UNCHECKED_EXCEPTIONS);
 
         // and we need to subscribe the Saga Manager to the Event Bus
-        eventBus.subscribe(new SimpleEventProcessor("saga", sagaManager));
+        eventBus.subscribe(sagaManager);
 
         // That's the infrastructure we need...
         // Let's pretend a few things are happening

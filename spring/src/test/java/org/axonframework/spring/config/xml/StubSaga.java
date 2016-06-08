@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package org.axonframework.spring.config.xml;
 
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.StartSaga;
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.StartSaga;
 
 /**
  * @author Allard Buijze
  */
-public class StubSaga extends AbstractAnnotatedSaga {
+public class StubSaga {
     private static final long serialVersionUID = 2637060466154370943L;
 
     @StartSaga(forceNew = true)

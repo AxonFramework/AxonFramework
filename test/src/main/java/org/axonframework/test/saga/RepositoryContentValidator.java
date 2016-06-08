@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 
 package org.axonframework.test.saga;
 
-import org.axonframework.saga.AssociationValue;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
+import org.axonframework.eventhandling.saga.AssociationValue;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.test.AxonAssertionError;
 
 import java.util.Set;
@@ -31,21 +30,20 @@ import static java.lang.String.format;
  * @author Allard Buijze
  * @since 1.1
  */
-public class RepositoryContentValidator {
+public class RepositoryContentValidator<T> {
 
-    private final InMemorySagaRepository sagaRepository;
-    private final Class<? extends AbstractAnnotatedSaga> sagaType;
+    private final Class<T> sagaType;
+    private final InMemorySagaStore sagaStore;
 
     /**
      * Initialize the validator to validate contents of the given <code>sagaRepository</code>, which contains Sagas of
      * the given <code>sagaType</code>.
      *
-     * @param sagaRepository The repository to monitor
-     * @param sagaType       The type of saga to validate
+     * @param sagaStore The SagaStore to monitor
      */
-    RepositoryContentValidator(InMemorySagaRepository sagaRepository, Class<? extends AbstractAnnotatedSaga> sagaType) {
-        this.sagaRepository = sagaRepository;
+    RepositoryContentValidator(Class<T> sagaType, InMemorySagaStore sagaStore) {
         this.sagaType = sagaType;
+        this.sagaStore = sagaStore;
     }
 
     /**
@@ -57,7 +55,7 @@ public class RepositoryContentValidator {
      */
     public void assertAssociationPresent(String associationKey, String associationValue) {
         Set<String> associatedSagas =
-                sagaRepository.find(sagaType, new AssociationValue(associationKey, associationValue));
+                sagaStore.findSagas(sagaType, new AssociationValue(associationKey, associationValue));
         if (associatedSagas.isEmpty()) {
             throw new AxonAssertionError(format(
                     "Expected a saga to be associated with key:<%s> value:<%s>, but found <none>",
@@ -75,7 +73,7 @@ public class RepositoryContentValidator {
      */
     public void assertNoAssociationPresent(String associationKey, String associationValue) {
         Set<String> associatedSagas =
-                sagaRepository.find(sagaType, new AssociationValue(associationKey, associationValue));
+                sagaStore.findSagas(sagaType, new AssociationValue(associationKey, associationValue));
         if (!associatedSagas.isEmpty()) {
             throw new AxonAssertionError(format(
                     "Expected a saga to be associated with key:<%s> value:<%s>, but found <%s>",
@@ -91,10 +89,10 @@ public class RepositoryContentValidator {
      * @param expected The number of expected sagas.
      */
     public void assertActiveSagas(int expected) {
-        if (expected != sagaRepository.size()) {
+        if (expected != sagaStore.size()) {
             throw new AxonAssertionError(format("Wrong number of active sagas. Expected <%s>, got <%s>.",
                                                 expected,
-                                                sagaRepository.size()));
+                                                sagaStore.size()));
         }
     }
 }

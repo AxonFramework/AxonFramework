@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config.annotation;
 
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.springframework.transaction.annotation.Transactional;
 
 /**

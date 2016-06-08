@@ -46,7 +46,7 @@
 
     <bean id="eventStore" class="org.axonframework.spring.config.xml.DisruptorContextConfigurationTest$InMemoryEventStore"/>
 
-    <bean id="commandTargetResolver" class="org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver"/>
+    <bean id="commandTargetResolver" class="org.axonframework.commandhandling.AnnotationCommandTargetResolver"/>
 
     <axon:aggregate-command-handler
             aggregate-type="org.axonframework.spring.config.xml.DisruptorContextConfigurationTest.MyAggregate"
@@ -54,5 +54,5 @@
 
 
     <bean id="xStreamSerializer"
-          class="org.axonframework.serializer.xml.XStreamSerializer"/>
+          class="org.axonframework.serialization.xml.XStreamSerializer"/>
 </beans>

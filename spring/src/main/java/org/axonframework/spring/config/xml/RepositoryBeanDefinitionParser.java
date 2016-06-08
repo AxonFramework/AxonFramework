@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -204,7 +203,6 @@ public class RepositoryBeanDefinitionParser extends AbstractBeanDefinitionParser
         } else if (hasText(aggregateType)) {
             aggregateFactory = genericBeanDefinition(GenericAggregateFactory.class)
                     .addConstructorArgValue(aggregateType)
-                    .addConstructorArgValue(SpringContextParameterResolverFactoryBuilder.getBeanReference(registry))
                     .getBeanDefinition();
         } else {
             throw new BeanDefinitionValidationException(

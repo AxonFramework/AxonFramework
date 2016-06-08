@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright (c) 2010-2012. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,36 +21,36 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
     <!-- Axon Event store -->
-    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore" lazy-init="true">
-        <constructor-arg ref="mongoTemplate"/>
+    <bean id="eventStore" class="org.axonframework.eventsourcing.eventstore.mongo.MongoEventStorageEngine" lazy-init="true">
+        <constructor-arg ref="template"/>
     </bean>
 
     <!-- Infrastructure Mongo -->
-    <bean id="mongoTemplate" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
+    <bean id="template" class="org.axonframework.eventsourcing.eventstore.mongo.DefaultMongoTemplate">
         <constructor-arg ref="mongoDb"/>
     </bean>
 
     <bean id="mongoDb" factory-bean="mongoFactoryBean" factory-method="createMongo"
           lazy-init="true"/>
 
-    <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory" lazy-init="true">
+    <bean id="mongoFactoryBean" class="org.axonframework.eventsourcing.eventstore.mongo.MongoFactory" lazy-init="true">
         <property name="mongoOptions">
             <bean factory-bean="mongoOptionsFactory" factory-method="createMongoOptions"/>
         </property>
     </bean>
 
-    <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
+    <bean id="mongoOptionsFactory" class="org.axonframework.eventsourcing.eventstore.mongo.MongoOptionsFactory">
         <property name="connectionsPerHost" value="100"/>
     </bean>
 
     <!-- Axon saga's -->
     <bean id="springResourceInjector" class="org.axonframework.spring.saga.SpringResourceInjector"/>
 
-    <bean id="mongoSagaRepository" class="org.axonframework.saga.repository.mongo.MongoSagaRepository">
+    <bean id="mongoSagaStore" class="org.axonframework.eventhandling.saga.repository.mongo.MongoSagaStore">
         <constructor-arg ref="sagaMongoTemplate"/>
     </bean>
 
-    <bean id="sagaMongoTemplate" class="org.axonframework.saga.repository.mongo.DefaultMongoTemplate">
+    <bean id="sagaMongoTemplate" class="org.axonframework.eventhandling.saga.repository.mongo.DefaultMongoTemplate">
         <constructor-arg ref="mongoDb"/>
     </bean>
 

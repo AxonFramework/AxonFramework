@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.domain.StubAggregate;
-import org.axonframework.testutils.MockException;
+import org.axonframework.commandhandling.StubAggregate;
+import org.axonframework.common.MockException;
 import org.junit.Test;
 
 import java.util.UUID;
@@ -40,7 +40,7 @@ public class GenericAggregateFactoryTest {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
         try {
-            factory.createAggregate(UUID.randomUUID().toString(), new GenericDomainEventMessage<>("", 0, new Object()));
+            factory.createAggregateRoot(UUID.randomUUID().toString(), new GenericDomainEventMessage<>("type", "", 0, new Object()));
             fail("Expected IncompatibleAggregateException");
         } catch (IncompatibleAggregateException e) {
             // we got it
@@ -50,10 +50,10 @@ public class GenericAggregateFactoryTest {
     @Test
     public void testInitializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
-        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
-                aggregate.getIdentifier(), 2, aggregate);
+        DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>("type", aggregate.getIdentifier(),
+                                                                                            2, aggregate);
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
-        assertSame(aggregate, factory.createAggregate(aggregate.getIdentifier(), snapshotMessage));
+        assertSame(aggregate, factory.createAggregateRoot(aggregate.getIdentifier(), snapshotMessage));
     }
 
     private static class UnsuitableAggregate {

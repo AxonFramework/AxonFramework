@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.metadata.MetaData;
-import org.axonframework.serializer.SerializedMetaData;
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serialization.SerializedMetaData;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.jgroups.util.Streamable;
 
 import java.io.*;
 
-import static org.axonframework.serializer.MessageSerializer.serializeMetaData;
-import static org.axonframework.serializer.MessageSerializer.serializePayload;
+import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
+import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
 /**
  * JGroups message that contains a CommandMessage that needs to be dispatched on a remote command bus segment. This
@@ -59,8 +60,8 @@ public class DispatchMessage implements Streamable, Externalizable {
     }
 
     /**
-     * Initialized a DispatchMessage for the given <code>commandMessage</code>, to be serialized using given
-     * <code>serializer</code>. <code>expectReply</code> indicates whether the sender will be expecting a reply.
+     * Initialized a DispatchMessage for the given {@code commandMessage}, to be serialized using given
+     * {@code serializer}. {@code expectReply} indicates whether the sender will be expecting a reply.
      *
      * @param commandMessage The message to send to the remote segment
      * @param serializer     The serialize to serialize the message payload and metadata with
@@ -81,7 +82,7 @@ public class DispatchMessage implements Streamable, Externalizable {
     /**
      * Indicates whether the sender of this message requests a reply.
      *
-     * @return <code>true</code> if a reply is expected, otherwise <code>false</code>.
+     * @return {@code true} if a reply is expected, otherwise {@code false}.
      */
     public boolean isExpectReply() {
         return expectReply;
@@ -100,7 +101,7 @@ public class DispatchMessage implements Streamable, Externalizable {
                                                                                          payloadRevision));
         final MetaData metaData = serializer.deserialize(new SerializedMetaData<>(serializedMetaData,
                                                                                                    byte[].class));
-        return new GenericCommandMessage<>(commandIdentifier, commandName, payload, metaData);
+        return new GenericCommandMessage<>(new GenericMessage<>(commandIdentifier, payload, metaData), commandName);
     }
 
     /**

@@ -16,10 +16,10 @@
 
 package org.axonframework.spring.config.annotation;
 
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SupportedCommandNamesAware;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.MessageHandler;
 import org.springframework.util.ReflectionUtils;

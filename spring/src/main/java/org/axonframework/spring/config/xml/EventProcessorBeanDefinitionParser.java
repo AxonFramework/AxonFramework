@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,10 @@ package org.axonframework.spring.config.xml;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
 import org.axonframework.eventhandling.SpringAnnotationOrderResolver;
-import org.axonframework.eventhandling.replay.BackloggingIncomingMessageHandler;
-import org.axonframework.eventhandling.replay.DiscardingIncomingMessageHandler;
-import org.axonframework.eventhandling.replay.IncomingMessageHandler;
 import org.axonframework.spring.config.eventhandling.*;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.*;
@@ -89,13 +85,13 @@ public class EventProcessorBeanDefinitionParser extends AbstractBeanDefinitionPa
             if (StringUtils.hasText(processorType)) {
                 innerProcessor.setBeanClassName(processorType);
             } else {
-                innerProcessor.setBeanClass(SimpleEventProcessor.class);
+                innerProcessor.setBeanClass(PublishingEventProcessor.class);
             }
             innerProcessor.getConstructorArgumentValues()
                         .addIndexedArgumentValue(0, resolveId(element, innerProcessor, parserContext));
             Element orderedElement = DomUtils.getChildElementByTagName(element, "ordered");
             if (orderedElement != null) {
-                innerProcessor.getConstructorArgumentValues().addGenericArgumentValue(parseOrderElement(orderedElement));
+                innerProcessor.getConstructorArgumentValues().addIndexedArgumentValue(1, parseOrderElement(orderedElement));
             }
         }
         Map metaData = parseMetaData(element, parserContext);
@@ -209,11 +205,8 @@ public class EventProcessorBeanDefinitionParser extends AbstractBeanDefinitionPa
         private final EventProcessor delegate;
 
         @SuppressWarnings("UnusedDeclaration")
-        private MetaDataOverridingEventProcessor(EventProcessor delegate, Map<String, Object> metaData) {
+        private MetaDataOverridingEventProcessor(EventProcessor delegate) {
             this.delegate = delegate;
-            for (Map.Entry<String, Object> entry : metaData.entrySet()) {
-                delegate.getMetaData().setProperty(entry.getKey(), entry.getValue());
-            }
         }
 
         @Override
@@ -259,38 +252,4 @@ public class EventProcessorBeanDefinitionParser extends AbstractBeanDefinitionPa
         }
     }
 
-    private static class IncomingMessageHandlerFactoryBean implements FactoryBean<IncomingMessageHandler>,
-            InitializingBean {
-
-        private IncomingMessageHandler messageHandler;
-        private String policy = "backlog";
-
-        @Override
-        public IncomingMessageHandler getObject() throws Exception {
-            return messageHandler;
-        }
-
-        @Override
-        public Class<?> getObjectType() {
-            return IncomingMessageHandler.class;
-        }
-
-        @Override
-        public boolean isSingleton() {
-            return true;
-        }
-
-        @Override
-        public void afterPropertiesSet() throws Exception {
-            if ("discard".equals(policy)) {
-                messageHandler = new DiscardingIncomingMessageHandler();
-            } else {
-                messageHandler = new BackloggingIncomingMessageHandler();
-            }
-        }
-
-        public void setPolicy(String policy) {
-            this.policy = policy;
-        }
-    }
 }

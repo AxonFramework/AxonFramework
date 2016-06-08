@@ -17,12 +17,15 @@
 package org.axonframework.test;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -141,9 +144,9 @@ public interface FixtureConfiguration<T> {
 
     /**
      * Registers a resource that is eligible for injection in handler method (e.g. methods annotated with {@link
-     * org.axonframework.commandhandling.annotation.CommandHandler @CommandHandler}, {@link
-     * org.axonframework.eventsourcing.annotation.EventSourcingHandler @EventSourcingHandler} and {@link
-     * org.axonframework.eventhandling.annotation.EventHandler @EventHandler}. These resource must be
+     * CommandHandler @CommandHandler}, {@link
+     * EventSourcingHandler @EventSourcingHandler} and {@link
+     * EventHandler @EventHandler}. These resource must be
      * registered <em>before</em> registering any command handler.
      *
      * @param resource The resource eligible for injection

@@ -17,24 +17,22 @@
 package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
-import org.axonframework.cache.Cache;
-import org.axonframework.cache.EhCacheAdapter;
-import org.axonframework.cache.NoCache;
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.eventhandling.*;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.fs.FileSystemEventStore;
-import org.axonframework.eventstore.fs.SimpleEventFileResolver;
-import org.axonframework.eventstore.jpa.JpaEventStore;
+import org.axonframework.common.caching.Cache;
+import org.axonframework.common.caching.EhCacheAdapter;
+import org.axonframework.common.caching.NoCache;
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -54,19 +52,10 @@ import static org.junit.Assert.*;
  * The caching event sourcing repository loads aggregates from a cache first, from the event store second. It places
  * aggregates into the cache via a postCommit listener registered with the unit of work.
  * <p/>
- * Committing a unit of work may result in additinal units of work being created -- typically as part of the 'publish
- * event' phase:
- * <ol>
- * <li>A Command is dispatched.
- * <li>A UOW is created, started.
- * <li>The command completes. Aggregate(s) have been loaded and events have been applied.
- * <li>The UOW is comitted:
- * <ol>
- * <li>The aggregate is saved.
- * <li>Events are published on the event bus.
- * <li>Inner UOWs are comitted.
- * <li>AfterCommit listeners are notified.
- * </ol>
+ * Committing a unit of work may result in additional units of work being created -- typically as part of the 'publish
+ * event' phase: <ol> <li>A Command is dispatched. <li>A UOW is created, started. <li>The command completes.
+ * Aggregate(s) have been loaded and events have been applied. <li>The UOW is comitted: <ol> <li>The aggregate is saved.
+ * <li>Events are published on the event bus. <li>Inner UOWs are comitted. <li>AfterCommit listeners are notified. </ol>
  * </ol>
  * <p/>
  * When the events are published, an @EventHandler may dispatch an additional command, which creates its own UOW
@@ -79,8 +68,7 @@ import static org.junit.Assert.*;
  * into the cache, exposing it to subsequent UOWs. The state of the aggregate in any UOW is not guaranteed to be
  * up-to-date. Depending on how UOWs are nested, it may be 'behind' by several events;
  * <p/>
- * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests
- * itself
+ * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests itself
  * primarily by events being assigned duplicate sequence numbers. The {@link JpaEventStore} detects this and throws an
  * exception noting that an 'identical' entity has already been persisted. The {@link FileSystemEventStore} corrupts
  * data silently.
@@ -88,18 +76,15 @@ import static org.junit.Assert.*;
  * <p/>
  * <h2>Possible solutions and workarounds contemplated include:</h2>
  * <p/>
- * <ul>
- * <li>Workaround: Disable Caching. Aggregates are always loaded from the event store for each UOW.
- * <li>Defer 'afterCommit' listener notification until the parent UOW completes.
- * <li>Prevent nesting of UOWs more than one level -- Attach all new UOWs to the 'root' UOW and let it manage event
- * publication while watching for newly created UOWs.
+ * <ul> <li>Workaround: Disable Caching. Aggregates are always loaded from the event store for each UOW. <li>Defer
+ * 'afterCommit' listener notification until the parent UOW completes. <li>Prevent nesting of UOWs more than one level
+ * -- Attach all new UOWs to the 'root' UOW and let it manage event publication while watching for newly created UOWs.
  * <li>Place Aggregates in the cache immediately. Improves performance by avoiding multiple loads of an aggregate (once
  * per UOW) and ensures that UOWs work on the same, up-to-date instance of the aggregate. Not desirable with a
- * distributed cache w/o global locking.
- * <li>Maintain a 'Session' of aggregates used in a UOW -- similar to adding aggregates to the cache immediately, but
- * explicitly limiting the scope/visibility to a UOW (or group of UOWs). Similar idea to a JPA/Hibernate session:
- * provide quick and canonical access to aggregates already touched somewhere in this UOW.
- * </ul>
+ * distributed cache w/o global locking. <li>Maintain a 'Session' of aggregates used in a UOW -- similar to adding
+ * aggregates to the cache immediately, but explicitly limiting the scope/visibility to a UOW (or group of UOWs).
+ * Similar idea to a JPA/Hibernate session: provide quick and canonical access to aggregates already touched somewhere
+ * in this UOW. </ul>
  *
  * @author patrickh
  */
@@ -107,15 +92,10 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     private CachingEventSourcingRepository<TestAggregate> repository;
     private UnitOfWorkFactory uowFactory;
-    private EventBus eventBus;
     private Cache realCache;
 
-    final List<String> events = new ArrayList<>();
+    private final List<String> events = new ArrayList<>();
 
-    private SimpleEventProcessor eventProcessor;
-
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
     private AggregateFactory<TestAggregate> aggregateFactory;
     private EventStore eventStore;
 
@@ -124,13 +104,11 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         final CacheManager cacheManager = CacheManager.getInstance();
         realCache = new EhCacheAdapter(cacheManager.addCacheIfAbsent("name"));
 
-        eventBus = new SimpleEventBus();
-        eventProcessor = new SimpleEventProcessor("logging");
-        eventProcessor.subscribe(new LoggingEventListener(events));
-        eventBus.subscribe(eventProcessor);
-        events.clear();
 
-        eventStore = new FileSystemEventStore(new SimpleEventFileResolver(tempFolder.newFolder()));
+        eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
+        EventProcessor eventProcessor = new PublishingEventProcessor("logging", new LoggingEventListener(events));
+        eventStore.subscribe(eventProcessor);
+        events.clear();
         aggregateFactory = new GenericAggregateFactory<>(TestAggregate.class);
 
         uowFactory = new DefaultUnitOfWorkFactory();
@@ -138,33 +116,34 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     public void testWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     public void testWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     public void testMinimalScenarioWithoutCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, NoCache.INSTANCE);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, NoCache.INSTANCE);
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     public void testMinimalScenarioWithCache() throws Exception {
-        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, eventBus, realCache);
+        repository = new CachingEventSourcingRepository<>(aggregateFactory, eventStore, realCache);
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
 
     public void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventProcessor.subscribe(new CommandExecutingEventListener("1", null, true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("2", null, true));
+        eventStore.subscribe(
+                new PublishingEventProcessor("commandExecutor", new CommandExecutingEventListener("1", null, true),
+                                             new CommandExecutingEventListener("2", null, true)));
 
         UnitOfWork<?> uow = uowFactory.createUnitOfWork(null);
         repository.newInstance(() -> new TestAggregate(id));
@@ -189,17 +168,18 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         //
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW4", null, true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW5", null, true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW3", null, true));
+        eventStore.subscribe(
+                new PublishingEventProcessor("commandExecution", new CommandExecutingEventListener("UOW4", null, true),
+                                             new CommandExecutingEventListener("UOW5", null, true),
+                                             new CommandExecutingEventListener("UOW3", null, true),
 
-        // Execute commands to update after the previous update has been performed
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW7", "UOW6", true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW6", "UOW3", true));
+                                             // Execute commands to update after the previous update has been performed
+                                             new CommandExecutingEventListener("UOW7", "UOW6", true),
+                                             new CommandExecutingEventListener("UOW6", "UOW3", true),
 
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW10", "UOW8", false)); // roll back
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW9", "UOW4", true));
-        eventProcessor.subscribe(new CommandExecutingEventListener("UOW8", "UOW4", true));
+                                             new CommandExecutingEventListener("UOW10", "UOW8", false),
+                                             new CommandExecutingEventListener("UOW9", "UOW4", true),
+                                             new CommandExecutingEventListener("UOW8", "UOW4", true)));
 
 
         // First command: Create Aggregate
@@ -275,21 +255,28 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;
 
                 UnitOfWork<EventMessage<?>> nested = uowFactory.createUnitOfWork(event);
-                Aggregate<TestAggregate> aggregate = repository.load(created.id);
-                aggregate.execute(r -> r.update(token));
-                nested.commit();
+                nested.execute(() -> {
+                    Aggregate<TestAggregate> aggregate = repository.load(created.id);
+                    aggregate.execute(r -> r.update(token));
+                });
             }
 
             if (previousToken != null && payload instanceof AggregateUpdatedEvent) {
                 AggregateUpdatedEvent updated = (AggregateUpdatedEvent) payload;
                 if (updated.token.equals(previousToken)) {
                     UnitOfWork<EventMessage<?>> nested = uowFactory.createUnitOfWork(event);
-                    Aggregate<TestAggregate> aggregate = repository.load(updated.id);
-                    aggregate.execute(r -> r.update(token));
                     if (commit) {
-                        nested.commit();
+                        nested.execute(() -> {
+                            Aggregate<TestAggregate> aggregate = repository.load(updated.id);
+                            aggregate.execute(r -> r.update(token));
+                        });
                     } else {
-                        nested.rollback();
+                        try {
+                            Aggregate<TestAggregate> aggregate = repository.load(updated.id);
+                            aggregate.execute(r -> r.update(token));
+                        } finally {
+                            nested.rollback();
+                        }
                     }
                 }
             }
@@ -311,7 +298,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
         @Override
         public String toString() {
-            return id;
+            return getClass().getSimpleName() + "@" + Integer.toHexString(hashCode()) + ": " + id;
         }
     }
 
@@ -328,7 +315,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
         @Override
         public String toString() {
-            return id + "/" + token;
+            return getClass().getSimpleName() + "@" + Integer.toHexString(hashCode()) + ": " + id + "/" + token;
         }
     }
 

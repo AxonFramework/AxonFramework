@@ -59,32 +59,32 @@
                            persistence-exception-resolver="persistenceExceptionResolver">
         <axon:upcasters>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+                <property name="mockType" value="org.axonframework.serialization.upcasting.Upcaster"/>
             </bean>
         </axon:upcasters>
     </axon:jdbc-event-store>
 
-    <bean id="nocache" class="org.axonframework.cache.NoCache"/>
+    <bean id="nocache" class="org.axonframework.common.caching.NoCache"/>
 
     <bean id="connectionProvider" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.common.jdbc.ConnectionProvider"/>
     </bean>
     <bean id="resourceInjector" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.saga.ResourceInjector"/>
+        <property name="mockType" value="org.axonframework.eventhandling.saga.ResourceInjector"/>
     </bean>
-    <bean id="serializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
+    <bean id="serializer" class="org.axonframework.serialization.xml.XStreamSerializer"/>
 
     <bean id="sqlSchema" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.saga.repository.jdbc.SagaSqlSchema"/>
+        <property name="mockType" value="org.axonframework.eventhandling.saga.repository.jdbc.SagaSqlSchema"/>
     </bean>
     <bean id="eventSqlSchema" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventstore.jdbc.EventSqlSchema"/>
+        <property name="mockType" value="org.axonframework.eventsourcing.eventstore.jdbc.EventSqlSchema"/>
     </bean>
     <bean id="persistenceExceptionResolver" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.common.jdbc.PersistenceExceptionResolver"/>
     </bean>
     <bean id="eventEntryStore" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventstore.jdbc.EventEntryStore"/>
+        <property name="mockType" value="org.axonframework.eventsourcing.eventstore.jdbc.EventEntryStore"/>
     </bean>
 
 </beans>

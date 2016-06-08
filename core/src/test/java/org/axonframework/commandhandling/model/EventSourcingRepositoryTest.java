@@ -16,17 +16,15 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.EventBus;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -40,6 +38,7 @@ import org.mockito.Mockito;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,19 +47,19 @@ public class EventSourcingRepositoryTest {
 
     private EventStore eventStore;
     private Repository<StubAggregate> repository;
-    private EventBus eventBus;
 
     @Before
     public void setUp() throws Exception {
         eventStore = Mockito.mock(EventStore.class);
-        eventBus = Mockito.mock(EventBus.class);
-        Mockito.when(eventStore.readEvents(Matchers.anyString()))
-                .thenAnswer(invocationOnMock ->
-                                    new SimpleDomainEventStream(new GenericDomainEventMessage<Object>(invocationOnMock.getArgumentAt(0, String.class), 1, "Test1"),
-                                                                new GenericDomainEventMessage<Object>(invocationOnMock.getArgumentAt(0, String.class), 2, "Test2"),
-                                                                new GenericDomainEventMessage<Object>(invocationOnMock.getArgumentAt(0, String.class), 3, "Test3")));
-        repository = new EventSourcingRepository<>(StubAggregate.class, eventStore, eventBus);
-        DefaultUnitOfWork.startAndGet(new GenericCommandMessage<Object>("Stub"));
+        Mockito.when(eventStore.readEvents(Matchers.anyString())).thenAnswer(invocationOnMock -> DomainEventStream
+                .of(new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 1,
+                                                          "Test1"),
+                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 2,
+                                                          "Test2"),
+                    new GenericDomainEventMessage<Object>("type", invocationOnMock.getArgumentAt(0, String.class), 3,
+                                                          "Test3")));
+        repository = new EventSourcingRepository<>(StubAggregate.class, eventStore);
+        DefaultUnitOfWork.startAndGet(asCommandMessage("Stub"));
     }
 
     @After
@@ -82,7 +81,7 @@ public class EventSourcingRepositoryTest {
         Aggregate<StubAggregate> actual = repository.load("test");
 
         assertEquals(3L, (long) actual.version());
-        verify(eventBus, never()).publish(Matchers.<EventMessage<?>[]>anyVararg());
+        verify(eventStore, never()).publish(Matchers.<EventMessage<?>[]>anyVararg());
         actual.execute(StubAggregate::changeState);
         assertEquals(6L, (long) actual.version());
         List<DomainEventMessage<String>> domainEventMessages = actual.invoke(StubAggregate::getMessages);
@@ -91,12 +90,10 @@ public class EventSourcingRepositoryTest {
         assertEquals("Got messages: 5", message.getPayload());
 
         for (int i = 0; i < 3; i++) {
-            verify(eventStore, never()).appendEvents(domainEventMessages.get(i));
-            verify(eventBus, never()).publish(domainEventMessages.get(i));
+            verify(eventStore, never()).publish(domainEventMessages.get(i));
         }
         for (int i = 3; i < 6; i++) {
-            verify(eventStore).appendEvents(domainEventMessages.get(i));
-            verify(eventBus).publish(domainEventMessages.get(i));
+            verify(eventStore).publish(domainEventMessages.get(i));
         }
     }
 
@@ -107,10 +104,8 @@ public class EventSourcingRepositoryTest {
         assertEquals(2, messages.size());
         assertEquals("Hello", messages.get(0).getPayload());
         assertEquals("Got messages: 1", messages.get(1).getPayload());
-        verify(eventStore).appendEvents(messages.get(0));
-        verify(eventBus).publish(messages.get(0));
-        verify(eventStore).appendEvents(messages.get(1));
-        verify(eventBus).publish(messages.get(1));
+        verify(eventStore).publish(messages.get(0));
+        verify(eventStore).publish(messages.get(1));
     }
 
     @AggregateRoot
@@ -126,8 +121,7 @@ public class EventSourcingRepositoryTest {
 
         public StubAggregate(String id, String message) {
             this.id = id;
-            AggregateLifecycle.doApply(message)
-                    .andThenApply(() -> "Got messages: " + messages.size());
+            AggregateLifecycle.doApply(message).andThenApply(() -> "Got messages: " + messages.size());
         }
 
         @CommandHandler
@@ -143,9 +137,8 @@ public class EventSourcingRepositoryTest {
         public void handle(String value, DomainEventMessage<String> message) {
             this.id = message.getAggregateIdentifier();
             if (value.startsWith("Test")) {
-                AggregateLifecycle.doApply("Last one")
-                        .andThenApply(() -> new GenericMessage<>("Got messages: " + messages.size(),
-                                                                 MetaData.with("key", "value")));
+                AggregateLifecycle.doApply("Last one").andThenApply(
+                        () -> new GenericMessage<>("Got messages: " + messages.size(), MetaData.with("key", "value")));
             }
             this.messages.add(message);
         }

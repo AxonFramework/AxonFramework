@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2014. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@
 
     <axon:annotation-config command-bus="commandBus-embedded-ref"/>
 
+<!--
     <axon:saga-manager id="sagaManagerNotSuppressingExceptions" saga-factory="sagaFactory" suppress-exceptions="false">
         <axon:types>org.axonframework.spring.config.xml.StubSaga</axon:types>
     </axon:saga-manager>
@@ -55,6 +56,7 @@
                     transaction-manager="transactionManager"/>
         <axon:types>org.axonframework.spring.config.xml.StubSaga</axon:types>
     </axon:saga-manager>
+-->
 
     <axon:aggregate-command-handler id="aggregateCommandHandlerWithoutTargetResolver"
                                     aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"
@@ -116,14 +118,14 @@
         </axon:selectors>
     </axon:event-processor>
 
-    <bean id="sagaSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
+    <bean id="sagaSerializer" class="org.axonframework.serialization.xml.XStreamSerializer"/>
 
     <bean id="commandTargetResolver" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
         <property name="mockType" value="org.axonframework.commandhandling.CommandTargetResolver"/>
     </bean>
 
     <bean id="sagaFactory" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.saga.SagaFactory"/>
+        <property name="mockType" value="org.axonframework.eventhandling.saga.SagaFactory"/>
     </bean>
 
     <bean id="mockCommandBus1" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
@@ -135,7 +137,7 @@
     </bean>
 
     <bean id="mockResourceInjector" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.saga.ResourceInjector"/>
+        <property name="mockType" value="org.axonframework.eventhandling.saga.ResourceInjector"/>
         <property name="singleton" value="true"/>
     </bean>
 
@@ -176,7 +178,7 @@
                           batch-size="1000">
         <axon:upcasters converter-factory="converterFactory" strategy="eager">
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+                <property name="mockType" value="org.axonframework.serialization.upcasting.Upcaster"/>
             </bean>
         </axon:upcasters>
     </axon:jpa-event-store>
@@ -185,10 +187,10 @@
                           event-serializer="eventSerializer" max-snapshots-archived="2" batch-size="1000">
         <axon:upcasters>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+                <property name="mockType" value="org.axonframework.serialization.upcasting.Upcaster"/>
             </bean>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+                <property name="mockType" value="org.axonframework.serialization.upcasting.Upcaster"/>
             </bean>
         </axon:upcasters>
     </axon:jpa-event-store>
@@ -200,28 +202,28 @@
                           event-entry-factory-ref="customEventEntryFactory"/>
 
     <bean id="customEventEntryStore" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventstore.jpa.EventEntryStore"/>
+        <property name="mockType" value="org.axonframework.eventsourcing.eventstore.jpa.EventEntryStore"/>
     </bean>
 
     <bean id="customEventEntryFactory" class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-        <property name="mockType" value="org.axonframework.eventstore.jpa.EventEntryFactory"/>
+        <property name="mockType" value="org.axonframework.eventsourcing.eventstore.jpa.EventEntryFactory"/>
     </bean>
 
-    <bean id="converterFactory" class="org.axonframework.serializer.ChainingConverterFactory"/>
+    <bean id="converterFactory" class="org.axonframework.serialization.ChainingConverterFactory"/>
     <bean id="myEntityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
 
     <axon:filesystem-event-store id="fileEventStore" base-dir="/tmp" event-serializer="eventSerializer">
         <axon:upcasters>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+                <property name="mockType" value="org.axonframework.serialization.upcasting.Upcaster"/>
             </bean>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
-                <property name="mockType" value="org.axonframework.upcasting.Upcaster"/>
+                <property name="mockType" value="org.axonframework.serialization.upcasting.Upcaster"/>
             </bean>
         </axon:upcasters>
     </axon:filesystem-event-store>
 
-    <bean id="eventSerializer" class="org.axonframework.serializer.xml.XStreamSerializer"/>
+    <bean id="eventSerializer" class="org.axonframework.serialization.xml.XStreamSerializer"/>
 
     <bean id="commandBusInterceptor"
           class="org.axonframework.messaging.interceptors.LoggingInterceptor">
@@ -259,7 +261,7 @@
                          event-bus="eventBus" lock-factory="nullLockFactory"
                          aggregate-type="org.axonframework.spring.config.xml.SimpleAnnotatedAggregate"/>
 
-    <bean id="mockCache" class="org.axonframework.cache.JCacheAdapter">
+    <bean id="mockCache" class="org.axonframework.common.caching.JCacheAdapter">
         <constructor-arg>
             <bean class="org.axonframework.spring.testutils.MockitoMockFactoryBean">
                 <property name="mockType" value="javax.cache.Cache"/>

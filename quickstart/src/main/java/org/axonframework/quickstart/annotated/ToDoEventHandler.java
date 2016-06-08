@@ -16,11 +16,8 @@
 
 package org.axonframework.quickstart.annotated;
 
-import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventhandling.annotation.SequenceNumber;
-import org.axonframework.eventhandling.annotation.Timestamp;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
 

@@ -17,11 +17,12 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.model.AggregateRoot;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.*;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotation.AggregateVersion;
-import org.axonframework.eventsourcing.annotation.EntityId;
+import org.axonframework.eventsourcing.AggregateVersion;
+import org.axonframework.eventsourcing.EntityId;
 import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Field;
@@ -38,6 +39,7 @@ public class ModelInspector<T> implements AggregateModel<T> {
     private final Map<String, CommandMessageHandler<? super T>> commandHandlers;
     private final List<MessageHandler<? super T>> eventHandlers;
 
+    private String aggregateType;
     private Field identifierField;
     private Field versionField;
     private String routingKey;
@@ -76,6 +78,7 @@ public class ModelInspector<T> implements AggregateModel<T> {
                                                     AnnotatedHandlerInspector<T> handlerInspector,
                                                     Map<Class<?>, ModelInspector> registry) {
         ModelInspector<T> inspector = new ModelInspector<>(inspectedType, registry, handlerInspector);
+        inspector.inspectAggregateType();
         inspector.inspectFields();
         inspector.prepareHandlers();
         return inspector;
@@ -91,6 +94,13 @@ public class ModelInspector<T> implements AggregateModel<T> {
                 eventHandlers.add(handler);
             }
         }
+    }
+
+    private void inspectAggregateType() {
+        aggregateType = AnnotationUtils.findAnnotationAttributes(inspectedType, AggregateRoot.class)
+                .map(map -> (String) map.get("type"))
+                .filter(String::isEmpty)
+                .orElse(inspectedType.getSimpleName());
     }
 
     private void inspectFields() {
@@ -162,6 +172,11 @@ public class ModelInspector<T> implements AggregateModel<T> {
             }
         });
         children.forEach(i -> i.publish(message, target));
+    }
+
+    @Override
+    public String type() {
+        return aggregateType;
     }
 
     @Override

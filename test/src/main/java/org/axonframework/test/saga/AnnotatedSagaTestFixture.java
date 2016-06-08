@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
+import org.axonframework.eventhandling.saga.SagaRepository;
+import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
+import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.saga.GenericSagaFactory;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.annotation.AnnotatedSagaManager;
-import org.axonframework.saga.repository.inmemory.InMemorySagaRepository;
 import org.axonframework.test.FixtureResourceParameterResolverFactory;
 import org.axonframework.test.eventscheduler.StubEventScheduler;
 import org.axonframework.test.matchers.FieldFilter;
@@ -51,14 +51,14 @@ import java.util.concurrent.TimeUnit;
  * @author Allard Buijze
  * @since 1.1
  */
-public class AnnotatedSagaTestFixture implements FixtureConfiguration, ContinuedGivenState {
+public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenState {
 
     private final StubEventScheduler eventScheduler;
-    private final AnnotatedSagaManager sagaManager;
+    private final AnnotatedSagaManager<T> sagaManager;
     private final List<Object> registeredResources = new LinkedList<>();
 
     private final Map<Object, AggregateEventPublisherImpl> aggregatePublishers = new HashMap<>();
-    private final FixtureExecutionResultImpl fixtureExecutionResult;
+    private final FixtureExecutionResultImpl<T> fixtureExecutionResult;
     private final RecordingCommandBus commandBus;
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
 
@@ -68,13 +68,14 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
      * @param sagaType The type of saga under test
      */
     @SuppressWarnings({"unchecked"})
-    public AnnotatedSagaTestFixture(Class<? extends AbstractAnnotatedSaga> sagaType) {
+    public AnnotatedSagaTestFixture(Class<T> sagaType) {
         eventScheduler = new StubEventScheduler();
-        GenericSagaFactory genericSagaFactory = new GenericSagaFactory();
-        genericSagaFactory.setResourceInjector(new AutowiredResourceInjector(registeredResources));
         EventBus eventBus = new SimpleEventBus();
-        InMemorySagaRepository sagaRepository = new InMemorySagaRepository();
-        sagaManager = new AnnotatedSagaManager(sagaRepository, genericSagaFactory, sagaType);
+        InMemorySagaStore sagaStore = new InMemorySagaStore();
+        SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
+                                                                         new AutowiredResourceInjector(
+                                                                                 registeredResources));
+        sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, sagaType::newInstance, t -> true);
         sagaManager.setSuppressExceptions(false);
 
         registeredResources.add(eventBus);
@@ -82,8 +83,8 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(new DefaultCommandGateway(commandBus));
-        fixtureExecutionResult = new FixtureExecutionResultImpl(sagaRepository, eventScheduler, eventBus, commandBus,
-                                                                sagaType, fieldFilters);
+        fixtureExecutionResult = new FixtureExecutionResultImpl<>(sagaStore, eventScheduler, eventBus, commandBus,
+                                                                  sagaType, fieldFilters);
         FixtureResourceParameterResolverFactory.clear();
         registeredResources.forEach(FixtureResourceParameterResolverFactory::registerResource);
     }
@@ -92,7 +93,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     public FixtureExecutionResult whenTimeElapses(Duration elapsedTime) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
+            eventScheduler.advanceTime(elapsedTime, sagaManager::accept);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -103,7 +104,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     public FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
-            eventScheduler.advanceTime(newDateTime, sagaManager::handle);
+            eventScheduler.advanceTime(newDateTime, sagaManager::accept);
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -129,7 +130,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public ContinuedGivenState givenAPublished(Object event) throws Exception {
-        sagaManager.handle(GenericEventMessage.asEventMessage(event));
+        sagaManager.accept(GenericEventMessage.asEventMessage(event));
         return this;
     }
 
@@ -145,19 +146,19 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public ContinuedGivenState andThenTimeElapses(final Duration elapsedTime) throws Exception {
-        eventScheduler.advanceTime(elapsedTime, sagaManager::handle);
+        eventScheduler.advanceTime(elapsedTime, sagaManager::accept);
         return this;
     }
 
     @Override
     public ContinuedGivenState andThenTimeAdvancesTo(final ZonedDateTime newDateTime) throws Exception {
-        eventScheduler.advanceTime(newDateTime, sagaManager::handle);
+        eventScheduler.advanceTime(newDateTime, sagaManager::accept);
         return this;
     }
 
     @Override
     public ContinuedGivenState andThenAPublished(Object event) throws Exception {
-        sagaManager.handle(GenericEventMessage.asEventMessage(event));
+        sagaManager.accept(GenericEventMessage.asEventMessage(event));
         return this;
     }
 
@@ -171,7 +172,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     public FixtureExecutionResult whenPublishingA(Object event) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
-            sagaManager.handle(GenericEventMessage.asEventMessage(event));
+            sagaManager.accept(GenericEventMessage.asEventMessage(event));
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -185,15 +186,15 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     }
 
     @Override
-    public <T> T registerCommandGateway(Class<T> gatewayInterface) {
+    public <I> I registerCommandGateway(Class<I> gatewayInterface) {
         return registerCommandGateway(gatewayInterface, null);
     }
 
     @Override
-    public <T> T registerCommandGateway(Class<T> gatewayInterface, final T stubImplementation) {
+    public <I> I registerCommandGateway(Class<I> gatewayInterface, final I stubImplementation) {
         GatewayProxyFactory factory = new StubAwareGatewayProxyFactory(stubImplementation,
                                                                        AnnotatedSagaTestFixture.this.commandBus);
-        final T gateway = factory.createGateway(gatewayInterface);
+        final I gateway = factory.createGateway(gatewayInterface);
         registerResource(gateway);
         return gateway;
     }
@@ -234,14 +235,14 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(
-                InvocationHandler<Future<R>> delegate, long timeout, TimeUnit timeUnit) {
+        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<Future<R>> delegate,
+                                                                        long timeout, TimeUnit timeUnit) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
-                InvocationHandler<Future<R>> delegate, int timeoutIndex, int timeUnitIndex) {
+        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(InvocationHandler<Future<R>> delegate,
+                                                                              int timeoutIndex, int timeUnitIndex) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
     }
@@ -279,11 +280,12 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
-        private final String aggregateIdentifier;
+        private final String aggregateIdentifier, type;
         private int sequenceNumber = 0;
 
         public AggregateEventPublisherImpl(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
+            this.type = "typeOf_" + aggregateIdentifier;
         }
 
         @Override
@@ -303,26 +305,23 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
         }
 
         private void publish(Object... events) throws Exception {
-            GenericEventMessage.clock = Clock.fixed(currentTime().toInstant(),currentTime().getZone());
-
             try {
+                Clock.fixed(currentTime().toInstant(), currentTime().getZone());
                 for (Object event : events) {
-                    if (event instanceof EventMessage) {
-                        EventMessage eventMessage = (EventMessage) event;
-                        sagaManager.handle(new GenericDomainEventMessage<>(eventMessage.getIdentifier(),
-                                                                           eventMessage.getTimestamp(),
-                                                                           aggregateIdentifier,
-                                                                           sequenceNumber++,
-                                                                           eventMessage.getPayload(),
-                                                                           eventMessage.getMetaData()));
+                    if (event instanceof EventMessage<?>) {
+                        EventMessage<?> eventMessage = (EventMessage<?>) event;
+                        sagaManager.accept(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                                                                           sequenceNumber++, eventMessage.getPayload(),
+                                                                           eventMessage.getMetaData(),
+                                                                           eventMessage.getIdentifier(),
+                                                                           eventMessage.getTimestamp()));
                     } else {
-                        sagaManager.handle(new GenericDomainEventMessage<>(aggregateIdentifier,
-                                                                           sequenceNumber++,
-                                                                           event));
+                        sagaManager.accept(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                                                                           sequenceNumber++, event));
                     }
                 }
             } finally {
-                GenericEventMessage.clock = Clock.systemDefaultZone();
+                Clock.systemDefaultZone();
             }
         }
     }

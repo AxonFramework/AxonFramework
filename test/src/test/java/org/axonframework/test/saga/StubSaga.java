@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.saga.EndSaga;
+import org.axonframework.eventhandling.saga.SagaEventHandler;
+import org.axonframework.eventhandling.saga.SagaLifecycle;
+import org.axonframework.eventhandling.saga.StartSaga;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.saga.annotation.AbstractAnnotatedSaga;
-import org.axonframework.saga.annotation.EndSaga;
-import org.axonframework.saga.annotation.SagaEventHandler;
-import org.axonframework.saga.annotation.StartSaga;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * @author Allard Buijze
  */
-public class StubSaga extends AbstractAnnotatedSaga {
+public class StubSaga {
 
     private static final int TRIGGER_DURATION_MINUTES = 10;
     private transient StubGateway stubGateway;
@@ -113,18 +113,15 @@ public class StubSaga extends AbstractAnnotatedSaga {
         this.stubGateway = stubGateway;
     }
 
-    @Override
     public void associateWith(String key, String value) {
-        super.associateWith(key, value);
+        SagaLifecycle.associateWith(key, value);
     }
 
-    @Override
     public void removeAssociationWith(String key, String value) {
-        super.removeAssociationWith(key, value);
+        SagaLifecycle.removeAssociationWith(key, value);
     }
 
-    @Override
     public void end() {
-        super.end();
+        SagaLifecycle.end();
     }
 }

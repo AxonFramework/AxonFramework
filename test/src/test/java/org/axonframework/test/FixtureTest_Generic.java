@@ -16,8 +16,12 @@
 
 package org.axonframework.test;
 
-import org.axonframework.eventsourcing.*;
-import org.axonframework.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.IncompatibleAggregateException;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.After;
 import org.junit.Before;
@@ -25,7 +29,6 @@ import org.junit.Test;
 
 import java.util.UUID;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -43,7 +46,7 @@ public class FixtureTest_Generic {
         fixture.setReportIllegalStateChange(false);
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StandardAggregate.class);
-        when(mockAggregateFactory.createAggregate(isA(String.class), isA(DomainEventMessage.class)))
+        when(mockAggregateFactory.createAggregateRoot(isA(String.class), isA(DomainEventMessage.class)))
                 .thenReturn(new StandardAggregate("id1"));
     }
 
@@ -65,7 +68,7 @@ public class FixtureTest_Generic {
         fixture.given(new MyEvent("id1", 1))
                 .when(new TestCommand("id1"));
 
-        verify(mockAggregateFactory).createAggregate(eq("id1"), isA(DomainEventMessage.class));
+        verify(mockAggregateFactory).createAggregateRoot(eq("id1"), isA(DomainEventMessage.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -137,17 +140,17 @@ public class FixtureTest_Generic {
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_DifferentAggregateIdentifiers() {
-        fixture.getEventStore().appendEvents(asList(
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(UUID.randomUUID().toString(), 0, new StubDomainEvent())));
+        fixture.getEventStore().publish(
+                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0, new StubDomainEvent()));
     }
 
     @Test(expected = EventStoreException.class)
     public void testFixtureGeneratesExceptionOnWrongEvents_WrongSequence() {
         String identifier = UUID.randomUUID().toString();
-        fixture.getEventStore().appendEvents(asList(
-                new GenericDomainEventMessage<>(identifier, 0, new StubDomainEvent()),
-                new GenericDomainEventMessage<>(identifier, 2, new StubDomainEvent())));
+        fixture.getEventStore().publish(
+                new GenericDomainEventMessage<>("test", identifier, 0, new StubDomainEvent()),
+                new GenericDomainEventMessage<>("test", identifier, 2, new StubDomainEvent()));
     }
 
     private class StubDomainEvent {

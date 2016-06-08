@@ -19,7 +19,7 @@ package org.axonframework.spring.config.eventhandling;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventProcessor;
+import org.axonframework.eventhandling.PublishingEventProcessor;
 
 /**
  * EventProcessorSelector implementation that always selects the same event processor. This implementation
@@ -35,11 +35,11 @@ public class DefaultEventProcessorSelector implements EventProcessorSelector {
     private final EventProcessor defaultEventProcessor;
 
     /**
-     * Initializes the DefaultEventProcessorSelector using a {@link SimpleEventProcessor} with
+     * Initializes the DefaultEventProcessorSelector using a {@link PublishingEventProcessor} with
      * identifier "default", to which this instance will assign all Event Listeners.
      */
     public DefaultEventProcessorSelector() {
-        this.defaultEventProcessor = new SimpleEventProcessor(DEFAULT_PROCESSOR_IDENTIFIER);
+        this.defaultEventProcessor = new PublishingEventProcessor(DEFAULT_PROCESSOR_IDENTIFIER);
     }
 
     /**
@@ -55,7 +55,7 @@ public class DefaultEventProcessorSelector implements EventProcessorSelector {
     /**
      * {@inheritDoc}
      * <p/>
-     * This implementation always returns the same instance of {@link SimpleEventProcessor}.
+     * This implementation always returns the same instance of {@link PublishingEventProcessor}.
      */
     @Override
     public EventProcessor selectEventProcessor(EventListener eventListener) {

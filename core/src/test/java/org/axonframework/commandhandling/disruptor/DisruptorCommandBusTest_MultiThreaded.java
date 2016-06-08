@@ -20,42 +20,40 @@ import com.lmax.disruptor.SleepingWaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.MockException;
 import org.axonframework.common.Registration;
-import org.axonframework.domain.IdentifierFactory;
+import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.SimpleDomainEventStream;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStore;
-import org.axonframework.eventstore.EventStreamNotFoundException;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.testutils.MockException;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
@@ -92,9 +90,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     @Test(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         testSubject = new DisruptorCommandBus(
-                inMemoryEventStore,
-                eventBus,
-                new DisruptorConfiguration().setBufferSize(4)
+                inMemoryEventStore, new DisruptorConfiguration().setBufferSize(4)
                         .setProducerType(ProducerType.MULTI)
                         .setWaitStrategy(new SleepingWaitStrategy())
                         .setRollbackConfiguration(RollbackConfigurationType.ANY_THROWABLE)
@@ -120,16 +116,16 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }).when(spiedRepository).load(isA(String.class));
 
         for (int a = 0; a < AGGREGATE_COUNT; a++) {
-            testSubject.dispatch(new GenericCommandMessage<>(new CreateCommand(aggregateIdentifier[a])));
+            testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier[a])));
         }
         CommandCallback mockCallback = mock(CommandCallback.class);
         for (int t = 0; t < COMMAND_COUNT; t++) {
             for (int a = 0; a < AGGREGATE_COUNT; a++) {
                 CommandMessage command;
                 if (t == 10) {
-                    command = new GenericCommandMessage<>(new ErrorCommand(aggregateIdentifier[a]));
+                    command = asCommandMessage(new ErrorCommand(aggregateIdentifier[a]));
                 } else {
-                    command = new GenericCommandMessage<>(new StubCommand(aggregateIdentifier[a]));
+                    command = asCommandMessage(new StubCommand(aggregateIdentifier[a]));
                 }
                 testSubject.dispatch(command, mockCallback);
             }
@@ -177,18 +173,18 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
     }
 
-    private static class InMemoryEventStore implements EventStore {
+    private static class InMemoryEventStore extends AbstractEventBus implements EventStore {
 
         private final Map<String, DomainEventMessage> storedEvents = new ConcurrentHashMap<>();
         private final AtomicInteger storedEventCounter = new AtomicInteger();
         private final AtomicInteger loadCounter = new AtomicInteger();
 
         @Override
-        public void appendEvents(List<DomainEventMessage<?>> events) {
+        protected void commit(List<? extends EventMessage<?>> events) {
             if (events == null || events.isEmpty()) {
                 return;
             }
-            String key = events.get(0).getAggregateIdentifier();
+            String key = ((DomainEventMessage) events.get(0)).getAggregateIdentifier();
             DomainEventMessage<?> lastEvent = null;
             for (EventMessage<?> event : events) {
                 storedEventCounter.incrementAndGet();
@@ -203,19 +199,14 @@ public class DisruptorCommandBusTest_MultiThreaded {
         @Override
         public DomainEventStream readEvents(String identifier) {
             loadCounter.incrementAndGet();
-            DomainEventMessage message = storedEvents.get(identifier);
-            if (message == null) {
-                throw new EventStreamNotFoundException(identifier);
-            }
-            return new SimpleDomainEventStream(Collections.singletonList(message));
+            DomainEventMessage<?> message = storedEvents.get(identifier);
+            return message == null ? DomainEventStream.of() : DomainEventStream.of(message);
         }
 
         @Override
-        public DomainEventStream readEvents(String identifier, long firstSequenceNumber,
-                                            long lastSequenceNumber) {
-            throw new UnsupportedOperationException("Not implemented");
+        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+            throw new UnsupportedOperationException();
         }
-
     }
 
     private static class StubCommand {
@@ -223,18 +214,18 @@ public class DisruptorCommandBusTest_MultiThreaded {
         @TargetAggregateIdentifier
         private Object aggregateIdentifier;
 
-        public StubCommand(Object aggregateIdentifier) {
+        private StubCommand(Object aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
         }
 
-        public Object getAggregateIdentifier() {
+        private Object getAggregateIdentifier() {
             return aggregateIdentifier;
         }
     }
 
     private static class ErrorCommand extends StubCommand {
 
-        public ErrorCommand(Object aggregateIdentifier) {
+        private ErrorCommand(Object aggregateIdentifier) {
             super(aggregateIdentifier);
         }
     }
@@ -255,7 +246,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     private static class CreateCommand extends StubCommand {
 
-        public CreateCommand(Object aggregateIdentifier) {
+        private CreateCommand(Object aggregateIdentifier) {
             super(aggregateIdentifier);
         }
     }
@@ -297,12 +288,17 @@ public class DisruptorCommandBusTest_MultiThreaded {
         private final CountDownLatch publisherCountDown = new CountDownLatch(COMMAND_COUNT);
 
         @Override
-        public void publish(List<EventMessage<?>> events) {
+        public void publish(List<? extends EventMessage<?>> events) {
             publisherCountDown.countDown();
         }
 
         @Override
-        public Registration subscribe(EventProcessor eventProcessor) {
+        public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
             throw new UnsupportedOperationException();
         }
 
@@ -312,10 +308,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
     }
 
-    /**
-     * @author Allard Buijze
-     */
-    static class FailingEvent {
+    private static class FailingEvent {
 
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,7 @@ import java.util.concurrent.Callable;
 /**
  * The repository provides an abstraction of the storage of aggregates.
  *
- * @author Allard Buijze
  * @param <T> The type of aggregate this repository stores.
- * @since 0.1
  */
 public interface Repository<T> {
 
@@ -33,7 +31,6 @@ public interface Repository<T> {
      *
      * @param aggregateIdentifier The identifier of the aggregate to load
      * @return The aggregate root with the given identifier.
-     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     Aggregate<T> load(String aggregateIdentifier);
@@ -42,14 +39,19 @@ public interface Repository<T> {
      * Load the aggregate with the given unique identifier.
      *
      * @param aggregateIdentifier The identifier of the aggregate to load
+     * @param expectedVersion     The expected version of the loaded aggregate
      * @return The aggregate root with the given identifier.
-     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      */
     Aggregate<T> load(String aggregateIdentifier, Long expectedVersion);
 
     /**
-     * TODO: documentation
+     * Creates a new managed instance for the aggregate, using the given {@code factoryMethod}
+     * to instantiate the aggregate's root.
+     *
+     * @param factoryMethod The method to create the aggregate's root instce
+     * @return an Aggregate instance describing the aggregate's state
+     * @throws Exception when the factoryMethod throws an exception
      */
     Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception;
 }

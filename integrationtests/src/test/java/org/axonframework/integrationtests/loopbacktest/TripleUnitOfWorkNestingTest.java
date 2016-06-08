@@ -17,20 +17,16 @@
 package org.axonframework.integrationtests.loopbacktest;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.eventhandling.*;
+import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.DomainEventStream;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.annotation.AggregateIdentifier;
-import org.axonframework.eventsourcing.annotation.EventSourcingHandler;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.junit.Before;
@@ -91,12 +87,12 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     public void testLoopbackScenario() throws InterruptedException {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
         eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
-                aggregateAIdentifier,
+                type, aggregateAIdentifier,
                 (long) 0,
                 new CreateEvent(aggregateAIdentifier),
                 MetaData.emptyInstance())}));
         eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
-                aggregateBIdentifier,
+                type, aggregateBIdentifier,
                 (long) 0,
                 new CreateEvent(aggregateBIdentifier),
                 MetaData.emptyInstance())}));

@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.eventsourcing.annotation.AggregateVersion;
+import org.axonframework.eventsourcing.AggregateVersion;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.After;

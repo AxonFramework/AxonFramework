@@ -16,13 +16,11 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.cache.Cache;
 import org.axonframework.commandhandling.model.Aggregate;
-import org.axonframework.common.io.IOUtils;
+import org.axonframework.common.caching.Cache;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -103,7 +101,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      * <p/>
      * By setting this value to false, event counters are kept in memory. This is particularly useful when repositories
      * use caches, preventing events from being loaded. Consider registering the Caches use using {@link
-     * #setAggregateCache(org.axonframework.cache.Cache)} or {@link #setAggregateCaches(java.util.List)}
+     * #setAggregateCache(org.axonframework.common.caching.Cache)} or {@link #setAggregateCaches(java.util.List)}
      *
      * @param clearCountersAfterAppend indicator whether to clear counters after appending events
      */
@@ -142,7 +140,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
         caches.forEach(this::setAggregateCache);
     }
 
-    private class CountingEventStream implements DomainEventStream, Closeable {
+    private class CountingEventStream implements DomainEventStream {
 
         private final DomainEventStream delegate;
         private final AtomicInteger counter;
@@ -176,11 +174,6 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
          */
         protected AtomicInteger getCounter() {
             return counter;
-        }
-
-        @Override
-        public void close() throws IOException {
-            IOUtils.closeIfCloseable(delegate);
         }
     }
 

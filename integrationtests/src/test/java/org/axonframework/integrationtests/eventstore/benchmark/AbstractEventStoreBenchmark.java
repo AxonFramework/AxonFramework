@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.eventstore.benchmark;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -63,27 +63,20 @@ public abstract class AbstractEventStoreBenchmark {
 
         System.out.println(String.format(
                 "Result (%s): %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %.0f events per second",
-                getClass().getSimpleName(),
-                getThreadCount(),
-                getTransactionCount(),
-                getTransactionSize(),
-                (end - start),
-                (((float) getThreadCount() * getTransactionCount() * getTransactionSize()) / ((float) (end - start)
-                        / 1000))));
+                getClass().getSimpleName(), getThreadCount(), getTransactionCount(), getTransactionSize(),
+                (end - start), (((float) getThreadCount() * getTransactionCount() * getTransactionSize()) /
+                        ((float) (end - start) / 1000))));
     }
 
     protected abstract Runnable getRunnableInstance();
 
-    protected int saveAndLoadLargeNumberOfEvents(String aggregateId, EventStore eventStore,
-                                                 int eventSequence) {
+    protected int saveAndLoadLargeNumberOfEvents(String aggregateId, EventStore eventStore, int eventSequence) {
         List<DomainEventMessage<?>> events = new ArrayList<>(getTransactionSize());
         for (int t = 0; t < getTransactionSize(); t++) {
-            events.add(new GenericDomainEventMessage<>(
-                    aggregateId,
-                    eventSequence++,
-                    new StubDomainEvent(), null));
+            events.add(
+                    new GenericDomainEventMessage<>("test", aggregateId, eventSequence++, new StubDomainEvent(), null));
         }
-        eventStore.appendEvents(events);
+        eventStore.publish(events);
         return eventSequence;
     }
 

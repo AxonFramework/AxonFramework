@@ -17,9 +17,9 @@
 package org.axonframework.spring.config.annotation;
 
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.eventhandling.AnnotationEventListenerAdapter;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.annotation.AnnotationEventListenerAdapter;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;

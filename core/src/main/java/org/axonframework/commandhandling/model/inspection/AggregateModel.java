@@ -18,5 +18,7 @@ package org.axonframework.commandhandling.model.inspection;
 
 public interface AggregateModel<T> extends EntityModel<T> {
 
+    String type();
+
     Long getVersion(T target);
 }

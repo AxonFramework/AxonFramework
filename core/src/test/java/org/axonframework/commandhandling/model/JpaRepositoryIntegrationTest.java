@@ -56,15 +56,12 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private List<EventMessage> capturedEvents;
-    private EventProcessor eventProcessor = new SimpleEventProcessor("test");
-
+    private final List<EventMessage> capturedEvents = new ArrayList<>();
+    private final EventProcessor eventProcessor = new PublishingEventProcessor("test", this);
 
     @Before
     public void setUp() {
-        capturedEvents = new ArrayList<>();
         eventBus.subscribe(eventProcessor);
-        eventProcessor.subscribe(this);
     }
 
     @After
@@ -140,8 +137,6 @@ public class JpaRepositoryIntegrationTest implements EventListener {
     }
 
     private UnitOfWork<?> startAndGetUnitOfWork() {
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
-        uow.resources().put(EventBus.KEY, eventBus);
-        return uow;
+        return DefaultUnitOfWork.startAndGet(null);
     }
 }

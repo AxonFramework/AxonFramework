@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ package org.axonframework.spring.messaging.eventbus;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.GenericMessage;
@@ -27,6 +28,7 @@ import org.springframework.messaging.support.GenericMessage;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 /**
  * {@link org.axonframework.eventhandling.EventBus} implementation that delegates all subscription and publishing
@@ -45,12 +47,12 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SpringMessagingEventBus extends AbstractEventBus {
 
-    private final ConcurrentMap<EventProcessor, MessageHandler> handlers =
+    private final ConcurrentMap<Consumer<List<? extends EventMessage<?>>>, MessageHandler> handlers =
             new ConcurrentHashMap<>();
     private SubscribableChannel channel;
 
     @Override
-    protected void prepareCommit(List<EventMessage<?>> events) {
+    protected void prepareCommit(List<? extends EventMessage<?>> events) {
         for (EventMessage event : events) {
             channel.send(new GenericMessage<>(event.getPayload(),
                                               event.getMetaData()));
@@ -58,7 +60,12 @@ public class SpringMessagingEventBus extends AbstractEventBus {
     }
 
     @Override
-    public Registration subscribe(EventProcessor eventProcessor) {
+    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
+        throw new UnsupportedOperationException("This implementation does not support Event Stream tracking");
+    }
+
+    @Override
+    public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         MessageHandler messagehandler = new MessageHandlerAdapter(eventProcessor);
         MessageHandler oldHandler = handlers.putIfAbsent(eventProcessor, messagehandler);
         if (oldHandler == null) {
