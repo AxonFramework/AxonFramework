@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import org.axonframework.messaging.metadata.MetaData;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Default entry point to gain access to the current UnitOfWork. Components managing transactional boundaries can
@@ -43,6 +45,20 @@ public abstract class CurrentUnitOfWork {
      */
     public static boolean isStarted() {
         return CURRENT.get() != null && !CURRENT.get().isEmpty();
+    }
+
+    /**
+     * If a Unit of Work is started, execute the given {@code function} on it. Otherwise, returns an empty Optional.
+     * Use this method when you wish to retrieve information from a Unit of Work, reverting to a default when no Unit
+     * of Work is started.
+     *
+     * @param function The function to apply to the unit of work, if present
+     * @param <T>      The type of return value expected
+     * @return an optional containing the result of the function, or an empty Optional when no Unit of Work was started
+     * @throws NullPointerException when a Unit of Work is present and the function returns null
+     */
+    public static <T> Optional<T> map(Function<UnitOfWork, T> function) {
+        return isStarted() ? Optional.of(function.apply(get())) : Optional.empty();
     }
 
     /**
@@ -112,6 +128,6 @@ public abstract class CurrentUnitOfWork {
     }
 
     public static MetaData correlationData() {
-        return CurrentUnitOfWork.isStarted() ? CurrentUnitOfWork.get().getCorrelationData() : MetaData.emptyInstance();
+        return CurrentUnitOfWork.map(UnitOfWork::getCorrelationData).orElse(MetaData.emptyInstance());
     }
 }

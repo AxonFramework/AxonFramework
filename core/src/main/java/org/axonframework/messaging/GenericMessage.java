@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,7 +32,8 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     private final T payload;
 
     /**
-     * Constructs a Message for the given <code>payload</code> using empty meta data.
+     * Constructs a Message for the given {@code payload} using the correlation data of the current Unit of Work, if
+     * present.
      *
      * @param payload The payload for the message
      */
@@ -38,7 +42,8 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     }
 
     /**
-     * Constructs a Message for the given <code>payload</code> and <code>meta data</code>.
+     * Constructs a Message for the given {@code payload} and {@code meta data}. The given {@code metaData} is
+     * merged with the MetaData from the correlation data of the current unit of work, if present.
      *
      * @param payload  The payload for the message
      * @param metaData The meta data for the message
@@ -49,7 +54,9 @@ public class GenericMessage<T> extends AbstractMessage<T> {
     }
 
     /**
-     * Constructor to reconstruct a Message using existing data.
+     * Constructor to reconstruct a Message using existing data. Note that no correlation data
+     * from a UnitOfWork is attached when using this constructor. If you're constructing a new
+     * Message, use {@link #GenericMessage(Object, Map)} instead.
      *
      * @param identifier The identifier of the Message
      * @param payload    The payload of the message
