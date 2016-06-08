@@ -133,4 +133,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     protected void setExecutionResult(ExecutionResult executionResult) {
         processingContext.setExecutionResult(executionResult);
     }
+
+    public List<? extends Message<?>> getMessages() {
+        return processingContexts.stream().map(MessageProcessingContext::getMessage).collect(Collectors.toList());
+    }
 }

@@ -31,12 +31,14 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     private Registration eventBusRegistration;
 
     public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus) {
-        this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, eventBus, DirectEventProcessingStrategy.INSTANCE);
+        this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, eventBus,
+             DirectEventProcessingStrategy.INSTANCE, NoOpErrorHandler.INSTANCE);
     }
 
-    public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
-                                     EventBus eventBus, EventProcessingStrategy processingStrategy) {
-        super(eventHandlerInvoker, rollbackConfiguration);
+    public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker,
+                                     RollbackConfiguration rollbackConfiguration, EventBus eventBus,
+                                     EventProcessingStrategy processingStrategy, ErrorHandler errorHandler) {
+        super(eventHandlerInvoker, rollbackConfiguration, errorHandler);
         this.eventBus = eventBus;
         this.processingStrategy = processingStrategy;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,26 +11,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.eventhandling;
+
+import java.util.List;
 
 /**
- * Interface for a component that processes Messages.
- *
- * @param <T> The message type this handler can process
  * @author Rene de Waele
- * @since 3.0
  */
-@FunctionalInterface
-public interface MessageHandler<T extends Message<?>> {
+public interface ErrorHandler {
 
-    /**
-     * Handles the given <code>message</code>.
-     *
-     * @param message        The message to be processed.
-     * @return The result of the message processing.
-     *
-     * @throws Exception any exception that occurs during message handling
-     */
-    Object handle(T message) throws Exception;
+    void handleError(String eventProcessor, Throwable error, List<? extends EventMessage<?>> failedEvents,
+                     Runnable retryMethod);
 
 }

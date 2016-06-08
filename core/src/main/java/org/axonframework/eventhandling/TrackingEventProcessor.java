@@ -48,12 +48,14 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private volatile TrackingToken lastToken;
 
     public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus, TokenStore tokenStore) {
-        this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, eventBus, tokenStore, 0, 1);
+        this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
+             tokenStore, 0, 1);
     }
 
     public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
-                                  EventBus eventBus, TokenStore tokenStore, int segment, int batchSize) {
-        super(eventHandlerInvoker, rollbackConfiguration);
+                                  ErrorHandler errorHandler, EventBus eventBus, TokenStore tokenStore, int segment,
+                                  int batchSize) {
+        super(eventHandlerInvoker, rollbackConfiguration, errorHandler);
         this.eventBus = requireNonNull(eventBus);
         this.tokenStore = requireNonNull(tokenStore);
         this.segment = requireNonNull(segment);

@@ -17,6 +17,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.ExecutionResult;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -34,10 +35,13 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
     private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
+    private final ErrorHandler errorHandler;
 
-    public AbstractEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration) {
-        this.eventHandlerInvoker = eventHandlerInvoker;
+    public AbstractEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
+                                  ErrorHandler errorHandler) {
+        this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
         this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
+        this.errorHandler = requireNonNull(errorHandler);
     }
 
     @Override
@@ -57,8 +61,15 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
     }
 
     @Override
+    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void accept(List<? extends EventMessage<?>> eventMessages) {
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
+        unitOfWork.onRollback(uow -> {
+            ExecutionResult executionResult = uow.getExecutionResult();
+            Throwable error = executionResult == null || !executionResult.isExceptionResult() ? null :
+                    executionResult.getExceptionResult();
+            errorHandler.handleError(getName(), error, eventMessages, () -> accept(eventMessages));
+        });
         try {
             unitOfWork.executeWithResult(
                     () -> new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed(),
