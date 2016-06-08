@@ -49,6 +49,11 @@ public final class ClasspathParameterResolverFactory {
             new WeakHashMap<>();
 
     /**
+     * Private default constructor
+     */
+    private ClasspathParameterResolverFactory() {}
+
+    /**
      * Creates an instance for the given <code>clazz</code>. Effectively, the class loader of the given class is used
      * to locate implementations.
      *
