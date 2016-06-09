@@ -6,6 +6,8 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +37,26 @@ public abstract class AbstractEventBus implements EventBus {
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
     final String eventsKey = this + "_EVENTS";
+    private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();
+
+    /**
+     * Initializes an event bus with a {@link NoOpMessageMonitor}.
+     */
+    public AbstractEventBus() {
+        this(NoOpMessageMonitor.INSTANCE);
+    }
+
+    /**
+     * Initializes an event bus. Uses the given <code>messageMonitor</code> to report ingested messages and report the
+     * result of processing the message.
+     *
+     * @param messageMonitor The monitor used to monitor the ingested messages
+     */
+    public AbstractEventBus(MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        this.messageMonitor = messageMonitor;
+    }
 
     @Override
     public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
@@ -137,7 +157,8 @@ public abstract class AbstractEventBus implements EventBus {
         return preprocessedEvents;
     }
 
-    private void doWithEvents(Consumer<List<? extends EventMessage<?>>> eventsConsumer, List<? extends EventMessage<?>> events) {
+    private void doWithEvents(Consumer<List<? extends EventMessage<?>>> eventsConsumer,
+                              List<? extends EventMessage<?>> events) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().resources().remove(eventsKey);
         }
@@ -146,11 +167,13 @@ public abstract class AbstractEventBus implements EventBus {
 
     /**
      * Process given <code>events</code> while the Unit of Work root is preparing for commit. The default implementation
-     * passes the events to each registered event processor.
+     * signals the registered {@link MessageMonitor} that the given events are ingested and passes the events to each
+     * registered event processor.
      *
      * @param events Events to be published by this Event Bus
      */
     protected void prepareCommit(List<? extends EventMessage<?>> events) {
+        events.forEach(messageMonitor::onMessageIngested);
         eventProcessors.forEach(eventProcessor -> eventProcessor.accept(events));
     }
 

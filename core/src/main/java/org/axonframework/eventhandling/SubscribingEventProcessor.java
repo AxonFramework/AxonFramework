@@ -16,6 +16,8 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.metrics.NoOpMessageMonitor;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -31,14 +33,20 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     private Registration eventBusRegistration;
 
     public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus) {
+        this(eventHandlerInvoker, eventBus, NoOpMessageMonitor.INSTANCE);
+    }
+
+    public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
+                                     MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, eventBus,
-             DirectEventProcessingStrategy.INSTANCE, NoOpErrorHandler.INSTANCE);
+             DirectEventProcessingStrategy.INSTANCE, NoOpErrorHandler.INSTANCE, messageMonitor);
     }
 
     public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker,
                                      RollbackConfiguration rollbackConfiguration, EventBus eventBus,
-                                     EventProcessingStrategy processingStrategy, ErrorHandler errorHandler) {
-        super(eventHandlerInvoker, rollbackConfiguration, errorHandler);
+                                     EventProcessingStrategy processingStrategy, ErrorHandler errorHandler,
+                                     MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        super(eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         this.eventBus = eventBus;
         this.processingStrategy = processingStrategy;
     }

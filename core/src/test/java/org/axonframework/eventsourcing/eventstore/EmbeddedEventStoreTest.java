@@ -16,6 +16,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.metrics.NoOpMessageMonitor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +55,8 @@ public class EmbeddedEventStoreTest {
 
     private void newTestSubject(int cachedEvents, long fetchDelay, long cleanupDelay) {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = new EmbeddedEventStore(storageEngine, cachedEvents, fetchDelay, cleanupDelay, MILLISECONDS);
+        testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
+                                             cleanupDelay, MILLISECONDS);
         testSubject.initialize();
     }
 

@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
+import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,11 +48,22 @@ public class SimpleEventBus extends AbstractEventBus {
     private final Collection<EventConsumer> eventStreams = new CopyOnWriteArraySet<>();
     private final int queueCapacity;
 
+    /**
+     * Initializes an event bus using a {@link NoOpMessageMonitor} and default queue capacity of {@link
+     * Integer#MAX_VALUE}.
+     */
     public SimpleEventBus() {
-        this(DEFAULT_QUEUE_CAPACITY);
+        this.queueCapacity = DEFAULT_QUEUE_CAPACITY;
     }
 
-    public SimpleEventBus(int queueCapacity) {
+    /**
+     * Initializes an event bus. Uses the given <code>messageMonitor</code> to report ingested messages and report the
+     * result of processing the message.
+     *
+     * @param messageMonitor The monitor used to monitor the ingested messages
+     */
+    public SimpleEventBus(int queueCapacity, MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        super(messageMonitor);
         this.queueCapacity = queueCapacity;
     }
 

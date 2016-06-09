@@ -11,6 +11,9 @@
 
     <artifactId>axon-metrics</artifactId>
 
+    <name>Axon Metrics</name>
+    <description>This module contains components that provide metrics for standard Axon components.</description>
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>

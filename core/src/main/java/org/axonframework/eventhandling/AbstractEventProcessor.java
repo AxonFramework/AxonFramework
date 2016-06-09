@@ -17,16 +17,19 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
-import org.axonframework.messaging.unitofwork.ExecutionResult;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.metrics.MessageMonitor;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * @author Rene de Waele
@@ -36,12 +39,14 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
     private final ErrorHandler errorHandler;
+    private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
     public AbstractEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
-                                  ErrorHandler errorHandler) {
+                                  ErrorHandler errorHandler, MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
         this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
         this.errorHandler = requireNonNull(errorHandler);
+        this.messageMonitor = messageMonitor;
     }
 
     @Override
@@ -63,12 +68,19 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
     @Override
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void accept(List<? extends EventMessage<?>> eventMessages) {
+        Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
+                eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
-        unitOfWork.onRollback(uow -> {
-            ExecutionResult executionResult = uow.getExecutionResult();
-            Throwable error = executionResult == null || !executionResult.isExceptionResult() ? null :
-                    executionResult.getExceptionResult();
-            errorHandler.handleError(getName(), error, eventMessages, () -> accept(eventMessages));
+        unitOfWork.onRollback(uow -> errorHandler
+                .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
+                             () -> accept(eventMessages)));
+        unitOfWork.onCleanup(uow -> {
+            MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
+            if (uow.isRolledBack()) {
+                callback.reportFailure(uow.getExecutionResult().getExceptionResult());
+            } else {
+                callback.reportSuccess();
+            }
         });
         try {
             unitOfWork.executeWithResult(

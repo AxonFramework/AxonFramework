@@ -20,6 +20,8 @@ import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,14 +50,19 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private volatile TrackingToken lastToken;
 
     public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus, TokenStore tokenStore) {
+        this(eventHandlerInvoker, eventBus, tokenStore, NoOpMessageMonitor.INSTANCE);
+    }
+
+    public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus, TokenStore tokenStore,
+                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
-             tokenStore, 0, 1);
+             tokenStore, 0, 1, messageMonitor);
     }
 
     public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
                                   ErrorHandler errorHandler, EventBus eventBus, TokenStore tokenStore, int segment,
-                                  int batchSize) {
-        super(eventHandlerInvoker, rollbackConfiguration, errorHandler);
+                                  int batchSize, MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        super(eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         this.eventBus = requireNonNull(eventBus);
         this.tokenStore = requireNonNull(tokenStore);
         this.segment = requireNonNull(segment);

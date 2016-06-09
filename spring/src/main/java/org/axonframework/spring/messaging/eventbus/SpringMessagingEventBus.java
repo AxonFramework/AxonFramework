@@ -47,6 +47,8 @@ import java.util.function.Consumer;
  */
 public class SpringMessagingEventBus extends AbstractEventBus {
 
+    //todo turn this into an event processor
+
     private final ConcurrentMap<Consumer<List<? extends EventMessage<?>>>, MessageHandler> handlers =
             new ConcurrentHashMap<>();
     private SubscribableChannel channel;

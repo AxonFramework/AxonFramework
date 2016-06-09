@@ -17,6 +17,8 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,12 +51,16 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private volatile Node oldest;
 
     public EmbeddedEventStore(EventStorageEngine storageEngine) {
-        this(storageEngine, 10000, 1000L, 10000L, TimeUnit.MILLISECONDS);
+        this(storageEngine, NoOpMessageMonitor.INSTANCE);
     }
 
-    public EmbeddedEventStore(EventStorageEngine storageEngine, int cachedEvents, long fetchDelay, long cleanupDelay,
-                              TimeUnit timeUnit) {
-        super(storageEngine);
+    public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor) {
+        this(storageEngine, monitor, 10000, 1000L, 10000L, TimeUnit.MILLISECONDS);
+    }
+
+    public EmbeddedEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> monitor,
+                              int cachedEvents, long fetchDelay, long cleanupDelay, TimeUnit timeUnit) {
+        super(storageEngine, monitor);
         threadFactory = new AxonThreadFactory(THREAD_GROUP);
         cleanupService = Executors.newScheduledThreadPool(1, threadFactory);
         producer = new EventProducer(timeUnit.toNanos(fetchDelay), cachedEvents);
