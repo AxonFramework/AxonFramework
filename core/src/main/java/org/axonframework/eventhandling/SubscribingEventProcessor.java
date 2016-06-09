@@ -19,8 +19,6 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.metrics.MessageMonitor;
 import org.axonframework.metrics.NoOpMessageMonitor;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Optional;
 
 /**
@@ -51,12 +49,10 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
         this.processingStrategy = processingStrategy;
     }
 
-    @PostConstruct
     public void start() {
         eventBusRegistration = eventBus.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this));
     }
 
-    @PreDestroy
     public void shutDown() {
         Optional.ofNullable(eventBusRegistration).ifPresent(Registration::cancel);
     }

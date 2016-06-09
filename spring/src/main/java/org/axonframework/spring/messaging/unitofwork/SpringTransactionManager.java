@@ -14,12 +14,16 @@
 package org.axonframework.spring.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.interceptors.Transaction;
-import org.axonframework.messaging.interceptors.TransactionManager;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionIsolationLevel;
+import org.axonframework.common.transaction.TransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * TransactionManager implementation that uses a {@link org.springframework.transaction.PlatformTransactionManager} as
@@ -30,8 +34,9 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
  */
 public class SpringTransactionManager implements TransactionManager {
 
-    private PlatformTransactionManager transactionManager;
-    private TransactionDefinition transactionDefinition;
+    private final PlatformTransactionManager transactionManager;
+    private final TransactionDefinition defaultTransactionDefinition;
+    private final Map<Integer, TransactionDefinition> transactionDefinitions = new ConcurrentHashMap<>();
 
     /**
      * @param transactionManager    The transaction manager to use
@@ -41,7 +46,7 @@ public class SpringTransactionManager implements TransactionManager {
                                     TransactionDefinition transactionDefinition) {
         Assert.notNull(transactionManager, "transactionManager may not be null");
         this.transactionManager = transactionManager;
-        this.transactionDefinition = transactionDefinition;
+        this.defaultTransactionDefinition = transactionDefinition;
     }
 
     /**
@@ -54,16 +59,15 @@ public class SpringTransactionManager implements TransactionManager {
         this(transactionManager, new DefaultTransactionDefinition());
     }
 
-    /**
-     * Default constructor. Requires the transaction manager to be set using setter injection.
-     */
-    public SpringTransactionManager() {
-        this.transactionDefinition = new DefaultTransactionDefinition();
-    }
-
     @Override
-    public Transaction startTransaction() {
-        TransactionStatus status = transactionManager.getTransaction(transactionDefinition);
+    public Transaction startTransaction(TransactionIsolationLevel isolationLevel) {
+        TransactionStatus status =
+                transactionManager.getTransaction(transactionDefinitions.computeIfAbsent(isolationLevel.get(), i -> {
+                    DefaultTransactionDefinition result =
+                            new DefaultTransactionDefinition(defaultTransactionDefinition);
+                    result.setIsolationLevel(i);
+                    return result;
+                }));
         return new Transaction() {
             @Override
             public void commit() {
@@ -97,24 +101,5 @@ public class SpringTransactionManager implements TransactionManager {
         if (status.isNewTransaction() && !status.isCompleted()) {
             transactionManager.rollback(status);
         }
-    }
-
-    /**
-     * The PlatformTransactionManager that manages the transactions with the underlying data source.
-     *
-     * @param transactionManager the transaction manager that manages transactions with underlying data sources
-     */
-    public void setTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
-    /**
-     * The TransactionDefinition to use by the transaction manager. Defaults to a {@link
-     * org.springframework.transaction.support.DefaultTransactionDefinition}.
-     *
-     * @param transactionDefinition the TransactionDefinition to use by the transaction manager
-     */
-    public void setTransactionDefinition(TransactionDefinition transactionDefinition) {
-        this.transactionDefinition = transactionDefinition;
     }
 }

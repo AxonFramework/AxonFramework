@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.mongo;
 
 import com.mongodb.MongoException;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
@@ -43,7 +44,7 @@ import java.util.Optional;
 public class MongoEventStorageEngine extends BatchingEventStorageEngine {
 
     private final MongoTemplate template;
-    private final org.axonframework.eventsourcing.eventstore.mongo.StorageStrategy storageStrategy;
+    private final StorageStrategy storageStrategy;
 
     /**
      * Constructor that accepts only a MongoTemplate. A Document-Per-Event storage strategy is used, causing each event
@@ -62,6 +63,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      * @param storageStrategy The strategy for storing and retrieving events from the collections
      */
     public MongoEventStorageEngine(MongoTemplate template, org.axonframework.eventsourcing.eventstore.mongo.StorageStrategy storageStrategy) {
+        super(NoTransactionManager.INSTANCE);
         this.template = template;
         this.storageStrategy = storageStrategy;
         setPersistenceExceptionResolver(exception -> exception instanceof MongoException.DuplicateKey);
@@ -102,14 +104,19 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    protected List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
-                                                            int batchSize) {
+    protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
+                                                                   int batchSize) {
         return storageStrategy
                 .findDomainEvents(template.eventCollection(), aggregateIdentifier, firstSequenceNumber, batchSize);
     }
 
     @Override
-    protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
+    protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         return storageStrategy.findTrackedEvents(template.eventCollection(), lastToken, batchSize);
+    }
+
+    @Override
+    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
+        return storageStrategy.getTokenForGapDetection(token);
     }
 }

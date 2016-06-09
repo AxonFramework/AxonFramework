@@ -23,7 +23,7 @@ import java.sql.SQLException;
 public abstract class AbstractEventSchemaFactory implements EventSchemaFactory {
     @Override
     public PreparedStatement createDomainEventTable(Connection connection,
-                                                    EventSchemaConfiguration configuration) throws SQLException {
+                                                    EventSchema configuration) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS " + configuration.domainEventTable() + " (\n" +
                 configuration.globalIndexColumn() + " BIGINT " + autoIncrement() + " NOT NULL,\n" +
                 configuration.aggregateIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
@@ -45,7 +45,7 @@ public abstract class AbstractEventSchemaFactory implements EventSchemaFactory {
 
     @Override
     public PreparedStatement createSnapshotEventTable(Connection connection,
-                                                      EventSchemaConfiguration configuration) throws SQLException {
+                                                      EventSchema configuration) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS " + configuration.snapshotTable() + " (\n" +
                 configuration.aggregateIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                 configuration.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +

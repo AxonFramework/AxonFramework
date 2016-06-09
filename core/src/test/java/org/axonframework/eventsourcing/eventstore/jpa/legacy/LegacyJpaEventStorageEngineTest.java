@@ -15,6 +15,7 @@ package org.axonframework.eventsourcing.eventstore.jpa.legacy;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
@@ -61,7 +62,7 @@ public class LegacyJpaEventStorageEngineTest extends BatchingEventStorageEngineT
     private static class CustomLegacyJpaEventStorageEngine extends LegacyJpaEventStorageEngine {
 
         private CustomLegacyJpaEventStorageEngine(EntityManagerProvider entityManagerProvider) {
-            super(entityManagerProvider);
+            super(entityManagerProvider, NoTransactionManager.INSTANCE);
         }
 
         @Override

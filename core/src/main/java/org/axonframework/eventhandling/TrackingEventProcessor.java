@@ -25,8 +25,6 @@ import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -43,7 +41,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     private final EventBus eventBus;
     private final TokenStore tokenStore;
-    private final int segment;
     private final int batchSize;
     private final ExecutorService executorService = newSingleThreadExecutor(new AxonThreadFactory(threadGroup));
     private TrackingEventStream eventStream;
@@ -56,28 +53,26 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus, TokenStore tokenStore,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
-             tokenStore, 0, 1, messageMonitor);
+             tokenStore, 1, messageMonitor);
     }
 
     public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
-                                  ErrorHandler errorHandler, EventBus eventBus, TokenStore tokenStore, int segment,
-                                  int batchSize, MessageMonitor<? super EventMessage<?>> messageMonitor) {
+                                  ErrorHandler errorHandler, EventBus eventBus, TokenStore tokenStore, int batchSize,
+                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         this.eventBus = requireNonNull(eventBus);
         this.tokenStore = requireNonNull(tokenStore);
-        this.segment = requireNonNull(segment);
         Assert.isTrue(batchSize > 0, "batchSize needs to be greater than 0");
         this.batchSize = batchSize;
     }
 
-    @PostConstruct
-    public void initialize() {
+    public void start() {
         registerInterceptor((unitOfWork, interceptorChain) -> {
             unitOfWork.onPrepareCommit(uow -> {
                 EventMessage<?> event = uow.getMessage();
                 if (event instanceof TrackedEventMessage<?> &&
                         ((TrackedEventMessage) event).trackingToken().equals(lastToken)) {
-                    tokenStore.storeToken(getName(), segment, lastToken);
+                    tokenStore.storeToken(getName(), 0, lastToken);
                 }
             });
             unitOfWork.afterCommit(uow -> {
@@ -92,7 +87,6 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         supplyNextBatch();
     }
 
-    @PreDestroy
     public void shutDown() {
         executorService.shutdown();
     }
@@ -105,7 +99,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
 
     protected void doSupplyNextBatch() {
         if (eventStream == null) {
-            TrackingToken startToken = tokenStore.fetchToken(getName(), segment);
+            TrackingToken startToken = tokenStore.fetchToken(getName(), 0);
             eventStream = eventBus.streamEvents(startToken);
         }
         List<TrackedEventMessage<?>> batch = new ArrayList<>();

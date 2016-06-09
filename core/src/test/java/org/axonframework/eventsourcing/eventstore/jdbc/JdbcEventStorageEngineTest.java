@@ -13,6 +13,7 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -30,13 +31,13 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.cre
  */
 public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
-    private JdbcEventStorageEngine testSubject;
+    private AbstractJdbcEventStorageEngine testSubject;
 
     @Before
     public void setUp() throws SQLException {
         JDBCDataSource dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
-        testSubject = new JdbcEventStorageEngine(dataSource::getConnection);
+        testSubject = new JdbcEventStorageEngine(dataSource::getConnection, NoTransactionManager.INSTANCE);
         testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
         setTestSubject(testSubject);
 
@@ -56,15 +57,14 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     public void testCustomSchemaConfig() throws Exception {
-        EventSchemaConfiguration customConfiguration = EventSchemaConfiguration.builder()
-                .withEventTable("CustomDomainEvent").withPayloadColumn("eventData").build();
+        EventSchema customConfiguration =
+                EventSchema.builder().withEventTable("CustomDomainEvent").withPayloadColumn("eventData").build();
 
         JDBCDataSource dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
 
-        EventSchema eventSchema = new DefaultEventSchema(customConfiguration, String.class);
-
-        testSubject = new JdbcEventStorageEngine(dataSource::getConnection, eventSchema);
+        testSubject = new JdbcEventStorageEngine(dataSource::getConnection, NoTransactionManager.INSTANCE,
+                                                 customConfiguration, String.class);
         testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
         setTestSubject(testSubject);
 

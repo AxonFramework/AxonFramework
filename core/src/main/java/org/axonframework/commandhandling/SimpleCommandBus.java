@@ -17,8 +17,8 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.*;
-import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.unitofwork.*;
 import org.axonframework.metrics.MessageMonitor;
 import org.axonframework.metrics.NoOpMessageMonitor;
@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 

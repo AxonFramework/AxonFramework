@@ -54,7 +54,7 @@ public class TrackingEventProcessorTest {
         testSubject = new TrackingEventProcessor(eventHandlerInvoker, eventBus, tokenStore);
 
         eventBus.initialize();
-        testSubject.initialize();
+        testSubject.start();
     }
 
     @After
@@ -71,7 +71,7 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
         eventBus.publish(createEvents(2));
-        assertTrue(countDownLatch.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(countDownLatch.await(200, TimeUnit.MILLISECONDS));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         eventBus.publish(createEvent());
-        assertTrue(countDownLatch.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(countDownLatch.await(200, TimeUnit.MILLISECONDS));
         verify(tokenStore).storeToken(any(), anyInt(), any());
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
@@ -101,7 +101,7 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         eventBus.publish(createEvent());
-        assertTrue(countDownLatch.await(100, TimeUnit.MILLISECONDS));
+        assertTrue(countDownLatch.await(500, TimeUnit.MILLISECONDS));
         verify(tokenStore).storeToken(any(), anyInt(), any());
         assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
@@ -111,6 +111,7 @@ public class TrackingEventProcessorTest {
     public void testContinueFromPreviousToken() throws Exception {
         testSubject.shutDown();
 
+        tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(10));
         TrackedEventMessage<?> firstEvent = eventBus.streamEvents(null).nextAvailable();
         tokenStore.storeToken(testSubject.getName(), 0, firstEvent.trackingToken());
@@ -125,8 +126,8 @@ public class TrackingEventProcessorTest {
         }).when(mockListener).handle(any());
 
         testSubject = new TrackingEventProcessor(eventHandlerInvoker, eventBus, tokenStore);
-        testSubject.initialize();
-        assertTrue(countDownLatch.await(100, TimeUnit.MILLISECONDS));
+        testSubject.start();
+        assertTrue(countDownLatch.await(200, TimeUnit.MILLISECONDS));
         assertEquals(9, ackedEvents.size());
     }
 

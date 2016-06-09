@@ -13,14 +13,17 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Spliterators;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionIsolationLevel;
+import org.axonframework.common.transaction.TransactionManager;
+
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author Rene de Waele
@@ -29,11 +32,13 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
 
     private static final int DEFAULT_BATCH_SIZE = 100;
     private int batchSize = DEFAULT_BATCH_SIZE;
+    private final TransactionManager transactionManager;
 
-    /**
-     * The returned iterator will be closed if the resulting stream is closed.
-     */
-    protected abstract List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize);
+    protected BatchingEventStorageEngine(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    protected abstract List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize);
 
     /**
      * Fetch a batch of events published by an aggregate with given {@code aggregateIdentifier}.
@@ -45,15 +50,15 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * If the returned number of entries is smaller than the given {@code batchSize} it is assumed that the storage
      * holds no further applicable entries.
      */
-    protected abstract List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier,
-                                                                     long firstSequenceNumber, int batchSize);
+    protected abstract List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier,
+                                                                            long firstSequenceNumber, int batchSize);
 
     @Override
     protected Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber) {
         EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
-                lastItem -> fetchBatch(identifier,
-                                       lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
-                                       batchSize), batchSize);
+                lastItem -> fetchDomainEvents(identifier,
+                                              lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
+                                              batchSize), batchSize, false);
         return StreamSupport.stream(spliterator, false);
     }
 
@@ -64,10 +69,71 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      */
     @Override
     protected Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
-        EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
-                lastItem -> fetchBatch(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
-                batchSize);
+        EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(lastItem -> {
+            List<? extends TrackedEventData<?>> result =
+                    fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize);
+            if (!mayBlock && containsGaps(trackingToken, result)) {
+                result = ensureNoGaps(trackingToken, result);
+            }
+            return result;
+        }, batchSize, true);
         return StreamSupport.stream(spliterator, false);
+    }
+
+    protected boolean containsGaps(TrackingToken lastToken, List<? extends TrackedEventData<?>> entries) {
+        if (entries.isEmpty()) {
+            return false;
+        }
+        Iterator<? extends TrackedEventData<?>> iterator = entries.iterator();
+        TrackingToken previousToken = lastToken;
+        if (previousToken == null) {
+            previousToken = iterator.next().trackingToken();
+        }
+        while (iterator.hasNext()) {
+            TrackingToken nextToken = iterator.next().trackingToken();
+            if (!previousToken.isGuaranteedNext(nextToken)) {
+                return true;
+            }
+            previousToken = nextToken;
+        }
+        return false;
+    }
+
+    protected List<? extends TrackedEventData<?>> ensureNoGaps(TrackingToken lastToken,
+                                                               List<? extends TrackedEventData<?>> batch) {
+        if (batch.isEmpty()) {
+            return batch;
+        }
+        Transaction transaction = transactionManager.startTransaction(TransactionIsolationLevel.READ_UNCOMMITTED);
+        try {
+            List<TrackingToken> existingTokens =
+                    fetchTokenRange(getTokenForGapDetection(lastToken), batch.get(batch.size() - 1).trackingToken());
+            List<? extends TrackedEventData<?>> result = batch;
+            for (int i = 0; i < batch.size(); i++) {
+                if (!existingTokens.contains(batch.get(i).trackingToken())) {
+                    result = batch.subList(0, i);
+                    break;
+                }
+            }
+            transaction.commit();
+            return result;
+        } catch (Throwable e) {
+            transaction.rollback();
+            throw e;
+        }
+    }
+
+    protected abstract TrackingToken getTokenForGapDetection(TrackingToken token);
+
+    protected List<TrackingToken> fetchTokenRange(TrackingToken lastToken, TrackingToken end) {
+        List<TrackingToken> result = new ArrayList<>(Collections.singletonList(lastToken));
+        while (end.isAfter(lastToken)) {
+            result.addAll(
+                    fetchTrackedEvents(lastToken, (int) (batchSize * 1.1)).stream().map(TrackedEventData::trackingToken)
+                            .filter(token -> !token.isAfter(end)).collect(toList()));
+            lastToken = result.get(result.size() - 1);
+        }
+        return result;
     }
 
     /**
@@ -83,30 +149,37 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         this.batchSize = batchSize;
     }
 
+    public int batchSize() {
+        return batchSize;
+    }
+
     private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
 
         private final Function<T, List<? extends T>> fetchFunction;
         private final int batchSize;
+        private final boolean fetchUntilEmpty;
         private Iterator<? extends T> iterator;
         private T lastItem;
-        private int lastBatchSize;
+        private int sizeOfLastBatch;
 
-        private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction, int batchSize) {
+        private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction, int batchSize,
+                                       boolean fetchUntilEmpty) {
             super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
             this.fetchFunction = fetchFunction;
             this.batchSize = batchSize;
+            this.fetchUntilEmpty = fetchUntilEmpty;
         }
 
         @Override
         public boolean tryAdvance(Consumer<? super T> action) {
             Objects.requireNonNull(action);
             if (iterator == null || !iterator.hasNext()) {
-                if (iterator != null && batchSize > lastBatchSize) {
+                if (iterator != null && batchSize > sizeOfLastBatch && !fetchUntilEmpty) {
                     return false;
                 }
                 List<? extends T> items = fetchFunction.apply(lastItem);
                 iterator = items.iterator();
-                if ((lastBatchSize = items.size()) == 0) {
+                if ((sizeOfLastBatch = items.size()) == 0) {
                     return false;
                 }
             }

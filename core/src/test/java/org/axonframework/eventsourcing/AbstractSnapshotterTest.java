@@ -19,10 +19,11 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionIsolationLevel;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.interceptors.Transaction;
-import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.metadata.MetaData;
 import org.hamcrest.Matcher;
 import org.junit.After;
@@ -188,7 +189,7 @@ public class AbstractSnapshotterTest {
         }
 
         @Override
-        public Transaction startTransaction() {
+        public Transaction startTransaction(TransactionIsolationLevel isolationLevel) {
             return transaction;
         }
     }

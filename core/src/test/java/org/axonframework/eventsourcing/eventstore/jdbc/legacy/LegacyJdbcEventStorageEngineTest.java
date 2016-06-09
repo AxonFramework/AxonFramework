@@ -13,10 +13,11 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc.legacy;
 
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.jdbc.EventSchemaConfiguration;
+import org.axonframework.eventsourcing.eventstore.jdbc.AbstractJdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventSchemaFactory;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.Before;
@@ -30,14 +31,14 @@ import java.sql.SQLException;
  */
 public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
-    private JdbcEventStorageEngine testSubject;
+    private AbstractJdbcEventStorageEngine testSubject;
 
     @Before
     public void setUp() throws SQLException {
         JDBCDataSource dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
 
-        testSubject = new JdbcEventStorageEngine(dataSource::getConnection, new LegacyEventSchema());
+        testSubject = new LegacyJdbcEventStorageEngine(dataSource::getConnection, NoTransactionManager.INSTANCE);
         testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
         setTestSubject(testSubject);
 
@@ -50,7 +51,7 @@ public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngine
     private static class LegacyEventSchemaFactory extends HsqlEventSchemaFactory {
         @Override
         public PreparedStatement createDomainEventTable(Connection connection,
-                                                        EventSchemaConfiguration configuration) throws SQLException {
+                                                        EventSchema configuration) throws SQLException {
             String sql = "CREATE TABLE IF NOT EXISTS " + configuration.domainEventTable() + " (\n" +
                     configuration.aggregateIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
                     configuration.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +

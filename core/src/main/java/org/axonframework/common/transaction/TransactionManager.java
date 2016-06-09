@@ -11,10 +11,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.interceptors;
-
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+package org.axonframework.common.transaction;
 
 /**
  * Interface towards a mechanism that manages transactions
@@ -27,26 +24,35 @@ import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 public interface TransactionManager {
 
     /**
-     * Starts a transaction. The return value is the started transaction that can be committed or rolled back.
+     * Starts a transaction with {@link java.sql.Connection#TRANSACTION_READ_COMMITTED} isolation level. The return
+     * value is the started transaction that can be committed or rolled back.
      *
      * @return The object representing the transaction
      */
-    Transaction startTransaction();
-
-    default void executeInTransaction(Runnable task) {
-        executeInTransaction(task, RollbackConfigurationType.RUNTIME_EXCEPTIONS);
+    default Transaction startTransaction() {
+        return startTransaction(TransactionIsolationLevel.READ_COMMITTED);
     }
 
-    default void executeInTransaction(Runnable task, RollbackConfiguration rollbackConfiguration) {
-        Transaction transaction = startTransaction();
+    /**
+     * Starts a transaction with given <code>isolationLevel</code>. The return value is the started transaction that can
+     * be committed or rolled back.
+     *
+     * @return The object representing the transaction
+     */
+    Transaction startTransaction(TransactionIsolationLevel isolationLevel);
+
+    default void executeInTransaction(TransactionIsolationLevel isolationLevel, Runnable task) {
+        Transaction transaction = startTransaction(isolationLevel);
         try {
             task.run();
             transaction.commit();
         } catch (Throwable e) {
-            if (rollbackConfiguration.rollBackOn(e)) {
-                transaction.rollback();
-            }
+            transaction.rollback();
             throw e;
         }
+    }
+
+    default void executeInTransaction(Runnable task) {
+        executeInTransaction(TransactionIsolationLevel.READ_COMMITTED, task);
     }
 }

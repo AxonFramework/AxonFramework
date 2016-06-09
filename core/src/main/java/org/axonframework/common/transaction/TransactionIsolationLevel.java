@@ -11,29 +11,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.interceptors;
+package org.axonframework.common.transaction;
+
+import java.sql.Connection;
 
 /**
- * TransactionManager implementation that does nothing. Is a placeholder implementation for the cases where no special
- * transaction management is required.
- *
- * @author Allard Buijze
- * @since 2.0
+ * @author Rene de Waele
  */
-public class NoTransactionManager implements TransactionManager {
+public enum TransactionIsolationLevel {
 
-    @Override
-    public Transaction startTransaction() {
-        return new Transaction() {
-            @Override
-            public void commit() {
-                //no op
-            }
+    READ_COMMITTED(Connection.TRANSACTION_READ_COMMITTED),
+    READ_UNCOMMITTED(Connection.TRANSACTION_READ_UNCOMMITTED);
 
-            @Override
-            public void rollback() {
-                //no op
-            }
-        };
+    private final int isolationLevel;
+
+    TransactionIsolationLevel(int isolationLevel) {
+        this.isolationLevel = isolationLevel;
+    }
+
+    public int get() {
+        return isolationLevel;
     }
 }

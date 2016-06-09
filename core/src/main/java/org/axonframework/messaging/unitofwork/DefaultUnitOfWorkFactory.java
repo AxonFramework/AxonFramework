@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.transaction.Transaction;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.interceptors.Transaction;
-import org.axonframework.messaging.interceptors.TransactionManager;
 
 /**
  * {@link UnitOfWorkFactory} implementation that creates instances of the {@link DefaultUnitOfWork}.

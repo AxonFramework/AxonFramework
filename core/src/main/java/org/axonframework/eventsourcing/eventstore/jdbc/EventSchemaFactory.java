@@ -30,7 +30,7 @@ public interface EventSchemaFactory {
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     PreparedStatement createDomainEventTable(Connection connection,
-                                             EventSchemaConfiguration schemaConfiguration) throws SQLException;
+                                             EventSchema schemaConfiguration) throws SQLException;
 
     /**
      * Creates a PreparedStatement that allows for the creation of the table to store Snapshots.
@@ -40,6 +40,6 @@ public interface EventSchemaFactory {
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
     PreparedStatement createSnapshotEventTable(Connection connection,
-                                               EventSchemaConfiguration schemaConfiguration) throws SQLException;
+                                               EventSchema schemaConfiguration) throws SQLException;
 
 }

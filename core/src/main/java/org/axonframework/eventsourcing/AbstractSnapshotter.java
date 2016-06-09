@@ -18,10 +18,10 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.DirectExecutor;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.interceptors.NoTransactionManager;
-import org.axonframework.messaging.interceptors.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +50,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * @param eventStorageEngine the EventStore instance to store snapshots in
      */
     protected AbstractSnapshotter(EventStorageEngine eventStorageEngine) {
-        this(eventStorageEngine, new NoTransactionManager());
+        this(eventStorageEngine, NoTransactionManager.INSTANCE);
     }
 
     /**

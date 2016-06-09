@@ -15,6 +15,7 @@ package org.axonframework.eventsourcing.eventstore.jpa.legacy;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
@@ -33,25 +34,35 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEven
  * @author Rene de Waele
  */
 public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
-    public LegacyJpaEventStorageEngine(EntityManagerProvider entityManagerProvider) {
-        super(entityManagerProvider);
+
+    private static final long DEFAULT_GAP_DETECTION_INTERVAL = 10000L;
+
+    private final long gapDetectionInterval;
+
+    public LegacyJpaEventStorageEngine(EntityManagerProvider entityManagerProvider,
+                                       TransactionManager transactionManager) {
+        super(entityManagerProvider, transactionManager);
+        this.gapDetectionInterval = DEFAULT_GAP_DETECTION_INTERVAL;
+    }
+
+    public LegacyJpaEventStorageEngine(EntityManagerProvider entityManagerProvider,
+                                       TransactionManager transactionManager, long gapDetectionInterval) {
+        super(entityManagerProvider, transactionManager);
+        this.gapDetectionInterval = gapDetectionInterval;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
+    protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof LegacyTrackingToken,
                       String.format("Token %s is of the wrong type", lastToken));
         Map<String, Object> paramRegistry = new HashMap<>();
-        Query query = entityManager().createQuery(
-                String.format("SELECT new org.axonframework.eventsourcing.eventstore.legacy.GenericLegacyDomainEventEntry("
-                                      + "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
-                                      + "e.timeStamp, e.payloadType, e.payloadRevision, e.metaData, e.payload)"
-                                      + "FROM %s e %s"
-                                      + "ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC",
-                              domainEventEntryEntityName(),
-                              buildWhereClause((LegacyTrackingToken) lastToken, paramRegistry))
-        );
+        Query query = entityManager().createQuery(String.format(
+                "SELECT new org.axonframework.eventsourcing.eventstore.legacy.GenericLegacyDomainEventEntry(" +
+                        "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, " +
+                        "e.timeStamp, e.payloadType, e.payloadRevision, e.metaData, e.payload)" + "FROM %s e %s" +
+                        "ORDER BY e.timeStamp ASC, e.sequenceNumber ASC, e.aggregateIdentifier ASC",
+                domainEventEntryEntityName(), buildWhereClause((LegacyTrackingToken) lastToken, paramRegistry)));
         paramRegistry.forEach(query::setParameter);
         return query.setMaxResults(batchSize).getResultList();
     }
@@ -69,6 +80,17 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
                 "OR (e.timeStamp = :timestamp AND e.sequenceNumber > :sequenceNumber) " +
                 "OR (e.timeStamp = :timestamp AND e.sequenceNumber = :sequenceNumber " +
                 "AND e.aggregateIdentifier > :aggregateIdentifier))";
+    }
+
+    @Override
+    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
+        if (token == null) {
+            return null;
+        }
+        Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
+        LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
+        return new LegacyTrackingToken(legacyToken.getTimestamp().minusMillis(gapDetectionInterval),
+                                       legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
     }
 
     @Override

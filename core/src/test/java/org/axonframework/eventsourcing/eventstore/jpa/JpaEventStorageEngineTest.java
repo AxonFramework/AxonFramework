@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
@@ -66,7 +67,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Before
     public void setUp() throws SQLException {
         entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
-        testSubject = new JpaEventStorageEngine(entityManagerProvider);
+        testSubject = new JpaEventStorageEngine(entityManagerProvider, NoTransactionManager.INSTANCE);
         testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
         setTestSubject(testSubject);
     }
@@ -97,7 +98,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     public void testStoreEventsWithCustomEntity() throws Exception {
-        testSubject = new JpaEventStorageEngine(entityManagerProvider) {
+        testSubject = new JpaEventStorageEngine(entityManagerProvider, NoTransactionManager.INSTANCE) {
 
             @Override
             protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {

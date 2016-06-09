@@ -13,179 +13,206 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
-import static java.lang.String.format;
-import static org.axonframework.common.io.IOUtils.closeQuietly;
+import java.time.Instant;
+import java.time.temporal.TemporalAccessor;
 
 /**
  * @author Rene de Waele
  */
-public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
-    private final ConnectionProvider connectionProvider;
+public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
+
+    private final Class<?> dataType;
     private final EventSchema schema;
 
-    public JdbcEventStorageEngine(ConnectionProvider connectionProvider) {
-        this(connectionProvider, new DefaultEventSchema());
+    public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
+        this(connectionProvider, transactionManager, new EventSchema(), byte[].class);
     }
 
-    public JdbcEventStorageEngine(ConnectionProvider connectionProvider, EventSchema eventSchema) {
-        this.connectionProvider = connectionProvider;
-        this.schema = eventSchema;
+    public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager,
+                                  EventSchema schema, Class<?> dataType) {
+        super(connectionProvider, transactionManager);
+        this.dataType = dataType;
+        this.schema = schema;
     }
 
-    /**
-     * Performs the DDL queries to create the schema necessary for this storage engine implementation.
-     *
-     * @throws EventStoreException when an error occurs executing SQL statements
-     */
+    @Override
     public void createSchema(EventSchemaFactory schemaFactory) {
         executeUpdates(e -> {
                            throw new EventStoreException("Failed to create event tables", e);
-                       }, connection -> schemaFactory.createDomainEventTable(connection, schema.schemaConfiguration()),
-                       connection -> schemaFactory.createSnapshotEventTable(connection, schema.schemaConfiguration()));
+                       }, connection -> schemaFactory.createDomainEventTable(connection, schema),
+                       connection -> schemaFactory.createSnapshotEventTable(connection, schema));
     }
 
     @Override
-    protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
-        return executeQuery(connection -> {
-                                PreparedStatement statement = schema.readEventData(connection, lastToken);
-                                statement.setMaxRows(batchSize);
-                                return statement;
-                            }, schema::getTrackedEventData,
-                            e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken),
-                                                         e));
+    public PreparedStatement appendEvent(Connection connection, DomainEventMessage<?> event,
+                                         Serializer serializer) throws SQLException {
+        return insertEvent(connection, schema.domainEventTable(), event, serializer);
     }
 
     @Override
-    protected List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
-                                                            int batchSize) {
-        return executeQuery(connection -> {
-            PreparedStatement statement = schema.readEventData(connection, aggregateIdentifier, firstSequenceNumber);
-            statement.setMaxRows(batchSize);
-            return statement;
-        }, schema::getDomainEventData, e -> new EventStoreException(
-                format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
+    public PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
+                                            Serializer serializer) throws SQLException {
+        return insertEvent(connection, schema.snapshotTable(), snapshot, serializer);
+    }
+
+    @SuppressWarnings("SqlInsertValues")
+    protected PreparedStatement insertEvent(Connection connection, String table, DomainEventMessage<?> event,
+                                            Serializer serializer) throws SQLException {
+        SerializedObject<?> payload = serializer.serialize(event.getPayload(), dataType);
+        SerializedObject<?> metaData = serializer.serialize(event.getMetaData(), dataType);
+        final String sql = "INSERT INTO " + table + " (" +
+                String.join(", ", schema.eventIdentifierColumn(), schema.aggregateIdentifierColumn(),
+                            schema.sequenceNumberColumn(), schema.typeColumn(), schema.timestampColumn(),
+                            schema.payloadTypeColumn(), schema.payloadRevisionColumn(), schema.payloadColumn(),
+                            schema.metaDataColumn()) + ") VALUES (?,?,?,?,?,?,?,?,?)";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql); // NOSONAR
+        preparedStatement.setString(1, event.getIdentifier());
+        preparedStatement.setString(2, event.getAggregateIdentifier());
+        preparedStatement.setLong(3, event.getSequenceNumber());
+        preparedStatement.setString(4, event.getType());
+        writeTimestamp(preparedStatement, 5, event.getTimestamp());
+        preparedStatement.setString(6, payload.getType().getName());
+        preparedStatement.setString(7, payload.getType().getRevision());
+        preparedStatement.setObject(8, payload.getData());
+        preparedStatement.setObject(9, metaData.getData());
+        return preparedStatement;
     }
 
     @Override
-    protected void appendEvents(List<? extends EventMessage<?>> events, Serializer serializer) {
-        if (events.isEmpty()) {
-            return;
-        }
-        executeUpdates(events.stream().map(EventUtils::asDomainEventMessage)
-                               .map(event -> connection -> schema.appendEvent(connection, event, serializer)), e -> {
-            handlePersistenceException(e, events.get(0));
-        });
+    public PreparedStatement deleteSnapshots(Connection connection, String aggregateIdentifier) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(
+                "DELETE FROM " + schema.snapshotTable() + " WHERE " + schema.aggregateIdentifierColumn() + " = ?");
+        preparedStatement.setString(1, aggregateIdentifier);
+        return preparedStatement;
     }
 
     @Override
-    protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        executeUpdates(e -> handlePersistenceException(e, snapshot),
-                       connection -> schema.deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
-                       connection -> schema.appendSnapshot(connection, snapshot, serializer));
+    public PreparedStatement readEventData(Connection connection, String identifier,
+                                           long firstSequenceNumber) throws SQLException {
+        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() +
+                " WHERE " + schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() +
+                " >= ? ORDER BY " + schema.sequenceNumberColumn() + " ASC";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setString(1, identifier);
+        preparedStatement.setLong(2, firstSequenceNumber);
+        return preparedStatement;
     }
 
     @Override
-    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        List<DomainEventData<?>> result = executeQuery(
-                connection -> schema.readSnapshotData(connection, aggregateIdentifier), schema::getDomainEventData,
-                e -> new EventStoreException(format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
-        return result.stream().findFirst();
+    public PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException {
+        Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
+                      String.format("Token [%s] is of the wrong type", lastToken));
+        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() +
+                " WHERE " + schema.globalIndexColumn() + " > ? ORDER BY " + schema.globalIndexColumn() + " ASC";
+        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        preparedStatement.setLong(1, lastToken == null ? -1 : ((GlobalIndexTrackingToken) lastToken).getGlobalIndex());
+        return preparedStatement;
     }
 
-    protected void executeUpdates(Consumer<SQLException> errorHandler, SqlFunction... sqlFunctions) {
-        executeUpdates(Arrays.stream(sqlFunctions), errorHandler);
+    @Override
+    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
+        return token;
     }
 
-    protected void executeUpdates(Stream<SqlFunction> sqlFunctions, Consumer<SQLException> errorHandler) {
-        Connection connection = getConnection();
-        try {
-            sqlFunctions.forEach(sqlFunction -> {
-                PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
-                try {
-                    preparedStatement.executeUpdate();
-                } catch (SQLException e) {
-                    errorHandler.accept(e);
-                } finally {
-                    closeQuietly(preparedStatement);
-                }
-            });
-        } finally {
-            closeQuietly(connection);
+    @Override
+    public PreparedStatement readSnapshotData(Connection connection, String identifier) throws SQLException {
+        final String s = "SELECT " + domainEventFields() + " FROM " + schema.snapshotTable() + " WHERE " +
+                schema.aggregateIdentifierColumn() + " = ? ORDER BY " + schema.sequenceNumberColumn() + " DESC";
+        PreparedStatement statement = connection.prepareStatement(s);
+        statement.setString(1, identifier);
+        return statement;
+    }
+
+    @Override
+    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException {
+        return new GenericTrackedDomainEventEntry<>(resultSet.getLong(schema.globalIndexColumn()),
+                                                    resultSet.getString(schema.typeColumn()),
+                                                    resultSet.getString(schema.aggregateIdentifierColumn()),
+                                                    resultSet.getLong(schema.sequenceNumberColumn()),
+                                                    resultSet.getString(schema.eventIdentifierColumn()),
+                                                    readTimeStamp(resultSet, schema.timestampColumn()),
+                                                    resultSet.getString(schema.payloadTypeColumn()),
+                                                    resultSet.getString(schema.payloadRevisionColumn()),
+                                                    readPayload(resultSet, schema.payloadColumn()),
+                                                    readPayload(resultSet, schema.metaDataColumn()));
+    }
+
+    @Override
+    public DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
+        return new GenericDomainEventEntry<>(resultSet.getString(schema.typeColumn()),
+                                             resultSet.getString(schema.aggregateIdentifierColumn()),
+                                             resultSet.getLong(schema.sequenceNumberColumn()),
+                                             resultSet.getString(schema.eventIdentifierColumn()),
+                                             readTimeStamp(resultSet, schema.timestampColumn()),
+                                             resultSet.getString(schema.payloadTypeColumn()),
+                                             resultSet.getString(schema.payloadRevisionColumn()),
+                                             readPayload(resultSet, schema.payloadColumn()),
+                                             readPayload(resultSet, schema.metaDataColumn()));
+    }
+
+    /**
+     * Reads a timestamp from the given <code>resultSet</code> at given <code>columnIndex</code>. The resultSet is
+     * positioned in the row that contains the data. This method must not change the row in the result set.
+     *
+     * @param resultSet  The resultSet containing the stored data
+     * @param columnName The name of the column containing the timestamp
+     * @return an object describing the timestamp
+     * @throws SQLException when an exception occurs reading from the resultSet.
+     */
+    protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
+        return resultSet.getString(columnName);
+    }
+
+    /**
+     * Write a timestamp from a {@link TemporalAccessor} to a data value suitable for the database scheme.
+     *
+     * @param input {@link TemporalAccessor} to convert
+     */
+    protected void writeTimestamp(PreparedStatement preparedStatement, int position,
+                                  TemporalAccessor input) throws SQLException {
+        preparedStatement.setString(position, Instant.from(input).toString());
+    }
+
+    /**
+     * Reads a serialized object from the given <code>resultSet</code> at given <code>columnIndex</code>. The resultSet
+     * is positioned in the row that contains the data. This method must not change the row in the result set.
+     *
+     * @param resultSet  The resultSet containing the stored data
+     * @param columnName The name of the column containing the payload
+     * @return an object describing the serialized data
+     * @throws SQLException when an exception occurs reading from the resultSet.
+     */
+    @SuppressWarnings("unchecked")
+    protected <T> T readPayload(ResultSet resultSet, String columnName) throws SQLException {
+        if (byte[].class.equals(dataType)) {
+            return (T) resultSet.getBytes(columnName);
         }
+        return (T) resultSet.getObject(columnName);
     }
 
-    protected <R> List<R> executeQuery(SqlFunction sqlFunction, SqlResultConverter<R> sqlResultConverter,
-                                       Function<SQLException, RuntimeException> errorHandler) {
-        Connection connection = getConnection();
-        try {
-            PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
-            try {
-                ResultSet resultSet;
-                try {
-                    resultSet = preparedStatement.executeQuery();
-                } catch (SQLException e) {
-                    throw errorHandler.apply(e);
-                }
-                try {
-                    List<R> results = new ArrayList<>();
-                    while (resultSet.next()) {
-                        results.add(sqlResultConverter.apply(resultSet));
-                    }
-                    return results;
-                } catch (SQLException e) {
-                    throw errorHandler.apply(e);
-                } finally {
-                    closeQuietly(resultSet);
-                }
-            } finally {
-                closeQuietly(preparedStatement);
-            }
-        } finally {
-            closeQuietly(connection);
-        }
+    protected String domainEventFields() {
+        return String.join(", ", schema.eventIdentifierColumn(), schema.timestampColumn(), schema.payloadTypeColumn(),
+                           schema.payloadRevisionColumn(), schema.payloadColumn(), schema.metaDataColumn(),
+                           schema.typeColumn(), schema.aggregateIdentifierColumn(), schema.sequenceNumberColumn());
     }
 
-    protected Connection getConnection() {
-        try {
-            return connectionProvider.getConnection();
-        } catch (SQLException e) {
-            throw new EventStoreException("Failed to obtain a database connection", e);
-        }
+    protected String trackedEventFields() {
+        return schema.globalIndexColumn() + ", " + domainEventFields();
     }
 
-    protected PreparedStatement createSqlStatement(Connection connection, SqlFunction sqlFunction) {
-        try {
-            return sqlFunction.apply(connection);
-        } catch (SQLException e) {
-            throw new EventStoreException("Failed to create a SQL statement", e);
-        }
-    }
-
-    @FunctionalInterface
-    protected interface SqlFunction {
-        PreparedStatement apply(Connection connection) throws SQLException;
-    }
-
-    @FunctionalInterface
-    protected interface SqlResultConverter<R> {
-        R apply(ResultSet resultSet) throws SQLException;
+    protected EventSchema schema() {
+        return schema;
     }
 }

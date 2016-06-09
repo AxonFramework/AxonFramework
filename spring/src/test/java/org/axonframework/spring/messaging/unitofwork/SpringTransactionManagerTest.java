@@ -13,7 +13,7 @@
 
 package org.axonframework.spring.messaging.unitofwork;
 
-import org.axonframework.messaging.interceptors.Transaction;
+import org.axonframework.common.transaction.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -35,8 +35,7 @@ public class SpringTransactionManagerTest {
     public void setUp() {
         underlyingTransactionStatus = mock(org.springframework.transaction.TransactionStatus.class);
         transactionManager = mock(PlatformTransactionManager.class);
-        testSubject = new SpringTransactionManager();
-        testSubject.setTransactionManager(transactionManager);
+        testSubject = new SpringTransactionManager(transactionManager);
         when(transactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(underlyingTransactionStatus);
         when(underlyingTransactionStatus.isNewTransaction()).thenReturn(true);
@@ -45,7 +44,7 @@ public class SpringTransactionManagerTest {
     @Test
     public void testManageTransaction_CustomTransactionStatus() {
         final TransactionDefinition transactionDefinition = mock(TransactionDefinition.class);
-        testSubject.setTransactionDefinition(transactionDefinition);
+        testSubject = new SpringTransactionManager(transactionManager, transactionDefinition);
         testSubject.startTransaction().commit();
 
         verify(transactionManager).getTransaction(transactionDefinition);

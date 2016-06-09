@@ -16,10 +16,10 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;

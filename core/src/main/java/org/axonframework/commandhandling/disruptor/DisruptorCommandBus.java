@@ -25,6 +25,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventStreamDecorator;
@@ -33,7 +34,6 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.interceptors.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,13 +15,13 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.EntityManager;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,16 +33,17 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asDomainEven
 public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     private final EntityManagerProvider entityManagerProvider;
 
-    public JpaEventStorageEngine(EntityManagerProvider entityManagerProvider) {
+    public JpaEventStorageEngine(EntityManagerProvider entityManagerProvider, TransactionManager transactionManager) {
+        super(transactionManager);
         this.entityManagerProvider = entityManagerProvider;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
+    protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
                       String.format("Token %s is of the wrong type", lastToken));
-        List<? extends TrackedEventData<?>> entries = entityManager()
+        return entityManager()
                 .createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
                                      "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                      "e.eventIdentifier, e.timeStamp, e.payloadType, " +
@@ -51,35 +52,17 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                      "WHERE e.globalIndex > :token " + "ORDER BY e.globalIndex ASC")
                 .setParameter("token", lastToken == null ? -1 : ((GlobalIndexTrackingToken) lastToken).getGlobalIndex())
                 .setMaxResults(batchSize).getResultList();
-        if (mayContainGaps(lastToken, entries)) {
-            //todo entries = ensureNoGaps();
-        }
-        return entries;
     }
 
-    protected boolean mayContainGaps(TrackingToken lastToken, List<? extends TrackedEventData<?>> entries) {
-        if (entries.isEmpty()) {
-            return false;
-        }
-        Iterator<? extends TrackedEventData<?>> iterator = entries.iterator();
-        TrackingToken previousToken = lastToken;
-        if (previousToken == null) {
-            previousToken = iterator.next().trackingToken();
-        }
-        while (iterator.hasNext()) {
-            TrackingToken nextToken = iterator.next().trackingToken();
-            if (!previousToken.isGuaranteedNext(nextToken)) {
-                return true;
-            }
-            previousToken = nextToken;
-        }
-        return false;
+    @Override
+    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
+        return token;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
-                                                            int batchSize) {
+    protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
+                                                                   int batchSize) {
         return entityManager()
                 .createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
                                      "e.type, e.aggregateIdentifier, e.sequenceNumber, " +

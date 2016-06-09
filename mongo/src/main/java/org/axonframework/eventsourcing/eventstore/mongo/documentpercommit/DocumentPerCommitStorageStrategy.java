@@ -49,6 +49,12 @@ public class DocumentPerCommitStorageStrategy extends AbstractEventStorageStrate
         this.commitEntryConfiguration = commitEntryConfiguration;
     }
 
+    public DocumentPerCommitStorageStrategy(EventEntryConfiguration eventConfiguration, long gapDetectionInterval,
+                                            CommitEntryConfiguration commitEntryConfiguration) {
+        super(eventConfiguration, gapDetectionInterval);
+        this.commitEntryConfiguration = commitEntryConfiguration;
+    }
+
     @Override
     protected Stream<DBObject> createEventDocuments(List<? extends EventMessage<?>> events, Serializer serializer) {
         return Stream
@@ -69,7 +75,7 @@ public class DocumentPerCommitStorageStrategy extends AbstractEventStorageStrate
 
     @Override
     protected DBCursor applyBatchSize(DBCursor cursor, int batchSize) {
-        return cursor.batchSize(batchSize/8).limit(batchSize);
+        return cursor.batchSize(batchSize / 8).limit(batchSize);
     }
 
     @Override

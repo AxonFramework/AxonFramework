@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.interceptors;
+package org.axonframework.common.transaction;
 
 /**
  * Interface of an object that represents a started transaction that can be committed or rolled back.

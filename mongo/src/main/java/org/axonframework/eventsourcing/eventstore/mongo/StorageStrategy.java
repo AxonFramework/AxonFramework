@@ -64,6 +64,8 @@ public interface StorageStrategy {
     List<? extends TrackedEventData<?>> findTrackedEvents(DBCollection eventCollection, TrackingToken lastToken,
                                                           int batchSize);
 
+    TrackingToken getTokenForGapDetection(TrackingToken token);
+
     /**
      * Finds the entry containing the last snapshot event for an aggregate with given <code>aggregateIdentifier</code>
      * in the given <code>collection</code>.

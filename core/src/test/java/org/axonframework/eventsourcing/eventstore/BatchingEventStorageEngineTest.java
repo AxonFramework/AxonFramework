@@ -14,7 +14,6 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.junit.Test;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
 
 import static junit.framework.TestCase.assertEquals;
@@ -28,29 +27,20 @@ import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 @Transactional
 public abstract class BatchingEventStorageEngineTest extends AbstractEventStorageEngineTest {
 
-    private static final int BATCH_SIZE = 100;
-
     private BatchingEventStorageEngine testSubject;
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void testLoad_LargeAmountOfEvents() {
-        int eventCount = BATCH_SIZE + 10;
+        int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
         assertEquals(eventCount, asStream(testSubject.readEvents(AGGREGATE)).count());
-        assertEquals(eventCount - 1, asStream(testSubject.readEvents(AGGREGATE)).reduce((a, b) -> b).get().getSequenceNumber());
-    }
-
-    @Test
-    @DirtiesContext
-    public void testLoad_LargeAmountOfEventsInSmallBatches() {
-        testSubject.setBatchSize(9);
-        testLoad_LargeAmountOfEvents();
+        assertEquals(eventCount - 1,
+                     asStream(testSubject.readEvents(AGGREGATE)).reduce((a, b) -> b).get().getSequenceNumber());
     }
 
     protected void setTestSubject(BatchingEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
-        testSubject.setBatchSize(BATCH_SIZE);
     }
 
 }

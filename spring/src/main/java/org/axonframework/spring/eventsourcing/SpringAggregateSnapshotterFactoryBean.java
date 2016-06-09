@@ -20,12 +20,12 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.MultiParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.interceptors.NoTransactionManager;
-import org.axonframework.messaging.interceptors.TransactionManager;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
@@ -50,8 +50,7 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SpringAggregateSnapshotterFactoryBean
-        implements FactoryBean<AggregateSnapshotter>, ApplicationContextAware {
+public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<AggregateSnapshotter>, ApplicationContextAware {
 
     private PlatformTransactionManager transactionManager;
     private boolean autoDetectAggregateFactories = true;
@@ -76,8 +75,8 @@ public class SpringAggregateSnapshotterFactoryBean
         }
 
         if (transactionManager == null) {
-            Map<String, PlatformTransactionManager> candidates = applicationContext.getBeansOfType(
-                    PlatformTransactionManager.class);
+            Map<String, PlatformTransactionManager> candidates =
+                    applicationContext.getBeansOfType(PlatformTransactionManager.class);
             if (candidates.size() == 1) {
                 this.transactionManager = candidates.values().iterator().next();
             }
@@ -88,13 +87,13 @@ public class SpringAggregateSnapshotterFactoryBean
         }
 
         if (parameterResolverFactory == null) {
-            parameterResolverFactory = MultiParameterResolverFactory.ordered(
-                    ClasspathParameterResolverFactory.forClass(getObjectType()),
-                    new SpringBeanParameterResolverFactory(applicationContext)
-            );
+            parameterResolverFactory = MultiParameterResolverFactory
+                    .ordered(ClasspathParameterResolverFactory.forClass(getObjectType()),
+                             new SpringBeanParameterResolverFactory(applicationContext));
         }
 
-        TransactionManager txManager = transactionManager == null ? new NoTransactionManager() : new SpringTransactionManager(transactionManager, transactionDefinition);
+        TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
+                new SpringTransactionManager(transactionManager, transactionDefinition);
 
         return new AggregateSnapshotter(eventStorage, factoriesFound, parameterResolverFactory, executor, txManager);
     }
@@ -121,8 +120,8 @@ public class SpringAggregateSnapshotterFactoryBean
     }
 
     /**
-     * Optionally sets the transaction definition to use. By default, uses the application context's default
-     * transaction semantics (see {@link org.springframework.transaction.support.DefaultTransactionDefinition}).
+     * Optionally sets the transaction definition to use. By default, uses the application context's default transaction
+     * semantics (see {@link org.springframework.transaction.support.DefaultTransactionDefinition}).
      *
      * @param transactionDefinition the transaction definition to use
      */
