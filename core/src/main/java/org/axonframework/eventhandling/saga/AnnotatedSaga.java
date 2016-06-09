@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,10 +18,12 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -38,7 +43,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private volatile boolean isActive = true;
     private final String sagaId;
     private final T sagaInstance;
-    private TrackingToken trackingToken;
+    private AtomicReference<TrackingToken> trackingToken;
 
     /**
      * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given
@@ -48,15 +53,17 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
      * @param sagaId            The identifier of this Saga instance
      * @param associationValues The current associations of this Saga
      * @param annotatedSaga     The object instance representing the Saga
+     * @param trackingToken     The token identifying the position in a stream the saga has last processed
      * @param metaModel         The model describing Saga structure
      */
     public AnnotatedSaga(String sagaId, Set<AssociationValue> associationValues,
-                         T annotatedSaga, SagaModel<T> metaModel) {
+                         T annotatedSaga, TrackingToken trackingToken, SagaModel<T> metaModel) {
         Assert.notNull(annotatedSaga, "SagaInstance may not be null");
         this.sagaId = sagaId;
         this.associationValues = new AssociationValuesImpl(associationValues);
         this.sagaInstance = annotatedSaga;
         this.metaModel = metaModel;
+        this.trackingToken = new AtomicReference<>(trackingToken);
     }
 
     @Override
@@ -92,8 +99,10 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
                     .filter(h -> getAssociationValues().contains(h.getAssociationValue(event)))
                     .findFirst().map(h -> {
                         try {
-                            // TODO: If events is tracked event, check for (and store) token
                             executeWithResult(() -> h.handle(event, sagaInstance));
+                            if (event instanceof TrackedEventMessage) {
+                                this.trackingToken.set(((TrackedEventMessage) event).trackingToken());
+                            }
                         } catch (RuntimeException | Error e) {
                             throw e;
                         } catch (Exception e) {
@@ -117,7 +126,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
 
     @Override
     public TrackingToken trackingToken() {
-        return trackingToken;
+        return trackingToken.get();
     }
 
     /**

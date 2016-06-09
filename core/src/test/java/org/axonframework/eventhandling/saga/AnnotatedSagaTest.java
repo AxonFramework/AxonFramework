@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,7 +34,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testInvokeSaga() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
-        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
+        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject, null,
                                                                  new DefaultSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
         s.handle(new GenericEventMessage<>(new RegularEvent("id")));
@@ -43,7 +46,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testEndedAfterInvocation_BeanProperty() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
-        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
+        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject, null,
                                                                  new DefaultSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
         s.handle(new GenericEventMessage<>(new RegularEvent("id")));
@@ -56,7 +59,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testEndedAfterInvocation_WhenAssociationIsRemoved() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSagaWithExplicitAssociationRemoval();
-        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
+        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject, null,
                                                                  new DefaultSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
         s.handle(new GenericEventMessage<>(new RegularEvent("id")));
@@ -69,7 +72,7 @@ public class AnnotatedSagaTest {
     @Test
     public void testEndedAfterInvocation_UniformAccessPrinciple() throws Exception {
         StubAnnotatedSaga testSubject = new StubAnnotatedSaga();
-        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject,
+        AnnotatedSaga<StubAnnotatedSaga> s = new AnnotatedSaga<>("id", Collections.emptySet(), testSubject, null,
                                                                  new DefaultSagaMetaModelFactory().modelOf(StubAnnotatedSaga.class));
         s.doAssociateWith(new AssociationValue("propertyName", "id"));
         s.handle(new GenericEventMessage<>(new UniformAccessEvent("id")));
