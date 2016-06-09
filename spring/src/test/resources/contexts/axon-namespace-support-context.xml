@@ -288,8 +288,6 @@
         <property name="waitForTasksToCompleteOnShutdown" value="true"/>
     </bean>
 
-    <bean id="conflictResolver" class="org.axonframework.eventsourcing.conflictresolvers.AcceptAllConflictResolver"/>
-
     <bean id="nullLockFactory" class="org.axonframework.common.lock.NullLockFactory"/>
 
     <axon:snapshotter id="snapshotter" event-store="eventStore" transaction-manager="transactionManager"
