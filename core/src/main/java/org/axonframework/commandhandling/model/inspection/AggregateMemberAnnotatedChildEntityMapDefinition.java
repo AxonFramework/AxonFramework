@@ -33,25 +33,6 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
 
 public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEntityDefinition {
 
-/*
-    @Override
-    public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
-        // TODO: Find out if the declared type of field is an Axon Entity
-        AggregateMember annotation = ReflectionUtils.findAnnotation(field, AggregateMember.class);
-        if (annotation == null || !Map.class.isAssignableFrom(field.getType())) {
-            return Optional.empty();
-        }
-
-        // TODO: Resolve map value type from generics or annotation declaration
-        EntityModel entityModel = declaringEntity.modelOf(resolve type);
-        String parentRoutingKey = declaringEntity.routingKey();
-        //noinspection unchecked
-        return Optional.of(new AnnotatedChildEntity<>(parentRoutingKey, field, entityModel,
-                                                      annotation.forwardCommands(), annotation.forwardEvents(),
-                                                      (msg, parent) -> ReflectionUtils.getFieldValue(field, parent)));
-    }
-*/
-
     @Override
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
         Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
@@ -77,7 +58,7 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEn
                                     return property;
                                 }));
         //noinspection unchecked
-        return Optional.of((ChildEntity<T>) new AnnotatedChildEntity<>(
+        return Optional.of(new AnnotatedChildEntity<>(
                 parentRoutingKey, field, childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
                 (Boolean) attributes.get("forwardEvents"),

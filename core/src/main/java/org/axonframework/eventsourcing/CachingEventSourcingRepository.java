@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,6 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
         EventSourcedAggregate<T> aggregate = super.doCreateNewForLock(factoryMethod);
         String aggregateIdentifier = aggregate.identifier();
-        // TODO: Add an entry in the cache which is serializable
         cache.put(aggregateIdentifier, new CacheEntry<>(aggregate));
         return aggregate;
     }
@@ -127,7 +126,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         return aggregate;
     }
 
-    private static class CacheEntry<T>  implements Serializable {
+    private static class CacheEntry<T> implements Serializable {
 
         private final T aggregateRoot;
         private final Long version;

@@ -93,7 +93,7 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
             T sagaRoot = sagaFactory.call();
             injector.injectResources(sagaRoot);
             AnnotatedSaga<T> saga = new AnnotatedSaga<>(IdentifierFactory.getInstance().generateIdentifier(),
-                                                        Collections.emptySet(), sagaRoot, sagaModel);
+                                                        Collections.emptySet(), sagaRoot, null, sagaModel);
             unitOfWork.onPrepareCommit(u -> {
                 if (saga.isActive()) {
                     storeSaga(saga);
@@ -176,7 +176,7 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
         if (entry != null) {
             T saga = entry.saga();
             injector.injectResources(saga);
-            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, sagaModel);
+            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, entry.trackingToken(), sagaModel);
         }
         return null;
     }
