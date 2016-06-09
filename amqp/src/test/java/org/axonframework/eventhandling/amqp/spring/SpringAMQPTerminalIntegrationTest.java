@@ -48,7 +48,7 @@ import static org.junit.Assume.assumeNoException;
 @ContextConfiguration(locations = "/META-INF/spring/messaging-context.xml")
 @RunWith(SpringJUnit4ClassRunner.class)
 @Ignore
-public class SpringAMQPEventBusIntegrationTest {
+public class SpringAMQPTerminalIntegrationTest {
 
     private static final int EVENT_COUNT = 100;
     private static final int THREAD_COUNT = 10;
@@ -57,7 +57,7 @@ public class SpringAMQPEventBusIntegrationTest {
     @Autowired
     private ConnectionFactory connectionFactory;
     @Autowired
-    private SpringAMQPEventBus terminal;
+    private SpringAMQPTerminal terminal;
 
     @Autowired
     @Qualifier("eventProcessor1")

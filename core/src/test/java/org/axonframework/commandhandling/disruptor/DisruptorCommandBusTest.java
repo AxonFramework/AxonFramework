@@ -152,7 +152,7 @@ public class DisruptorCommandBusTest {
         }
     }
 
-    @Ignore("TODO: Figure out how to do event decoration")
+    @Ignore("TODO: Figure out how to do event decoration on append")
     @Test
     public void testEventStreamsDecoratedOnReadAndWrite() throws InterruptedException {
         ExecutorService customExecutor = Executors.newCachedThreadPool();

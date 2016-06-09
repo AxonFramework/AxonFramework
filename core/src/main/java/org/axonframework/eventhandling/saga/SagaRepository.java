@@ -51,9 +51,6 @@ public interface SagaRepository<T> {
      */
     Saga<T> load(String sagaIdentifier);
 
-    /**
-     * TODO: Fix docs
-     */
     Saga<T> newInstance(Callable<T> factoryMethod);
 
 }

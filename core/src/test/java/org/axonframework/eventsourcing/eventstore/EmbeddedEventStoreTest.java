@@ -13,6 +13,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -25,12 +26,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.fail;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
-import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
 import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -181,107 +182,35 @@ public class EmbeddedEventStoreTest {
         verify(storageEngine).readEvents(firstEvent.trackingToken(), false);
     }
 
-    //TODO test non-tracking features of event store
+    @Test
+    public void testLoadWithoutSnapshot() {
+        testSubject.publish(createEvents(110));
+        List<DomainEventMessage<?>> eventMessages =
+                asStream(testSubject.readEvents(AGGREGATE)).collect(Collectors.toList());
+        assertEquals(110, eventMessages.size());
+        assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
+    }
 
-//    @Test
-//    @Transactional
-//    public void testLoad_LargeAmountOfEventsWithSnapshot() {
-//        testSubject.appendEvents(createEvents(110));
-//        testSubject.storeSnapshot(createEvent(30));
-//        entityManager.flush();
-//        entityManager.clear();
-//
-//        DomainEventStream events = testSubject.readEvents(aggregateIdentifier);
-//        long t = 30L;
-//        while (events.hasNext()) {
-//            DomainEventMessage event = events.next();
-//            assertEquals(t, event.getSequenceNumber());
-//            t++;
-//        }
-//        assertEquals(110L, t);
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void testLoadWithSnapshotEvent() {
-//        testSubject.appendEvents(new GenericDomainEventMessage<>(type, "id", 0, "payload"),
-//                                 new GenericDomainEventMessage<>(type, "id", 1, "payload"),
-//                                 new GenericDomainEventMessage<>(type, "id", 2, "payload"),
-//                                 new GenericDomainEventMessage<>(type, "id", 3, "payload"));
-//        entityManager.flush();
-//        entityManager.clear();
-//        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>(type, "id", 3, "snapshot"));
-//        entityManager.flush();
-//        entityManager.clear();
-//        testSubject.appendEvents(new GenericDomainEventMessage<>(type, "id", 4, "payload"));
-//
-//        DomainEventStream actualEventStream = testSubject.readEvents("id");
-//        List<DomainEventMessage> domainEvents = new ArrayList<>();
-//        while (actualEventStream.hasNext()) {
-//            DomainEventMessage next = actualEventStream.next();
-//            domainEvents.add(next);
-//            assertEquals("id", next.getAggregateIdentifier());
-//        }
-//
-//        assertEquals(2, domainEvents.size());
-//    }
+    @Test
+    public void testLoadWithSnapshot() {
+        testSubject.publish(createEvents(110));
+        storageEngine.storeSnapshot(createEvent(30));
+        List<DomainEventMessage<?>> eventMessages =
+                asStream(testSubject.readEvents(AGGREGATE)).collect(Collectors.toList());
+        assertEquals(110 - 30, eventMessages.size());
+        assertEquals(30, eventMessages.get(0).getSequenceNumber());
+        assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
+    }
 
-//    @Test
-//    @Transactional
-//    public void testEntireStreamIsReadOnUnserializableSnapshot_WithException() {
-//        testSubject.appendEvents(createEvents(110));
-//
-//        entityManager.persist(new SnapshotEventEntry(createEvent(30), StubSerializer.EXCEPTION_ON_SERIALIZATION));
-//        entityManager.flush();
-//        entityManager.clear();
-//
-//        assertEquals(0L, testSubject.readEvents(AGGREGATE).findFirst().get().getSequenceNumber());
-//    }
-//
-//    @Test
-//    @Transactional
-//    public void testEntireStreamIsReadOnUnserializableSnapshot_WithError() {
-//        testSubject.appendEvents(createEvents(110));
-//
-//        entityManager.persist(new SnapshotEventEntry(createEvent(30), StubSerializer.ERROR_ON_SERIALIZATION));
-//        entityManager.flush();
-//        entityManager.clear();
-//
-//        assertEquals(0L, testSubject.readEvents(AGGREGATE).findFirst().get().getSequenceNumber());
-//    }
-//
-//    @DirtiesContext
-//    @Test
-//    @Transactional
-//    public void testPrunesSnapshotsWhenNumberOfSnapshotsExceedsConfiguredMaxSnapshotsArchived() {
-//        testSubject.setMaxSnapshotsArchived(1);
-//
-//        testSubject.appendEvents(new GenericDomainEventMessage<>(type, "id", 0, "payload"),
-//                                 new GenericDomainEventMessage<>(type, "id", 1, "payload"),
-//                                 new GenericDomainEventMessage<>(type, "id", 2, "payload"),
-//                                 new GenericDomainEventMessage<>(type, "id", 3, "payload"));
-//        entityManager.flush();
-//        entityManager.clear();
-//
-//        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>(type, "id", 3, "snapshot"));
-//        entityManager.flush();
-//        entityManager.clear();
-//
-//        testSubject.appendEvents(new GenericDomainEventMessage<>(type, "id", 4, "payload"));
-//        entityManager.flush();
-//        entityManager.clear();
-//
-//        testSubject.appendSnapshotEvent(new GenericDomainEventMessage<>(type, "id", 4, "snapshot"));
-//        entityManager.flush();
-//        entityManager.clear();
-//
-//        @SuppressWarnings({"unchecked"})
-//        List<SnapshotEventEntry> snapshots =
-//                entityManager.createQuery("SELECT e FROM SnapshotEventEntry e "
-//                                                  + "WHERE e.aggregateIdentifier = :aggregateIdentifier")
-//                        .setParameter("aggregateIdentifier", "id")
-//                        .getResultList();
-//        assertEquals("archived snapshot count", 1L, snapshots.size());
-//        assertEquals("archived snapshot sequence", 4L, snapshots.iterator().next().getSequenceNumber());
-//    }
+    @Test
+    public void testLoadWithFailingSnapshot() {
+        testSubject.publish(createEvents(110));
+        storageEngine.storeSnapshot(createEvent(30));
+        when(storageEngine.readSnapshot(AGGREGATE)).thenThrow(new MockException());
+        List<DomainEventMessage<?>> eventMessages =
+                asStream(testSubject.readEvents(AGGREGATE)).collect(Collectors.toList());
+        assertEquals(110, eventMessages.size());
+        assertEquals(0, eventMessages.get(0).getSequenceNumber());
+        assertEquals(109, eventMessages.get(eventMessages.size() - 1).getSequenceNumber());
+    }
 }

@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 
 /**
  * MessageListener implementation that deserializes incoming messages and forwards them to one or more event processors.
- * The <code>byte[]</code> making up the message payload must the format as used by the {@link SpringAMQPEventBus}.
+ * The <code>byte[]</code> making up the message payload must the format as used by the {@link SpringAMQPTerminal}.
  *
  * @author Allard Buijze
  * @since 2.0

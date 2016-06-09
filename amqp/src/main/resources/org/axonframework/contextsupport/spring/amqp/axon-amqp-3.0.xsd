@@ -36,7 +36,7 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <tool:annotation>
-                    <tool:exports type="org.axonframework.eventhandling.amqp.spring.SpringAMQPEventBus"/>
+                    <tool:exports type="org.axonframework.eventhandling.amqp.spring.SpringAMQPTerminal"/>
                     <tool:exports type="org.axonframework.eventhandling.amqp.spring.ListenerContainerLifecycleManager"/>
                 </tool:annotation>
             </xsd:appinfo>

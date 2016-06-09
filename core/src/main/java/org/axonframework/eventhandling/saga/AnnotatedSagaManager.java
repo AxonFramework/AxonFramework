@@ -43,9 +43,6 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
         this(sagaType, sagaRepository, sagaFactory, new DefaultSagaMetaModelFactory().modelOf(sagaType));
     }
 
-    /**
-     * TODO: Javadoc
-     */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
                                 SagaModel<T> sagaMetaModel) {
         super(sagaType, sagaRepository, sagaFactory);

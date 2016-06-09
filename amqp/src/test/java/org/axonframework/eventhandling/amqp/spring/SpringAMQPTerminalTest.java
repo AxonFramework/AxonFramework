@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.amqp.spring;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.amqp.EventPublicationFailedException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -44,22 +45,25 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class SpringAMQPEventBusTest {
+public class SpringAMQPTerminalTest {
 
     private static final Charset UTF_8 = Charset.forName("UTF-8");
-    private SpringAMQPEventBus testSubject;
+    private SpringAMQPTerminal testSubject;
     private ConnectionFactory connectionFactory;
     private Serializer serializer;
+    private SimpleEventBus eventBus;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new SpringAMQPEventBus();
+        eventBus = new SimpleEventBus();
+        testSubject = new SpringAMQPTerminal(eventBus);
         connectionFactory = mock(ConnectionFactory.class);
         serializer = mock(Serializer.class);
         testSubject.setConnectionFactory(connectionFactory);
         testSubject.setExchangeName("mockExchange");
         testSubject.setTransactional(true);
         testSubject.setMessageConverter(new DefaultAMQPMessageConverter(serializer));
+        testSubject.start();
     }
 
     @After
@@ -67,6 +71,7 @@ public class SpringAMQPEventBusTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
+        testSubject.shutDown();
     }
 
     @Test
@@ -80,7 +85,7 @@ public class SpringAMQPEventBusTest {
                 .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
-        testSubject.publish(message);
+        eventBus.publish(message);
 
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
                                                   eq(false), eq(false),
@@ -103,7 +108,7 @@ public class SpringAMQPEventBusTest {
                 .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
-        testSubject.publish(message);
+        eventBus.publish(message);
 
         uow.commit();
         verify(transactionalChannel).basicPublish(eq("mockExchange"), eq("java.lang"),
@@ -127,7 +132,7 @@ public class SpringAMQPEventBusTest {
                 .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
-        testSubject.publish(message);
+        eventBus.publish(message);
 
         try {
             uow.commit();
@@ -157,7 +162,7 @@ public class SpringAMQPEventBusTest {
                 .thenReturn(new SimpleSerializedObject<>("Message".getBytes(UTF_8), byte[].class, "String", "0"));
         when(serializer.serialize(message.getMetaData(), byte[].class))
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
-        testSubject.publish(message);
+        eventBus.publish(message);
 
         verify(transactionalChannel, never()).txRollback();
         verify(transactionalChannel, never()).txCommit();
@@ -193,7 +198,7 @@ public class SpringAMQPEventBusTest {
 
         UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(message);
 
-        testSubject.publish(message);
+        eventBus.publish(message);
         verify(channel, never()).waitForConfirms();
 
         uow.commit();
@@ -239,7 +244,7 @@ public class SpringAMQPEventBusTest {
         when(serializer.serialize(message.getMetaData(), byte[].class))
                 .thenReturn(new SerializedMetaData<>(new byte[0], byte[].class));
 
-        testSubject.publish(message);
+        eventBus.publish(message);
         verify(channel).confirmSelect();
         verify(channel).basicPublish(eq("mockExchange"), eq("java.lang"),
                                      eq(false), eq(false),

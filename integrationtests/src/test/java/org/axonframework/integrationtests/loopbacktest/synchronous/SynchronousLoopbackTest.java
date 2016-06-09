@@ -24,6 +24,7 @@ import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.ThrowingListenerErrorHandler;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -32,6 +33,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,9 +61,7 @@ public class SynchronousLoopbackTest {
         commandBus = new SimpleCommandBus();
         eventStore = spy(new EmbeddedEventStore(new InMemoryEventStorageEngine()));
         eventStore.publish(new GenericDomainEventMessage<>("test", aggregateIdentifier, 0,
-                        new AggregateCreatedEvent(aggregateIdentifier),
-                        null
-                ));
+                                                           new AggregateCreatedEvent(aggregateIdentifier), null));
         reset(eventStore);
 
         reportErrorCallback = new VoidCallback<Object>() {
@@ -88,9 +88,8 @@ public class SynchronousLoopbackTest {
     }
 
     protected void initializeRepository(LockFactory lockingStrategy) {
-        EventSourcingRepository<CountingAggregate> repository = new EventSourcingRepository<>(
-                CountingAggregate.class, eventStore,
-                lockingStrategy);
+        EventSourcingRepository<CountingAggregate> repository =
+                new EventSourcingRepository<>(CountingAggregate.class, eventStore, lockingStrategy);
         new AnnotationCommandHandlerAdapter(new CounterCommandHandler(repository)).subscribe(commandBus);
     }
 
@@ -102,12 +101,12 @@ public class SynchronousLoopbackTest {
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                 if (counterChangedEvent.getCounter() == 1) {
-                    commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                     counterChangedEvent.getCounter() + 1)), reportErrorCallback);
-                    commandBus.dispatch(asCommandMessage(
-                            new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                     counterChangedEvent.getCounter() + 2)), reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                                  counterChangedEvent.getCounter() +
+                                                                                          1)), reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                                  counterChangedEvent.getCounter() +
+                                                                                          2)), reportErrorCallback);
                 }
             }
         };
@@ -136,20 +135,20 @@ public class SynchronousLoopbackTest {
             if (event.getPayload() instanceof CounterChangedEvent) {
                 CounterChangedEvent counterChangedEvent = (CounterChangedEvent) event.getPayload();
                 if (counterChangedEvent.getCounter() == 1) {
-                    commandBus.dispatch(asCommandMessage(
-                                                new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                         counterChangedEvent.getCounter() + 1)),
-                                        reportErrorCallback);
-                    commandBus.dispatch(
-                            asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
-                                                                      counterChangedEvent.getCounter() + 2)),
-                            reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                                  counterChangedEvent.getCounter() +
+                                                                                          1)), reportErrorCallback);
+                    commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(domainEvent.getAggregateIdentifier(),
+                                                                                  counterChangedEvent.getCounter() +
+                                                                                          2)), reportErrorCallback);
                 } else if (counterChangedEvent.getCounter() == 2) {
                     throw new RuntimeException("Mock exception");
                 }
             }
         };
-        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", el), eventStore).start();
+        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", Collections.singletonList(el),
+                                                                    ThrowingListenerErrorHandler.INSTANCE), eventStore)
+                .start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), expectErrorCallback);
 

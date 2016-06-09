@@ -171,8 +171,7 @@ public class EventSourcingRepositoryTest {
         aggregate.execute(r -> r.apply(new StubDomainEvent()));
     }
 
-    //todo fix test
-    @Ignore
+    @Ignore("TODO: Figure out how to do event decoration on append")
     @Test
     public void testSaveEventsWithDecorators() {
         testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore);

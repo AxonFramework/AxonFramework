@@ -31,6 +31,7 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 
 import java.util.UUID;
 
@@ -70,8 +71,10 @@ public class EventPublicationOrderTest {
             return Void.class;
         }).when(eventStore).publish(isA(EventMessage.class));
         commandBus.dispatch(asCommandMessage(new UpdateStubAggregateWithExtraEventCommand(aggregateId)));
-        verify(eventStore).publish(isA(DomainEventMessage.class), argThat(new NotADomainEventMatcher()),
-                                   isA(DomainEventMessage.class));
+        InOrder inOrder = inOrder(eventStore, eventStore, eventStore);
+        inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));
+        inOrder.verify(eventStore).publish(argThat(new NotADomainEventMatcher()));
+        inOrder.verify(eventStore).publish(isA(DomainEventMessage.class));
     }
 
     private static class NotADomainEventMatcher extends BaseMatcher<EventMessage> {

@@ -71,20 +71,22 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
         Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
-        unitOfWork.onRollback(uow -> errorHandler
-                .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
-                             () -> accept(eventMessages)));
-        unitOfWork.onCleanup(uow -> {
-            MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
-            if (uow.isRolledBack()) {
-                callback.reportFailure(uow.getExecutionResult().getExceptionResult());
-            } else {
-                callback.reportSuccess();
-            }
-        });
         try {
             unitOfWork.executeWithResult(
-                    () -> new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed(),
+                    () -> {
+                        unitOfWork.onRollback(uow -> errorHandler
+                                .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
+                                             () -> accept(eventMessages)));
+                        unitOfWork.onCleanup(uow -> {
+                            MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
+                            if (uow.isRolledBack()) {
+                                callback.reportFailure(uow.getExecutionResult().getExceptionResult());
+                            } else {
+                                callback.reportSuccess();
+                            }
+                        });
+                        return new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed();
+                    },
                     rollbackConfiguration);
         } catch (Exception e) {
             throw new EventProcessingException(

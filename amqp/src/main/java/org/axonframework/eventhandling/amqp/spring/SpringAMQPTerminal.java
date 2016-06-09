@@ -21,11 +21,9 @@ import com.rabbitmq.client.ShutdownSignalException;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.AbstractEventBus;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.amqp.*;
-import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
-import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
@@ -40,6 +38,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
@@ -52,12 +51,12 @@ import java.util.function.Consumer;
  * @author Allard Buijze
  * @since 2.0
  */
-public class SpringAMQPEventBus extends AbstractEventBus implements InitializingBean, ApplicationContextAware {
+public class SpringAMQPTerminal implements InitializingBean, ApplicationContextAware {
 
-    //todo turn this into an event processor
-
-    private static final Logger logger = LoggerFactory.getLogger(SpringAMQPEventBus.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpringAMQPTerminal.class);
     private static final String DEFAULT_EXCHANGE_NAME = "Axon.EventBus";
+
+    private final EventBus eventBus;
 
     private ConnectionFactory connectionFactory;
     private String exchangeName = DEFAULT_EXCHANGE_NAME;
@@ -70,9 +69,21 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     private RoutingKeyResolver routingKeyResolver;
     private boolean waitForAck;
     private long publisherAckTimeout;
+    private Registration eventBusRegistration;
 
-    @Override
-    protected void prepareCommit(List<? extends EventMessage<?>> events) {
+    public SpringAMQPTerminal(EventBus eventBus) {
+        this.eventBus = eventBus;
+    }
+
+    public void start() {
+        eventBusRegistration = eventBus.subscribe(this::send);
+    }
+
+    public void shutDown() {
+        Optional.ofNullable(eventBusRegistration).ifPresent(Registration::cancel);
+    }
+
+    protected void send(List<? extends EventMessage<?>> events) {
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {
             if (isTransactional) {
@@ -179,13 +190,6 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
         }
     }
 
-    @Override
-    public TrackingEventStream streamEvents(TrackingToken trackingToken) {
-        //todo can be removed when this is modified to be an event processor
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor) {
         AMQPConsumerConfiguration config = new DefaultAMQPConsumerConfiguration(eventProcessor.toString());
         return getListenerContainerLifecycleManager().registerEventProcessor(eventProcessor, config, messageConverter);
@@ -289,7 +293,7 @@ public class SpringAMQPEventBus extends AbstractEventBus implements Initializing
     /**
      * Sets the ConnectionFactory providing the Connections and Channels to send messages on. The SpringAMQPTerminal
      * does not cache or reuse connections. Providing a ConnectionFactory instance that caches connections will prevent
-     * new connections to be opened for each invocation to {@link #publish(EventMessage[])}
+     * new connections to be opened for each invocation to {@link #accept(List)}
      * <p>
      * Defaults to an autowired Connection Factory.
      *

@@ -46,7 +46,7 @@ public class MessageHandlerAdapterTest {
         verify(mockEventProcessor, times(1)).accept(argThat(new BaseMatcher<List<? extends EventMessage<?>>>() {
             @Override
             public boolean matches(Object o) {
-                return ((o instanceof EventMessage) && ((EventMessage) o).getPayload().equals(payload));
+                return ((o instanceof List<?>) && ((EventMessage<?>) ((List) o).get(0)).getPayload().equals(payload));
             }
 
             @Override

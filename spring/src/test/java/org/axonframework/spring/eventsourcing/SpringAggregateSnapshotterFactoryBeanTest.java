@@ -54,25 +54,26 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         testSubject = new SpringAggregateSnapshotterFactoryBean();
         testSubject.setApplicationContext(mockApplicationContext);
         when(mockApplicationContext.getBeansOfType(AggregateFactory.class)).thenReturn(
-                Collections.<String, AggregateFactory>singletonMap(
-                        "myFactory",
-                        new AbstractAggregateFactory<StubAggregate>(StubAggregate.class) {
-                            @Override
-                            public StubAggregate doCreateAggregate(String aggregateIdentifier,
-                                                                   DomainEventMessage firstEvent) {
-                                return new StubAggregate(aggregateIdentifier);
-                            }
-                        }));
+                Collections.<String, AggregateFactory>singletonMap("myFactory",
+                                                                   new AbstractAggregateFactory<StubAggregate>(
+                                                                           StubAggregate.class) {
+                                                                       @Override
+                                                                       public StubAggregate doCreateAggregate(
+                                                                               String aggregateIdentifier,
+                                                                               DomainEventMessage firstEvent) {
+                                                                           return new StubAggregate(
+                                                                                   aggregateIdentifier);
+                                                                       }
+                                                                   }));
         testSubject.setEventStorageEngine(mockEventStorage);
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
-        DomainEventMessage event1 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 0L,
-                                                                          "Mock contents", MetaData.emptyInstance());
-        DomainEventMessage event2 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 1L,
-                                                                          "Mock contents", MetaData.emptyInstance());
-        when(mockEventStorage.readEvents(aggregateIdentifier))
-                .thenReturn(DomainEventStream.of(event1, event2));
+        DomainEventMessage event1 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 0L, "Mock contents",
+                                                                    MetaData.emptyInstance());
+        DomainEventMessage event2 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 1L, "Mock contents",
+                                                                    MetaData.emptyInstance());
+        when(mockEventStorage.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(event1, event2));
     }
 
     @Test
@@ -101,8 +102,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         testSubject.setTransactionManager(mockTransactionManager);
         AggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
-        when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
-                .thenReturn(existingTransaction);
+        when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class))).thenReturn(existingTransaction);
 
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
@@ -115,10 +115,8 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         testSubject.setTransactionManager(mockTransactionManager);
         AggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
-        when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
-                .thenReturn(existingTransaction);
-        doThrow(new RuntimeException("Stub"))
-                .when(mockEventStorage).storeSnapshot(isA(DomainEventMessage.class));
+        when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class))).thenReturn(existingTransaction);
+        doThrow(new RuntimeException("Stub")).when(mockEventStorage).storeSnapshot(isA(DomainEventMessage.class));
 
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
@@ -132,10 +130,8 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         testSubject.setTransactionManager(mockTransactionManager);
         AggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(true);
-        when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
-                .thenReturn(existingTransaction);
-        doThrow(new RuntimeException("Stub"))
-                .when(mockEventStorage).storeSnapshot(isA(DomainEventMessage.class));
+        when(mockTransactionManager.getTransaction(any())).thenReturn(existingTransaction);
+        doThrow(new RuntimeException("Stub")).when(mockEventStorage).storeSnapshot(isA(DomainEventMessage.class));
 
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
@@ -148,8 +144,8 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         return argThat(new BaseMatcher<DomainEventMessage>() {
             @Override
             public boolean matches(Object o) {
-                return o instanceof DomainEventMessage
-                        && ((DomainEventMessage) o).getSequenceNumber() == sequenceNumber;
+                return o instanceof DomainEventMessage &&
+                        ((DomainEventMessage) o).getSequenceNumber() == sequenceNumber;
             }
 
             @Override

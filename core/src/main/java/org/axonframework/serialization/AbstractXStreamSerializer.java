@@ -127,9 +127,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
             registerConverters((ChainingConverterFactory) converterFactory);
         }
         xStream.addImmutableType(UUID.class, true);
-        //todo org.axonframework.domain does not exist anymore. Check what's affected by this.
-        xStream.aliasPackage("axon.domain", "org.axonframework.domain");
-        xStream.aliasPackage("axon.es", "org.axonframework.eventsourcing");
 
         // Message serialization
         xStream.alias("domain-event", GenericDomainEventMessage.class);

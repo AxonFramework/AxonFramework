@@ -17,8 +17,10 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.common.Registration;
+import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,19 +37,22 @@ import static org.mockito.Mockito.*;
 /**
  * @author Allard Buijze
  */
-public class SpringMessagingEventBusTest {
+public class SpringMessagingTerminalTest {
 
-    private SpringMessagingEventBus testSubject;
+    private SpringMessagingTerminal testSubject;
     private SubscribableChannel mockChannel;
     private Consumer<List<? extends EventMessage<?>>> eventProcessor;
+    private EventBus eventBus;
 
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() {
-        testSubject = new SpringMessagingEventBus();
+        eventBus = new SimpleEventBus();
+        testSubject = new SpringMessagingTerminal(eventBus);
         mockChannel = mock(SubscribableChannel.class);
         eventProcessor = mock(Consumer.class);
         testSubject.setChannel(mockChannel);
+        testSubject.start();
     }
 
     @Test
@@ -87,7 +92,7 @@ public class SpringMessagingEventBusTest {
     public void testPublishEvent() {
         StubDomainEvent event = new StubDomainEvent();
 
-        testSubject.publish(new GenericEventMessage<>(event));
+        eventBus.publish(new GenericEventMessage<>(event));
 
         verify(mockChannel).send(messageContainingEvent(event));
     }

@@ -43,9 +43,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     private final TransactionManager transactionManager;
 
     /**
-     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will
-     * create the snapshots in the process that triggers them, and save them into the Event Store without any
-     * transaction.
+     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create the
+     * snapshots in the process that triggers them, and save them into the Event Store without any transaction.
      *
      * @param eventStorageEngine the EventStore instance to store snapshots in
      */
@@ -54,11 +53,11 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     /**
-     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create
-     * the snapshots in the process that triggers them, and save them into the Event Store in a transaction managed by
-     * the given {@code transactionManager}.
+     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create the
+     * snapshots in the process that triggers them, and save them into the Event Store in a transaction managed by the
+     * given {@code transactionManager}.
      *
-     * @param eventStorageEngine         the EventStore instance to store snapshots in
+     * @param eventStorageEngine the EventStore instance to store snapshots in
      * @param transactionManager The transaction manager to create the surrounding transaction with
      */
     protected AbstractSnapshotter(EventStorageEngine eventStorageEngine, TransactionManager transactionManager) {
@@ -66,15 +65,16 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     /**
-     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create
-     * the snapshots in the process provided by the given {@code executor}, and save them into the Event Store in a
+     * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create the
+     * snapshots in the process provided by the given {@code executor}, and save them into the Event Store in a
      * transaction managed by the given {@code transactionManager}.
      *
-     * @param eventStorageEngine         The EventStore instance to store snapshots in
+     * @param eventStorageEngine The EventStore instance to store snapshots in
      * @param executor           The executor that handles the actual snapshot creation process
      * @param transactionManager The transaction manager to create the surrounding transaction with
      */
-    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine, Executor executor, TransactionManager transactionManager) {
+    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine, Executor executor,
+                                  TransactionManager transactionManager) {
         this.eventStorageEngine = eventStorageEngine;
         this.executor = executor;
         this.transactionManager = transactionManager;
@@ -82,8 +82,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     @Override
     public void scheduleSnapshot(Class<?> aggregateType, String aggregateIdentifier) {
-        executor.execute(() -> transactionManager
-                .executeInTransaction(new SilentTask(createSnapshotterTask(aggregateType, aggregateIdentifier))));
+        executor.execute(new SilentTask(() -> transactionManager
+                .executeInTransaction(createSnapshotterTask(aggregateType, aggregateIdentifier))));
     }
 
     /**
@@ -98,9 +98,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     }
 
     /**
-     * Creates a snapshot event for an aggregate of which passed events are available in the given
-     * {@code eventStream}. May return {@code null} to indicate a snapshot event is not necessary or
-     * appropriate for the given event stream.
+     * Creates a snapshot event for an aggregate of which passed events are available in the given {@code eventStream}.
+     * May return {@code null} to indicate a snapshot event is not necessary or appropriate for the given event stream.
      *
      * @param aggregateType       The aggregate's type identifier
      * @param aggregateIdentifier The identifier of the aggregate to create a snapshot for
@@ -165,7 +164,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
         @Override
         public void run() {
-            DomainEventStream eventStream = eventStream = eventStorageEngine.readEvents(identifier);
+            DomainEventStream eventStream = eventStorageEngine.readEvents(identifier);
             // a snapshot should only be stored if the snapshot replaces at least more than one event
             long firstEventSequenceNumber = eventStream.peek().getSequenceNumber();
             DomainEventMessage snapshotEvent = createSnapshot(aggregateType, identifier, eventStream);

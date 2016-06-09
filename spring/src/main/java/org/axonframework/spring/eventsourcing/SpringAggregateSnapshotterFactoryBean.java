@@ -60,7 +60,6 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
     private Executor executor = DirectExecutor.INSTANCE;
     private List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
     private ParameterResolverFactory parameterResolverFactory;
-    private EventStorageEngine eventStorageEngine;
 
     @Override
     public AggregateSnapshotter getObject() throws Exception {
@@ -146,7 +145,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
      * @param eventStorageEngine The Event Storage Engine to store the snapshot events in
      */
     public void setEventStorageEngine(EventStorageEngine eventStorageEngine) {
-        this.eventStorageEngine = eventStorageEngine;
+        this.eventStorage = eventStorageEngine;
     }
 
     @Override

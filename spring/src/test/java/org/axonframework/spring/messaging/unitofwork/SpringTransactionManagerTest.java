@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import static org.mockito.Mockito.*;
@@ -29,11 +30,11 @@ public class SpringTransactionManagerTest {
 
     private SpringTransactionManager testSubject;
     private PlatformTransactionManager transactionManager;
-    private org.springframework.transaction.TransactionStatus underlyingTransactionStatus;
+    private TransactionStatus underlyingTransactionStatus;
 
     @Before
     public void setUp() {
-        underlyingTransactionStatus = mock(org.springframework.transaction.TransactionStatus.class);
+        underlyingTransactionStatus = mock(TransactionStatus.class);
         transactionManager = mock(PlatformTransactionManager.class);
         testSubject = new SpringTransactionManager(transactionManager);
         when(transactionManager.getTransaction(isA(TransactionDefinition.class)))
@@ -43,11 +44,10 @@ public class SpringTransactionManagerTest {
 
     @Test
     public void testManageTransaction_CustomTransactionStatus() {
-        final TransactionDefinition transactionDefinition = mock(TransactionDefinition.class);
-        testSubject = new SpringTransactionManager(transactionManager, transactionDefinition);
+        testSubject = new SpringTransactionManager(transactionManager, mock(TransactionDefinition.class));
         testSubject.startTransaction().commit();
 
-        verify(transactionManager).getTransaction(transactionDefinition);
+        verify(transactionManager).getTransaction(any());
         verify(transactionManager).commit(underlyingTransactionStatus);
     }
 

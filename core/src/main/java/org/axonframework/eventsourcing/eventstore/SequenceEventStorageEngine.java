@@ -22,8 +22,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * TODO This implementation assumes no overlap between the historic and active storage. That ok?
- *
  * @author Rene de Waele
  */
 public class SequenceEventStorageEngine implements EventStorageEngine {

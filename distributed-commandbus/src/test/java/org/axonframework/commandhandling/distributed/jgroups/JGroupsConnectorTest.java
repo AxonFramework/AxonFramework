@@ -66,8 +66,7 @@ public class JGroupsConnectorTest {
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         hashChangeListener = new RecordingHashChangeListener();
         serializer = new XStreamSerializer();
-        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, serializer,
-                                          hashChangeListener);
+        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, serializer, hashChangeListener);
         connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, serializer);
     }
 
@@ -91,7 +90,7 @@ public class JGroupsConnectorTest {
         channel1.getReceiver().receive(message);
 
         //Verify that the newly introduced ReplyingCallBack class is being wired in. Actual behaviour of ReplyingCallback is tested in its unit tests
-        verify(mockCommandBus1).dispatch(refEq(commandMessage), any(ReplyingCallback.class));
+        verify(mockCommandBus1).dispatch(any(), any(ReplyingCallback.class));
 
     }
 
@@ -209,13 +208,12 @@ public class JGroupsConnectorTest {
 
     private void waitForConnectorSync() throws InterruptedException {
         int t = 0;
-        while (ConsistentHash.emptyRing().equals(connector1.getConsistentHash())
-                || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
+        while (ConsistentHash.emptyRing().equals(connector1.getConsistentHash()) ||
+                !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (t++ > 1500) {
                 assertEquals("Connectors did not synchronize within 30 seconds.",
-                             connector1.getConsistentHash().toString(),
-                             connector2.getConsistentHash().toString());
+                             connector1.getConsistentHash().toString(), connector2.getConsistentHash().toString());
             }
             Thread.sleep(20);
         }
@@ -283,12 +281,10 @@ public class JGroupsConnectorTest {
             FutureCallback<Object, Object> callback = new FutureCallback<>();
             String message = "message" + t;
             if ((t % 3) == 0) {
-                connector1.send(message,
-                                new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand1"),
+                connector1.send(message, new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand1"),
                                 callback);
             } else {
-                connector2.send(message,
-                                new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand2"),
+                connector2.send(message, new GenericCommandMessage<>(new GenericMessage<>(message), "myCommand2"),
                                 callback);
             }
             callbacks.add(callback);

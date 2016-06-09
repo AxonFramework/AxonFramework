@@ -17,7 +17,7 @@
 package org.axonframework.contextsupport.spring.amqp;
 
 import org.axonframework.eventhandling.amqp.spring.ListenerContainerLifecycleManager;
-import org.axonframework.eventhandling.amqp.spring.SpringAMQPEventBus;
+import org.axonframework.eventhandling.amqp.spring.SpringAMQPTerminal;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -65,7 +65,7 @@ public class EventBusBeanDefinitionParser extends AbstractBeanDefinitionParser {
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         GenericBeanDefinition terminalDefinition = new GenericBeanDefinition();
-        terminalDefinition.setBeanClass(SpringAMQPEventBus.class);
+        terminalDefinition.setBeanClass(SpringAMQPTerminal.class);
         GenericBeanDefinition listenerContainerDefinition = createContainerManager(element, parserContext);
         final String containerBeanName = resolveId(element, terminalDefinition, parserContext)
                 + CONTAINER_MANAGER_SUFFIX;

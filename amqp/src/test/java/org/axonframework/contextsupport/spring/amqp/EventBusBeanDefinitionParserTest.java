@@ -21,7 +21,7 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.eventhandling.amqp.AMQPMessageConverter;
 import org.axonframework.eventhandling.amqp.RoutingKeyResolver;
 import org.axonframework.eventhandling.amqp.spring.SpringAMQPConsumerConfiguration;
-import org.axonframework.eventhandling.amqp.spring.SpringAMQPEventBus;
+import org.axonframework.eventhandling.amqp.spring.SpringAMQPTerminal;
 import org.axonframework.serialization.Serializer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,7 +64,7 @@ public class EventBusBeanDefinitionParserTest {
         assertNotNull(applicationContext);
         assertNotNull(beanFactory);
         BeanDefinition terminal1 = beanFactory.getBeanDefinition("terminal1");
-        assertEquals(SpringAMQPEventBus.class.getName(), terminal1.getBeanClassName());
+        assertEquals(SpringAMQPTerminal.class.getName(), terminal1.getBeanClassName());
         assertTrue(property(terminal1, "listenerContainerLifecycleManager") instanceof BeanReference);
 
         assertEquals("connectionFactory", property(terminal1, "connectionFactory", BeanReference.class).getBeanName());
