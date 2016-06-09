@@ -27,12 +27,11 @@ import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventSchemaFactory;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
-import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.upcasting.AbstractSingleEntryUpcaster;
-import org.axonframework.serialization.upcasting.LazyUpcasterChain;
-import org.axonframework.serialization.upcasting.UpcastingContext;
+import org.axonframework.serialization.upcasting.event.AbstractSingleEventUpcaster;
+import org.axonframework.serialization.upcasting.event.DefaultEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -42,7 +41,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 
 /**
  * @author Allard Buijze
@@ -67,22 +65,18 @@ public class RunUpcaster {
         storageEngine.createSchema(HsqlEventSchemaFactory.INSTANCE);
         storageEngine.setSerializer(serializer);
         // initialize the upcaster chain with our upcaster
-        storageEngine.setUpcasterChain(new LazyUpcasterChain(serializer,
-                                                             Collections.singletonList(new ToDoItemUpcaster())));
+        storageEngine.setUpcasterChain(new DefaultEventUpcasterChain(new ToDoItemUpcaster()));
 
         // create an EmdeddedEventStore (we don't want to run a separate server)
         EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngine);
 
 
         // we append some events. Notice we append a "ToDoItemCreatedEvent".
-        eventStore.publish(
-                new GenericDomainEventMessage<>("type", "todo1", 0,
-                                                new ToDoItemCreatedEvent("todo1", "I need to do this today")),
-                new GenericDomainEventMessage<>("type", "todo1", 1, new ToDoItemCompletedEvent("todo1"))
-        );
-        eventStore.publish(
-                new GenericDomainEventMessage<>("type", "todo2", 0, new ToDoItemCreatedEvent("todo2", "I also need to do this"))
-        );
+        eventStore.publish(new GenericDomainEventMessage<>("type", "todo1", 0, new ToDoItemCreatedEvent("todo1",
+                                                                                                        "I need to do this today")),
+                           new GenericDomainEventMessage<>("type", "todo1", 1, new ToDoItemCompletedEvent("todo1")));
+        eventStore.publish(new GenericDomainEventMessage<>("type", "todo2", 0, new ToDoItemCreatedEvent("todo2",
+                                                                                                        "I also need to do this")));
 
         // now, we read the events from the "todo1" stream
         DomainEventStream eventStream = eventStore.readEvents("todo1");
@@ -97,42 +91,36 @@ public class RunUpcaster {
      * This is our upcaster. It converts the XML representation of a ToItemCreatedEvent to a
      * NewToDoItemWithDeadlineCreatedEvent. The latter contains an explicit deadline of the task at hand.
      */
-    public static class ToDoItemUpcaster extends AbstractSingleEntryUpcaster<Document> {
+    public static class ToDoItemUpcaster extends AbstractSingleEventUpcaster {
 
         @Override
-        public boolean canUpcast(SerializedType serializedType) {
+        protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation intermediateRepresentation) {
             // we can upcast the object if it's type name is the fully qualified class name of the ToDoItemCreatedEvent.
             // normally, you would also want to check the revision
-            return ToDoItemCreatedEvent.class.getName().equals(serializedType.getName());
-        }
-
-        @Override
-        public Class<Document> expectedRepresentationType() {
-            // we want to use Dom4J document. Axon will automatically convert the serialized form.
-            return Document.class;
-        }
-
-        @Override
-        public Document doUpcast(SerializedObject<Document> intermediateRepresentation,
-                                 UpcastingContext context) {
-            // here, we convert the XML format of the old event to that of the new event
-            Document data = intermediateRepresentation.getData();
-            Element rootElement = data.getRootElement();
-            // change the name of the root element to reflect the changed class name
-            rootElement.setName(NewToDoItemWithDeadlineCreatedEvent.class.getName());
-            // and add an element for the new "deadline" field
-            rootElement.addElement("deadline")
-                    // we set the value of the field to the default value: one day after the event was created
-                    .setText(context.getTimestamp().plus(1, ChronoUnit.DAYS).toString());
-            // we return the modified Document
-            return data;
-        }
-
-        @Override
-        public SerializedType doUpcast(SerializedType serializedType) {
-            // we describe the refactoring that we have done. Since we want to simulate a new revision and need to
-            // change the class name, we pass both details in the returned SerializedType.
-            return new SimpleSerializedType(NewToDoItemWithDeadlineCreatedEvent.class.getName(), "1.1");
+            if (intermediateRepresentation.getOutputType().getName().equals(ToDoItemCreatedEvent.class.getName())) {
+                // we describe the refactoring that we have done. Since we want to simulate a new revision and need to
+                // change the class name, we pass both details in the returned SerializedType.
+                SerializedType targetType =
+                        new SimpleSerializedType(NewToDoItemWithDeadlineCreatedEvent.class.getName(), "1.1");
+                Instant timestamp = intermediateRepresentation.getTimestamp();
+                // here, we convert the XML format of the old event to that of the new event.
+                intermediateRepresentation =
+                        // we want to get the data as a Dom4J document.
+                        // Axon will automatically convert the serialized form.
+                        intermediateRepresentation.upcastPayload(targetType, Document.class, oldDocument -> {
+                            Element rootElement = oldDocument.getRootElement();
+                            // change the name of the root element to reflect the changed class name
+                            rootElement.setName(NewToDoItemWithDeadlineCreatedEvent.class.getName());
+                            // and add an element for the new "deadline" field
+                            rootElement.addElement("deadline")
+                                    // we set the value of the field to the default value:
+                                    // one day after the event was created
+                                    .setText(timestamp.plus(1, ChronoUnit.DAYS).toString());
+                            // we return the modified Document
+                            return oldDocument;
+                        });
+            }
+            return intermediateRepresentation;
         }
     }
 
@@ -166,8 +154,7 @@ public class RunUpcaster {
 
         @Override
         public String toString() {
-            return "NewToDoItemWithDeadlineCreatedEvent(" + todoId + ", '" + description + "' before "
-                    + deadline + ")";
+            return "NewToDoItemWithDeadlineCreatedEvent(" + todoId + ", '" + description + "' before " + deadline + ")";
         }
     }
 }

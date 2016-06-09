@@ -41,7 +41,6 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -54,8 +53,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Rather extensive test that shows the existence of <a href="http://code.google.com/p/axonframework/issues/detail?id=204">issue
- * #204</a>. This bug causes application to hang when using triply nested unit of work. The cleanup callbacks in the
- * 3rd
+ * #204</a>. This bug causes application to hang when using triply nested unit of work. The cleanup callbacks in the 3rd
  * level of the hierarchy wasn't called, causing reentrant locks to stay active.
  * <p/>
  * This test does nesting to up to 4 levels, with 2 units of work on the same (second) level.
@@ -86,16 +84,12 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
     @Test
     public void testLoopbackScenario() throws InterruptedException {
         TransactionStatus tx = transactionManager.getTransaction(new DefaultTransactionAttribute());
-        eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
-                type, aggregateAIdentifier,
-                (long) 0,
-                new CreateEvent(aggregateAIdentifier),
-                MetaData.emptyInstance())}));
-        eventStore.appendEvents(Arrays.asList(new DomainEventMessage[]{new GenericDomainEventMessage<>(
-                type, aggregateBIdentifier,
-                (long) 0,
-                new CreateEvent(aggregateBIdentifier),
-                MetaData.emptyInstance())}));
+        eventStore.publish(new GenericDomainEventMessage<>("test", aggregateAIdentifier, (long) 0,
+                                                           new CreateEvent(aggregateAIdentifier),
+                                                           MetaData.emptyInstance()));
+        eventStore.publish(new GenericDomainEventMessage<>("test", aggregateBIdentifier, (long) 0,
+                                                           new CreateEvent(aggregateBIdentifier),
+                                                           MetaData.emptyInstance()));
         transactionManager.commit(tx);
         assertEquals(1, toList(eventStore.readEvents(aggregateAIdentifier)).size());
         assertEquals(1, toList(eventStore.readEvents(aggregateBIdentifier)).size());
@@ -144,7 +138,7 @@ public class TripleUnitOfWorkNestingTest implements EventListener {
         @CommandHandler
         public void handle(String stringCommand) {
             eventBus.publish(new GenericEventMessage<>("Mock"));
-            aggregateARepository.load(aggregateAIdentifier).execute(r-> r.doSomething(stringCommand));
+            aggregateARepository.load(aggregateAIdentifier).execute(r -> r.doSomething(stringCommand));
         }
 
         @CommandHandler

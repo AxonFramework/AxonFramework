@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 
 import java.util.regex.Pattern;
@@ -35,24 +34,24 @@ import java.util.regex.Pattern;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ClassNamePatternEventHandlerManagerSelector extends AbstractEventHandlerManagerSelector {
+public class ClassNamePatternEventProcessorSelector extends AbstractEventProcessorSelector {
 
     private final Pattern pattern;
-    private final EventHandlerInvoker eventProcessor;
+    private final String eventProcessor;
 
     /**
      * Initializes the ClassNamePrefixEventProcessorSelector using the given <code>mappings</code>. If a name does not have a
      * prefix defined, the Event Processor Selector returns the given <code>defaultEventProcessor</code>.
-     *  @param pattern The pattern to match an Event Listener's class name against
-     * @param eventHandlerInvoker The eventProcessor to choose when the pattern matches
+     * @param pattern The pattern to match an Event Listener's class name against
+     * @param eventProcessor The eventProcessor to choose when the pattern matches
      */
-    public ClassNamePatternEventHandlerManagerSelector(Pattern pattern, EventHandlerInvoker eventHandlerInvoker) {
+    public ClassNamePatternEventProcessorSelector(Pattern pattern, String eventProcessor) {
         this.pattern = pattern;
-        this.eventProcessor = eventHandlerInvoker;
+        this.eventProcessor = eventProcessor;
     }
 
     @Override
-    public EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class listenerType) {
+    public String doSelectEventHandlerManager(EventListener eventListener, Class listenerType) {
         String listenerName = listenerType.getName();
         if (pattern.matcher(listenerName).matches()) {
             return eventProcessor;

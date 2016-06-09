@@ -20,10 +20,10 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.*;
+import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +81,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         commandGateway = new DefaultCommandGateway(commandBus, retryScheduler);
 
         // trigger retry
-        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+        commandBus.subscribe(String.class.getName(), commandMessage -> {
             throw new ConcurrencyException("some retryable exception");
         });
 
@@ -138,7 +138,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         });
 
         // trigger retry, then return metadata for verification
-        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+        commandBus.subscribe(String.class.getName(), commandMessage -> {
             if (Thread.currentThread() == testThread) {
                 throw new ConcurrencyException("some retryable exception");
             } else {
@@ -164,7 +164,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         commandGateway = new DefaultCommandGateway(commandBus, retryScheduler);
 
         // trigger retry, then return metadata for verification
-        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+        commandBus.subscribe(String.class.getName(), commandMessage -> {
             if (Thread.currentThread() == testThread) {
                 throw new ConcurrencyException("some retryable exception");
             } else {

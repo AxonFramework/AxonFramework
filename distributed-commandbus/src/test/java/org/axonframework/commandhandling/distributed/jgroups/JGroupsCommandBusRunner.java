@@ -60,7 +60,7 @@ public class JGroupsCommandBusRunner {
                 return command.getPayload().toString();
             }
         });
-        dcb.subscribe(String.class.getName(), (stringCommandMessage, unitOfWork) -> {
+        dcb.subscribe(String.class.getName(), stringCommandMessage -> {
             logger.error("Received message: " + stringCommandMessage.getPayload());
             return null;
         });
@@ -76,7 +76,7 @@ public class JGroupsCommandBusRunner {
                 System.out.println("This is not a number.");
             }
         }
-        dcb.subscribe(String.class.getName(), (stringCommandMessage, unitOfWork) -> {
+        dcb.subscribe(String.class.getName(), stringCommandMessage -> {
             System.out.println("Received message: " + stringCommandMessage.getPayload());
             return null;
         });

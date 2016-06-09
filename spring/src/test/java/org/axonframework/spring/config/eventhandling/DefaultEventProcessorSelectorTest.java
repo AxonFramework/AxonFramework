@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,29 +26,29 @@ import static org.mockito.Mockito.mock;
 /**
  * @author Allard Buijze
  */
-public class DefaultEventHandlerManagerSelectorTest {
+public class DefaultEventProcessorSelectorTest {
 
-    private DefaultEventHandlerManagerSelector testSubject;
+    private DefaultEventProcessorSelector testSubject;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new DefaultEventHandlerManagerSelector();
+        testSubject = new DefaultEventProcessorSelector();
     }
 
     @Test
     public void testSameInstanceIsReturned() {
-        EventHandlerInvoker handlerManager1 = testSubject.selectHandlerManager(mock(EventListener.class));
-        EventHandlerInvoker handlerManager2 = testSubject.selectHandlerManager(mock(EventListener.class));
-        EventHandlerInvoker handlerManager3 = testSubject.selectHandlerManager(mock(EventListener.class));
+        String processor1 = testSubject.selectEventProcessor(mock(EventListener.class));
+        String processor2 = testSubject.selectEventProcessor(mock(EventListener.class));
+        String processor3 = testSubject.selectEventProcessor(mock(EventListener.class));
 
-        assertSame(handlerManager1, handlerManager2);
-        assertSame(handlerManager2, handlerManager3);
+        assertSame(processor1, processor2);
+        assertSame(processor2, processor3);
     }
 
     @Test
     public void testProvidedInstanceIsReturned() {
-        EventHandlerInvoker mock = mock(EventHandlerInvoker.class);
-        testSubject = new DefaultEventHandlerManagerSelector(mock);
-        assertSame(mock, testSubject.selectHandlerManager(mock(EventListener.class)));
+        String mock = mock(String.class);
+        testSubject = new DefaultEventProcessorSelector(mock);
+        assertSame(mock, testSubject.selectEventProcessor(mock(EventListener.class)));
     }
 }

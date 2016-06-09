@@ -17,12 +17,14 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Test;
 import org.springframework.messaging.support.GenericMessage;
+
+import java.util.List;
+import java.util.function.Consumer;
 
 import static org.mockito.Mockito.*;
 
@@ -34,14 +36,14 @@ public class MessageHandlerAdapterTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testMessageForwarded() {
-        EventProcessor mockEventProcessor = mock(EventProcessor.class);
+        Consumer<List<? extends EventMessage<?>>> mockEventProcessor = mock(Consumer.class);
         MessageHandlerAdapter adapter = new MessageHandlerAdapter(mockEventProcessor);
 
         final StubDomainEvent payload = new StubDomainEvent();
         adapter.handleMessage(new GenericMessage<>(payload));
         adapter.handleMessage(new GenericMessage<>(new StubDomainEvent()));
 
-        verify(mockEventProcessor, times(1)).accept(argThat(new BaseMatcher<EventMessage>() {
+        verify(mockEventProcessor, times(1)).accept(argThat(new BaseMatcher<List<? extends EventMessage<?>>>() {
             @Override
             public boolean matches(Object o) {
                 return ((o instanceof EventMessage) && ((EventMessage) o).getPayload().equals(payload));

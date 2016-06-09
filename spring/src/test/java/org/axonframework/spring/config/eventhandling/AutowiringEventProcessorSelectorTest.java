@@ -16,10 +16,8 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,26 +40,26 @@ import static org.mockito.Mockito.*;
  */
 @ContextConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
-public class AutowiringEventHandlerManagerSelectorTest {
+public class AutowiringEventProcessorSelectorTest {
 
-    private static final EventHandlerInvoker manager1 = new SimpleEventHandlerInvoker("manager1");
-    private static final EventHandlerInvoker manager2 = new SimpleEventHandlerInvoker("manager2");
-    private static final EventHandlerInvoker manager3 = new SimpleEventHandlerInvoker("manager3");
+    private static final String manager1 = "manager1";
+    private static final String manager2 = "manager2";
+    private static final String manager3 = "manager3";
 
     @Autowired
-    private AutowiringEventHandlerManagerSelector testSubject;
+    private AutowiringEventProcessorSelector testSubject;
 
     @Autowired
     @Qualifier("firstSelector")
-    private EventHandlerManagerSelector firstSelector;
+    private EventProcessorSelector firstSelector;
 
     @Autowired
     @Qualifier("secondSelector")
-    private EventHandlerManagerSelector secondSelector;
+    private EventProcessorSelector secondSelector;
 
     @Autowired
     @Qualifier("thirdSelector")
-    private EventHandlerManagerSelector thirdSelector;
+    private EventProcessorSelector thirdSelector;
 
     @Before
     public void setUp() {
@@ -72,11 +70,11 @@ public class AutowiringEventHandlerManagerSelectorTest {
     public void testAutowiringEventProcessorSelector_LastCandidateSelected() {
         //This will also test for a recursive dependency of the autowired eventProcessor selector on itself
         assertNotNull(testSubject);
-        EventHandlerInvoker eventProcessor = testSubject.selectHandlerManager(event -> {
+        String eventProcessor = testSubject.selectEventProcessor(event -> {
         });
-        verify(firstSelector).selectHandlerManager(isA(EventListener.class));
-        verify(secondSelector).selectHandlerManager(isA(EventListener.class));
-        verify(thirdSelector).selectHandlerManager(isA(EventListener.class));
+        verify(firstSelector).selectEventProcessor(isA(EventListener.class));
+        verify(secondSelector).selectEventProcessor(isA(EventListener.class));
+        verify(thirdSelector).selectEventProcessor(isA(EventListener.class));
         assertSame(manager3, eventProcessor);
     }
 
@@ -84,52 +82,52 @@ public class AutowiringEventHandlerManagerSelectorTest {
     public void testAutowiringEventProcessorSelector_FirstCandidateSelected() {
         assertNotNull(testSubject);
 
-        EventHandlerInvoker eventProcessor = testSubject.selectHandlerManager(new MyTestListener());
+        String eventProcessor = testSubject.selectEventProcessor(new MyTestListener());
         assertSame(manager1, eventProcessor);
-        verify(firstSelector).selectHandlerManager(isA(EventListener.class));
-        verify(secondSelector, never()).selectHandlerManager(isA(EventListener.class));
-        verify(thirdSelector, never()).selectHandlerManager(isA(EventListener.class));
+        verify(firstSelector).selectEventProcessor(isA(EventListener.class));
+        verify(secondSelector, never()).selectEventProcessor(isA(EventListener.class));
+        verify(thirdSelector, never()).selectEventProcessor(isA(EventListener.class));
     }
 
     @Configuration
     public static class TestContext {
 
         @Bean
-        public AutowiringEventHandlerManagerSelector testSubject() {
-            return new AutowiringEventHandlerManagerSelector();
+        public AutowiringEventProcessorSelector testSubject() {
+            return new AutowiringEventProcessorSelector();
         }
 
         @Bean
-        public EventHandlerManagerSelector firstSelector() {
+        public EventProcessorSelector firstSelector() {
             return spy(new OrderedSelector(Integer.MIN_VALUE,
-                                           new ClassNamePatternEventHandlerManagerSelector(Pattern.compile(".*TestListener"),
-                                                                                           manager1)));
+                                           new ClassNamePatternEventProcessorSelector(Pattern.compile(".*TestListener"),
+                                                                                      manager1)));
         }
 
         @Bean
-        public EventHandlerManagerSelector secondSelector() {
-            return spy(new ClassNamePrefixEventHandlerManagerSelector("java", manager2));
+        public EventProcessorSelector secondSelector() {
+            return spy(new ClassNamePrefixEventProcessorSelector("java", manager2));
         }
 
         @Bean
-        public EventHandlerManagerSelector thirdSelector() {
-            return spy(new OrderedSelector(Integer.MAX_VALUE, new ClassNamePrefixEventHandlerManagerSelector("org", manager3)));
+        public EventProcessorSelector thirdSelector() {
+            return spy(new OrderedSelector(Integer.MAX_VALUE, new ClassNamePrefixEventProcessorSelector("org", manager3)));
         }
     }
 
-    private static class OrderedSelector implements Ordered, EventHandlerManagerSelector {
+    private static class OrderedSelector implements Ordered, EventProcessorSelector {
 
         private final int order;
-        private final EventHandlerManagerSelector delegate;
+        private final EventProcessorSelector delegate;
 
-        private OrderedSelector(int order, EventHandlerManagerSelector delegate) {
+        private OrderedSelector(int order, EventProcessorSelector delegate) {
             this.order = order;
             this.delegate = delegate;
         }
 
         @Override
-        public EventHandlerInvoker selectHandlerManager(EventListener eventListener) {
-            return delegate.selectHandlerManager(eventListener);
+        public String selectEventProcessor(EventListener eventListener) {
+            return delegate.selectEventProcessor(eventListener);
         }
 
         @Override

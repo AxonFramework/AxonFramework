@@ -31,8 +31,8 @@ public class InstrumentedCommandBusTest {
     public void setUp() throws Exception {
         delegate = new SimpleCommandBus();
         testSubject = new InstrumentedCommandBus(delegate);
-        testSubject.subscribe(String.class.getName(), (m, u) -> m.getPayload());
-        delegate.subscribe(Long.class.getName(), (m, u) -> {
+        testSubject.subscribe(String.class.getName(), m -> m.getPayload());
+        delegate.subscribe(Long.class.getName(), m -> {
             throw new MockException();
         });
     }
@@ -45,7 +45,7 @@ public class InstrumentedCommandBusTest {
         assertEquals(1, supportedCommandsValue.size());
         assertEquals(String.class.getName(), supportedCommandsValue.iterator().next());
 
-        final MessageHandler<CommandMessage<?>> handler = (m, u) -> null;
+        final MessageHandler<CommandMessage<?>> handler = m -> null;
         Registration subscription = testSubject.subscribe(Long.class.getName(), handler);
 
         assertEquals(1, supportedCommandsValue.size());
@@ -160,7 +160,7 @@ public class InstrumentedCommandBusTest {
 
     @Test
     public void testHandlingCounterUpdated() throws Exception {
-        testSubject.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+        testSubject.subscribe(String.class.getName(), commandMessage -> {
             assertEquals(1, testSubject.getHandlingCounter().getCount());
             return commandMessage.getPayload();
         });

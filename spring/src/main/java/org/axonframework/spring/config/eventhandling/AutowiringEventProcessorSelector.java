@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -34,23 +33,23 @@ import java.util.*;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AutowiringEventHandlerManagerSelector implements EventHandlerManagerSelector, ApplicationContextAware {
+public class AutowiringEventProcessorSelector implements EventProcessorSelector, ApplicationContextAware {
 
     private ApplicationContext applicationContext;
-    private final List<EventHandlerManagerSelector> selectors = new ArrayList<>();
+    private final List<EventProcessorSelector> selectors = new ArrayList<>();
     private volatile boolean initialized;
 
     @Override
-    public EventHandlerInvoker selectHandlerManager(EventListener eventListener) {
+    public String selectEventProcessor(EventListener eventListener) {
         if (!initialized) {
             initialize();
         }
-        EventHandlerInvoker eventHandlerInvoker = null;
-        Iterator<EventHandlerManagerSelector> selectorIterator = selectors.iterator();
-        while (eventHandlerInvoker == null && selectorIterator.hasNext()) {
-            eventHandlerInvoker = selectorIterator.next().selectHandlerManager(eventListener);
+        String eventProcessor = null;
+        Iterator<EventProcessorSelector> selectorIterator = selectors.iterator();
+        while (eventProcessor == null && selectorIterator.hasNext()) {
+            eventProcessor = selectorIterator.next().selectEventProcessor(eventListener);
         }
-        return eventHandlerInvoker;
+        return eventProcessor;
     }
 
     @Override
@@ -64,9 +63,9 @@ public class AutowiringEventHandlerManagerSelector implements EventHandlerManage
         }
 
         this.initialized = true;
-        Map<String, EventHandlerManagerSelector> candidates = applicationContext.getBeansOfType(EventHandlerManagerSelector.class);
+        Map<String, EventProcessorSelector> candidates = applicationContext.getBeansOfType(EventProcessorSelector.class);
         SortedSet<OrderedEventProcessorSelector> orderedCandidates = new TreeSet<>();
-        for (Map.Entry<String, EventHandlerManagerSelector> entry : candidates.entrySet()) {
+        for (Map.Entry<String, EventProcessorSelector> entry : candidates.entrySet()) {
             if (entry.getValue() != this) {
                 orderedCandidates.add(new OrderedEventProcessorSelector(entry.getKey(), entry.getValue()));
             }
@@ -75,17 +74,17 @@ public class AutowiringEventHandlerManagerSelector implements EventHandlerManage
             selectors.add(candidate.selector);
         }
         if (selectors.isEmpty()) {
-            selectors.add(new DefaultEventHandlerManagerSelector());
+            selectors.add(new DefaultEventProcessorSelector());
         }
     }
 
     private static final class OrderedEventProcessorSelector implements Comparable<OrderedEventProcessorSelector> {
 
         private final String name;
-        private final EventHandlerManagerSelector selector;
+        private final EventProcessorSelector selector;
         private final int order;
 
-        private OrderedEventProcessorSelector(String name, EventHandlerManagerSelector selector) {
+        private OrderedEventProcessorSelector(String name, EventProcessorSelector selector) {
             this.name = name;
             this.selector = selector;
             if (selector instanceof Ordered) {

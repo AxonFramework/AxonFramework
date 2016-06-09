@@ -58,7 +58,7 @@ public class DisruptorCommandBusTest {
 
     @Test
     public void handleCommandWithoutUsingAggregate() throws ExecutionException, InterruptedException {
-        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> "ok");
+        commandBus.subscribe(String.class.getName(), commandMessage -> "ok");
 
         final FutureCallback<String, String> callback = new FutureCallback<>();
         commandBus.dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
@@ -69,14 +69,14 @@ public class DisruptorCommandBusTest {
     @DirtiesContext
     @Test
     public void handleCommandWithoutUsingAggregate_PublicationFails() throws ExecutionException, InterruptedException {
-        commandBus.subscribe(String.class.getName(), (commandMessage, unitOfWork) -> {
+        commandBus.subscribe(String.class.getName(), commandMessage -> {
             eventBus.publish(GenericEventMessage.asEventMessage("test"));
             return "ok";
         });
         final RuntimeException failure = new RuntimeException("Test");
-        SimpleEventProcessor eventProcessor = new SimpleEventProcessor("test");
-        eventProcessor.subscribe(e -> { throw failure; });
-        eventBus.subscribe(eventProcessor);
+        eventBus.subscribe(eventMessages -> {
+            throw failure;
+        });
 
         final FutureCallback<String, String> callback = new FutureCallback<>();
         commandBus.dispatch(new GenericCommandMessage<>("test"), callback);

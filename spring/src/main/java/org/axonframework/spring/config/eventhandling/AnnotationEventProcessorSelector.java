@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 
 import java.lang.annotation.Annotation;
@@ -28,10 +27,10 @@ import java.lang.annotation.Annotation;
  * @author Allard Buijze
  * @since 2.0
  */
-public class AnnotationEventHandlerManagerSelector extends AbstractEventHandlerManagerSelector {
+public class AnnotationEventProcessorSelector extends AbstractEventProcessorSelector {
 
     private final Class<? extends Annotation> annotationType;
-    private final EventHandlerInvoker eventHandlerInvoker;
+    private final String eventProcessor;
     private final boolean inspectSuperClasses;
 
     /**
@@ -41,12 +40,12 @@ public class AnnotationEventHandlerManagerSelector extends AbstractEventHandlerM
      * Note that this instance will <em>not</em> search superclasses for annotations by default. If annotation on
      * classes should also reflect on their subclasses, make sure to use the
      * {@link java.lang.annotation.Inherited @Inherited} Meta-Annotation, or use {@link
-     * #AnnotationEventHandlerManagerSelector(Class, EventHandlerInvoker, boolean)}.
-     *  @param annotationType The type of annotation to find on the Event Listeners
-     * @param eventHandlerInvoker The event processor to select if the annotation was found
+     * #AnnotationEventProcessorSelector(Class, String, boolean)}.
+     * @param annotationType The type of annotation to find on the Event Listeners
+     * @param eventProcessor The event processor to select if the annotation was found
      */
-    public AnnotationEventHandlerManagerSelector(Class<? extends Annotation> annotationType, EventHandlerInvoker eventHandlerInvoker) {
-        this(annotationType, eventHandlerInvoker, false);
+    public AnnotationEventProcessorSelector(Class<? extends Annotation> annotationType, String eventProcessor) {
+        this(annotationType, eventProcessor, false);
     }
 
     /**
@@ -54,21 +53,21 @@ public class AnnotationEventHandlerManagerSelector extends AbstractEventHandlerM
      * annotated with the given <code>annotationType</code>. If <code>inspectSuperClasses</code> is <code>true</code>,
      * super classes will be searched for the annotation, regardless if the annotation is marked as {@link
      * java.lang.annotation.Inherited @Inherited}
-     *  @param annotationType      The type of annotation to find on the Event Listeners
-     * @param eventHandlerInvoker      The event processor to select if the annotation was found
+     * @param annotationType      The type of annotation to find on the Event Listeners
+     * @param eventProcessor      The event processor to select if the annotation was found
      * @param inspectSuperClasses Whether or not to inspect super classes as well
      */
-    public AnnotationEventHandlerManagerSelector(Class<? extends Annotation> annotationType, EventHandlerInvoker eventHandlerInvoker,
-                                                 boolean inspectSuperClasses) {
+    public AnnotationEventProcessorSelector(Class<? extends Annotation> annotationType, String eventProcessor,
+                                            boolean inspectSuperClasses) {
         this.annotationType = annotationType;
-        this.eventHandlerInvoker = eventHandlerInvoker;
+        this.eventProcessor = eventProcessor;
         this.inspectSuperClasses = inspectSuperClasses;
     }
 
 
     @Override
-    protected EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType) {
-        return annotationPresent(listenerType) ? eventHandlerInvoker : null;
+    protected String doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType) {
+        return annotationPresent(listenerType) ? eventProcessor : null;
     }
 
     private boolean annotationPresent(Class<?> listenerType) {

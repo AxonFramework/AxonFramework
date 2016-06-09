@@ -13,7 +13,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.serialization.upcasting.UpcastDomainEventData;
 
 /**
  * Interface describing the properties of serialized Domain Event Messages. Event Store implementations should have
@@ -21,7 +20,6 @@ import org.axonframework.serialization.upcasting.UpcastDomainEventData;
  *
  * @param <T> The content type of the serialized data
  * @author Allard Buijze
- * @see UpcastDomainEventData
  * @since 2.0
  */
 public interface DomainEventData<T> extends EventData<T> {

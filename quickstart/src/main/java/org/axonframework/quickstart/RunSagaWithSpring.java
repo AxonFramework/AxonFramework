@@ -17,9 +17,7 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
@@ -42,8 +40,7 @@ public class RunSagaWithSpring {
         // let's register a Command Handler that writes to System Out so we can see what happens
         applicationContext.getBean(CommandBus.class)
                           .subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                                     (CommandMessage<?> commandMessage,
-                                      UnitOfWork<? extends CommandMessage<?>> unitOfWork) -> {
+                                     commandMessage -> {
                                          System.out.println(String.format("Got command to mark [%s] overdue!",
                                                  ((MarkToDoItemOverdueCommand) commandMessage.getPayload()).getTodoId()));
                                          return null;

@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 
 /**
@@ -28,7 +27,7 @@ import org.axonframework.eventhandling.EventListener;
  * @author Allard Buijze
  * @since 1.2
  */
-public interface EventHandlerManagerSelector {
+public interface EventProcessorSelector {
 
     /**
      * Selects the event processor instance that the given {@code eventListener} should be member of. This may be an existing
@@ -39,5 +38,5 @@ public interface EventHandlerManagerSelector {
      * @param eventListener the event listener to select a event processor for
      * @return The event processor assigned to the listener
      */
-    EventHandlerInvoker selectHandlerManager(EventListener eventListener);
+    String selectEventProcessor(EventListener eventListener);
 }

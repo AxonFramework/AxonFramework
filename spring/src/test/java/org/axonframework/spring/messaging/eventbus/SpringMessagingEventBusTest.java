@@ -17,7 +17,7 @@
 package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.common.Registration;
-import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.Before;
@@ -27,6 +27,9 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.SubscribableChannel;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import static org.mockito.Mockito.*;
 
 /**
@@ -35,27 +38,28 @@ import static org.mockito.Mockito.*;
 public class SpringMessagingEventBusTest {
 
     private SpringMessagingEventBus testSubject;
-    private EventProcessor mockEventProcessor;
     private SubscribableChannel mockChannel;
+    private Consumer<List<? extends EventMessage<?>>> eventProcessor;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setUp() {
         testSubject = new SpringMessagingEventBus();
-        mockEventProcessor = mock(EventProcessor.class);
         mockChannel = mock(SubscribableChannel.class);
+        eventProcessor = mock(Consumer.class);
         testSubject.setChannel(mockChannel);
     }
 
     @Test
     public void testSubscribeListener() {
-        testSubject.subscribe(new SimpleEventProcessor("test"));
+        testSubject.subscribe(eventProcessor);
 
         verify(mockChannel).subscribe(isA(MessageHandler.class));
     }
 
     @Test
     public void testUnsubscribeListener() throws Exception {
-        Registration subscription = testSubject.subscribe(new SimpleEventProcessor("test"));
+        Registration subscription = testSubject.subscribe(eventProcessor);
         subscription.close();
 
         verify(mockChannel).unsubscribe(isA(MessageHandler.class));
@@ -63,7 +67,7 @@ public class SpringMessagingEventBusTest {
 
     @Test
     public void testUnsubscribeListener_UnsubscribedTwice() throws Exception {
-        Registration subscription = testSubject.subscribe(new SimpleEventProcessor("test"));
+        Registration subscription = testSubject.subscribe(eventProcessor);
         subscription.close();
         subscription.close();
 
@@ -73,7 +77,6 @@ public class SpringMessagingEventBusTest {
     @Test
     public void testSubscribeListener_SubscribedTwice() {
 
-        SimpleEventProcessor eventProcessor = new SimpleEventProcessor("test");
         testSubject.subscribe(eventProcessor);
         testSubject.subscribe(eventProcessor);
 

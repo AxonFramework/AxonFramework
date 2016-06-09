@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventListenerProxy;
 
@@ -29,10 +28,10 @@ import org.axonframework.eventhandling.EventListenerProxy;
  * @author Allard Buijze
  * @since 2.0
  */
-public abstract class AbstractEventHandlerManagerSelector implements EventHandlerManagerSelector {
+public abstract class AbstractEventProcessorSelector implements EventProcessorSelector {
 
     @Override
-    public EventHandlerInvoker selectHandlerManager(EventListener eventListener) {
+    public String selectEventProcessor(EventListener eventListener) {
         Class<?> listenerType;
         if (eventListener instanceof EventListenerProxy) {
             listenerType = ((EventListenerProxy) eventListener).getTargetType();
@@ -51,5 +50,5 @@ public abstract class AbstractEventHandlerManagerSelector implements EventHandle
      * @param listenerType  The actual type of the Event Listener
      * @return the event processor to assign the Event Listener to
      */
-    protected abstract EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType);
+    protected abstract String doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType);
 }

@@ -22,6 +22,8 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -40,11 +42,10 @@ public class RunDisruptorCommandBus {
         // we'll store Events in memory
         EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
 
-        // TODO: Listeners should subscribe to Event Store instead of Event Bus
         // we register the event handler
-        eventStore.subscribe(new SimpleEventProcessor("processor", (EventListener) event -> {
+        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", (EventListener) event -> {
             System.out.println(event.getPayload());
-        }));
+        }), eventStore).start();
 
         // we use default settings for the disruptor command bus
         DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);

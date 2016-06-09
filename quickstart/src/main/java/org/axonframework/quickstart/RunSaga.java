@@ -17,12 +17,12 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventhandling.saga.AnnotatedSagaManager;
 import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.SimpleResourceInjector;
@@ -30,7 +30,6 @@ import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.quickstart.api.MarkToDoItemOverdueCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
@@ -63,7 +62,7 @@ public class RunSaga {
 
         // let's register a Command Handler that writes to System Out so we can see what happens
         commandBus.subscribe(MarkToDoItemOverdueCommand.class.getName(),
-                             (CommandMessage<?> commandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) -> {
+                             commandMessage -> {
                                  System.out.println(String.format("Got command to mark [%s] overdue!",
                                          ((MarkToDoItemOverdueCommand) commandMessage.getPayload()).getTodoId()));
                                  return null;
@@ -84,7 +83,7 @@ public class RunSaga {
         AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(ToDoSaga.class, repository, ToDoSaga::new);
 
         // and we need to subscribe the Saga Manager to the Event Bus
-        eventBus.subscribe(sagaManager);
+        new SubscribingEventProcessor(sagaManager, eventBus).start();
 
         // That's the infrastructure we need...
         // Let's pretend a few things are happening

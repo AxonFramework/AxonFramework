@@ -21,6 +21,7 @@ import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.EntityManager;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,27 +42,52 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     protected List<? extends TrackedEventData<?>> fetchBatch(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
                       String.format("Token %s is of the wrong type", lastToken));
-        return entityManager().createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
-                                                   "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                                                   "e.eventIdentifier, e.timeStamp, e.payloadType, " +
-                                                   "e.payloadRevision, e.payload, e.metaData) " +
-                                                   "FROM " + domainEventEntryEntityName() + " e " +
-                                                   "WHERE e.globalIndex > :token " + "ORDER BY e.globalIndex ASC")
+        List<? extends TrackedEventData<?>> entries = entityManager()
+                .createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
+                                     "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                     "e.eventIdentifier, e.timeStamp, e.payloadType, " +
+                                     "e.payloadRevision, e.payload, e.metaData) " +
+                                     "FROM " + domainEventEntryEntityName() + " e " +
+                                     "WHERE e.globalIndex > :token " + "ORDER BY e.globalIndex ASC")
                 .setParameter("token", lastToken == null ? -1 : ((GlobalIndexTrackingToken) lastToken).getGlobalIndex())
                 .setMaxResults(batchSize).getResultList();
+        if (mayContainGaps(lastToken, entries)) {
+            //todo entries = ensureNoGaps();
+        }
+        return entries;
+    }
+
+    protected boolean mayContainGaps(TrackingToken lastToken, List<? extends TrackedEventData<?>> entries) {
+        if (entries.isEmpty()) {
+            return false;
+        }
+        Iterator<? extends TrackedEventData<?>> iterator = entries.iterator();
+        TrackingToken previousToken = lastToken;
+        if (previousToken == null) {
+            previousToken = iterator.next().trackingToken();
+        }
+        while (iterator.hasNext()) {
+            TrackingToken nextToken = iterator.next().trackingToken();
+            if (!previousToken.isGuaranteedNext(nextToken)) {
+                return true;
+            }
+            previousToken = nextToken;
+        }
+        return false;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected List<? extends DomainEventData<?>> fetchBatch(String aggregateIdentifier, long firstSequenceNumber,
                                                             int batchSize) {
-        return entityManager().createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
-                                                   "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
-                                                   "e.eventIdentifier, e.timeStamp, e.payloadType, " +
-                                                   "e.payloadRevision, e.payload, e.metaData) " +
-                                                   "FROM " + domainEventEntryEntityName() + " e " +
-                                                   "WHERE e.aggregateIdentifier = :id " +
-                                                   "AND e.sequenceNumber >= :seq " + "ORDER BY e.sequenceNumber ASC")
+        return entityManager()
+                .createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
+                                     "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                     "e.eventIdentifier, e.timeStamp, e.payloadType, " +
+                                     "e.payloadRevision, e.payload, e.metaData) " +
+                                     "FROM " + domainEventEntryEntityName() + " e " +
+                                     "WHERE e.aggregateIdentifier = :id " +
+                                     "AND e.sequenceNumber >= :seq " + "ORDER BY e.sequenceNumber ASC")
                 .setParameter("id", aggregateIdentifier).setParameter("seq", firstSequenceNumber)
                 .setMaxResults(batchSize).getResultList();
     }
@@ -75,8 +101,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                      "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) " +
                                      "FROM " + snapshotEventEntryEntityName() + " e " +
                                      "WHERE e.aggregateIdentifier = :id " +
-                                     "ORDER BY e.sequenceNumber DESC")
-                .setParameter("id", aggregateIdentifier)
+                                     "ORDER BY e.sequenceNumber DESC").setParameter("id", aggregateIdentifier)
                 .setMaxResults(1).getResultList().stream().findFirst();
     }
 

@@ -17,7 +17,6 @@
 package org.axonframework.eventhandling.amqp.spring;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.amqp.DefaultAMQPMessageConverter;
 import org.axonframework.eventhandling.io.EventMessageWriter;
@@ -32,6 +31,8 @@ import org.springframework.amqp.core.MessageProperties;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.nio.charset.Charset;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static org.mockito.Mockito.*;
 
@@ -41,9 +42,10 @@ import static org.mockito.Mockito.*;
 public class EventProcessorMessageListenerTest {
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testMessageListenerInvokesAllEventProcessors() throws Exception {
         Serializer serializer = new XStreamSerializer();
-        EventProcessor eventProcessor = mock(EventProcessor.class);
+        Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
         EventProcessorMessageListener testSubject = new EventProcessorMessageListener(new DefaultAMQPMessageConverter(serializer));
         testSubject.addEventProcessor(eventProcessor);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -51,10 +53,10 @@ public class EventProcessorMessageListenerTest {
         outputStream.writeEventMessage(new GenericEventMessage<>("Event"));
         testSubject.onMessage(new Message(baos.toByteArray(), new MessageProperties()));
 
-        verify(eventProcessor).accept(argThat(new TypeSafeMatcher<EventMessage>() {
+        verify(eventProcessor).accept(argThat(new TypeSafeMatcher<List<? extends EventMessage<?>>>() {
             @Override
-            public boolean matchesSafely(EventMessage item) {
-                return "Event".equals(item.getPayload());
+            public boolean matchesSafely(List<? extends EventMessage<?>> item) {
+                return item.size() == 1 && item.get(0).getPayload().equals("Event");
             }
 
             @Override
@@ -65,9 +67,10 @@ public class EventProcessorMessageListenerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testMessageListenerIgnoredOnDeserializationFailure() throws Exception {
         Serializer serializer = new XStreamSerializer();
-        EventProcessor eventProcessor = mock(EventProcessor.class);
+        Consumer<List<? extends EventMessage<?>>> eventProcessor = mock(Consumer.class);
         EventProcessorMessageListener testSubject = new EventProcessorMessageListener(new DefaultAMQPMessageConverter(serializer));
         testSubject.addEventProcessor(eventProcessor);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -78,6 +81,6 @@ public class EventProcessorMessageListenerTest {
                                                          .getBytes(Charset.forName("UTF-8"));
         testSubject.onMessage(new Message(body, new MessageProperties()));
 
-        verify(eventProcessor, never()).accept(any(EventMessage.class));
+        verify(eventProcessor, never()).accept(any(List.class));
     }
 }

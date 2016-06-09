@@ -22,6 +22,8 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
+import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -53,8 +55,8 @@ public class RunAnnotatedAggregate {
         new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);
 
         // We register an event listener to see which events are created
-        eventStore.subscribe(new SimpleEventProcessor("processor",
-                                                      (EventListener) event -> System.out.println(event.getPayload())));
+        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", (EventListener) event -> System.out
+                .println(event.getPayload())), eventStore).start();
 
         // and let's send some Commands on the CommandBus.
         CommandGenerator.sendCommands(commandGateway);

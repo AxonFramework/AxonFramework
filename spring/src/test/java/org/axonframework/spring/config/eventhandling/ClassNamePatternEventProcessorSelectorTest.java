@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.junit.Test;
@@ -29,17 +28,17 @@ import static org.mockito.Mockito.mock;
 /**
  * @author Allard Buijze
  */
-public class ClassNamePatternEventHandlerManagerSelectorTest {
+public class ClassNamePatternEventProcessorSelectorTest {
 
     @Test
     public void testMatchesPattern() throws Exception {
-        EventHandlerInvoker eventHandlerInvoker = mock(EventHandlerInvoker.class);
+        String eventProcessor = mock(String.class);
         Pattern pattern = Pattern.compile("org\\.axonframework.*\\$MyEventListener");
-        ClassNamePatternEventHandlerManagerSelector
-                testSubject = new ClassNamePatternEventHandlerManagerSelector(pattern, eventHandlerInvoker);
+        ClassNamePatternEventProcessorSelector
+                testSubject = new ClassNamePatternEventProcessorSelector(pattern, eventProcessor);
 
-        EventHandlerInvoker actual = testSubject.selectHandlerManager(new MyEventListener());
-        assertSame(eventHandlerInvoker, actual);
+        String actual = testSubject.selectEventProcessor(new MyEventListener());
+        assertSame(eventProcessor, actual);
     }
 
     private static class MyEventListener implements EventListener {

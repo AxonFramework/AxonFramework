@@ -16,7 +16,6 @@
 
 package org.axonframework.spring.config.eventhandling;
 
-import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventListener;
 
 import java.io.Serializable;
@@ -45,53 +44,53 @@ import java.util.TreeMap;
  * @author Allard Buijze
  * @since 2.0
  */
-public class ClassNamePrefixEventHandlerManagerSelector extends AbstractEventHandlerManagerSelector {
+public class ClassNamePrefixEventProcessorSelector extends AbstractEventProcessorSelector {
 
-    private final Map<String, EventHandlerInvoker> mappings;
-    private final EventHandlerInvoker defaultEventHandlerInvoker;
+    private final Map<String, String> eventProcessorToPrefix;
+    private final String defaultEventProcessor;
 
     /**
      * Initializes the ClassNamePrefixEventProcessorSelector where classes starting with the given <code>prefix</code> will be
      * mapped to the given <code>eventProcessor</code>.
      * <p/>
-     * This method is identical to {@link #ClassNamePrefixEventHandlerManagerSelector(java.util.Map)} with only a single mapping.
-     *  @param prefix  The prefix of the fully qualified classname to match against
-     * @param eventHandlerInvoker The event processor to choose if a match is found
+     * This method is identical to {@link #ClassNamePrefixEventProcessorSelector(java.util.Map)} with only a single mapping.
+     * @param prefix  The prefix of the fully qualified classname to match against
+     * @param eventProcessor The event processor to choose if a match is found
      */
-    public ClassNamePrefixEventHandlerManagerSelector(String prefix, EventHandlerInvoker eventHandlerInvoker) {
-        this(Collections.singletonMap(prefix, eventHandlerInvoker));
+    public ClassNamePrefixEventProcessorSelector(String prefix, String eventProcessor) {
+        this(Collections.singletonMap(prefix, eventProcessor));
     }
 
     /**
      * Initializes the ClassNamePrefixEventProcessorSelector using the given <code>mappings</code>. If a name does not have a
      * prefix defined, the EventProcessor Selector returns <code>null</code>.
      *
-     * @param mappings the mappings defining an event processor for each Class Name prefix
+     * @param eventProcessorToPrefix the mappings defining an event processor for each Class Name prefix
      */
-    public ClassNamePrefixEventHandlerManagerSelector(Map<String, EventHandlerInvoker> mappings) {
-        this(mappings, null);
+    public ClassNamePrefixEventProcessorSelector(Map<String, String> eventProcessorToPrefix) {
+        this(eventProcessorToPrefix, null);
     }
 
     /**
      * Initializes the ClassNamePrefixEventProcessorSelector using the given <code>mappings</code>. If a name does not have a
      * prefix defined, the Event Processor Selector returns the given <code>defaultEventProcessor</code>.
-     *  @param mappings       the mappings defining an event processor for each Class Name prefix
-     * @param defaultEventHandlerInvoker The event processor to use when no mapping is present*/
-    public ClassNamePrefixEventHandlerManagerSelector(Map<String, EventHandlerInvoker> mappings, EventHandlerInvoker defaultEventHandlerInvoker) {
-        this.defaultEventHandlerInvoker = defaultEventHandlerInvoker;
-        this.mappings = new TreeMap<>(new ReverseStringComparator());
-        this.mappings.putAll(mappings);
+     * @param eventProcessorToPrefix       the mappings defining an event processor for each Class Name prefix
+     * @param defaultEventProcessor The event processor to use when no mapping is present*/
+    public ClassNamePrefixEventProcessorSelector(Map<String, String> eventProcessorToPrefix, String defaultEventProcessor) {
+        this.defaultEventProcessor = defaultEventProcessor;
+        this.eventProcessorToPrefix = new TreeMap<>(new ReverseStringComparator());
+        this.eventProcessorToPrefix.putAll(eventProcessorToPrefix);
     }
 
     @Override
-    public EventHandlerInvoker doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType) {
+    public String doSelectEventHandlerManager(EventListener eventListener, Class<?> listenerType) {
         String listenerName = listenerType.getName();
-        for (Map.Entry<String, EventHandlerInvoker> entry : mappings.entrySet()) {
+        for (Map.Entry<String, String> entry : eventProcessorToPrefix.entrySet()) {
             if (listenerName.startsWith(entry.getKey())) {
                 return entry.getValue();
             }
         }
-        return defaultEventHandlerInvoker;
+        return defaultEventProcessor;
     }
 
     private static class ReverseStringComparator implements Comparator<String>, Serializable {

@@ -31,6 +31,7 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -66,30 +67,30 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test
     public void testTwoEventProcessorsForSingleQueue() {
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener = containersCreated.get(0).getMessageListener();
-        verify((EventProcessorMessageListener) messageListener, never()).addEventProcessor(isA(SimpleEventProcessor.class));
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
+        verify((EventProcessorMessageListener) messageListener, never()).addEventProcessor(isA(Consumer.class));
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
 
         assertTrue(messageListener instanceof EventProcessorMessageListener);
         // the first eventProcessor is added in the constructor
-        verify((EventProcessorMessageListener) messageListener, times(1)).addEventProcessor(isA(SimpleEventProcessor.class));
+        verify((EventProcessorMessageListener) messageListener, times(1)).addEventProcessor(isA(Consumer.class));
     }
 
     @Test
     public void testTwoEventProcessorsForDifferentQueues() {
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener1 = containersCreated.get(0).getMessageListener();
 
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -97,16 +98,16 @@ public class ListenerContainerLifecycleManagerTest {
         Object messageListener2 = containersCreated.get(1).getMessageListener();
 
         // the first eventProcessor is added in the constructor
-        verify((EventProcessorMessageListener) messageListener1, never()).addEventProcessor(isA(SimpleEventProcessor.class));
-        verify((EventProcessorMessageListener) messageListener2, never()).addEventProcessor(isA(SimpleEventProcessor.class));
+        verify((EventProcessorMessageListener) messageListener1, never()).addEventProcessor(isA(Consumer.class));
+        verify((EventProcessorMessageListener) messageListener2, never()).addEventProcessor(isA(Consumer.class));
     }
 
     @Test
     public void testLifecycleOperationsPropagatedToAllListeners() throws Exception {
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -129,10 +130,10 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test
     public void testContainerManagerIsRunningIfAtLeastOneContainerIsRunning() throws Exception {
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue2"),
                                     new DefaultAMQPMessageConverter(serializer));
 
@@ -148,27 +149,27 @@ public class ListenerContainerLifecycleManagerTest {
 
     @Test(expected = AxonConfigurationException.class)
     public void testEventProcessorIsRejectedIfNoQueueSpecified() {
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration(null),
                                     new DefaultAMQPMessageConverter(serializer));
     }
 
     @Test
     public void testEventProcessorIsCreatedAfterContainerStart() {
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor1"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
         assertEquals(1, containersCreated.size());
         Object messageListener = containersCreated.get(0).getMessageListener();
-        verify((EventProcessorMessageListener) messageListener, never()).addEventProcessor(isA(SimpleEventProcessor.class));
+        verify((EventProcessorMessageListener) messageListener, never()).addEventProcessor(isA(Consumer.class));
         testSubject.start();
-        testSubject.registerEventProcessor(new SimpleEventProcessor("eventProcessor2"),
+        testSubject.registerEventProcessor(mock(Consumer.class),
                                     new DefaultAMQPConsumerConfiguration("Queue1"),
                                     new DefaultAMQPMessageConverter(serializer));
 
         assertTrue(messageListener instanceof EventProcessorMessageListener);
         // the first eventProcessor is added in the constructor
-        verify((EventProcessorMessageListener) messageListener, times(1)).addEventProcessor(isA(SimpleEventProcessor.class));
+        verify((EventProcessorMessageListener) messageListener, times(1)).addEventProcessor(isA(Consumer.class));
     }
 
     private static class CallRealMethodWithSpiedArgument implements Answer {
