@@ -71,7 +71,7 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
         eventBus.publish(createEvents(2));
-        assertTrue(countDownLatch.await(200, TimeUnit.MILLISECONDS));
+        assertTrue("Expected listener to have received 2 published events", countDownLatch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
@@ -82,7 +82,7 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         eventBus.publish(createEvent());
-        assertTrue(countDownLatch.await(200, TimeUnit.MILLISECONDS));
+        assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore).storeToken(any(), anyInt(), any());
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
@@ -101,7 +101,7 @@ public class TrackingEventProcessorTest {
             return interceptorChain.proceed();
         }));
         eventBus.publish(createEvent());
-        assertTrue(countDownLatch.await(500, TimeUnit.MILLISECONDS));
+        assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
         verify(tokenStore).storeToken(any(), anyInt(), any());
         assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
@@ -127,7 +127,7 @@ public class TrackingEventProcessorTest {
 
         testSubject = new TrackingEventProcessor(eventHandlerInvoker, eventBus, tokenStore);
         testSubject.start();
-        assertTrue(countDownLatch.await(200, TimeUnit.MILLISECONDS));
+        assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());
     }
 
