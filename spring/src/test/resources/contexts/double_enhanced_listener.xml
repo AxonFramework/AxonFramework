@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2012. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@
 
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns:axon="http://www.axonframework.org/schema/core" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:security="http://www.springframework.org/schema/security"
-       xsi:schemaLocation="http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd
-                           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
                            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
                            http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
 
-    <axon:annotation-config event-bus="eventBus" command-bus="commandBus"/>
+    <bean class="org.axonframework.spring.config.AnnotationEventListenerBeanPostProcessor"/>
+    <bean class="org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor"/>
 
     <security:global-method-security proxy-target-class="true" secured-annotations="enabled"/>
 
-    <axon:event-bus id="eventBus"/>
-    <axon:command-bus id="commandBus"/>
+    <bean id="eventBus" class="org.axonframework.eventhandling.SimpleEventBus"/>
+    <bean id="commandBus" class="org.axonframework.commandhandling.SimpleCommandBus"/>
 
     <bean class="org.axonframework.spring.config.annotation.TransactionalListener"/>
     <bean class="org.axonframework.spring.config.annotation.TransactionalCommandHandler"/>
