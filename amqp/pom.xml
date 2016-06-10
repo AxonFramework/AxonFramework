@@ -26,7 +26,7 @@
 
     <artifactId>axon-amqp</artifactId>
 
-    <name>Axon AMQP Connectors</name>
+    <name>Axon AMQP</name>
     <description>This module contains implementations of several components, connecting them to an AMQP compatible
         message broker.
     </description>

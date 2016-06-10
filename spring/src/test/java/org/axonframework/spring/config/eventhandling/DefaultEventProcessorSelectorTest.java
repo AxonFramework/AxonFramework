@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventListener;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 
@@ -47,8 +48,8 @@ public class DefaultEventProcessorSelectorTest {
 
     @Test
     public void testProvidedInstanceIsReturned() {
-        String mock = mock(String.class);
+        String mock = "eventProcessor";
         testSubject = new DefaultEventProcessorSelector(mock);
-        assertSame(mock, testSubject.selectEventProcessor(mock(EventListener.class)));
+        assertEquals(mock, testSubject.selectEventProcessor(mock(EventListener.class)));
     }
 }

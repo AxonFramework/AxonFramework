@@ -22,8 +22,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.*;
 
 /**
@@ -47,13 +47,13 @@ public class CompositeEventProcessorSelectorTest {
 
     @Test
     public void testSelectorDelegatesInOrder() throws Exception {
-        String eventProcessor = mock(String.class);
+        String eventProcessor = "eventProcessor";
 
         when(selector2.selectEventProcessor(isA(EventListener.class))).thenReturn(eventProcessor);
         testSubject = new CompositeEventProcessorSelector(Arrays.asList(selector1, selector2, selector3));
 
         String actual = testSubject.selectEventProcessor(mockListener);
-        assertSame(eventProcessor, actual);
+        assertEquals(eventProcessor, actual);
         verify(selector1).selectEventProcessor(mockListener);
         verify(selector2).selectEventProcessor(mockListener);
         verify(selector3, never()).selectEventProcessor(any(EventListener.class));

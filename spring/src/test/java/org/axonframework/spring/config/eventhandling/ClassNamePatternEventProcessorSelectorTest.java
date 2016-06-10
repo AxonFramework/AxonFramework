@@ -22,8 +22,7 @@ import org.junit.Test;
 
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertSame;
-import static org.mockito.Mockito.mock;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Allard Buijze
@@ -32,13 +31,13 @@ public class ClassNamePatternEventProcessorSelectorTest {
 
     @Test
     public void testMatchesPattern() throws Exception {
-        String eventProcessor = mock(String.class);
+        String eventProcessor = "processor";
         Pattern pattern = Pattern.compile("org\\.axonframework.*\\$MyEventListener");
         ClassNamePatternEventProcessorSelector
                 testSubject = new ClassNamePatternEventProcessorSelector(pattern, eventProcessor);
 
         String actual = testSubject.selectEventProcessor(new MyEventListener());
-        assertSame(eventProcessor, actual);
+        assertEquals(eventProcessor, actual);
     }
 
     private static class MyEventListener implements EventListener {
