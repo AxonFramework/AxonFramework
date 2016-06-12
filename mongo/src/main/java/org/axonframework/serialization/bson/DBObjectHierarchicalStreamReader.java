@@ -20,6 +20,8 @@ import com.mongodb.DBObject;
 import com.thoughtworks.xstream.converters.ErrorWriter;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.Stack;
 
@@ -32,8 +34,8 @@ import java.util.Stack;
  */
 public class DBObjectHierarchicalStreamReader implements HierarchicalStreamReader {
 
-    private final Stack<BSONNode> itemStack = new Stack<>();
-    private final Stack<Iterator<BSONNode>> childrenStack = new Stack<>();
+    private final Deque<BSONNode> itemStack = new ArrayDeque<>();
+    private final Deque<Iterator<BSONNode>> childrenStack = new ArrayDeque<>();
 
     /**
      * Initialize the reader to read the structure of the given <code>root</code> DBObject.
