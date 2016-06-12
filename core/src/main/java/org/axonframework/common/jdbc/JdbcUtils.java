@@ -31,6 +31,11 @@ import java.sql.Statement;
 public class JdbcUtils {
 
     /**
+     * Private default constructor
+     */
+    private JdbcUtils() {}
+
+    /**
      * Close the given <code>resultSet</code>, if possible. All exceptions are discarded.
      *
      * @param resultSet The resource to close. May be <code>null</code>.
