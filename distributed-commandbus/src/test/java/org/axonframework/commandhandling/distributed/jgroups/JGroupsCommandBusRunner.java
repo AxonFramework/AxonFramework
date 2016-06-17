@@ -22,7 +22,8 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.callbacks.VoidCallback;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.serializer.xml.XStreamSerializer;
+import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,17 +51,19 @@ public class JGroupsCommandBusRunner {
         JChannel channel = new JChannel(
                 "org/axonframework/commandhandling/distributed/jgroups/tcp_" + protocol + ".xml");
 
-        connector = new JGroupsConnector(channel,
-                                         "testing",
-                                         new SimpleCommandBus(),
-                                         new XStreamSerializer());
-        dcb = new DistributedCommandBus(connector, new RoutingStrategy() {
+        SimpleCommandBus localSegment = new SimpleCommandBus();
+        connector = new JGroupsConnector(
+                localSegment,
+                channel,
+                "testing",
+                new XStreamSerializer());
+        dcb = new DistributedCommandBus<Address>(localSegment, connector, connector, new RoutingStrategy() {
             @Override
             public String getRoutingKey(CommandMessage<?> command) {
                 return command.getPayload().toString();
             }
         });
-        dcb.subscribe(String.class.getName(), stringCommandMessage -> {
+        dcb.subscribe(String.class.getName(), (stringCommandMessage, unitOfWork) -> {
             logger.error("Received message: " + stringCommandMessage.getPayload());
             return null;
         });
@@ -76,7 +79,7 @@ public class JGroupsCommandBusRunner {
                 System.out.println("This is not a number.");
             }
         }
-        dcb.subscribe(String.class.getName(), stringCommandMessage -> {
+        dcb.subscribe(String.class.getName(), (stringCommandMessage, unitOfWork) -> {
             System.out.println("Received message: " + stringCommandMessage.getPayload());
             return null;
         });
@@ -98,8 +101,6 @@ public class JGroupsCommandBusRunner {
                 } catch (NumberFormatException e) {
                     System.out.println(newLoadFactor + " is not a number");
                 }
-            } else if ("members".equals(line)) {
-                System.out.println(connector.getConsistentHash().toString());
             } else if (line.matches("join [0-9]+")) {
                 int factor = Integer.parseInt(line.split(" ")[1]);
                 connector.connect(factor);

@@ -16,36 +16,39 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
 import org.axonframework.common.AxonConfigurationException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.axonframework.common.ReflectionUtils.*;
 
 /**
- * RoutingStrategy that expects an {@link TargetAggregateIdentifier}
+ * RoutingStrategy that expects an {@link org.axonframework.commandhandling.annotation.TargetAggregateIdentifier}
  * annotation on the command message's payload. Commands are routed based on the identifier of the aggregate that they
  * target. This approach ensures that commands to be processed by the same aggregate are dispatched to the same node in
- * a DistributedCommandBus. See {@link AnnotationCommandTargetResolver}
+ * a DistributedCommandBus. See {@link org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver}
  * for more details.
  * <p/>
  * This class requires the returned Aggregate Identifiers to implement a proper {@link Object#toString()} method. An
  * inconsistent toString() method may result in different members using different routing keys for the same identifier.
  *
  * @author Allard Buijze
- * @see AnnotationCommandTargetResolver
+ * @see org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver
  * @see DistributedCommandBus
  * @since 2.0
  */
 public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
     private final Class<? extends Annotation> annotationType;
+
+    private final Map<Class<?>, AggregateIdentifierResolver> resolverMap = new ConcurrentHashMap<>();
 
     /**
      * Initializes a Routing Strategy that fails when an incoming command does not define an AggregateIdentifier to
@@ -108,18 +111,47 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    private <I> I findIdentifier(CommandMessage<?> command) throws InvocationTargetException, IllegalAccessException {
-        for (Method m : methodsOf(command.getPayloadType())) {
+    private String findIdentifier(CommandMessage<?> command) throws InvocationTargetException, IllegalAccessException {
+        return resolverMap.computeIfAbsent(command.getPayloadType(), this::createResolver).identify(command);
+    }
+
+    private AggregateIdentifierResolver createResolver(Class<?> type) {
+        for (Method m : methodsOf(type)) {
             if (m.isAnnotationPresent(annotationType)) {
                 ensureAccessible(m);
-                return (I) m.invoke(command.getPayload());
+                return new AggregateIdentifierResolver(m);
             }
         }
-        for (Field f : fieldsOf(command.getPayloadType())) {
+        for (Field f : fieldsOf(type)) {
             if (f.isAnnotationPresent(annotationType)) {
-                return (I) getFieldValue(f, command.getPayload());
+                return new AggregateIdentifierResolver(f);
             }
         }
-        return null;
+        return NO_RESOLVE;
+    }
+
+    private static final AggregateIdentifierResolver NO_RESOLVE = new AggregateIdentifierResolver((Method) null);
+    private static final class AggregateIdentifierResolver {
+        private final Method method;
+        private final Field field;
+
+        public AggregateIdentifierResolver(Method method) {
+            this.method = method;
+            this.field = null;
+        }
+
+        public AggregateIdentifierResolver(Field field) {
+            this.method = null;
+            this.field = field;
+        }
+
+        public String identify(Object command) throws InvocationTargetException, IllegalAccessException {
+            if (method != null) {
+                return (String) method.invoke(command);
+            } else if (field != null) {
+                return (String) field.get(command);
+            }
+            return null;
+        }
     }
 }
