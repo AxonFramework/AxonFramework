@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serializer.Serializer;
 import org.jgroups.JChannel;
 import org.jgroups.util.Util;
 import org.springframework.beans.BeansException;
@@ -58,7 +58,6 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private List<MessageHandlerInterceptor<CommandMessage<?>>> interceptors;
     private long joinTimeout = -1;
     private boolean registerMBean = false;
-    private HashChangeListener hashChangeListener;
 
     @Override
     public Object getObject() throws Exception {
@@ -94,7 +93,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         if (channelName != null) {
             channel.setName(channelName);
         }
-        connector = new JGroupsConnector(channel, clusterName, localSegment, serializer, hashChangeListener);
+        connector = new JGroupsConnector(localSegment, channel, clusterName, serializer);
     }
 
     /**
@@ -123,7 +122,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     /**
      * Sets the JChannelFactory that allows programmatic definition of the JChannel.
      *
-     * @param channelFactory
+     * @param channelFactory The factory that creates the JChannel
      */
     public void setChannelFactory(JChannelFactory channelFactory) {
         this.channelFactory = channelFactory;
@@ -203,21 +202,10 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         this.registerMBean = registerMBean;
     }
 
-    /**
-     * Register a {@link HashChangeListener} with the {@link JGroupsConnector}. The listener
-     * will be notified when the consistent hash changes due to members joining or leaving the
-     * JGroup.
-     *
-     * @param hashChangeListener
-     */
-    public void setHashChangeListener(HashChangeListener hashChangeListener) {
-        this.hashChangeListener = hashChangeListener;
-    }
-
     @Override
     public void start() {
         try {
-            connector.connect(loadFactor);
+            connector.connect(100);
             if (joinTimeout >= 0) {
                 connector.awaitJoined(joinTimeout, TimeUnit.MILLISECONDS);
             } else {

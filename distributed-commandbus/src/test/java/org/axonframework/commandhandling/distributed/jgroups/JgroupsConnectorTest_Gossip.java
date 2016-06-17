@@ -20,16 +20,19 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
+import org.axonframework.commandhandling.distributed.registry.ServiceMember;
+import org.axonframework.commandhandling.distributed.registry.ServiceRegistryListener;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.serializer.SerializedObject;
+import org.axonframework.serializer.xml.XStreamSerializer;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
+import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.stack.GossipRouter;
 import org.junit.After;
@@ -38,7 +41,9 @@ import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -68,8 +73,8 @@ public class JgroupsConnectorTest_Gossip {
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         serializer = spy(new XStreamSerializer());
-        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, serializer);
-        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, serializer);
+        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer);
+        connector2 = new JGroupsConnector(mockCommandBus2, channel2, clusterName, serializer);
         gossipRouter = new GossipRouter(12001, "127.0.0.1");
     }
 
@@ -82,14 +87,26 @@ public class JgroupsConnectorTest_Gossip {
 
     @Test
     public void testConnectorRecoversWhenGossipRouterReconnects() throws Exception {
-        final AtomicInteger counter1 = new AtomicInteger(0);
-        final AtomicInteger counter2 = new AtomicInteger(0);
+        final Set<ServiceMember<Address>> connector1Members = new HashSet<>();
+        final Set<ServiceMember<Address>> connector2Members = new HashSet<>();
 
-        connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
+        connector1.addListener(new ServiceRegistryListener<Address>() {
+            @Override
+            public void updateMembers(Set<ServiceMember<Address>> serviceMembers) {
+                connector1Members.clear();
+                connector1Members.addAll(serviceMembers);
+            }
+        });
         connector1.connect(20);
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(Long.class.getName(), new CountingCommandHandler(counter2));
+        connector2.addListener(new ServiceRegistryListener<Address>() {
+            @Override
+            public void updateMembers(Set<ServiceMember<Address>> serviceMembers) {
+                connector2Members.clear();
+                connector2Members.addAll(serviceMembers);
+            }
+        });
         connector2.connect(80);
 
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
@@ -98,7 +115,16 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         // now, they should detect eachother and start syncing their state
-        waitForConnectorSync(60);
+        int t = 0;
+        while (connector1Members.isEmpty() || connector2Members.isEmpty() ||
+                !connector1Members.equals(connector2Members)) {
+            // don't have a member for String yet, which means we must wait a little longer
+            if (t++ > 600) {
+                fail("Connectors did not manage to synchronize consistent hash ring within " + 60
+                             + " seconds...");
+            }
+            Thread.sleep(100);
+        }
     }
 
     @Test(timeout = 30000)
@@ -106,14 +132,18 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         final AtomicInteger counter2 = new AtomicInteger(0);
-        connector2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
         connector1.connect(20);
         connector2.connect(20);
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
         assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
 
-        DistributedCommandBus bus1 = new DistributedCommandBus(connector1, new AnnotationRoutingStrategy(
-                UnresolvedRoutingKeyPolicy.RANDOM_KEY));
+        DistributedCommandBus bus1 = new DistributedCommandBus<>(mockCommandBus1, connector1, connector1,
+                new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY));
+        //bus1.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        DistributedCommandBus bus2 = new DistributedCommandBus<>(mockCommandBus2, connector2, connector2,
+                new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY));
+        bus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        Thread.sleep(1000);
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
 
         doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat(new TypeSafeMatcher<SerializedObject<byte[]>>() {
@@ -131,22 +161,23 @@ public class JgroupsConnectorTest_Gossip {
             gateway1.sendAndWait("Try this!");
             fail("Expected exception");
         } catch (RuntimeException e) {
+            e.printStackTrace();
             assertEquals("Mock", e.getMessage());
         }
     }
 
-    private void waitForConnectorSync(int timeoutInSeconds) throws InterruptedException {
-        int t = 0;
-        while (ConsistentHash.emptyRing().equals(connector1.getConsistentHash())
-                || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
-            // don't have a member for String yet, which means we must wait a little longer
-            if (t++ > timeoutInSeconds * 10) {
-                fail("Connectors did not manage to synchronize consistent hash ring within " + timeoutInSeconds
-                             + " seconds...");
-            }
-            Thread.sleep(100);
-        }
-    }
+//    private void waitForConnectorSync(int timeoutInSeconds) throws InterruptedException {
+//        int t = 0;
+//        while (new ConsistentHash().equals(connector1)
+//                || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
+//            // don't have a member for String yet, which means we must wait a little longer
+//            if (t++ > timeoutInSeconds * 10) {
+//                fail("Connectors did not manage to synchronize consistent hash ring within " + timeoutInSeconds
+//                             + " seconds...");
+//            }
+//            Thread.sleep(100);
+//        }
+//    }
 
     private static JChannel createChannel() throws Exception {
         return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_gossip.xml");
@@ -161,7 +192,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<?> stringCommandMessage) throws Exception {
+        public Object handle(CommandMessage<?> stringCommandMessage, UnitOfWork<? extends CommandMessage<?>> unitOfWork) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }
