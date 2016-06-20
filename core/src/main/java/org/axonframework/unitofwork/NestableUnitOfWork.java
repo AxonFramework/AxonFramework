@@ -118,9 +118,9 @@ public abstract class NestableUnitOfWork implements UnitOfWork {
     @Override
     public void rollback(Throwable cause) {
         if (cause != null && logger.isInfoEnabled()) {
-            logger.debug("Rollback requested for Unit Of Work due to exception. ", cause);
+            logger.info("Rollback requested for Unit Of Work due to exception. ", cause);
         } else if (logger.isInfoEnabled()) {
-            logger.debug("Rollback requested for Unit Of Work for unknown reason.");
+            logger.info("Rollback requested for Unit Of Work for unknown reason.");
         }
 
         try {
