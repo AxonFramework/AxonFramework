@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -72,7 +75,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(lastItem -> {
             List<? extends TrackedEventData<?>> result =
                     fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize);
-            if (!mayBlock && containsGaps(trackingToken, result)) {
+            if (containsGaps(trackingToken, result)) {
                 result = ensureNoGaps(trackingToken, result);
             }
             return result;
@@ -109,8 +112,10 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
             List<TrackingToken> existingTokens =
                     fetchTokenRange(getTokenForGapDetection(lastToken), batch.get(batch.size() - 1).trackingToken());
             List<? extends TrackedEventData<?>> result = batch;
+            Iterator<TrackingToken> existingTokenIterator = existingTokens.iterator();
             for (int i = 0; i < batch.size(); i++) {
-                if (!existingTokens.contains(batch.get(i).trackingToken())) {
+                if (!existingTokenIterator.hasNext()
+                        || !batch.get(i).trackingToken().equals(existingTokenIterator.next())) {
                     result = batch.subList(0, i);
                     break;
                 }
@@ -126,7 +131,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     protected abstract TrackingToken getTokenForGapDetection(TrackingToken token);
 
     protected List<TrackingToken> fetchTokenRange(TrackingToken lastToken, TrackingToken end) {
-        List<TrackingToken> result = new ArrayList<>(Collections.singletonList(lastToken));
+        List<TrackingToken> result = new ArrayList<>();
         while (end.isAfter(lastToken)) {
             result.addAll(
                     fetchTrackedEvents(lastToken, (int) (batchSize * 1.1)).stream().map(TrackedEventData::trackingToken)

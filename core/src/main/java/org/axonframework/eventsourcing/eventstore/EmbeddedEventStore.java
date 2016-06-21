@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -118,12 +121,25 @@ public class EmbeddedEventStore extends AbstractEventStore {
         return node;
     }
 
+    private static class Node {
+        private final long index;
+        private final TrackingToken previousToken;
+        private final TrackedEventMessage<?> event;
+        private volatile Node next;
+
+        private Node(long index, TrackingToken previousToken, TrackedEventMessage<?> event) {
+            this.index = index;
+            this.previousToken = previousToken;
+            this.event = event;
+        }
+    }
+
     private class EventProducer implements AutoCloseable {
         private final Lock lock = new ReentrantLock();
         private final Condition dataAvailableCondition = lock.newCondition();
         private final long fetchDelayNanos;
         private final int cachedEvents;
-        private volatile boolean fetching, shouldFetch, closed;
+        private volatile boolean shouldFetch, closed;
         private Stream<? extends TrackedEventMessage<?>> eventStream;
         private Node newest;
 
@@ -133,25 +149,28 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private void run() throws InterruptedException {
+            boolean dataFound = false;
             while (!closed) {
                 shouldFetch = true;
-                fetching = true;
                 while (shouldFetch) {
                     shouldFetch = false;
-                    fetchData();
+                    dataFound = fetchData();
                 }
-                fetching = false;
                 if (tailingConsumers.isEmpty()) {
                     newest = null;
                 }
-                waitForData();
+                if (!dataFound) {
+                    waitForData();
+                }
             }
         }
 
         private void waitForData() throws InterruptedException {
             lock.lock();
             try {
-                dataAvailableCondition.awaitNanos(fetchDelayNanos);
+                if (!shouldFetch) {
+                    dataAvailableCondition.awaitNanos(fetchDelayNanos);
+                }
             } finally {
                 lock.unlock();
             }
@@ -159,20 +178,20 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         private void fetchIfWaiting() {
             shouldFetch = true;
-            if (!fetching) {
-                lock.lock();
-                try {
-                    dataAvailableCondition.signal();
-                } finally {
-                    lock.unlock();
-                }
+            lock.lock();
+            try {
+                dataAvailableCondition.signalAll();
+            } finally {
+                lock.unlock();
             }
         }
 
-        private void fetchData() {
+        private boolean fetchData() {
+            Node currentNewest = newest;
             if (!tailingConsumers.isEmpty()) {
                 try {
-                    (eventStream = storageEngine().readEvents(lastToken(), true)).forEach(event -> {
+                    eventStream = storageEngine().readEvents(lastToken(), true);
+                    eventStream.forEach(event -> {
                         Node node = new Node(nextIndex(), lastToken(), event);
                         if (newest != null) {
                             newest.next = node;
@@ -182,12 +201,13 @@ public class EmbeddedEventStore extends AbstractEventStore {
                             oldest = node;
                         }
                         notifyConsumers();
+                        trimCache();
                     });
                 } catch (Exception e) {
                     logger.error("Failed to read events from the underlying event storage", e);
                 }
-                trimCache();
             }
+            return newest != currentNewest;
         }
 
         private TrackingToken lastToken() {
@@ -214,7 +234,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private void trimCache() {
-            while (newest != null && newest.index - oldest.index >= cachedEvents) {
+            while (newest != null && oldest != null && newest.index - oldest.index >= cachedEvents) {
                 oldest = oldest.next;
             }
         }
@@ -261,7 +281,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            return tailingConsumers.contains(this) ? peekGlobalStream(timeout, timeUnit) :
+            return lastNode != null ? peekGlobalStream(timeout, timeUnit) :
                     peekPrivateStream(timeout, timeUnit);
         }
 
@@ -277,7 +297,9 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 }
             }
             if (nextNode != null) {
-                lastNode = nextNode;
+                if (tailingConsumers.contains(this)) {
+                    lastNode = nextNode;
+                }
                 lastToken = nextNode.event.trackingToken();
                 return nextNode.event;
             } else {
@@ -347,19 +369,6 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 tailingConsumers.remove(consumer);
                 consumer.lastNode = null; //make old nodes garbage collectable
             });
-        }
-    }
-
-    private static class Node {
-        private final long index;
-        private final TrackingToken previousToken;
-        private final TrackedEventMessage<?> event;
-        private volatile Node next;
-
-        private Node(long index, TrackingToken previousToken, TrackedEventMessage<?> event) {
-            this.index = index;
-            this.previousToken = previousToken;
-            this.event = event;
         }
     }
 }
