@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.inject.Inject;
@@ -67,23 +66,16 @@ public class JpaStorageEngineInsertionReadOrderTest {
     @Inject
     private PlatformTransactionManager tx;
 
-    private TransactionTemplate txReadCommitted;
-    private TransactionTemplate txReadUncommitted;
-
     private BatchingEventStorageEngine testSubject;
+    private TransactionTemplate txTemplate;
 
     @Before
     public void setUp() throws Exception {
-        txReadCommitted = new TransactionTemplate(tx);
-        txReadCommitted.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
-        txReadUncommitted = new TransactionTemplate(tx);
-        txReadUncommitted.setIsolationLevel(TransactionDefinition.ISOLATION_READ_UNCOMMITTED);
-
-        txReadCommitted.execute(ts -> {
+        txTemplate = new TransactionTemplate(tx);
+        txTemplate.execute(ts -> {
             entityManager.createQuery("DELETE FROM DomainEventEntry").executeUpdate();
             return null;
         });
-
 
         testSubject = new JpaEventStorageEngine(new SimpleEntityManagerProvider(entityManager),
                                                 new SpringTransactionManager(tx));
@@ -118,7 +110,6 @@ public class JpaStorageEngineInsertionReadOrderTest {
         int counter = 0;
         while (counter < expectedEventCount) {
             if (readEvents.hasNextAvailable()) {
-                System.out.println(readEvents.nextAvailable().trackingToken());
                 counter++;
             }
         }
@@ -164,7 +155,7 @@ public class JpaStorageEngineInsertionReadOrderTest {
                 for (int j = 0; j < eventsPerThread; j++) {
                     final int s = j;
                     try {
-                        txReadCommitted.execute(ts -> {
+                        txTemplate.execute(ts -> {
                             testSubject.appendEvents(
                                     createEvent(AGGREGATE, threadIndex * eventsPerThread + s, "Thread" + threadIndex));
                             if (s % inverseRollbackRate == 0) {

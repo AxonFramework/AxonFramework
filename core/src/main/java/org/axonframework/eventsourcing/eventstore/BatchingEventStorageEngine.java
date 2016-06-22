@@ -34,8 +34,8 @@ import static java.util.stream.Collectors.toList;
 public abstract class BatchingEventStorageEngine extends AbstractEventStorageEngine {
 
     private static final int DEFAULT_BATCH_SIZE = 100;
-    private int batchSize = DEFAULT_BATCH_SIZE;
     private final TransactionManager transactionManager;
+    private int batchSize = DEFAULT_BATCH_SIZE;
 
     protected BatchingEventStorageEngine(TransactionManager transactionManager) {
         this.transactionManager = transactionManager;
@@ -136,7 +136,9 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
             result.addAll(
                     fetchTrackedEvents(lastToken, (int) (batchSize * 1.1)).stream().map(TrackedEventData::trackingToken)
                             .filter(token -> !token.isAfter(end)).collect(toList()));
-            lastToken = result.get(result.size() - 1);
+            if (!result.isEmpty()) {
+                lastToken = result.get(result.size() - 1);
+            }
         }
         return result;
     }
