@@ -25,7 +25,7 @@ package org.axonframework.eventhandling.saga;
 public interface ResourceInjector {
 
     /**
-     * Inject required resources into the given <code>saga</code>.
+     * Inject required resources into the given {@code saga}.
      *
      * @param saga The saga to inject resources into
      */

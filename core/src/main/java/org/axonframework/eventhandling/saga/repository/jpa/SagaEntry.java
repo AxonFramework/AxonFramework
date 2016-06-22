@@ -45,7 +45,7 @@ public class SagaEntry<T> {
     private byte[] serializedSaga;
 
     /**
-     * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
+     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
      * saga is not modified by this operation.
      *
      * @param saga       The saga to store

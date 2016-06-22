@@ -43,12 +43,12 @@ public abstract class AbstractCommandGateway {
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
 
     /**
-     * Initialize the AbstractCommandGateway with given <code>commandBus</code>, <code>retryScheduler</code> and
-     * <code>commandDispatchInterceptors</code>.
+     * Initialize the AbstractCommandGateway with given {@code commandBus}, {@code retryScheduler} and
+     * {@code commandDispatchInterceptors}.
      *
      * @param commandBus                  The command bus on which to dispatch events
      * @param retryScheduler              The scheduler capable of performing retries of failed commands. May be
-     *                                    <code>null</code> when to prevent retries.
+     *                                    {@code null} when to prevent retries.
      * @param messageDispatchInterceptors The interceptors to invoke when dispatching a command
      */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
@@ -64,7 +64,7 @@ public abstract class AbstractCommandGateway {
     }
 
     /**
-     * Sends the given <code>command</code>, and invokes the <code>callback</code> when the command is processed.
+     * Sends the given {@code command}, and invokes the {@code callback} when the command is processed.
      *
      * @param command  The command to dispatch
      * @param callback The callback to notify with the processing result

@@ -30,7 +30,7 @@ public class LockAcquisitionFailedException extends AxonTransientException {
     private static final long serialVersionUID = 4453369833513201587L;
 
     /**
-     * Initialize the exception with given <code>message</code> and <code>cause</code>
+     * Initialize the exception with given {@code message} and {@code cause}
      *
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception
@@ -40,7 +40,7 @@ public class LockAcquisitionFailedException extends AxonTransientException {
     }
 
     /**
-     * Initialize the exception with given <code>message</code>.
+     * Initialize the exception with given {@code message}.
      *
      * @param message The message describing the exception
      */

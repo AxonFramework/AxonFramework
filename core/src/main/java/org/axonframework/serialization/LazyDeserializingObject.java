@@ -37,7 +37,7 @@ public class LazyDeserializingObject<T> {
     private volatile transient T deserializedObject;
 
     /**
-     * Creates an instance with the given <code>deserializedObject</code> object instance. Using this constructor will
+     * Creates an instance with the given {@code deserializedObject} object instance. Using this constructor will
      * ensure that no deserializing is required when invoking the {@link #getType()} or {@link #getObject()} methods.
      *
      * @param deserializedObject The deserialized object to return on {@link #getObject()}
@@ -52,8 +52,8 @@ public class LazyDeserializingObject<T> {
     }
 
     /**
-     * Creates an instance which will deserialize given <code>serializedObject</code> upon request. Use this constructor
-     * if the <code>serializedObject</code> is already available and does not need to undergo a process of e.g.
+     * Creates an instance which will deserialize given {@code serializedObject} upon request. Use this constructor
+     * if the {@code serializedObject} is already available and does not need to undergo a process of e.g.
      * upcasting.
      *
      * @param serializedObject The serialized payload of the message
@@ -107,7 +107,7 @@ public class LazyDeserializingObject<T> {
     }
 
     /**
-     * Indicates whether this object has already been deserialized. When this method returns <code>true</code>, the
+     * Indicates whether this object has already been deserialized. When this method returns {@code true}, the
      * {@link #getObject()} method is able to return a value without invoking the serializer.
      *
      * @return whether the contained object has been deserialized already.

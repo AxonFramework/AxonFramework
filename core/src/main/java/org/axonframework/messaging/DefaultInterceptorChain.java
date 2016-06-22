@@ -34,8 +34,8 @@ public class DefaultInterceptorChain<T extends Message<?>> implements Intercepto
     private final UnitOfWork<? extends T> unitOfWork;
 
     /**
-     * Initialize the default interceptor chain to dispatch the given <code>message</code>, through the
-     * <code>chain</code>, to the <code>handler</code>.
+     * Initialize the default interceptor chain to dispatch the given {@code message}, through the
+     * {@code chain}, to the {@code handler}.
      *
      * @param unitOfWork    The UnitOfWork the message is executed in
      * @param interceptors  The interceptors composing the chain

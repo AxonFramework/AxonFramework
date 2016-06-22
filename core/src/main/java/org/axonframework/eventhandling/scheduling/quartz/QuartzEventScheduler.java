@@ -72,8 +72,8 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      * Builds the JobDetail instance for Quartz, which defines the Job that needs to be executed when the trigger
      * fires.
      * <p/>
-     * The resulting JobDetail must be identified by the given <code>jobKey</code> and represent a Job that dispatches
-     * the given <code>event</code>.
+     * The resulting JobDetail must be identified by the given {@code jobKey} and represent a Job that dispatches
+     * the given {@code event}.
      * <p/>
      * This method may be safely overridden to change behavior. Defaults to a JobDetail to fire a {@link FireEventJob}.
      *
@@ -92,12 +92,12 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Builds a Trigger which fires the Job identified by <code>jobKey</code> at (or around) the given
-     * <code>triggerDateTime</code>.
+     * Builds a Trigger which fires the Job identified by {@code jobKey} at (or around) the given
+     * {@code triggerDateTime}.
      *
      * @param triggerDateTime The time at which a trigger was requested
      * @param jobKey          The key of the job to be triggered
-     * @return a configured Trigger for the Job with key <code>jobKey</code>
+     * @return a configured Trigger for the Job with key {@code jobKey}
      */
     protected Trigger buildTrigger(ZonedDateTime triggerDateTime, JobKey jobKey) {
         return TriggerBuilder.newTrigger()

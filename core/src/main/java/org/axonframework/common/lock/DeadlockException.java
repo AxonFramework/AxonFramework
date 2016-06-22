@@ -31,7 +31,7 @@ public class DeadlockException extends LockAcquisitionFailedException {
     private static final long serialVersionUID = -5552006099153686607L;
 
     /**
-     * Initializes the exception with given <code>message</code>.
+     * Initializes the exception with given {@code message}.
      *
      * @param message The message describing the exception
      */

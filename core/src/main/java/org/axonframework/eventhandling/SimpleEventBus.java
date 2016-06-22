@@ -57,7 +57,7 @@ public class SimpleEventBus extends AbstractEventBus {
     }
 
     /**
-     * Initializes an event bus. Uses the given <code>messageMonitor</code> to report ingested messages and report the
+     * Initializes an event bus. Uses the given {@code messageMonitor} to report ingested messages and report the
      * result of processing the message.
      *
      * @param messageMonitor The monitor used to monitor the ingested messages

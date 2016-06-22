@@ -28,9 +28,6 @@ import org.axonframework.eventsourcing.DomainEventMessage;
  */
 public class SequentialPerAggregatePolicy implements SequencingPolicy<EventMessage> {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object getSequenceIdentifierFor(EventMessage event) {
         if (DomainEventMessage.class.isInstance(event)) {

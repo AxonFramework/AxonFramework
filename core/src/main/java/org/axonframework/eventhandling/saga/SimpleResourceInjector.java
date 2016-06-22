@@ -35,11 +35,9 @@ import static org.axonframework.common.ReflectionUtils.methodsOf;
 
 /**
  * A resource injector that checks for {@see javax.inject.Inject} annotated fields and setter methods to inject
- *  resources.
- * If a field is annotated with {@see javax.inject.Inject}, a Resource of the type of that field is injected into it,
- *  if present.
- * If a method is annotated with {@see javax.inject.Inject}, the method is invoked with a Resource of the type of the
- *  first parameter, if present.
+ * resources. If a field is annotated with {@see javax.inject.Inject}, a Resource of the type of that field is injected
+ * into it, if present. If a method is annotated with {@see javax.inject.Inject}, the method is invoked with a Resource
+ * of the type of the first parameter, if present.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -53,7 +51,7 @@ public class SimpleResourceInjector implements ResourceInjector {
     private final Iterable<?> resources;
 
     /**
-     * Initializes the resource injector to inject to given <code>resources</code>.
+     * Initializes the resource injector to inject to given {@code resources}.
      *
      * @param resources The resources to inject
      */
@@ -62,7 +60,7 @@ public class SimpleResourceInjector implements ResourceInjector {
     }
 
     /**
-     * Initializes the resource injector to inject to given <code>resources</code>.
+     * Initializes the resource injector to inject to given {@code resources}.
      *
      * @param resources The resources to inject
      */
@@ -77,15 +75,13 @@ public class SimpleResourceInjector implements ResourceInjector {
     }
 
     private void injectFieldResources(Object saga) {
-        fieldsOf(saga.getClass()).forEach(field -> {
-            Optional.ofNullable(AnnotationUtils.findAnnotation(field, FULLY_QUALIFIED_CLASS_NAME_INJECT))
-                    .ifPresent(annotatedFields -> {
-                        Class<?> requiredType = field.getType();
-                        StreamSupport.stream(resources.spliterator(), false)
-                                .filter(requiredType::isInstance)
-                                .forEach(resource -> injectFieldResource(saga, field, resource));
-                    });
-        });
+        fieldsOf(saga.getClass()).forEach(
+                field -> Optional.ofNullable(AnnotationUtils.findAnnotation(field, FULLY_QUALIFIED_CLASS_NAME_INJECT))
+                        .ifPresent(annotatedFields -> {
+                            Class<?> requiredType = field.getType();
+                            StreamSupport.stream(resources.spliterator(), false).filter(requiredType::isInstance)
+                                    .forEach(resource -> injectFieldResource(saga, field, resource));
+                        }));
     }
 
     private void injectFieldResource(Object saga, Field injectField, Object resource) {
@@ -98,15 +94,13 @@ public class SimpleResourceInjector implements ResourceInjector {
     }
 
     private void injectMethodResources(Object saga) {
-        methodsOf(saga.getClass()).forEach(method -> {
-            Optional.ofNullable(AnnotationUtils.findAnnotation(method, FULLY_QUALIFIED_CLASS_NAME_INJECT))
-                    .ifPresent(annotatedMethods -> {
-                        Class<?> requiredType = method.getParameterTypes()[0];
-                        StreamSupport.stream(resources.spliterator(), false)
-                                .filter(requiredType::isInstance)
-                                .forEach(resource -> injectMethodResource(saga, method, resource));
-                    });
-        });
+        methodsOf(saga.getClass()).forEach(
+                method -> Optional.ofNullable(AnnotationUtils.findAnnotation(method, FULLY_QUALIFIED_CLASS_NAME_INJECT))
+                        .ifPresent(annotatedMethods -> {
+                            Class<?> requiredType = method.getParameterTypes()[0];
+                            StreamSupport.stream(resources.spliterator(), false).filter(requiredType::isInstance)
+                                    .forEach(resource -> injectMethodResource(saga, method, resource));
+                        }));
     }
 
     private void injectMethodResource(Object saga, Method injectMethod, Object resource) {

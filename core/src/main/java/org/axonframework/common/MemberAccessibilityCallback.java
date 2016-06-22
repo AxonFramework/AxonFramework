@@ -30,7 +30,7 @@ public class MemberAccessibilityCallback implements PrivilegedAction<Object> {
     private final AccessibleObject method;
 
     /**
-     * Initialize the callback to make the given <code>method</code> accessible for reflection.
+     * Initialize the callback to make the given {@code method} accessible for reflection.
      *
      * @param method The method to make accessible
      */
@@ -38,9 +38,6 @@ public class MemberAccessibilityCallback implements PrivilegedAction<Object> {
         this.method = method;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object run() {
         method.setAccessible(true);

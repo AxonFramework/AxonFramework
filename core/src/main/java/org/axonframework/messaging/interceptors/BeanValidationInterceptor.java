@@ -81,16 +81,16 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
     }
 
     /**
-     * Validate the given <code>message</code> using the given <code>validator</code>. The default implementation
-     * merely calls <code>validator.validate(message)</code>.
+     * Validate the given {@code message} using the given {@code validator}. The default implementation
+     * merely calls {@code validator.validate(message)}.
      * <p/>
      * Subclasses may override this method to alter the validation behavior in specific cases. Although the
-     * <code>null</code> is accepted as return value to indicate that there are no constraint violations,
+     * {@code null} is accepted as return value to indicate that there are no constraint violations,
      * implementations are encouraged to return an empty Set instead.
      *
      * @param message   The message to validate
      * @param validator The validator provided by the validator factory
-     * @return a set of Constraint Violations. May also return <code>null</code>.
+     * @return a set of Constraint Violations. May also return {@code null}.
      */
     protected Set<ConstraintViolation<Object>> validateMessage(Object message, Validator validator) {
         return validator.validate(message);

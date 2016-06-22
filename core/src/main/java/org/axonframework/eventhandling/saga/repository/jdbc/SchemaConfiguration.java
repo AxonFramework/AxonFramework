@@ -14,8 +14,7 @@ public class SchemaConfiguration {
     public static final String DEFAULT_ASSOC_VALUE_ENTRY_TABLE = "AssociationValueEntry";
 
     private final String sagaEntryTable;
-
-    private final String assocValueEntryTable;
+    private final String associationValueEntryTable;
 
     /**
      * Initialize SchemaConfiguration with default values.
@@ -27,16 +26,16 @@ public class SchemaConfiguration {
     /**
      * Initialize SchemaConfiguration with custom locations for event entry tables.
      *
-     * @param sagaEntryTable
-     * @param assocValueEntryTable
+     * @param sagaEntryTable              The name of the entry table
+     * @param associationValueEntryTable  The name of the association value table
      */
-    public SchemaConfiguration(String sagaEntryTable, String assocValueEntryTable) {
+    public SchemaConfiguration(String sagaEntryTable, String associationValueEntryTable) {
         this.sagaEntryTable = sagaEntryTable;
-        this.assocValueEntryTable = assocValueEntryTable;
+        this.associationValueEntryTable = associationValueEntryTable;
     }
 
-    public String assocValueEntryTable() {
-        return assocValueEntryTable;
+    public String associationValueEntryTable() {
+        return associationValueEntryTable;
     }
 
     public String sagaEntryTable() {

@@ -30,24 +30,24 @@ import java.util.function.Supplier;
 public interface SagaRepository<T> {
 
     /**
-     * Find saga instances of the given <code>type</code> that have been associated with the given
-     * <code>associationValue</code>.
+     * Find saga instances of the given {@code type} that have been associated with the given
+     * {@code associationValue}.
      * <p/>
      *
      * @param associationValue The value that the returned Sagas must be associated with
      * @return A Set containing the found Saga instances. If none are found, an empty Set is returned. Will never
-     * return <code>null</code>.
+     * return {@code null}.
      */
     Set<String> find(AssociationValue associationValue);
 
     /**
      * Loads a known Saga instance by its unique identifier.
      * Due to the concurrent nature of Sagas, it is not unlikely for a Saga to have ceased to exist after it has been
-     * found based on associations. Therefore, a repository should return <code>null</code> in case a Saga doesn't
+     * found based on associations. Therefore, a repository should return {@code null} in case a Saga doesn't
      * exists, as opposed to throwing an exception.
      *
      * @param sagaIdentifier The unique identifier of the Saga to load
-     * @return The Saga instance, or <code>null</code> if no such saga exists
+     * @return The Saga instance, or {@code null} if no such saga exists
      */
     Saga<T> load(String sagaIdentifier);
 

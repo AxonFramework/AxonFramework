@@ -19,8 +19,8 @@ package org.axonframework.common.property;
 
 /**
  * PropertyAccessStrategy implementation that finds properties defined according to the Uniform Access Principle
- * (see <a href="http://en.wikipedia.org/wiki/Uniform_access_principle">wikipedia</a>).
- * For example, a property called <code>myProperty</code>, it will use a method called <code>myProperty()</code>;
+ * (see <a href="http://en.wikipedia.org/wiki/Uniform_access_principle">Wikipedia</a>).
+ * For example, a property called {@code myProperty}, it will use a method called {@code myProperty()};
  *
  * @author Maxim Fedorov
  * @author Allard Buijze

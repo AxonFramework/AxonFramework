@@ -43,8 +43,8 @@ public class IntervalRetryScheduler implements RetryScheduler {
     private final ScheduledExecutorService retryExecutor;
 
     /**
-     * Initializes the retry scheduler to schedule retries on the given <code>executor</code> using the given
-     * <code>interval</code> and allowing <code>maxRetryCount</code> retries before giving up permanently.
+     * Initializes the retry scheduler to schedule retries on the given {@code executor} using the given
+     * {@code interval} and allowing {@code maxRetryCount} retries before giving up permanently.
      *
      * @param executor      The executor on which to schedule retry execution
      * @param interval      The interval in milliseconds at which to schedule a retry
@@ -85,14 +85,14 @@ public class IntervalRetryScheduler implements RetryScheduler {
     }
 
     /**
-     * Indicates whether the given <code>failure</code> is clearly non-transient. That means, whether the
-     * <code>failure</code> explicitly states that a retry of the same Command would result in the same failure to
+     * Indicates whether the given {@code failure} is clearly non-transient. That means, whether the
+     * {@code failure} explicitly states that a retry of the same Command would result in the same failure to
      * occur
      * again.
      *
      * @param failure The exception that occurred while processing a command
-     * @return <code>true</code> if the exception is clearly non-transient and the command should <em>not</em> be
-     * retried, or <code>false</code> when the command has a chance of succeeding if it retried.
+     * @return {@code true} if the exception is clearly non-transient and the command should <em>not</em> be
+     * retried, or {@code false} when the command has a chance of succeeding if it retried.
      */
     protected boolean isExplicitlyNonTransient(Throwable failure) {
         return failure instanceof AxonNonTransientException

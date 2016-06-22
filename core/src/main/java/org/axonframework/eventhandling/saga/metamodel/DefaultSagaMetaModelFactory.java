@@ -66,6 +66,7 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage) {
             for (MessageHandler<? super T> handler : handlers) {
                 if (handler.canHandle(eventMessage)) {
@@ -75,8 +76,8 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
             return Optional.empty();
         }
 
-        @SuppressWarnings("unchecked")
         @Override
+        @SuppressWarnings("unchecked")
         public List<SagaMethodMessageHandler<T>> findHandlerMethods(EventMessage<?> eventMessage) {
             return handlers.stream()
                     .filter(h -> h.canHandle(eventMessage))

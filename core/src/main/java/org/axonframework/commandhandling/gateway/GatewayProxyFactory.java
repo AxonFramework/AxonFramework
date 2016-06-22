@@ -52,7 +52,7 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
  * </ul>
  * <p/>
  * <em>Effect of return values</em><ul>
- * <li><code>void</code> return types are always allowed. Unless another parameter makes the method blocking, void
+ * <li>{@code void} return types are always allowed. Unless another parameter makes the method blocking, void
  * methods are non-blocking by default.</li>
  * <li>Declaring a {@link Future} return type will always result in a non-blocking operation. A future is returned
  * that allows you to retrieve the execution's result at your own convenience. Note that declared exceptions and
@@ -65,9 +65,9 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
  * <li>Any checked exception declared on the method will cause it to block (optionally with timeout). If the command
  * results in a declared checked exception, that exception is thrown from the method.</li>
  * <li>Declaring a {@link TimeoutException} will throw that exception when a configured timeout expires. If no such
- * exception is declared, but a timeout is configured, the method will return <code>null</code>.</li>
+ * exception is declared, but a timeout is configured, the method will return {@code null}.</li>
  * <li>Declaring an {@link InterruptedException} will throw that exception when a thread blocked while waiting for a
- * response is interrupted. Not declaring the exception will have the method return <code>null</code> when a blocked
+ * response is interrupted. Not declaring the exception will have the method return {@code null} when a blocked
  * thread is interrupted. Note that when no InterruptedException is declared, the interrupt flag is set back on the
  * interrupted thread</li>
  * </ul>
@@ -81,7 +81,7 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
  * a method invocation to block until a response is available, or the timeout expires.
  * <p/>
  * Any method will be blocking if: <ul>
- * <li>It declares a return type other than <code>void</code> or <code>Future</code>, or</li>
+ * <li>It declares a return type other than {@code void} or {@code Future}, or</li>
  * <li>It declares an exception, or</li>
  * <li>The last two parameters are of type {@link TimeUnit} and {@link Long long}, or</li>
  * <li>The method is annotated with {@link Timeout @Timeout}</li>
@@ -101,10 +101,10 @@ public class GatewayProxyFactory {
     private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
-     * Initialize the factory sending Commands to the given <code>commandBus</code>, optionally intercepting them with
-     * given <code>dispatchInterceptors</code>.
+     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
+     * given {@code dispatchInterceptors}.
      * <p/>
-     * Note that the given <code>dispatchInterceptors</code> are applied only on commands sent through gateways that
+     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
      * have been created using this factory.
      *
      * @param commandBus           The CommandBus on which to dispatch the Command Messages
@@ -117,16 +117,16 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Initialize the factory sending Commands to the given <code>commandBus</code>, optionally intercepting them with
-     * given <code>dispatchInterceptors</code>. The given <code>retryScheduler</code> will reschedule commands for
+     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
+     * given {@code dispatchInterceptors}. The given {@code retryScheduler} will reschedule commands for
      * dispatching if a previous attempt resulted in an exception.
      * <p/>
-     * Note that the given <code>dispatchInterceptors</code> are applied only on commands sent through gateways that
+     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
      * have been created using this factory.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
-     *                                    <code>null</code> to report failures without rescheduling
+     *                                    {@code null} to report failures without rescheduling
      * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     @SafeVarargs
@@ -136,16 +136,16 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Initialize the factory sending Commands to the given <code>commandBus</code>, optionally intercepting them with
-     * given <code>dispatchInterceptors</code>. The given <code>retryScheduler</code> will reschedule commands for
+     * Initialize the factory sending Commands to the given {@code commandBus}, optionally intercepting them with
+     * given {@code dispatchInterceptors}. The given {@code retryScheduler} will reschedule commands for
      * dispatching if a previous attempt resulted in an exception.
      * <p/>
-     * Note that the given <code>dispatchInterceptors</code> are applied only on commands sent through gateways that
+     * Note that the given {@code dispatchInterceptors} are applied only on commands sent through gateways that
      * have been created using this factory.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
      * @param retryScheduler              The scheduler that will decide whether to reschedule commands, may be
-     *                                    <code>null</code> to report failures without rescheduling
+     *                                    {@code null} to report failures without rescheduling
      * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
@@ -162,7 +162,7 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Creates a gateway instance for the given <code>gatewayInterface</code>. The returned instance is a Proxy that
+     * Creates a gateway instance for the given {@code gatewayInterface}. The returned instance is a Proxy that
      * implements that interface.
      *
      * @param gatewayInterface The interface declaring the gateway methods
@@ -235,13 +235,13 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Wraps the given <code>delegate</code> in an InvocationHandler that wraps exceptions not declared on the method
+     * Wraps the given {@code delegate} in an InvocationHandler that wraps exceptions not declared on the method
      * in a {@link org.axonframework.commandhandling.CommandExecutionException}.
      *
      * @param delegate           The delegate to invoke that potentially throws exceptions
      * @param declaredExceptions The exceptions declared on the method signature
      * @param <R>                The response type of the command handler
-     * @return an InvocationHandler that wraps undeclared exceptions in a <code>CommandExecutionException</code>
+     * @return an InvocationHandler that wraps undeclared exceptions in a {@code CommandExecutionException}
      */
     protected <R> InvocationHandler<R> wrapUndeclaredExceptions(final InvocationHandler<R> delegate,
                                                                 final Class<?>[] declaredExceptions) {
@@ -249,8 +249,8 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Wrap the given <code>delegate</code> in an InvocationHandler that returns null when the
-     * <code>delegate</code>
+     * Wrap the given {@code delegate} in an InvocationHandler that returns null when the
+     * {@code delegate}
      * throws an InterruptedException.
      *
      * @param delegate The delegate to invoke, potentially throwing an InterruptedException when invoked
@@ -262,8 +262,8 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Wrap the given <code>delegate</code> in an InvocationHandler that returns null when the
-     * <code>delegate</code> throws a TimeoutException.
+     * Wrap the given {@code delegate} in an InvocationHandler that returns null when the
+     * {@code delegate} throws a TimeoutException.
      *
      * @param delegate The delegate to invoke, potentially throwing a TimeoutException when invoked
      * @param <R>      The response type of the command handler
@@ -274,8 +274,8 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Wrap the given <code>delegate</code> in an InvocationHandler that returns immediately after invoking the
-     * <code>delegate</code>.
+     * Wrap the given {@code delegate} in an InvocationHandler that returns immediately after invoking the
+     * {@code delegate}.
      *
      * @param delegate The delegate to invoke, potentially throwing an InterruptedException when invoked
      * @param <R>      The response type of the command handler
@@ -286,7 +286,7 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Wraps the given <code>delegate</code> and waits for the result in the Future to become available. No explicit
+     * Wraps the given {@code delegate} and waits for the result in the Future to become available. No explicit
      * timeout is provided for the waiting.
      *
      * @param delegate The delegate to invoke, returning a Future
@@ -298,8 +298,8 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Wraps the given <code>delegate</code> and waits for the result in the Future to become available, with given
-     * <code>timeout</code> and <code>timeUnit</code>.
+     * Wraps the given {@code delegate} and waits for the result in the Future to become available, with given
+     * {@code timeout} and {@code timeUnit}.
      *
      * @param delegate The delegate to invoke, returning a Future
      * @param timeout  The amount of time to wait for the result to become available
@@ -313,7 +313,7 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Wraps the given <code>delegate</code> and waits for the result in the Future to become available using given
+     * Wraps the given {@code delegate} and waits for the result in the Future to become available using given
      * indices to resolve the parameters that provide the timeout to use.
      *
      * @param delegate      The delegate to invoke, returning a Future
@@ -337,7 +337,7 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Registers the <code>callback</code>, which is invoked for each sent command, unless Axon is able to detect that
+     * Registers the {@code callback}, which is invoked for each sent command, unless Axon is able to detect that
      * the result of the command does not match the type accepted by the callback.
      * <p/>
      * Axon will check the signature of the onSuccess() method and only invoke the callback if the actual result of the
@@ -354,7 +354,7 @@ public class GatewayProxyFactory {
     }
 
     /**
-     * Registers the given <code>dispatchInterceptor</code> which is invoked for each Command dispatched through the
+     * Registers the given {@code dispatchInterceptor} which is invoked for each Command dispatched through the
      * Command Gateways created by this factory.
      *
      * @param dispatchInterceptor The interceptor to register.
@@ -390,9 +390,9 @@ public class GatewayProxyFactory {
     public interface InvocationHandler<R> {
 
         /**
-         * Handle the invocation of the given <code>invokedMethod</code>, invoked on given <code>proxy</code> with
+         * Handle the invocation of the given {@code invokedMethod}, invoked on given {@code proxy} with
          * given
-         * <code>args</code>.
+         * {@code args}.
          *
          * @param proxy         The proxy on which the method was invoked
          * @param invokedMethod The method being invoked

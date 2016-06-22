@@ -44,8 +44,8 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     private final Map<String, MessageHandler<CommandMessage<?>>> handlers;
 
     /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
-     * given <code>repository</code> to add and load aggregate instances.
+     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
+     * given {@code repository} to add and load aggregate instances.
      *
      * @param aggregateType The type of aggregate
      * @param repository    The repository providing access to aggregate instances
@@ -55,8 +55,8 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
-     * given <code>repository</code> to add and load aggregate instances and the default ParameterResolverFactory.
+     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
+     * given {@code repository} to add and load aggregate instances and the default ParameterResolverFactory.
      *
      * @param aggregateType         The type of aggregate
      * @param repository            The repository providing access to aggregate instances
@@ -69,9 +69,9 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
-     * given <code>repository</code> to add and load aggregate instances and the given
-     * <code>parameterResolverFactory</code>.
+     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
+     * given {@code repository} to add and load aggregate instances and the given
+     * {@code parameterResolverFactory}.
      *
      * @param aggregateType            The type of aggregate
      * @param repository               The repository providing access to aggregate instances
@@ -86,9 +86,9 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     /**
-     * Initializes an AnnotationCommandHandler based on the annotations on given <code>aggregateType</code>, using the
-     * given <code>repository</code> to add and load aggregate instances and the given
-     * <code>parameterResolverFactory</code>.
+     * Initializes an AnnotationCommandHandler based on the annotations on given {@code aggregateType}, using the
+     * given {@code repository} to add and load aggregate instances and the given
+     * {@code parameterResolverFactory}.
      *
      * @param repository            The repository providing access to aggregate instances
      * @param commandTargetResolver The target resolution strategy
@@ -106,7 +106,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     /**
-     * Subscribe this command handler to the given <code>commandBus</code>. The command handler will be subscribed
+     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed
      * for each of the supported commands.
      *
      * @param commandBus The command bus instance to subscribe to
@@ -145,7 +145,7 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
     }
 
     /**
-     * Resolves the value to return when the given <code>command</code> has created the given <code>aggregate</code>.
+     * Resolves the value to return when the given {@code command} has created the given {@code aggregate}.
      * This implementation returns the identifier of the created aggregate.
      * <p>
      * This method may be overridden to change the return value of this Command Handler

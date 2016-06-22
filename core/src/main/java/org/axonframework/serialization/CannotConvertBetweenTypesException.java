@@ -30,7 +30,7 @@ public class CannotConvertBetweenTypesException extends AxonConfigurationExcepti
     private static final long serialVersionUID = 2707247238103378855L;
 
     /**
-     * Initializes the exception with the given <code>message</code>.
+     * Initializes the exception with the given {@code message}.
      *
      * @param message The message describing the problem
      */
@@ -39,7 +39,7 @@ public class CannotConvertBetweenTypesException extends AxonConfigurationExcepti
     }
 
     /**
-     * Initializing the exception with given <code>message</code> and <code>cause</code>.
+     * Initializing the exception with given {@code message} and {@code cause}.
      *
      * @param message The message describing the problem
      * @param cause   The original cause of the exception

@@ -53,7 +53,7 @@ public class JavaSerializer implements Serializer {
         this.revisionResolver = revisionResolver;
     }
 
-    @SuppressWarnings("NonSerializableObjectPassedToObjectStream")
+    @SuppressWarnings({"NonSerializableObjectPassedToObjectStream", "ThrowFromFinallyBlock"})
     @Override
     public <T> SerializedObject<T> serialize(Object instance, Class<T> expectedType) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

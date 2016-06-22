@@ -34,6 +34,7 @@ public enum NoOpMessageMonitor implements MessageMonitor<Message<?>> {
      *
      * @return the instance of {@code {@link NoOpMessageMonitor}}
      */
+    @SuppressWarnings("SameReturnValue")
     public static NoOpMessageMonitor instance() {
         return INSTANCE;
     }

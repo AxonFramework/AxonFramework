@@ -32,9 +32,8 @@ public class SerializedToken<T> {
 
     @SuppressWarnings("unchecked")
     public TrackingToken getToken(Serializer serializer) {
-        SimpleSerializedObject<T> serializedObject = new SimpleSerializedObject<T>(data, (Class<T>) data.getClass(),
-                                                                                   new SimpleSerializedType(dataType,
-                                                                                                            null));
+        SimpleSerializedObject<T> serializedObject =
+                new SimpleSerializedObject<>(data, (Class<T>) data.getClass(), new SimpleSerializedType(dataType, null));
         return serializer.deserialize(serializedObject);
     }
 }

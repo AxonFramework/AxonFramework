@@ -163,7 +163,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     }
 
     /**
-     * Reads a timestamp from the given <code>resultSet</code> at given <code>columnIndex</code>. The resultSet is
+     * Reads a timestamp from the given {@code resultSet} at given {@code columnIndex}. The resultSet is
      * positioned in the row that contains the data. This method must not change the row in the result set.
      *
      * @param resultSet  The resultSet containing the stored data
@@ -186,7 +186,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     }
 
     /**
-     * Reads a serialized object from the given <code>resultSet</code> at given <code>columnIndex</code>. The resultSet
+     * Reads a serialized object from the given {@code resultSet} at given {@code columnIndex}. The resultSet
      * is positioned in the row that contains the data. This method must not change the row in the result set.
      *
      * @param resultSet  The resultSet containing the stored data

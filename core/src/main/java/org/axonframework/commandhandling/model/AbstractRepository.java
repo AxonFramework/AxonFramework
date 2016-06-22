@@ -46,8 +46,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     private final AggregateModel<T> aggregateModel;
 
     /**
-     * Initializes a repository that stores aggregate of the given <code>aggregateType</code>. All aggregates in this
-     * repository must be <code>instanceOf</code> this aggregate type.
+     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
+     * repository must be {@code instanceOf} this aggregate type.
      *
      * @param aggregateType The type of aggregate stored in this repository
      */
@@ -58,8 +58,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     /**
-     * Initializes a repository that stores aggregate of the given <code>aggregateType</code>. All aggregates in this
-     * repository must be <code>instanceOf</code> this aggregate type.
+     * Initializes a repository that stores aggregate of the given {@code aggregateType}. All aggregates in this
+     * repository must be {@code instanceOf} this aggregate type.
      *
      * @param aggregateType The type of aggregate stored in this repository
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
@@ -89,8 +89,6 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     protected abstract A doCreateNew(Callable<T> factoryMethod) throws Exception;
 
     /**
-     * {@inheritDoc}
-     *
      * @throws AggregateNotFoundException if aggregate with given id cannot be found
      * @throws RuntimeException           any exception thrown by implementing classes
      */
@@ -107,9 +105,6 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         return aggregate;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public A load(String aggregateIdentifier) {
         return load(aggregateIdentifier, null);
@@ -138,7 +133,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     }
 
     /**
-     * Register handlers with the current Unit of Work that save or delete the given <code>aggregate</code> when
+     * Register handlers with the current Unit of Work that save or delete the given {@code aggregate} when
      * the Unit of Work is committed.
      *
      * @param aggregate The Aggregate to save or delete when the Unit of Work is committed

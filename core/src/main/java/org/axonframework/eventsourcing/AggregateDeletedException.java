@@ -30,8 +30,8 @@ public class AggregateDeletedException extends AggregateNotFoundException {
     private static final long serialVersionUID = 6814686444144567614L;
 
     /**
-     * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
-     * given <code>message</code>.
+     * Initialize a AggregateDeletedException for an aggregate identifier by given {@code aggregateIdentifier} and
+     * given {@code message}.
      *
      * @param aggregateIdentifier The identifier of the aggregate that has been deleted
      * @param message             The message describing the cause of the exception
@@ -41,8 +41,8 @@ public class AggregateDeletedException extends AggregateNotFoundException {
     }
 
     /**
-     * Initialize a AggregateDeletedException for an aggregate identifier by given <code>aggregateIdentifier</code> and
-     * a default <code>message</code>.
+     * Initialize a AggregateDeletedException for an aggregate identifier by given {@code aggregateIdentifier} and
+     * a default {@code message}.
      *
      * @param aggregateIdentifier The identifier of the aggregate that has been deleted
      */

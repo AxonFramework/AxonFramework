@@ -38,7 +38,7 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
 
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
-        final String sql = "create table " + schemaConfiguration.assocValueEntryTable() + " (\n" +
+        final String sql = "create table " + schemaConfiguration.associationValueEntryTable() + " (\n" +
                 "        id bigserial not null,\n" +
                 "        associationKey varchar(255),\n" +
                 "        associationValue varchar(255),\n" +

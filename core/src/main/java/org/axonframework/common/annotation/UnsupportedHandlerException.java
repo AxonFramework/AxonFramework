@@ -33,7 +33,7 @@ public class UnsupportedHandlerException extends AxonConfigurationException {
     private static final long serialVersionUID = 7991150193173243668L;
 
     /**
-     * Initialize the exception with a <code>message</code> and the <code>violatingMethod</code>.
+     * Initialize the exception with a {@code message} and the {@code violatingMethod}.
      *
      * @param message         a descriptive message of the violation
      * @param violatingMethod the method that violates the rules of annotated Event Handlers

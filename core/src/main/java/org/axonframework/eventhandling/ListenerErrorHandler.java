@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
 public interface ListenerErrorHandler {
 
     /**
-     * Invoked after given <code>eventListener</code> failed to handle given <code>event</code>. Implementations have a
+     * Invoked after given {@code eventListener} failed to handle given {@code event}. Implementations have a
      * choice of options for how to continue:
      * <p>
      * <ul> <li>To ignore this error no special action is required. Processing will continue for this and subsequent

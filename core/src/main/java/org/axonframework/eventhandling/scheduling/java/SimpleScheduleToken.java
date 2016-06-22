@@ -30,7 +30,7 @@ public class SimpleScheduleToken implements ScheduleToken {
     private final String tokenId;
 
     /**
-     * Creates a SimpleScheduleToken with the given <code>tokenId</code>.
+     * Creates a SimpleScheduleToken with the given {@code tokenId}.
      *
      * @param tokenId The identifier referencing the scheduled task.
      */

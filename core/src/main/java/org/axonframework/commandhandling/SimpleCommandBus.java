@@ -39,7 +39,7 @@ import static java.lang.String.format;
  * command. Interceptors may be configured to add processing to commands regardless of their type, for example logging,
  * security (authorization), sla monitoring, etc.
  * <p/>
- * This class can be monitored as the implementation of the <code>StatisticsProvider</code> interface indicates.
+ * This class can be monitored as the implementation of the {@code StatisticsProvider} interface indicates.
  *
  * @author Allard Buijze
  * @author Martin Tilma
@@ -58,7 +58,7 @@ public class SimpleCommandBus implements CommandBus {
     private UnitOfWorkFactory<?> unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
 
-    private MessageMonitor<? super CommandMessage<?>> messageMonitor;
+    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
 
     /**
      * Initializes the SimpleCommandBus.
@@ -70,7 +70,7 @@ public class SimpleCommandBus implements CommandBus {
     /**
      * Initializes the SimpleCommandBus with the given <name>messageMonitor</name>
      *
-     * @param messageMonitor the message monitor to monitor the commandbus
+     * @param messageMonitor the message monitor to monitor the command bus
      */
     public SimpleCommandBus(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
         this.messageMonitor = messageMonitor;
@@ -136,7 +136,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     /**
-     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>. If a subscription already
+     * Subscribe the given {@code handler} to commands of type {@code commandType}. If a subscription already
      * exists for the given type, then the new handler takes over the subscription.
      *
      * @param commandName The type of command to subscribe the handler to

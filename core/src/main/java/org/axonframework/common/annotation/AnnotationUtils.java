@@ -37,13 +37,13 @@ public abstract class AnnotationUtils {
     }
 
     /**
-     * Find an annotation of given <code>annotationType</code> on the given <code>element</code>, considering that the
-     * given <code>annotationType</code> may be present as a meta annotation on any other annotation on that element.
+     * Find an annotation of given {@code annotationType} on the given {@code element}, considering that the
+     * given {@code annotationType} may be present as a meta annotation on any other annotation on that element.
      *
      * @param element        The element to inspect
      * @param annotationType The type of annotation to find
      * @param <T>            The generic type of the annotation
-     * @return the annotation, or <code>null</code> if no such annotation is present.
+     * @return the annotation, or {@code null} if no such annotation is present.
      */
     @SuppressWarnings("unchecked")
     public static <T extends Annotation> T findAnnotation(AnnotatedElement element, Class<T> annotationType) {
@@ -51,13 +51,13 @@ public abstract class AnnotationUtils {
     }
 
     /**
-     * Find an annotation of given <code>annotationType</code> as String on the given <code>element</code>,
-     * considering that the given <code>annotationType</code> may be present as a meta annotation on any other
+     * Find an annotation of given {@code annotationType} as String on the given {@code element},
+     * considering that the given {@code annotationType} may be present as a meta annotation on any other
      * annotation on that element.
      *
      * @param element        The element to inspect
      * @param annotationType The type of annotation as String to find
-     * @return the annotation, or <code>null</code> if no such annotation is present.
+     * @return the annotation, or {@code null} if no such annotation is present.
      */
     public static Annotation findAnnotation(AnnotatedElement element, String annotationType) {
         Annotation ann = getAnnotation(element, annotationType);

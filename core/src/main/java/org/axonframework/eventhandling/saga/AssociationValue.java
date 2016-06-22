@@ -39,7 +39,7 @@ public class AssociationValue implements Serializable {
     private final String propertyValue;
 
     /**
-     * Creates a Association Value instance with the given <code>key</code> and <code>value</code>.
+     * Creates a Association Value instance with the given {@code key} and {@code value}.
      *
      * @param key   The key of the Association Value. Usually indicates where the value comes from.
      * @param value The value corresponding to the key of the association. It is highly recommended to only use
@@ -64,7 +64,7 @@ public class AssociationValue implements Serializable {
     /**
      * Returns the value of this association.
      *
-     * @return the value of this association. Never <code>null</code>.
+     * @return the value of this association. Never {@code null}.
      */
     public String getValue() {
         return propertyValue;

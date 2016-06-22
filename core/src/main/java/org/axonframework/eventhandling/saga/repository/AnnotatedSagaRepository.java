@@ -154,7 +154,7 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
     }
 
     /**
-     * Update a stored Saga, by replacing it with the given <code>saga</code> instance.
+     * Update a stored Saga, by replacing it with the given {@code saga} instance.
      *
      * @param saga The saga that has been modified and needs to be updated in the storage
      */

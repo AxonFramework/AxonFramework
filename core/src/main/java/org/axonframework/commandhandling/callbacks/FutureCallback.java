@@ -52,8 +52,8 @@ public class FutureCallback<C, R> extends CompletableFuture<R> implements Comman
      * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
      * checked exceptions are wrapped in a {@link CommandExecutionException}.
      * <p/>
-     * If the thread is interrupted while waiting, the interrupt flag is set back on the thread, and <code>null</code>
-     * is returned. To distinguish between an interrupt and a <code>null</code> result, use the {@link #isDone()}
+     * If the thread is interrupted while waiting, the interrupt flag is set back on the thread, and {@code null}
+     * is returned. To distinguish between an interrupt and a {@code null} result, use the {@link #isDone()}
      * method.
      *
      * @return the result of the command handler execution.
@@ -78,9 +78,9 @@ public class FutureCallback<C, R> extends CompletableFuture<R> implements Comman
      * Unlike {@link #get(long, java.util.concurrent.TimeUnit)}, this method will throw the original exception. Only
      * checked exceptions are wrapped in a {@link CommandExecutionException}.
      * <p/>
-     * If the timeout expired or the thread is interrupted before completion, <code>null</code> is returned. In case of
+     * If the timeout expired or the thread is interrupted before completion, {@code null} is returned. In case of
      * an interrupt, the interrupt flag will have been set back on the thread. To distinguish between an interrupt and
-     * a <code>null</code> result, use the {@link #isDone()}
+     * a {@code null} result, use the {@link #isDone()}
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the timeout argument
@@ -115,8 +115,8 @@ public class FutureCallback<C, R> extends CompletableFuture<R> implements Comman
      *
      * @param timeout The amount of time to wait for command processing to complete
      * @param unit    The unit in which the timeout is expressed
-     * @return <code>true</code> if command processing completed before the timeout expired, otherwise
-     * <code>false</code>.
+     * @return {@code true} if command processing completed before the timeout expired, otherwise
+     * {@code false}.
      */
     public boolean awaitCompletion(long timeout, TimeUnit unit) {
         try {

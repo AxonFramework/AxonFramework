@@ -78,7 +78,7 @@ public interface UnitOfWork<T extends Message<?>> {
      * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is unregistered from the
      * {@link CurrentUnitOfWork}.
      *
-     * @param cause The cause of the rollback. May be <code>null</code>.
+     * @param cause The cause of the rollback. May be {@code null}.
      * @throws IllegalStateException if the Unit of Work is not in a compatible phase.
      */
     void rollback(Throwable cause);
@@ -87,7 +87,7 @@ public interface UnitOfWork<T extends Message<?>> {
      * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called, and
      * if the UnitOfWork has not been committed or rolled back.
      *
-     * @return <code>true</code> if this UnitOfWork is started, <code>false</code> otherwise.
+     * @return {@code true} if this UnitOfWork is started, {@code false} otherwise.
      */
     default boolean isActive() {
         return phase().isStarted();
@@ -101,7 +101,7 @@ public interface UnitOfWork<T extends Message<?>> {
     Phase phase();
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
      * Unit of Work changes to {@link Phase#PREPARE_COMMIT}.
      *
      * @param handler the handler to register with the Unit of Work
@@ -109,7 +109,7 @@ public interface UnitOfWork<T extends Message<?>> {
     void onPrepareCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
      * Unit of Work changes to {@link Phase#COMMIT}.
      *
      * @param handler the handler to register with the Unit of Work
@@ -117,7 +117,7 @@ public interface UnitOfWork<T extends Message<?>> {
     void onCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
      * Unit of Work changes to {@link Phase#AFTER_COMMIT}.
      *
      * @param handler the handler to register with the Unit of Work
@@ -125,7 +125,7 @@ public interface UnitOfWork<T extends Message<?>> {
     void afterCommit(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
      * Unit of Work changes to {@link Phase#ROLLBACK}. On rollback, the cause for the rollback can obtained from the
      * supplied
      *
@@ -134,7 +134,7 @@ public interface UnitOfWork<T extends Message<?>> {
     void onRollback(Consumer<UnitOfWork<T>> handler);
 
     /**
-     * Register given <code>handler</code> with the Unit of Work. The handler will be notified when the phase of the
+     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
      * Unit of Work changes to {@link Phase#CLEANUP}.
      *
      * @param handler the handler to register with the Unit of Work
@@ -151,9 +151,9 @@ public interface UnitOfWork<T extends Message<?>> {
     Optional<UnitOfWork<?>> parent();
 
     /**
-     * Check that returns <code>true</code> if this Unit of Work has not got a parent.
+     * Check that returns {@code true} if this Unit of Work has not got a parent.
      *
-     * @return <code>true</code> if this Unit of Work has no parent
+     * @return {@code true} if this Unit of Work has no parent
      */
     default boolean isRoot() {
         return !parent().isPresent();
@@ -197,7 +197,7 @@ public interface UnitOfWork<T extends Message<?>> {
     MetaData getCorrelationData();
 
     /**
-     * Register given <code>correlationDataProvider</code> with this Unit of Work. Correlation data providers are used
+     * Register given {@code correlationDataProvider} with this Unit of Work. Correlation data providers are used
      * to provide meta data based on this Unit of Work's {@link #getMessage() Message} when {@link
      * #getCorrelationData()} is invoked.
      *
@@ -213,12 +213,12 @@ public interface UnitOfWork<T extends Message<?>> {
     Map<String, Object> resources();
 
     /**
-     * Returns the resource attached under given <code>name</code>, or <code>null</code> if no such resource is
+     * Returns the resource attached under given {@code name}, or {@code null} if no such resource is
      * available.
      *
      * @param name The name under which the resource was attached
      * @param <R>  The type of resource
-     * @return The resource mapped to the given <code>name</code>, or <code>null</code> if no resource was found.
+     * @return The resource mapped to the given {@code name}, or {@code null} if no resource was found.
      */
     @SuppressWarnings("unchecked")
     default <R> R getResource(String name) {
@@ -226,13 +226,13 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
-     * Returns the resource attached under given <code>name</code>. If there is no resource mapped to the given key yet
-     * the <code>mappingFunction</code> is invoked to provide the mapping.
+     * Returns the resource attached under given {@code name}. If there is no resource mapped to the given key yet
+     * the {@code mappingFunction} is invoked to provide the mapping.
      *
      * @param key The name under which the resource was attached
      * @param <R> The type of resource
-     * @return The resource mapped to the given <code>key</code>, or the resource returned by the
-     * <code>mappingFunction</code> if no resource was found.
+     * @return The resource mapped to the given {@code key}, or the resource returned by the
+     * {@code mappingFunction} if no resource was found.
      */
     @SuppressWarnings("unchecked")
     default <R> R getOrComputeResource(String key, Function<? super String, R> mappingFunction) {
@@ -240,7 +240,7 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
-     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
      * If the task executes successfully the Unit of Work is committed. If any exception is raised while executing the
@@ -253,11 +253,11 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
-     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
      * If the task executes successfully the Unit of Work is committed. If an exception is raised while executing the
-     * task, the <code>rollbackConfiguration</code> determines if the Unit of Work should be rolled back or committed,
+     * task, the {@code rollbackConfiguration} determines if the Unit of Work should be rolled back or committed,
      * and the exception is thrown.
      *
      * @param task                  the task to execute
@@ -276,7 +276,7 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
-     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
      * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If any
@@ -290,11 +290,11 @@ public interface UnitOfWork<T extends Message<?>> {
     }
 
     /**
-     * Execute the given <code>task</code> in the context of this Unit of Work. If the Unit of Work is not started yet
+     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
      * it will be started.
      * <p/>
      * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If
-     * execution fails, the <code>rollbackConfiguration</code> determines if the Unit of Work should be rolled back or
+     * execution fails, the {@code rollbackConfiguration} determines if the Unit of Work should be rolled back or
      * committed.
      *
      * @param <R>                   the type of result that is returned after successful execution
@@ -306,13 +306,13 @@ public interface UnitOfWork<T extends Message<?>> {
 
     /**
      * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task
-     * to execute this method returns <code>null</code>.
+     * to execute this method returns {@code null}.
      * <p>
      * Note that the value of the returned ExecutionResult's {@link ExecutionResult#isExceptionResult()} does not
      * determine whether or not the UnitOfWork has been rolled back. To check whether or not the UnitOfWork was rolled
      * back check {@link #isRolledBack}.
      *
-     * @return The result of the task executed by this Unit of Work, or <code>null</code> if the Unit of Work has not
+     * @return The result of the task executed by this Unit of Work, or {@code null} if the Unit of Work has not
      * been given a task to execute.
      */
     ExecutionResult getExecutionResult();
@@ -320,14 +320,14 @@ public interface UnitOfWork<T extends Message<?>> {
     /**
      * Check if the Unit of Work has been rolled back.
      *
-     * @return <code>true</code> if the unit of work was rolled back, <code>false</code> otherwise.
+     * @return {@code true} if the unit of work was rolled back, {@code false} otherwise.
      */
     boolean isRolledBack();
 
     /**
      * Check if the Unit of Work is the 'currently' active Unit of Work returned by {@link CurrentUnitOfWork#get()}.
      *
-     * @return <code>true</code> if the Unit of Work is the currently active Unit of Work
+     * @return {@code true} if the Unit of Work is the currently active Unit of Work
      */
     default boolean isCurrent() {
         return CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get() == this;
@@ -401,7 +401,7 @@ public interface UnitOfWork<T extends Message<?>> {
          * Check if a Unit of Work in this phase has been started, i.e. is registered with the {@link
          * CurrentUnitOfWork}.
          *
-         * @return <code>true</code> if the Unit of Work is started when in this phase, <code>false</code> otherwise
+         * @return {@code true} if the Unit of Work is started when in this phase, {@code false} otherwise
          */
         public boolean isStarted() {
             return started;
@@ -412,28 +412,28 @@ public interface UnitOfWork<T extends Message<?>> {
          * registered handler is invoked first) or in the reverse order of registration (last registered handler is
          * invoked first).
          *
-         * @return <code>true</code> if the order of invoking handlers in this phase should be in the reverse order of
-         * registration, <code>false</code> otherwise.
+         * @return {@code true} if the order of invoking handlers in this phase should be in the reverse order of
+         * registration, {@code false} otherwise.
          */
         public boolean isReverseCallbackOrder() {
             return reverseCallbackOrder;
         }
 
         /**
-         * Check if this Phase comes before given other <code>phase</code>.
+         * Check if this Phase comes before given other {@code phase}.
          *
          * @param phase The other Phase
-         * @return <code>true</code> if this comes before the given <code>phase</code>, <code>false</code> otherwise.
+         * @return {@code true} if this comes before the given {@code phase}, {@code false} otherwise.
          */
         public boolean isBefore(Phase phase) {
             return ordinal() < phase.ordinal();
         }
 
         /**
-         * Check if this Phase comes after given other <code>phase</code>.
+         * Check if this Phase comes after given other {@code phase}.
          *
          * @param phase The other Phase
-         * @return <code>true</code> if this comes after the given <code>phase</code>, <code>false</code> otherwise.
+         * @return {@code true} if this comes after the given {@code phase}, {@code false} otherwise.
          */
         public boolean isAfter(Phase phase) {
             return ordinal() > phase.ordinal();

@@ -31,7 +31,7 @@ public class ConcurrencyException extends AxonTransientException {
     private static final long serialVersionUID = -739879545165860129L;
 
     /**
-     * Initialize a ConcurrencyException with the given <code>message</code>.
+     * Initialize a ConcurrencyException with the given {@code message}.
      *
      * @param message The message describing the cause of the exception
      */
@@ -40,7 +40,7 @@ public class ConcurrencyException extends AxonTransientException {
     }
 
     /**
-     * Initialize a ConcurrencyException with the given <code>message</code> and <code>cause</code>.
+     * Initialize a ConcurrencyException with the given {@code message} and {@code cause}.
      *
      * @param message The message describing the cause of the exception
      * @param cause   The cause of the exception

@@ -97,7 +97,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
 
     /**
      * Indicates whether to maintain counters for aggregates after appending events to the event store for these
-     * aggregates. Defaults to <code>true</code>.
+     * aggregates. Defaults to {@code true}.
      * <p/>
      * By setting this value to false, event counters are kept in memory. This is particularly useful when repositories
      * use caches, preventing events from being loaded. Consider registering the Caches use using {@link
@@ -118,7 +118,7 @@ public class EventCountSnapshotterTrigger implements SnapshotterTrigger {
      * Use the {@link #setAggregateCaches(java.util.List)} method if you have configured different caches for different
      * repositories.
      * <p/>
-     * Using this method will automatically set {@link #setClearCountersAfterAppend(boolean)} to <code>false</code>.
+     * Using this method will automatically set {@link #setClearCountersAfterAppend(boolean)} to {@code false}.
      *
      * @param cache The cache used by caching repositories
      * @see #setAggregateCaches(java.util.List)

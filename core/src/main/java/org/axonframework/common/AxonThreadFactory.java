@@ -30,7 +30,7 @@ public class AxonThreadFactory implements ThreadFactory {
     private final ThreadGroup groupName;
 
     /**
-     * Initializes a ThreadFactory instance that creates each thread in a group with given <code>groupName</code> with
+     * Initializes a ThreadFactory instance that creates each thread in a group with given {@code groupName} with
      * default priority.
      *
      * @param groupName The name of the group to create each thread in
@@ -41,7 +41,7 @@ public class AxonThreadFactory implements ThreadFactory {
     }
 
     /**
-     * Initializes a ThreadFactory instance that create each thread in the given <code>group</code> with default
+     * Initializes a ThreadFactory instance that create each thread in the given {@code group} with default
      * priority.
      *
      * @param group The ThreadGroup to create each thread in
@@ -52,8 +52,8 @@ public class AxonThreadFactory implements ThreadFactory {
     }
 
     /**
-     * Initializes a ThreadFactory instance that create each thread in the given <code>group</code> with given
-     * <code>priority</code>.
+     * Initializes a ThreadFactory instance that create each thread in the given {@code group} with given
+     * {@code priority}.
      *
      * @param priority The priority of the threads to create
      * @param group    The ThreadGroup to create each thread in

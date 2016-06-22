@@ -16,8 +16,6 @@
 
 package org.axonframework.common.jdbc;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -35,12 +33,12 @@ public abstract class ConnectionWrapperFactory {
     }
 
     /**
-     * Wrap the given <code>connection</code>, creating a Proxy with an additional <code>wrapperInterface</code>
-     * (implemented by given <code>wrapperHandler</code>). Calls to the close method are forwarded to the given
-     * <code>closeHandler</code>.
+     * Wrap the given {@code connection}, creating a Proxy with an additional {@code wrapperInterface}
+     * (implemented by given {@code wrapperHandler}). Calls to the close method are forwarded to the given
+     * {@code closeHandler}.
      * <p/>
-     * Note that all invocations on methods declared on the <code>wrapperInterface</code> (including equals, hashCode)
-     * are forwarded to the <code>wrapperHandler</code>.
+     * Note that all invocations on methods declared on the {@code wrapperInterface} (including equals, hashCode)
+     * are forwarded to the {@code wrapperHandler}.
      *
      * @param connection       The connection to wrap
      * @param wrapperInterface The additional interface to implement
@@ -54,39 +52,34 @@ public abstract class ConnectionWrapperFactory {
                                       final ConnectionCloseHandler closeHandler) {
         return (Connection) Proxy.newProxyInstance(wrapperInterface.getClassLoader(),
                                                    new Class[]{Connection.class, wrapperInterface},
-                                                   new InvocationHandler() {
-                                                       @Override
-                                                       public Object invoke(Object proxy, Method method, Object[] args)
-                                                               throws Exception {
-                                                           if ("equals".equals(method.getName()) && args != null
-                                                                   && args.length == 1) {
-                                                               return proxy == args[0];
-                                                           } else if ("hashCode".equals(
-                                                                   method.getName()) && isEmpty(args)) {
-                                                               return connection.hashCode();
-                                                           } else if (method.getDeclaringClass().isAssignableFrom(
-                                                                   wrapperInterface)) {
-                                                               return method.invoke(wrapperHandler, args);
-                                                           } else if ("close".equals(method.getName())
-                                                                   && isEmpty(args)) {
-                                                               closeHandler.close(connection);
-                                                               return null;
-                                                           } else if ("commit".equals(method.getName())
-                                                                   && isEmpty(args)) {
-                                                               closeHandler.commit(connection);
-                                                               return null;
-                                                           } else {
-                                                               return method.invoke(connection, args);
-                                                           }
+                                                   (proxy, method, args) -> {
+                                                       if ("equals".equals(method.getName()) && args != null
+                                                               && args.length == 1) {
+                                                           return proxy == args[0];
+                                                       } else if ("hashCode".equals(
+                                                               method.getName()) && isEmpty(args)) {
+                                                           return connection.hashCode();
+                                                       } else if (method.getDeclaringClass().isAssignableFrom(
+                                                               wrapperInterface)) {
+                                                           return method.invoke(wrapperHandler, args);
+                                                       } else if ("close".equals(method.getName())
+                                                               && isEmpty(args)) {
+                                                           closeHandler.close(connection);
+                                                           return null;
+                                                       } else if ("commit".equals(method.getName())
+                                                               && isEmpty(args)) {
+                                                           closeHandler.commit(connection);
+                                                           return null;
+                                                       } else {
+                                                           return method.invoke(connection, args);
                                                        }
-                                                   }
-        );
+                                                   });
     }
 
     /**
-     * Wrap the given <code>connection</code>, creating a Proxy with an additional <code>wrapperInterface</code>
-     * (implemented by given <code>wrapperHandler</code>). Calls to the close method are forwarded to the given
-     * <code>closeHandler</code>.
+     * Wrap the given {@code connection}, creating a Proxy with an additional {@code wrapperInterface}
+     * (implemented by given {@code wrapperHandler}). Calls to the close method are forwarded to the given
+     * {@code closeHandler}.
      *
      * @param connection   The connection to wrap
      * @param closeHandler The handler to redirect close invocations to
@@ -94,31 +87,25 @@ public abstract class ConnectionWrapperFactory {
      */
     public static Connection wrap(final Connection connection, final ConnectionCloseHandler closeHandler) {
         return (Connection) Proxy.newProxyInstance(closeHandler.getClass().getClassLoader(),
-                                                   new Class[]{Connection.class},
-                                                   new InvocationHandler() {
-                                                       @Override
-                                                       public Object invoke(Object proxy, Method method, Object[] args)
-                                                               throws Exception {
-                                                           if ("equals".equals(method.getName()) && args != null
-                                                                   && args.length == 1) {
-                                                               return proxy == args[0];
-                                                           } else if ("hashCode".equals(
-                                                                   method.getName()) && isEmpty(args)) {
-                                                               return connection.hashCode();
-                                                           } else if ("close".equals(method.getName())
-                                                                   && isEmpty(args)) {
-                                                               closeHandler.close(connection);
-                                                               return null;
-                                                           } else if ("commit".equals(method.getName())
-                                                                   && isEmpty(args)) {
-                                                               closeHandler.commit(connection);
-                                                               return null;
-                                                           } else {
-                                                               return method.invoke(connection, args);
-                                                           }
+                                                   new Class[]{Connection.class}, (proxy, method, args) -> {
+                                                       if ("equals".equals(method.getName()) && args != null
+                                                               && args.length == 1) {
+                                                           return proxy == args[0];
+                                                       } else if ("hashCode".equals(
+                                                               method.getName()) && isEmpty(args)) {
+                                                           return connection.hashCode();
+                                                       } else if ("close".equals(method.getName())
+                                                               && isEmpty(args)) {
+                                                           closeHandler.close(connection);
+                                                           return null;
+                                                       } else if ("commit".equals(method.getName())
+                                                               && isEmpty(args)) {
+                                                           closeHandler.commit(connection);
+                                                           return null;
+                                                       } else {
+                                                           return method.invoke(connection, args);
                                                        }
-                                                   }
-        );
+                                                   });
     }
 
     private static boolean isEmpty(Object[] array) {
@@ -131,7 +118,7 @@ public abstract class ConnectionWrapperFactory {
     public interface ConnectionCloseHandler {
 
         /**
-         * Close the given <code>connection</code>, which was wrapped by the ConnectionWrapperFactory.
+         * Close the given {@code connection}, which was wrapped by the ConnectionWrapperFactory.
          *
          * @param connection the wrapped connection to close
          */

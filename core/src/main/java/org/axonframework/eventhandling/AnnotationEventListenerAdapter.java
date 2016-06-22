@@ -33,7 +33,7 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
     private final Object annotatedEventListener;
 
     /**
-     * Wraps the given <code>annotatedEventListener</code>, allowing it to be subscribed to an Event Bus.
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus.
      *
      * @param annotatedEventListener the annotated event listener
      */
@@ -42,8 +42,8 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
     }
 
     /**
-     * Wraps the given <code>annotatedEventListener</code>, allowing it to be subscribed to an Event Bus. The given
-     * <code>parameterResolverFactory</code> is used to resolve parameter values for handler methods.
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given
+     * {@code parameterResolverFactory} is used to resolve parameter values for handler methods.
      *
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values

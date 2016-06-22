@@ -27,7 +27,7 @@ public class TransactionMethodExecutionException extends AxonException {
     private static final long serialVersionUID = 1952095576024390566L;
 
     /**
-     * Initialize the exception with given <code>message</code> and <code>cause</code>.
+     * Initialize the exception with given {@code message} and {@code cause}.
      *
      * @param message Message describing the cause of the exception
      * @param cause   The exception that caused this exception to occur.

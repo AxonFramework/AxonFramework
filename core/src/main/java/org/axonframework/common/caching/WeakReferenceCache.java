@@ -54,6 +54,7 @@ public class WeakReferenceCache implements Cache {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <K, V> V get(K key) {
         purgeItems();
         final Reference<Object> entry = cache.get(key);

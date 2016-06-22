@@ -31,7 +31,7 @@ import java.util.function.BiFunction;
 public interface MessageDispatchInterceptor<T extends Message<?>> {
 
     /**
-     * Invoked each time a message is about to be dispatched. The given <code>message</code> represents the message
+     * Invoked each time a message is about to be dispatched. The given {@code message} represents the message
      * being dispatched.
      *
      * @param message The message intended to be dispatched
@@ -42,7 +42,7 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
     }
 
     /**
-     * Apply this interceptor to the given list of <code>messages</code>. This method returns a function that can be
+     * Apply this interceptor to the given list of {@code messages}. This method returns a function that can be
      * invoked to obtain a modified version of messages at each position in the list. For instance, to obtain the
      * processed message at index 2, use:
      * <p/>

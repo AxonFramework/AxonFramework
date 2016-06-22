@@ -48,7 +48,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
      * {@inheritDoc}
      *
      * <p/>
-     * This implementation executes the given <code>task</code> for each of its messages. The return value is the
+     * This implementation executes the given {@code task} for each of its messages. The return value is the
      * result of the last executed task.
      */
     @Override
@@ -87,7 +87,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
 
     /**
      * Returns a Map of {@link ExecutionResult} per Message. If the Unit of Work has not been given a task
-     * to execute, the ExecutionResult is <code>null</code> for each Message.
+     * to execute, the ExecutionResult is {@code null} for each Message.
      *
      * @return a Map of ExecutionResult per Message processed by this Unit of Work
      */

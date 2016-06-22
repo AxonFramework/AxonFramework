@@ -34,37 +34,37 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
     private final ParameterResolverFactory[] factories;
 
     /**
-     * Creates a MultiParameterResolverFactory instance with the given <code>delegates</code>, which are automatically
+     * Creates a MultiParameterResolverFactory instance with the given {@code delegates}, which are automatically
      * ordered based on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes.
-     * Classes with the same Priority are kept in the order as provided in the <code>delegates</code>.
+     * Classes with the same Priority are kept in the order as provided in the {@code delegates}.
      * <p>
      * If one of the delegates is a MultiParameterResolverFactory itself, that factory's delegates are 'mixed' with
-     * the given <code>delegates</code>, based on their respective order.
+     * the given {@code delegates}, based on their respective order.
      *
      * @param delegates The delegates to include in the factory
-     * @return an instance delegating to the given <code>delegates</code>
+     * @return an instance delegating to the given {@code delegates}
      */
     public static MultiParameterResolverFactory ordered(ParameterResolverFactory... delegates) {
         return ordered(Arrays.asList(delegates));
     }
 
     /**
-     * Creates a MultiParameterResolverFactory instance with the given <code>delegates</code>, which are automatically
+     * Creates a MultiParameterResolverFactory instance with the given {@code delegates}, which are automatically
      * ordered based on the {@link org.axonframework.common.Priority @Priority} annotation on their respective classes.
-     * Classes with the same Priority are kept in the order as provided in the <code>delegates</code>.
+     * Classes with the same Priority are kept in the order as provided in the {@code delegates}.
      * <p>
      * If one of the delegates is a MultiParameterResolverFactory itself, that factory's delegates are 'mixed' with
-     * the given <code>delegates</code>, based on their respective order.
+     * the given {@code delegates}, based on their respective order.
      *
      * @param delegates The delegates to include in the factory
-     * @return an instance delegating to the given <code>delegates</code>
+     * @return an instance delegating to the given {@code delegates}
      */
     public static MultiParameterResolverFactory ordered(List<ParameterResolverFactory> delegates) {
         return new MultiParameterResolverFactory(flatten(delegates));
     }
 
     /**
-     * Initializes an instance that delegates to the given <code>delegates</code>, in the order provided. Changes in
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
      * the given array are not reflected in the created instance.
      *
      * @param delegates The factories providing the parameter values to use
@@ -74,7 +74,7 @@ public class MultiParameterResolverFactory implements ParameterResolverFactory {
     }
 
     /**
-     * Initializes an instance that delegates to the given <code>delegates</code>, in the order provided. Changes in
+     * Initializes an instance that delegates to the given {@code delegates}, in the order provided. Changes in
      * the given List are not reflected in the created instance.
      *
      * @param delegates The list of factories providing the parameter values to use

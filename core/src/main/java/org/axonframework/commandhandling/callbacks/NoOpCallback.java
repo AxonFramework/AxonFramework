@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.CommandMessage;
 
 /**
  * Callback that does absolutely nothing when invoked. For performance reasons, an instance of this callback can be
- * obtained using <code>NoOpCallback.INSTANCE</code>. A generics-compatible alternative is provided by
- * <code>NoOpCallback.&lt;C&gt;instance()</code>.
+ * obtained using {@code NoOpCallback.INSTANCE}. A generics-compatible alternative is provided by
+ * {@code NoOpCallback.&lt;C&gt;instance()}.
  *
  * @author Allard Buijze
  * @since 0.6

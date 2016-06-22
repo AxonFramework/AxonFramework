@@ -62,11 +62,11 @@ public abstract class EventUtils {
     }
 
     /**
-     * Upcasts and deserializes the given <code>eventEntryStream</code> using the given <code>serializer</code> and
-     * <code>upcasterChain</code>.
+     * Upcasts and deserializes the given {@code eventEntryStream} using the given {@code serializer} and
+     * {@code upcasterChain}.
      * <p>
      * The list of events returned contains lazy deserializing events for optimization purposes. Events represented with
-     * unknown classes are ignored if <code>skipUnknownTypes</code> is <code>true</code>
+     * unknown classes are ignored if {@code skipUnknownTypes} is {@code true}
      *
      * @param eventEntryStream the stream of entries containing the data of the serialized event
      * @param serializer       the serializer to deserialize the event with
@@ -92,11 +92,11 @@ public abstract class EventUtils {
     }
 
     /**
-     * Upcasts and deserializes the given <code>eventEntryStream</code> using the given <code>serializer</code> and
-     * <code>upcasterChain</code>.
+     * Upcasts and deserializes the given {@code eventEntryStream} using the given {@code serializer} and
+     * {@code upcasterChain}.
      * <p>
      * The list of events returned contains lazy deserializing events for optimization purposes. Events represented with
-     * unknown classes are ignored if <code>skipUnknownTypes</code> is <code>true</code>
+     * unknown classes are ignored if {@code skipUnknownTypes} is {@code true}
      *
      * @param eventEntryStream the stream of entries containing the data of the serialized event
      * @param serializer       the serializer to deserialize the event with

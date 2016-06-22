@@ -71,7 +71,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given <code>LockFactory</code>.
+     * Initialize the repository with the given {@code LockFactory}.
      *
      * @param aggregateType The type of aggregate stored in this repository
      * @param lockFactory the lock factory to use
@@ -83,7 +83,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
-     * Initialize the repository with the given <code>LockFactory</code> and <code>ParameterResolverFactory</code>.
+     * Initialize the repository with the given {@code LockFactory} and {@code ParameterResolverFactory}.
      *
      * @param aggregateType             The type of aggregate stored in this repository
      * @param lockFactory               The lock factory to use

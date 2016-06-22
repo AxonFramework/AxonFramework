@@ -47,11 +47,11 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     /**
-     * Registers given <code>correlationDataProvider</code> with the Interceptor. The provider will be registered with
+     * Registers given {@code correlationDataProvider} with the Interceptor. The provider will be registered with
      * the Unit of Work each time a Message is intercepted that is to be processed.
      *
      * @param correlationDataProvider The CorrelationDataProvider to register with the Interceptor
-     * @return a handle to cancel the registration. After cancellation the given <code>correlationDataProvider</code>
+     * @return a handle to cancel the registration. After cancellation the given {@code correlationDataProvider}
      * will no longer be registered with new Units of Work by this interceptor.
      */
     public Registration registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider) {
@@ -60,7 +60,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     /**
-     * Registers given <code>correlationDataProviders</code> with the Interceptor. The providers will be registered with
+     * Registers given {@code correlationDataProviders} with the Interceptor. The providers will be registered with
      * the Unit of Work each time a Message is intercepted that is to be processed.
      *
      * @param correlationDataProviders The CorrelationDataProviders to register with the Interceptor

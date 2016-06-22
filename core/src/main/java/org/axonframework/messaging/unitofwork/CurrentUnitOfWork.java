@@ -93,7 +93,7 @@ public abstract class CurrentUnitOfWork {
     }
 
     /**
-     * Binds the given <code>unitOfWork</code> to the current thread. If other UnitOfWork instances were bound, they
+     * Binds the given {@code unitOfWork} to the current thread. If other UnitOfWork instances were bound, they
      * will be marked as inactive until the given UnitOfWork is cleared.
      *
      * @param unitOfWork The UnitOfWork to bind to the current thread.
@@ -107,7 +107,7 @@ public abstract class CurrentUnitOfWork {
 
     /**
      * Clears the UnitOfWork currently bound to the current thread, if that UnitOfWork is the given
-     * <code>unitOfWork</code>.
+     * {@code unitOfWork}.
      *
      * @param unitOfWork The UnitOfWork expected to be bound to the current thread.
      * @throws IllegalStateException when the given UnitOfWork was not the current active UnitOfWork. This exception

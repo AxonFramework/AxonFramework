@@ -46,8 +46,8 @@ public class AssociationValueEntry {
     private String sagaType;
 
     /**
-     * Initialize a new AssociationValueEntry for a saga with given <code>sagaIdentifier</code> and
-     * <code>associationValue</code>.
+     * Initialize a new AssociationValueEntry for a saga with given {@code sagaIdentifier} and
+     * {@code associationValue}.
      *
      * @param sagaType         The type of Saga this association value belongs to
      * @param sagaIdentifier   The identifier of the saga

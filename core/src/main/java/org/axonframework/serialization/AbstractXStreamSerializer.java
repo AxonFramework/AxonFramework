@@ -79,8 +79,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
-     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
+     * {@code xStream} instance is configured with several converters for the most common types in Axon.
      * <p/>
      * An {@link AnnotationRevisionResolver} is used to resolve revision for serialized objects.
      *
@@ -92,8 +92,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
-     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
+     * {@code xStream} instance is configured with several converters for the most common types in Axon.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
@@ -104,8 +104,8 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code>, <code>xStream</code> instance,
-     * <code>revisionResolver</code> and <code>converterFactory</code>. The <code>xStream</code> instance is configured
+     * Initialize the serializer using the given {@code charset}, {@code xStream} instance,
+     * {@code revisionResolver} and {@code converterFactory}. The {@code xStream} instance is configured
      * with several converters for the most common types in Axon.
      *
      * @param charset          The character set to use
@@ -159,9 +159,6 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return converterFactory.hasConverter(byte[].class, expectedRepresentation);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public <T> SerializedObject<T> serialize(Object object, Class<T> expectedType) {
         T result = doSerialize(object, expectedType, xStream);
@@ -169,7 +166,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Serialize the given <code>object</code> to the given <code>expectedFormat</code>. The subclass may use {@link
+     * Serialize the given {@code object} to the given {@code expectedFormat}. The subclass may use {@link
      * #convert(Class, Class, Object)} to convert the result of the serialization to the expected type.
      *
      * @param object         The object to serialize
@@ -181,7 +178,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     protected abstract <T> T doSerialize(Object object, Class<T> expectedFormat, XStream xStream);
 
     /**
-     * Deserialize the given <code>serializedObject</code>.
+     * Deserialize the given {@code serializedObject}.
      *
      * @param serializedObject The instance containing the serialized format of the object
      * @param xStream          The XStream instance to deserialize with
@@ -190,10 +187,10 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     protected abstract Object doDeserialize(SerializedObject serializedObject, XStream xStream);
 
     /**
-     * Convert the given <code>source</code>, of type <code>sourceType</code> to the given <code>targetType</code>.
+     * Convert the given {@code source}, of type {@code sourceType} to the given {@code targetType}.
      *
      * @param sourceType The type of data that needs to be converted. Should be a content type identifier, not
-     *                   necessarily the result of <code>source.getClass()</code>.
+     *                   necessarily the result of {@code source.getClass()}.
      * @param targetType The target type of the conversion
      * @param source     The object to convert
      * @param <S>        The type of data that needs to be converted
@@ -208,18 +205,12 @@ public abstract class AbstractXStreamSerializer implements Serializer {
         return revisionResolver.revisionOf(type);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @SuppressWarnings("unchecked")
     @Override
     public <S, T> T deserialize(SerializedObject<S> serializedObject) {
         return (T) doDeserialize(serializedObject, xStream);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Class classForType(SerializedType type) {
         try {
@@ -305,7 +296,7 @@ public abstract class AbstractXStreamSerializer implements Serializer {
     }
 
     /**
-     * Returns the type identifier for the given <code>type</code>. It uses the aliasing rules configured in XStream.
+     * Returns the type identifier for the given {@code type}. It uses the aliasing rules configured in XStream.
      *
      * @param type The type to get the type identifier of
      * @return A String containing the type identifier of the given class

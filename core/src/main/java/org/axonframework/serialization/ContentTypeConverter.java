@@ -18,8 +18,8 @@ package org.axonframework.serialization;
 
 /**
  * Interface describing a mechanism that converts the data type of IntermediateRepresentations of SerializedObjects for
- * Upcasters. Different upcasters may require different data type (e.g. <code>byte[]</code> or
- * <code>InputStream</code>), or may produce a different data type than they consume.
+ * Upcasters. Different upcasters may require different data type (e.g. {@code byte[]} or
+ * {@code InputStream}), or may produce a different data type than they consume.
  *
  * @param <S> The expected source type
  * @param <T> The output type
@@ -43,7 +43,7 @@ public interface ContentTypeConverter<S, T> {
     Class<T> targetType();
 
     /**
-     * Converts the data format of the given <code>original</code> IntermediateRepresentation to the target data type.
+     * Converts the data format of the given {@code original} IntermediateRepresentation to the target data type.
      *
      * @param original The source to convert
      * @return the converted representation

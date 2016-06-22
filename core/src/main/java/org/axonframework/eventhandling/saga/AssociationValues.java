@@ -60,35 +60,35 @@ public interface AssociationValues extends Iterable<AssociationValue> {
     int size();
 
     /**
-     * Indicates whether this instance contains the given <code>associationValue</code>.
+     * Indicates whether this instance contains the given {@code associationValue}.
      *
      * @param associationValue the association value to verify
-     * @return <code>true</code> if the association value is available in this instance, otherwise <code>false</code>
+     * @return {@code true} if the association value is available in this instance, otherwise {@code false}
      */
     boolean contains(AssociationValue associationValue);
 
     /**
-     * Adds the given <code>associationValue</code>, if it has not been previously added.
+     * Adds the given {@code associationValue}, if it has not been previously added.
      * <p/>
-     * When added (method returns <code>true</code>), the given <code>associationValue</code> will be returned on the
+     * When added (method returns {@code true}), the given {@code associationValue} will be returned on the
      * next call to {@link #addedAssociations()}, unless it has been removed after the last call to {@link
      * #removedAssociations()}.
      *
      * @param associationValue The association value to add
-     * @return <code>true</code> if the value was added, <code>false</code> if it was already contained in this
+     * @return {@code true} if the value was added, {@code false} if it was already contained in this
      *         instance
      */
     boolean add(AssociationValue associationValue);
 
     /**
-     * Removes the given <code>associationValue</code>, if it is contained by this instance.
+     * Removes the given {@code associationValue}, if it is contained by this instance.
      * <p/>
-     * When removed (method returns <code>true</code>), the given <code>associationValue</code> will be returned on the
+     * When removed (method returns {@code true}), the given {@code associationValue} will be returned on the
      * next call to {@link #removedAssociations()}, unless it has been added after the last call to {@link
      * #addedAssociations()}.
      *
      * @param associationValue The association value to remove
-     * @return <code>true</code> if the value was removed, <code>false</code> if it was not contained in this instance
+     * @return {@code true} if the value was removed, {@code false} if it was not contained in this instance
      */
     boolean remove(AssociationValue associationValue);
 

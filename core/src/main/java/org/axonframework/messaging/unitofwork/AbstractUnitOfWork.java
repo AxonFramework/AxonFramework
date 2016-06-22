@@ -175,7 +175,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     }
 
     /**
-     * Overwrite the current phase with the given <code>phase</code>.
+     * Overwrite the current phase with the given {@code phase}.
      *
      * @param phase the new phase of the Unit of Work
      */
@@ -184,7 +184,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     }
 
     /**
-     * Ask the unit of work to transition to the given <code>phases</code> sequentially. In each of the phases the
+     * Ask the unit of work to transition to the given {@code phases} sequentially. In each of the phases the
      * unit of work is responsible for invoking the handlers attached to each phase.
      * <p/>
      * By default this sets the Phase and invokes the handlers attached to the phase.
@@ -199,15 +199,15 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     }
 
     /**
-     * Notify the handlers attached to the given <code>phase</code>.
+     * Notify the handlers attached to the given {@code phase}.
      *
      * @param phase The phase for which to invoke registered handlers.
      */
     protected abstract void notifyHandlers(Phase phase);
 
     /**
-     * Register the given <code>handler</code> with the Unit of Work. The handler will be invoked when the
-     * Unit of Work changes its phase to the given <code>phase</code>.
+     * Register the given {@code handler} with the Unit of Work. The handler will be invoked when the
+     * Unit of Work changes its phase to the given {@code phase}.
      *
      * @param phase     the Phase of the Unit of Work at which to invoke the handler
      * @param handler   the handler to add

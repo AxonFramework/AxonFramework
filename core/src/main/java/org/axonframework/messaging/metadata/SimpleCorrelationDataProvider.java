@@ -35,7 +35,7 @@ public class SimpleCorrelationDataProvider implements CorrelationDataProvider {
     private final String[] headerNames;
 
     /**
-     * Initializes the CorrelationDataProvider to return the meta data of messages with given <code>metaDataKeys</code>
+     * Initializes the CorrelationDataProvider to return the meta data of messages with given {@code metaDataKeys}
      * as correlation data.
      *
      * @param metaDataKeys The keys of the meta data entries from messages to return as correlation data

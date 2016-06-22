@@ -29,7 +29,7 @@ public class EventStoreException extends AxonNonTransientException {
     private static final long serialVersionUID = -4514732518167514479L;
 
     /**
-     * Initialize the exception with the given <code>message</code>.
+     * Initialize the exception with the given {@code message}.
      *
      * @param message a detailed message of the cause of the exception
      */
@@ -38,7 +38,7 @@ public class EventStoreException extends AxonNonTransientException {
     }
 
     /**
-     * Initialize the exception with the given <code>message</code> and <code>cause</code>
+     * Initialize the exception with the given {@code message} and {@code cause}
      *
      * @param message a detailed message of the cause of the exception
      * @param cause   the original cause of this exception

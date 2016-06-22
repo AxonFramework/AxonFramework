@@ -37,8 +37,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     private final SagaModel<T> sagaMetaModel;
 
     /**
-     * Initialize the AnnotatedSagaManager using given <code>repository</code> to load sagas and supporting given
-     * annotated <code>sagaClasses</code>.
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and supporting given
+     * annotated {@code sagaClasses}.
      *
      * @param sagaRepository The repository providing access to the Saga instances
      */
@@ -47,8 +47,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     }
 
     /**
-     * Initialize the AnnotatedSagaManager using given <code>repository</code> to load sagas and supporting given
-     * annotated <code>sagaClasses</code>.
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and supporting given
+     * annotated {@code sagaClasses}.
      *
      * @param sagaRepository The repository providing access to the Saga instances
      */

@@ -41,10 +41,10 @@ public enum EventMessageType {
     private final Class<? extends EventMessage> messageClass;
 
     /**
-     * Returns the most specific EventMessageType for the given <code>message</code>.
+     * Returns the most specific EventMessageType for the given {@code message}.
      *
      * @param message The message to resolve the type for
-     * @return The EventMessageType for the given <code>message</code>
+     * @return The EventMessageType for the given {@code message}
      */
     public static EventMessageType forMessage(EventMessage message) {
         for (EventMessageType type : EventMessageType.values()) {
@@ -56,10 +56,10 @@ public enum EventMessageType {
     }
 
     /**
-     * Returns the EventMessageType identified by the given <code>typeByte</code>.
+     * Returns the EventMessageType identified by the given {@code typeByte}.
      *
      * @param typeByte The byte representing the EventMessageType
-     * @return the EventMessageType represented by the typeByte, or <code>null</code> if unknown
+     * @return the EventMessageType represented by the typeByte, or {@code null} if unknown
      */
     public static EventMessageType fromTypeByte(byte typeByte) {
         for (EventMessageType type : EventMessageType.values()) {
@@ -70,7 +70,7 @@ public enum EventMessageType {
         return null;
     }
 
-    private EventMessageType(byte typeByte, Class<? extends EventMessage> messageClass) {
+    EventMessageType(byte typeByte, Class<? extends EventMessage> messageClass) {
         this.typeByte = typeByte;
         this.messageClass = messageClass;
     }

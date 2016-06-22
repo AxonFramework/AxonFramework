@@ -39,9 +39,9 @@ public interface CommandMessage<T> extends Message<T> {
     String getCommandName();
 
     /**
-     * Returns a copy of this CommandMessage with the given <code>metaData</code>. The payload remains unchanged.
+     * Returns a copy of this CommandMessage with the given {@code metaData}. The payload remains unchanged.
      * <p/>
-     * While the implementation returned may be different than the implementation of <code>this</code>, implementations
+     * While the implementation returned may be different than the implementation of {@code this}, implementations
      * must take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent
      * errors further downstream.
      *
@@ -52,7 +52,7 @@ public interface CommandMessage<T> extends Message<T> {
     CommandMessage<T> withMetaData(Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this CommandMessage with it MetaData merged with the given <code>metaData</code>. The payload
+     * Returns a copy of this CommandMessage with it MetaData merged with the given {@code metaData}. The payload
      * remains unchanged.
      *
      * @param metaData The MetaData to merge with

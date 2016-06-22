@@ -74,8 +74,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given
      * {@code aggregateModel} that will publish events to the given {@code eventBus}.
      *
-     * @param aggregateRoot The aggregate root instance
-     * @param model         The model describing the aggregate structure
+     * @param inspector     The AggregateModel that describes the aggregate
      * @param eventBus      The Event Bus to publish generated events on
      */
     protected AnnotatedAggregate(AggregateModel<T> inspector, EventBus eventBus) {

@@ -29,8 +29,8 @@ import java.util.concurrent.Callable;
 import static java.lang.String.format;
 
 /**
- * Generic repository implementation that stores JPA annotated aggregates. These aggregates must implement {@link
- * org.axonframework.domain.AggregateRoot} and have the proper JPA Annotations.
+ * Generic repository implementation that stores JPA annotated aggregates. These aggregates must have the proper JPA
+ * Annotations.
  * <p/>
  * Optionally, the repository may be configured with a locking scheme. The repository will always force optimistic
  * locking in the backing data store. The optional lock in the repository is in addition to this optimistic lock. Note
@@ -50,26 +50,27 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     private boolean forceFlushOnSave = true;
 
     /**
-     * Initialize a repository for storing aggregates of the given <code>aggregateType</code>. No additional locking
+     * Initialize a repository for storing aggregates of the given {@code aggregateType}. No additional locking
      * will be used.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      * @param aggregateType         the aggregate type this repository manages
      */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus) {
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
+                                EventBus eventBus) {
         this(entityManagerProvider, aggregateType, eventBus, new NullLockFactory());
     }
 
     /**
-     * Initialize a repository  for storing aggregates of the given <code>aggregateType</code> with an additional
-     * <code> LockFactory</code>.
+     * Initialize a repository  for storing aggregates of the given {@code aggregateType} with an additional {@code
+     * LockFactory}.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      * @param aggregateType         the aggregate type this repository manages
      * @param lockFactory           the additional locking strategy for this repository
      */
-    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
-                                EventBus eventBus, LockFactory lockFactory) {
+    public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
+                                LockFactory lockFactory) {
         super(aggregateType, lockFactory);
         Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
@@ -80,17 +81,13 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     protected AnnotatedAggregate<T> doLoadWithLock(String aggregateIdentifier, Long expectedVersion) {
         T aggregateRoot = entityManagerProvider.getEntityManager().find(getAggregateType(), aggregateIdentifier);
         if (aggregateRoot == null) {
-            throw new AggregateNotFoundException(aggregateIdentifier, format(
-                    "Aggregate [%s] with identifier [%s] not found",
-                    getAggregateType().getSimpleName(),
-                    aggregateIdentifier));
+            throw new AggregateNotFoundException(aggregateIdentifier,
+                                                 format("Aggregate [%s] with identifier [%s] not found",
+                                                        getAggregateType().getSimpleName(), aggregateIdentifier));
         }
-        AnnotatedAggregate<T> aggregate = new AnnotatedAggregate<T>(aggregateRoot, aggregateModel(), eventBus);
-        if (expectedVersion != null && aggregate.version() != null
-                && !expectedVersion.equals(aggregate.version())) {
-            throw new ConflictingAggregateVersionException(aggregateIdentifier,
-                    expectedVersion,
-                    aggregate.version());
+        AnnotatedAggregate<T> aggregate = new AnnotatedAggregate<>(aggregateRoot, aggregateModel(), eventBus);
+        if (expectedVersion != null && aggregate.version() != null && !expectedVersion.equals(aggregate.version())) {
+            throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion, aggregate.version());
         }
         return aggregate;
     }
@@ -120,13 +117,13 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
 
     /**
      * Indicates whether the EntityManager's state should be flushed each time an aggregate is saved. Defaults to
-     * <code>true</code>.
+     * {@code true}.
      * <p/>
      * Flushing the EntityManager will force JPA to send state changes to the database. Any key violations and failing
      * optimistic locks will be identified in an early stage.
      *
      * @param forceFlushOnSave whether or not to flush the EntityManager after each save. Defaults to
-     *                         <code>true</code>.
+     *                         {@code true}.
      * @see javax.persistence.EntityManager#flush()
      */
     public void setForceFlushOnSave(boolean forceFlushOnSave) {

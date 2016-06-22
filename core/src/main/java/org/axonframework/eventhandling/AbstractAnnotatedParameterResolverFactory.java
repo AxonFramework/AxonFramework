@@ -42,7 +42,7 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A extends Annota
 
     /**
      * Initialize a ParameterResolverFactory instance that resolves parameters of type
-     * <code>declaredParameterType</code> annotated with the given <code>annotationType</code>.
+     * {@code declaredParameterType} annotated with the given {@code annotationType}.
      *
      * @param annotationType        the type of annotation that a prospective parameter should declare
      * @param declaredParameterType the type that the parameter value should be assignable to

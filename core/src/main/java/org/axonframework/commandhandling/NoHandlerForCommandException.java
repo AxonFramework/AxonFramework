@@ -29,7 +29,7 @@ public class NoHandlerForCommandException extends AxonNonTransientException {
     private static final long serialVersionUID = -7242262641697288852L;
 
     /**
-     * Initialize a NoHandlerForCommandException with the given <code>message</code>.
+     * Initialize a NoHandlerForCommandException with the given {@code message}.
      *
      * @param message The message describing the cause of the exception
      */

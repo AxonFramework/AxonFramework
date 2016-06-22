@@ -26,7 +26,7 @@ package org.axonframework.eventsourcing;
 public interface Snapshotter {
 
     /**
-     * Schedules snapshot taking for an aggregate with given <code>aggregateIdentifier</code>. The implementation may
+     * Schedules snapshot taking for an aggregate with given {@code aggregateIdentifier}. The implementation may
      * choose to process this call synchronously (i.e. in the caller's thread), asynchronously, or ignore the call
      * altogether.
      *

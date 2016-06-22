@@ -27,11 +27,11 @@ package org.axonframework.common.property;
 public interface Property<T> {
 
     /**
-     * Returns the value of the property on given <code>target</code>.
+     * Returns the value of the property on given {@code target}.
      *
      * @param target The instance to get the property value from
      * @param <V>    The type of value expected
-     * @return the property value on <code>target</code>
+     * @return the property value on {@code target}
      */
     <V> V getValue(T target);
 }
