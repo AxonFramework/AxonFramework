@@ -281,7 +281,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            return lastNode != null ? peekGlobalStream(timeout, timeUnit) :
+            return tailingConsumers.contains(this) ? peekGlobalStream(timeout, timeUnit) :
                     peekPrivateStream(timeout, timeUnit);
         }
 
