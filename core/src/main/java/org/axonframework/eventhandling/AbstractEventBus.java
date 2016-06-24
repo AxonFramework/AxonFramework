@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 
@@ -149,9 +149,9 @@ public abstract class AbstractEventBus implements EventBus {
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
         for (MessageDispatchInterceptor<EventMessage<?>> preprocessor : dispatchInterceptors) {
-            Function<Integer, EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
+            BiFunction<Integer, EventMessage<?>, EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
             for (int i = 0; i < preprocessedEvents.size(); i++) {
-                preprocessedEvents.set(i, function.apply(i));
+                preprocessedEvents.set(i, function.apply(i, preprocessedEvents.get(i)));
             }
         }
         return preprocessedEvents;

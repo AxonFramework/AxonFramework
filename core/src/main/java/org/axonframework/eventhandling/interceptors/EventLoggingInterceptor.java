@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -65,7 +65,7 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
     }
 
     @Override
-    public Function<Integer, EventMessage<?>> handle(List<EventMessage<?>> messages) {
+    public BiFunction<Integer, EventMessage<?>, EventMessage<?>> handle(List<EventMessage<?>> messages) {
         StringBuilder sb = new StringBuilder(String.format("Events published: [%s]",
                 messages.stream().map(m -> m.getPayloadType().getSimpleName()).collect(Collectors.joining(", "))));
         if (CurrentUnitOfWork.isStarted()) {
@@ -86,6 +86,6 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
             }
         }
         logger.info(sb.toString());
-        return messages::get;
+        return (i, m) -> m;
     }
 }

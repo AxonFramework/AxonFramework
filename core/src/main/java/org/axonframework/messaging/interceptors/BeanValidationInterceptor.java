@@ -28,7 +28,7 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * Interceptor that applies JSR303 bean validation on incoming messages. When validation on a message fails, a
@@ -69,9 +69,8 @@ public class BeanValidationInterceptor<T extends Message<?>> implements MessageH
     }
 
     @Override
-    public Function<Integer, T> handle(List<T> messages) {
-        return index -> {
-            T message = messages.get(index);
+    public BiFunction<Integer, T, T> handle(List<T> messages) {
+        return (index, message) -> {
             Validator validator = validatorFactory.getValidator();
             Set<ConstraintViolation<Object>> violations = validateMessage(message.getPayload(), validator);
             if (violations != null && !violations.isEmpty()) {
