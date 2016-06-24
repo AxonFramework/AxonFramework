@@ -56,7 +56,6 @@ public class TrackingEventProcessorTest {
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
 
-        eventBus.initialize();
         testSubject.start();
     }
 

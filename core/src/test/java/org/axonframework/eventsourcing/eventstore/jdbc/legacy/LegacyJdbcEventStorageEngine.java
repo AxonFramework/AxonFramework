@@ -36,13 +36,13 @@ import java.time.temporal.TemporalAccessor;
  */
 public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
 
-    private static final long DEFAULT_GAP_DETECTION_INTERVAL = 10000L;
+    private static final long DEFAULT_GAP_DETECTION_INTERVAL_MILLIS = 10000L;
 
     private final long gapDetectionInterval;
 
     public LegacyJdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
         super(connectionProvider, transactionManager);
-        this.gapDetectionInterval = DEFAULT_GAP_DETECTION_INTERVAL;
+        this.gapDetectionInterval = DEFAULT_GAP_DETECTION_INTERVAL_MILLIS;
     }
 
     public LegacyJdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager,
@@ -58,7 +58,7 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
         }
         Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
         LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp().minusMillis(gapDetectionInterval),
+        return new LegacyTrackingToken(legacyToken.getTimestamp(),
                                        legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
     }
 

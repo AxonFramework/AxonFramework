@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,9 +51,9 @@ public class SimpleCommandBus implements CommandBus {
 
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> subscriptions =
             new ConcurrentHashMap<>();
-    private volatile Iterable<MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors
+    private volatile Iterable<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors
             = Collections.emptyList();
-    private volatile Iterable<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors
+    private volatile Iterable<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
             = Collections.emptyList();
     private UnitOfWorkFactory<?> unitOfWorkFactory = new DefaultUnitOfWorkFactory();
     private RollbackConfiguration rollbackConfiguration = RollbackConfigurationType.UNCHECKED_EXCEPTIONS;
@@ -89,7 +90,7 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings("unchecked")
     protected <C> CommandMessage<C> intercept(CommandMessage<C> command) {
         CommandMessage<C> commandToDispatch = command;
-        for (MessageDispatchInterceptor<CommandMessage<?>> interceptor : dispatchInterceptors) {
+        for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
             commandToDispatch = (CommandMessage<C>) interceptor.handle(commandToDispatch);
         }
         return commandToDispatch;
@@ -153,7 +154,7 @@ public class SimpleCommandBus implements CommandBus {
      *
      * @param handlerInterceptors The interceptors to invoke when commands are handled
      */
-    public void setHandlerInterceptors(List<? extends MessageHandlerInterceptor<CommandMessage<?>>> handlerInterceptors) {
+    public void setHandlerInterceptors(List<? extends MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors) {
         this.handlerInterceptors = new ArrayList<>(handlerInterceptors);
     }
 
@@ -164,7 +165,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param dispatchInterceptors The interceptors to invoke when commands are dispatched
      */
     public void setDispatchInterceptors(
-            List<? extends MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
+            List<? extends MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
         this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
     }
 

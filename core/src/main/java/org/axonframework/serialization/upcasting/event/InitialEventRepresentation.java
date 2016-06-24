@@ -96,7 +96,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
 
     @Override
     public Optional<String> getAggregateType() {
-        return Optional.of(aggregateType);
+        return Optional.ofNullable(aggregateType);
     }
 
     @Override

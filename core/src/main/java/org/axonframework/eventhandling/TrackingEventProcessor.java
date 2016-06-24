@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
@@ -80,47 +81,46 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
                     tokenStore.storeToken(getName(), 0, lastToken);
                 }
             });
-            unitOfWork.afterCommit(uow -> {
-                EventMessage<?> event = uow.getMessage();
-                if (event instanceof TrackedEventMessage<?> &&
-                        ((TrackedEventMessage) event).trackingToken().equals(lastToken)) {
-                    supplyNextBatch();
-                }
-            });
             return interceptorChain.proceed();
         });
-        supplyNextBatch();
+        executorService.submit(() -> {
+            try {
+                this.doProcess();
+            } catch (Throwable e ){
+                e.printStackTrace(System.err);
+            }
+        });
     }
 
     public void shutDown() {
         executorService.shutdown();
     }
 
-    private void supplyNextBatch() {
-        if (!executorService.isShutdown()) {
-            executorService.submit(this::doSupplyNextBatch);
-        }
-    }
-
-    protected void doSupplyNextBatch() {
-        if (eventStream == null) {
-            TrackingToken startToken = tokenStore.fetchToken(getName(), 0);
-            eventStream = eventBus.streamEvents(startToken);
-        }
-        List<TrackedEventMessage<?>> batch = new ArrayList<>();
-        try {
-            while (!executorService.isShutdown() &&
-                    (batch.isEmpty() || (batch.size() < batchSize && eventStream.hasNextAvailable()))) {
-                batch.add(eventStream.nextAvailable());
+    protected void doProcess() {
+        while (!executorService.isShutdown()) {
+            if (eventStream == null) {
+                TrackingToken startToken = tokenStore.fetchToken(getName(), 0);
+                eventStream = eventBus.streamEvents(startToken);
             }
-        } catch (InterruptedException e) {
-            logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
-            Thread.currentThread().interrupt();
-            return;
-        }
-        if (!batch.isEmpty()) {
-            lastToken = batch.get(batch.size() - 1).trackingToken();
-            doProcess(batch);
+            List<TrackedEventMessage<?>> batch = new ArrayList<>();
+            try {
+                if (batch.isEmpty()) {
+                    if(eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {
+                        batch.add(eventStream.nextAvailable());
+                    }
+                }
+                while (batch.size() < batchSize && eventStream.hasNextAvailable()) {
+                    batch.add(eventStream.nextAvailable());
+                }
+            } catch (InterruptedException e) {
+                logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
+                Thread.currentThread().interrupt();
+                return;
+            }
+            if (!batch.isEmpty()) {
+                lastToken = batch.get(batch.size() - 1).trackingToken();
+                doProcessBatch(batch);
+            }
         }
     }
 }

@@ -76,7 +76,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         return getName();
     }
 
-    protected void doProcess(List<? extends EventMessage<?>> eventMessages) {
+    protected void doProcessBatch(List<? extends EventMessage<?>> eventMessages) {
         Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
@@ -85,7 +85,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
                     () -> {
                         unitOfWork.onRollback(uow -> errorHandler
                                 .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
-                                             () -> doProcess(eventMessages)));
+                                             () -> doProcessBatch(eventMessages)));
                         unitOfWork.onCleanup(uow -> {
                             MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
                             if (uow.isRolledBack()) {

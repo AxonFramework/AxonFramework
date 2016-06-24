@@ -22,6 +22,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents MetaData that is passed along with a payload in a Message. Typically, the MetaData contains information
@@ -105,6 +109,20 @@ public class MetaData implements Map<String, Object>, Serializable {
         HashMap<String, Object> newValues = new HashMap<>(values);
         newValues.put(key, value);
         return new MetaData(newValues);
+    }
+
+    /**
+     * Returns a MetaData instances containing the current entries, <b>and</b> the given <code>key</code> if it was
+     * not yet present in this MetaData.
+     * If <code>key</code> already existed, the current value will be used.
+     * Otherwise the Supplier function will provide the <code>value</code> for <code>key</code>
+     *
+     * @param key   The key for the entry
+     * @param value A Supplier function which provides the value
+     * @return a MetaData instance with an additional entry
+     */
+    public MetaData andIfNotPresent(String key, Supplier<Object> value) {
+        return containsKey(key) ? this : this.and(key, value.get());
     }
 
     @Override
@@ -244,6 +262,17 @@ public class MetaData implements Map<String, Object>, Serializable {
             modified.remove(key);
         }
         return new MetaData(modified);
+    }
+
+    /**
+     * Returns a MetaData instance containing a subset of the <code>keys</code> in this instance.
+     * Keys for which there is no assigned value are ignored.<
+     *
+     * @param keys The keys of the entries to remove
+     * @return a MetaData instance containing the given <code>keys</code> if these were already present
+     */
+    public MetaData subset(String... keys) {
+        return MetaData.from(Stream.of(keys).filter(this::containsKey).collect(Collectors.toMap(Function.identity(), this::get)));
     }
 
     /**

@@ -117,7 +117,7 @@ public abstract class EventUtils {
                                                                                                      serializer),
                                                                              ir.getMetaData());
             if (ir.getAggregateIdentifier().isPresent()) {
-                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().get(),
+                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().orElse(null),
                                                               ir.getAggregateIdentifier().get(),
                                                               ir.getSequenceNumber().get(), serializedMessage,
                                                               ir.getTimestamp());

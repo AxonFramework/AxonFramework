@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.model;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -54,6 +55,20 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         Assert.notNull(aggregateType, "aggregateType may not be null");
         this.aggregateType = aggregateType;
         this.aggregateModel = ModelInspector.inspectAggregate(aggregateType);
+    }
+
+    /**
+     * Initializes a repository that stores aggregate of the given <code>aggregateType</code>. All aggregates in this
+     * repository must be <code>instanceOf</code> this aggregate type.
+     *
+     * @param aggregateType The type of aggregate stored in this repository
+     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     */
+    protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
+        Assert.notNull(aggregateType, "aggregateType may not be null");
+        Assert.notNull(parameterResolverFactory, "parameterResolverFactory may not be null");
+        this.aggregateType = aggregateType;
+        this.aggregateModel = ModelInspector.inspectAggregate(aggregateType, parameterResolverFactory);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
@@ -60,6 +61,16 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     }
 
     /**
+     * Initialize a repository with a pessimistic locking strategy and a parameter resolver factory.
+     *
+     * @param aggregateType The type of aggregate stored in this repository
+     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     */
+    protected LockingRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
+        this(aggregateType, new PessimisticLockFactory(), parameterResolverFactory);
+    }
+
+    /**
      * Initialize the repository with the given <code>LockFactory</code>.
      *
      * @param aggregateType The type of aggregate stored in this repository
@@ -67,6 +78,19 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      */
     protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory) {
         super(aggregateType);
+        Assert.notNull(lockFactory, "LockFactory may not be null");
+        this.lockFactory = lockFactory;
+    }
+
+    /**
+     * Initialize the repository with the given <code>LockFactory</code> and <code>ParameterResolverFactory</code>.
+     *
+     * @param aggregateType             The type of aggregate stored in this repository
+     * @param lockFactory               The lock factory to use
+     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     */
+    protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory) {
+        super(aggregateType, parameterResolverFactory);
         Assert.notNull(lockFactory, "LockFactory may not be null");
         this.lockFactory = lockFactory;
     }

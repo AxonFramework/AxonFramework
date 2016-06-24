@@ -18,7 +18,7 @@ package org.axonframework.messaging;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * Interceptor that allows messages to be intercepted and modified before they are dispatched. This interceptor
@@ -38,7 +38,7 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
      * @return the message to dispatch
      */
     default T handle(T message) {
-        return handle(Collections.singletonList(message)).apply(0);
+        return handle(Collections.singletonList(message)).apply(0, message);
     }
 
     /**
@@ -51,6 +51,6 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
      * @param messages  The Messages to pre-process
      * @return a function that processes messages based on their position in the list
      */
-    Function<Integer, T> handle(List<T> messages);
+    BiFunction<Integer, T, T> handle(List<T> messages);
 
 }
