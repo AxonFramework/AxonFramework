@@ -30,7 +30,7 @@ import java.util.Iterator;
 public class DefaultInterceptorChain<T extends Message<?>> implements InterceptorChain {
 
     private final MessageHandler<? super T> handler;
-    private final Iterator<? extends MessageHandlerInterceptor<T>> chain;
+    private final Iterator<? extends MessageHandlerInterceptor<? super T>> chain;
     private final UnitOfWork<? extends T> unitOfWork;
 
     /**
@@ -42,7 +42,7 @@ public class DefaultInterceptorChain<T extends Message<?>> implements Intercepto
      * @param handler       The handler for the message
      */
     public DefaultInterceptorChain(UnitOfWork<? extends T> unitOfWork,
-                                   Iterable<? extends MessageHandlerInterceptor<T>> interceptors,
+                                   Iterable<? extends MessageHandlerInterceptor<? super T>> interceptors,
                                    MessageHandler<? super T> handler) {
         this.handler = handler;
         this.chain = interceptors.iterator();
