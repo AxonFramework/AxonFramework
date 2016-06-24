@@ -135,6 +135,22 @@ public class MetaDataTest {
         assertEquals("secondVal", result.get("secondKey"));
     }
 
+    @Test
+    public void testBuildMetaDataThroughAndIfNotPresentAddsNewValue() throws Exception {
+        MetaData result = MetaData.with("firstKey", "firstVal").andIfNotPresent("secondKey", () -> "secondVal");
+
+        assertEquals("firstVal", result.get("firstKey"));
+        assertEquals("secondVal", result.get("secondKey"));
+    }
+
+    @Test
+    public void testBuildMetaDataThroughAndIfNotPresentDoesntAddNewValue() throws Exception {
+        MetaData result = MetaData.with("firstKey", "firstVal").andIfNotPresent("firstKey", () -> "firstVal");
+
+        assertEquals("firstVal", result.get("firstKey"));
+        assertEquals(1, result.size());
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void testMetaDataModification_Clear() {
         new MetaData(Collections.<String, Object>emptyMap()).clear();
@@ -169,5 +185,19 @@ public class MetaDataTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testMetaDataModification_EntrySet_Remove() {
         new MetaData(Collections.<String, Object>emptyMap()).entrySet().remove("Hello");
+    }
+
+    @Test
+    public void testMetaDataSubsetReturnsSubsetOfMetaDataInstance() throws Exception {
+        MetaData testMetaData = MetaData.with("firstKey", "firstValue")
+                .and("secondKey", "secondValue")
+                .and("thirdKey", "thirdValue")
+                .and("fourthKey", "fourthValue");
+
+        MetaData result = testMetaData.subset("secondKey", "fourthKey", "fifthKey");
+
+        assertEquals("secondValue", result.get("secondKey"));
+        assertEquals("fourthValue", result.get("fourthKey"));
+        assertNull(result.get("fifthKey"));
     }
 }
