@@ -53,18 +53,6 @@ public abstract class CollectionUtils {
         return null;
     }
 
-    /**
-     * Returns the first non-null value in the given {@code values}
-     *
-     * @param value1 The first value to inspect
-     * @param value2 The second value to inspect
-     * @param <T>    The type of values
-     * @return The first non-null value, or {@code null} if all values are {@code null}.
-     */
-    public static <T> T firstNonNull(T value1, T value2) {
-        return value1 == null ? value2 : value1;
-    }
-
     public static <S, T extends Collection<S>> T merge(T collection1, T collection2, Supplier<T> factoryMethod) {
         if (collection1 == null || collection1.isEmpty()) {
             return collection2;

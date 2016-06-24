@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -43,7 +43,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private volatile boolean suppressExceptions = true;
-    private final Callable<T> sagaFactory;
+    private final Supplier<T> sagaFactory;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
@@ -52,7 +52,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      * @param sagaRepository        The repository providing the saga instances.
      * @param sagaFactory           The factory responsible for creating new Saga instances
      */
-    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory) {
+    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
         Assert.notNull(sagaRepository, "sagaRepository may not be null");

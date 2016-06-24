@@ -52,7 +52,8 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     }
 
     public void start() {
-        eventBusRegistration = eventBus.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this));
+        eventBusRegistration = eventBus.subscribe(eventMessages -> processingStrategy.handle(eventMessages,
+                                                                                             this::doProcess));
     }
 
     public void shutDown() {

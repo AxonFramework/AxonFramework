@@ -120,7 +120,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         }
         if (!batch.isEmpty()) {
             lastToken = batch.get(batch.size() - 1).trackingToken();
-            accept(batch);
+            doProcess(batch);
         }
     }
 }

@@ -30,7 +30,7 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * Abstract implementation for saga repositories. This (partial) implementation will take care of the uniqueness of
@@ -87,10 +87,10 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
     }
 
     @Override
-    public AnnotatedSaga<T> newInstance(Callable<T> sagaFactory) {
+    public AnnotatedSaga<T> newInstance(Supplier<T> sagaFactory) {
         try {
             UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-            T sagaRoot = sagaFactory.call();
+            T sagaRoot = sagaFactory.get();
             injector.injectResources(sagaRoot);
             AnnotatedSaga<T> saga = new AnnotatedSaga<>(IdentifierFactory.getInstance().generateIdentifier(),
                                                         Collections.emptySet(), sagaRoot, null, sagaModel);

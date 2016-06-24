@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.saga;
 
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * Interface towards the storage mechanism of Saga instances. Saga Repositories can find sagas either through the
@@ -51,6 +51,6 @@ public interface SagaRepository<T> {
      */
     Saga<T> load(String sagaIdentifier);
 
-    Saga<T> newInstance(Callable<T> factoryMethod);
+    Saga<T> newInstance(Supplier<T> factoryMethod);
 
 }

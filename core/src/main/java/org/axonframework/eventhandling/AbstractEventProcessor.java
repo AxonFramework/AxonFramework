@@ -23,21 +23,24 @@ import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * @author Rene de Waele
  */
-public abstract class AbstractEventProcessor implements EventProcessor, Consumer<List<? extends EventMessage<?>>> {
+public abstract class AbstractEventProcessor implements EventProcessor {
+
     private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
     private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
@@ -51,8 +54,10 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
         this.name = requireNonNull(name);
         this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
         this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
-        this.errorHandler = requireNonNull(errorHandler);
-        this.messageMonitor = messageMonitor;
+        this.errorHandler = getOrDefault(errorHandler, ()-> NoOpErrorHandler.INSTANCE);
+        this.messageMonitor = getOrDefault(messageMonitor,
+                                           (Supplier<MessageMonitor<? super EventMessage<?>>>)
+                                                   NoOpMessageMonitor::instance);
     }
 
     @Override
@@ -71,9 +76,7 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
         return getName();
     }
 
-    @Override
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void accept(List<? extends EventMessage<?>> eventMessages) {
+    protected void doProcess(List<? extends EventMessage<?>> eventMessages) {
         Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
@@ -82,7 +85,7 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
                     () -> {
                         unitOfWork.onRollback(uow -> errorHandler
                                 .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
-                                             () -> accept(eventMessages)));
+                                             () -> doProcess(eventMessages)));
                         unitOfWork.onCleanup(uow -> {
                             MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
                             if (uow.isRolledBack()) {

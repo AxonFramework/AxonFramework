@@ -14,28 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.monitoring;
+package org.axonframework.eventhandling.saga;
 
-/**
- * A NoOp MessageMonitor callback
- *
- * @author Marijn van Zelst
- * @since 3.0
- */
-public enum NoOpMessageMonitorCallback implements MessageMonitor.MonitorCallback {
+import org.axonframework.common.AxonNonTransientException;
 
-    INSTANCE;
-
-    @Override
-    public void reportSuccess() {
-    }
-
-    @Override
-    public void reportFailure(Throwable cause) {
-    }
-
-    @Override
-    public void reportIgnored() {
-
+public class SagaInstantiationException extends AxonNonTransientException {
+    public SagaInstantiationException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
