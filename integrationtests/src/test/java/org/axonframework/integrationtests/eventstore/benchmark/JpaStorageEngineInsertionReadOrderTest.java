@@ -105,7 +105,6 @@ public class JpaStorageEngineInsertionReadOrderTest {
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject);
-        embeddedEventStore.initialize();
         TrackingEventStream readEvents = embeddedEventStore.streamEvents(null);
         int counter = 0;
         while (counter < expectedEventCount) {
@@ -127,17 +126,14 @@ public class JpaStorageEngineInsertionReadOrderTest {
                 rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject, null, 5, 1000, 10, TimeUnit.MILLISECONDS);
-        embeddedEventStore.initialize();
+        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject, null, 20, 1000, 100, TimeUnit.MILLISECONDS);
         TrackingEventStream readEvents = embeddedEventStore.streamEvents(null);
         int counter = 0;
         while (counter < expectedEventCount) {
-            while (readEvents.hasNextAvailable()) {
-                readEvents.nextAvailable();
-                counter++;
-                if (counter % 50 == 0) {
-                    Thread.sleep(200);
-                }
+            readEvents.nextAvailable();
+            counter++;
+            if (counter % 50 == 0) {
+                Thread.sleep(200);
             }
         }
         for (Thread thread : writerThreads) {

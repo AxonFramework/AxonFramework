@@ -25,10 +25,10 @@ import org.axonframework.metrics.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,6 +52,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private final ScheduledExecutorService cleanupService;
 
     private volatile Node oldest;
+    private final AtomicBoolean producerStarted = new AtomicBoolean();
 
     public EmbeddedEventStore(EventStorageEngine storageEngine) {
         this(storageEngine, NoOpMessageMonitor.INSTANCE);
@@ -70,25 +71,26 @@ public class EmbeddedEventStore extends AbstractEventStore {
         cleanupDelayMillis = timeUnit.toMillis(cleanupDelay);
     }
 
-    @PostConstruct
-    public void initialize() {
-        threadFactory.newThread(() -> {
-            try {
-                producer.run();
-            } catch (InterruptedException e) {
-                logger.warn("Producer thread was interrupted. Shutting down event store.", e);
-                Thread.currentThread().interrupt();
-            }
-        }).start();
-        cleanupService
-                .scheduleWithFixedDelay(new Cleaner(), cleanupDelayMillis, cleanupDelayMillis, TimeUnit.MILLISECONDS);
-    }
-
     @PreDestroy
     public void shutDown() {
         tailingConsumers.forEach(IOUtils::closeQuietly);
         IOUtils.closeQuietly(producer);
         cleanupService.shutdownNow();
+    }
+
+    private void ensureProducerStarted() {
+        if (producerStarted.compareAndSet(false, true)) {
+            threadFactory.newThread(() -> {
+                try {
+                    producer.run();
+                } catch (InterruptedException e) {
+                    logger.warn("Producer thread was interrupted. Shutting down event store.", e);
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
+            cleanupService
+                    .scheduleWithFixedDelay(new Cleaner(), cleanupDelayMillis, cleanupDelayMillis, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
@@ -150,14 +152,12 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         private void run() throws InterruptedException {
             boolean dataFound = false;
+
             while (!closed) {
                 shouldFetch = true;
                 while (shouldFetch) {
                     shouldFetch = false;
                     dataFound = fetchData();
-                }
-                if (tailingConsumers.isEmpty()) {
-                    newest = null;
                 }
                 if (!dataFound) {
                     waitForData();
@@ -281,8 +281,12 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            return tailingConsumers.contains(this) ? peekGlobalStream(timeout, timeUnit) :
+            return isTailingConsumer() ? peekGlobalStream(timeout, timeUnit) :
                     peekPrivateStream(timeout, timeUnit);
+        }
+
+        private boolean isTailingConsumer() {
+            return tailingConsumers.contains(this) && (this.lastToken == null || oldest == null || this.lastToken.isAfter(oldest.previousToken));
         }
 
         private TrackedEventMessage<?> peekGlobalStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
@@ -320,6 +324,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 closePrivateStream();
                 lastNode = findNode(lastToken);
                 tailingConsumers.add(this);
+                ensureProducerStarted();
                 return timeout > 0 ? peek(timeout, timeUnit) : null;
             }
         }
@@ -367,7 +372,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 logger.warn("An event processor fell behind the tail end of the event store cache. " +
                                     "This usually indicates a badly performing event processor.");
                 tailingConsumers.remove(consumer);
-                consumer.lastNode = null; //make old nodes garbage collectable
+                consumer.lastNode = null; //make old nodes garbage collectible
             });
         }
     }
