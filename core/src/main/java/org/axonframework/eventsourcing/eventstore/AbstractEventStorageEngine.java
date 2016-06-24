@@ -21,6 +21,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.DefaultEventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +34,7 @@ import static java.lang.String.format;
  */
 public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
-    private Serializer serializer;
+    private Serializer serializer = new XStreamSerializer();
     private EventUpcasterChain upcasterChain = new DefaultEventUpcasterChain();
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
