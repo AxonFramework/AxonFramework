@@ -72,7 +72,7 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
      */
     @Override
     public void afterPropertiesSet() {
-        new SubscribingEventProcessor(new SimpleEventHandlerInvoker(beanName, this), eventBus).start();
+        new SubscribingEventProcessor(beanName, new SimpleEventHandlerInvoker(this), eventBus).start();
     }
 
     /**

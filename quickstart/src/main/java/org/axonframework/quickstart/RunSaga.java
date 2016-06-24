@@ -83,7 +83,7 @@ public class RunSaga {
         AnnotatedSagaManager sagaManager = new AnnotatedSagaManager(ToDoSaga.class, repository, ToDoSaga::new);
 
         // and we need to subscribe the Saga Manager to the Event Bus
-        new SubscribingEventProcessor(sagaManager, eventBus).start();
+        new SubscribingEventProcessor("ToDoSagaProcessor", sagaManager, eventBus).start();
 
         // That's the infrastructure we need...
         // Let's pretend a few things are happening

@@ -39,13 +39,16 @@ import static java.util.stream.Collectors.toMap;
  */
 public abstract class AbstractEventProcessor implements EventProcessor, Consumer<List<? extends EventMessage<?>>> {
     private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
+    private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
-    public AbstractEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
-                                  ErrorHandler errorHandler, MessageMonitor<? super EventMessage<?>> messageMonitor) {
+    public AbstractEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
+                                  RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
+                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        this.name = requireNonNull(name);
         this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
         this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
         this.errorHandler = requireNonNull(errorHandler);
@@ -54,7 +57,7 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
 
     @Override
     public String getName() {
-        return eventHandlerInvoker.getName();
+        return name;
     }
 
     @Override

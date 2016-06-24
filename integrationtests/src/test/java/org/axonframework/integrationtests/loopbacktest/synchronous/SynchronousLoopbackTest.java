@@ -110,7 +110,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", el), eventStore).start();
+        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(el), eventStore).start();
 
         commandBus.dispatch(asCommandMessage(new ChangeCounterCommand(aggregateIdentifier, 1)), reportErrorCallback);
 
@@ -146,7 +146,7 @@ public class SynchronousLoopbackTest {
                 }
             }
         };
-        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", Collections.singletonList(el),
+        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(Collections.singletonList(el),
                                                                     ThrowingListenerErrorHandler.INSTANCE), eventStore)
                 .start();
 

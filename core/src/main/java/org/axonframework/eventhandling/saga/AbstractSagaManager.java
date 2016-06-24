@@ -60,11 +60,6 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     }
 
     @Override
-    public String getName() {
-        return "SagaManager[" + sagaType.getName() + "]";
-    }
-
-    @Override
     public Object handle(EventMessage<?> event) throws Exception {
         Set<AssociationValue> associationValues = extractAssociationValues(event);
         Set<Saga<T>> sagas =

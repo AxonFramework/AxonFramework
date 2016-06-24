@@ -17,12 +17,11 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
+import org.axonframework.common.io.IOUtils;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
-
-import java.util.Optional;
 
 /**
  * @author Rene de Waele
@@ -31,23 +30,23 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
 
     private final EventBus eventBus;
     private final EventProcessingStrategy processingStrategy;
-    private Registration eventBusRegistration;
+    private volatile Registration eventBusRegistration;
 
-    public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus) {
-        this(eventHandlerInvoker, eventBus, NoOpMessageMonitor.INSTANCE);
+    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus) {
+        this(name, eventHandlerInvoker, eventBus, NoOpMessageMonitor.INSTANCE);
     }
 
-    public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
+    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
                                      MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, eventBus,
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, eventBus,
              DirectEventProcessingStrategy.INSTANCE, NoOpErrorHandler.INSTANCE, messageMonitor);
     }
 
-    public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker,
+    public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      RollbackConfiguration rollbackConfiguration, EventBus eventBus,
                                      EventProcessingStrategy processingStrategy, ErrorHandler errorHandler,
                                      MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        super(eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
+        super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         this.eventBus = eventBus;
         this.processingStrategy = processingStrategy;
     }
@@ -57,6 +56,6 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     }
 
     public void shutDown() {
-        Optional.ofNullable(eventBusRegistration).ifPresent(Registration::cancel);
+        IOUtils.closeQuietly(eventBusRegistration);
     }
 }

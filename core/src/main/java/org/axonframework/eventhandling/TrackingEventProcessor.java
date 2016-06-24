@@ -49,20 +49,22 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     private TrackingEventStream eventStream;
     private volatile TrackingToken lastToken;
 
-    public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus, TokenStore tokenStore) {
-        this(eventHandlerInvoker, eventBus, tokenStore, NoOpMessageMonitor.INSTANCE);
+    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
+                                  TokenStore tokenStore) {
+        this(name, eventHandlerInvoker, eventBus, tokenStore, NoOpMessageMonitor.INSTANCE);
     }
 
-    public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus, TokenStore tokenStore,
-                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        this(eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
+    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
+                                  TokenStore tokenStore, MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
              tokenStore, 1, messageMonitor);
     }
 
-    public TrackingEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
-                                  ErrorHandler errorHandler, EventBus eventBus, TokenStore tokenStore, int batchSize,
+    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
+                                  RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
+                                  EventBus eventBus, TokenStore tokenStore, int batchSize,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
-        super(eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
+        super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         this.eventBus = requireNonNull(eventBus);
         this.tokenStore = requireNonNull(tokenStore);
         Assert.isTrue(batchSize > 0, "batchSize needs to be greater than 0");
