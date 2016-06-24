@@ -28,7 +28,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
 
     private final EventBus eventBus;
     private final EventProcessingStrategy processingStrategy;
-    private Registration eventBusRegistration;
+    private volatile Registration eventBusRegistration;
 
     public SubscribingEventProcessor(EventHandlerInvoker eventHandlerInvoker, EventBus eventBus) {
         this(eventHandlerInvoker, eventBus, NoOpMessageMonitor.INSTANCE);
