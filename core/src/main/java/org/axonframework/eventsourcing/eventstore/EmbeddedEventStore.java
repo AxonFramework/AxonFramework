@@ -20,8 +20,8 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.metrics.MessageMonitor;
-import org.axonframework.metrics.NoOpMessageMonitor;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -281,7 +281,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            return lastNode != null ? peekGlobalStream(timeout, timeUnit) :
+            return tailingConsumers.contains(this) ? peekGlobalStream(timeout, timeUnit) :
                     peekPrivateStream(timeout, timeUnit);
         }
 

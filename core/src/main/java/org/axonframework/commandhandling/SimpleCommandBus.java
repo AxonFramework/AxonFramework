@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.unitofwork.*;
-import org.axonframework.metrics.MessageMonitor;
-import org.axonframework.metrics.NoOpMessageMonitor;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
