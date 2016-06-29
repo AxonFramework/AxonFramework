@@ -92,7 +92,7 @@ public class DocumentPerCommitStorageStrategy extends AbstractEventStorageStrate
     public void ensureIndexes(DBCollection eventsCollection, DBCollection snapshotsCollection) {
         super.ensureIndexes(eventsCollection, snapshotsCollection);
         //prevents duplicate commits
-        eventsCollection.ensureIndex(new BasicDBObject(eventConfiguration().aggregateIdentifierProperty(), ORDER_ASC)
+        eventsCollection.createIndex(new BasicDBObject(eventConfiguration().aggregateIdentifierProperty(), ORDER_ASC)
                                              .append(commitEntryConfiguration.firstSequenceNumberProperty(), ORDER_ASC),
                                      "uniqueAggregateStartIndex", true);
     }

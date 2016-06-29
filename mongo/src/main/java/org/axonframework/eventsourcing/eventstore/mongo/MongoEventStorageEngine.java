@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore.mongo;
 
-import com.mongodb.MongoException;
+import com.mongodb.DuplicateKeyException;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
@@ -66,7 +66,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
         super(NoTransactionManager.INSTANCE);
         this.template = template;
         this.storageStrategy = storageStrategy;
-        setPersistenceExceptionResolver(exception -> exception instanceof MongoException.DuplicateKey);
+        setPersistenceExceptionResolver(exception -> exception instanceof DuplicateKeyException);
     }
 
     /**

@@ -17,8 +17,8 @@
 package org.axonframework.eventhandling.saga.repository.mongo;
 
 import com.mongodb.DBCollection;
-import com.mongodb.Mongo;
-import org.axonframework.common.mongo.AuthenticatingMongoTemplate;
+import com.mongodb.MongoClient;
+import org.axonframework.common.mongo.AbstractMongoTemplate;
 
 /**
  * MongoTemplate instance providing access to the MongoDB Collection containing stored Sagas.
@@ -27,7 +27,7 @@ import org.axonframework.common.mongo.AuthenticatingMongoTemplate;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DefaultMongoTemplate extends AuthenticatingMongoTemplate implements MongoTemplate {
+public class DefaultMongoTemplate extends AbstractMongoTemplate implements MongoTemplate {
 
     private static final String DEFAULT_SAGAS_COLLECTION_NAME = "sagas";
 
@@ -39,26 +39,21 @@ public class DefaultMongoTemplate extends AuthenticatingMongoTemplate implements
      *
      * @param mongo The Mongo instance providing access to the database
      */
-    public DefaultMongoTemplate(Mongo mongo) {
-        super(mongo, null, null);
+    public DefaultMongoTemplate(MongoClient mongo) {
+        super(mongo);
         this.sagasCollectionName = DEFAULT_SAGAS_COLLECTION_NAME;
     }
 
     /**
      * Creates a template connecting to given <code>mongo</code> instance, and loads sagas in the collection with given
-     * <code>sagasCollectionName</code>, in a database with given <code>databaseName</code>. When not
-     * <code>null</code>, the given <code>userName</code> and <code>password</code> are used to authenticate against
-     * the database.
+     * <code>sagasCollectionName</code>, in a database with given <code>databaseName</code>.
      *
      * @param mongo               The Mongo instance configured to connect to the Mongo Server
      * @param databaseName        The name of the database containing the data
      * @param sagasCollectionName The collection containing the saga instance
-     * @param userName            The username to authenticate with. Use <code>null</code> to skip authentication
-     * @param password            The password to authenticate with. Use <code>null</code> to skip authentication
      */
-    public DefaultMongoTemplate(Mongo mongo, String databaseName, String sagasCollectionName,
-                                String userName, char[] password) {
-        super(mongo, databaseName, userName, password);
+    public DefaultMongoTemplate(MongoClient mongo, String databaseName, String sagasCollectionName) {
+        super(mongo, databaseName);
         this.sagasCollectionName = sagasCollectionName;
     }
 

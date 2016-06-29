@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore.mongo;
 
 import com.mongodb.DBCollection;
-import com.mongodb.MongoException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
@@ -38,11 +37,9 @@ import java.util.Optional;
  */
 public interface StorageStrategy {
 
-    void appendEvents(DBCollection eventCollection, List<? extends EventMessage<?>> events,
-                      Serializer serializer) throws MongoException.DuplicateKey;
+    void appendEvents(DBCollection eventCollection, List<? extends EventMessage<?>> events, Serializer serializer);
 
-    void appendSnapshot(DBCollection snapshotCollection, DomainEventMessage<?> snapshot,
-                        Serializer serializer) throws MongoException.DuplicateKey;
+    void appendSnapshot(DBCollection snapshotCollection, DomainEventMessage<?> snapshot, Serializer serializer);
 
     void deleteSnapshots(DBCollection snapshotCollection, String aggregateIdentifier);
 

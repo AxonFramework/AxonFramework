@@ -14,7 +14,7 @@
 package org.axonframework.eventsourcing.eventstore.mongo;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
@@ -68,9 +68,9 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
     @Before
     public void setUp() {
         try {
-            Mongo mongo = context.getBean(Mongo.class);
+            MongoClient mongoClient = context.getBean(MongoClient.class);
             testSubject = context.getBean(MongoEventStorageEngine.class);
-            mongoTemplate = new DefaultMongoTemplate(mongo);
+            mongoTemplate = new DefaultMongoTemplate(mongoClient);
             mongoTemplate.eventCollection().remove(new BasicDBObject());
             mongoTemplate.snapshotCollection().remove(new BasicDBObject());
             setTestSubject(testSubject);

@@ -33,13 +33,11 @@
         <constructor-arg ref="mongoDb"/>
     </bean>
 
-    <bean id="mongoDb" class="com.mongodb.Mongo" factory-bean="mongoFactoryBean" factory-method="createMongo"
-          lazy-init="true"/>
+    <bean id="mongoDb" factory-bean="mongoFactoryBean" factory-method="createMongo" lazy-init="true"/>
 
     <bean id="mongoFactoryBean" class="org.axonframework.eventsourcing.eventstore.mongo.MongoFactory" lazy-init="true">
         <property name="mongoOptions">
-            <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
-                  factory-method="createMongoOptions"/>
+            <bean factory-bean="mongoOptionsFactory" factory-method="createMongoOptions"/>
         </property>
     </bean>
 

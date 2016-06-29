@@ -16,12 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore.mongo;
 
-import com.mongodb.MongoOptions;
+import com.mongodb.MongoClientOptions;
 import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static junit.framework.Assert.assertEquals;
 
 /**
  * @author Jettro Coenradie
@@ -37,33 +36,30 @@ public class MongoOptionsFactoryTest {
 
     @Test
     public void testCreateMongoOptions_defaults() throws Exception {
-        MongoOptions options = factory.createMongoOptions();
-        MongoOptions defaults = new MongoOptions();
+        MongoClientOptions options = factory.createMongoOptions();
+        MongoClientOptions defaults = MongoClientOptions.builder().build();
 
-        assertEquals(defaults.autoConnectRetry, options.autoConnectRetry);
-        assertEquals(defaults.maxWaitTime, options.maxWaitTime);
-        assertEquals(defaults.socketTimeout, options.socketTimeout);
-        assertEquals(defaults.connectionsPerHost, options.connectionsPerHost);
-        assertEquals(defaults.connectTimeout, options.connectTimeout);
-        assertEquals(defaults.threadsAllowedToBlockForConnectionMultiplier,
-                     options.threadsAllowedToBlockForConnectionMultiplier);
+        assertEquals(defaults.getMaxWaitTime(), options.getMaxWaitTime());
+        assertEquals(defaults.getSocketTimeout(), options.getSocketTimeout());
+        assertEquals(defaults.getConnectionsPerHost(), options.getConnectionsPerHost());
+        assertEquals(defaults.getConnectTimeout(), options.getConnectTimeout());
+        assertEquals(defaults.getThreadsAllowedToBlockForConnectionMultiplier(),
+                options.getThreadsAllowedToBlockForConnectionMultiplier());
     }
 
     @Test
     public void testCreateMongoOptions_customSet() throws Exception {
-        factory.setAutoConnectRetry(true);
         factory.setConnectionsPerHost(9);
         factory.setConnectionTimeout(11);
         factory.setMaxWaitTime(3);
         factory.setSocketTimeOut(23);
         factory.setThreadsAllowedToBlockForConnectionMultiplier(31);
 
-        MongoOptions options = factory.createMongoOptions();
-        assertTrue(options.autoConnectRetry);
-        assertEquals(3, options.maxWaitTime);
-        assertEquals(23, options.socketTimeout);
-        assertEquals(9, options.connectionsPerHost);
-        assertEquals(11, options.connectTimeout);
-        assertEquals(31, options.threadsAllowedToBlockForConnectionMultiplier);
+        MongoClientOptions options = factory.createMongoOptions();
+        assertEquals(3, options.getMaxWaitTime());
+        assertEquals(23, options.getSocketTimeout());
+        assertEquals(9, options.getConnectionsPerHost());
+        assertEquals(11, options.getConnectTimeout());
+        assertEquals(31, options.getThreadsAllowedToBlockForConnectionMultiplier());
     }
 }

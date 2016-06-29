@@ -53,7 +53,7 @@ public abstract class AbstractEventStorageStrategy implements StorageStrategy {
 
     @Override
     public void appendEvents(DBCollection eventCollection, List<? extends EventMessage<?>> events,
-                             Serializer serializer) throws MongoException.DuplicateKey {
+                             Serializer serializer) {
         eventCollection.insert(createEventDocuments(events, serializer).collect(Collectors.toList()));
     }
 
@@ -62,7 +62,7 @@ public abstract class AbstractEventStorageStrategy implements StorageStrategy {
 
     @Override
     public void appendSnapshot(DBCollection snapshotCollection, DomainEventMessage<?> snapshot,
-                               Serializer serializer) throws MongoException.DuplicateKey {
+                               Serializer serializer) {
         snapshotCollection.insert(createSnapshotDocument(snapshot, serializer));
     }
 
@@ -158,13 +158,13 @@ public abstract class AbstractEventStorageStrategy implements StorageStrategy {
 
     @Override
     public void ensureIndexes(DBCollection eventsCollection, DBCollection snapshotsCollection) {
-        eventsCollection.ensureIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
+        eventsCollection.createIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
                                              .append(eventConfiguration.sequenceNumberProperty(), ORDER_ASC),
                                      "uniqueAggregateIndex", true);
-        eventsCollection.ensureIndex(new BasicDBObject(eventConfiguration.timestampProperty(), ORDER_ASC)
+        eventsCollection.createIndex(new BasicDBObject(eventConfiguration.timestampProperty(), ORDER_ASC)
                                              .append(eventConfiguration.sequenceNumberProperty(), ORDER_ASC),
                                      "orderedEventStreamIndex", false);
-        snapshotsCollection.ensureIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
+        snapshotsCollection.createIndex(new BasicDBObject(eventConfiguration.aggregateIdentifierProperty(), ORDER_ASC)
                                                 .append(eventConfiguration.sequenceNumberProperty(), ORDER_ASC),
                                         "uniqueAggregateIndex", true);
     }
