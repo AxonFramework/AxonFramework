@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.common.annotation;
 
+import java.lang.reflect.Executable;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.Function;
@@ -23,8 +24,14 @@ import java.util.function.ToIntFunction;
 
 public final class HandlerComparator {
 
-    private static final Comparator<MessageHandler<?>> INSTANCE = Comparator.comparing((Function<MessageHandler<?>, Class<?>>) MessageHandler::payloadType, HandlerComparator::compareHierarchy)
-            .thenComparing(Comparator.comparingInt((ToIntFunction<MessageHandler<?>>) MessageHandler::priority).reversed());
+    private static final Comparator<MessageHandler<?>> INSTANCE =
+            Comparator.comparing((Function<MessageHandler<?>, Class<?>>) MessageHandler::payloadType, HandlerComparator::compareHierarchy)
+                    .thenComparing(Comparator.comparingInt((ToIntFunction<MessageHandler<?>>) MessageHandler::priority).reversed())
+                    .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));
+
+    // prevent construction
+    private HandlerComparator() {
+    }
 
     public static Comparator<MessageHandler<?>> instance() {
         return INSTANCE;
@@ -41,7 +48,4 @@ public final class HandlerComparator {
         return 0;
     }
 
-    // prevent construction
-    private HandlerComparator() {
-    }
 }
