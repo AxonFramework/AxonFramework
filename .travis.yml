@@ -1,5 +1,12 @@
 language: java
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
+
+sudo: required
+
+jdk:
+  - oraclejdk8
+
+install: true
+
+script:
+  - sudo apt-get update && sudo apt-get install oracle-java8-installer
+  - java -version
