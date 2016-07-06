@@ -224,7 +224,7 @@ public class DisruptorCommandBus implements CommandBus {
         RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
         int invokerSegment = 0;
         int publisherSegment = 0;
-        if ((commandHandlerInvokers.length > 1 || publisherCount > 1)) {
+        if (commandHandlerInvokers.length > 1 || publisherCount > 1) {
             String aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
             if (aggregateIdentifier != null) {
                 int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
