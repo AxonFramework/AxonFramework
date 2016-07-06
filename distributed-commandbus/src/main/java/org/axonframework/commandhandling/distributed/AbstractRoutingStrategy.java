@@ -61,7 +61,8 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
                 case STATIC_KEY:
                     return STATIC_ROUTING_KEY;
                 default:
-                    break;
+                    throw new IllegalStateException("The configured UnresolvedRoutingPolicy of "
+                                                            + unresolvedRoutingKeyPolicy.name() + " is not supported.");
             }
         }
         return routingKey;

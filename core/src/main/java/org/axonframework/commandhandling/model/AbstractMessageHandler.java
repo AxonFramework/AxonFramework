@@ -120,6 +120,7 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T> {
         return AnnotationUtils.findAnnotation(executable, annotationType) != null;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <H> Optional<H> unwrap(Class<H> handlerType) {
         if (handlerType.isInstance(executable)) {
