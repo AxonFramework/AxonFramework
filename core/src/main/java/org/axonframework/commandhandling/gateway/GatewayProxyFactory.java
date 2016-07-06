@@ -191,9 +191,7 @@ public class GatewayProxyFactory {
                                                                     arguments.length - 1);
                 } else {
                     Timeout timeout = gatewayMethod.getAnnotation(Timeout.class);
-                    if (timeout == null) {
-                        timeout = gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class);
-                    }
+                    timeout = resolveTimeout(gatewayMethod, timeout);
                     if (timeout != null) {
                         dispatcher = wrapToReturnWithFixedTimeout(dispatcher, timeout.value(), timeout.unit());
                     } else if (!Void.TYPE.equals(gatewayMethod.getReturnType())
@@ -223,6 +221,13 @@ public class GatewayProxyFactory {
                                        new Class[]{gatewayInterface},
                                        new GatewayInvocationHandler(dispatchers, commandBus, retryScheduler,
                                                                     dispatchInterceptors)));
+    }
+
+    private Timeout resolveTimeout(Method gatewayMethod, Timeout timeout) {
+        if (timeout == null) {
+            timeout = gatewayMethod.getDeclaringClass().getAnnotation(Timeout.class);
+        }
+        return timeout;
     }
 
     private boolean hasCallbackParameters(Method gatewayMethod) {
