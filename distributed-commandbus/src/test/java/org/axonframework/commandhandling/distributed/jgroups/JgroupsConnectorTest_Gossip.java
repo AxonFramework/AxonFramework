@@ -112,6 +112,9 @@ public class JgroupsConnectorTest_Gossip {
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
         assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
 
+        // now, they should detect eachother and start syncing their state
+        waitForConnectorSync(10);
+
         DistributedCommandBus bus1 = new DistributedCommandBus(connector1, new AnnotationRoutingStrategy(
                 UnresolvedRoutingKeyPolicy.RANDOM_KEY));
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
