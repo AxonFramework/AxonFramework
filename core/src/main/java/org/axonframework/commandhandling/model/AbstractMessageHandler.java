@@ -41,7 +41,7 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T> {
         parameterResolvers = new ParameterResolver[parameterCount];
         Class<?> supportedPayloadType = explicitPayloadType;
         for (int i = 0; i < parameterCount; i++) {
-            parameterResolvers[i] = (parameterResolverFactory.createInstance(executable, parameters, i));
+            parameterResolvers[i] = parameterResolverFactory.createInstance(executable, parameters, i);
             if (supportedPayloadType.isAssignableFrom(parameterResolvers[i].supportedPayloadType())) {
                 supportedPayloadType = parameterResolvers[i].supportedPayloadType();
             } else if (!parameterResolvers[i].supportedPayloadType().isAssignableFrom(supportedPayloadType)) {
@@ -88,13 +88,17 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T> {
                 throw new IllegalStateException("What kind of handler is this?");
             }
         } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            if (e.getCause() instanceof Exception) {
-                throw (Exception) e.getCause();
-            } else if (e.getCause() instanceof Error) {
-                throw (Error) e.getCause();
-            }
+            checkAndRethrowForExceptionOrError(e);
             throw new MessageHandlerInvocationException(
                     String.format("Error handling an object of type [%s]", message.getPayloadType()), e);
+        }
+    }
+
+    private void checkAndRethrowForExceptionOrError(ReflectiveOperationException e) throws Exception {
+        if (e.getCause() instanceof Exception) {
+            throw (Exception) e.getCause();
+        } else if (e.getCause() instanceof Error) {
+            throw (Error) e.getCause();
         }
     }
 
@@ -117,9 +121,9 @@ public abstract class AbstractMessageHandler<T> implements MessageHandler<T> {
     }
 
     @Override
-    public <HT> Optional<HT> unwrap(Class<HT> handlerType) {
+    public <H> Optional<H> unwrap(Class<H> handlerType) {
         if (handlerType.isInstance(executable)) {
-            return Optional.of(handlerType.cast(executable));
+            return (Optional<H>) Optional.of(executable);
         }
         return Optional.empty();
     }

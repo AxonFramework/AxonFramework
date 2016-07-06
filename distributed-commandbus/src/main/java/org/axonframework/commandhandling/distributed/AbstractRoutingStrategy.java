@@ -60,6 +60,8 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
                     return Long.toHexString(counter.getAndIncrement());
                 case STATIC_KEY:
                     return STATIC_ROUTING_KEY;
+                default:
+                    break;
             }
         }
         return routingKey;
