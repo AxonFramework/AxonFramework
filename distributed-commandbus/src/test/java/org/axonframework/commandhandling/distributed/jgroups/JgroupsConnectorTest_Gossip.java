@@ -134,7 +134,6 @@ public class JgroupsConnectorTest_Gossip {
             gateway1.sendAndWait("Try this!");
             fail("Expected exception");
         } catch (RuntimeException e) {
-            System.out.println(connector2.getConsistentHash());
             assertEquals("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(), "Mock", e.getMessage());
         }
     }

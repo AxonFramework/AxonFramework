@@ -63,7 +63,6 @@ public class DisruptorCommandBusTest_MultiThreaded {
 
     private static final int COMMAND_COUNT = 100;
     private static final int AGGREGATE_COUNT = 10;
-    private CountingEventBus eventBus;
     private StubHandler stubHandler;
     private InMemoryEventStore inMemoryEventStore;
     private DisruptorCommandBus testSubject;
@@ -75,7 +74,6 @@ public class DisruptorCommandBusTest_MultiThreaded {
         for (int i = 0; i < AGGREGATE_COUNT; i++) {
             aggregateIdentifier[i] = IdentifierFactory.getInstance().generateIdentifier();
         }
-        eventBus = new CountingEventBus();
         stubHandler = new StubHandler();
         inMemoryEventStore = new InMemoryEventStore();
     }
