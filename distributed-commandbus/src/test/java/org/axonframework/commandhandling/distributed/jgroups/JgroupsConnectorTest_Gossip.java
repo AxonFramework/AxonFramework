@@ -107,8 +107,8 @@ public class JgroupsConnectorTest_Gossip {
 
         final AtomicInteger counter2 = new AtomicInteger(0);
         connector2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
-        connector1.connect(20);
         connector2.connect(20);
+        connector1.connect(20);
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
         assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
 
@@ -134,7 +134,8 @@ public class JgroupsConnectorTest_Gossip {
             gateway1.sendAndWait("Try this!");
             fail("Expected exception");
         } catch (RuntimeException e) {
-            assertEquals("Mock", e.getMessage());
+            System.out.println(connector2.getConsistentHash());
+            assertEquals("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(), "Mock", e.getMessage());
         }
     }
 
