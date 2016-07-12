@@ -18,13 +18,17 @@ import org.axonframework.serialization.*;
 
 import javax.persistence.Basic;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.Lob;
 import javax.persistence.MappedSuperclass;
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author Rene de Waele
  */
 @MappedSuperclass
+@IdClass(AbstractTokenEntry.PK.class)
 public abstract class AbstractTokenEntry<T> {
     @Id
     private String processName;
@@ -63,5 +67,27 @@ public abstract class AbstractTokenEntry<T> {
 
     protected SerializedType getTokenType() {
         return new SimpleSerializedType(tokenType, null);
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public static class PK implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private String processName;
+        private int segment;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            PK pk = (PK) o;
+            return segment == pk.segment &&
+                    Objects.equals(processName, pk.processName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(processName, segment);
+        }
     }
 }

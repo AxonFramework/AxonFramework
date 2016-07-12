@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.metrics.MessageMonitor;
 import org.axonframework.metrics.MessageMonitorBuilder;
+import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.handler.CreateToDoCommandHandler;
@@ -77,7 +77,7 @@ public class RunBasicCommandHandlingWithMetrics {
                 new MessageMonitorBuilder().buildEventProcessorMonitor(mr);
 
         // We register an event listener to see which events are created
-        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", (EventListener) event -> System.out
+        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> System.out
                 .println(event.getPayload())), eventStore, eventProcessorMessageMonitor).start();
 
         // and let's send some Commands on the CommandBus using the special runner configured with our CommandGateway.

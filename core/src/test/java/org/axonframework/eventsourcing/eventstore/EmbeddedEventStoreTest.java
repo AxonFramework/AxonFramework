@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +20,7 @@ import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.metrics.NoOpMessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +61,6 @@ public class EmbeddedEventStoreTest {
         Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
         testSubject = new EmbeddedEventStore(storageEngine, NoOpMessageMonitor.INSTANCE, cachedEvents, fetchDelay,
                                              cleanupDelay, MILLISECONDS);
-        testSubject.initialize();
     }
 
     @After
@@ -96,7 +98,7 @@ public class EmbeddedEventStoreTest {
         t.join();
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 5000)
     public void testReadingIsBlockedWhenStoreIsEmpty() throws Exception {
         CountDownLatch lock = new CountDownLatch(1);
         TrackingEventStream stream = testSubject.streamEvents(null);
@@ -108,7 +110,7 @@ public class EmbeddedEventStoreTest {
         assertEquals(0, lock.getCount());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 5000)
     public void testReadingIsBlockedWhenEndOfStreamIsReached() throws Exception {
         testSubject.publish(createEvent());
         CountDownLatch lock = new CountDownLatch(2);
@@ -122,7 +124,7 @@ public class EmbeddedEventStoreTest {
         assertEquals(0, lock.getCount());
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 5000)
     public void testReadingCanBeContinuedUsingLastToken() throws Exception {
         testSubject.publish(createEvents(2));
         TrackedEventMessage<?> first = testSubject.streamEvents(null).nextAvailable();
@@ -131,7 +133,7 @@ public class EmbeddedEventStoreTest {
         assertTrue(second.trackingToken().isAfter(firstToken));
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 5000)
     public void testEventIsFetchedFromCacheWhenFetchedASecondTime() throws Exception {
         CountDownLatch lock = new CountDownLatch(2);
         List<TrackedEventMessage<?>> events = new CopyOnWriteArrayList<>();
@@ -151,7 +153,7 @@ public class EmbeddedEventStoreTest {
         verifyNoMoreInteractions(storageEngine);
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 5000)
     public void testPeriodicPollingWhenEventStorageIsUpdatedIndependently() throws Exception {
         newTestSubject(CACHED_EVENTS, 20, CLEANUP_DELAY);
         TrackingEventStream stream = testSubject.streamEvents(null);
@@ -164,7 +166,7 @@ public class EmbeddedEventStoreTest {
         assertTrue(lock.await(100, MILLISECONDS));
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 5000)
     public void testConsumerStopsTailingWhenItFallsBehindTheCache() throws Exception {
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, 20);
         TrackingEventStream stream = testSubject.streamEvents(null);

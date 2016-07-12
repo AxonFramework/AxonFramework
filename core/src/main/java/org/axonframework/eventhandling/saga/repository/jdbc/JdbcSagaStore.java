@@ -62,7 +62,7 @@ public class JdbcSagaStore implements SagaStore<Object> {
     private final SagaSqlSchema sqldef;
 
     /**
-     * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
+     * Initializes a Saga Repository, using given {@code connectionProvider} to obtain connections to the
      * database, using a Generic SQL Schema.
      *
      * @param connectionProvider The data source to obtain connections from
@@ -72,8 +72,8 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Initializes a Saga Repository, using given <code>dataSource</code> to obtain connections to the database, and
-     * given <code>sqldef</code> to execute SQL statements.
+     * Initializes a Saga Repository, using given {@code dataSource} to obtain connections to the database, and
+     * given {@code sqldef} to execute SQL statements.
      *
      * @param dataSource The data source to obtain connections from
      * @param sqldef     The definition of SQL operations to execute
@@ -83,8 +83,8 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
-     * database, and given <code>sqldef</code> to execute SQL statements.
+     * Initializes a Saga Repository, using given {@code connectionProvider} to obtain connections to the
+     * database, and given {@code sqldef} to execute SQL statements.
      *
      * @param connectionProvider The provider to obtain connections from
      * @param sqldef             The definition of SQL operations to execute
@@ -94,8 +94,8 @@ public class JdbcSagaStore implements SagaStore<Object> {
     }
 
     /**
-     * Initializes a Saga Repository, using given <code>connectionProvider</code> to obtain connections to the
-     * database, and given <code>sqldef</code> to execute SQL statements and <code>serializer</code> to serialize
+     * Initializes a Saga Repository, using given {@code connectionProvider} to obtain connections to the
+     * database, and given {@code sqldef} to execute SQL statements and {@code serializer} to serialize
      * Sagas.
      *
      * @param connectionProvider The provider to obtain connections from

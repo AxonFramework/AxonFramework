@@ -59,7 +59,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     private final EventStore eventStore;
 
     /**
-     * Create an aggregate invoker instance that uses the given <code>eventStore</code> and <code>cache</code> to
+     * Create an aggregate invoker instance that uses the given {@code eventStore} and {@code cache} to
      * retrieve aggregate instances.
      *
      * @param eventStore The event store providing access to events to reconstruct aggregates
@@ -73,10 +73,10 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     }
 
     /**
-     * Returns the Repository instance for Aggregate with given <code>typeIdentifier</code> used by the
+     * Returns the Repository instance for Aggregate with given {@code typeIdentifier} used by the
      * CommandHandlerInvoker that is running on the current thread.
      * <p>
-     * Calling this method from any other thread will return <code>null</code>.
+     * Calling this method from any other thread will return {@code null}.
      *
      * @param type The type of aggregate
      * @param <T>  The type of aggregate
@@ -108,7 +108,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     }
 
     /**
-     * Create a repository instance for an aggregate created by the given <code>aggregateFactory</code>. The returning
+     * Create a repository instance for an aggregate created by the given {@code aggregateFactory}. The returning
      * repository must be sage to use by this invoker instance.
      *
      * @param aggregateFactory The factory creating aggregate instances

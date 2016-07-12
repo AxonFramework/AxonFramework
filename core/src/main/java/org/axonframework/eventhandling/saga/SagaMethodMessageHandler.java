@@ -52,11 +52,11 @@ public class SagaMethodMessageHandler<T> extends WrappedMessageHandler<T> {
     }
 
     /**
-     * The AssociationValue to find the saga instance with, or <code>null</code> if no AssociationValue can be found on
-     * the given <code>eventMessage</code>.
+     * The AssociationValue to find the saga instance with, or {@code null} if no AssociationValue can be found on
+     * the given {@code eventMessage}.
      *
      * @param eventMessage The event message containing the value of the association
-     * @return the AssociationValue to find the saga instance with, or <code>null</code> if none found
+     * @return the AssociationValue to find the saga instance with, or {@code null} if none found
      */
     @SuppressWarnings("unchecked")
     public AssociationValue getAssociationValue(EventMessage<?> eventMessage) {
@@ -85,8 +85,8 @@ public class SagaMethodMessageHandler<T> extends WrappedMessageHandler<T> {
     /**
      * Indicates whether this handler is one that ends the Saga lifecycle
      *
-     * @return <code>true</code> if the Saga lifecycle ends unconditionally after this call, otherwise
-     * <code>false</code>
+     * @return {@code true} if the Saga lifecycle ends unconditionally after this call, otherwise
+     * {@code false}
      */
     public boolean isEndingHandler() {
         return endingHandler;

@@ -44,7 +44,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
     private final EventProcessingMonitor targetMonitor;
 
     /**
-     * Creates an instance with the given <code>targetMonitor</code> as the monitor to eventually forward calls to.
+     * Creates an instance with the given {@code targetMonitor} as the monitor to eventually forward calls to.
      *
      * @param targetMonitor The monitor to eventually forward calls to
      */
@@ -53,7 +53,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
     }
 
     /**
-     * Prepare the monitor for processing the given <code>message</code>. This means a tracker will be created to this
+     * Prepare the monitor for processing the given {@code message}. This means a tracker will be created to this
      * event, which keeps track of the required and actual invocations.
      * <p/>
      * When an unprepared message is acknowledged or reported as failed, that notification is immediately forwarded to
@@ -66,7 +66,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
     }
 
     /**
-     * Prepare the monitor for the invocation of the given <code>message</code> to the given <code>member</code>. This
+     * Prepare the monitor for the invocation of the given {@code message} to the given {@code member}. This
      * means that, if the given member implement {@link org.axonframework.eventhandling.EventProcessingMonitorSupport},
      * the monitor will wait for an invocation by that member's monitor.
      * <p/>
@@ -74,7 +74,7 @@ public class MultiplexingEventProcessingMonitor implements EventProcessingMonito
      *
      * @param eventMessage The message about to be sent
      * @param member       The member that will be invoked
-     * @throws java.lang.IllegalArgumentException if the given <code>eventMessage</code> has not been {@link
+     * @throws java.lang.IllegalArgumentException if the given {@code eventMessage} has not been {@link
      * #prepare(EventMessage) prepared} yet.
      */
     public void prepareForInvocation(EventMessage eventMessage, EventListener member) {

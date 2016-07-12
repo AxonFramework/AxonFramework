@@ -43,7 +43,7 @@ public class EventProcessorTask implements Runnable {
     private final Object runnerMonitor = new Object();
 
     /**
-     * Initialize a scheduler using the given <code>executor</code>. This scheduler uses an unbounded queue to schedule
+     * Initialize a scheduler using the given {@code executor}. This scheduler uses an unbounded queue to schedule
      * events.
      *
      * @param executor         The executor service that will process the events

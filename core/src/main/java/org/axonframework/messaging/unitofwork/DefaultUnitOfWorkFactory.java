@@ -39,7 +39,7 @@ public class DefaultUnitOfWorkFactory extends AbstractUnitOfWorkFactory<DefaultU
 
     /**
      * Initializes the factory to create Unit of Work bound to transactions managed by the given
-     * <code>transactionManager</code>
+     * {@code transactionManager}
      *
      * @param transactionManager The transaction manager to manage the transactions for Unit Of Work created by this
      *                           factory

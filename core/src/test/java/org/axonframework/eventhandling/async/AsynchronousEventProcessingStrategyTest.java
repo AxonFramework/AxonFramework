@@ -72,7 +72,7 @@ public class AsynchronousEventProcessingStrategyTest {
         testSubject =
                 new AsynchronousEventProcessingStrategy(Executors.newSingleThreadExecutor(), new SequentialPolicy());
 
-        final List<EventMessage> ackedMessages = new ArrayList<>();
+        final List<EventMessage> ackedMessages = Collections.synchronizedList(new ArrayList<>());
 
         EventMessage<?> event1 = createEvent(1);
         EventMessage<?> event2 = createEvent(2);

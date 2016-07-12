@@ -16,6 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import java.util.Objects;
+
 /**
  * Structure that holds an Aggregate Identifier and an expected version of an aggregate.
  *
@@ -39,7 +41,7 @@ public class VersionedAggregateIdentifier {
     }
 
     /**
-     * Returns the identifier of the targeted Aggregate. May never return <code>null</code>.
+     * Returns the identifier of the targeted Aggregate. May never return {@code null}.
      *
      * @return the identifier of the targeted Aggregate
      */
@@ -64,23 +66,12 @@ public class VersionedAggregateIdentifier {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         VersionedAggregateIdentifier that = (VersionedAggregateIdentifier) o;
-
-        if (!identifier.equals(that.identifier)) {
-            return false;
-        }
-        if (version != null ? !version.equals(that.version) : that.version != null) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(identifier, that.identifier) && Objects.equals(version, that.version);
     }
 
     @Override
     public int hashCode() {
-        int result = identifier.hashCode();
-        result = 31 * result + (version != null ? version.hashCode() : 0);
-        return result;
+        return Objects.hash(identifier, version);
     }
 }

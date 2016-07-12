@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,9 +69,8 @@ import static org.junit.Assert.*;
  * up-to-date. Depending on how UOWs are nested, it may be 'behind' by several events;
  * <p/>
  * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests itself
- * primarily by events being assigned duplicate sequence numbers. The {@link JpaEventStore} detects this and throws an
- * exception noting that an 'identical' entity has already been persisted. The {@link FileSystemEventStore} corrupts
- * data silently.
+ * primarily by events being assigned duplicate sequence numbers. The {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine} detects this and throws an
+ * exception noting that an 'identical' entity has already been persisted.
  * <p/>
  * <p/>
  * <h2>Possible solutions and workarounds contemplated include:</h2>
@@ -90,12 +89,10 @@ import static org.junit.Assert.*;
  */
 public class CachingRepositoryWithNestedUnitOfWorkTest {
 
+    private final List<String> events = new ArrayList<>();
     private CachingEventSourcingRepository<TestAggregate> repository;
     private UnitOfWorkFactory uowFactory;
     private Cache realCache;
-
-    private final List<String> events = new ArrayList<>();
-
     private AggregateFactory<TestAggregate> aggregateFactory;
     private EventStore eventStore;
 
@@ -107,7 +104,7 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
         eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         SubscribingEventProcessor eventProcessor =
-                new SubscribingEventProcessor(new SimpleEventHandlerInvoker("test", new LoggingEventListener(events)),
+                new SubscribingEventProcessor("test", new SimpleEventHandlerInvoker(new LoggingEventListener(events)),
                                               eventStore);
         eventProcessor.start();
         events.clear();
@@ -145,7 +142,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
     public void testMinimalScenario(String id) throws Exception {
         // Execute commands to update this aggregate after the creation (previousToken = null)
         SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
-                new SimpleEventHandlerInvoker("test", new CommandExecutingEventListener("1", null, true),
+                "test",
+                new SimpleEventHandlerInvoker(new CommandExecutingEventListener("1", null, true),
                                               new CommandExecutingEventListener("2", null, true)), eventStore);
         eventProcessor.start();
 
@@ -174,7 +172,8 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
 
         // Execute commands to update this aggregate after the creation (previousToken = null)
         SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor(
-                new SimpleEventHandlerInvoker("test", new CommandExecutingEventListener("UOW4", null, true),
+                "test",
+                new SimpleEventHandlerInvoker(new CommandExecutingEventListener("UOW4", null, true),
                                               new CommandExecutingEventListener("UOW5", null, true),
                                               new CommandExecutingEventListener("UOW3", null, true),
 
@@ -238,6 +237,72 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
+    public static class AggregateCreatedEvent implements Serializable {
+
+        @AggregateIdentifier
+        final String id;
+
+        public AggregateCreatedEvent(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "@" + Integer.toHexString(hashCode()) + ": " + id;
+        }
+    }
+
+	/*
+     * Domain Model
+	 */
+
+    public static class AggregateUpdatedEvent implements Serializable {
+
+        @AggregateIdentifier
+        final String id;
+        final String token;
+
+        public AggregateUpdatedEvent(String id, String token) {
+            this.id = id;
+            this.token = token;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "@" + Integer.toHexString(hashCode()) + ": " + id + "/" + token;
+        }
+    }
+
+    public static class TestAggregate implements Serializable {
+
+        @AggregateIdentifier
+        public String id;
+
+        public Set<String> tokens = new HashSet<>();
+
+        @SuppressWarnings("unused")
+        private TestAggregate() {
+        }
+
+        public TestAggregate(String id) {
+            apply(new AggregateCreatedEvent(id));
+        }
+
+        public void update(String token) {
+            apply(new AggregateUpdatedEvent(id, token));
+        }
+
+        @EventSourcingHandler
+        private void created(AggregateCreatedEvent event) {
+            this.id = event.id;
+        }
+
+        @EventSourcingHandler
+        private void updated(AggregateUpdatedEvent event) {
+            tokens.add(event.token);
+        }
+    }
+
     /**
      * Simulate event on bus -> command handler -> subsequent command (w/ unit of work)
      */
@@ -286,72 +351,6 @@ public class CachingRepositoryWithNestedUnitOfWorkTest {
                     }
                 }
             }
-        }
-    }
-
-	/*
-     * Domain Model
-	 */
-
-    public static class AggregateCreatedEvent implements Serializable {
-
-        @AggregateIdentifier
-        final String id;
-
-        public AggregateCreatedEvent(String id) {
-            this.id = id;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "@" + Integer.toHexString(hashCode()) + ": " + id;
-        }
-    }
-
-    public static class AggregateUpdatedEvent implements Serializable {
-
-        @AggregateIdentifier
-        final String id;
-        final String token;
-
-        public AggregateUpdatedEvent(String id, String token) {
-            this.id = id;
-            this.token = token;
-        }
-
-        @Override
-        public String toString() {
-            return getClass().getSimpleName() + "@" + Integer.toHexString(hashCode()) + ": " + id + "/" + token;
-        }
-    }
-
-    public static class TestAggregate implements Serializable {
-
-        @AggregateIdentifier
-        public String id;
-
-        public Set<String> tokens = new HashSet<>();
-
-        @SuppressWarnings("unused")
-        private TestAggregate() {
-        }
-
-        public TestAggregate(String id) {
-            apply(new AggregateCreatedEvent(id));
-        }
-
-        public void update(String token) {
-            apply(new AggregateUpdatedEvent(id, token));
-        }
-
-        @EventSourcingHandler
-        private void created(AggregateCreatedEvent event) {
-            this.id = event.id;
-        }
-
-        @EventSourcingHandler
-        private void updated(AggregateUpdatedEvent event) {
-            tokens.add(event.token);
         }
     }
 }

@@ -31,7 +31,7 @@ public class FixedValueParameterResolver<T> implements ParameterResolver<T> {
     private final T value;
 
     /**
-     * Initialize the ParameterResolver to inject the given <code>value</code> for each incoming message.
+     * Initialize the ParameterResolver to inject the given {@code value} for each incoming message.
      *
      * @param value The value to inject as parameter
      */

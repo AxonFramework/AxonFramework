@@ -42,8 +42,8 @@ public class EventMessageReader {
     private final DataInputStream in;
 
     /**
-     * Creates a new EventMessageReader that reads the data from the given <code>input</code> and deserializes payload
-     * and meta data using the given <code>serializer</code>.
+     * Creates a new EventMessageReader that reads the data from the given {@code input} and deserializes payload
+     * and meta data using the given {@code serializer}.
      *
      * @param input      The input providing access to the written data
      * @param serializer The serializer to deserialize payload and meta data with
@@ -58,7 +58,7 @@ public class EventMessageReader {
      * DomainEventMessage is returned.
      *
      * @param <T> The type of payload expected to be in the returned EventMessage. This is not checked at runtime!
-     * @return an EventMessage representing the message originally written, or <code>null</code> if the stream has
+     * @return an EventMessage representing the message originally written, or {@code null} if the stream has
      * reached the end
      * @throws IOException                                                    when an error occurs reading from the
      *                                                                        underlying input

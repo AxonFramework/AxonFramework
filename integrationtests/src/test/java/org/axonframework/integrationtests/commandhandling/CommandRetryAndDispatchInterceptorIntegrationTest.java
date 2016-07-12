@@ -33,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static junit.framework.TestCase.assertEquals;
 
@@ -90,10 +90,10 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         final Thread testThread = Thread.currentThread();
         commandBus.setDispatchInterceptors(Collections.singletonList(new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Override
-            public Function<Integer, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
-                return (index) -> {
+            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+                return (index, message) -> {
                     if (Thread.currentThread() == testThread) {
-                        return messages.get(index); // ok
+                        return message; // ok
                     } else {
                         // also, nothing is logged!
                         LoggerFactory.getLogger(getClass()).info("throwing exception from dispatcher...");
@@ -124,10 +124,10 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         commandGateway = new DefaultCommandGateway(commandBus, retryScheduler, new MessageDispatchInterceptor<CommandMessage<?>>() {
 
             @Override
-            public Function<Integer, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
-                return (index) -> {
+            public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+                return (index, message) -> {
                     if (Thread.currentThread() == testThread) {
-                        return messages.get(index).andMetaData(
+                        return message.andMetaData(
                                 Collections.singletonMap("gatewayMetaData", "myUserSession"));
                     } else {
                         // gateway interceptor should only be called from the caller's thread
@@ -172,16 +172,14 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
             }
         });
 
-        commandBus.setDispatchInterceptors(Collections.singletonList(messages -> (index) -> {
+        commandBus.setDispatchInterceptors(Collections.singletonList(messages -> (index, message) -> {
             if (Thread.currentThread() == testThread) {
-                return messages.get(index).andMetaData(Collections.singletonMap("commandBusMetaData",
-                        "myUserSession"));
+                return message.andMetaData(Collections.singletonMap("commandBusMetaData", "myUserSession"));
             } else {
                 // say the security interceptor example
                 // from #testCommandDipatchInterceptorExceptionOnRetryThreadIsThrownToCaller
                 // has been "fixed" -- on the retry thread, there's no security context
-                return messages.get(index).andMetaData(Collections.singletonMap("commandBusMetaData",
-                        "noUserSession"));
+                return message.andMetaData(Collections.singletonMap("commandBusMetaData", "noUserSession"));
             }
         }));
 

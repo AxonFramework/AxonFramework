@@ -27,9 +27,6 @@ public class SequentialPolicy implements SequencingPolicy<Object> {
 
     private static final Object FULL_SEQUENTIAL_POLICY = new Object();
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object getSequenceIdentifierFor(Object task) {
         return FULL_SEQUENTIAL_POLICY;

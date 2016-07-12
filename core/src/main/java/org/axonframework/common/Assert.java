@@ -30,7 +30,7 @@ public abstract class Assert {
     }
 
     /**
-     * Asserts that the value of <code>state</code> is true. If not, an IllegalStateException is thrown.
+     * Asserts that the value of {@code state} is true. If not, an IllegalStateException is thrown.
      *
      * @param state   the state validation expression
      * @param message The message that the exception contains if state evaluates to false
@@ -42,7 +42,7 @@ public abstract class Assert {
     }
 
     /**
-     * Asserts that the given <code>expression</code> is true. If not, an IllegalArgumentException is thrown.
+     * Asserts that the given {@code expression} is true. If not, an IllegalArgumentException is thrown.
      *
      * @param expression the state validation expression
      * @param message    The message that the exception contains if state evaluates to false
@@ -54,7 +54,7 @@ public abstract class Assert {
     }
 
     /**
-     * Asserts that the given <code>expression</code> is false. If not, an IllegalArgumentException is thrown.
+     * Asserts that the given {@code expression} is false. If not, an IllegalArgumentException is thrown.
      *
      * @param expression the state validation expression
      * @param message    The message that the exception contains if state evaluates to true
@@ -66,10 +66,10 @@ public abstract class Assert {
     }
 
     /**
-     * Assert that the given <code>value</code> is not <code>null</code>. If not, an IllegalArgumentException is
+     * Assert that the given {@code value} is not {@code null}. If not, an IllegalArgumentException is
      * thrown.
      *
-     * @param value   the value not to be <code>null</code>
+     * @param value   the value not to be {@code null}
      * @param message The message to add to the exception when the assertion fails
      */
     public static void notNull(Object value, String message) {
@@ -77,7 +77,7 @@ public abstract class Assert {
     }
 
     /**
-     * Assert that the given <code>value</code> is not <code>null</code> or empty. If not, an IllegalArgumentException
+     * Assert that the given {@code value} is not {@code null} or empty. If not, an IllegalArgumentException
      * is thrown.
      *
      * @param value   the value to contain at least one character

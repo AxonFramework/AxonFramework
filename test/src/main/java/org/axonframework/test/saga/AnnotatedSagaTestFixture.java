@@ -76,7 +76,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         SagaRepository<T> sagaRepository = new AnnotatedSagaRepository<>(sagaType, sagaStore,
                                                                          new AutowiredResourceInjector(
                                                                                  registeredResources));
-        sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository, sagaType::newInstance);
+        sagaManager = new AnnotatedSagaManager<>(sagaType, sagaRepository);
         sagaManager.setSuppressExceptions(false);
 
         registeredResources.add(eventBus);
@@ -89,7 +89,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         FixtureResourceParameterResolverFactory.clear();
         registeredResources.forEach(FixtureResourceParameterResolverFactory::registerResource);
     }
-    
+
     protected void handleInSaga(EventMessage<?> event) throws Exception {
         DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> sagaManager.handle(event));
     }
@@ -316,13 +316,13 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
                     if (event instanceof EventMessage<?>) {
                         EventMessage<?> eventMessage = (EventMessage<?>) event;
                         handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,
-                                                                           sequenceNumber++, eventMessage.getPayload(),
-                                                                           eventMessage.getMetaData(),
-                                                                           eventMessage.getIdentifier(),
-                                                                           eventMessage.getTimestamp()));
+                                                                     sequenceNumber++, eventMessage.getPayload(),
+                                                                     eventMessage.getMetaData(),
+                                                                     eventMessage.getIdentifier(),
+                                                                     eventMessage.getTimestamp()));
                     } else {
                         handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,
-                                                                           sequenceNumber++, event));
+                                                                     sequenceNumber++, event));
                     }
                 }
             } finally {

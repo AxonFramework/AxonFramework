@@ -28,7 +28,7 @@ import org.axonframework.messaging.Message;
 public interface ParameterResolver<T> {
 
     /**
-     * Resolves the parameter value to use for the given <code>message</code>, or <code>null</code> if no suitable
+     * Resolves the parameter value to use for the given {@code message}, or {@code null} if no suitable
      * parameter value can be resolved.
      *
      * @param message The message to resolve the value from
@@ -37,10 +37,10 @@ public interface ParameterResolver<T> {
     T resolveParameterValue(Message message);
 
     /**
-     * Indicates whether this resolver is capable of providing a value for the given <code>message</code>.
+     * Indicates whether this resolver is capable of providing a value for the given {@code message}.
      *
      * @param message The message to evaluate
-     * @return <code>true</code> if this resolver can provide a value for the message, otherwise <code>false</code>
+     * @return {@code true} if this resolver can provide a value for the message, otherwise {@code false}
      */
     boolean matches(Message message);
 

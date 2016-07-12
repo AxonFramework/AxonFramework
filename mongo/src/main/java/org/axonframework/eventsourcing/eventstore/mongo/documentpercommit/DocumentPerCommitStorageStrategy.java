@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventUtils;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
-import org.axonframework.eventsourcing.eventstore.mongo.AbstractEventStorageStrategy;
+import org.axonframework.eventsourcing.eventstore.mongo.AbstractMongoEventStorageStrategy;
 import org.axonframework.eventsourcing.eventstore.mongo.documentperevent.EventEntryConfiguration;
 import org.axonframework.serialization.Serializer;
 
@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DocumentPerCommitStorageStrategy extends AbstractEventStorageStrategy {
+public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageStrategy {
 
     private final CommitEntryConfiguration commitEntryConfiguration;
 

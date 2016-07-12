@@ -58,7 +58,7 @@ public class AnnotatedHandlerInspector<T> {
         List<AnnotatedHandlerInspector<? super T>> parents = new ArrayList<>();
         for (Class<?> iFace : inspectedType.getInterfaces()) {
             //noinspection unchecked
-            parents.add(createInspector((Class<? super T>) iFace, parameterResolverFactory, registry));
+            parents.add(createInspector(iFace, parameterResolverFactory, registry));
         }
         if (inspectedType.getSuperclass() != null && !Object.class.equals(inspectedType.getSuperclass())) {
             parents.add(createInspector(inspectedType.getSuperclass(), parameterResolverFactory, registry));

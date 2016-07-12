@@ -49,7 +49,7 @@ public interface Repository<T> {
      * Creates a new managed instance for the aggregate, using the given {@code factoryMethod}
      * to instantiate the aggregate's root.
      *
-     * @param factoryMethod The method to create the aggregate's root instce
+     * @param factoryMethod The method to create the aggregate's root instance
      * @return an Aggregate instance describing the aggregate's state
      * @throws Exception when the factoryMethod throws an exception
      */

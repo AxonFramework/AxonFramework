@@ -35,8 +35,8 @@ public class AggregateBlacklistedException extends AggregateStateCorruptedExcept
     private static final long serialVersionUID = -6223847897300183682L;
 
     /**
-     * Initializes the exception with given <code>aggregateIdentifier</code>, given explanatory <code>message</code>
-     * and <code>cause</code>.
+     * Initializes the exception with given {@code aggregateIdentifier}, given explanatory {@code message}
+     * and {@code cause}.
      *
      * @param aggregateIdentifier The identifier of the blacklisted aggregate
      * @param message             The message explaining why the blacklisting occurred

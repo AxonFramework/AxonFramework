@@ -40,10 +40,11 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
 
         this.commandHandlers = new HashMap<>();
         if (forwardCommands) {
-            entityModel.commandHandlers()
-                    .forEach((commandType, childHandler) -> {
-                        commandHandlers.put(commandType, new ChildForwardingCommandMessageHandler<>(parentRoutingKey, childHandler, targetResolver));
-                    });
+            entityModel.commandHandlers().forEach((commandType, childHandler) -> commandHandlers.put(commandType,
+                                                                                                     new ChildForwardingCommandMessageHandler<>(
+                                                                                                             parentRoutingKey,
+                                                                                                             childHandler,
+                                                                                                             targetResolver)));
         }
     }
 

@@ -41,14 +41,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.test.FixtureTest_CommandInterceptors.InterceptorAggregate.AGGREGATE_IDENTIFIER;
-import static org.axonframework.test.FixtureTest_CommandInterceptors.TestCommandDispatchInterceptor.DISPATCH_META_DATA_KEY;
-import static org.axonframework.test.FixtureTest_CommandInterceptors.TestCommandDispatchInterceptor.DISPATCH_META_DATA_VALUE;
-import static org.axonframework.test.FixtureTest_CommandInterceptors.TestCommandHandlerInterceptor.HANDLER_META_DATA_KEY;
-import static org.axonframework.test.FixtureTest_CommandInterceptors.TestCommandHandlerInterceptor.HANDLER_META_DATA_VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
@@ -56,6 +52,11 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FixtureTest_CommandInterceptors {
+
+    private static final String DISPATCH_META_DATA_KEY = "dispatchKey";
+    private static final String DISPATCH_META_DATA_VALUE = "dispatchValue";
+    private static final String HANDLER_META_DATA_KEY = "handlerKey";
+    private static final String HANDLER_META_DATA_VALUE = "handlerValue";
 
     private FixtureConfiguration<InterceptorAggregate> fixture;
 
@@ -263,13 +264,9 @@ public class FixtureTest_CommandInterceptors {
 
     class TestCommandDispatchInterceptor implements MessageDispatchInterceptor<CommandMessage<?>> {
 
-        static final String DISPATCH_META_DATA_KEY = "dispatchKey";
-        static final String DISPATCH_META_DATA_VALUE = "dispatchValue";
-
         @Override
-        public Function<Integer, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
-            return index -> {
-                CommandMessage<?> message = messages.get(index);
+        public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
+            return (index, message) -> {
                 Map<String, Object> testMetaDataMap = new HashMap<>();
                 testMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
                 message = message.andMetaData(testMetaDataMap);
@@ -280,9 +277,6 @@ public class FixtureTest_CommandInterceptors {
     }
 
     class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
-
-        static final String HANDLER_META_DATA_KEY = "handlerKey";
-        static final String HANDLER_META_DATA_VALUE = "handlerValue";
 
         @Override
         public Object handle(UnitOfWork<? extends CommandMessage<?>> unitOfWork, InterceptorChain interceptorChain) throws Exception {

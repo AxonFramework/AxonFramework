@@ -23,8 +23,8 @@ import static org.axonframework.common.ReflectionUtils.declaringClass;
 
 /**
  * Validates the structure of an object passed as Aggregate Identifier. These objects need to (properly) override
- * the <code>toString</code> method. Two equal identifiers must always produce the same <code>toString</code> values,
- * even between JVM restarts. Typically, this also means <code>equals</code> and <code>hashCode</code> need to be
+ * the {@code toString} method. Two equal identifiers must always produce the same {@code toString} values,
+ * even between JVM restarts. Typically, this also means {@code equals} and {@code hashCode} need to be
  * implemented.
  * <p/>
  * For optimization purposes, this validator keeps a white-list of all aggregate types that have passed validation.
@@ -55,10 +55,10 @@ public final class IdentifierValidator {
     }
 
     /**
-     * Indicates whether or not the given <code>identifierType</code> is safe to use as aggregate identifier
+     * Indicates whether or not the given {@code identifierType} is safe to use as aggregate identifier
      *
      * @param identifierType The class of the identifier
-     * @return <code>true</code> if the identifier is valid, <code>false</code> otherwise
+     * @return {@code true} if the identifier is valid, {@code false} otherwise
      */
     public boolean isValidIdentifier(Class<?> identifierType) {
         if (!whiteList.containsKey(identifierType)) {

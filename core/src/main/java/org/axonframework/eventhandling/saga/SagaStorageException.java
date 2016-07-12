@@ -29,7 +29,7 @@ public class SagaStorageException extends AxonTransientException {
     private static final long serialVersionUID = -225936398184084287L;
 
     /**
-     * Initialize a SagaStorageException with the given descriptive <code>message</code>.
+     * Initialize a SagaStorageException with the given descriptive {@code message}.
      *
      * @param message The message describing the error.
      */
@@ -38,7 +38,7 @@ public class SagaStorageException extends AxonTransientException {
     }
 
     /**
-     * Initialize a SagaStorageException with the given descriptive <code>message</code> and <code>cause</code>.
+     * Initialize a SagaStorageException with the given descriptive {@code message} and {@code cause}.
      *
      * @param message The message describing the error.
      * @param cause   The cause of the error.

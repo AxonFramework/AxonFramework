@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,15 +20,15 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.metrics.MessageMonitor;
-import org.axonframework.metrics.NoOpMessageMonitor;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -49,6 +52,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
     private final ScheduledExecutorService cleanupService;
 
     private volatile Node oldest;
+    private final AtomicBoolean producerStarted = new AtomicBoolean();
 
     public EmbeddedEventStore(EventStorageEngine storageEngine) {
         this(storageEngine, NoOpMessageMonitor.INSTANCE);
@@ -67,25 +71,26 @@ public class EmbeddedEventStore extends AbstractEventStore {
         cleanupDelayMillis = timeUnit.toMillis(cleanupDelay);
     }
 
-    @PostConstruct
-    public void initialize() {
-        threadFactory.newThread(() -> {
-            try {
-                producer.run();
-            } catch (InterruptedException e) {
-                logger.warn("Producer thread was interrupted. Shutting down event store.", e);
-                Thread.currentThread().interrupt();
-            }
-        }).start();
-        cleanupService
-                .scheduleWithFixedDelay(new Cleaner(), cleanupDelayMillis, cleanupDelayMillis, TimeUnit.MILLISECONDS);
-    }
-
     @PreDestroy
     public void shutDown() {
         tailingConsumers.forEach(IOUtils::closeQuietly);
         IOUtils.closeQuietly(producer);
         cleanupService.shutdownNow();
+    }
+
+    private void ensureProducerStarted() {
+        if (producerStarted.compareAndSet(false, true)) {
+            threadFactory.newThread(() -> {
+                try {
+                    producer.run();
+                } catch (InterruptedException e) {
+                    logger.warn("Producer thread was interrupted. Shutting down event store.", e);
+                    Thread.currentThread().interrupt();
+                }
+            }).start();
+            cleanupService
+                    .scheduleWithFixedDelay(new Cleaner(), cleanupDelayMillis, cleanupDelayMillis, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
@@ -118,12 +123,25 @@ public class EmbeddedEventStore extends AbstractEventStore {
         return node;
     }
 
+    private static class Node {
+        private final long index;
+        private final TrackingToken previousToken;
+        private final TrackedEventMessage<?> event;
+        private volatile Node next;
+
+        private Node(long index, TrackingToken previousToken, TrackedEventMessage<?> event) {
+            this.index = index;
+            this.previousToken = previousToken;
+            this.event = event;
+        }
+    }
+
     private class EventProducer implements AutoCloseable {
         private final Lock lock = new ReentrantLock();
         private final Condition dataAvailableCondition = lock.newCondition();
         private final long fetchDelayNanos;
         private final int cachedEvents;
-        private volatile boolean fetching, shouldFetch, closed;
+        private volatile boolean shouldFetch, closed;
         private Stream<? extends TrackedEventMessage<?>> eventStream;
         private Node newest;
 
@@ -133,25 +151,26 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private void run() throws InterruptedException {
+            boolean dataFound = false;
+
             while (!closed) {
                 shouldFetch = true;
-                fetching = true;
                 while (shouldFetch) {
                     shouldFetch = false;
-                    fetchData();
+                    dataFound = fetchData();
                 }
-                fetching = false;
-                if (tailingConsumers.isEmpty()) {
-                    newest = null;
+                if (!dataFound) {
+                    waitForData();
                 }
-                waitForData();
             }
         }
 
         private void waitForData() throws InterruptedException {
             lock.lock();
             try {
-                dataAvailableCondition.awaitNanos(fetchDelayNanos);
+                if (!shouldFetch) {
+                    dataAvailableCondition.awaitNanos(fetchDelayNanos);
+                }
             } finally {
                 lock.unlock();
             }
@@ -159,20 +178,20 @@ public class EmbeddedEventStore extends AbstractEventStore {
 
         private void fetchIfWaiting() {
             shouldFetch = true;
-            if (!fetching) {
-                lock.lock();
-                try {
-                    dataAvailableCondition.signal();
-                } finally {
-                    lock.unlock();
-                }
+            lock.lock();
+            try {
+                dataAvailableCondition.signalAll();
+            } finally {
+                lock.unlock();
             }
         }
 
-        private void fetchData() {
+        private boolean fetchData() {
+            Node currentNewest = newest;
             if (!tailingConsumers.isEmpty()) {
                 try {
-                    (eventStream = storageEngine().readEvents(lastToken(), true)).forEach(event -> {
+                    eventStream = storageEngine().readEvents(lastToken(), true);
+                    eventStream.forEach(event -> {
                         Node node = new Node(nextIndex(), lastToken(), event);
                         if (newest != null) {
                             newest.next = node;
@@ -182,12 +201,13 @@ public class EmbeddedEventStore extends AbstractEventStore {
                             oldest = node;
                         }
                         notifyConsumers();
+                        trimCache();
                     });
                 } catch (Exception e) {
                     logger.error("Failed to read events from the underlying event storage", e);
                 }
-                trimCache();
             }
+            return newest != currentNewest;
         }
 
         private TrackingToken lastToken() {
@@ -214,7 +234,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private void trimCache() {
-            while (newest != null && newest.index - oldest.index >= cachedEvents) {
+            while (newest != null && oldest != null && newest.index - oldest.index >= cachedEvents) {
                 oldest = oldest.next;
             }
         }
@@ -261,8 +281,12 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private TrackedEventMessage<?> peek(int timeout, TimeUnit timeUnit) throws InterruptedException {
-            return tailingConsumers.contains(this) ? peekGlobalStream(timeout, timeUnit) :
+            return isTailingConsumer() ? peekGlobalStream(timeout, timeUnit) :
                     peekPrivateStream(timeout, timeUnit);
+        }
+
+        private boolean isTailingConsumer() {
+            return tailingConsumers.contains(this) && (this.lastToken == null || oldest == null || this.lastToken.isAfter(oldest.previousToken));
         }
 
         private TrackedEventMessage<?> peekGlobalStream(int timeout, TimeUnit timeUnit) throws InterruptedException {
@@ -277,7 +301,9 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 }
             }
             if (nextNode != null) {
-                lastNode = nextNode;
+                if (tailingConsumers.contains(this)) {
+                    lastNode = nextNode;
+                }
                 lastToken = nextNode.event.trackingToken();
                 return nextNode.event;
             } else {
@@ -298,6 +324,7 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 closePrivateStream();
                 lastNode = findNode(lastToken);
                 tailingConsumers.add(this);
+                ensureProducerStarted();
                 return timeout > 0 ? peek(timeout, timeUnit) : null;
             }
         }
@@ -345,21 +372,8 @@ public class EmbeddedEventStore extends AbstractEventStore {
                 logger.warn("An event processor fell behind the tail end of the event store cache. " +
                                     "This usually indicates a badly performing event processor.");
                 tailingConsumers.remove(consumer);
-                consumer.lastNode = null; //make old nodes garbage collectable
+                consumer.lastNode = null; //make old nodes garbage collectible
             });
-        }
-    }
-
-    private static class Node {
-        private final long index;
-        private final TrackingToken previousToken;
-        private final TrackedEventMessage<?> event;
-        private volatile Node next;
-
-        private Node(long index, TrackingToken previousToken, TrackedEventMessage<?> event) {
-            this.index = index;
-            this.previousToken = previousToken;
-            this.event = event;
         }
     }
 }

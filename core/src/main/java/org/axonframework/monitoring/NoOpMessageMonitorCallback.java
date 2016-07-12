@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,28 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.disruptor;
-
-import com.eaio.uuid.UUID;
-import org.axonframework.common.IdentifierFactory;
+package org.axonframework.monitoring;
 
 /**
- * @author Allard Buijze
+ * A NoOp MessageMonitor callback
+ *
+ * @author Marijn van Zelst
+ * @since 3.0
  */
-public class FastUUIDIdentifierFactory extends IdentifierFactory {
+public enum NoOpMessageMonitorCallback implements MessageMonitor.MonitorCallback {
+
+    INSTANCE;
+
     @Override
-    public String generateIdentifier() {
-        return new UUID().toString();
+    public void reportSuccess() {
+    }
+
+    @Override
+    public void reportFailure(Throwable cause) {
+    }
+
+    @Override
+    public void reportIgnored() {
+
     }
 }

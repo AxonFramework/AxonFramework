@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +22,7 @@ import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -34,16 +37,26 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     private final SagaModel<T> sagaMetaModel;
 
     /**
-     * Initialize the AnnotatedSagaManager using given <code>repository</code> to load sagas and supporting given
-     * annotated <code>sagaClasses</code>.
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and supporting given
+     * annotated {@code sagaClasses}.
      *
      * @param sagaRepository The repository providing access to the Saga instances
      */
-    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory) {
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository) {
+        this(sagaType, sagaRepository, () -> newInstance(sagaType));
+    }
+
+    /**
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and supporting given
+     * annotated {@code sagaClasses}.
+     *
+     * @param sagaRepository The repository providing access to the Saga instances
+     */
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
         this(sagaType, sagaRepository, sagaFactory, new DefaultSagaMetaModelFactory().modelOf(sagaType));
     }
 
-    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory,
+    public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
                                 SagaModel<T> sagaMetaModel) {
         super(sagaType, sagaRepository, sagaFactory);
         this.sagaMetaModel = sagaMetaModel;
@@ -66,6 +79,14 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
         List<SagaMethodMessageHandler<T>> handlers = sagaMetaModel.findHandlerMethods(event);
         return handlers.stream().map(handler -> handler.getAssociationValue(event)).collect(Collectors.toSet());
+    }
+
+    private static <T> T newInstance(Class<T> type) {
+        try {
+            return type.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new SagaInstantiationException("Exception while trying to instantiate a new Saga", e);
+        }
     }
 
     @Override

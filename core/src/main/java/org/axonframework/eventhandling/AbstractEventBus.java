@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2016. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Assert;
@@ -6,8 +22,8 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.metrics.MessageMonitor;
-import org.axonframework.metrics.NoOpMessageMonitor;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
 
@@ -49,7 +65,7 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Initializes an event bus. Uses the given <code>messageMonitor</code> to report ingested messages and report the
+     * Initializes an event bus. Uses the given {@code messageMonitor} to report ingested messages and report the
      * result of processing the message.
      *
      * @param messageMonitor The monitor used to monitor the ingested messages
@@ -83,7 +99,7 @@ public abstract class AbstractEventBus implements EventBus {
     /**
      * {@inheritDoc}
      * <p/>
-     * In case a Unit of Work is active, the <code>preprocessor</code> is not invoked by this Event Bus until the Unit
+     * In case a Unit of Work is active, the {@code preprocessor} is not invoked by this Event Bus until the Unit
      * of Work root is committed.
      *
      * @param dispatchInterceptor
@@ -149,9 +165,9 @@ public abstract class AbstractEventBus implements EventBus {
     protected List<? extends EventMessage<?>> intercept(List<? extends EventMessage<?>> events) {
         List<EventMessage<?>> preprocessedEvents = new ArrayList<>(events);
         for (MessageDispatchInterceptor<EventMessage<?>> preprocessor : dispatchInterceptors) {
-            Function<Integer, EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
+            BiFunction<Integer, EventMessage<?>, EventMessage<?>> function = preprocessor.handle(preprocessedEvents);
             for (int i = 0; i < preprocessedEvents.size(); i++) {
-                preprocessedEvents.set(i, function.apply(i));
+                preprocessedEvents.set(i, function.apply(i, preprocessedEvents.get(i)));
             }
         }
         return preprocessedEvents;
@@ -166,7 +182,7 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Process given <code>events</code> while the Unit of Work root is preparing for commit. The default implementation
+     * Process given {@code events} while the Unit of Work root is preparing for commit. The default implementation
      * signals the registered {@link MessageMonitor} that the given events are ingested and passes the events to each
      * registered event processor.
      *
@@ -178,7 +194,7 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Process given <code>events</code> while the Unit of Work root is being committed. The default implementation does
+     * Process given {@code events} while the Unit of Work root is being committed. The default implementation does
      * nothing.
      *
      * @param events Events to be published by this Event Bus
@@ -187,7 +203,7 @@ public abstract class AbstractEventBus implements EventBus {
     }
 
     /**
-     * Process given <code>events</code> after the Unit of Work has been committed. The default implementation does
+     * Process given {@code events} after the Unit of Work has been committed. The default implementation does
      * nothing.
      *
      * @param events Events to be published by this Event Bus

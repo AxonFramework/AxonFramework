@@ -17,11 +17,11 @@
 package org.axonframework.messaging.metadata;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents MetaData that is passed along with a payload in a Message. Typically, the MetaData contains information
@@ -43,7 +43,7 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Initializes a MetaData instance with the given <code>items</code> as content. Note that the items are copied
+     * Initializes a MetaData instance with the given {@code items} as content. Note that the items are copied
      * into the MetaData. Modifications in the Map of items will not reflect is the MetaData, or vice versa.
      * Modifications in the items themselves <em>are</em> reflected in the MetaData.
      *
@@ -63,12 +63,12 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Creates a new MetaData instance from the given <code>metaDataEntries</code>. If <code>metaDataEntries</code> is
+     * Creates a new MetaData instance from the given {@code metaDataEntries}. If {@code metaDataEntries} is
      * already a MetaData instance, it is returned as is. This makes this method more suitable than the {@link
      * #MetaData(java.util.Map)} copy-constructor.
      *
      * @param metaDataEntries the items to populate the MetaData with
-     * @return a MetaData instance with the given <code>metaDataEntries</code> as content
+     * @return a MetaData instance with the given {@code metaDataEntries} as content
      */
     public static MetaData from(Map<String, ?> metaDataEntries) {
         if (metaDataEntries instanceof MetaData) {
@@ -80,8 +80,8 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Creates a MetaData instances with a single entry, with the given <code>key</code> and
-     * given <code>value</code>.
+     * Creates a MetaData instances with a single entry, with the given {@code key} and
+     * given {@code value}.
      *
      * @param key   The key for the entry
      * @param value The value of the entry
@@ -92,10 +92,10 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Returns a MetaData instances containing the current entries, <b>and</b> the given <code>key</code> and given
-     * <code>value</code>.
-     * If <code>key</code> already existed, it's old <code>value</code> is overwritten with the given
-     * <code>value</code>.
+     * Returns a MetaData instances containing the current entries, <b>and</b> the given {@code key} and given
+     * {@code value}.
+     * If {@code key} already existed, it's old {@code value} is overwritten with the given
+     * {@code value}.
      *
      * @param key   The key for the entry
      * @param value The value of the entry
@@ -105,6 +105,20 @@ public class MetaData implements Map<String, Object>, Serializable {
         HashMap<String, Object> newValues = new HashMap<>(values);
         newValues.put(key, value);
         return new MetaData(newValues);
+    }
+
+    /**
+     * Returns a MetaData instances containing the current entries, <b>and</b> the given {@code key} if it was
+     * not yet present in this MetaData.
+     * If {@code key} already existed, the current value will be used.
+     * Otherwise the Supplier function will provide the {@code value} for {@code key}
+     *
+     * @param key   The key for the entry
+     * @param value A Supplier function which provides the value
+     * @return a MetaData instance with an additional entry
+     */
+    public MetaData andIfNotPresent(String key, Supplier<Object> value) {
+        return containsKey(key) ? this : this.and(key, value.get());
     }
 
     @Override
@@ -207,13 +221,13 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Returns a MetaData instance containing values of <code>this</code>, combined with the given
-     * <code>additionalEntries</code>. If any entries have identical keys, the values from the
-     * <code>additionalEntries</code> will take precedence.
+     * Returns a MetaData instance containing values of {@code this}, combined with the given
+     * {@code additionalEntries}. If any entries have identical keys, the values from the
+     * {@code additionalEntries} will take precedence.
      *
      * @param additionalEntries The additional entries for the new MetaData
-     * @return a MetaData instance containing values of <code>this</code>, combined with the given
-     * <code>additionalEntries</code>
+     * @return a MetaData instance containing values of {@code this}, combined with the given
+     * {@code additionalEntries}
      */
     public MetaData mergedWith(Map<String, ?> additionalEntries) {
         if (additionalEntries.isEmpty()) {
@@ -228,22 +242,31 @@ public class MetaData implements Map<String, Object>, Serializable {
     }
 
     /**
-     * Returns a MetaData instance with the items with given <code>keys</code> removed. Keys for which there is no
+     * Returns a MetaData instance with the items with given {@code keys} removed. Keys for which there is no
      * assigned value are ignored.<br/>
      * This MetaData instance is not influenced by this operation.
      *
      * @param keys The keys of the entries to remove
-     * @return a MetaData instance without the given <code>keys</code>
+     * @return a MetaData instance without the given {@code keys}
      */
     public MetaData withoutKeys(Set<String> keys) {
         if (keys.isEmpty()) {
             return this;
         }
         Map<String, ?> modified = new HashMap<>(values);
-        for (String key : keys) {
-            modified.remove(key);
-        }
+        keys.forEach(modified::remove);
         return new MetaData(modified);
+    }
+
+    /**
+     * Returns a MetaData instance containing a subset of the {@code keys} in this instance.
+     * Keys for which there is no assigned value are ignored.<
+     *
+     * @param keys The keys of the entries to remove
+     * @return a MetaData instance containing the given {@code keys} if these were already present
+     */
+    public MetaData subset(String... keys) {
+        return MetaData.from(Stream.of(keys).filter(this::containsKey).collect(Collectors.toMap(Function.identity(), this::get)));
     }
 
     /**

@@ -36,8 +36,8 @@ public class MethodAccessedProperty<T> implements Property<T> {
     private final String property;
 
     /**
-     * Initialize a reader that uses given <code>accessorMethod</code> to access a property with given
-     * <code>propertyName</code>.
+     * Initialize a reader that uses given {@code accessorMethod} to access a property with given
+     * {@code propertyName}.
      *
      * @param accessorMethod The method providing the property value
      * @param propertyName   The name of the property

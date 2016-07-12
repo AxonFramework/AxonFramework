@@ -38,9 +38,9 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     private final Class<S> source;
 
     /**
-     * Returns a converter that can convert an IntermediateRepresentation from the given <code>sourceType</code> to the
-     * given <code>targetType</code> using a chain formed with given <code>candidates</code>. The returned converter
-     * uses some (or all) of the given <code>candidates</code> as delegates.
+     * Returns a converter that can convert an IntermediateRepresentation from the given {@code sourceType} to the
+     * given {@code targetType} using a chain formed with given {@code candidates}. The returned converter
+     * uses some (or all) of the given {@code candidates} as delegates.
      *
      * @param sourceType The source type of the converter
      * @param targetType The target type of the converter
@@ -63,17 +63,17 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     }
 
     /**
-     * Indicates whether this converter is capable of converting the given <code>sourceContentType</code> into
-     * <code>targetContentType</code>, using the given <code>converters</code>. When <code>true</code>, it may use any
-     * number of the given <code>converters</code> to form a chain.
+     * Indicates whether this converter is capable of converting the given {@code sourceContentType} into
+     * {@code targetContentType}, using the given {@code converters}. When {@code true}, it may use any
+     * number of the given {@code converters} to form a chain.
      *
      * @param sourceContentType The content type of the source object
      * @param targetContentType The content type of the target object
      * @param converters        The converters eligible for use
      * @param <S>               The content type of the source object
      * @param <T>               The content type of the target object
-     * @return <code>true</code> if this Converter can convert between the given types, using the given converters.
-     *         Otherwise <code>false</code>.
+     * @return {@code true} if this Converter can convert between the given types, using the given converters.
+     *         Otherwise {@code false}.
      */
     public static <S, T> boolean canConvert(Class<S> sourceContentType, Class<T> targetContentType,
                                             List<ContentTypeConverter<?, ?>> converters) {
@@ -86,8 +86,8 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
     }
 
     /**
-     * Creates a new instance that uses the given <code>delegates</code> to form a chain of converters. Note that the
-     * <code>delegates</code> must for a Continuous chain, meaning that each item must produce an
+     * Creates a new instance that uses the given {@code delegates} to form a chain of converters. Note that the
+     * {@code delegates} must for a Continuous chain, meaning that each item must produce an
      * IntermediateRepresentation of a type that can be consumed by the next delegate.
      * <p/>
      * To automatically calculate a route between converters, see {@link #calculateChain(Class source, Class target,
@@ -202,7 +202,7 @@ public class ChainedConverter<S, T> implements ContentTypeConverter<S, T> {
 
     private static final class Route {
 
-        private final ContentTypeConverter[] nodes;
+        private final ContentTypeConverter<?, ?>[] nodes;
         private final Class endPoint;
 
         private Route(ContentTypeConverter initialVertex) {

@@ -29,10 +29,10 @@ package org.axonframework.messaging.unitofwork;
 public interface RollbackConfiguration {
 
     /**
-     * Decides whether the given <code>throwable</code> should trigger a rollback.
+     * Decides whether the given {@code throwable} should trigger a rollback.
      *
      * @param throwable the Throwable to evaluate
-     * @return <code>true</code> if the UnitOfWork should be rolled back, <code>false</code> otherwise
+     * @return {@code true} if the UnitOfWork should be rolled back, {@code false} otherwise
      */
     boolean rollBackOn(Throwable throwable);
 }

@@ -26,13 +26,13 @@ import java.util.Map;
  * Representation of a Message, containing a Payload and MetaData. Typical examples of Messages are Commands and
  * Events.
  * <p/>
- * Instead of implementing <code>Message</code> directly, consider implementing
- * {@link org.axonframework.commandhandling.CommandMessage <code>CommandMessage</code>} or {@link
+ * Instead of implementing {@code Message} directly, consider implementing
+ * {@link org.axonframework.commandhandling.CommandMessage {@code CommandMessage}} or {@link
  * EventMessage} instead.
  *
  * @param <T> The type of payload contained in this Message
  * @author Allard Buijze
- * @see org.axonframework.commandhandling.CommandMessage <code>CommandMessage</code>
+ * @see org.axonframework.commandhandling.CommandMessage {@code CommandMessage}
  * @see EventMessage
  * @since 2.0
  */
@@ -65,7 +65,7 @@ public interface Message<T> extends Serializable {
     /**
      * Returns the type of the payload.
      * <p/>
-     * Is semantically equal to <code>getPayload().getClass()</code>, but allows implementations to optimize by using
+     * Is semantically equal to {@code getPayload().getClass()}, but allows implementations to optimize by using
      * lazy loading or deserialization.
      *
      * @return the type of payload.
@@ -73,9 +73,9 @@ public interface Message<T> extends Serializable {
     Class<T> getPayloadType();
 
     /**
-     * Returns a copy of this Message with the given <code>metaData</code>. The payload remains unchanged.
+     * Returns a copy of this Message with the given {@code metaData}. The payload remains unchanged.
      * <p/>
-     * While the implementation returned may be different than the implementation of <code>this</code>, implementations
+     * While the implementation returned may be different than the implementation of {@code this}, implementations
      * must take special care in returning the same type of Message (e.g. EventMessage, DomainEventMessage) to prevent
      * errors further downstream.
      *
@@ -85,7 +85,7 @@ public interface Message<T> extends Serializable {
     Message<T> withMetaData(Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this Message with it MetaData merged with the given <code>metaData</code>. The payload
+     * Returns a copy of this Message with it MetaData merged with the given {@code metaData}. The payload
      * remains unchanged.
      *
      * @param metaData The MetaData to merge with

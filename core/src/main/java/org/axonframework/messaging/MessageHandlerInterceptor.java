@@ -32,9 +32,9 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      * Invoked before a Message is handled by a designated {@link org.axonframework.messaging.MessageHandler}.
      * <p/>
      * The interceptor is responsible for the continuation of the handling process by invoking the {@link
-     * InterceptorChain#proceed()} method on the given <code>interceptorChain</code>.
+     * InterceptorChain#proceed()} method on the given {@code interceptorChain}.
      * <p/>
-     * The given <code>unitOfWork</code> contains contextual information. Any information gathered by interceptors
+     * The given {@code unitOfWork} contains contextual information. Any information gathered by interceptors
      * may be attached to the unitOfWork.
      * <p/>
      * Interceptors are highly recommended not to change the type of the message handling result, as the dispatching

@@ -19,13 +19,7 @@ package org.axonframework.common.annotation;
 import org.slf4j.LoggerFactory;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
-import java.util.WeakHashMap;
+import java.util.*;
 
 import static java.util.ServiceLoader.load;
 
@@ -34,7 +28,7 @@ import static java.util.ServiceLoader.load;
  * the {@link ServiceLoader} mechanism to locate and initialize them.
  * <p/>
  * This means for this class to find implementations, their fully qualified class name has to be put into a file called
- * <code>META-INF/services/org.axonframework.common.annotation.ParameterResolverFactory</code>. For more details, see
+ * {@code META-INF/services/org.axonframework.common.annotation.ParameterResolverFactory}. For more details, see
  * {@link ServiceLoader}.
  *
  * @author Allard Buijze
@@ -49,7 +43,12 @@ public final class ClasspathParameterResolverFactory {
             new WeakHashMap<>();
 
     /**
-     * Creates an instance for the given <code>clazz</code>. Effectively, the class loader of the given class is used
+     * Private default constructor
+     */
+    private ClasspathParameterResolverFactory() {}
+
+    /**
+     * Creates an instance for the given {@code clazz}. Effectively, the class loader of the given class is used
      * to locate implementations.
      *
      * @param clazz The class for which the parameter resolver must be returned
@@ -60,7 +59,7 @@ public final class ClasspathParameterResolverFactory {
     }
 
     /**
-     * Creates an instance using the given <code>classLoader</code>. Implementations are located using this class
+     * Creates an instance using the given {@code classLoader}. Implementations are located using this class
      * loader.
      *
      * @param classLoader The class loader to locate the implementations with

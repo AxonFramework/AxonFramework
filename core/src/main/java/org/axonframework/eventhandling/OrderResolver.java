@@ -27,14 +27,14 @@ package org.axonframework.eventhandling;
 public interface OrderResolver {
 
     /**
-     * Returns the order for the given <code>listener</code>.
+     * Returns the order for the given {@code listener}.
      * <p/>
-     * Implementations should check whether the <code>listener</code> implements {@link EventListenerProxy}. In that
+     * Implementations should check whether the {@code listener} implements {@link EventListenerProxy}. In that
      * case, use {@link org.axonframework.eventhandling.EventListenerProxy#getTargetType()} to get access to the actual
      * type handling the events.
      *
      * @param listener the listener to resolve the order for
-     * @return the order for the given listener, or <code>0</code> if no specific order is provided.
+     * @return the order for the given listener, or {@code 0} if no specific order is provided.
      */
     int orderOf(EventListener listener);
 }

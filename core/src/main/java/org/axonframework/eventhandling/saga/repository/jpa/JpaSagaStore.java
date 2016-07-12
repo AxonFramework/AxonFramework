@@ -89,7 +89,7 @@ public class JpaSagaStore implements SagaStore<Object> {
     private volatile boolean useExplicitFlush = true;
 
     /**
-     * Initializes a Saga Repository with a <code>JavaSerializer</code>.
+     * Initializes a Saga Repository with a {@code JavaSerializer}.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      */
@@ -264,9 +264,9 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     /**
      * Sets whether or not to do an explicit {@link javax.persistence.EntityManager#flush()} after each data modifying
-     * operation on the backing storage. Default to <code>true</code>
+     * operation on the backing storage. Default to {@code true}
      *
-     * @param useExplicitFlush <code>true</code> to force flush, <code>false</code> otherwise.
+     * @param useExplicitFlush {@code true} to force flush, {@code false} otherwise.
      */
     public void setUseExplicitFlush(boolean useExplicitFlush) {
         this.useExplicitFlush = useExplicitFlush;

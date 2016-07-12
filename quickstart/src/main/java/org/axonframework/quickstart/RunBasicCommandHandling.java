@@ -59,7 +59,7 @@ public class RunBasicCommandHandling {
         commandBus.subscribe(MarkCompletedCommand.class.getName(), new MarkCompletedCommandHandler(repository));
 
         // We register an event listener to see which events are created
-        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", (EventListener) event -> System.out
+        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> System.out
                 .println(event.getPayload())), eventStore).start();
 
         // and let's send some Commands on the CommandBus using the special runner configured with our CommandGateway.

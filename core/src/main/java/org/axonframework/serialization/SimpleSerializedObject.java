@@ -34,7 +34,7 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
     private final Class<T> dataType;
 
     /**
-     * Initializes a SimpleSerializedObject using given <code>data</code> and <code>serializedType</code>.
+     * Initializes a SimpleSerializedObject using given {@code data} and {@code serializedType}.
      *
      * @param data           The data of the serialized object
      * @param dataType       The type of data
@@ -49,8 +49,8 @@ public class SimpleSerializedObject<T> implements SerializedObject<T> {
     }
 
     /**
-     * Initializes a SimpleSerializedObject using given <code>data</code> and a serialized type identified by given
-     * <code>type</code> and <code>revision</code>.
+     * Initializes a SimpleSerializedObject using given {@code data} and a serialized type identified by given
+     * {@code type} and {@code revision}.
      *
      * @param data     The data of the serialized object
      * @param dataType The type of data

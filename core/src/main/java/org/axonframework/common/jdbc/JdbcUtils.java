@@ -31,9 +31,14 @@ import java.sql.Statement;
 public class JdbcUtils {
 
     /**
-     * Close the given <code>resultSet</code>, if possible. All exceptions are discarded.
+     * Private default constructor
+     */
+    private JdbcUtils() {}
+
+    /**
+     * Close the given {@code resultSet}, if possible. All exceptions are discarded.
      *
-     * @param resultSet The resource to close. May be <code>null</code>.
+     * @param resultSet The resource to close. May be {@code null}.
      */
     public static void closeQuietly(ResultSet resultSet) {
         if (resultSet != null) {
@@ -45,9 +50,9 @@ public class JdbcUtils {
     }
 
     /**
-     * Close the given <code>statement</code>, if possible. All exceptions are discarded.
+     * Close the given {@code statement}, if possible. All exceptions are discarded.
      *
-     * @param statement The resource to close. May be <code>null</code>.
+     * @param statement The resource to close. May be {@code null}.
      */
     public static void closeQuietly(Statement statement) {
         if (statement != null) {
@@ -59,9 +64,9 @@ public class JdbcUtils {
     }
 
     /**
-     * Close the given <code>connection</code>, if possible. All exceptions are discarded.
+     * Close the given {@code connection}, if possible. All exceptions are discarded.
      *
-     * @param connection The resource to close. May be <code>null</code>.
+     * @param connection The resource to close. May be {@code null}.
      */
     public static void closeQuietly(Connection connection) {
         try {

@@ -23,7 +23,7 @@ import org.axonframework.messaging.Message;
  * Wrapper around a serializer that provides {@link SerializationAware} support. This class can either be used as a
  * wrapper around a Serializer, or as a static utility class.
  * <p/>
- * The <code>serializePayload</code> and <code>serializeMetaData</code> methods on this class are aware of
+ * The {@code serializePayload} and {@code serializeMetaData} methods on this class are aware of
  * SerializationAware messages. When a Message implements that interface, serialization is delegated to that message to
  * allow performance optimizations.
  * <p/>
@@ -48,8 +48,8 @@ public class MessageSerializer implements Serializer {
     }
 
     /**
-     * Utility method that serializes the payload of the given <code>message</code> using given <code>serializer</code>
-     * and <code>expectedRepresentation</code>. This method will verify if the <code>eventMessage</code> is {@link
+     * Utility method that serializes the payload of the given {@code message} using given {@code serializer}
+     * and {@code expectedRepresentation}. This method will verify if the {@code eventMessage} is {@link
      * SerializationAware}.
      *
      * @param message                The message containing the payload to serialize
@@ -67,9 +67,9 @@ public class MessageSerializer implements Serializer {
     }
 
     /**
-     * Utility method that serializes the meta data of the given <code>message</code> using given
-     * <code>serializer</code> and <code>expectedRepresentation</code>. This method will verify if the
-     * <code>eventMessage</code> is {@link SerializationAware}.
+     * Utility method that serializes the meta data of the given {@code message} using given
+     * {@code serializer} and {@code expectedRepresentation}. This method will verify if the
+     * {@code eventMessage} is {@link SerializationAware}.
      *
      * @param message                The message containing the meta data to serialize
      * @param serializer             The serializer to serialize the meta data with
@@ -86,7 +86,7 @@ public class MessageSerializer implements Serializer {
     }
 
     /**
-     * Serialize the payload of given <code>message</code> to the given <code>expectedRepresentation</code>.
+     * Serialize the payload of given {@code message} to the given {@code expectedRepresentation}.
      *
      * @param message                The message containing the payload to serialize
      * @param expectedRepresentation The representation of the serialized data
@@ -98,7 +98,7 @@ public class MessageSerializer implements Serializer {
     }
 
     /**
-     * Serialize the meta data of given <code>message</code> to the given <code>expectedRepresentation</code>.
+     * Serialize the meta data of given {@code message} to the given {@code expectedRepresentation}.
      *
      * @param message                The message containing the meta data to serialize
      * @param expectedRepresentation The representation of the serialized data

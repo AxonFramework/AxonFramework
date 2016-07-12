@@ -28,7 +28,7 @@ public class AxonConfigurationException extends AxonNonTransientException {
     private static final long serialVersionUID = 4369033925877210475L;
 
     /**
-     * Initializes the exception using the given <code>message</code>.
+     * Initializes the exception using the given {@code message}.
      *
      * @param message The message describing the exception
      */
@@ -37,7 +37,7 @@ public class AxonConfigurationException extends AxonNonTransientException {
     }
 
     /**
-     * Initializes the exception using the given <code>message</code> and <code>cause</code>.
+     * Initializes the exception using the given {@code message} and {@code cause}.
      *
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception

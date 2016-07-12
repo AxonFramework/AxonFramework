@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -43,7 +43,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     private final SagaRepository<T> sagaRepository;
     private final Class<T> sagaType;
     private volatile boolean suppressExceptions = true;
-    private final Callable<T> sagaFactory;
+    private final Supplier<T> sagaFactory;
 
     /**
      * Initializes the SagaManager with the given {@code sagaRepository}.
@@ -52,16 +52,11 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
      * @param sagaRepository        The repository providing the saga instances.
      * @param sagaFactory           The factory responsible for creating new Saga instances
      */
-    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Callable<T> sagaFactory) {
+    protected AbstractSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
         this.sagaType = sagaType;
         this.sagaFactory = sagaFactory;
         Assert.notNull(sagaRepository, "sagaRepository may not be null");
         this.sagaRepository = sagaRepository;
-    }
-
-    @Override
-    public String getName() {
-        return "SagaManager[" + sagaType.getName() + "]";
     }
 
     @Override
@@ -85,14 +80,14 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
         return null;
     }
 
-    private void startNewSaga(EventMessage event, AssociationValue associationValue) throws Exception {
+    private void startNewSaga(EventMessage event, AssociationValue associationValue) {
         Saga<T> newSaga = sagaRepository.newInstance(sagaFactory);
         newSaga.getAssociationValues().add(associationValue);
         doInvokeSaga(event, newSaga);
     }
 
     /**
-     * Returns the Saga Initialization Policy for a Saga of the given <code>sagaType</code> and <code>event</code>. This
+     * Returns the Saga Initialization Policy for a Saga of the given {@code sagaType} and {@code event}. This
      * policy provides the conditions to create new Saga instance, as well as the initial association of that saga.
      *
      * @param event The Event that is being dispatched to Saga instances
@@ -101,8 +96,8 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     protected abstract SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event);
 
     /**
-     * Extracts the AssociationValues from the given <code>event</code> as relevant for a Saga of given
-     * <code>sagaType</code>. A single event may be associated with multiple values.
+     * Extracts the AssociationValues from the given {@code event} as relevant for a Saga of given
+     * {@code sagaType}. A single event may be associated with multiple values.
      *
      * @param event The event containing the association information
      * @return the AssociationValues indicating which Sagas should handle given event
@@ -125,7 +120,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
 
     /**
      * Sets whether or not to suppress any exceptions that are cause by invoking Sagas. When suppressed, exceptions are
-     * logged. Defaults to <code>true</code>.
+     * logged. Defaults to {@code true}.
      *
      * @param suppressExceptions whether or not to suppress exceptions from Sagas.
      */

@@ -34,31 +34,16 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
     private static final String CONNECTION_RESOURCE_NAME = Connection.class.getName();
 
     private final ConnectionProvider delegate;
-    private final boolean inherited;
 
     /**
-     * Initializes a ConnectionProvider, using given <code>delegate</code> to create a new instance, when on is not
-     * already attached to the Unit of Work. Nested Unit of Work will inherit the same connection.
+     * Initializes a ConnectionProvider, using given {@code delegate} to create a new instance, when on is not
+     * already attached to the Unit of Work.
      *
      * @param delegate The connection provider creating connections, when required
      */
     public UnitOfWorkAwareConnectionProviderWrapper(ConnectionProvider delegate) {
-        this(delegate, true);
-    }
-
-    /**
-     * Initializes a ConnectionProvider, using given <code>delegate</code> to create a new instance, when on is not
-     * already attached to the Unit of Work. Given <code>attachAsInheritedResource</code> flag indicates whether
-     * the resource should be inherited by nested Unit of Work.
-     *
-     * @param delegate                  The connection provider creating connections, when required
-     * @param attachAsInheritedResource whether or not nested Units of Work should inherit connections
-     */
-    public UnitOfWorkAwareConnectionProviderWrapper(ConnectionProvider delegate, boolean attachAsInheritedResource) {
         this.delegate = delegate;
-        this.inherited = attachAsInheritedResource;
     }
-
 
     @Override
     public Connection getConnection() throws SQLException {
@@ -115,7 +100,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
 
         private final Connection delegateConnection;
 
-        public UoWAttachedConnectionImpl(Connection delegateConnection) {
+        private UoWAttachedConnectionImpl(Connection delegateConnection) {
             this.delegateConnection = delegateConnection;
         }
 

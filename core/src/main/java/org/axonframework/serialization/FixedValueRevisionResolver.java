@@ -28,7 +28,7 @@ public class FixedValueRevisionResolver implements RevisionResolver {
     private final String revision;
 
     /**
-     * Initializes the FixedValueRevisionResolver to always return the given <code>revision</code>, when asked.
+     * Initializes the FixedValueRevisionResolver to always return the given {@code revision}, when asked.
      *
      * @param revision The revision to return
      */

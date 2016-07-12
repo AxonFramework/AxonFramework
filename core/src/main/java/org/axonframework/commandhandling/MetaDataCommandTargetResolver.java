@@ -34,10 +34,10 @@ public class MetaDataCommandTargetResolver implements CommandTargetResolver {
     private final String versionKey;
 
     /**
-     * Initializes the MetaDataCommandTargetResolver to use the given <code>identifierKey</code> as the MetaData
-     * key to the aggregate identifier, and a <code>null</code> (ignored) version.
+     * Initializes the MetaDataCommandTargetResolver to use the given {@code identifierKey} as the MetaData
+     * key to the aggregate identifier, and a {@code null} (ignored) version.
      * <p/>
-     * When the given <code>identifierKey</code> is not present in a command's MetaData, {@link
+     * When the given {@code identifierKey} is not present in a command's MetaData, {@link
      * #resolveTarget(CommandMessage)} will raise an {@link IllegalArgumentException}
      *
      * @param identifierKey The key of the meta data field containing the aggregate identifier
@@ -47,15 +47,15 @@ public class MetaDataCommandTargetResolver implements CommandTargetResolver {
     }
 
     /**
-     * Initializes the MetaDataCommandTargetResolver to use the given <code>identifierKey</code> as the MetaData
-     * key to the aggregate identifier, and the given <code>versionKey</code> as key to the (optional) version entry.
+     * Initializes the MetaDataCommandTargetResolver to use the given {@code identifierKey} as the MetaData
+     * key to the aggregate identifier, and the given {@code versionKey} as key to the (optional) version entry.
      * <p/>
-     * When the given <code>identifierKey</code> is not present in a command's MetaData, {@link
+     * When the given {@code identifierKey} is not present in a command's MetaData, {@link
      * #resolveTarget(CommandMessage)} will raise an {@link IllegalArgumentException}
      *
      * @param identifierKey The key of the meta data field containing the aggregate identifier
      * @param versionKey    The key of the meta data field containing the expected aggregate version. A
-     *                      <code>null</code> value may be provided to ignore the version
+     *                      {@code null} value may be provided to ignore the version
      */
     public MetaDataCommandTargetResolver(String identifierKey, String versionKey) {
         this.versionKey = versionKey;

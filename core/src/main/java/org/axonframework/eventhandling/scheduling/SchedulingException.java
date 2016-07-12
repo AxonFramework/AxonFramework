@@ -29,7 +29,7 @@ public class SchedulingException extends AxonTransientException {
     private static final long serialVersionUID = -3633716643792480973L;
 
     /**
-     * Initialize a SchedulingException with the given <code>message</code>.
+     * Initialize a SchedulingException with the given {@code message}.
      *
      * @param message The message describing the exception
      */
@@ -38,7 +38,7 @@ public class SchedulingException extends AxonTransientException {
     }
 
     /**
-     * Initialize a SchedulingException with the given <code>message</code> and <code>cause</code>.
+     * Initialize a SchedulingException with the given {@code message} and {@code cause}.
      *
      * @param message The message describing the exception
      * @param cause   The cause of this exception

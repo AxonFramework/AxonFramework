@@ -32,7 +32,7 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
     private final long actualVersion;
 
     /**
-     * Initializes the exception using the given <code>message</code>.
+     * Initializes the exception using the given {@code message}.
      *
      * @param aggregateIdentifier The identifier of the aggregate which version was not as expected
      * @param expectedVersion     The version expected by the component loading the aggregate
@@ -49,7 +49,7 @@ public class ConflictingAggregateVersionException extends ConflictingModificatio
     }
 
     /**
-     * Initializes the exception using the given <code>message</code> and <code>cause</code>.
+     * Initializes the exception using the given {@code message} and {@code cause}.
      *
      * @param aggregateIdentifier The identifier of the aggregate which version was not as expected
      * @param expectedVersion     The version expected by the component loading the aggregate

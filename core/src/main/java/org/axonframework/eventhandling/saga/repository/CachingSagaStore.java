@@ -45,8 +45,8 @@ public class CachingSagaStore<T> implements SagaStore<T> {
     private final Cache sagaCache;
 
     /**
-     * Initializes an instance delegating to the given <code>delegate</code>, storing associations in the given
-     * <code>associationsCache</code> and Saga instances in the given <code>sagaCache</code>.
+     * Initializes an instance delegating to the given {@code delegate}, storing associations in the given
+     * {@code associationsCache} and Saga instances in the given {@code sagaCache}.
      *
      * @param delegate          The repository instance providing access to (persisted) entries
      * @param associationsCache The cache to store association information is

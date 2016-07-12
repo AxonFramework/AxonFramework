@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -133,7 +134,7 @@ public class AbstractEventBusTest {
         String key = "additional", value = "metaData";
         when(dispatchInterceptorMock.handle(anyList())).thenAnswer(invocation -> {
             List<EventMessage<?>> eventMessages = (List<EventMessage<?>>) invocation.getArguments()[0];
-            return (Function<Integer, Object>) (index) -> {
+            return (BiFunction<Integer, Object, Object>) (index, message) -> {
                 if (eventMessages.get(index).getMetaData().containsKey(key)) {
                     throw new AssertionError("MessageProcessor is asked to process the same event message twice");
                 }

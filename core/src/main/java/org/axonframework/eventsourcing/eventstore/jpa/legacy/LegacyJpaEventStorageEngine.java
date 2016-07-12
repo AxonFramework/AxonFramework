@@ -89,7 +89,7 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
         }
         Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
         LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp().minusMillis(gapDetectionInterval),
+        return new LegacyTrackingToken(legacyToken.getTimestamp(),
                                        legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
     }
 

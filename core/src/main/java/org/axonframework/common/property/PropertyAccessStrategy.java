@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
  * Abstract Strategy that provides access to all PropertyAccessStrategy implementations.
  * <p/>
  * Application developers may provide custom PropertyAccessStrategy implementations using the ServiceLoader
- * mechanism. To do so, place a file called <code>org.axonframework.common.property.PropertyAccessStrategy</code>
- * in the <code>META-INF/services</code> folder. In this file, place the fully qualified class names of all available
+ * mechanism. To do so, place a file called {@code org.axonframework.common.property.PropertyAccessStrategy}
+ * in the {@code META-INF/services} folder. In this file, place the fully qualified class names of all available
  * implementations.
  * <p/>
  * The factory implementations must be public, non-abstract, have a default public constructor and extend the
@@ -81,7 +81,7 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
      * @param targetClass  class that contains property
      * @param propertyName name of the property to create propertyReader for
      * @param <T>          Thy type defining the property
-     * @return suitable {@link Property}, or <code>null</code> if none is found
+     * @return suitable {@link Property}, or {@code null} if none is found
      */
     public static <T> Property<T> getProperty(Class<? extends T> targetClass, String propertyName) {
         Property<T> property = null;
@@ -114,18 +114,18 @@ public abstract class PropertyAccessStrategy implements Comparable<PropertyAcces
      * The JavaBean Property strategy has a value of 0. To ensure evaluation before that strategy, use any value higher
      * than that number, otherwise lower.
      *
-     * @return a value reflecting relative priority, <code>Integer.MAX_VALUE</code> being evaluated first
+     * @return a value reflecting relative priority, {@code Integer.MAX_VALUE} being evaluated first
      */
     protected abstract int getPriority();
 
     /**
-     * Returns a Property instance for the given <code>property</code>, defined in given
-     * <code>targetClass</code>, or <code>null</code> if no such property is found on the class.
+     * Returns a Property instance for the given {@code property}, defined in given
+     * {@code targetClass}, or {@code null} if no such property is found on the class.
      *
      * @param targetClass The class on which to find the property
      * @param property    The name of the property to find
      * @param <T>         The type of class on which to find the property
-     * @return the Property instance providing access to the property value, or <code>null</code> if property could not
+     * @return the Property instance providing access to the property value, or {@code null} if property could not
      * be found.
      */
     protected abstract <T> Property<T> propertyFor(Class<? extends T> targetClass, String property);

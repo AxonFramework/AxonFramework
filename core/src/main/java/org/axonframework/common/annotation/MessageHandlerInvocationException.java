@@ -30,7 +30,7 @@ public class MessageHandlerInvocationException extends AxonException {
     private static final long serialVersionUID = 664867158607341533L;
 
     /**
-     * Initialize the MessageHandlerInvocationException using given <code>message</code> and <code>cause</code>.
+     * Initialize the MessageHandlerInvocationException using given {@code message} and {@code cause}.
      *
      * @param message A message describing the cause of the exception
      * @param cause   The exception thrown by the Event Handler

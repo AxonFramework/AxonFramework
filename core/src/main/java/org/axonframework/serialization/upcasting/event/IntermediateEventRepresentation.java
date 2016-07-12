@@ -93,7 +93,7 @@ public interface IntermediateEventRepresentation {
     Optional<TrackingToken> getTrackingToken();
 
     /**
-     * Returns the timestamp at which the event was first created. Will return <code>null</code> if the object being
+     * Returns the timestamp at which the event was first created. Will return {@code null} if the object being
      * upcast
      *
      * @return the timestamp at which the event was first created, if available
@@ -102,7 +102,7 @@ public interface IntermediateEventRepresentation {
 
     /**
      * Returns the meta data of the message wrapping the object being upcast. If the meta data is not available, or is
-     * in fact the subject of being upcast itself, this method returns <code>null</code>.
+     * in fact the subject of being upcast itself, this method returns {@code null}.
      *
      * @return the MetaData of the message wrapping the object to upcast, if available
      */

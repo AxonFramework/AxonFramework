@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.Message;
 
 import java.util.concurrent.TimeUnit;
@@ -24,9 +25,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Interface towards the Command Handling components of an application. This interface provides a friendlier API toward
  * the command bus. The CommandGateway allows for components dispatching commands to wait for the result.
- * <p/>
- * Implementations should check the {@link org.axonframework.correlation.CorrelationDataHolder} for correlation data
- * attached to the current thread. This correlation data should be attached to the messages sent.
  *
  * @author Allard Buijze
  * @see DefaultCommandGateway
@@ -35,10 +33,10 @@ import java.util.concurrent.TimeUnit;
 public interface CommandGateway {
 
     /**
-     * Sends the given <code>command</code>, and have the result of the command's execution reported to the given
-     * <code>callback</code>.
+     * Sends the given {@code command}, and have the result of the command's execution reported to the given
+     * {@code callback}.
      * <p/>
-     * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
+     * The given {@code command} is wrapped as the payload of the CommandMessage that is eventually posted on the
      * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      *
@@ -49,12 +47,12 @@ public interface CommandGateway {
     <C, R> void send(C command, CommandCallback<? super C, R> callback);
 
     /**
-     * Sends the given <code>command</code> and wait for it to execute. The result of the execution is returned when
+     * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
      * available. This method will block indefinitely, until a result is available, or until the Thread is interrupted.
-     * When the thread is interrupted, this method returns <code>null</code>. If command execution resulted in an
-     * exception, it is wrapped in a {@link org.axonframework.commandhandling.CommandExecutionException}.
+     * When the thread is interrupted, this method returns {@code null}. If command execution resulted in an
+     * exception, it is wrapped in a {@link CommandExecutionException}.
      * <p/>
-     * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
+     * The given {@code command} is wrapped as the payload of the CommandMessage that is eventually posted on the
      * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      * <p/>
@@ -62,22 +60,21 @@ public interface CommandGateway {
      *
      * @param command The command to dispatch
      * @param <R>     The type of result expected from command execution
-     * @return the result of command execution, or <code>null</code> if the thread was interrupted while waiting for
+     * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for
      *         the command to execute
      *
-     * @throws org.axonframework.commandhandling.CommandExecutionException
-     *          when an exception occurred while processing the command
+     * @throws CommandExecutionException when an exception occurred while processing the command
      */
     <R> R sendAndWait(Object command);
 
     /**
-     * Sends the given <code>command</code> and wait for it to execute. The result of the execution is returned when
-     * available. This method will block until a result is available, or the given <code>timeout</code> was reached, or
+     * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
+     * available. This method will block until a result is available, or the given {@code timeout} was reached, or
      * until the Thread is interrupted. When the timeout is reached or the thread is interrupted, this method returns
-     * <code>null</code>. If command execution resulted in an exception, it is wrapped in a {@link
-     * org.axonframework.commandhandling.CommandExecutionException}.
+     * {@code null}. If command execution resulted in an exception, it is wrapped in a {@link
+     * CommandExecutionException}.
      * <p/>
-     * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
+     * The given {@code command} is wrapped as the payload of the CommandMessage that is eventually posted on the
      * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      * <p/>
@@ -85,21 +82,20 @@ public interface CommandGateway {
      *
      * @param command The command to dispatch
      * @param timeout The amount of time the thread is allows to wait for the result
-     * @param unit    The unit in which <code>timeout</code> is expressed
+     * @param unit    The unit in which {@code timeout} is expressed
      * @param <R>     The type of result expected from command execution
-     * @return the result of command execution, or <code>null</code> if the thread was interrupted while waiting for
+     * @return the result of command execution, or {@code null} if the thread was interrupted while waiting for
      *         the command to execute
      *
-     * @throws org.axonframework.commandhandling.CommandExecutionException
-     *          when an exception occurred while processing the command
+     * @throws CommandExecutionException when an exception occurred while processing the command
      */
     <R> R sendAndWait(Object command, long timeout, TimeUnit unit);
 
     /**
-     * Sends the given <code>command</code> and returns immediately, without waiting for the command to execute. The
+     * Sends the given {@code command} and returns immediately, without waiting for the command to execute. The
      * caller will therefore not receive any feedback on the command's execution.
      * <p/>
-     * The given <code>command</code> is wrapped as the payload of the CommandMessage that is eventually posted on the
+     * The given {@code command} is wrapped as the payload of the CommandMessage that is eventually posted on the
      * Command Bus, unless Command already implements {@link Message}. In that case, a
      * CommandMessage is constructed from that message's payload and MetaData.
      *

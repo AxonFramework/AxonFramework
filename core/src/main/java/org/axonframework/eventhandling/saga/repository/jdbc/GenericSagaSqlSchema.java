@@ -48,9 +48,9 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     /**
      * Initialize a GenericSagaSqlSchema.
      * <p/>
-     * Serialized data is stored using the given SchemaConfiguration.
+     * Serialized data is stored using the given {@code schemaConfiguration}.
      *
-     * @param schemaConfiguration
+     * @param schemaConfiguration The configuration to use for the initialization of the schema
      */
     public GenericSagaSqlSchema(SchemaConfiguration schemaConfiguration) {
         this.schemaConfiguration = schemaConfiguration;
@@ -67,7 +67,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     @Override
     public PreparedStatement sql_removeAssocValue(Connection connection, String key, String value, String sagaType,
             String sagaIdentifier) throws SQLException {
-        final String sql = "DELETE FROM " + schemaConfiguration.assocValueEntryTable()
+        final String sql = "DELETE FROM " + schemaConfiguration.associationValueEntryTable()
                 + " WHERE associationKey = ? AND associationValue = ?"
                 + " AND sagaType = ? AND sagaId = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -81,7 +81,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     @Override
     public PreparedStatement sql_storeAssocValue(Connection connection, String key, String value, String sagaType,
             String sagaIdentifier) throws SQLException {
-        final String sql = "INSERT INTO " + schemaConfiguration.assocValueEntryTable()
+        final String sql = "INSERT INTO " + schemaConfiguration.associationValueEntryTable()
                 + " (associationKey, associationValue, sagaType, sagaId)"
                 + " VALUES(?, ?, ?, ?)";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -95,7 +95,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     @Override
     public PreparedStatement sql_findAssocSagaIdentifiers(Connection connection, String key, String value,
             String sagaType) throws SQLException {
-        final String sql = "SELECT sagaId FROM " + schemaConfiguration.assocValueEntryTable()
+        final String sql = "SELECT sagaId FROM " + schemaConfiguration.associationValueEntryTable()
                 + " WHERE associationKey = ?"
                 + " AND associationValue = ?"
                 + " AND sagaType = ?";
@@ -108,7 +108,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
 
     @Override
     public PreparedStatement sql_findAssociations(Connection connection, String sagaIdentifier, String sagaType) throws SQLException {
-        final String sql = "SELECT associationKey, associationValue FROM " + schemaConfiguration.assocValueEntryTable()
+        final String sql = "SELECT associationKey, associationValue FROM " + schemaConfiguration.associationValueEntryTable()
                 + " WHERE sagaId = ?"
                 + " AND sagaType = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -143,7 +143,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
     @Override
     public PreparedStatement sql_deleteAssociationEntries(Connection connection, String sagaIdentifier)
             throws SQLException {
-        final String sql = "DELETE FROM " + schemaConfiguration.assocValueEntryTable() + " WHERE sagaId = ?";
+        final String sql = "DELETE FROM " + schemaConfiguration.associationValueEntryTable() + " WHERE sagaId = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, sagaIdentifier);
         return preparedStatement;
@@ -177,7 +177,7 @@ public class GenericSagaSqlSchema implements SagaSqlSchema {
 
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
-        final String sql = "create table " + schemaConfiguration.assocValueEntryTable() + " (\n" +
+        final String sql = "create table " + schemaConfiguration.associationValueEntryTable() + " (\n" +
                 "        id int not null AUTO_GENERATED,\n" +
                 "        associationKey varchar(255),\n" +
                 "        associationValue varchar(255),\n" +

@@ -35,7 +35,7 @@ public class MultiCorrelationDataProvider<T extends Message> implements Correlat
     private final List<? extends CorrelationDataProvider> delegates;
 
     /**
-     * Initialize the correlation data provider, delegating to given <code>correlationDataProviders</code>.
+     * Initialize the correlation data provider, delegating to given {@code correlationDataProviders}.
      *
      * @param correlationDataProviders the providers to delegate to.
      */

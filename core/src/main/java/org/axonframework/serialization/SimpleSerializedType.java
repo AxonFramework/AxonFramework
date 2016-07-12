@@ -18,6 +18,8 @@ package org.axonframework.serialization;
 
 import org.axonframework.common.Assert;
 
+import java.util.Objects;
+
 import static java.lang.String.format;
 
 /**
@@ -32,7 +34,7 @@ public class SimpleSerializedType implements SerializedType {
     private final String revisionId;
 
     /**
-     * Initialize with given <code>objectType</code> and <code>revisionNumber</code>
+     * Initialize with given {@code objectType} and {@code revisionNumber}
      *
      * @param objectType     The description of the serialized object's type
      * @param revisionNumber The revision of the serialized object's type
@@ -61,24 +63,13 @@ public class SimpleSerializedType implements SerializedType {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         SimpleSerializedType that = (SimpleSerializedType) o;
-
-        if (revisionId != null ? !revisionId.equals(that.revisionId) : that.revisionId != null) {
-            return false;
-        }
-        if (!type.equals(that.type)) {
-            return false;
-        }
-
-        return true;
+        return Objects.equals(type, that.type) && Objects.equals(revisionId, that.revisionId);
     }
 
     @Override
     public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + (revisionId != null ? revisionId.hashCode() : 0);
-        return result;
+        return Objects.hash(type, revisionId);
     }
 
     @Override

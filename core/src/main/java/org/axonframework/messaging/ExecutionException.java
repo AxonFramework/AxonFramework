@@ -25,7 +25,7 @@ import org.axonframework.common.AxonTransientException;
 public class ExecutionException extends AxonTransientException {
 
     /**
-     * Initialize an ExecutionException with the given <code>message</code> and <code>cause</code>.
+     * Initialize an ExecutionException with the given {@code message} and {@code cause}.
      *
      * @param message The message describing the cause of the exception
      * @param cause   The cause of the exception

@@ -29,7 +29,7 @@ import java.util.function.Function;
  * Multiple instances of a single type of Saga may exist. In that case, each Saga will be managing a different
  * transaction. Sagas need to be associated with concepts in order to receive specific events. These associations are
  * managed through AssociationValues. For example, to associate a saga with an Order with ID 1234, this saga needs an
- * association value with key <code>"orderId"</code> and value {@code "1234"}.
+ * association value with key {@code "orderId"} and value {@code "1234"}.
  *
  * @author Allard Buijze
  * @since 0.7

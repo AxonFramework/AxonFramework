@@ -33,7 +33,7 @@ public class ConflictingModificationException extends AxonNonTransientException 
     private static final long serialVersionUID = -4333021767907264897L;
 
     /**
-     * Initializes the exception using the given <code>message</code>.
+     * Initializes the exception using the given {@code message}.
      *
      * @param message The message describing the exception
      */
@@ -42,7 +42,7 @@ public class ConflictingModificationException extends AxonNonTransientException 
     }
 
     /**
-     * Initializes the exception using the given <code>message</code> and <code>cause</code>.
+     * Initializes the exception using the given {@code message} and {@code cause}.
      *
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception

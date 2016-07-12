@@ -30,10 +30,10 @@ import org.axonframework.common.Registration;
 public interface EventProcessingMonitorSupport {
 
     /**
-     * Subscribes the given <code>monitor</code>. If the monitor is already subscribed, nothing happens.
+     * Subscribes the given {@code monitor}. If the monitor is already subscribed, nothing happens.
      *
      * @param monitor The monitor to subscribe
-     * @return a handle to unsubscribe the <code>monitor</code>. When unsubscribed it will no longer be notified.
+     * @return a handle to unsubscribe the {@code monitor}. When unsubscribed it will no longer be notified.
      */
     Registration subscribeEventProcessingMonitor(EventProcessingMonitor monitor);
 }

@@ -41,8 +41,8 @@ import static java.util.Arrays.asList;
 public class DefaultCommandGateway extends AbstractCommandGateway implements CommandGateway {
 
     /**
-     * Initializes a command gateway that dispatches commands to the given <code>commandBus</code> after they have been
-     * handles by the given <code>commandDispatchInterceptors</code>. Commands will not be retried when command
+     * Initializes a command gateway that dispatches commands to the given {@code commandBus} after they have been
+     * handles by the given {@code commandDispatchInterceptors}. Commands will not be retried when command
      * execution fails.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
@@ -55,9 +55,9 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     /**
-     * Initializes a command gateway that dispatches commands to the given <code>commandBus</code> after they have been
-     * handles by the given <code>commandDispatchInterceptors</code>. When command execution results in an unchecked
-     * exception, the given <code>retryScheduler</code> is invoked to allow it to retry that command.
+     * Initializes a command gateway that dispatches commands to the given {@code commandBus} after they have been
+     * handles by the given {@code commandDispatchInterceptors}. When command execution results in an unchecked
+     * exception, the given {@code retryScheduler} is invoked to allow it to retry that command.
      * execution fails.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
@@ -71,9 +71,9 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     /**
-     * Initializes a command gateway that dispatches commands to the given <code>commandBus</code> after they have been
-     * handles by the given <code>commandDispatchInterceptors</code>. When command execution results in an unchecked
-     * exception, the given <code>retryScheduler</code> is invoked to allow it to retry that command.
+     * Initializes a command gateway that dispatches commands to the given {@code commandBus} after they have been
+     * handles by the given {@code commandDispatchInterceptors}. When command execution results in an unchecked
+     * exception, the given {@code retryScheduler} is invoked to allow it to retry that command.
      * execution fails.
      *
      * @param commandBus                  The CommandBus on which to dispatch the Command Messages
@@ -91,7 +91,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     /**
-     * Sends the given <code>command</code> and waits for its execution to complete, or until the waiting thread is
+     * Sends the given {@code command} and waits for its execution to complete, or until the waiting thread is
      * interrupted.
      *
      * @param command The command to send
@@ -110,10 +110,10 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     /**
-     * Sends the given <code>command</code> and waits for its execution to complete, or until the given
-     * <code>timeout</code> has expired, or the waiting thread is interrupted.
+     * Sends the given {@code command} and waits for its execution to complete, or until the given
+     * {@code timeout} has expired, or the waiting thread is interrupted.
      * <p/>
-     * When the timeout occurs, or the thread is interrupted, this method returns <code>null</code>.
+     * When the timeout occurs, or the thread is interrupted, this method returns {@code null}.
      *
      * @param command The command to send
      * @param timeout The maximum time to wait
@@ -133,7 +133,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     }
 
     /**
-     * Sends the given <code>command</code> and returns immediately. This implementation
+     * Sends the given {@code command} and returns immediately. This implementation
      *
      * @param command The command to send
      */

@@ -24,7 +24,7 @@ import java.lang.annotation.*;
  * <p>
  * Axon provides a number of parameter resolvers that allow you to use the following parameter types:<ul>
  * <li>The first parameter is always the payload of the Event message</li>
- * <li>Parameters annotated with <code>@MetaData</code> will resolve to the Meta Data value with the key as indicated
+ * <li>Parameters annotated with {@code @MetaData} will resolve to the Meta Data value with the key as indicated
  * on the annotation. If required is false (default), null is passed when the meta data value is not present. If
  * required is true, the resolver will not match and prevent the method from being invoked when the meta data value is
  * not present.</li>
@@ -37,9 +37,9 @@ import java.lang.annotation.*;
  * parameter is of type message, it effectively matches an Event of any type, even if generic parameters would suggest
  * otherwise. Due to type erasure, Axon cannot detect what parameter is expected. In such case, it is best to declare a
  * parameter of the payload type, followed by a parameter of type Message.</li>
- * <li>When using Spring and <code>&lt;axon:annotation-config/&gt;</code> is declared, any other parameters will
+ * <li>When using Spring and {@code &lt;axon:annotation-config/&gt;} is declared, any other parameters will
  * resolve to autowired beans, if exactly one autowire candidate is available in the application context. This allows
- * you to inject resources directly into <code>@EventHandler</code> annotated methods.</li>
+ * you to inject resources directly into {@code @EventHandler} annotated methods.</li>
  * </ul>
  * <p>
  * For each event, only a single method will be invoked per object instance with annotated methods. This method is
@@ -54,7 +54,7 @@ import java.lang.annotation.*;
  * evaluated. <li>If still no method is found, the event listener ignores the event </ol>
  * <p>
  * If you do not want any events to be ignored, but rather have some logging of the fact that an unhandled event came
- * by, make an abstract superclass that contains an event handler method that accepts any <code>Object</code>.
+ * by, make an abstract superclass that contains an event handler method that accepts any {@code Object}.
  * <p>
  * Note: if there are two event handler methods accepting the same argument, the behavior is undefined.
  *

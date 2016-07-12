@@ -41,7 +41,7 @@ public class EventMessageWriter {
     private final DataOutput out;
 
     /**
-     * Creates a new EventMessageWriter writing data to the specified underlying <code>output</code>.
+     * Creates a new EventMessageWriter writing data to the specified underlying {@code output}.
      *
      * @param output     the underlying output
      * @param serializer The serializer to deserialize payload and metadata with
@@ -52,7 +52,7 @@ public class EventMessageWriter {
     }
 
     /**
-     * Writes the given <code>eventMessage</code> to the underling output.
+     * Writes the given {@code eventMessage} to the underling output.
      *
      * @param eventMessage the EventMessage to write to the underlying output
      * @throws IOException when any exception occurs writing to the underlying stream

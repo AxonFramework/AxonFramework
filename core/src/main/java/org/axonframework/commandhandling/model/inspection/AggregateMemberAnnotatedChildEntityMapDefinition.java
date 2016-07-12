@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static org.axonframework.common.CollectionUtils.firstNonNull;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEntityDefinition {
@@ -47,13 +47,13 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEn
                         .collect(Collectors.toConcurrentMap(
                                 CommandMessageHandler::commandName,
                                 h -> {
-                                    String routingKey = firstNonNull(h.routingKey(),
+                                    String routingKey = getOrDefault(h.routingKey(),
                                                                      childEntityModel.routingKey());
                                     Property<Object> property = getProperty(h.payloadType(),
                                                                             routingKey);
                                     if (property == null) {
                                         throw new AxonConfigurationException(format("Command of type [%s] doesn't have a property matching the routing key [%s] necessary to route through field [%s]",
-                                                                              h.payloadType(), routingKey, field.toGenericString()));
+                                                                                    h.payloadType(), routingKey, field.toGenericString()));
                                     }
                                     return property;
                                 }));

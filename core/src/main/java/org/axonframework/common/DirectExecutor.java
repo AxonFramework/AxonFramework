@@ -33,7 +33,7 @@ public final class DirectExecutor implements Executor {
     public static final DirectExecutor INSTANCE = new DirectExecutor();
 
     /**
-     * Executes the given <code>command</code> immediately in the current thread.
+     * Executes the given {@code command} immediately in the current thread.
      *
      * @param command the command to execute.
      */

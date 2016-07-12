@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package org.axonframework.common.io;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.charset.Charset;
 
 /**
@@ -39,7 +38,7 @@ public final class IOUtils {
 
     /**
      * Closes any AutoCloseable object, while suppressing any IOExceptions it will generate. The given
-     * <code>closeable</code> may be <code>null</code>, in which case nothing happens.
+     * {@code closeable} may be {@code null}, in which case nothing happens.
      *
      * @param closeable the object to be closed
      */
@@ -55,7 +54,7 @@ public final class IOUtils {
 
     /**
      * Closes any object if that object implements {@link Closeable}, while suppressing any IOExceptions it will
-     * generate. The given <code>closeable</code> may be <code>null</code>, in which case nothing happens.
+     * generate. The given {@code closeable} may be {@code null}, in which case nothing happens.
      *
      * @param closeable the object to be closed
      */
@@ -65,17 +64,4 @@ public final class IOUtils {
         }
     }
 
-    /**
-     * Close the given <code>closeable</code> if it implements the {@link Closeable} interface. Otherwise, nothing
-     * happens. Unlike {@link #closeQuietlyIfCloseable(Object)}, this method does not suppress any exceptions thrown
-     * while attempting to close the resource.
-     *
-     * @param closeable The object to close
-     * @throws IOException when an error occurs while closing the resource
-     */
-    public static void closeIfCloseable(Object closeable) throws Exception {
-        if (closeable instanceof AutoCloseable) {
-            ((AutoCloseable) closeable).close();
-        }
-    }
 }

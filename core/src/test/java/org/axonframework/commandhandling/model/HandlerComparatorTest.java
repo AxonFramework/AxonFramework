@@ -27,8 +27,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class HandlerComparatorTest {
 
@@ -70,6 +69,12 @@ public class HandlerComparatorTest {
         assertEquals(0, testSubject.compare(objectHandler, objectHandler));
         assertEquals(0, testSubject.compare(longHandler, longHandler));
         assertEquals(0, testSubject.compare(numberHandler, numberHandler));
+
+        assertNotEquals(0, testSubject.compare(stringHandler, objectHandler));
+        assertNotEquals(0, testSubject.compare(longHandler, stringHandler));
+        assertNotEquals(0, testSubject.compare(numberHandler, stringHandler));
+        assertNotEquals(0, testSubject.compare(objectHandler, longHandler));
+        assertNotEquals(0, testSubject.compare(objectHandler, numberHandler));
     }
 
     @Test

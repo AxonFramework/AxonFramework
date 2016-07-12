@@ -28,26 +28,26 @@ public interface ConverterFactory {
 
     /**
      * Indicates whether this factory contains a converter capable of converting the given
-     * <code>sourceContentType</code> into the <code>targetContentType</code>.
+     * {@code sourceContentType} into the {@code targetContentType}.
      *
      * @param sourceContentType The type of source data for which a converter must be available
      * @param targetContentType The type of target data for which a converter must be available
      * @param <S>               The type of source data for which a converter must be available
      * @param <T>               The type of target data for which a converter must be available
-     * @return <code>true</code> if a converter is available, otherwise <code>false</code>.
+     * @return {@code true} if a converter is available, otherwise {@code false}.
      */
     <S, T> boolean hasConverter(Class<S> sourceContentType, Class<T> targetContentType);
 
     /**
      * Returns a converter that is capable of converting IntermediateRepresentation object containing the given
-     * <code>sourceContentType</code> to the given <code>targetContentType</code>.
+     * {@code sourceContentType} to the given {@code targetContentType}.
      *
      * @param sourceContentType The type of data the converter accepts as input
      * @param targetContentType The type of data the converter produces
      * @param <S>               The source content type
      * @param <T>               The target content type
-     * @return a converter capable of converting from the given <code>sourceContentType</code> to
-     *         <code>targetContentType</code>
+     * @return a converter capable of converting from the given {@code sourceContentType} to
+     *         {@code targetContentType}
      *
      * @throws CannotConvertBetweenTypesException
      *          when no suitable converter can be found

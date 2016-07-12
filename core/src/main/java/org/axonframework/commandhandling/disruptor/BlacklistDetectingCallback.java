@@ -41,8 +41,8 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
     private final boolean rescheduleOnCorruptState;
 
     /**
-     * Initializes the callback which allows the given <code>command</code> to be rescheduled on the given
-     * <code>ringBuffer</code> if it failed due to a corrupt state.
+     * Initializes the callback which allows the given {@code command} to be rescheduled on the given
+     * {@code ringBuffer} if it failed due to a corrupt state.
      *
      * @param delegate                 The callback to invoke when an exception occurred
      * @param ringBuffer               The RingBuffer on which an Aggregate Cleanup should be scheduled when a
@@ -92,7 +92,7 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
     /**
      * Indicates whether this callback has a delegate that needs to be notified of the command handling result
      *
-     * @return <code>true</code> if this callback has a delegate, otherwise <code>false</code>.
+     * @return {@code true} if this callback has a delegate, otherwise {@code false}.
      */
     public boolean hasDelegate() {
         return delegate != null;

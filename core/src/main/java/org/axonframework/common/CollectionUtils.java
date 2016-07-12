@@ -33,14 +33,14 @@ public abstract class CollectionUtils {
     }
 
     /**
-     * Finds an annotation of given <code>annotationType</code> from the given <code>annotations</code>. If
-     * <code>annotations</code> contains multiple annotations of the given type, the first one is returned. If none
-     * is found, this method returns <code>null</code>.
+     * Finds an annotation of given {@code annotationType} from the given {@code annotations}. If
+     * {@code annotations} contains multiple annotations of the given type, the first one is returned. If none
+     * is found, this method returns {@code null}.
      *
      * @param annotations    The annotations to search in
      * @param annotationType The type of annotation to search for
      * @param <T>            The type of annotation to search for
-     * @return the first annotation found, or <code>null</code> if no such annotation is present
+     * @return the first annotation found, or {@code null} if no such annotation is present
      */
     @SuppressWarnings({"unchecked"})
     @Deprecated
@@ -51,18 +51,6 @@ public abstract class CollectionUtils {
             }
         }
         return null;
-    }
-
-    /**
-     * Returns the first non-null value in the given {@code values}
-     *
-     * @param value1 The first value to inspect
-     * @param value2 The second value to inspect
-     * @param <T>    The type of values
-     * @return The first non-null value, or {@code null} if all values are {@code null}.
-     */
-    public static <T> T firstNonNull(T value1, T value2) {
-        return value1 == null ? value2 : value1;
     }
 
     public static <S, T extends Collection<S>> T merge(T collection1, T collection2, Supplier<T> factoryMethod) {

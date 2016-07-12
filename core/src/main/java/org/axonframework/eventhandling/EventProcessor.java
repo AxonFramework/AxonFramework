@@ -43,7 +43,7 @@ public interface EventProcessor {
     String getName();
 
     /**
-     * Registers the given <code>interceptor</code> to this event processor. The <code>interceptor</code> will
+     * Registers the given {@code interceptor} to this event processor. The {@code interceptor} will
      * receive each event message that is about to be published but before it has reached its event handlers.
      * Interceptors are free to modify the event message or stop publication altogether. In
      * addition, interceptors are able to interact with the {@link org.axonframework.messaging.unitofwork.UnitOfWork}
@@ -54,7 +54,7 @@ public interface EventProcessor {
      * from the intercepted event.
      *
      * @param interceptor The interceptor to register.
-     * @return a handle to unregister the <code>interceptor</code>. When unregistered the <code>interceptor</code> will
+     * @return a handle to unregister the {@code interceptor}. When unregistered the {@code interceptor} will
      * no longer receive events from this event processor.
      */
     Registration registerInterceptor(MessageHandlerInterceptor<EventMessage<?>> interceptor);

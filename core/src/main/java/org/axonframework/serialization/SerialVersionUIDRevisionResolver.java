@@ -20,7 +20,7 @@ import java.io.ObjectStreamClass;
 
 /**
  * RevisionResolver implementation that returns the (String representation of the) serialVersionUID of a class. If a
- * class is not serializable, it returns <code>null</code> when asked for a revision.
+ * class is not serializable, it returns {@code null} when asked for a revision.
  *
  * @author Allard Buijze
  * @since 2.0

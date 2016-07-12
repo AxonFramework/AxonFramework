@@ -55,7 +55,7 @@ public class RunAnnotatedAggregate {
         new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);
 
         // We register an event listener to see which events are created
-        new SubscribingEventProcessor(new SimpleEventHandlerInvoker("processor", (EventListener) event -> System.out
+        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> System.out
                 .println(event.getPayload())), eventStore).start();
 
         // and let's send some Commands on the CommandBus.

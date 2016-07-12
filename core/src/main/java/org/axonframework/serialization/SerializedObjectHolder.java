@@ -43,7 +43,7 @@ public class SerializedObjectHolder implements SerializationAware {
 
     /**
      * Initialize the holder for the serialized representations of the payload and meta data of given
-     * <code>message</code>
+     * {@code message}
      *
      * @param message The message to initialize the holder for
      */

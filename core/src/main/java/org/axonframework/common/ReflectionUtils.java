@@ -49,12 +49,12 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the value of the given <code>field</code> in the given <code>object</code>. If necessary, the field is
+     * Returns the value of the given {@code field} in the given {@code object}. If necessary, the field is
      * made accessible, assuming the security manager allows it.
      *
      * @param field  The field containing the value
      * @param object The object to retrieve the field's value from
-     * @return the value of the <code>field</code> in the <code>object</code>
+     * @return the value of the {@code field} in the {@code object}
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
@@ -68,15 +68,15 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the class on which the method with name "<code>getter</code>" and parameters of type
-     * <code>parameterTypes</code> is declared. The given <code>instanceClass</code> is the instance on which the
-     * method cn be called. If the method is not available on the given <code>instanceClass</code>, <code>null</code>
+     * Returns the class on which the method with name "{@code getter}" and parameters of type
+     * {@code parameterTypes} is declared. The given {@code instanceClass} is the instance on which the
+     * method cn be called. If the method is not available on the given {@code instanceClass}, {@code null}
      * is returned.
      *
      * @param instanceClass  The class on which to look for the method
      * @param methodName     The name of the method
      * @param parameterTypes The parameter types of the method
-     * @return The class on which the method is declared, or <code>null</code> if not found
+     * @return The class on which the method is declared, or {@code null} if not found
      */
     public static Class<?> declaringClass(Class<?> instanceClass, String methodName, Class<?>... parameterTypes) {
         try {
@@ -88,10 +88,10 @@ public abstract class ReflectionUtils {
 
     /**
      * Indicates whether the given class implements a customized equals method. This methods returns true if the
-     * declaring type of the equals method is not <code>Object</code>.
+     * declaring type of the equals method is not {@code Object}.
      *
      * @param type The type to inspect
-     * @return <code>true</code> if the given type overrides the equals method, otherwise <code>false</code>
+     * @return {@code true} if the given type overrides the equals method, otherwise {@code false}
      */
     public static boolean hasEqualsMethod(Class<?> type) {
         return !Object.class.equals(declaringClass(type, "equals", Object.class));
@@ -101,11 +101,11 @@ public abstract class ReflectionUtils {
      * Indicates whether the two given objects are <em>not the same</em>, override an equals method that indicates
      * they are <em>not equal</em>, or implements {@link Comparable} which indicates the two are not equal. If this
      * method cannot safely indicate two objects are not equal, it returns
-     * <code>false</code>.
+     * {@code false}.
      *
      * @param value      One of the values to compare
      * @param otherValue other value to compare
-     * @return <code>true</code> if these objects explicitly indicate they are not equal, <code>false</code> otherwise.
+     * @return {@code true} if these objects explicitly indicate they are not equal, {@code false} otherwise.
      */
     @SuppressWarnings("unchecked")
     public static boolean explicitlyUnequal(Object value, Object otherValue) {
@@ -122,11 +122,11 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Makes the given <code>member</code> accessible via reflection if it is not the case already.
+     * Makes the given {@code member} accessible via reflection if it is not the case already.
      *
      * @param member The member (field, method, constructor, etc) to make accessible
      * @param <T>    The type of member to make accessible
-     * @return the given <code>member</code>, for easier method chaining
+     * @return the given {@code member}, for easier method chaining
      * @throws IllegalStateException if the member is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
@@ -138,22 +138,22 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Indicates whether the given <code>member</code> is accessible. It does so by checking whether the member is
+     * Indicates whether the given {@code member} is accessible. It does so by checking whether the member is
      * non-final and public, or made accessible via reflection.
      *
      * @param member The member (field, method, constructor, etc) to check for accessibility
-     * @return <code>true</code> if the member is accessible, otherwise <code>false</code>.
+     * @return {@code true} if the member is accessible, otherwise {@code false}.
      */
     public static boolean isAccessible(AccessibleObject member) {
         return member.isAccessible() || (Member.class.isInstance(member) && isNonFinalPublicMember((Member) member));
     }
 
     /**
-     * Checks whether the given <code>member</code> is public and non-final. These members do no need to be set
+     * Checks whether the given {@code member} is public and non-final. These members do no need to be set
      * accessible using reflection.
      *
      * @param member The member to check
-     * @return <code>true</code> if the member is public and non-final, otherwise <code>false</code>.
+     * @return {@code true} if the member is public and non-final, otherwise {@code false}.
      * @see #isAccessible(java.lang.reflect.AccessibleObject)
      * @see #ensureAccessible(java.lang.reflect.AccessibleObject)
      */
@@ -168,7 +168,7 @@ public abstract class ReflectionUtils {
      * will always return fields declared in a subtype before returning fields declared in a super type.
      *
      * @param clazz The class to return fields for
-     * @return an <code>Iterable</code> providing access to all declared fields in the class hierarchy
+     * @return an {@code Iterable} providing access to all declared fields in the class hierarchy
      */
     public static Iterable<Field> fieldsOf(Class<?> clazz) {
         List<Field> fields = new LinkedList<>();
@@ -185,7 +185,7 @@ public abstract class ReflectionUtils {
      * will always return methods declared in a subtype before returning methods declared in a super type.
      *
      * @param clazz The class to return methods for
-     * @return an <code>Iterable</code> providing access to all declared methods in the class hierarchy
+     * @return an {@code Iterable} providing access to all declared methods in the class hierarchy
      */
     public static Iterable<Method> methodsOf(Class<?> clazz) {
         List<Method> methods = new LinkedList<>();
@@ -199,10 +199,10 @@ public abstract class ReflectionUtils {
     }
 
     /**
-     * Returns the boxed wrapper type for the given <code>primitiveType</code>.
+     * Returns the boxed wrapper type for the given {@code primitiveType}.
      *
      * @param primitiveType The primitive type to return boxed wrapper type for
-     * @return the boxed wrapper type for the given <code>primitiveType</code>
+     * @return the boxed wrapper type for the given {@code primitiveType}
      * @throws IllegalArgumentException will be thrown instead of returning null if no wrapper class was found.
      */
     public static Class<?> resolvePrimitiveWrapperType(Class<?> primitiveType) {
@@ -225,8 +225,8 @@ public abstract class ReflectionUtils {
      * Indicates whether the given field has the "transient" modifier
      *
      * @param field the field to inspect
-     * @return <code>true</code> if the field is marked transient, otherwise <code>false
-     * </code>
+     * @return {@code true} if the field is marked transient, otherwise {@code false
+     * }
      */
     public static boolean isTransient(Field field) {
         return Modifier.isTransient(field.getModifiers());
