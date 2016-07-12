@@ -19,7 +19,7 @@ public class Oracle11SagaSqlSchema extends GenericSagaSqlSchema {
 
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
-        conn.prepareStatement("create table " + schemaConfiguration.assocValueEntryTable() + " (\n" +
+        conn.prepareStatement("create table " + schemaConfiguration.associationValueEntryTable() + " (\n" +
                 "        id number(38) not null,\n" +
                 "        associationKey varchar(255),\n" +
                 "        associationValue varchar(255),\n" +
@@ -28,7 +28,7 @@ public class Oracle11SagaSqlSchema extends GenericSagaSqlSchema {
                 "        primary key (id)\n" +
                 "    )").executeUpdate();
 
-        Oracle11Utils.simulateAutoIncrement(conn, schemaConfiguration.assocValueEntryTable(), "id");
+        Oracle11Utils.simulateAutoIncrement(conn, schemaConfiguration.associationValueEntryTable(), "id");
 
         return Oracle11Utils.createNullStatement(conn);
     }

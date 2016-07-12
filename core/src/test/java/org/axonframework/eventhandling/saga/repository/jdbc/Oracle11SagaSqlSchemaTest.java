@@ -2,13 +2,15 @@ package org.axonframework.eventhandling.saga.repository.jdbc;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
-@Ignore("These tests require that Oracle 11 is running")
+import static org.axonframework.common.jdbc.JdbcUtils.closeQuietly;
+import static org.junit.Assume.assumeNoException;
+
 public class Oracle11SagaSqlSchemaTest {
 
     private Oracle11SagaSqlSchema testSubject;
@@ -19,12 +21,16 @@ public class Oracle11SagaSqlSchemaTest {
     public void setUp() throws Exception {
         schemaConfiguration = new SchemaConfiguration();
         testSubject = new Oracle11SagaSqlSchema(schemaConfiguration);
-        connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "axon", "axon");
+        try {
+            connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "axon", "axon");
+        } catch (SQLException e) {
+            assumeNoException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
+        }
     }
 
     @After
     public void tearDown() throws Exception {
-        connection.close();
+        closeQuietly(connection);
     }
 
     @Test
@@ -32,12 +38,12 @@ public class Oracle11SagaSqlSchemaTest {
         // test passes if no exception is thrown
         testSubject.sql_createTableAssocValueEntry(connection)
                 .execute();
-        connection.prepareStatement("SELECT * FROM " + schemaConfiguration.assocValueEntryTable())
+        connection.prepareStatement("SELECT * FROM " + schemaConfiguration.associationValueEntryTable())
                 .execute();
 
-        connection.prepareStatement("DROP TABLE " + schemaConfiguration.assocValueEntryTable())
+        connection.prepareStatement("DROP TABLE " + schemaConfiguration.associationValueEntryTable())
                 .execute();
-        connection.prepareStatement("DROP SEQUENCE " + schemaConfiguration.assocValueEntryTable() + "_seq")
+        connection.prepareStatement("DROP SEQUENCE " + schemaConfiguration.associationValueEntryTable() + "_seq")
                 .execute();
     }
 
