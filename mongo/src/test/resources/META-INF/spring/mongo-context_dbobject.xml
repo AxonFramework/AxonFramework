@@ -39,7 +39,9 @@
     <bean id="mongoFactoryBean" class="org.axonframework.eventsourcing.eventstore.mongo.MongoFactory" lazy-init="true">
         <property name="mongoOptions">
             <bean class="com.mongodb.MongoOptions" factory-bean="mongoOptionsFactory"
-                  factory-method="createMongoOptions"/>
+                  factory-method="createMongoOptions">
+                <property name="fsync" value="true"/>
+            </bean>
         </property>
     </bean>
 
