@@ -42,6 +42,11 @@ public class EventListenerOrderComparator implements Comparator<EventListener> {
         this.orderResolver = orderResolver;
     }
 
+    // taken from JDK v1.7 (Long.compare)
+    private int compare(long x, long y) {
+        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+    }
+
     @Override
     public int compare(EventListener o1, EventListener o2) {
         if (o1 == o2 || o1.equals(o2)) {
@@ -50,13 +55,13 @@ public class EventListenerOrderComparator implements Comparator<EventListener> {
         int order1 = orderResolver.orderOf(o1);
         int order2 = orderResolver.orderOf(o2);
         if (order1 != order2) {
-            return order1 - order2;
+            return compare(order1, order2);
         }
 
         int hc1 = o1.hashCode();
         int hc2 = o2.hashCode();
         if (hc1 != hc2) {
-            return hc2 - hc1;
+            return compare(hc2, hc1);
         }
 
         if (o1.getClass().equals(o2.getClass())) {
@@ -64,7 +69,7 @@ public class EventListenerOrderComparator implements Comparator<EventListener> {
             int ihc1 = System.identityHashCode(o1);
             int ihc2 = System.identityHashCode(o2);
 
-            return ihc2 - ihc1;
+            return compare(ihc2, ihc1);
         }
         return o1.getClass().getName().compareTo(o2.getClass().getName());
     }
