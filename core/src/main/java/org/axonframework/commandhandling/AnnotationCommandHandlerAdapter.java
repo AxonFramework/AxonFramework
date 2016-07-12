@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageHandler;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Adapter that turns any {@link CommandHandler @CommandHandler} annotated bean into a {@link
@@ -40,7 +41,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
     private final AggregateModel<Object> modelInspector;
 
     /**
-     * Wraps the given <code>annotatedCommandHandler</code>, allowing it to be subscribed to a Command Bus.
+     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a Command Bus.
      *
      * @param annotatedCommandHandler The object containing the @CommandHandler annotated methods
      */
@@ -49,7 +50,7 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
     }
 
     /**
-     * Wraps the given <code>annotatedCommandHandler</code>, allowing it to be subscribed to a Command Bus.
+     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a Command Bus.
      *
      * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
      * @param parameterResolverFactory The strategy for resolving handler method parameter values
@@ -65,28 +66,27 @@ public class AnnotationCommandHandlerAdapter implements MessageHandler<CommandMe
     }
 
     /**
-     * Subscribe this command handler to the given <code>commandBus</code>. The command handler will be subscribed
+     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed
      * for each of the supported commands.
      *
      * @param commandBus    The command bus instance to subscribe to
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
-        Collection<Registration> subscriptions = new ArrayDeque<>();
-        for (String supportedCommand : supportedCommandNames()) {
-            subscriptions.add(commandBus.subscribe(supportedCommand, this));
-        }
+        Collection<Registration> subscriptions =
+                supportedCommandNames().stream().map(supportedCommand -> commandBus.subscribe(supportedCommand, this))
+                        .collect(Collectors.toCollection(ArrayDeque::new));
         return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
 
     /**
-     * Invokes the @CommandHandler annotated method that accepts the given <code>command</code>.
+     * Invokes the @CommandHandler annotated method that accepts the given {@code command}.
      *
      * @param command    The command to handle
-     * @return the result of the command handling. Is <code>null</code> when the annotated handler has a
-     * <code>void</code> return value.
+     * @return the result of the command handling. Is {@code null} when the annotated handler has a
+     * {@code void} return value.
      *
-     * @throws NoHandlerForCommandException when no handler is found for given <code>command</code>.
+     * @throws NoHandlerForCommandException when no handler is found for given {@code command}.
      * @throws Exception any exception occurring while handling the command
      */
     @Override

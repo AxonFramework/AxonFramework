@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.Assert;
+import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -72,6 +73,23 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         this.eventStore = eventStore;
     }
 
+
+    /**
+     * Initializes a repository with the default locking strategy, using the given {@code aggregateFactory} to
+     * create new aggregate instances.
+     *
+     * @param aggregateFactory          The factory for new aggregate instances
+     * @param eventStore                The event store that holds the event streams for this repository
+     * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
+     * @see LockingRepository#LockingRepository(Class)
+     */
+    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, ParameterResolverFactory parameterResolverFactory) {
+        super(aggregateFactory.getAggregateType(), parameterResolverFactory);
+        Assert.notNull(eventStore, "eventStore may not be null");
+        this.eventStore = eventStore;
+        this.aggregateFactory = aggregateFactory;
+    }
+
     /**
      * Initialize a repository with the given locking strategy.
      *
@@ -81,6 +99,21 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      */
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory) {
         super(aggregateFactory.getAggregateType(), lockFactory);
+        Assert.notNull(eventStore, "eventStore may not be null");
+        this.eventStore = eventStore;
+        this.aggregateFactory = aggregateFactory;
+    }
+
+    /**
+     * Initialize a repository with the given locking strategy and parameter resolver factory.
+     *
+     * @param aggregateFactory              The factory for new aggregate instances
+     * @param eventStore                    The event store that holds the event streams for this repository
+     * @param lockFactory                   The locking strategy to apply to this repository
+     * @param parameterResolverFactory      The parameter resolver factory used to resolve parameters of annotated handlers
+     */
+    public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory) {
+        super(aggregateFactory.getAggregateType(), lockFactory, parameterResolverFactory);
         Assert.notNull(eventStore, "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;

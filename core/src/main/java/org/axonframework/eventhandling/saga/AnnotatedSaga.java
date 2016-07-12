@@ -43,7 +43,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
     private volatile boolean isActive = true;
     private final String sagaId;
     private final T sagaInstance;
-    private AtomicReference<TrackingToken> trackingToken;
+    private final AtomicReference<TrackingToken> trackingToken;
 
     /**
      * Creates an AnnotatedSaga instance to wrap the given {@code annotatedSaga}, identifier with the given

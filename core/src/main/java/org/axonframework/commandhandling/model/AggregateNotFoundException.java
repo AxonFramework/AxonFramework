@@ -30,8 +30,8 @@ public class AggregateNotFoundException extends AxonNonTransientException {
     private final String aggregateIdentifier;
 
     /**
-     * Initialize a AggregateNotFoundException for an aggregate identifier by given <code>aggregateIdentifier</code>
-     * and given <code>message</code>.
+     * Initialize a AggregateNotFoundException for an aggregate identifier by given {@code aggregateIdentifier}
+     * and given {@code message}.
      *
      * @param aggregateIdentifier The identifier of the aggregate that could not be found
      * @param message             The message describing the cause of the exception
@@ -42,9 +42,9 @@ public class AggregateNotFoundException extends AxonNonTransientException {
     }
 
     /**
-     * Initialize a AggregateNotFoundException for an aggregate identifier by given <code>aggregateIdentifier</code>
+     * Initialize a AggregateNotFoundException for an aggregate identifier by given {@code aggregateIdentifier}
      * and
-     * with the given <code>message</code> and <code>cause</code>.
+     * with the given {@code message} and {@code cause}.
      *
      * @param aggregateIdentifier The identifier of the aggregate that could not be found
      * @param message             The message describing the cause of the exception

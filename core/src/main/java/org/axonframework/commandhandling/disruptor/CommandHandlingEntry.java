@@ -46,7 +46,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private boolean isRecoverEntry;
     private String aggregateIdentifier;
     private int invokerSegmentId;
-    private List<DomainEventMessage<?>> messagesToPublish = new ArrayList<>();
+    private final List<DomainEventMessage<?>> messagesToPublish = new ArrayList<>();
 
     /**
      * Initializes the CommandHandlingEntry
@@ -57,7 +57,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the InterceptorChain for the invocation process registered with this entry, or <code>null</code> if none
+     * Returns the InterceptorChain for the invocation process registered with this entry, or {@code null} if none
      * is available.
      *
      * @return the InterceptorChain for the invocation process registered with this entry
@@ -67,7 +67,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the InterceptorChain for the publication process registered with this entry, or <code>null</code> if
+     * Returns the InterceptorChain for the publication process registered with this entry, or {@code null} if
      * none
      * is available.
      *
@@ -87,7 +87,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the exception that occurred while processing the incoming command, or <code>null</code> if
+     * Returns the exception that occurred while processing the incoming command, or {@code null} if
      * processing did not result in an exception or if execution is not yet finished.
      *
      * @return the exception that occurred while processing the incoming command, if any.
@@ -114,7 +114,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Returns the result of the command's execution, or <code>null</code> if the command is not yet executed or
+     * Returns the result of the command's execution, or {@code null} if the command is not yet executed or
      * resulted in an exception.
      *
      * @return the result of the command's execution, if any
@@ -133,19 +133,19 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     }
 
     /**
-     * Indicates whether this entry is a recovery entry. When <code>true</code>, this entry does not contain any
+     * Indicates whether this entry is a recovery entry. When {@code true}, this entry does not contain any
      * command
      * handling information.
      *
-     * @return <code>true</code> if this entry represents a recovery request, otherwise <code>false</code>.
+     * @return {@code true} if this entry represents a recovery request, otherwise {@code false}.
      */
     public boolean isRecoverEntry() {
         return isRecoverEntry;
     }
 
     /**
-     * Returns the identifier of the aggregate to recover. Returns <code>null</code> when {@link #isRecoverEntry()}
-     * returns <code>false</code>.
+     * Returns the identifier of the aggregate to recover. Returns {@code null} when {@link #isRecoverEntry()}
+     * returns {@code false}.
      *
      * @return the identifier of the aggregate to recover
      */
@@ -175,7 +175,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      * Resets this entry, preparing it for use for another command.
      *
      * @param newCommand             The new command the entry is used for
-     * @param newCommandHandler      The Command Handler responsible for handling <code>newCommand</code>
+     * @param newCommandHandler      The Command Handler responsible for handling {@code newCommand}
      * @param newInvokerSegmentId    The SegmentID of the invoker that should process this entry
      * @param newPublisherSegmentId  The SegmentID of the publisher that should process this entry
      * @param newCallback            The callback to report the result of command execution to

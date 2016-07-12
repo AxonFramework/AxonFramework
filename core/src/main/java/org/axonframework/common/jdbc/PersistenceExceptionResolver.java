@@ -25,12 +25,12 @@ package org.axonframework.common.jdbc;
 public interface PersistenceExceptionResolver {
 
     /**
-     * Indicates whether the given <code>exception</code> represents a duplicate key violation. Typically, duplicate key
+     * Indicates whether the given {@code exception} represents a duplicate key violation. Typically, duplicate key
      * violations indicates concurrent access to an entity in the application. Two users might be accessing the same
      * Aggregate, for example.
      *
      * @param exception The exception to evaluate
-     * @return <code>true</code> if the given exception represents a Duplicate Key Violation, <code>false</code>
+     * @return {@code true} if the given exception represents a Duplicate Key Violation, {@code false}
      *         otherwise.
      */
     boolean isDuplicateKeyViolation(Exception exception);

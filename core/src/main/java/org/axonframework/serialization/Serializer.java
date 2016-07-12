@@ -17,7 +17,7 @@
 package org.axonframework.serialization;
 
 /**
- * Interface describing a serialization mechanism. Implementations can serialize objects of given type <code>T</code>
+ * Interface describing a serialization mechanism. Implementations can serialize objects of given type {@code T}
  * to an output stream and read the object back in from an input stream.
  *
  * @author Allard Buijze
@@ -26,10 +26,10 @@ package org.axonframework.serialization;
 public interface Serializer {
 
     /**
-     * Serialize the given <code>object</code> into a Serialized Object containing the given
-     * <code>expectedRepresentation</code>.
+     * Serialize the given {@code object} into a Serialized Object containing the given
+     * {@code expectedRepresentation}.
      * <p/>
-     * Use {@link #canSerializeTo(Class)} to detect whether the <code>expectedRepresentation</code> is supported by
+     * Use {@link #canSerializeTo(Class)} to detect whether the {@code expectedRepresentation} is supported by
      * this serializer.
      *
      * @param object                 The object to serialize
@@ -40,22 +40,22 @@ public interface Serializer {
     <T> SerializedObject<T> serialize(Object object, Class<T> expectedRepresentation);
 
     /**
-     * Indicates whether this Serializer is capable of serializing to the given <code>expectedRepresentation</code>.
+     * Indicates whether this Serializer is capable of serializing to the given {@code expectedRepresentation}.
      * <p/>
-     * When <code>true</code>, this does *not* guarantee that the serialization and (optional) conversion will also
-     * succeed when executed. For example, when a serializer produces a <code>byte[]</code> containing JSON, trying to
+     * When {@code true}, this does *not* guarantee that the serialization and (optional) conversion will also
+     * succeed when executed. For example, when a serializer produces a {@code byte[]} containing JSON, trying to
      * convert to a Dom4J Document will fail, even though this serializer has a converter to convert
-     * <code>byte[]</code>
+     * {@code byte[]}
      * to Dom4J instances.
      *
      * @param expectedRepresentation The type of data a Serialized Object should contain
      * @param <T>                    The type of data a Serialized Object should contain
-     * @return <code>true</code> if the <code>expectedRepresentation</code> is supported, otherwise <code>false</code>.
+     * @return {@code true} if the {@code expectedRepresentation} is supported, otherwise {@code false}.
      */
     <T> boolean canSerializeTo(Class<T> expectedRepresentation);
 
     /**
-     * Deserializes the first object read from the given <code>bytes</code>. The <code>bytes</code> are not consumed
+     * Deserializes the first object read from the given {@code bytes}. The {@code bytes} are not consumed
      * from the array or modified in any way. The resulting object instance is cast to the expected type.
      *
      * @param serializedObject the instance describing the type of object and the bytes providing the serialized data
@@ -69,7 +69,7 @@ public interface Serializer {
 
     /**
      * Returns the class for the given type identifier. The result of this method must guarantee that the deserialized
-     * SerializedObject with the given <code>type</code> is an instance of the returned Class.
+     * SerializedObject with the given {@code type} is an instance of the returned Class.
      * <p/>
      * If a class cannot be resolved (i.e. because the class is not available on this JVM's classpath) this method
      * throws UnknownSerializedTypeException.
@@ -77,7 +77,7 @@ public interface Serializer {
      * @param type The type identifier of the object
      * @return the Class representing the type of the serialized Object
      *
-     * @throws UnknownSerializedTypeException if the <code>type</code> cannot be resolved to a class
+     * @throws UnknownSerializedTypeException if the {@code type} cannot be resolved to a class
      */
     Class classForType(SerializedType type) throws UnknownSerializedTypeException;
 

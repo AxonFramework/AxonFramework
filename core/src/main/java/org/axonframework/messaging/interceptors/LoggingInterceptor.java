@@ -29,8 +29,8 @@ import static java.lang.String.format;
  * Message Handler Interceptor that logs incoming messages and their result to a SLF4J logger. Allow configuration of
  * the name under which the logger should log the statements.
  * <p/>
- * Incoming messages and successful executions are logged at the <code>INFO</code> level. Processing errors are logged
- * using the <code>WARN</code> level.
+ * Incoming messages and successful executions are logged at the {@code INFO} level. Processing errors are logged
+ * using the {@code WARN} level.
  *
  * @author Allard Buijze
  * @since 0.6
@@ -40,7 +40,7 @@ public class LoggingInterceptor<T extends Message<?>> implements MessageHandlerI
     private final Logger logger;
 
     /**
-     * Initialize the LoggingInterceptor with the given <code>loggerName</code>. The actual logging implementation will
+     * Initialize the LoggingInterceptor with the given {@code loggerName}. The actual logging implementation will
      * use this name to decide the appropriate log level and location. See the documentation of your logging
      * implementation for more information.
      *

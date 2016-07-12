@@ -34,8 +34,8 @@ public abstract class AbstractCacheAdapter<L> implements Cache {
             new ConcurrentHashMap<>();
 
     /**
-     * Creates an adapter for the given <code>cacheEntryListener</code>. The adapter must forward all incoming
-     * notifications to the respective methods on the <code>cacheEntryListener</code>.
+     * Creates an adapter for the given {@code cacheEntryListener}. The adapter must forward all incoming
+     * notifications to the respective methods on the {@code cacheEntryListener}.
      *
      * @param cacheEntryListener The listener to create an adapter for
      * @return an adapter that forwards notifications

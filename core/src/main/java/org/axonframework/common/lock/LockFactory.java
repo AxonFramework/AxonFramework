@@ -25,7 +25,7 @@ package org.axonframework.common.lock;
 public interface LockFactory {
 
     /**
-     * Obtain a lock for a resource identified by given <code>identifier</code>. Depending on the strategy, this
+     * Obtain a lock for a resource identified by given {@code identifier}. Depending on the strategy, this
      * method may return immediately or block until a lock is held.
      *
      * @param identifier the identifier of the resource to obtain a lock for.

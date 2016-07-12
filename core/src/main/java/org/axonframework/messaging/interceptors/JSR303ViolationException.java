@@ -36,7 +36,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
     private final Set<ConstraintViolation<Object>> violations;
 
     /**
-     * Initializes an exception with the given <code>message</code> and <code>violations</code>.
+     * Initializes an exception with the given {@code message} and {@code violations}.
      *
      * @param message    A descriptive message of the failure
      * @param violations The violations that were detected

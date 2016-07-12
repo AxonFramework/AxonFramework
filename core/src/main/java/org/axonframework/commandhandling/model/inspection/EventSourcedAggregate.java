@@ -38,14 +38,14 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
     public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
                                                           EventStore eventStore) {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<T>(aggregateRoot, inspector, eventStore);
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(aggregateRoot, inspector, eventStore);
         aggregate.registerWithUnitOfWork();
         return aggregate;
     }
 
     public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
                                                           EventStore eventStore) throws Exception {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<T>(inspector, eventStore);
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(inspector, eventStore);
         aggregate.registerWithUnitOfWork();
         aggregate.registerRoot(aggregateFactory);
         return aggregate;

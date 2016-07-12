@@ -25,7 +25,7 @@ import java.lang.annotation.*;
  * <p/>
  * <code>@StartSaga(forceNew=true)<br/>@SageEventHandler(associationProperty=&quot;orderId&quot;)<br/>public void
  * handleOrderCreated(OrderCreatedEvent event) </code><br/> will always trigger the creation of a saga that can be found
- * with an AssociationValue with key "orderId" and as value the value returned by <code>event.getOrderId()</code>.
+ * with an AssociationValue with key "orderId" and as value the value returned by {@code event.getOrderId()}.
  * <p/>
  * This annotation can only appear on methods that have been annotated with {@link
  * SagaEventHandler @SagaEventHandler}.
@@ -39,8 +39,8 @@ import java.lang.annotation.*;
 public @interface StartSaga {
 
     /**
-     * Indicates whether or not to force creation of a Saga, even if one already exists. If <code>true</code>, a new
-     * Saga is always created when an event assignable to the annotated method is handled. If <code>false</code>, a new
+     * Indicates whether or not to force creation of a Saga, even if one already exists. If {@code true}, a new
+     * Saga is always created when an event assignable to the annotated method is handled. If {@code false}, a new
      * saga is only created if no Saga's exist that can handle the incoming event.
      * <p/>
      * This annotation can only appear on methods that have been annotated with {@link

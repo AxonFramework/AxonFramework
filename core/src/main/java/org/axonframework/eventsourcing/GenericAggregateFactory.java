@@ -41,7 +41,7 @@ public class GenericAggregateFactory<T> extends AbstractAggregateFactory<T> {
     private final Constructor<T> constructor;
 
     /**
-     * Initialize the AggregateFactory for creating instances of the given <code>aggregateType</code>.
+     * Initialize the AggregateFactory for creating instances of the given {@code aggregateType}.
      *
      * @param aggregateType The type of aggregate this factory creates instances of.
      * @throws IncompatibleAggregateException if the aggregate constructor throws an exception, or if the JVM security

@@ -31,7 +31,7 @@ public class CommandExecutionException extends AxonException {
     private static final long serialVersionUID = -4864350962123378098L;
 
     /**
-     * Initializes the exception with given <code>message</code> and <code>cause</code>.
+     * Initializes the exception with given {@code message} and {@code cause}.
      *
      * @param message The message describing the exception
      * @param cause   The cause of the exception

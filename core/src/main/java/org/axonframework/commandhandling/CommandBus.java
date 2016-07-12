@@ -31,14 +31,14 @@ import org.axonframework.messaging.MessageHandler;
 public interface CommandBus {
 
     /**
-     * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
+     * Dispatch the given {@code command} to the CommandHandler subscribed to that type of {@code command}.
      * No
      * feedback is given about the status of the dispatching process. Implementations may return immediately after
      * asserting a valid handler is registered for the given command.
      *
      * @param <C>     The type of command to dispatch
      * @param command The Command to dispatch
-     * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
+     * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
     default <C> void dispatch(CommandMessage<C> command) {
@@ -46,7 +46,7 @@ public interface CommandBus {
     }
 
     /**
-     * Dispatch the given <code>command</code> to the CommandHandler subscribed to that type of <code>command</code>.
+     * Dispatch the given {@code command} to the CommandHandler subscribed to that type of {@code command}.
      * When the command is processed, on of the callback methods is called, depending on the result of the processing.
      * <p/>
      * When the method returns, the only guarantee provided by the CommandBus implementation, is that the command has
@@ -60,21 +60,21 @@ public interface CommandBus {
      * @param callback The callback to invoke when command processing is complete
      * @param <C>      The type of command to dispatch
      * @param <R>      The type of the expected result
-     * @throws NoHandlerForCommandException when no command handler is registered for the given <code>command</code>.
+     * @throws NoHandlerForCommandException when no command handler is registered for the given {@code command}.
      * @see GenericCommandMessage#asCommandMessage(Object)
      */
     <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback);
 
     /**
-     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code>.
+     * Subscribe the given {@code handler} to commands of type {@code commandType}.
      * <p/>
      * If a subscription already exists for the given type, the behavior is undefined. Implementations may throw an
      * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
-     * <code>handler</code> gets the subscription.
+     * {@code handler} gets the subscription.
      *
      * @param commandName The name of the command to subscribe the handler to
      * @param handler     The handler instance that handles the given type of command
-     * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
+     * @return a handle to unsubscribe the {@code handler}. When unsubscribed it will no longer receive commands.
      */
     Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 

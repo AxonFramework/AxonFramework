@@ -27,8 +27,8 @@ package org.axonframework.serialization;
 public interface SerializationAware {
 
     /**
-     * Serialize the payload of this message using given <code>serializer</code>, using given
-     * <code>expectedRepresentation</code>. This method <em>should</em> return the same SerializedObject instance when
+     * Serialize the payload of this message using given {@code serializer}, using given
+     * {@code expectedRepresentation}. This method <em>should</em> return the same SerializedObject instance when
      * invoked multiple times using the same serializer.
      *
      * @param serializer             The serializer to serialize payload with
@@ -39,8 +39,8 @@ public interface SerializationAware {
     <T> SerializedObject<T> serializePayload(Serializer serializer, Class<T> expectedRepresentation);
 
     /**
-     * Serialize the meta data of this message using given <code>serializer</code>, using given
-     * <code>expectedRepresentation</code>. This method <em>should</em> return the same SerializedObject instance when
+     * Serialize the meta data of this message using given {@code serializer}, using given
+     * {@code expectedRepresentation}. This method <em>should</em> return the same SerializedObject instance when
      * invoked multiple times using the same serializer.
      *
      * @param serializer             The serializer to serialize meta data with

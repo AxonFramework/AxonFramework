@@ -44,7 +44,7 @@ public class MessageProcessingContext<T extends Message<?>> {
     private ExecutionResult executionResult;
 
     /**
-     * Creates a new processing context for the given <code>message</code>.
+     * Creates a new processing context for the given {@code message}.
      *
      * @param message The Message that is to be processed.
      */
@@ -53,7 +53,7 @@ public class MessageProcessingContext<T extends Message<?>> {
     }
 
     /**
-     * Invoke the handlers in this collection attached to the given <code>phase</code>.
+     * Invoke the handlers in this collection attached to the given {@code phase}.
      *
      * @param unitOfWork    The Unit of Work that is changing its phase
      * @param phase         The phase for which attached handlers should be invoked
@@ -120,9 +120,9 @@ public class MessageProcessingContext<T extends Message<?>> {
 
     /**
      * Get the result of processing the {@link #getMessage() Message}. If the Message has not been processed yet this
-     * method returns <code>null</code>.
+     * method returns {@code null}.
      *
-     * @return The result of processing the Message, or <code>null</code> if the Message hasn't been processed
+     * @return The result of processing the Message, or {@code null} if the Message hasn't been processed
      */
     public ExecutionResult getExecutionResult() {
         return executionResult;
@@ -139,7 +139,7 @@ public class MessageProcessingContext<T extends Message<?>> {
 
     /**
      * Reset the processing context. This clears the execution result and map with registered handlers, and replaces
-     * the current Message with the given <code>message</code>.
+     * the current Message with the given {@code message}.
      *
      * @param message The new message that is being processed
      */

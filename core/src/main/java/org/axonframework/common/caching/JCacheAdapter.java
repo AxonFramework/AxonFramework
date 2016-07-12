@@ -35,7 +35,7 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
     private final javax.cache.Cache jCache;
 
     /**
-     * Initialize the adapter to forward call to the given <code>jCache</code> instance
+     * Initialize the adapter to forward call to the given {@code jCache} instance
      *
      * @param jCache The cache to forward all calls to
      */

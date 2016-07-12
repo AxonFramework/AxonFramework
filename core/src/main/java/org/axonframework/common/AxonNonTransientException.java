@@ -30,12 +30,12 @@ public abstract class AxonNonTransientException extends AxonException {
     private static final long serialVersionUID = -2119569988731244940L;
 
     /**
-     * Indicates whether the given <code>throwable</code> is a AxonNonTransientException exception or indicates to be
+     * Indicates whether the given {@code throwable} is a AxonNonTransientException exception or indicates to be
      * caused by one.
      *
      * @param throwable The throwable to inspect
-     * @return <code>true</code> if the given instance or one of it's causes is an instance of
-     *         AxonNonTransientException, otherwise <code>false</code>
+     * @return {@code true} if the given instance or one of it's causes is an instance of
+     *         AxonNonTransientException, otherwise {@code false}
      */
     public static boolean isCauseOf(Throwable throwable) {
         return throwable != null
@@ -43,7 +43,7 @@ public abstract class AxonNonTransientException extends AxonException {
     }
 
     /**
-     * Initializes the exception using the given <code>message</code>.
+     * Initializes the exception using the given {@code message}.
      *
      * @param message The message describing the exception
      */
@@ -52,7 +52,7 @@ public abstract class AxonNonTransientException extends AxonException {
     }
 
     /**
-     * Initializes the exception using the given <code>message</code> and <code>cause</code>.
+     * Initializes the exception using the given {@code message} and {@code cause}.
      *
      * @param message The message describing the exception
      * @param cause   The underlying cause of the exception

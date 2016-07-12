@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -50,10 +53,9 @@ public class TrackingEventProcessorTest {
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
-        eventHandlerInvoker = new SimpleEventHandlerInvoker("test", mockListener);
-        testSubject = new TrackingEventProcessor(eventHandlerInvoker, eventBus, tokenStore);
+        eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
 
-        eventBus.initialize();
         testSubject.start();
     }
 
@@ -125,7 +127,7 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
 
-        testSubject = new TrackingEventProcessor(eventHandlerInvoker, eventBus, tokenStore);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
         testSubject.start();
         assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());

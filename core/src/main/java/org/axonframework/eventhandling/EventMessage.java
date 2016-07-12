@@ -58,7 +58,7 @@ public interface EventMessage<T> extends Message<T> {
     Instant getTimestamp();
 
     /**
-     * Returns a copy of this EventMessage with the given <code>metaData</code>. The payload, {@link #getTimestamp()
+     * Returns a copy of this EventMessage with the given {@code metaData}. The payload, {@link #getTimestamp()
      * Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
      *
      * @param metaData The new MetaData for the Message
@@ -68,7 +68,7 @@ public interface EventMessage<T> extends Message<T> {
     EventMessage<T> withMetaData(Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this EventMessage with it MetaData merged with the given <code>metaData</code>. The payload,
+     * Returns a copy of this EventMessage with it MetaData merged with the given {@code metaData}. The payload,
      * {@link #getTimestamp() Timestamp} and {@link #getIdentifier() Identifier} remain unchanged.
      *
      * @param metaData The MetaData to merge with

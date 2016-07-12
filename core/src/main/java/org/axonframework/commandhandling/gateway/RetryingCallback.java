@@ -45,9 +45,9 @@ public class RetryingCallback<C, R> implements CommandCallback<C, R> {
     private final List<Class<? extends Throwable>[]> history;
 
     /**
-     * Initialize the RetryingCallback with the given <code>delegate</code>, representing the actual callback passed as
-     * a parameter to dispatch, the given <code>commandMessage</code>, <code>retryScheduler</code> and
-     * <code>commandBus</code>.
+     * Initialize the RetryingCallback with the given {@code delegate}, representing the actual callback passed as
+     * a parameter to dispatch, the given {@code commandMessage}, {@code retryScheduler} and
+     * {@code commandBus}.
      *
      * @param delegate       The callback to invoke when the command succeeds, or when retries are rejected.
      * @param retryScheduler The scheduler that decides if and when a retry should be scheduled

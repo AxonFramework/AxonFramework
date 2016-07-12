@@ -26,7 +26,7 @@ public interface TrackingEventStream extends AutoCloseable {
 
     /**
      * Checks whether or not the next event message in the stream is available. If so this method returns
-     * <code>true</code> immediately. If not it returns <code>false</code> immediately.
+     * {@code true} immediately. If not it returns {@code false} immediately.
      *
      * @return true if an event is available or becomes available before the given timeout, false otherwise
      */
@@ -41,10 +41,10 @@ public interface TrackingEventStream extends AutoCloseable {
     /**
      * Checks whether or not the next event message in the stream is available. If an event is available when this
      * method is invoked this method returns immediately. If not, this method will block until an event becomes
-     * available, returning <code>true</code> or until the given <code>timeout</code> expires, returning
-     * <code>false</code>.
+     * available, returning {@code true} or until the given {@code timeout} expires, returning
+     * {@code false}.
      * <p>
-     * To check if the stream has events available now, pass a zero <code>timeout</code>.
+     * To check if the stream has events available now, pass a zero {@code timeout}.
      *
      * @param timeout the maximum number of time units to wait for events to become available
      * @param unit    the time unit for the timeout

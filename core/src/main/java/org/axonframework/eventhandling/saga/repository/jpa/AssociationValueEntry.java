@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,7 @@ package org.axonframework.eventhandling.saga.repository.jpa;
 
 import org.axonframework.eventhandling.saga.AssociationValue;
 
-import javax.persistence.Basic;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * JPA wrapper around an Association Value. This entity is used to store relevant Association Values for Sagas.
@@ -33,7 +30,7 @@ import javax.persistence.Id;
 public class AssociationValueEntry {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Basic
@@ -49,8 +46,8 @@ public class AssociationValueEntry {
     private String sagaType;
 
     /**
-     * Initialize a new AssociationValueEntry for a saga with given <code>sagaIdentifier</code> and
-     * <code>associationValue</code>.
+     * Initialize a new AssociationValueEntry for a saga with given {@code sagaIdentifier} and
+     * {@code associationValue}.
      *
      * @param sagaType         The type of Saga this association value belongs to
      * @param sagaIdentifier   The identifier of the saga

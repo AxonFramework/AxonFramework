@@ -16,9 +16,9 @@
 
 package org.axonframework.common.jdbc;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import javax.sql.DataSource;
 
 /**
  * ConnectionProvider implementation that obtains a connection from a given DataSource.
@@ -31,7 +31,7 @@ public class DataSourceConnectionProvider implements ConnectionProvider {
     private final DataSource dataSource;
 
     /**
-     * Initialize the Connection Provider, using given <code>dataSource</code> to obtain new connections.
+     * Initialize the Connection Provider, using given {@code dataSource} to obtain new connections.
      *
      * @param dataSource The DataSource to obtain connections from
      */

@@ -29,7 +29,7 @@ public class JdbcTransactionException extends AxonTransientException {
     private static final long serialVersionUID = -4361376818435729797L;
 
     /**
-     * Initialize the exception with given <code>message</code> and <code>cause</code>
+     * Initialize the exception with given {@code message} and {@code cause}
      *
      * @param message The message describing the error
      * @param cause   The cause of the error

@@ -34,7 +34,7 @@ public interface TransactionManager {
     }
 
     /**
-     * Starts a transaction with given <code>isolationLevel</code>. The return value is the started transaction that can
+     * Starts a transaction with given {@code isolationLevel}. The return value is the started transaction that can
      * be committed or rolled back.
      *
      * @return The object representing the transaction

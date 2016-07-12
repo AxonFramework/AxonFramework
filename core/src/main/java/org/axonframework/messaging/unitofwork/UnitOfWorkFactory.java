@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.metadata.CorrelationDataProvider;
 
 /**
- * The <code>UnitOfWorkFactory</code> interface is used to obtain UnitOfWork instances to manage activity in command
+ * The {@code UnitOfWorkFactory} interface is used to obtain UnitOfWork instances to manage activity in command
  * handling processes.
  * <p/>
  * All UnitOfWork instances returned by this factory have been started. It is the responsibility of the caller to
@@ -35,18 +35,18 @@ import org.axonframework.messaging.metadata.CorrelationDataProvider;
 public interface UnitOfWorkFactory<T extends UnitOfWork> {
 
     /**
-     * Register given <code>correlationDataProvider</code> with the UnitOfWorkFactory. When a new UnitOfWork
+     * Register given {@code correlationDataProvider} with the UnitOfWorkFactory. When a new UnitOfWork
      * instance is created the factory installs all registered correlation data providers with the unit of work.
      *
      * @param correlationDataProvider The correlation data provider to register
-     * @return a handle to unregister the <code>correlationDataProvider</code>. When unregistered it will no longer
+     * @return a handle to unregister the {@code correlationDataProvider}. When unregistered it will no longer
      * be attached to new unit of works.
      */
     Registration registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
 
     /**
      * Creates a new UnitOfWork instance. The instance's {@link UnitOfWork#isActive()} method returns
-     * <code>true</code>.
+     * {@code true}.
      *
      * @param message The message to be processed by the new Unit of Work
      * @return a new UnitOfWork instance, which has been started.

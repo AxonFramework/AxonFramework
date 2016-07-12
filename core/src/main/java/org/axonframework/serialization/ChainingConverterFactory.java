@@ -28,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * from one type to another, for which there is no suitable single converter.
  * <p/>
  * This implementation will also autodetect ContentTypeConverter implementations by scanning
- * <code>/META-INF/services/org.axonframework.serializer.ContentTypeConverter</code> files on the classpath. These
+ * {@code /META-INF/services/org.axonframework.serializer.ContentTypeConverter} files on the classpath. These
  * files must contain the fully qualified class names of the implementations to use.
  *
  * @author Allard Buijze
@@ -41,7 +41,7 @@ public class ChainingConverterFactory implements ConverterFactory {
 
     /**
      * Initialize a new ChainingConverterFactory. Will autodetect all converters mentioned in
-     * <code>/META-INF/services/org.axonframework.serializer.ContentTypeConverter</code> files on the class path.
+     * {@code /META-INF/services/org.axonframework.serializer.ContentTypeConverter} files on the class path.
      * <p/>
      * Instances of ChainingConverterFactory are safe for use in a multi-threaded environment, with exception of the
      * {@link #registerConverter(ContentTypeConverter)} method.
@@ -101,11 +101,11 @@ public class ChainingConverterFactory implements ConverterFactory {
     }
 
     /**
-     * Registers the given <code>converter</code> with this factory. The converter which is registered <em>last</em>
+     * Registers the given {@code converter} with this factory. The converter which is registered <em>last</em>
      * will be inspected <em>first</em> when finding a suitable converter for a given input and output type.
      * <p/>
      * An alternative to explicit converter registration (but without the ordering guarantees) is to create a file
-     * called <code>org.axonframework.serializer.ContentTypeConverter</code> in <code>/META-INF/services/</code> on the
+     * called {@code org.axonframework.serializer.ContentTypeConverter} in {@code /META-INF/services/} on the
      * class path which contains the fully qualified class names of the converters, separated by newlines. These
      * implementations must have a public no-arg constructor.
      *
@@ -116,7 +116,7 @@ public class ChainingConverterFactory implements ConverterFactory {
     }
 
     /**
-     * Registers a convert of the given <code>converterType</code> with this factory, only if initialization of such a
+     * Registers a convert of the given {@code converterType} with this factory, only if initialization of such a
      * converter is possible. Both the expected source type and target type classes are checked for availability on the
      * class path. In contrast to {@link #registerConverter(ContentTypeConverter)}, this method allows potentially
      * unsafe (in terms of class dependencies) converters to be registered.
@@ -125,7 +125,7 @@ public class ChainingConverterFactory implements ConverterFactory {
      * converter for a given input and output type.
      * <p/>
      * An alternative to explicit converter registration (but without the ordering guarantees) is to create a file
-     * called <code>org.axonframework.serializer.ContentTypeConverter</code> in <code>/META-INF/services/</code> on the
+     * called {@code org.axonframework.serializer.ContentTypeConverter} in {@code /META-INF/services/} on the
      * class path which contains the fully qualified class names of the converters, separated by newlines. These
      * implementations must have a public no-arg constructor.
      *
@@ -148,14 +148,12 @@ public class ChainingConverterFactory implements ConverterFactory {
     /**
      * Setter for dependency injection frameworks that require property methods. This method is the same as calling
      * {@link #registerConverter(ContentTypeConverter)} for each converter in the given list of
-     * <code>additionalConverters</code>.
+     * {@code additionalConverters}.
      *
      * @param additionalConverters The converters to register with this factory
      */
     public void setAdditionalConverters(List<ContentTypeConverter> additionalConverters) {
-        for (ContentTypeConverter converter : additionalConverters) {
-            registerConverter(converter);
-        }
+        additionalConverters.forEach(this::registerConverter);
     }
 
     private static class NoConversion<T> implements ContentTypeConverter<T, T> {

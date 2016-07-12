@@ -38,8 +38,8 @@ package org.axonframework.eventhandling.async;
 public interface SequencingPolicy<T> {
 
     /**
-     * Returns the sequence identifier for the given <code>event</code>. When two events have the same identifier (as
-     * defined by their equals method), they will be executed sequentially. A <code>null</code> value indicates that
+     * Returns the sequence identifier for the given {@code event}. When two events have the same identifier (as
+     * defined by their equals method), they will be executed sequentially. A {@code null} value indicates that
      * there are no sequencing requirements for the handling of this event.
      *
      * @param event the event for which to get the sequencing identifier

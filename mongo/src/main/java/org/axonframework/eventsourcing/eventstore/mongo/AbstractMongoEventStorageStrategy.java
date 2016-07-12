@@ -34,7 +34,7 @@ import static java.util.stream.StreamSupport.stream;
 /**
  * @author Rene de Waele
  */
-public abstract class AbstractEventStorageStrategy implements StorageStrategy {
+public abstract class AbstractMongoEventStorageStrategy implements StorageStrategy {
 
     private static final long DEFAULT_GAP_DETECTION_INTERVAL = 10000L;
     protected static final int ORDER_ASC = 1, ORDER_DESC = -1;
@@ -42,11 +42,11 @@ public abstract class AbstractEventStorageStrategy implements StorageStrategy {
     private final EventEntryConfiguration eventConfiguration;
     private final long gapDetectionInterval;
 
-    public AbstractEventStorageStrategy(EventEntryConfiguration eventConfiguration) {
+    public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration) {
         this(eventConfiguration, DEFAULT_GAP_DETECTION_INTERVAL);
     }
 
-    public AbstractEventStorageStrategy(EventEntryConfiguration eventConfiguration, long gapDetectionInterval) {
+    public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration, long gapDetectionInterval) {
         this.eventConfiguration = eventConfiguration;
         this.gapDetectionInterval = gapDetectionInterval;
     }
@@ -134,7 +134,7 @@ public abstract class AbstractEventStorageStrategy implements StorageStrategy {
         }
         Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
         LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp().minusMillis(gapDetectionInterval),
+        return new LegacyTrackingToken(legacyToken.getTimestamp(),
                                        legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
     }
 

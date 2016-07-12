@@ -108,7 +108,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
      * {@link CommandGateway}.
      *
      * @param gatewayInterface The interface describing the gateway
-     * @throws IllegalArgumentException if the given <code>gatewayInterface</code> is <code>null</code> or not an
+     * @throws IllegalArgumentException if the given {@code gatewayInterface} is {@code null} or not an
      * interface.
      */
     public void setGatewayInterface(Class<T> gatewayInterface) {
@@ -147,7 +147,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
     }
 
     /**
-     * Registers the <code>commandCallbacks</code>, which are invoked for each sent command, unless Axon is able to
+     * Registers the {@code commandCallbacks}, which are invoked for each sent command, unless Axon is able to
      * detect
      * that the result of the command does not match the type accepted by that callback.
      * <p/>

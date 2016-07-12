@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public final class Digester {
     private final MessageDigest messageDigest;
 
     /**
-     * Creates a new Digester instance for the given <code>algorithm</code>.
+     * Creates a new Digester instance for the given {@code algorithm}.
      *
      * @param algorithm The algorithm to use, e.g. "MD5"
      * @return a fully initialized Digester instance
@@ -58,10 +58,10 @@ public final class Digester {
     }
 
     /**
-     * Utility method that creates a hex string of the MD5 hash of the given <code>input</code>
+     * Utility method that creates a hex string of the MD5 hash of the given {@code input}
      *
      * @param input The value to create a MD5 hash for
-     * @return The hex representation of the MD5 hash of given <code>input</code>
+     * @return The hex representation of the MD5 hash of given {@code input}
      */
     public static String md5Hex(String input) {
         try {
@@ -76,10 +76,10 @@ public final class Digester {
     }
 
     /**
-     * Update the Digester with given <code>additionalData</code>.
+     * Update the Digester with given {@code additionalData}.
      *
      * @param additionalData The data to add to the digest source
-     * @return <code>this</code> for method chaining
+     * @return {@code this} for method chaining
      */
     public Digester update(byte[] additionalData) {
         messageDigest.update(additionalData);

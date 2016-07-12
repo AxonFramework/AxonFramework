@@ -93,7 +93,7 @@ import static java.lang.String.format;
  * Consider providing an alternative {@link IdentifierFactory} implementation. The default
  * implementation used {@link java.util.UUID#randomUUID()} to generated identifier for Events. The poor performance of
  * this method severely impacts overall performance of the DisruptorCommandBus. A better performing alternative is, for
- * example, <a href="http://johannburkard.de/software/uuid/" target="_blank"><code>com.eaio.uuid.UUID</code></a>
+ * example, <a href="http://johannburkard.de/software/uuid/" target="_blank">{@code com.eaio.uuid.UUID}</a>
  *
  * @author Allard Buijze
  * @since 2.0
@@ -224,7 +224,7 @@ public class DisruptorCommandBus implements CommandBus {
         RingBuffer<CommandHandlingEntry> ringBuffer = disruptor.getRingBuffer();
         int invokerSegment = 0;
         int publisherSegment = 0;
-        if ((commandHandlerInvokers.length > 1 || publisherCount > 1)) {
+        if (commandHandlerInvokers.length > 1 || publisherCount > 1) {
             String aggregateIdentifier = commandTargetResolver.resolveTarget(command).getIdentifier();
             if (aggregateIdentifier != null) {
                 int idHash = aggregateIdentifier.hashCode() & Integer.MAX_VALUE;
@@ -250,7 +250,7 @@ public class DisruptorCommandBus implements CommandBus {
 
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * <code>aggregateFactory</code>.
+     * {@code aggregateFactory}.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
@@ -265,13 +265,13 @@ public class DisruptorCommandBus implements CommandBus {
 
     /**
      * Creates a repository instance for an Event Sourced aggregate that is created by the given
-     * <code>aggregateFactory</code>. The given <code>decorator</code> is used to decorate event streams.
+     * {@code aggregateFactory}. The given {@code decorator} is used to decorate event streams.
      * <p>
      * The repository returned must be used by Command Handlers subscribed to this Command Bus for loading aggregate
      * instances. Using any other repository instance may result in undefined outcome (a.k.a. concurrency problems).
      * <p>
      * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
-     * return the same instance as the first invocation, even if the given <code>decorator</code> is different.
+     * return the same instance as the first invocation, even if the given {@code decorator} is different.
      *
      * @param aggregateFactory The factory creating uninitialized instances of the Aggregate
      * @param decorator        The decorator to decorate events streams with

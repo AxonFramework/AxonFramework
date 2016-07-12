@@ -48,7 +48,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     private final EventStore eventStore;
 
     /**
-     * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
+     * Initializes a repository with a the given {@code aggregateFactory} and a pessimistic locking strategy.
      *
      * @param aggregateFactory The factory for new aggregate instances
      * @param eventStore       The event store that holds the event streams for this repository
@@ -59,7 +59,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     }
 
     /**
-     * Initializes a repository with a the given <code>aggregateFactory</code> and a pessimistic locking strategy.
+     * Initializes a repository with a the given {@code aggregateFactory} and a pessimistic locking strategy.
      * <p>
      * Note that an optimistic locking strategy is not compatible with caching.
      *

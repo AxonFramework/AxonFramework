@@ -34,7 +34,7 @@ public class QuartzScheduleToken implements ScheduleToken {
     private final String groupIdentifier;
 
     /**
-     * Initialize a token for the given <code>jobIdentifier</code> and <code>groupIdentifier</code>.
+     * Initialize a token for the given {@code jobIdentifier} and {@code groupIdentifier}.
      *
      * @param jobIdentifier   The identifier used when registering the job with quartz.
      * @param groupIdentifier The identifier of the group the job is part of.

@@ -52,7 +52,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer with the given <code>objectMapper</code> to serialize and parse the objects to JSON.
+     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
      * This objectMapper allows for customization of the serialized form.
      *
      * @param objectMapper The objectMapper to serialize objects and parse JSON with
@@ -62,8 +62,8 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer using a default ObjectMapper instance, using the given <code>revisionResolver</code>
-     * to define revision for each object to serialize, and given <code>converterFactory</code> to be used by
+     * Initialize the serializer using a default ObjectMapper instance, using the given {@code revisionResolver}
+     * to define revision for each object to serialize, and given {@code converterFactory} to be used by
      * upcasters.
      *
      * @param revisionResolver The strategy to use to resolve the revision of an object
@@ -74,8 +74,8 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer with the given <code>objectMapper</code> to serialize and parse the objects to JSON.
-     * This objectMapper allows for customization of the serialized form. The given <code>revisionResolver</code> is
+     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
+     * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
      * used to resolve the revision from an object to be serialized.
      *
      * @param objectMapper     The objectMapper to serialize objects and parse JSON with
@@ -86,9 +86,9 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer with the given <code>objectMapper</code> to serialize and parse the objects to JSON.
-     * This objectMapper allows for customization of the serialized form. The given <code>revisionResolver</code> is
-     * used to resolve the revision from an object to be serialized. The given <code>converterFactory</code> is the
+     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
+     * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
+     * used to resolve the revision from an object to be serialized. The given {@code converterFactory} is the
      * converter factory used by upcasters to convert between content types.
      *
      * @param objectMapper     The objectMapper to serialize objects and parse JSON with
@@ -101,9 +101,9 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Initialize the serializer with the given <code>objectMapper</code> to serialize and parse the objects to JSON.
-     * This objectMapper allows for customization of the serialized form. The given <code>revisionResolver</code> is
-     * used to resolve the revision from an object to be serialized. The given <code>converterFactory</code> is the
+     * Initialize the serializer with the given {@code objectMapper} to serialize and parse the objects to JSON.
+     * This objectMapper allows for customization of the serialized form. The given {@code revisionResolver} is
+     * used to resolve the revision from an object to be serialized. The given {@code converterFactory} is the
      * converter factory used by upcasters to convert between content types.
      *
      * @param objectMapper     The objectMapper to serialize objects and parse JSON with
@@ -127,7 +127,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Registers converters with the given <code>converterFactory</code> which depend on the actual contents of the
+     * Registers converters with the given {@code converterFactory} which depend on the actual contents of the
      * serialized for to represent a JSON format.
      *
      * @param converterFactory The ChainingConverterFactory instance to register the converters with.
@@ -220,7 +220,7 @@ public class JacksonSerializer implements Serializer {
     }
 
     /**
-     * Resolve the class name from the given <code>serializedType</code>. This method may be overridden to customize
+     * Resolve the class name from the given {@code serializedType}. This method may be overridden to customize
      * the names used to denote certain classes, for example, by leaving out a certain base package for brevity.
      *
      * @param serializedType The serialized type to resolve the class name for

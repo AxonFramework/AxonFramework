@@ -51,7 +51,7 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
     String getType();
 
     /**
-     * Returns a copy of this DomainEventMessage with the given <code>metaData</code>. The payload, {@link
+     * Returns a copy of this DomainEventMessage with the given {@code metaData}. The payload, {@link
      * #getTimestamp()
      * Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the {@link #getAggregateIdentifier()
      * Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain unchanged.
@@ -63,7 +63,7 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
     DomainEventMessage<T> withMetaData(Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this DomainEventMessage with its MetaData merged with the given <code>metaData</code>. The
+     * Returns a copy of this DomainEventMessage with its MetaData merged with the given {@code metaData}. The
      * payload, {@link #getTimestamp() Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the
      * {@link #getAggregateIdentifier() Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain
      * unchanged.

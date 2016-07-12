@@ -32,9 +32,9 @@ public interface CorrelationDataProvider {
 
     /**
      * Provides a map with the entries to attach as correlation data to generated messages while processing given
-     * <code>message</code>.
+     * {@code message}.
      * <p/>
-     * This method should not return <code>null</code>.
+     * This method should not return {@code null}.
      *
      * @param message The message to define correlation data for
      * @return the data to attach as correlation data to generated messages

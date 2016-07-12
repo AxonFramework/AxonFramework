@@ -34,7 +34,7 @@ public class JsonNodeToByteArrayConverter extends AbstractContentTypeConverter<J
     private final ObjectMapper objectMapper;
 
     /**
-     * Initialize the converter, using given <code>objectMapper</code> to convert the JSonNode into bytes. Typically,
+     * Initialize the converter, using given {@code objectMapper} to convert the JSonNode into bytes. Typically,
      * this would be the objectMapper used by the Serializer that serializes objects into JsonNode.
      *
      * @param objectMapper The objectMapper to serialize the JsonNode with.

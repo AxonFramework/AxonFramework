@@ -41,8 +41,10 @@ public class JpaTokenStore implements TokenStore {
         AbstractTokenEntry<?> entity = createEntity(processName, segment, token, serializer);
         int count = entityManager.createQuery("UPDATE " + tokenEntryName() + " SET token = :token " +
                                                       "WHERE processName = :processName AND segment = :segment")
-                .setParameter("token", entity.getToken().getData()).setParameter("process", processName)
-                .setParameter("segment", segment).executeUpdate();
+                .setParameter("token", entity.getToken().getData())
+                .setParameter("processName", processName)
+                .setParameter("segment", segment)
+                .executeUpdate();
         if (count == 0) {
             entityManager.persist(entity);
         }
@@ -54,8 +56,11 @@ public class JpaTokenStore implements TokenStore {
         Optional<SerializedToken> serializedToken = entityManagerProvider.getEntityManager().createQuery(
                 "SELECT NEW org.axonframework.eventhandling.tokenstore.jpa.SerializedToken(token, tokenType) " +
                         "FROM " + tokenEntryName() + " WHERE processName = :processName AND segment = :segment",
-                SerializedToken.class).setParameter("processName", processName).setParameter("segment", segment)
-                .setMaxResults(1).getResultList().stream().findFirst();
+                    SerializedToken.class)
+                .setParameter("processName", processName)
+                .setParameter("segment", segment)
+                .setMaxResults(1)
+                .getResultList().stream().findFirst();
         return serializedToken.map(token -> token.getToken(serializer)).orElse(null);
     }
 

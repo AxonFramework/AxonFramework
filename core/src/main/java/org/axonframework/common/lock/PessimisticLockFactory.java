@@ -73,7 +73,7 @@ public class PessimisticLockFactory implements LockFactory {
     }
 
     /**
-     * Obtain a lock for a resource identified by the given <code>identifier</code>. This method will block until a
+     * Obtain a lock for a resource identified by the given {@code identifier}. This method will block until a
      * lock was successfully obtained.
      * <p/>
      * Note: when an exception occurs during the locking process, the lock may or may not have been allocated.

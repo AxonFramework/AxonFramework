@@ -24,7 +24,7 @@ import org.axonframework.common.AxonException;
 public class EventProcessingException extends AxonException {
 
     /**
-     * Initialize the exception with given <code>message</code> and <code>cause</code>.
+     * Initialize the exception with given {@code message} and {@code cause}.
      *
      * @param message Message describing the cause of the exception
      * @param cause   The exception that caused this exception to occur.

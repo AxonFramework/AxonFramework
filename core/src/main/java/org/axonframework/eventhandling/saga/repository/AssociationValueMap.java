@@ -34,7 +34,7 @@ import static org.springframework.util.ObjectUtils.nullSafeEquals;
  * Note that this "map" does not implement the Map interface. This is mainly due to the specific nature and intent of
  * this implementation. For example, the Map interface does not allow a single key to point to more than one value.
  * <p/>
- * This implementation is thread safe and has an expected average time cost of <code>log(n)</code>.
+ * This implementation is thread safe and has an expected average time cost of {@code log(n)}.
  *
  * @author Allard Buijze
  * @since 0.7
@@ -51,7 +51,7 @@ public class AssociationValueMap {
     }
 
     /**
-     * Returns the identifiers of the Sagas that have been associated with the given <code>associationValue</code>.
+     * Returns the identifiers of the Sagas that have been associated with the given {@code associationValue}.
      *
      * @param sagaType         The type of the associated Saga
      * @param associationValue The associationValue to find Sagas for
@@ -72,7 +72,7 @@ public class AssociationValueMap {
     }
 
     /**
-     * Adds an association between the given <code>associationValue</code> and <code>sagaIdentifier</code>.
+     * Adds an association between the given {@code associationValue} and {@code sagaIdentifier}.
      *
      * @param associationValue The association value associated with the Saga
      * @param sagaType         The type of the associated Saga
@@ -83,7 +83,7 @@ public class AssociationValueMap {
     }
 
     /**
-     * Removes an association between the given <code>associationValue</code> and <code>sagaIdentifier</code>.
+     * Removes an association between the given {@code associationValue} and {@code sagaIdentifier}.
      *
      * @param associationValue The association value associated with the Saga
      * @param sagaType         The type of the associated Saga
@@ -136,7 +136,7 @@ public class AssociationValueMap {
     /**
      * Indicates whether any elements are contained within this map.
      *
-     * @return <code>true</code> if this Map is empty, <code>false</code> if it contains any associations.
+     * @return {@code true} if this Map is empty, {@code false} if it contains any associations.
      */
     public boolean isEmpty() {
         return mappings.isEmpty();

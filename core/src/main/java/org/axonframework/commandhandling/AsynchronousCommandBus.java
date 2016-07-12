@@ -49,7 +49,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     }
 
     /**
-     * Initialize the AsynchronousCommandBus using the given <code>executor</code>.
+     * Initialize the AsynchronousCommandBus using the given {@code executor}.
      *
      * @param executor The executor that processes Command dispatching threads
      */
@@ -64,8 +64,8 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
     }
 
     /**
-     * Shuts down the Executor used to asynchronously dispatch incoming commands. If the <code>Executor</code> provided
-     * in the constructor does not implement <code>ExecutorService</code>, this method does nothing.
+     * Shuts down the Executor used to asynchronously dispatch incoming commands. If the {@code Executor} provided
+     * in the constructor does not implement {@code ExecutorService}, this method does nothing.
      */
     public void shutdown() {
         if (executor instanceof ExecutorService) {

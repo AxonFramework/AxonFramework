@@ -57,8 +57,8 @@ public class SimpleEventScheduler implements EventScheduler {
     private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
 
     /**
-     * Initialize the SimpleEventScheduler using the given <code>executorService</code> as trigger and execution
-     * mechanism, and publishes events to the given <code>eventBus</code>.
+     * Initialize the SimpleEventScheduler using the given {@code executorService} as trigger and execution
+     * mechanism, and publishes events to the given {@code eventBus}.
      *
      * @param executorService The backing ScheduledExecutorService
      * @param eventBus        The Event Bus on which Events are to be published
@@ -68,8 +68,8 @@ public class SimpleEventScheduler implements EventScheduler {
     }
 
     /**
-     * Initialize the SimpleEventScheduler using the given <code>executorService</code> as trigger and execution
-     * mechanism, and publishes events to the given <code>eventBus</code>. The <code>eventTriggerCallback</code> is
+     * Initialize the SimpleEventScheduler using the given {@code executorService} as trigger and execution
+     * mechanism, and publishes events to the given {@code eventBus}. The {@code eventTriggerCallback} is
      * invoked just before and after publication of a scheduled event.
      *
      * @param executorService   The backing ScheduledExecutorService

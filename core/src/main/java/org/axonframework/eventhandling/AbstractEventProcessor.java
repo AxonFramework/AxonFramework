@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,39 +22,47 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.metrics.MessageMonitor;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * @author Rene de Waele
  */
-public abstract class AbstractEventProcessor implements EventProcessor, Consumer<List<? extends EventMessage<?>>> {
+public abstract class AbstractEventProcessor implements EventProcessor {
+
     private final Set<MessageHandlerInterceptor<EventMessage<?>>> interceptors = new CopyOnWriteArraySet<>();
+    private final String name;
     private final EventHandlerInvoker eventHandlerInvoker;
     private final RollbackConfiguration rollbackConfiguration;
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
-    public AbstractEventProcessor(EventHandlerInvoker eventHandlerInvoker, RollbackConfiguration rollbackConfiguration,
-                                  ErrorHandler errorHandler, MessageMonitor<? super EventMessage<?>> messageMonitor) {
+    public AbstractEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
+                                  RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
+                                  MessageMonitor<? super EventMessage<?>> messageMonitor) {
+        this.name = requireNonNull(name);
         this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
         this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
-        this.errorHandler = requireNonNull(errorHandler);
-        this.messageMonitor = messageMonitor;
+        this.errorHandler = getOrDefault(errorHandler, ()-> NoOpErrorHandler.INSTANCE);
+        this.messageMonitor = getOrDefault(messageMonitor,
+                                           (Supplier<MessageMonitor<? super EventMessage<?>>>)
+                                                   NoOpMessageMonitor::instance);
     }
 
     @Override
     public String getName() {
-        return eventHandlerInvoker.getName();
+        return name;
     }
 
     @Override
@@ -65,9 +76,7 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
         return getName();
     }
 
-    @Override
-    @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-    public void accept(List<? extends EventMessage<?>> eventMessages) {
+    protected void doProcessBatch(List<? extends EventMessage<?>> eventMessages) {
         Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
@@ -76,7 +85,7 @@ public abstract class AbstractEventProcessor implements EventProcessor, Consumer
                     () -> {
                         unitOfWork.onRollback(uow -> errorHandler
                                 .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
-                                             () -> accept(eventMessages)));
+                                             () -> doProcessBatch(eventMessages)));
                         unitOfWork.onCleanup(uow -> {
                             MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
                             if (uow.isRolledBack()) {

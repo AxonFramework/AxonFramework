@@ -32,7 +32,7 @@ public class SimpleEntityManagerProvider implements EntityManagerProvider {
     private final EntityManager entityManager;
 
     /**
-     * Initializes an instance that always returns the given <code>entityManager</code>. This class can be used for
+     * Initializes an instance that always returns the given {@code entityManager}. This class can be used for
      * testing, or when using a ContainerManaged EntityManager.
      *
      * @param entityManager the EntityManager to return on {@link #getEntityManager()}

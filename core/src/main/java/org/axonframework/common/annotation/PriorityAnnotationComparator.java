@@ -50,9 +50,9 @@ public class PriorityAnnotationComparator<T> implements Comparator<T> {
     public int compare(T o1, T o2) {
         Priority annotation1 = o1.getClass().getAnnotation(Priority.class);
         Priority annotation2 = o2.getClass().getAnnotation(Priority.class);
-        int prio1 = annotation1 == null ? Priority.NEUTRAL : annotation1.value();
-        int prio2 = annotation2 == null ? Priority.NEUTRAL : annotation2.value();
+        int priority1 = annotation1 == null ? Priority.NEUTRAL : annotation1.value();
+        int priority2 = annotation2 == null ? Priority.NEUTRAL : annotation2.value();
 
-        return (prio1 > prio2) ? -1 : ((prio2 == prio1) ? 0 : 1);
+        return (priority1 > priority2) ? -1 : ((priority2 == priority1) ? 0 : 1);
     }
 }

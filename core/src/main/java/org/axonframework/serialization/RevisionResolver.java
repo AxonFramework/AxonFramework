@@ -27,14 +27,14 @@ package org.axonframework.serialization;
 public interface RevisionResolver {
 
     /**
-     * Returns the revision for the given <code>payloadType</code>.
+     * Returns the revision for the given {@code payloadType}.
      * <p/>
      * The revision is used by upcasters to decide whether they need to process a certain serialized event.
      * Generally, the revision needs to be modified each time the structure of an event has been changed in an
      * incompatible manner.
      *
      * @param payloadType The type for which to return the revision
-     * @return the revision for the given <code>payloadType</code>
+     * @return the revision for the given {@code payloadType}
      */
     String revisionOf(Class<?> payloadType);
 }

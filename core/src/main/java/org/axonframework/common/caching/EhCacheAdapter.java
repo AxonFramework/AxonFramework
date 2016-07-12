@@ -33,7 +33,7 @@ public class EhCacheAdapter extends AbstractCacheAdapter<CacheEventListener> {
     private final Ehcache ehCache;
 
     /**
-     * Initialize the adapter to forward all call to the given <code>ehCache</code> instance
+     * Initialize the adapter to forward all call to the given {@code ehCache} instance
      *
      * @param ehCache The cache instance to forward calls to
      */

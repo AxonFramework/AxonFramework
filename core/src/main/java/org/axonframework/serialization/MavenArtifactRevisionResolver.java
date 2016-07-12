@@ -38,7 +38,7 @@ public class MavenArtifactRevisionResolver implements RevisionResolver {
 
     /**
      * Initialize the RevisionResolver to look for the version in the Meta Data of the artifact with given
-     * <code>groupId</code> and <code>artifactId</code>.
+     * {@code groupId} and {@code artifactId}.
      * <p/>
      * The class loader that loaded the MavenArtifactRevisionResolver class is used to load the artifact configuration.
      *
@@ -52,7 +52,7 @@ public class MavenArtifactRevisionResolver implements RevisionResolver {
 
     /**
      * Initialize the RevisionResolver to look for the version in the Meta Data of the artifact with given
-     * <code>groupId</code> and <code>artifactId</code>.
+     * {@code groupId} and {@code artifactId}.
      *
      * @param groupId     The groupId as defined in the pom.xml file of the module
      * @param artifactId  The artifactId as defined in the pom.xml file of the module

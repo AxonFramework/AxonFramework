@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * interceptor also logs the command and the execution result of the command.
  * <p/>
  * The interceptor allows for configuration of the name under which the logger should log the statements. All logging
- * is done at the <code>INFO</code> level.
+ * is done at the {@code INFO} level.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -54,7 +54,7 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
     }
 
     /**
-     * Initialize the interceptor with the given <code>loggerName</code>. The actual logging implementation will
+     * Initialize the interceptor with the given {@code loggerName}. The actual logging implementation will
      * use this name to decide the appropriate log level and location. See the documentation of your logging
      * implementation for more information.
      *
@@ -65,7 +65,7 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
     }
 
     @Override
-    public Function<Integer, EventMessage<?>> handle(List<EventMessage<?>> messages) {
+    public BiFunction<Integer, EventMessage<?>, EventMessage<?>> handle(List<EventMessage<?>> messages) {
         StringBuilder sb = new StringBuilder(String.format("Events published: [%s]",
                 messages.stream().map(m -> m.getPayloadType().getSimpleName()).collect(Collectors.joining(", "))));
         if (CurrentUnitOfWork.isStarted()) {
@@ -86,6 +86,6 @@ public class EventLoggingInterceptor implements MessageDispatchInterceptor<Event
             }
         }
         logger.info(sb.toString());
-        return messages::get;
+        return (i, m) -> m;
     }
 }

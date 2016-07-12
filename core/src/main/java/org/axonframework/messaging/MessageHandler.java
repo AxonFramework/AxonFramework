@@ -24,7 +24,7 @@ package org.axonframework.messaging;
 public interface MessageHandler<T extends Message<?>> {
 
     /**
-     * Handles the given <code>message</code>.
+     * Handles the given {@code message}.
      *
      * @param message        The message to be processed.
      * @return The result of the message processing.

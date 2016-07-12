@@ -48,8 +48,8 @@ public class EventPublisher implements EventHandler<CommandHandlingEntry> {
     private final TransactionManager transactionManager;
 
     /**
-     * Initializes the EventPublisher to publish Events to the given <code>eventStore</code> and <code>eventBus</code>
-     * for aggregate of given <code>aggregateType</code>.
+     * Initializes the EventPublisher to publish Events to the given {@code eventStore} and {@code eventBus}
+     * for aggregate of given {@code aggregateType}.
      *
      * @param executor              The executor which schedules response reporting
      * @param transactionManager    The transaction manager that manages the transaction around event storage and

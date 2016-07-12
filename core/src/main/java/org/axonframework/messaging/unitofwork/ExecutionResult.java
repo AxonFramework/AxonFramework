@@ -32,7 +32,7 @@ public class ExecutionResult {
 
     /**
      * Returns the execution result. If the execution was completed successfully but yielded no result this method
-     * returns <code>null</code>. If the execution gave rise to an exception, invoking this method will throw an
+     * returns {@code null}. If the execution gave rise to an exception, invoking this method will throw an
      * exception. Unchecked exceptions will be thrown directly. Checked exceptions are wrapped by a
      * {@link org.axonframework.messaging.ExecutionException}.
      *
@@ -53,9 +53,9 @@ public class ExecutionResult {
 
     /**
      * Get the execution result in case the result is an exception. If the execution yielded no exception this method
-     * returns <code>null</code>.
+     * returns {@code null}.
      *
-     * @return The exception raised during execution of the task if any, <code>null</code> otherwise.
+     * @return The exception raised during execution of the task if any, {@code null} otherwise.
      */
     public Throwable getExceptionResult() {
         return isExceptionResult() ? (Throwable) result : null;
@@ -64,7 +64,7 @@ public class ExecutionResult {
     /**
      * Check if the result of the execution yielded an exception.
      *
-     * @return <code>true</code> if execution of the task gave rise to an exception, <code>false</code> otherwise.
+     * @return {@code true} if execution of the task gave rise to an exception, {@code false} otherwise.
      */
     public boolean isExceptionResult() {
         return result instanceof Throwable;

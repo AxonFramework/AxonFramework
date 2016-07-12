@@ -27,8 +27,8 @@ import org.axonframework.serialization.SimpleSerializedObject;
 public class SerializedSaga extends SimpleSerializedObject<byte[]> {
 
     /**
-     * Initialize a SerializedSaga instance with given <code>data</code>, of given <code>type</code> and
-     * <code>revision</code>.
+     * Initialize a SerializedSaga instance with given {@code data}, of given {@code type} and
+     * {@code revision}.
      *
      * @param data     The binary data of the Saga
      * @param type     The type of saga

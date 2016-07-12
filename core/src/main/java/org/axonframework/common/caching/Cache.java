@@ -20,7 +20,7 @@ import org.axonframework.common.Registration;
 
 /**
  * Abstraction for a Caching mechanism. All Axon component rely on this abstraction, so that different
- * providers can be plugged in. In future versions, this abstraction may be replaced with the <code>javax.cache</code>
+ * providers can be plugged in. In future versions, this abstraction may be replaced with the {@code javax.cache}
  * api, as soon as that api is final.
  *
  * @author Allard Buijze
@@ -29,7 +29,7 @@ import org.axonframework.common.Registration;
 public interface Cache {
 
     /**
-     * Returns an item from the cache, or <code>null</code> if no item was stored under that key
+     * Returns an item from the cache, or {@code null} if no item was stored under that key
      *
      * @param key The key under which the item was cached
      * @param <K> The type of key used
@@ -39,7 +39,7 @@ public interface Cache {
     <K, V> V get(K key);
 
     /**
-     * Stores the given <code>value</code> in the cache, under given <code>key</code>. If an item already exists,
+     * Stores the given {@code value} in the cache, under given {@code key}. If an item already exists,
      * it is updated with the new value.
      *
      * @param key   The key under which to store the item
@@ -50,38 +50,38 @@ public interface Cache {
     <K, V> void put(K key, V value);
 
     /**
-     * Stores the given <code>value</code> in the cache, under given <code>key</code>, if no element is yet available
+     * Stores the given {@code value} in the cache, under given {@code key}, if no element is yet available
      * under that key. This operation is performed atomically.
      *
      * @param key   The key under which to store the item
      * @param value The item to cache
      * @param <K>   The type of key used
      * @param <V>   The type of value stored
-     * @return <code>true</code> if no value was previously assigned to the key, <code>false</code> otherwise.
+     * @return {@code true} if no value was previously assigned to the key, {@code false} otherwise.
      */
     <K, V> boolean putIfAbsent(K key, V value);
 
     /**
-     * Removes the entry stored under given <code>key</code>. If no such entry exists, nothing happens.
+     * Removes the entry stored under given {@code key}. If no such entry exists, nothing happens.
      *
      * @param key The key under which the item was stored
      * @param <K> The type of key used
-     * @return <code>true</code> if a value was previously assigned to the key and has been removed, <code>false</code>
+     * @return {@code true} if a value was previously assigned to the key and has been removed, {@code false}
      * otherwise.
      */
     <K> boolean remove(K key);
 
     /**
-     * Indicates whether there is an item stored under given <code>key</code>.
+     * Indicates whether there is an item stored under given {@code key}.
      *
      * @param key The key to check
      * @param <K> The type of key
-     * @return <code>true</code> if an item is available under that key, <code>false</code> otherwise.
+     * @return {@code true} if an item is available under that key, {@code false} otherwise.
      */
     <K> boolean containsKey(K key);
 
     /**
-     * Registers the given <code>cacheEntryListener</code> to listen for Cache changes.
+     * Registers the given {@code cacheEntryListener} to listen for Cache changes.
      *
      * @param cacheEntryListener The listener to register
      * @return a handle to unregister the listener

@@ -24,9 +24,6 @@ package org.axonframework.eventhandling.async;
  */
 public class FullConcurrencyPolicy implements SequencingPolicy<Object> {
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Object getSequenceIdentifierFor(Object event) {
         return null;

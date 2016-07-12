@@ -106,8 +106,8 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
      * databaseDuplicateKeyCodes
      * <p/>
      * The form of the properties is expected to be:<br/>
-     * <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
-     * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
+     * <em>{@code databaseName}</em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
+     * Where <em>{@code databaseName}</em> is the database product name as returned by the driver, with spaces ('
      * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
      *
      * @param properties          the properties defining SQL Error Codes for Duplicate Key violations for different
@@ -119,12 +119,12 @@ public class SQLErrorCodesResolver implements PersistenceExceptionResolver {
     }
 
     /**
-     * Initialize the SQLErrorCodesResolver with the given <code>properties</code> and use the <code>dataSource</code>
+     * Initialize the SQLErrorCodesResolver with the given {@code properties} and use the {@code dataSource}
      * to automatically retrieve the database product name.
      * <p/>
      * The form of the properties is expected to be:<br/>
-     * <em><code>databaseName</code></em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
-     * Where <em><code>databaseName</code></em> is the database product name as returned by the driver, with spaces ('
+     * <em>{@code databaseName}</em>.duplicateKeyCodes=<code><em>keyCode</em>[,<em>keyCode</em>]*</code><br/>
+     * Where <em>{@code databaseName}</em> is the database product name as returned by the driver, with spaces ('
      * ') replaced by underscore ('_'). The key codes must be a comma separated list of SQL Error code numbers (int).
      *
      * @param properties the properties defining SQL Error Codes for Duplicate Key violations for different databases

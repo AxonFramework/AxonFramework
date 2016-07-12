@@ -34,7 +34,7 @@ public class ByteArrayToJsonNodeConverter extends AbstractContentTypeConverter<b
     private final ObjectMapper objectMapper;
 
     /**
-     * Initialize the Converter, using given <code>objectMapper</code> to parse the binary contents
+     * Initialize the Converter, using given {@code objectMapper} to parse the binary contents
      *
      * @param objectMapper the Jackson ObjectMapper to parse the byte array with
      */

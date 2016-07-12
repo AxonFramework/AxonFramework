@@ -32,7 +32,7 @@ public class UnknownSerializedTypeException extends AxonNonTransientException {
     private static final long serialVersionUID = 5423163966186330707L;
 
     /**
-     * Initialize the constructor with a default message, containing details of the given <code>serializedType</code>
+     * Initialize the constructor with a default message, containing details of the given {@code serializedType}
      *
      * @param serializedType The serialized type of the object being deserialized
      */
@@ -42,7 +42,7 @@ public class UnknownSerializedTypeException extends AxonNonTransientException {
     }
 
     /**
-     * Initialize the constructor with a default message, containing details of the given <code>serializedType</code>
+     * Initialize the constructor with a default message, containing details of the given {@code serializedType}
      *
      * @param serializedType The serialized type of the object being deserialized
      * @param cause          The cause of this exception

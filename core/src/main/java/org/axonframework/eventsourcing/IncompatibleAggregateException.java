@@ -30,7 +30,7 @@ public class IncompatibleAggregateException extends AxonNonTransientException {
     private static final long serialVersionUID = -3045725345744416856L;
 
     /**
-     * Initialize the exception with given <code>message</code> and <code>cause</code>.
+     * Initialize the exception with given {@code message} and {@code cause}.
      *
      * @param message Message describing the reason the aggregate is not compatible
      * @param cause   The cause
@@ -40,7 +40,7 @@ public class IncompatibleAggregateException extends AxonNonTransientException {
     }
 
     /**
-     * Initialize the exception with given <code>message</code>.
+     * Initialize the exception with given {@code message}.
      *
      * @param message Message describing the reason the aggregate is not compatible
      */

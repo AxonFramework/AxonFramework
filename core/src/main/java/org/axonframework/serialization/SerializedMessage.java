@@ -102,7 +102,7 @@ public class SerializedMessage<T> extends AbstractMessage<T> implements Serializ
     /**
      * Indicates whether the payload of this message has already been deserialized.
      *
-     * @return <code>true</code> if the payload is deserialized, otherwise <code>false</code>
+     * @return {@code true} if the payload is deserialized, otherwise {@code false}
      */
     public boolean isPayloadDeserialized() {
         return payload.isDeserialized();
@@ -111,7 +111,7 @@ public class SerializedMessage<T> extends AbstractMessage<T> implements Serializ
     /**
      * Indicates whether the metaData of this message has already been deserialized.
      *
-     * @return <code>true</code> if the metaData is deserialized, otherwise <code>false</code>
+     * @return {@code true} if the metaData is deserialized, otherwise {@code false}
      */
     public boolean isMetaDataDeserialized() {
         return metaData.isDeserialized();

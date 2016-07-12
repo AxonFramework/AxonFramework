@@ -32,7 +32,7 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
     private final SimpleSerializedObject<T> delegate;
 
     /**
-     * Construct an instance with given <code>bytes</code> representing the serialized form of a {@link MetaData}
+     * Construct an instance with given {@code bytes} representing the serialized form of a {@link MetaData}
      * instance.
      *
      * @param data     data representing the serialized form of a {@link MetaData} instance.
@@ -43,12 +43,12 @@ public class SerializedMetaData<T> implements SerializedObject<T> {
     }
 
     /**
-     * Indicates whether the given <code>serializedObject</code> represents a serialized form of a MetaData object,
+     * Indicates whether the given {@code serializedObject} represents a serialized form of a MetaData object,
      * such as the ones created by this class (see {@link #SerializedMetaData(Object, Class)}.
      *
      * @param serializedObject The object to check for Meta Data
-     * @return <code>true</code> if the serialized objects represents serialized meta data, otherwise
-     *         <code>false</code>.
+     * @return {@code true} if the serialized objects represents serialized meta data, otherwise
+     *         {@code false}.
      */
     public static boolean isSerializedMetaData(SerializedObject<?> serializedObject) {
         return serializedObject != null

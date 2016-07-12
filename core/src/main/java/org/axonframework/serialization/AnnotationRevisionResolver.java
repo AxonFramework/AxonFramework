@@ -18,10 +18,10 @@ package org.axonframework.serialization;
 
 /**
  * Revision Resolver implementation that checks for the presence of an {@link Revision @Revision} annotation. The value
- * of that annotation is returns as the revision of the payload it annotates. Note that <code>@Revision</code> is an
+ * of that annotation is returns as the revision of the payload it annotates. Note that {@code @Revision} is an
  * inherited annotation, meaning that subclasses of annotated classes inherit the revision of their parent.
  * <p/>
- * This implementation returns <code>null</code> for objects that do not have a <code>@Revision</code> annotation.
+ * This implementation returns {@code null} for objects that do not have a {@code @Revision} annotation.
  *
  * @author Allard Buijze
  * @since 2.0

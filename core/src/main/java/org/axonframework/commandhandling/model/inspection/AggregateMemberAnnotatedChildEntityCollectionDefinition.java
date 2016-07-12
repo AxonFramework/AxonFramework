@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
-import static org.axonframework.common.CollectionUtils.firstNonNull;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements ChildEntityDefinition {
@@ -49,9 +49,9 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements 
                         .collect(Collectors.toConcurrentMap(
                                 CommandMessageHandler::commandName,
                                 h -> getProperty(h.payloadType(),
-                                                 firstNonNull(h.routingKey(), childEntityModel.routingKey()))));
+                                                 getOrDefault(h.routingKey(), childEntityModel.routingKey()))));
         //noinspection unchecked
-        return Optional.of((ChildEntity<T>) new AnnotatedChildEntity<>(
+        return Optional.of(new AnnotatedChildEntity<>(
                 parentRoutingKey, field, childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
                 (Boolean) attributes.get("forwardEvents"),

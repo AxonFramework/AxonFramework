@@ -34,7 +34,7 @@ public class SagaInitializationPolicy {
     private final AssociationValue initialAssociationValue;
 
     /**
-     * Creates an instance using the given <code>creationPolicy</code> and <code>initialAssociationValue</code>. To
+     * Creates an instance using the given {@code creationPolicy} and {@code initialAssociationValue}. To
      * indicate that no saga should be created, use {@link #NONE} instead of this constructor.
      *
      * @param creationPolicy          The policy describing the condition to create a new instance
@@ -55,7 +55,7 @@ public class SagaInitializationPolicy {
     }
 
     /**
-     * Returns the initial association value for a newly created saga. May be <code>null</code>.
+     * Returns the initial association value for a newly created saga. May be {@code null}.
      *
      * @return the initial association value for a newly created saga
      */

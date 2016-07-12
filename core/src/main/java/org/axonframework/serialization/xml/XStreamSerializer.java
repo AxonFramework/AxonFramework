@@ -81,7 +81,7 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code>. A default XStream instance (with {@link
+     * Initialize the serializer using the given {@code charset}. A default XStream instance (with {@link
      * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
      *
      * @param charset The character set to use
@@ -91,8 +91,8 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
-     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
+     * {@code xStream} instance is configured with several converters for the most common types in Axon.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
@@ -103,9 +103,9 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The given
-     * <code>converterFactory</code> is used to convert serialized objects for use by Upcasters. The
-     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The given
+     * {@code converterFactory} is used to convert serialized objects for use by Upcasters. The
+     * {@code xStream} instance is configured with several converters for the most common types in Axon.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use
@@ -124,9 +124,6 @@ public class XStreamSerializer extends AbstractXStreamSerializer {
         return convert(byte[].class, expectedFormat, baos.toByteArray());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @SuppressWarnings({"unchecked"})
     @Override
     public Object doDeserialize(SerializedObject serializedObject, XStream xStream) {

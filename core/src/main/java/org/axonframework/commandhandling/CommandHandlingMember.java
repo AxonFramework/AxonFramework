@@ -17,7 +17,7 @@ import java.lang.annotation.*;
 
 /**
  * Marker annotation for field that contain an Entity capable of handling Commands on behalf of the aggregate. When
- * a field is annotated with <code>@CommandHandlerMember</code>, it is a hint towards Command Handler discovery
+ * a field is annotated with {@code @CommandHandlerMember}, it is a hint towards Command Handler discovery
  * mechanisms that the entity should also be inspected for {@link CommandHandler @CommandHandler} annotated methods.
  * <p/>
  * Note that CommandHandler detection is done using static typing. This means that only the declared type of the field

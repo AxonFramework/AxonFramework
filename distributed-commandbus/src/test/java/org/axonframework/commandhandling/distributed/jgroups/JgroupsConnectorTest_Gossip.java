@@ -107,10 +107,13 @@ public class JgroupsConnectorTest_Gossip {
 
         final AtomicInteger counter2 = new AtomicInteger(0);
         connector2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
-        connector1.connect(20);
         connector2.connect(20);
+        connector1.connect(20);
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
         assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
+
+        // now, they should detect eachother and start syncing their state
+        waitForConnectorSync(10);
 
         DistributedCommandBus bus1 = new DistributedCommandBus(connector1, new AnnotationRoutingStrategy(
                 UnresolvedRoutingKeyPolicy.RANDOM_KEY));
@@ -131,7 +134,7 @@ public class JgroupsConnectorTest_Gossip {
             gateway1.sendAndWait("Try this!");
             fail("Expected exception");
         } catch (RuntimeException e) {
-            assertEquals("Mock", e.getMessage());
+            assertEquals("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(), "Mock", e.getMessage());
         }
     }
 

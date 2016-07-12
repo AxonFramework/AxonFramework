@@ -33,7 +33,7 @@ public class CompositeEventStreamDecorator implements EventStreamDecorator {
     private final EventStreamDecorator[] eventStreamDecorators;
 
     /**
-     * Initialize the decorator, delegating to the given <code>eventStreamDecorators</code>. The decorators are invoked
+     * Initialize the decorator, delegating to the given {@code eventStreamDecorators}. The decorators are invoked
      * in the iterator's order on {@link EventStreamDecorator#decorateForRead}, and in reverse order on {@link
      * #decorateForAppend}.
      *
