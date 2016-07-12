@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,26 @@
 package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
 import org.jgroups.util.Util;
-import org.junit.*;
-import org.junit.runner.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.context.ApplicationContext;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.verifyNew;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.*;
 
 /**
  * @author Allard Buijze
@@ -62,7 +65,8 @@ public class JGroupsConnectorFactoryBeanTest {
                         isA(CommandBus.class),
                         isA(JChannel.class),
                         isA(String.class),
-                        isA(Serializer.class))
+                        isA(Serializer.class),
+                        isA(RoutingStrategy.class))
                 .thenReturn(mockConnector);
 
         testSubject = new JGroupsConnectorFactoryBean();
@@ -81,8 +85,9 @@ public class JGroupsConnectorFactoryBeanTest {
                 isA(SimpleCommandBus.class),
                 eq(mockChannel),
                 eq("beanName"),
-                isA(Serializer.class));
-        verify(mockConnector).connect(100);
+                isA(Serializer.class),
+                isA(RoutingStrategy.class));
+        verify(mockConnector).connect();
         verify(mockChannel, never()).close();
 
         verifyStatic(never());
@@ -98,11 +103,12 @@ public class JGroupsConnectorFactoryBeanTest {
     public void testCreateWithSpecifiedValues() throws Exception {
         testSubject.setClusterName("ClusterName");
         testSubject.setConfiguration("custom.xml");
-        testSubject.setLoadFactor(200);
         XStreamSerializer serializer = new XStreamSerializer();
         testSubject.setSerializer(serializer);
         SimpleCommandBus localSegment = new SimpleCommandBus();
         testSubject.setLocalSegment(localSegment);
+        RoutingStrategy routingStrategy = CommandMessage::getCommandName;
+        testSubject.setRoutingStrategy(routingStrategy);
         testSubject.setChannelName("localname");
         testSubject.afterPropertiesSet();
         testSubject.start();
@@ -113,10 +119,11 @@ public class JGroupsConnectorFactoryBeanTest {
                 same(localSegment),
                 eq(mockChannel),
                 eq("ClusterName"),
-                same(serializer));
+                same(serializer),
+                same(routingStrategy));
         verify(mockApplicationContext, never()).getBean(Serializer.class);
         verify(mockChannel).setName("localname");
-        verify(mockConnector).connect(100);
+        verify(mockConnector).connect();
         verify(mockChannel, never()).close();
 
         testSubject.stop(new Runnable() {
@@ -143,8 +150,9 @@ public class JGroupsConnectorFactoryBeanTest {
                 isA(SimpleCommandBus.class),
                 eq(mockChannel),
                 eq("beanName"),
-                isA(Serializer.class));
-        verify(mockConnector).connect(100);
+                isA(Serializer.class),
+                isA(RoutingStrategy.class));
+        verify(mockConnector).connect();
         verify(mockChannel, never()).close();
 
         testSubject.stop(new Runnable() {
@@ -171,8 +179,9 @@ public class JGroupsConnectorFactoryBeanTest {
                 isA(SimpleCommandBus.class),
                 eq(mockChannel),
                 eq("beanName"),
-                isA(Serializer.class));
-        verify(mockConnector).connect(100);
+                isA(Serializer.class),
+                isA(RoutingStrategy.class));
+        verify(mockConnector).connect();
         verify(mockChannel, never()).close();
 
         testSubject.stop(() -> {

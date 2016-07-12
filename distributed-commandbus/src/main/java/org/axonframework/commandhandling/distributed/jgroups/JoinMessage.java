@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,9 @@
 package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
 import org.jgroups.Address;
 import org.jgroups.util.Streamable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -41,7 +37,7 @@ import java.util.function.Predicate;
 public class JoinMessage implements Externalizable {
 
     private static final long serialVersionUID = 5829153340455127795L;
-    private Predicate<CommandMessage> commandMessagePredicate;
+    private Predicate<CommandMessage<?>> messageFilter;
     private Address address;
     private int loadFactor;
 
@@ -58,12 +54,12 @@ public class JoinMessage implements Externalizable {
      * Initializes a JoinMessage with the given <code>loadFactor</code>.
      *
      * @param loadFactor                The loadFactor the member wishes to join with
-     * @param commandMessagePredicate   A predicate the will filter command messages this node will accept.
+     * @param messageFilter   A predicate the will filter command messages this node will accept.
      */
-    public JoinMessage(Address address, int loadFactor, Predicate<CommandMessage> commandMessagePredicate) {
+    public JoinMessage(Address address, int loadFactor, Predicate<CommandMessage<?>> messageFilter) {
         this.address = address;
         this.loadFactor = loadFactor;
-        this.commandMessagePredicate = commandMessagePredicate;
+        this.messageFilter = messageFilter;
     }
 
     /**
@@ -79,7 +75,7 @@ public class JoinMessage implements Externalizable {
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeObject(address);
         out.writeInt(loadFactor);
-        out.writeObject(commandMessagePredicate);
+        out.writeObject(messageFilter);
     }
 
     @SuppressWarnings("unchecked")
@@ -87,10 +83,10 @@ public class JoinMessage implements Externalizable {
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         address = (Address) in.readObject();
         loadFactor = in.readInt();
-        commandMessagePredicate = (Predicate<CommandMessage>) in.readObject();
+        messageFilter = (Predicate<CommandMessage<?>>) in.readObject();
     }
 
-    public Predicate<CommandMessage> getCommandMessagePredicate() {
-        return commandMessagePredicate;
+    public Predicate<CommandMessage<?>> messageFilter() {
+        return messageFilter;
     }
 }

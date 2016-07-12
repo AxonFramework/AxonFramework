@@ -58,10 +58,11 @@ public abstract class ReflectionUtils {
      * @throws IllegalStateException if the field is not accessible and the security manager doesn't allow it to be
      *                               made accessible
      */
-    public static Object getFieldValue(Field field, Object object) {
+    @SuppressWarnings("unchecked")
+    public static <R> R getFieldValue(Field field, Object object) {
         ensureAccessible(field);
         try {
-            return field.get(object);
+            return (R) field.get(object);
         } catch (IllegalArgumentException | IllegalAccessException ex) {
             throw new IllegalStateException("Unable to access field.", ex);
         }

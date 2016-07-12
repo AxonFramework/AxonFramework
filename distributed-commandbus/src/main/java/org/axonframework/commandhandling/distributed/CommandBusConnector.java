@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,10 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
-
-import java.util.Iterator;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Interface describing the component that remotely connects multiple CommandBus instances.
@@ -33,12 +27,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author Allard Buijze
  * @since 2.0
  */
-public interface CommandBusConnector<T> {
-    /**
-     * Get the local endpoint for this connector
-     * @return The local endpoint identifier
-     */
-    T getLocalEndpoint();
+public interface CommandBusConnector {
 
     /**
      * Sends the given <code>command</code> to the node assigned to handle messages with the given
@@ -55,7 +44,7 @@ public interface CommandBusConnector<T> {
      * @param command     The command to send to the (remote) member
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <C> void send(T destination, CommandMessage<? extends C> command) throws Exception;
+    <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception;
 
     /**
      * Sends the given <code>command</code> to the node assigned to handle messages with the given
@@ -81,18 +70,7 @@ public interface CommandBusConnector<T> {
      * @param <R>         The type of object expected as result of the command
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <C, R> void send(T destination, CommandMessage<C> command, CommandCallback<? super C, R> callback);
+    <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception;
 
-    /**
-     * Triggered when a new set of members is identified. CommandBusConnector implementations can use this to purge
-     * callbacks of pending commands on remote hosts
-     * @param newMembers  The new set of members
-     */
-    void updateMembers(Set<T> newMembers);
-
-    /**
-     * Get the load factor of this member in the network
-     * @return The load factor
-     */
-    int getLoadFactor();
+    Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 }

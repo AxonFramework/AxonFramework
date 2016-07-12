@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,22 @@
 
 package org.axonframework.quickstart;
 
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.distributed.DistributedCommandBus;
+import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
+import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
+import org.axonframework.spring.config.AnnotationDriven;
+import org.axonframework.spring.config.EnableHandlerSubscription;
 import org.jgroups.stack.GossipRouter;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 import java.net.BindException;
 
@@ -44,7 +56,7 @@ public class RunDistributedCommandBusWithSpring {
         }
 
         // Load the spring beans from the xml configuration file.
-        ApplicationContext applicationContext = new ClassPathXmlApplicationContext("distributed-config.xml");
+        ApplicationContext applicationContext = new AnnotationConfigApplicationContext(Config.class);
 
         // Obtain the gateway from the context to send commands.
         CommandGateway commandGateway = applicationContext.getBean("commandGateway", CommandGateway.class);
@@ -57,4 +69,40 @@ public class RunDistributedCommandBusWithSpring {
         }
     }
 
+    @AnnotationDriven
+    @EnableHandlerSubscription(subscribeEventListeners = false, subscribeEventProcessors = false)
+    @Configuration
+    public static class Config {
+
+        @Primary
+        @Bean
+        public CommandBus commandBus(JGroupsConnector connector) throws Exception {
+            DistributedCommandBus bus = new DistributedCommandBus(connector, connector);
+            bus.updateLoadFactor(Integer.getInteger("loadFactor"));
+            return bus;
+        }
+
+        @Bean
+        public JGroupsConnectorFactoryBean jGroupsConnector() throws Exception {
+            JGroupsConnectorFactoryBean jGroupsConnector = new JGroupsConnectorFactoryBean();
+            jGroupsConnector.setClusterName("myChannel");
+            jGroupsConnector.setConfiguration("tcp_gossip.xml");
+            return jGroupsConnector;
+        }
+
+        @Bean
+        public Serializer serializer() {
+            return new XStreamSerializer();
+        }
+
+        @Bean
+        public CommandGateway commandGateway(CommandBus commandBus) throws Exception {
+            return new DefaultCommandGateway(commandBus);
+        }
+
+        @Bean
+        public RunDistributedCommandBus.ToDoLoggingCommandHandler commandHandler() {
+            return new RunDistributedCommandBus.ToDoLoggingCommandHandler();
+        }
+    }
 }

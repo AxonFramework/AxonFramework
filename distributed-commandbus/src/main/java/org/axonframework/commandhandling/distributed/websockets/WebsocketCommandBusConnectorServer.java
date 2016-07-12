@@ -1,28 +1,47 @@
+/*
+ * Copyright (c) 2010-2016. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.distributed.websockets;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.websocket.*;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
+import javax.websocket.OnMessage;
+import javax.websocket.Session;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public class WebsocketCommandBusConnectorServer extends Endpoint {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebsocketCommandBusConnectorServer.class);
-    private CommandBus localSegment;
-    private Serializer serializer = new XStreamSerializer();
+    private final CommandBus localSegment;
+    private final Serializer serializer;
 
-    public WebsocketCommandBusConnectorServer(CommandBus localSegment) {
+    public WebsocketCommandBusConnectorServer(CommandBus localSegment, Serializer serializer) {
         if (localSegment == null) {
             throw new IllegalStateException("Trying to create a connection while no local segment is configured, " +
                     "supply one by calling WebsocketCommandBusConnectorServerConfigurator.setLocalSegment()");
         }
+        this.serializer = serializer;
         this.localSegment = localSegment;
     }
 
@@ -42,7 +61,7 @@ public class WebsocketCommandBusConnectorServer extends Endpoint {
     @OnMessage
     public <C, R> void receive(final ByteBuffer data, final Session session) {
         WebsocketCommandMessage message = serializer.deserialize(new SimpleSerializedObject<>(data.array(), byte[].class,
-                serializer.typeForClass(WebsocketCommandMessage.class)));
+                                                                                              serializer.typeForClass(WebsocketCommandMessage.class)));
         if (message.isWithCallback()) {
             try {
                localSegment.dispatch(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,10 @@ package org.axonframework.commandhandling.distributed.jgroups;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.serialization.Serializer;
 import org.jgroups.JChannel;
 import org.jgroups.util.Util;
 import org.springframework.beans.BeansException;
@@ -41,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  * @author Allard Buijze
  * @since 2.0
  */
-public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBean, SmartLifecycle, BeanNameAware,
+public class JGroupsConnectorFactoryBean implements FactoryBean<JGroupsConnector>, InitializingBean, SmartLifecycle, BeanNameAware,
         ApplicationContextAware {
 
     private JGroupsConnector connector;
@@ -50,7 +52,6 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private String clusterName;
     private String channelName;
     private CommandBus localSegment;
-    private int loadFactor = 100;
     private JChannel channel;
     private int phase = Integer.MAX_VALUE;
     private String beanName;
@@ -58,9 +59,10 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     private List<MessageHandlerInterceptor<CommandMessage<?>>> interceptors;
     private long joinTimeout = -1;
     private boolean registerMBean = false;
+    private RoutingStrategy routingStrategy = new AnnotationRoutingStrategy();
 
     @Override
-    public Object getObject() throws Exception {
+    public JGroupsConnector getObject() throws Exception {
         return connector;
     }
 
@@ -93,7 +95,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
         if (channelName != null) {
             channel.setName(channelName);
         }
-        connector = new JGroupsConnector(localSegment, channel, clusterName, serializer);
+        connector = new JGroupsConnector(localSegment, channel, clusterName, serializer, routingStrategy);
     }
 
     /**
@@ -117,6 +119,10 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
      */
     public void setConfiguration(String configuration) {
         this.channelFactory = new JGroupsXmlConfigurationChannelFactory(configuration);
+    }
+
+    public void setRoutingStrategy(RoutingStrategy routingStrategy) {
+        this.routingStrategy = routingStrategy;
     }
 
     /**
@@ -184,16 +190,6 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     }
 
     /**
-     * Sets the load factor for this instance of the Distributed Command Bus. This factor described the relative number
-     * of Command messages this instance will handle. Defaults to 100.
-     *
-     * @param loadFactor The load factor for this instance
-     */
-    public void setLoadFactor(int loadFactor) {
-        this.loadFactor = loadFactor;
-    }
-
-    /**
      * Registers the JChannel monitoring bean after the channel has connected. Defaults to false.
      *
      * @param registerMBean
@@ -205,7 +201,7 @@ public class JGroupsConnectorFactoryBean implements FactoryBean, InitializingBea
     @Override
     public void start() {
         try {
-            connector.connect(100);
+            connector.connect();
             if (joinTimeout >= 0) {
                 connector.awaitJoined(joinTimeout, TimeUnit.MILLISECONDS);
             } else {

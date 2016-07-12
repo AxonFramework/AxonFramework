@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.annotation.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -30,24 +31,24 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.axonframework.common.ReflectionUtils.*;
 
 /**
- * RoutingStrategy that expects an {@link org.axonframework.commandhandling.annotation.TargetAggregateIdentifier}
+ * RoutingStrategy that expects an {@link org.axonframework.commandhandling.TargetAggregateIdentifier}
  * annotation on the command message's payload. Commands are routed based on the identifier of the aggregate that they
  * target. This approach ensures that commands to be processed by the same aggregate are dispatched to the same node in
- * a DistributedCommandBus. See {@link org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver}
+ * a DistributedCommandBus. See {@link org.axonframework.commandhandling.AnnotationCommandTargetResolver}
  * for more details.
  * <p/>
  * This class requires the returned Aggregate Identifiers to implement a proper {@link Object#toString()} method. An
  * inconsistent toString() method may result in different members using different routing keys for the same identifier.
  *
  * @author Allard Buijze
- * @see org.axonframework.commandhandling.annotation.AnnotationCommandTargetResolver
+ * @see org.axonframework.commandhandling.AnnotationCommandTargetResolver
  * @see DistributedCommandBus
  * @since 2.0
  */
 public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
+    private static final AggregateIdentifierResolver NO_RESOLVE = new AggregateIdentifierResolver((Method) null);
     private final Class<? extends Annotation> annotationType;
-
     private final Map<Class<?>, AggregateIdentifierResolver> resolverMap = new ConcurrentHashMap<>();
 
     /**
@@ -112,7 +113,8 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
 
     @SuppressWarnings("unchecked")
     private String findIdentifier(CommandMessage<?> command) throws InvocationTargetException, IllegalAccessException {
-        return resolverMap.computeIfAbsent(command.getPayloadType(), this::createResolver).identify(command);
+        return resolverMap.computeIfAbsent(command.getPayloadType(), this::createResolver)
+                .identify(command.getPayload());
     }
 
     private AggregateIdentifierResolver createResolver(Class<?> type) {
@@ -130,7 +132,6 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
         return NO_RESOLVE;
     }
 
-    private static final AggregateIdentifierResolver NO_RESOLVE = new AggregateIdentifierResolver((Method) null);
     private static final class AggregateIdentifierResolver {
         private final Method method;
         private final Field field;
@@ -149,7 +150,7 @@ public class AnnotationRoutingStrategy extends AbstractRoutingStrategy {
             if (method != null) {
                 return (String) method.invoke(command);
             } else if (field != null) {
-                return (String) field.get(command);
+                return ReflectionUtils.getFieldValue(field, command);
             }
             return null;
         }

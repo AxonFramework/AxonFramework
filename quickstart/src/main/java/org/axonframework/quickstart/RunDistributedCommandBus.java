@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -66,16 +67,17 @@ public class RunDistributedCommandBus {
         Serializer serializer = new XStreamSerializer();
 
         // Use the jgroup channel and the serializer to setup the connector to the jgroup cluster
-        JGroupsConnector connector = new JGroupsConnector(channel, "myCluster", localSegment, serializer);
+        JGroupsConnector connector = new JGroupsConnector(localSegment, channel, "myCluster", serializer, new AnnotationRoutingStrategy());
 
         // Setup the distributed command bus using the connector and the routing strategy
-        DistributedCommandBus commandBus = new DistributedCommandBus(connector);
+        DistributedCommandBus commandBus = new DistributedCommandBus(connector, connector);
+        commandBus.updateLoadFactor(loadFactor);
 
         // Register the Command Handlers with the command bus using the annotated methods of the object.
         new AnnotationCommandHandlerAdapter(new ToDoLoggingCommandHandler()).subscribe(commandBus);
 
         // Start the connection to the distributed command bus
-        connector.connect(loadFactor);
+        connector.connect();
 
         // Load the amount of times to send the commands from the command line or use default 1
         Integer numberOfCommandLoops = determineNumberOfCommandLoops();

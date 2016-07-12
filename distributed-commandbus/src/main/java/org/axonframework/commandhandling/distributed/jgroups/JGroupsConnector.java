@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2016. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
@@ -5,105 +21,100 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
-import org.axonframework.commandhandling.distributed.registry.AbstractServiceRegistry;
-import org.axonframework.commandhandling.distributed.registry.ServiceMember;
-import org.axonframework.commandhandling.distributed.registry.ServiceRegistry;
-import org.axonframework.commandhandling.distributed.registry.ServiceRegistryException;
-import org.axonframework.serializer.Serializer;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.serialization.Serializer;
 import org.jgroups.*;
-import org.jgroups.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
 
-public class JGroupsConnector extends AbstractServiceRegistry<Address> implements Receiver, CommandBusConnector<Address> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(JGroupsConnector.class);
+public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConnector {
+    private static final Logger logger = LoggerFactory.getLogger(JGroupsConnector.class);
 
     private final CommandBus localSegment;
     private final CommandCallbackRepository<Address> callbackRepository = new CommandCallbackRepository<>();
     private final Serializer serializer;
-    private Set<Address> currentMembers = new HashSet<>();
     private final JoinCondition joinedCondition = new JoinCondition();
-    private final Map<Address, ServiceMember<Address>> members = new HashMap<>();
+    private final Map<Address, SimpleMember<Address>> members = new HashMap<>();
     private final String clusterName;
-    private JChannel channel;
-//    private ServiceMember<Address> me;
+    private final RoutingStrategy routingStrategy;
+    private final JChannel channel;
     private volatile View currentView;
-    private int loadFactor = 100;
-    private Predicate<CommandMessage> commandFilter = DenyAll.INSTANCE;
+    private volatile int loadFactor = 0;
+    private volatile Predicate<CommandMessage<?>> commandFilter = DenyAll.INSTANCE;
 
-    public JGroupsConnector(CommandBus localSegment, JChannel channel, String clusterName, Serializer serializer) {
+    private final AtomicReference<ConsistentHash> consistentHash = new AtomicReference<>(new ConsistentHash());
+
+    public JGroupsConnector(CommandBus localSegment, JChannel channel, String clusterName, Serializer serializer,
+                            RoutingStrategy routingStrategy) {
         this.localSegment = localSegment;
         this.serializer = serializer;
         this.channel = channel;
         this.clusterName = clusterName;
+        this.routingStrategy = routingStrategy;
     }
 
     @Override
-    public void publish(Address address, int loadFactor, Predicate<CommandMessage> commandFilter) throws ServiceRegistryException {
+    public void updateMembership(int loadFactor, Predicate<CommandMessage<?>> commandFilter) {
+        this.loadFactor = loadFactor;
+        this.commandFilter = commandFilter;
+        broadCastMembership();
+    }
+
+    protected void broadCastMembership() throws ServiceRegistryException {
         try {
-            this.loadFactor = loadFactor;
-            this.commandFilter = commandFilter;
             if (channel.isConnected()) {
-                JoinMessage joinMessage = new JoinMessage(address, loadFactor, commandFilter);
-                channel.send(null, joinMessage);
+                Address localAddress = channel.getAddress();
+                channel.send(null, new JoinMessage(localAddress, loadFactor, commandFilter));
             }
         } catch (Exception e) {
-            throw new ServiceRegistryException("Could not publish me on the cluster", e);
+            throw new ServiceRegistryException("Could not broadcast local membership details to the cluster", e);
         }
     }
 
-    public void connect(int loadFactor) throws Exception {
+    public void connect() throws Exception {
         if (channel.getClusterName() != null && !clusterName.equals(channel.getClusterName())) {
             throw new ConnectionFailedException("Already joined cluster: " + channel.getClusterName());
         }
-        this.loadFactor = loadFactor;
         channel.setReceiver(this);
         channel.connect(clusterName);
-        publish(channel.getAddress(), loadFactor, commandFilter);
-    }
+        broadCastMembership();
 
-    @Override
-    public void unpublish(Address address) throws ServiceRegistryException {
-        try {
-            channel.send(null, new JoinMessage(address, 0, null));
-        } catch (Exception e) {
-            throw new ServiceRegistryException("Could not unpublish me on the cluster", e);
-        }
+        Address localAddress = channel.getAddress();
+        String localName = channel.getName(localAddress);
+        SimpleMember<Address> localMember = new SimpleMember<>(localName, localAddress, null);
+        members.put(localAddress, localMember);
+        consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
     }
 
     @Override
     public void getState(OutputStream ostream) throws Exception {
-        Util.objectToStream(members, new DataOutputStream(ostream));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void setState(InputStream istream) throws Exception {
-        members.clear();
-        members.putAll((Map) Util.objectFromStream(new DataInputStream(istream)));
-        update(new HashSet<>(members.values()));
     }
 
     @Override
     public void viewAccepted(final View view) {
         if (currentView == null) {
-            LOGGER.info("Local segment ({}) joined the cluster. Broadcasting configuration.", channel.getAddress());
+            logger.info("Local segment ({}) joined the cluster. Broadcasting configuration.", channel.getAddress());
             try {
-                channel.send(null, new JoinMessage(channel.getAddress(), loadFactor, commandFilter));
+                broadCastMembership();
                 joinedCondition.markJoined(true);
             } catch (Exception e) {
                 throw new MembershipUpdateFailedException("Failed to broadcast my settings", e);
@@ -115,7 +126,7 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
             asList(joined).stream()
                     .filter(member -> !member.equals(channel.getAddress()))
                     .forEach(member -> {
-                        LOGGER.info("New member detected: [{}]. Sending it my configuration.", member);
+                        logger.info("New member detected: [{}]. Sending it my configuration.", member);
                         try {
                             channel.send(member, new JoinMessage(channel.getAddress(), loadFactor, commandFilter));
                         } catch (Exception e) {
@@ -123,14 +134,15 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
                         }
                     });
 
-            asList(left).forEach(member -> members.remove(new ServiceMember<>(member, null, 0)));
+            Arrays.stream(left).forEach(lm -> consistentHash.updateAndGet(ch -> ch.without(members.get(lm))));
+            Arrays.stream(left).forEach(members::remove);
         }
         currentView = view;
     }
 
     @Override
     public void suspect(Address suspected_mbr) {
-        LOGGER.warn("Member is suspect: {}", suspected_mbr.toString());
+        logger.warn("Member is suspect: {}", suspected_mbr.toString());
     }
 
     @Override
@@ -158,10 +170,14 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
     private void processReplyMessage(ReplyMessage message) {
         CommandCallbackWrapper<Object, Object, Object> callbackWrapper =
                 callbackRepository.fetchAndRemove(message.getCommandIdentifier());
-        if (message.isSuccess()) {
-            callbackWrapper.success(message.getReturnValue(serializer));
+        if (callbackWrapper == null) {
+            logger.warn("Received a callback for a message that has either already received a callback, or which was not sent through this node. Ignoring.");
         } else {
-            callbackWrapper.fail(message.getError(serializer));
+            if (message.isSuccess()) {
+                callbackWrapper.success(message.getReturnValue(serializer));
+            } else {
+                callbackWrapper.fail(message.getError(serializer));
+            }
         }
     }
 
@@ -187,7 +203,7 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
             try {
                 localSegment.dispatch(message.getCommandMessage(serializer));
             } catch (Exception e) {
-                LOGGER.error("Could not dispatch command", e);
+                logger.error("Could not dispatch command", e);
             }
         }
     }
@@ -199,28 +215,28 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
             try {
                 channel.send(address, new ReplyMessage(commandIdentifier, null, e, serializer));
             } catch (Exception e1) {
-                LOGGER.error("Could not send reply", e1);
+                logger.error("Could not send reply", e1);
             }
         }
     }
 
     private void processJoinMessage(final Message message, final JoinMessage joinMessage) {
-        String source = channel.getName(message.getSrc());
-        if (source != null) {
-            if (LOGGER.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {
-                LOGGER.info("{} joined with load factor: {}", source, joinMessage.getLoadFactor());
+        String joinedMember = channel.getName(message.getSrc());
+        if (joinedMember != null) {
+            int loadFactor = joinMessage.getLoadFactor();
+            Predicate<CommandMessage<?>> commandFilter = joinMessage.messageFilter();
+            SimpleMember<Address> member = new SimpleMember<>(joinedMember, message.getSrc(), null);
+            members.put(member.endpoint(), member);
+            consistentHash.updateAndGet(ch -> ch.with(member, loadFactor, commandFilter));
+            if (logger.isInfoEnabled() && !message.getSrc().equals(channel.getAddress())) {
+                logger.info("{} joined with load factor: {}", joinedMember, loadFactor);
             }
-
-            ServiceMember<Address> member = new ServiceMember<>(message.getSrc(), joinMessage.getCommandMessagePredicate(),
-                    joinMessage.getLoadFactor());
-            members.put(member.getIdentifier(), member);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Got a notwork of members: {}", members.values());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Got a network of members: {}", members.values());
             }
-            update(new HashSet<>(members.values()));
         } else {
-            LOGGER.warn("Received join message from '{}', but a connection with the sender has been lost.",
-                    message.getSrc().toString());
+            logger.warn("Received join message from '{}', but a connection with the sender has been lost.",
+                        message.getSrc().toString());
         }
     }
 
@@ -229,7 +245,6 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
      * interrupted, or when joining has failed.
      *
      * @return <code>true</code> if the member successfully joined, otherwise <code>false</code>.
-     *
      * @throws InterruptedException when the thread is interrupted while joining
      */
     public boolean awaitJoined() throws InterruptedException {
@@ -245,7 +260,6 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
      * @param timeout  The amount of time to wait for the connection to complete
      * @param timeUnit The time unit of the timeout
      * @return <code>true</code> if the member successfully joined, otherwise <code>false</code>.
-     *
      * @throws InterruptedException when the thread is interrupted while joining
      */
     public boolean awaitJoined(long timeout, TimeUnit timeUnit) throws InterruptedException {
@@ -255,6 +269,36 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
 
     public String getNodeName() {
         return channel.getName();
+    }
+
+    protected ConsistentHash getConsistentHash() {
+        return consistentHash.get();
+    }
+
+    @Override
+    public <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception {
+        channel.send(resolveAddress(destination), new DispatchMessage(command, serializer, false));
+    }
+
+    @Override
+    public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception {
+        callbackRepository.store(command.getIdentifier(), new CommandCallbackWrapper<>(destination, command, callback));
+        channel.send(resolveAddress(destination), new DispatchMessage(command, serializer, true));
+    }
+
+    @Override
+    public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+        return localSegment.subscribe(commandName, handler);
+    }
+
+    protected Address resolveAddress(Member destination) {
+        return destination.getConnectionEndpoint(Address.class).orElseThrow(() -> new CommandBusConnectorCommunicationException("The target member doesn't expose a JGroups endpoint"));
+    }
+
+    @Override
+    public Optional<Member> findDestination(CommandMessage<?> message) {
+        String routingKey = routingStrategy.getRoutingKey(message);
+        return consistentHash.get().getMember(routingKey, message);
     }
 
     private static final class JoinCondition {
@@ -278,40 +322,5 @@ public class JGroupsConnector extends AbstractServiceRegistry<Address> implement
         public boolean isJoined() {
             return success;
         }
-    }
-
-
-    @Override
-    public Address getLocalEndpoint() {
-        return channel.getAddress();
-    }
-
-    @Override
-    public <C> void send(Address destination, CommandMessage<? extends C> command) throws Exception {
-        channel.send(destination, new DispatchMessage(command, serializer, false));
-    }
-
-    @Override
-    public <C, R> void send(Address destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) {
-        callbackRepository.store(command.getIdentifier(), new CommandCallbackWrapper<>(destination, command, callback));
-        try {
-            channel.send(destination, new DispatchMessage(command, serializer, true));
-        } catch (Exception e) {
-            throw new CommandBusConnectorCommunicationException("Could not send command to remote", e);
-        }
-    }
-
-    @Override
-    public void updateMembers(Set<Address> newMembers) {
-        Set<Address> lostMembers = new HashSet<>(currentMembers);
-        lostMembers.removeAll(newMembers);
-        lostMembers.forEach(callbackRepository::cancelCallbacks);
-
-        currentMembers = new HashSet<>(newMembers);
-    }
-
-    @Override
-    public int getLoadFactor() {
-        return loadFactor;
     }
 }

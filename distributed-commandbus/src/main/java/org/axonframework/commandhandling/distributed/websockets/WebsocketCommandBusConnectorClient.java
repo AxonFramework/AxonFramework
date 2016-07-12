@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2016. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.commandhandling.distributed.websockets;
 
 import org.apache.commons.pool.ObjectPool;
@@ -9,9 +25,9 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnectorCommunicationException;
 import org.axonframework.commandhandling.distributed.CommandCallbackRepository;
 import org.axonframework.commandhandling.distributed.CommandCallbackWrapper;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
-import org.axonframework.serializer.xml.XStreamSerializer;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,7 +115,7 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
     @SuppressWarnings("unchecked")
     public void onMessage(ByteBuffer data) {
         WebsocketResultMessage message = serializer.deserialize(new SimpleSerializedObject<>(data.array(), byte[].class,
-                serializer.typeForClass(WebsocketResultMessage.class)));
+                                                                                             serializer.typeForClass(WebsocketResultMessage.class)));
 
         CommandCallbackWrapper callbackWrapper = repository.fetchAndRemove(message.getCommandId());
         if (callbackWrapper != null) {

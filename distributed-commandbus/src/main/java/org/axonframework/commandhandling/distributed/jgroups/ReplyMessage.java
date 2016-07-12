@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,12 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.serializer.SerializedObject;
-import org.axonframework.serializer.Serializer;
-import org.axonframework.serializer.SimpleSerializedObject;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
 import org.jgroups.util.Streamable;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 
 /**
  * JGroups Message representing a reply to a dispatched command.
@@ -125,7 +120,7 @@ public class ReplyMessage implements Streamable, Externalizable {
 
     private Object deserializeResult(Serializer serializer) {
         return serializer.deserialize(new SimpleSerializedObject<>(serializedResult, byte[].class,
-                                                                         resultType, resultRevision));
+                                                                   resultType, resultRevision));
     }
 
     /**
