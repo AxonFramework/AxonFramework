@@ -19,10 +19,7 @@ package org.axonframework.commandhandling.distributed.jgroups;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.RoutingStrategy;
-import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
+import org.axonframework.commandhandling.distributed.*;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -126,7 +123,10 @@ public class JgroupsConnectorTest_Gossip {
         //bus1.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
         DistributedCommandBus bus2 = new DistributedCommandBus(connector2, connector2);
         bus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
-        Thread.sleep(1000);
+
+        // now, they should detect eachother and start syncing their state
+        waitForConnectorSync(10);
+
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
 
         doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat(new TypeSafeMatcher<SerializedObject<byte[]>>() {
@@ -144,23 +144,22 @@ public class JgroupsConnectorTest_Gossip {
             gateway1.sendAndWait("Try this!");
             fail("Expected exception");
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            assertEquals("Mock", e.getMessage());
+            assertEquals("Wrong exception. \nConsistent hash status of connector2: \n" + connector2.getConsistentHash(), "Mock", e.getMessage());
         }
     }
 
-//    private void waitForConnectorSync(int timeoutInSeconds) throws InterruptedException {
-//        int t = 0;
-//        while (new ConsistentHash().equals(connector1)
-//                || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
-//            // don't have a member for String yet, which means we must wait a little longer
-//            if (t++ > timeoutInSeconds * 10) {
-//                fail("Connectors did not manage to synchronize consistent hash ring within " + timeoutInSeconds
-//                             + " seconds...");
-//            }
-//            Thread.sleep(100);
-//        }
-//    }
+    private void waitForConnectorSync(int timeoutInSeconds) throws InterruptedException {
+        int t = 0;
+        while ((connector1.getConsistentHash().getMembers().isEmpty())
+                || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
+            // don't have a member for String yet, which means we must wait a little longer
+            if (t++ > timeoutInSeconds * 10) {
+                fail("Connectors did not manage to synchronize consistent hash ring within " + timeoutInSeconds
+                             + " seconds...");
+            }
+            Thread.sleep(100);
+        }
+    }
 
     private static JChannel createChannel() throws Exception {
         return new JChannel("org/axonframework/commandhandling/distributed/jgroups/tcp_gossip.xml");
