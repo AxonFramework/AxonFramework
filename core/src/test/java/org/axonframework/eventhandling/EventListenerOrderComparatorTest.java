@@ -2,6 +2,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.domain.EventMessage;
 import org.junit.*;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -68,6 +70,25 @@ public class EventListenerOrderComparatorTest {
         @Override
         public int hashCode() {
             return hashCode;
+        }
+    }
+
+    @Test
+    public void testCompareHighestPrecendenceToLowestPrecedence() throws Exception {
+        EventListener highestPrecedence = new NullEventListener();
+        EventListener lowestPrecedence = new NullEventListener();
+
+        when(orderResolver.orderOf(highestPrecedence)).thenReturn(Ordered.HIGHEST_PRECEDENCE);
+        when(orderResolver.orderOf(lowestPrecedence)).thenReturn(Ordered.LOWEST_PRECEDENCE);
+
+        int result = testSubject.compare(highestPrecedence, lowestPrecedence);
+
+        Assert.assertEquals(result, -1);
+    }
+
+    private class NullEventListener implements EventListener {
+        @Override
+        public void handle(EventMessage event) {
         }
     }
 }
