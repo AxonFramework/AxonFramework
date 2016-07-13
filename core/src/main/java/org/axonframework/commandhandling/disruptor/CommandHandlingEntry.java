@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package org.axonframework.commandhandling.disruptor;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,7 +44,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private boolean isRecoverEntry;
     private String aggregateIdentifier;
     private int invokerSegmentId;
-    private final List<DomainEventMessage<?>> messagesToPublish = new ArrayList<>();
 
     /**
      * Initializes the CommandHandlingEntry
@@ -103,14 +100,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      */
     public void setResult(Object result) {
         this.result = result;
-    }
-
-    public List<DomainEventMessage<?>> getMessagesToPublish() {
-        return messagesToPublish;
-    }
-
-    public void publishMessages(List<DomainEventMessage<?>> messagesToPublish) {
-        this.messagesToPublish.addAll(messagesToPublish);
     }
 
     /**
@@ -190,7 +179,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;
         this.isRecoverEntry = false;
-        this.messagesToPublish.clear();
         this.result = null;
         this.exceptionResult = null;
         this.aggregateIdentifier = null;
@@ -218,7 +206,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         invocationInterceptorChain = null;
         invokerSegmentId = -1;
         this.aggregateIdentifier = newAggregateIdentifier;
-        this.messagesToPublish.clear();
         reset(null);
     }
 
