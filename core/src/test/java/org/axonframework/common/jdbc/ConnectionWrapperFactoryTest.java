@@ -3,11 +3,10 @@ package org.axonframework.common.jdbc;
 import org.junit.*;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import static org.axonframework.common.jdbc.ConnectionWrapperFactory.wrap;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -68,5 +67,39 @@ public class ConnectionWrapperFactoryTest {
     public void testHashCode_WithoutWrapper() throws Exception {
         Connection wrapped = wrap(connection, closeHandler);
         assertEquals(wrapped.hashCode(), wrapped.hashCode());
+    }
+
+    @Test(expected = SQLException.class)
+    public void testUnwrapInvocationTargetException() throws Exception {
+        when(connection.prepareStatement(anyString())).thenThrow(new SQLException());
+
+        Connection wrapper = wrap(connection, closeHandler);
+        wrapper.prepareStatement("foo");
+    }
+
+    @Test(expected = SQLException.class)
+    public void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface1() throws Exception {
+        WrapperInterface wrapperImplementation = mock(WrapperInterface.class);
+        when(connection.prepareStatement(anyString())).thenThrow(new SQLException());
+
+        Connection wrapper = wrap(connection, WrapperInterface.class, wrapperImplementation, closeHandler);
+        wrapper.prepareStatement("foo");
+    }
+
+    @Test(expected = SQLException.class)
+    public void testUnwrapInvocationTargetExceptionWithAdditionalWrapperInterface2() throws Exception {
+        WrapperInterface wrapperImplementation = mock(WrapperInterface.class);
+        doThrow(new SQLException()).when(wrapperImplementation).foo();
+
+        WrapperInterface wrapper = (WrapperInterface) wrap(connection,
+                                                           WrapperInterface.class,
+                                                           wrapperImplementation,
+                                                           closeHandler);
+        wrapper.foo();
+    }
+
+    private interface WrapperInterface {
+
+        void foo() throws SQLException;
     }
 }
