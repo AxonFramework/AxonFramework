@@ -2,13 +2,15 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
-@Ignore("These tests require that Oracle 11 is running")
+import static org.axonframework.common.io.IOUtils.closeQuietly;
+import static org.junit.Assume.assumeNoException;
+
 public class Oracle11EventSchemaFactoryTest {
 
     private Oracle11EventSchemaFactory testSubject;
@@ -19,12 +21,16 @@ public class Oracle11EventSchemaFactoryTest {
     public void setUp() throws Exception {
         testSubject = new Oracle11EventSchemaFactory();
         eventSchema = new EventSchema();
-        connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "axon", "axon");
+        try {
+            connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "axon", "axon");
+        } catch (SQLException e) {
+            assumeNoException("Ignoring test. Machine does not have a local Oracle 11 instance running", e);
+        }
     }
 
     @After
     public void tearDown() throws Exception {
-        connection.close();
+        closeQuietly(connection);
     }
 
     @Test
