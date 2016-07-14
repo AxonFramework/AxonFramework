@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,23 +121,23 @@ public class EventSourcingRepositoryTest {
 
         public StubAggregate(String id, String message) {
             this.id = id;
-            AggregateLifecycle.doApply(message).andThenApply(() -> "Got messages: " + messages.size());
+            AggregateLifecycle.apply(message).andThenApply(() -> "Got messages: " + messages.size());
         }
 
         @CommandHandler
         public void handle(String command) {
-            AggregateLifecycle.doApply(command);
+            AggregateLifecycle.apply(command);
         }
 
         public void changeState() {
-            AggregateLifecycle.doApply("Test more");
+            AggregateLifecycle.apply("Test more");
         }
 
         @EventHandler
         public void handle(String value, DomainEventMessage<String> message) {
             this.id = message.getAggregateIdentifier();
             if (value.startsWith("Test")) {
-                AggregateLifecycle.doApply("Last one").andThenApply(
+                AggregateLifecycle.apply("Last one").andThenApply(
                         () -> new GenericMessage<>("Got messages: " + messages.size(), MetaData.with("key", "value")));
             }
             this.messages.add(message);

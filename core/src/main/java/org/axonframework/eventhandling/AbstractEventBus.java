@@ -145,6 +145,7 @@ public abstract class AbstractEventBus implements EventBus {
                         doWithEvents(this::afterCommit, eventQueue);
                     }
                 });
+                unitOfWork.onCleanup(u -> u.resources().remove(eventsKey));
                 return eventQueue;
 
             }).addAll(events);

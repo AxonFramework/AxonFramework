@@ -28,10 +28,6 @@ public abstract class AggregateLifecycle {
 
     private static final ThreadLocal<AggregateLifecycle> CURRENT = new ThreadLocal<>();
 
-    public static ApplyMore doApply(Object payload) {
-        return AggregateLifecycle.getInstance().doApply(payload, MetaData.emptyInstance());
-    }
-
     public static ApplyMore apply(Object payload, MetaData metaData) {
         return AggregateLifecycle.getInstance().doApply(payload, metaData);
     }
