@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2014. Axon Framework
+  ~ Copyright (c) 2010-2016. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -47,85 +47,30 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>com.agilejava.docbkx</groupId>
-                <artifactId>docbkx-maven-plugin</artifactId>
-                <version>2.0.14</version>
+                <groupId>com.ruleoftech</groupId>
+                <artifactId>markdown-page-generator-plugin</artifactId>
+                <version>0.10</version>
                 <executions>
                     <execution>
-                        <id>doc-html</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>generate-html</goal>
+                            <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <htmlCustomization>${project.basedir}/src/main/docbook/styles/html/chunked.xsl
-                            </htmlCustomization>
-                            <targetDirectory>${project.build.directory}/docbkx/html/</targetDirectory>
-                            <postProcess>
-                                <copy todir="${project.build.directory}/docbkx/html">
-                                    <fileset dir="src/main/resources"/>
-                                </copy>
-                            </postProcess>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>doc-single-html</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>generate-html</goal>
-                        </goals>
-                        <configuration>
-                            <htmlCustomization>${project.basedir}/src/main/docbook/styles/html/single.xsl
-                            </htmlCustomization>
-                            <targetDirectory>${project.build.directory}/docbkx/single/</targetDirectory>
-                            <postProcess>
-                                <copy todir="${project.build.directory}/docbkx/single">
-                                    <fileset dir="src/main/resources"/>
-                                </copy>
-                            </postProcess>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>doc-pdf</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>generate-pdf</goal>
-                        </goals>
-                        <configuration>
-                            <foCustomization>${basedir}/src/main/docbook/styles/pdf/custom.xsl</foCustomization>
-                            <imgSrcPath>file:${basedir}/src/main/resources/images/</imgSrcPath>
-                            <admonGraphicsPath>${basedir}/src/main/resources/images/</admonGraphicsPath>
-                            <admonGraphicsExtension>_large.png</admonGraphicsExtension>
-                            <calloutGraphicsPath>${basedir}/src/main/resources/images/callouts/</calloutGraphicsPath>
-                            <calloutGraphicsExtension>.svg</calloutGraphicsExtension>
-                            <paperType>A4</paperType>
+                            <outputDirectory>${basedir}/target/reference_guide/html</outputDirectory>
+                            <copyDirectories>images,css,js</copyDirectories>
                         </configuration>
                     </execution>
                 </executions>
                 <configuration>
-                    <imgSrcPath>images/</imgSrcPath>
-                    <customizationParameters>
-                        <parameter>
-                            <name>highlight.xslthl.config.path</name>
-                            <value>file:////${project.basedir}/src/main/docbook/styles/highlighting/xslthl-config.xml
-                            </value>
-                        </parameter>
-                    </customizationParameters>
-                    <xincludeSupported>true</xincludeSupported>
-                    <sourceDirectory>${project.basedir}/src/main/docbook/en-US</sourceDirectory>
-                    <includes>reference-guide.xml</includes>
-                    <targetDirectory>target/docbkx/</targetDirectory>
+                    <inputDirectory>${basedir}/src/main/markdown/reference_guide</inputDirectory>
+                    <transformRelativeMarkdownLinks>true</transformRelativeMarkdownLinks>
+                    <inputEncoding>UTF-8</inputEncoding>
+                    <outputEncoding>UTF-8</outputEncoding>
+                    <pegdownExtensions>TABLES,FENCED_CODE_BLOCKS,AUTOLINKS,ANCHORLINKS,STRIKETHROUGH</pegdownExtensions>
+                    <headerHtmlFile>${basedir}/src/main/resources/header.html</headerHtmlFile>
+                    <footerHtmlFile>${basedir}/src/main/resources/footer.html</footerHtmlFile>
                 </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>net.sf.docbook</groupId>
-                        <artifactId>docbook-xml</artifactId>
-                        <version>5.0-all</version>
-                        <classifier>resources</classifier>
-                        <type>zip</type>
-                        <scope>runtime</scope>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>
