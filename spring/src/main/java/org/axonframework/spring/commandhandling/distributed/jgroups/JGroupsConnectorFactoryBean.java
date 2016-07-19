@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed.jgroups;
+package org.axonframework.spring.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.jgroups.ConnectionFailedException;
+import org.axonframework.commandhandling.distributed.jgroups.JChannelFactory;
+import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
+import org.axonframework.commandhandling.distributed.jgroups.JGroupsXmlConfigurationChannelFactory;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.jgroups.JChannel;

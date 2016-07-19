@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.distributed.jgroups;
+package org.axonframework.spring.commandhandling.distributed.jgroups;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.jgroups.JChannelFactory;
+import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
+import org.axonframework.commandhandling.distributed.jgroups.JGroupsXmlConfigurationChannelFactory;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.jgroups.JChannel;
@@ -27,16 +30,24 @@ import org.jgroups.util.Util;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.context.ApplicationContext;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.*;
 
 /**
  * @author Allard Buijze
@@ -53,14 +64,14 @@ public class JGroupsConnectorFactoryBeanTest {
 
     @Before
     public void setUp() throws Exception {
-        mockStatic(Util.class);
+        PowerMockito.mockStatic(Util.class);
         mockApplicationContext = mock(ApplicationContext.class);
         mockChannel = mock(JChannel.class);
         mockConnector = mock(JGroupsConnector.class);
         when(mockApplicationContext.getBean(Serializer.class)).thenReturn(new XStreamSerializer());
-        whenNew(JChannel.class).withParameterTypes(String.class).withArguments(isA(String.class))
+        PowerMockito.whenNew(JChannel.class).withParameterTypes(String.class).withArguments(isA(String.class))
                 .thenReturn(mockChannel);
-        whenNew(JGroupsConnector.class)
+        PowerMockito.whenNew(JGroupsConnector.class)
                 .withArguments(
                         isA(CommandBus.class),
                         isA(JChannel.class),
@@ -80,8 +91,8 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.start();
         testSubject.getObject();
 
-        verifyNew(JChannel.class).withArguments("tcp_mcast.xml");
-        verifyNew(JGroupsConnector.class).withArguments(
+        PowerMockito.verifyNew(JChannel.class).withArguments("tcp_mcast.xml");
+        PowerMockito.verifyNew(JGroupsConnector.class).withArguments(
                 isA(SimpleCommandBus.class),
                 eq(mockChannel),
                 eq("beanName"),
@@ -90,7 +101,7 @@ public class JGroupsConnectorFactoryBeanTest {
         verify(mockConnector).connect();
         verify(mockChannel, never()).close();
 
-        verifyStatic(never());
+        PowerMockito.verifyStatic(never());
         Util.registerChannel(any(JChannel.class), anyString());
 
         testSubject.stop(() -> {
@@ -114,8 +125,8 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.start();
         testSubject.getObject();
 
-        verifyNew(JChannel.class).withArguments("custom.xml");
-        verifyNew(JGroupsConnector.class).withArguments(
+        PowerMockito.verifyNew(JChannel.class).withArguments("custom.xml");
+        PowerMockito.verifyNew(JGroupsConnector.class).withArguments(
                 same(localSegment),
                 eq(mockChannel),
                 eq("ClusterName"),
@@ -146,7 +157,7 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.getObject();
 
         verify(mockFactory).createChannel();
-        verifyNew(JGroupsConnector.class).withArguments(
+        PowerMockito.verifyNew(JGroupsConnector.class).withArguments(
                 isA(SimpleCommandBus.class),
                 eq(mockChannel),
                 eq("beanName"),
@@ -172,10 +183,10 @@ public class JGroupsConnectorFactoryBeanTest {
         testSubject.start();
         testSubject.getObject();
 
-        verifyStatic(times(1));
+        PowerMockito.verifyStatic(times(1));
         Util.registerChannel(eq(mockChannel), isNull(String.class));
 
-        verifyNew(JGroupsConnector.class).withArguments(
+        PowerMockito.verifyNew(JGroupsConnector.class).withArguments(
                 isA(SimpleCommandBus.class),
                 eq(mockChannel),
                 eq("beanName"),

@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.gateway;
+package org.axonframework.spring.commandhandling.gateway;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
+import org.axonframework.commandhandling.gateway.RetryScheduler;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.MessageDispatchInterceptor;
