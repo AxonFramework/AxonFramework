@@ -17,8 +17,8 @@
 package org.axonframework.messaging.interceptors;
 
 import org.axonframework.common.AxonNonTransientException;
-import org.springframework.util.StringUtils;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.validation.ConstraintViolation;
@@ -44,7 +44,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
      */
     public JSR303ViolationException(Set<ConstraintViolation<Object>> violations) {
         super("One or more JSR303 constraints were violated: " + System.lineSeparator()
-            + StringUtils.collectionToDelimitedString(convert(violations), System.lineSeparator()));
+            + convert(violations));
         this.violations = violations;
     }
 
@@ -67,7 +67,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
      * </pre>
      * <pre>property notNull in class my.some.TheClass may not be null</pre>
      */
-    protected static Set<String> convert(Set<ConstraintViolation<Object>> violations) {
+    protected static String convert(Set<ConstraintViolation<Object>> violations) {
         // sort the violations on bean class and property name
         Set<String> sortedViolations = new TreeSet<>();
         for (ConstraintViolation<Object> violation : violations) {
@@ -76,6 +76,14 @@ public class JSR303ViolationException extends AxonNonTransientException {
             msg += " " + violation.getMessage();
             sortedViolations.add(msg);
         }
-        return sortedViolations;
+        StringBuffer sb = new StringBuffer();
+        Iterator<String> it = sortedViolations.iterator();
+        while (it.hasNext()) {
+            sb.append(it.next());
+            if (it.hasNext()) {
+                sb.append(System.lineSeparator());
+            }
+        }
+        return sb.toString();
     }
 }
