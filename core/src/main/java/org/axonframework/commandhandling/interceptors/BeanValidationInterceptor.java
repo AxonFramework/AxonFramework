@@ -70,7 +70,7 @@ public class BeanValidationInterceptor implements CommandHandlerInterceptor, Com
         Validator validator = validatorFactory.getValidator();
         Set<ConstraintViolation<Object>> violations = validateCommand(command.getPayload(), validator);
         if (violations != null && !violations.isEmpty()) {
-            throw new JSR303ViolationException("One or more JSR303 constraints were violated.", violations);
+            throw new JSR303ViolationException(violations);
         }
         return command;
     }
