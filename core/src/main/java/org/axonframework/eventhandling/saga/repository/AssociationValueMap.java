@@ -19,10 +19,10 @@ package org.axonframework.eventhandling.saga.repository;
 import org.axonframework.eventhandling.saga.AssociationValue;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -164,10 +164,10 @@ public class AssociationValueMap {
         @Override
         public int compare(SagaAssociationValue o1, SagaAssociationValue o2) {
             int value = o1.getKey().compareTo(o2.getKey());
-            if (value == 0 && !nullSafeEquals(o1.getValue(), o2.getValue())) {
+            if (value == 0 && !Objects.deepEquals(o1.getValue(), o2.getValue())) {
                 value = o1.getValue().getClass().getName().compareTo(o2.getValue().getClass().getName());
             }
-            if (value == 0 && !nullSafeEquals(o1.getValue(), o2.getValue())) {
+            if (value == 0 && !Objects.deepEquals(o1.getValue(), o2.getValue())) {
                 // the objects are of the same class
                 if (o1.getValue() instanceof Comparable) {
                     value = ((Comparable) o1.getValue()).compareTo(o2.getValue());
@@ -179,7 +179,7 @@ public class AssociationValueMap {
                 }
             }
 
-            if (value == 0 && !nullSafeEquals(o1.getSagaType(), o2.getSagaType())) {
+            if (value == 0 && !Objects.deepEquals(o1.getSagaType(), o2.getSagaType())) {
                 if (o1.getSagaType() == null) {
                     return -1;
                 } else if (o2.getSagaType() == null) {
@@ -188,7 +188,7 @@ public class AssociationValueMap {
                 return o1.getSagaType().compareTo(o2.getSagaType());
             }
 
-            if (value == 0 && !nullSafeEquals(o1.getSagaIdentifier(), o2.getSagaIdentifier())) {
+            if (value == 0 && !Objects.deepEquals(o1.getSagaIdentifier(), o2.getSagaIdentifier())) {
                 if (o1.getSagaIdentifier() == null) {
                     return -1;
                 } else if (o2.getSagaIdentifier() == null) {
@@ -198,52 +198,5 @@ public class AssociationValueMap {
             }
             return value;
         }
-
-        /**
-         * Copied from Spring's ObjectUtils because Spring dependency is no longer allowed and I
-         * did not want to introduce any regressions by handcrafting something worse.
-         */
-        protected static boolean nullSafeEquals(Object o1, Object o2) {
-            if (o1 == o2) {
-                return true;
-            }
-            if (o1 == null || o2 == null) {
-                return false;
-            }
-            if (o1.equals(o2)) {
-                return true;
-            }
-            if (o1.getClass().isArray() && o2.getClass().isArray()) {
-                if (o1 instanceof Object[] && o2 instanceof Object[]) {
-                    return Arrays.equals((Object[]) o1, (Object[]) o2);
-                }
-                if (o1 instanceof boolean[] && o2 instanceof boolean[]) {
-                    return Arrays.equals((boolean[]) o1, (boolean[]) o2);
-                }
-                if (o1 instanceof byte[] && o2 instanceof byte[]) {
-                    return Arrays.equals((byte[]) o1, (byte[]) o2);
-                }
-                if (o1 instanceof char[] && o2 instanceof char[]) {
-                    return Arrays.equals((char[]) o1, (char[]) o2);
-                }
-                if (o1 instanceof double[] && o2 instanceof double[]) {
-                    return Arrays.equals((double[]) o1, (double[]) o2);
-                }
-                if (o1 instanceof float[] && o2 instanceof float[]) {
-                    return Arrays.equals((float[]) o1, (float[]) o2);
-                }
-                if (o1 instanceof int[] && o2 instanceof int[]) {
-                    return Arrays.equals((int[]) o1, (int[]) o2);
-                }
-                if (o1 instanceof long[] && o2 instanceof long[]) {
-                    return Arrays.equals((long[]) o1, (long[]) o2);
-                }
-                if (o1 instanceof short[] && o2 instanceof short[]) {
-                    return Arrays.equals((short[]) o1, (short[]) o2);
-                }
-            }
-            return false;
-        }
-
     }
 }
