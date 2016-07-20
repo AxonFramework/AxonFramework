@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.LockingRepository;
-import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.Assert;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.lock.LockFactory;

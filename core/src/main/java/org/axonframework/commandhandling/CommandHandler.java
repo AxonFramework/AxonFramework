@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,15 +29,14 @@ import java.lang.annotation.*;
  * appears on an Aggregate root's constructor, that command will cause a new aggregate to be created and stored in the
  * repository provided with the {@link AggregateAnnotationCommandHandler}. If a non-root entity of the Aggregate is
  * to handle a command, the field declaring that entity must be annotated with {@link
- * CommandHandlingMember}. Note that the annotation may not be placed on
- * a non-root Entity's constructor.
+ * org.axonframework.commandhandling.model.AggregateMember}. Note that the {@link CommandHandler} annotation may not
+ * be placed on a non-root Entity's constructor.
  * <p/>
  * The annotated method's first parameter is the command handled by that method. Optionally, the command handler may
  * specify a second parameter of type {@link UnitOfWork}. The active Unit of Work will be
  * passed if that parameter is supplied.
  *
  * @author Allard Buijze
- * @see CommandHandlingMember
  * @since 0.5
  */
 @Documented

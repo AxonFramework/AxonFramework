@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 import org.junit.Before;
 import org.junit.Test;
 

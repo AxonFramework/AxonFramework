@@ -20,7 +20,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.metadata.CorrelationDataProvider;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Collection;

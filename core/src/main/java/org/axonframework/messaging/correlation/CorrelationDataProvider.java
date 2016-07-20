@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.metadata;
+package org.axonframework.messaging.correlation;
 
 import org.axonframework.messaging.Message;
 

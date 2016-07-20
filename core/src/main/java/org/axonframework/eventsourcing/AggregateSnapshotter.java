@@ -19,14 +19,13 @@ package org.axonframework.eventsourcing;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
-import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.common.annotation.ParameterResolverFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 
 import java.util.List;
 import java.util.Map;

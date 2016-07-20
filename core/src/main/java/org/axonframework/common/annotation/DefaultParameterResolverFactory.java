@@ -43,7 +43,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         if (metaDataAnnotation != null) {
             return new AnnotatedMetaDataParameterResolver(metaDataAnnotation, parameterType);
         }
-        if (org.axonframework.messaging.metadata.MetaData.class.isAssignableFrom(parameterType)) {
+        if (org.axonframework.messaging.MetaData.class.isAssignableFrom(parameterType)) {
             return MetaDataParameterResolver.INSTANCE;
         }
         if (parameterIndex == 0) {

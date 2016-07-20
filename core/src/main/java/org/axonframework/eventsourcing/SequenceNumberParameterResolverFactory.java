@@ -1,9 +1,12 @@
 /*
  * Copyright (c) 2010-2016. Axon Framework
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -11,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Priority;
 import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventhandling.AbstractAnnotatedParameterResolverFactory;
+import org.axonframework.eventhandling.SequenceNumber;
 import org.axonframework.messaging.Message;
 
 
@@ -51,7 +55,7 @@ public final class SequenceNumberParameterResolverFactory extends
     /**
      * ParameterResolver that resolves SequenceNumber parameters
      */
-    static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
+    public static class SequenceNumberParameterResolver implements ParameterResolver<Long> {
 
         @Override
         public Long resolveParameterValue(Message message) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.LockAwareAggregate;
-import org.axonframework.commandhandling.model.inspection.EventSourcedAggregate;
 import org.axonframework.common.MockException;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;

@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling.model.inspection;
+package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.model.ApplyMore;
+import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 
 import java.util.Iterator;
 import java.util.Map;

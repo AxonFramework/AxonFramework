@@ -17,7 +17,7 @@
 package org.axonframework.test.saga;
 
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
 import org.hamcrest.CoreMatchers;
