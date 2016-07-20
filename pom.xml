@@ -55,17 +55,6 @@
 
     <profiles>
         <profile>
-            <id>with-doc</id>
-            <activation>
-                <property>
-                    <name>allmodules</name>
-                </property>
-            </activation>
-            <modules>
-                <module>documentation</module>
-            </modules>
-        </profile>
-        <profile>
             <id>release-sign-artifacts</id>
             <activation>
                 <property>
