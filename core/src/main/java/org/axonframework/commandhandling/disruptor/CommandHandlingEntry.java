@@ -205,6 +205,7 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         exceptionResult = null;
         invocationInterceptorChain = null;
         invokerSegmentId = -1;
+        publisherSegmentId = -1;
         this.aggregateIdentifier = newAggregateIdentifier;
         reset(null);
     }
