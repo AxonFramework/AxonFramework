@@ -26,13 +26,13 @@
     </bean>
 
     <!-- Setup the gateway using the distributed command bus -->
-    <bean id="commandGateway" class="org.axonframework.commandhandling.gateway.CommandGatewayFactoryBean">
+    <bean id="commandGateway" class="org.axonframework.spring.commandhandling.gateway.CommandGatewayFactoryBean">
         <property name="commandBus" ref="commandBus"/>
     </bean>
 
     <!-- Setup the factory bean for the JGroupsConnector -->
     <bean id="jGroupsConnector"
-          class="org.axonframework.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean">
+          class="org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean">
         <property name="configuration" value="tcp_gossip.xml"/>
         <property name="clusterName" value="myCluster"/>
     </bean>

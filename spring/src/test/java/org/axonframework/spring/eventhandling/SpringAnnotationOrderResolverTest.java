@@ -1,5 +1,8 @@
-package org.axonframework.eventhandling;
+package org.axonframework.spring.eventhandling;
 
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.EventMessage;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.annotation.Order;

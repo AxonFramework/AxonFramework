@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventhandling;
+package org.axonframework.spring.eventhandling;
 
+import org.axonframework.eventhandling.EventListener;
+import org.axonframework.eventhandling.EventListenerProxy;
+import org.axonframework.eventhandling.OrderResolver;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.annotation.Order;
 

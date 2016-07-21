@@ -22,10 +22,10 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import static org.springframework.util.ObjectUtils.nullSafeEquals;
 
 /**
  * In-memory storage for AssociationValue to Saga mappings. A single AssociationValue can map to several Sagas, and a
@@ -164,10 +164,10 @@ public class AssociationValueMap {
         @Override
         public int compare(SagaAssociationValue o1, SagaAssociationValue o2) {
             int value = o1.getKey().compareTo(o2.getKey());
-            if (value == 0 && !nullSafeEquals(o1.getValue(), o2.getValue())) {
+            if (value == 0 && !Objects.deepEquals(o1.getValue(), o2.getValue())) {
                 value = o1.getValue().getClass().getName().compareTo(o2.getValue().getClass().getName());
             }
-            if (value == 0 && !nullSafeEquals(o1.getValue(), o2.getValue())) {
+            if (value == 0 && !Objects.deepEquals(o1.getValue(), o2.getValue())) {
                 // the objects are of the same class
                 if (o1.getValue() instanceof Comparable) {
                     value = ((Comparable) o1.getValue()).compareTo(o2.getValue());
@@ -179,7 +179,7 @@ public class AssociationValueMap {
                 }
             }
 
-            if (value == 0 && !nullSafeEquals(o1.getSagaType(), o2.getSagaType())) {
+            if (value == 0 && !Objects.deepEquals(o1.getSagaType(), o2.getSagaType())) {
                 if (o1.getSagaType() == null) {
                     return -1;
                 } else if (o2.getSagaType() == null) {
@@ -188,7 +188,7 @@ public class AssociationValueMap {
                 return o1.getSagaType().compareTo(o2.getSagaType());
             }
 
-            if (value == 0 && !nullSafeEquals(o1.getSagaIdentifier(), o2.getSagaIdentifier())) {
+            if (value == 0 && !Objects.deepEquals(o1.getSagaIdentifier(), o2.getSagaIdentifier())) {
                 if (o1.getSagaIdentifier() == null) {
                     return -1;
                 } else if (o2.getSagaIdentifier() == null) {
