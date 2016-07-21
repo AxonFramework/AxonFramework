@@ -31,6 +31,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.commandhandling.MonitorAwareCallback;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
@@ -410,29 +411,4 @@ public class DisruptorCommandBus implements CommandBus {
         }
     }
 
-    private static class MonitorAwareCallback<C, R> implements CommandCallback<C, R> {
-        private final CommandCallback<C, R> delegate;
-        private final MessageMonitor.MonitorCallback messageMonitorCallback;
-
-        public MonitorAwareCallback(CommandCallback<C, R> delegate, MessageMonitor.MonitorCallback messageMonitorCallback) {
-            this.delegate = delegate;
-            this.messageMonitorCallback = messageMonitorCallback;
-        }
-
-        @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-            messageMonitorCallback.reportSuccess();
-            if (delegate != null) {
-                delegate.onSuccess(commandMessage, result);
-            }
-        }
-
-        @Override
-        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
-            messageMonitorCallback.reportFailure(cause);
-            if (delegate != null) {
-                delegate.onFailure(commandMessage, cause);
-            }
-        }
-    }
 }
