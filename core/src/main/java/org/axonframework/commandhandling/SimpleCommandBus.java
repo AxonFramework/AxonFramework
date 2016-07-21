@@ -17,14 +17,7 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.Registration;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.*;
-import org.axonframework.messaging.unitofwork.*;
-import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.monitoring.NoOpMessageMonitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.lang.String.format;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +25,22 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.lang.String.format;
+import org.axonframework.common.Registration;
+import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific type of
@@ -106,8 +114,8 @@ public class SimpleCommandBus implements CommandBus {
     @SuppressWarnings({"unchecked"})
     protected <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
+        MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command);
         try {
-            MessageHandler<? super CommandMessage<?>> handler = findCommandHandlerFor(command);
             Object result = doDispatch(command, handler);
             monitorCallback.reportSuccess();
             callback.onSuccess(command, (R) result);

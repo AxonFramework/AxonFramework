@@ -16,6 +16,8 @@
 
 package org.axonframework.test;
 
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
@@ -23,8 +25,6 @@ import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.junit.Test;
-
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 public class FixtureTest_ExceptionHandling {
 
@@ -39,18 +39,11 @@ public class FixtureTest_ExceptionHandling {
         );
     }
 
-    @Test
-    public void testWhenUnhandledCommand() {
-        fixture.givenCommands(new CreateMyAggregateCommand("14")).when(
-                new UnhandledCommand("14")
-        ).expectException(NoHandlerForCommandException.class);
-    }
-
-    @Test(expected = FixtureExecutionException.class)
-    public void givenUnhandledCommand() {
+    @Test(expected = NoHandlerForCommandException.class)
+    public void givenUnknownCommand() {
         fixture.givenCommands(
                 new CreateMyAggregateCommand("14"),
-                new UnhandledCommand("14")
+                new UnknownCommand("14")
         );
     }
 
@@ -113,8 +106,8 @@ public class FixtureTest_ExceptionHandling {
         }
     }
 
-    private static class UnhandledCommand extends AbstractMyAggregateCommand {
-        protected UnhandledCommand(String id) {
+    private static class UnknownCommand extends AbstractMyAggregateCommand {
+        protected UnknownCommand(String id) {
             super(id);
         }
     }
