@@ -47,6 +47,7 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.monitoring.MessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +127,7 @@ public class DisruptorCommandBus implements CommandBus {
     private final int publisherCount;
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
+    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
 
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
@@ -171,8 +173,9 @@ public class DisruptorCommandBus implements CommandBus {
         // configure publisher Threads
         EventPublisher[] publishers = initializePublisherThreads(configuration, executor,
                                                                  transactionManager);
+        messageMonitor = configuration.getMessageMonitor();
         publisherCount = publishers.length;
-        disruptor.handleExceptionsWith(new ExceptionHandler());
+        disruptor.setDefaultExceptionHandler(new ExceptionHandler());
 
         disruptor.handleEventsWith(commandHandlerInvokers).then(publishers);
 
@@ -212,7 +215,8 @@ public class DisruptorCommandBus implements CommandBus {
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
             commandToDispatch = (CommandMessage) interceptor.handle(commandToDispatch);
         }
-        doDispatch(commandToDispatch, callback);
+        MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(command);
+        doDispatch(commandToDispatch, new MonitorAwareCallback(callback, monitorCallback));
     }
 
     /**
@@ -223,7 +227,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param callback The callback to notify when command handling is completed
      * @param <R>      The expected return type of the command
      */
-    public <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
+    <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
@@ -403,6 +407,32 @@ public class DisruptorCommandBus implements CommandBus {
         @Override
         public void handleOnShutdownException(Throwable ex) {
             logger.error("Error while shutting down the DisruptorCommandBus", ex);
+        }
+    }
+
+    private static class MonitorAwareCallback<C, R> implements CommandCallback<C, R> {
+        private final CommandCallback<C, R> delegate;
+        private final MessageMonitor.MonitorCallback messageMonitorCallback;
+
+        public MonitorAwareCallback(CommandCallback<C, R> delegate, MessageMonitor.MonitorCallback messageMonitorCallback) {
+            this.delegate = delegate;
+            this.messageMonitorCallback = messageMonitorCallback;
+        }
+
+        @Override
+        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
+            messageMonitorCallback.reportSuccess();
+            if (delegate != null) {
+                delegate.onSuccess(commandMessage, result);
+            }
+        }
+
+        @Override
+        public void onFailure(CommandMessage<? extends C> commandMessage, Throwable cause) {
+            messageMonitorCallback.reportFailure(cause);
+            if (delegate != null) {
+                delegate.onFailure(commandMessage, cause);
+            }
         }
     }
 }

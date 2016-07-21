@@ -31,6 +31,8 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.serialization.Serializer;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
@@ -68,6 +70,7 @@ public class DisruptorConfiguration {
     private int invokerThreadCount = 1;
     private int publisherThreadCount = 1;
     private Serializer serializer;
+    private MessageMonitor<? super CommandMessage<?>> messageMonitor = NoOpMessageMonitor.INSTANCE;
 
     /**
      * Initializes a configuration instance with default settings: ring-buffer size: 4096, blocking wait strategy and
@@ -482,6 +485,27 @@ public class DisruptorConfiguration {
     public DisruptorConfiguration setProducerType(ProducerType producerType) {
         Assert.notNull(producerType, "producerType must not be null");
         this.producerType = producerType;
+        return this;
+    }
+
+    /**
+     * Returns the message monitor to use.
+     *
+     * @return the message monitor to use.
+     */
+    public MessageMonitor<? super CommandMessage<?>> getMessageMonitor() {
+        return messageMonitor;
+    }
+
+    /**
+     * Sets the message monitor to use. The default is the NoOpMessageMonitor.
+     *
+     * @param messageMonitor the message monitor to use.
+     * @return {@code this} for method chaining
+     */
+    public DisruptorConfiguration setMessageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        Assert.notNull(messageMonitor, "messageMonitor must not be null");
+        this.messageMonitor = messageMonitor;
         return this;
     }
 }
