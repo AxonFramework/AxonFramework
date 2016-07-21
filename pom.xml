@@ -28,6 +28,7 @@
         <module>distributed-commandbus</module>
         <module>integrationtests</module>
         <module>mongo</module>
+        <module>mongo3</module>
         <module>incubator/google-app-engine</module>
         <module>amqp</module>
         <module>monitoring-jmx</module>
