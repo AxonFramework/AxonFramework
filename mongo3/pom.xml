@@ -25,7 +25,7 @@
 
     <artifactId>axon-mongo3</artifactId>
 
-    <name>Axon MongoDB Components</name>
+    <name>Axon MongoDB Components V3</name>
     <description>This module contains components that integrate with MongoDB driver version 3.2.x</description>
 
     <packaging>bundle</packaging>
