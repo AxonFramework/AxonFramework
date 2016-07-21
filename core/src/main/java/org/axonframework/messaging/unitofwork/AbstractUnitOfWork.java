@@ -16,15 +16,19 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
+
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
-import java.util.function.Consumer;
 
 /**
  * Abstract implementation of the Unit of Work. It provides default implementations of all methods related to the
@@ -48,6 +52,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
             logger.debug("Starting Unit Of Work");
         }
         Assert.state(Phase.NOT_STARTED.equals(phase()), "UnitOfWork is already started");
+        rolledBack = false;
         onRollback(u -> rolledBack = true);
         if (CurrentUnitOfWork.isStarted()) {
             // we're nesting.
@@ -212,6 +217,16 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
             setPhase(phase);
             notifyHandlers(phase);
         }
+    }
+
+    /**
+     * Provides the collection of registered Correlation Data Providers of this Unit of Work. The returned collection is a live view of the providers
+     * registered. Any changes in the registration are reflected in the returned collection.
+     *
+     * @return The Correlation Data Providers registered with this Unit of Work.
+     */
+    protected Collection<CorrelationDataProvider> correlationDataProviders() {
+        return correlationDataProviders;
     }
 
     /**
