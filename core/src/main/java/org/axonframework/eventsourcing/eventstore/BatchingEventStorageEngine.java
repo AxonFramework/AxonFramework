@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionIsolationLevel;
 import org.axonframework.common.transaction.TransactionManager;
@@ -38,6 +39,11 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
     private int batchSize = DEFAULT_BATCH_SIZE;
 
     protected BatchingEventStorageEngine(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    protected BatchingEventStorageEngine(TransactionManager transactionManager, PersistenceExceptionResolver persistenceExceptionResolver) {
+        super(persistenceExceptionResolver);
         this.transactionManager = transactionManager;
     }
 

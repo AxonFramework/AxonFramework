@@ -20,8 +20,8 @@ import com.mongodb.MongoClient;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.mongo.DefaultMongoTemplate;
-import org.axonframework.eventsourcing.eventstore.mongo.MongoEventStorageEngine;
+import org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate;
+import org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 
 /**
@@ -52,8 +52,8 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
     @Override
     protected void prepareEventStore() {
         DefaultMongoTemplate mongoTemplate = new DefaultMongoTemplate(mongoDb);
-        mongoTemplate.eventCollection().getDB().dropDatabase();
-        mongoTemplate.snapshotCollection().getDB().dropDatabase();
+        mongoTemplate.eventCollection().drop();
+        mongoTemplate.snapshotCollection().drop();
     }
 
     private class MongoBenchmark implements Runnable {
