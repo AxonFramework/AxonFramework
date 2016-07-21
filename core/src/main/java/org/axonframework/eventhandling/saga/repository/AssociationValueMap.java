@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,7 @@ package org.axonframework.eventhandling.saga.repository;
 import org.axonframework.eventhandling.saga.AssociationValue;
 
 import java.io.Serializable;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.NavigableSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 
@@ -164,10 +160,10 @@ public class AssociationValueMap {
         @Override
         public int compare(SagaAssociationValue o1, SagaAssociationValue o2) {
             int value = o1.getKey().compareTo(o2.getKey());
-            if (value == 0 && !Objects.deepEquals(o1.getValue(), o2.getValue())) {
+            if (value == 0 && !Objects.equals(o1.getValue(), o2.getValue())) {
                 value = o1.getValue().getClass().getName().compareTo(o2.getValue().getClass().getName());
             }
-            if (value == 0 && !Objects.deepEquals(o1.getValue(), o2.getValue())) {
+            if (value == 0 && !Objects.equals(o1.getValue(), o2.getValue())) {
                 // the objects are of the same class
                 if (o1.getValue() instanceof Comparable) {
                     value = ((Comparable) o1.getValue()).compareTo(o2.getValue());
@@ -179,7 +175,7 @@ public class AssociationValueMap {
                 }
             }
 
-            if (value == 0 && !Objects.deepEquals(o1.getSagaType(), o2.getSagaType())) {
+            if (value == 0 && !Objects.equals(o1.getSagaType(), o2.getSagaType())) {
                 if (o1.getSagaType() == null) {
                     return -1;
                 } else if (o2.getSagaType() == null) {
@@ -188,7 +184,7 @@ public class AssociationValueMap {
                 return o1.getSagaType().compareTo(o2.getSagaType());
             }
 
-            if (value == 0 && !Objects.deepEquals(o1.getSagaIdentifier(), o2.getSagaIdentifier())) {
+            if (value == 0 && !Objects.equals(o1.getSagaIdentifier(), o2.getSagaIdentifier())) {
                 if (o1.getSagaIdentifier() == null) {
                     return -1;
                 } else if (o2.getSagaIdentifier() == null) {
