@@ -16,11 +16,21 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.digest.Digester;
-
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Predicate;
+
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Assert;
+import org.axonframework.common.digest.Digester;
 
 public class ConsistentHash {
 
@@ -65,9 +75,10 @@ public class ConsistentHash {
     }
 
     public ConsistentHash without(Member member) {
+        Assert.notNull(member, "Member may not be null");
         SortedMap<String, ConsistentHashMember> newHashes = new TreeMap<>();
         this.hashToMember.forEach((h, v) -> {
-            if (!v.name().equals(member.name())) {
+            if (!Objects.equals(v.name(), member.name())) {
                 newHashes.put(h, v);
             }
         });
@@ -75,6 +86,7 @@ public class ConsistentHash {
     }
 
     public ConsistentHash with(Member member, int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
+        Assert.notNull(member, "Member may not be null");
         SortedMap<String, ConsistentHashMember> members = new TreeMap<>(without(member).hashToMember);
 
         ConsistentHashMember newMember = new ConsistentHashMember(member, loadFactor, commandFilter);

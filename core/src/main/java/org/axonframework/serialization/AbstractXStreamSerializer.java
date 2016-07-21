@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.AssociationValuesImpl;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.*;
 import org.axonframework.test.matchers.FieldFilter;
 
 import java.util.List;
@@ -157,7 +154,7 @@ public interface FixtureConfiguration<T> {
     /**
      * Register a command dispatch interceptor which will always be invoked before a command is dispatched on the
      * command bus to perform a task specified in the interceptor. For example by adding
-     * {@link org.axonframework.messaging.metadata.MetaData} or throwing an exception based on the command.
+     * {@link MetaData} or throwing an exception based on the command.
      * @param commandDispatchInterceptor the command dispatch interceptor to be added to the commandbus
      * @return the current FixtureConfiguration, for fluent interfacing
      */

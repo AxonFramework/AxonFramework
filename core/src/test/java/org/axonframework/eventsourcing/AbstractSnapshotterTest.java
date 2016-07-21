@@ -24,7 +24,7 @@ import org.axonframework.common.transaction.TransactionIsolationLevel;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;

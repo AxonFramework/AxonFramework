@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 

@@ -16,9 +16,22 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.dsl.Disruptor;
-import org.axonframework.commandhandling.*;
+import static java.lang.String.format;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandTargetResolver;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
@@ -37,11 +50,8 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
-
-import static java.lang.String.format;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.dsl.Disruptor;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
@@ -106,9 +116,9 @@ public class DisruptorCommandBus implements CommandBus {
     private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>>> commandHandlers = new ConcurrentHashMap<>();
     private final Disruptor<CommandHandlingEntry> disruptor;
     private final CommandHandlerInvoker[] commandHandlerInvokers;
-    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
-    private final List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors;
-    private final List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors;
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors;
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors;
     private final ExecutorService executorService;
     private final boolean rescheduleOnCorruptState;
     private final long coolingDownPeriod;
@@ -199,7 +209,7 @@ public class DisruptorCommandBus implements CommandBus {
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         Assert.state(started, "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
-        for (MessageDispatchInterceptor<CommandMessage<?>> interceptor : dispatchInterceptors) {
+        for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
             commandToDispatch = (CommandMessage) interceptor.handle(commandToDispatch);
         }
         doDispatch(commandToDispatch, callback);

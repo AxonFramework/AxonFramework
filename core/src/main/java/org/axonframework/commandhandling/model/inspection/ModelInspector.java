@@ -18,11 +18,11 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.model.AggregateRoot;
+import org.axonframework.commandhandling.model.AggregateVersion;
+import org.axonframework.commandhandling.model.EntityId;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.*;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AggregateVersion;
-import org.axonframework.eventsourcing.EntityId;
 import org.axonframework.messaging.Message;
 
 import java.lang.reflect.Field;

@@ -16,17 +16,7 @@
 
 package org.axonframework.commandhandling.distributed.jgroups;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.distributed.*;
-import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
-import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.serialization.Serializer;
-import org.jgroups.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Arrays.asList;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,7 +29,30 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
-import static java.util.Arrays.asList;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.distributed.CommandBusConnector;
+import org.axonframework.commandhandling.distributed.CommandBusConnectorCommunicationException;
+import org.axonframework.commandhandling.distributed.CommandCallbackRepository;
+import org.axonframework.commandhandling.distributed.CommandCallbackWrapper;
+import org.axonframework.commandhandling.distributed.CommandRouter;
+import org.axonframework.commandhandling.distributed.ConsistentHash;
+import org.axonframework.commandhandling.distributed.Member;
+import org.axonframework.commandhandling.distributed.RoutingStrategy;
+import org.axonframework.commandhandling.distributed.ServiceRegistryException;
+import org.axonframework.commandhandling.distributed.SimpleMember;
+import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.axonframework.common.Registration;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.serialization.Serializer;
+import org.jgroups.Address;
+import org.jgroups.JChannel;
+import org.jgroups.Message;
+import org.jgroups.Receiver;
+import org.jgroups.View;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConnector {
     private static final Logger logger = LoggerFactory.getLogger(JGroupsConnector.class);
@@ -100,6 +113,10 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
         consistentHash.updateAndGet(ch -> ch.with(localMember, loadFactor, commandFilter));
     }
 
+    public void disconnect() {
+        channel.disconnect();
+    }
+
     @Override
     public void getState(OutputStream ostream) throws Exception {
     }
@@ -134,7 +151,13 @@ public class JGroupsConnector implements CommandRouter, Receiver, CommandBusConn
                         }
                     });
 
-            Arrays.stream(left).forEach(lm -> consistentHash.updateAndGet(ch -> ch.without(members.get(lm))));
+            Arrays.stream(left).forEach(lm -> consistentHash.updateAndGet(ch -> {
+                SimpleMember<Address> member = members.get(lm);
+                if (member == null) {
+                    return ch;
+                }
+                return ch.without(member);
+            }));
             Arrays.stream(left).forEach(members::remove);
         }
         currentView = view;

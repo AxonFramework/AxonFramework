@@ -16,13 +16,13 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import java.util.List;
+
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-
-import java.util.List;
 
 /**
  * DataHolder for the DisruptorCommandBus. The CommandHandlingEntry maintains all information required for or produced
@@ -173,8 +173,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      */
     public void reset(CommandMessage<?> newCommand, MessageHandler<? super CommandMessage<?>> newCommandHandler, // NOSONAR - Not important
                       int newInvokerSegmentId, int newPublisherSegmentId, BlacklistDetectingCallback newCallback,
-                      List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors,
-                      List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
+                      List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors,
+                      List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors) {
         this.invokerSegmentId = newInvokerSegmentId;
         this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;

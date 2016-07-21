@@ -19,8 +19,8 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.junit.Test;
 

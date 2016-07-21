@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2013. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.serialization;
 
+import org.axonframework.messaging.MetaData;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -32,7 +33,7 @@ public class SerializedMetaDataTest {
         assertEquals(stubData, serializedMetaData.getData());
         assertEquals(byte[].class, serializedMetaData.getContentType());
         assertNull(serializedMetaData.getType().getRevision());
-        assertEquals("org.axonframework.messaging.metadata.MetaData", serializedMetaData.getType().getName());
+        assertEquals(MetaData.class.getName(), serializedMetaData.getType().getName());
     }
 
     @Test

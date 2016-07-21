@@ -16,9 +16,10 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.dsl.ProducerType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+
 import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandTargetResolver;
@@ -32,9 +33,9 @@ import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.serialization.Serializer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executor;
+import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * Configuration object for the DisruptorCommandBus. The DisruptorConfiguration provides access to the options to tweak
@@ -59,9 +60,9 @@ public class DisruptorConfiguration {
     private boolean rescheduleCommandsOnCorruptState;
     private long coolingDownPeriod;
     private Cache cache;
-    private final List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors = new ArrayList<>();
-    private final List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors = new ArrayList<>();
-    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new ArrayList<>();
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors = new ArrayList<>();
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors = new ArrayList<>();
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new ArrayList<>();
     private TransactionManager transactionManager;
     private CommandTargetResolver commandTargetResolver;
     private int invokerThreadCount = 1;
@@ -148,7 +149,7 @@ public class DisruptorConfiguration {
      *
      * @return the interceptors for the DisruptorCommandBus
      */
-    public List<MessageHandlerInterceptor<CommandMessage<?>>> getInvokerInterceptors() {
+    public List<MessageHandlerInterceptor<? super CommandMessage<?>>> getInvokerInterceptors() {
         return invokerInterceptors;
     }
 
@@ -163,7 +164,7 @@ public class DisruptorConfiguration {
      * @return {@code this} for method chaining
      */
     public DisruptorConfiguration setInvokerInterceptors(
-            List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors) {  //NOSONAR (setter may hide field)
+            List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors) {  //NOSONAR (setter may hide field)
         this.invokerInterceptors.clear();
         this.invokerInterceptors.addAll(invokerInterceptors);
         return this;
@@ -174,7 +175,7 @@ public class DisruptorConfiguration {
      *
      * @return the interceptors for the DisruptorCommandBus
      */
-    public List<MessageHandlerInterceptor<CommandMessage<?>>> getPublisherInterceptors() {
+    public List<MessageHandlerInterceptor<? super CommandMessage<?>>> getPublisherInterceptors() {
         return publisherInterceptors;
     }
 
@@ -197,7 +198,7 @@ public class DisruptorConfiguration {
      *
      * @return the dispatch interceptors for the DisruptorCommandBus
      */
-    public List<MessageDispatchInterceptor<CommandMessage<?>>> getDispatchInterceptors() {
+    public List<MessageDispatchInterceptor<? super CommandMessage<?>>> getDispatchInterceptors() {
         return dispatchInterceptors;
     }
 

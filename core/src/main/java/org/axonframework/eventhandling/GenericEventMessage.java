@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 
 import java.time.Clock;
 import java.time.Instant;

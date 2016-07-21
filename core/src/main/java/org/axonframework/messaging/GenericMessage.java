@@ -17,7 +17,6 @@
 package org.axonframework.messaging;
 
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.messaging.metadata.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.util.Map;
