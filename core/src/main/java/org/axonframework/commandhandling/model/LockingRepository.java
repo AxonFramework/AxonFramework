@@ -99,6 +99,10 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNewForLock(factoryMethod);
         final String aggregateIdentifier = aggregate.identifier();
+        if (aggregateIdentifier == null) {
+            throw new AggregateNotFoundException(null," Make sure the aggregate identifier for ["
+                + getAggregateType().getName() + "] is initialized before registering events");
+        }
         Lock lock = lockFactory.obtainLock(aggregateIdentifier);
         try {
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
