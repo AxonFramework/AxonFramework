@@ -21,27 +21,27 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <!-- Axon Event store -->
-    <bean id="eventStore" class="org.axonframework.eventstore.mongo.MongoEventStore" lazy-init="true">
+    <bean id="eventStore" class="org.axonframework.mongo3.eventstore.MongoEventStore" lazy-init="true">
         <constructor-arg>
-            <bean class="org.axonframework.serializer.bson.DBObjectXStreamSerializer"/>
+            <bean class="org.axonframework.mongo3.serializer.bson.DBObjectXStreamSerializer"/>
         </constructor-arg>
         <constructor-arg ref="template"/>
     </bean>
 
     <!-- Infrastructure Mongo -->
-    <bean id="template" class="org.axonframework.eventstore.mongo.DefaultMongoTemplate">
+    <bean id="template" class="org.axonframework.mongo3.eventstore.DefaultMongoTemplate">
         <constructor-arg ref="mongoDb"/>
     </bean>
 
     <bean id="mongoDb" factory-bean="mongoFactoryBean" factory-method="createMongo" lazy-init="true"/>
 
-    <bean id="mongoFactoryBean" class="org.axonframework.eventstore.mongo.MongoFactory" lazy-init="true">
+    <bean id="mongoFactoryBean" class="org.axonframework.mongo3.eventstore.MongoFactory" lazy-init="true">
         <property name="mongoOptions">
             <bean factory-bean="mongoOptionsFactory" factory-method="createMongoOptions"/>
         </property>
     </bean>
 
-    <bean id="mongoOptionsFactory" class="org.axonframework.eventstore.mongo.MongoOptionsFactory">
+    <bean id="mongoOptionsFactory" class="org.axonframework.mongo3.eventstore.MongoOptionsFactory">
         <property name="connectionsPerHost" value="100"/>
     </bean>
 
