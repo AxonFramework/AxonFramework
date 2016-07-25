@@ -493,7 +493,7 @@
             <para>MongoDB is a document based NoSQL store. Its scalability characteristics make it
                 suitable for use as an Event Store. Axon provides the <code>MongoEventStore</code>, which uses
                 MongoDB as backing database. It is contained in the Axon Mongo module (Maven
-                artifactId <code>axon-mongo</code>).</para>
+                artifactId <code>axon-mongo</code> for Mongo 2, and <code>axon-mongo3</code> for Mongo 3).</para>
             <para>Events are stored in two separate collections: one for the actual event streams
                 and one for the snapshots.</para>
             <para>By default, the <code>MongoEventStore</code> stores each event in a separate document. It is,
