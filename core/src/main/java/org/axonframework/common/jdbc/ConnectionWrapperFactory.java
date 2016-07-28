@@ -16,6 +16,8 @@
 
 package org.axonframework.common.jdbc;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -61,7 +63,9 @@ public abstract class ConnectionWrapperFactory {
                                                            return connection.hashCode();
                                                        } else if (method.getDeclaringClass().isAssignableFrom(
                                                                wrapperInterface)) {
-                                                           return method.invoke(wrapperHandler, args);
+                                                           return invokeMethodAndUnwrapNestedException(
+                                                                   method, wrapperHandler,
+                                                                   args);
                                                        } else if ("close".equals(method.getName())
                                                                && isEmpty(args)) {
                                                            closeHandler.close(connection);
@@ -71,7 +75,9 @@ public abstract class ConnectionWrapperFactory {
                                                            closeHandler.commit(connection);
                                                            return null;
                                                        } else {
-                                                           return method.invoke(connection, args);
+                                                           return invokeMethodAndUnwrapNestedException(method,
+                                                                                                       connection,
+                                                                                                       args);
                                                        }
                                                    });
     }
@@ -103,13 +109,23 @@ public abstract class ConnectionWrapperFactory {
                                                            closeHandler.commit(connection);
                                                            return null;
                                                        } else {
-                                                           return method.invoke(connection, args);
+                                                           return invokeMethodAndUnwrapNestedException(method, connection, args);
                                                        }
                                                    });
     }
 
     private static boolean isEmpty(Object[] array) {
         return array == null || array.length == 0;
+    }
+
+    private static Object invokeMethodAndUnwrapNestedException(Method method, Object objectToInvokeMethodOn,
+                                                               Object[] args)
+            throws Throwable {
+        try {
+            return method.invoke(objectToInvokeMethodOn, args);
+        } catch (InvocationTargetException e) {
+            throw e.getCause();
+        }
     }
 
     /**
