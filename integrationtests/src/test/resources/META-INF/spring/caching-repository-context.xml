@@ -28,7 +28,7 @@
         <property name="cacheName" value="testCache"/>
     </bean>
 
-    <bean class="org.axonframework.commandhandling.gateway.CommandGatewayFactoryBean">
+    <bean class="org.axonframework.spring.commandhandling.gateway.CommandGatewayFactoryBean">
         <property name="commandBus" ref="commandBus"/>
     </bean>
 

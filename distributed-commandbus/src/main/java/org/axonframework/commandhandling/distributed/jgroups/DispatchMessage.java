@@ -19,7 +19,7 @@ package org.axonframework.commandhandling.distributed.jgroups;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedMetaData;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -60,8 +60,8 @@ public class DispatchMessage implements Streamable, Externalizable {
     }
 
     /**
-     * Initialized a DispatchMessage for the given {@code commandMessage}, to be serialized using given
-     * {@code serializer}. {@code expectReply} indicates whether the sender will be expecting a reply.
+     * Initialized a DispatchMessage for the given <code>commandMessage</code>, to be serialized using given
+     * <code>serializer</code>. <code>expectReply</code> indicates whether the sender will be expecting a reply.
      *
      * @param commandMessage The message to send to the remote segment
      * @param serializer     The serialize to serialize the message payload and metadata with
@@ -82,7 +82,7 @@ public class DispatchMessage implements Streamable, Externalizable {
     /**
      * Indicates whether the sender of this message requests a reply.
      *
-     * @return {@code true} if a reply is expected, otherwise {@code false}.
+     * @return <code>true</code> if a reply is expected, otherwise <code>false</code>.
      */
     public boolean isExpectReply() {
         return expectReply;
@@ -96,11 +96,11 @@ public class DispatchMessage implements Streamable, Externalizable {
      */
     public CommandMessage<?> getCommandMessage(Serializer serializer) {
         final Object payload = serializer.deserialize(new SimpleSerializedObject<>(serializedPayload,
-                                                                                         byte[].class,
-                                                                                         payloadType,
-                                                                                         payloadRevision));
+                                                                                   byte[].class,
+                                                                                   payloadType,
+                                                                                   payloadRevision));
         final MetaData metaData = serializer.deserialize(new SerializedMetaData<>(serializedMetaData,
-                                                                                                   byte[].class));
+                                                                                  byte[].class));
         return new GenericCommandMessage<>(new GenericMessage<>(commandIdentifier, payload, metaData), commandName);
     }
 

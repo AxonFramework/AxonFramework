@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import net.sf.ehcache.CacheManager;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.common.caching.NoCache;

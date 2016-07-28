@@ -82,8 +82,8 @@ public class AsynchronousEventProcessingStrategyTest {
         doAnswer(invocation -> {
             List<? extends EventMessage<?>> events = (List) invocation.getArguments()[0];
             events.forEach(e -> {
-                latch.countDown();
                 ackedMessages.add(e);
+                latch.countDown();
             });
             return null;
         }).when(processor).accept(anyList());

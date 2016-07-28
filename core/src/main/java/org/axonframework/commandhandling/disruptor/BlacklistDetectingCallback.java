@@ -16,11 +16,12 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.RingBuffer;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.lmax.disruptor.RingBuffer;
 
 /**
  * Wrapper for command handler Callbacks that detects blacklisted aggregates and starts a cleanup process when an
@@ -35,7 +36,7 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
 
     private static final Logger logger = LoggerFactory.getLogger(BlacklistDetectingCallback.class);
 
-    private final CommandCallback<C, R> delegate;
+    private final CommandCallback<? super C, R> delegate;
     private final RingBuffer<CommandHandlingEntry> ringBuffer;
     private final DisruptorCommandBus commandBus;
     private final boolean rescheduleOnCorruptState;
@@ -54,7 +55,7 @@ public class BlacklistDetectingCallback<C, R> implements CommandCallback<C, R> {
      * @param rescheduleOnCorruptState Whether the command should be retried if it has been executed against corrupt
      *                                 state
      */
-    public BlacklistDetectingCallback(CommandCallback<C, R> delegate,
+    public BlacklistDetectingCallback(CommandCallback<? super C, R> delegate,
                                       RingBuffer<CommandHandlingEntry> ringBuffer,
                                       DisruptorCommandBus commandBus, boolean rescheduleOnCorruptState) {
         this.delegate = delegate;

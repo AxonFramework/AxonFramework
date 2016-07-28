@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,13 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import java.util.List;
+
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * DataHolder for the DisruptorCommandBus. The CommandHandlingEntry maintains all information required for or produced
@@ -46,7 +44,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
     private boolean isRecoverEntry;
     private String aggregateIdentifier;
     private int invokerSegmentId;
-    private final List<DomainEventMessage<?>> messagesToPublish = new ArrayList<>();
 
     /**
      * Initializes the CommandHandlingEntry
@@ -103,14 +100,6 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      */
     public void setResult(Object result) {
         this.result = result;
-    }
-
-    public List<DomainEventMessage<?>> getMessagesToPublish() {
-        return messagesToPublish;
-    }
-
-    public void publishMessages(List<DomainEventMessage<?>> messagesToPublish) {
-        this.messagesToPublish.addAll(messagesToPublish);
     }
 
     /**
@@ -184,13 +173,12 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
      */
     public void reset(CommandMessage<?> newCommand, MessageHandler<? super CommandMessage<?>> newCommandHandler, // NOSONAR - Not important
                       int newInvokerSegmentId, int newPublisherSegmentId, BlacklistDetectingCallback newCallback,
-                      List<MessageHandlerInterceptor<CommandMessage<?>>> invokerInterceptors,
-                      List<MessageHandlerInterceptor<CommandMessage<?>>> publisherInterceptors) {
+                      List<MessageHandlerInterceptor<? super CommandMessage<?>>> invokerInterceptors,
+                      List<MessageHandlerInterceptor<? super CommandMessage<?>>> publisherInterceptors) {
         this.invokerSegmentId = newInvokerSegmentId;
         this.publisherSegmentId = newPublisherSegmentId;
         this.callback = newCallback;
         this.isRecoverEntry = false;
-        this.messagesToPublish.clear();
         this.result = null;
         this.exceptionResult = null;
         this.aggregateIdentifier = null;
@@ -217,8 +205,8 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         exceptionResult = null;
         invocationInterceptorChain = null;
         invokerSegmentId = -1;
+        publisherSegmentId = -1;
         this.aggregateIdentifier = newAggregateIdentifier;
-        this.messagesToPublish.clear();
         reset(null);
     }
 

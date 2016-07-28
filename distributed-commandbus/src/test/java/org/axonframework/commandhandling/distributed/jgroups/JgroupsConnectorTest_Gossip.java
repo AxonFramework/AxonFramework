@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,8 @@ package org.axonframework.commandhandling.distributed.jgroups;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.distributed.AnnotationRoutingStrategy;
-import org.axonframework.commandhandling.distributed.ConsistentHash;
-import org.axonframework.commandhandling.distributed.DistributedCommandBus;
-import org.axonframework.commandhandling.distributed.UnresolvedRoutingKeyPolicy;
+import org.axonframework.commandhandling.distributed.*;
+import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.messaging.MessageHandler;
@@ -59,17 +57,19 @@ public class JgroupsConnectorTest_Gossip {
     private GossipRouter gossipRouter;
     private String clusterName;
     private XStreamSerializer serializer;
+    private RoutingStrategy routingStrategy;
 
     @Before
     public void setUp() throws Exception {
         channel1 = createChannel();
         channel2 = createChannel();
+        routingStrategy = new AnnotationRoutingStrategy(UnresolvedRoutingKeyPolicy.RANDOM_KEY);
         mockCommandBus1 = spy(new SimpleCommandBus());
         mockCommandBus2 = spy(new SimpleCommandBus());
         clusterName = "test-" + new Random().nextInt(Integer.MAX_VALUE);
         serializer = spy(new XStreamSerializer());
-        connector1 = new JGroupsConnector(channel1, clusterName, mockCommandBus1, serializer);
-        connector2 = new JGroupsConnector(channel2, clusterName, mockCommandBus2, serializer);
+        connector1 = new JGroupsConnector(mockCommandBus1, channel1, clusterName, serializer, routingStrategy);
+        connector2 = new JGroupsConnector(mockCommandBus2, channel2, clusterName, serializer, routingStrategy);
         gossipRouter = new GossipRouter(12001, "127.0.0.1");
     }
 
@@ -82,15 +82,13 @@ public class JgroupsConnectorTest_Gossip {
 
     @Test
     public void testConnectorRecoversWhenGossipRouterReconnects() throws Exception {
-        final AtomicInteger counter1 = new AtomicInteger(0);
-        final AtomicInteger counter2 = new AtomicInteger(0);
 
-        connector1.subscribe(String.class.getName(), new CountingCommandHandler(counter1));
-        connector1.connect(20);
+        connector1.updateMembership(20, AcceptAll.INSTANCE);
+        connector1.connect();
         assertTrue("Expected connector 1 to connect within 10 seconds", connector1.awaitJoined(10, TimeUnit.SECONDS));
 
-        connector2.subscribe(Long.class.getName(), new CountingCommandHandler(counter2));
-        connector2.connect(80);
+        connector2.updateMembership(80, AcceptAll.INSTANCE);
+        connector2.connect();
 
         assertTrue("Connector 2 failed to connect", connector2.awaitJoined());
 
@@ -98,7 +96,15 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         // now, they should detect eachother and start syncing their state
-        waitForConnectorSync(60);
+        int t = 0;
+        while (!connector1.getConsistentHash().getMembers().equals(connector2.getConsistentHash().getMembers())) {
+            // don't have a member for String yet, which means we must wait a little longer
+            if (t++ > 600) {
+                fail("Connectors did not manage to synchronize consistent hash ring within " + 60
+                             + " seconds...");
+            }
+            Thread.sleep(100);
+        }
     }
 
     @Test(timeout = 30000)
@@ -106,17 +112,21 @@ public class JgroupsConnectorTest_Gossip {
         gossipRouter.start();
 
         final AtomicInteger counter2 = new AtomicInteger(0);
-        connector2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
-        connector2.connect(20);
-        connector1.connect(20);
+        connector1.updateMembership(20, AcceptAll.INSTANCE);
+        connector1.connect();
+        connector2.updateMembership(20, AcceptAll.INSTANCE);
+        connector2.connect();
         assertTrue("Failed to connect", connector1.awaitJoined(5, TimeUnit.SECONDS));
         assertTrue("Failed to connect", connector2.awaitJoined(5, TimeUnit.SECONDS));
+
+        DistributedCommandBus bus1 = new DistributedCommandBus(connector1, connector1);
+        //bus1.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
+        DistributedCommandBus bus2 = new DistributedCommandBus(connector2, connector2);
+        bus2.subscribe(String.class.getName(), new CountingCommandHandler(counter2));
 
         // now, they should detect eachother and start syncing their state
         waitForConnectorSync(10);
 
-        DistributedCommandBus bus1 = new DistributedCommandBus(connector1, new AnnotationRoutingStrategy(
-                UnresolvedRoutingKeyPolicy.RANDOM_KEY));
         CommandGateway gateway1 = new DefaultCommandGateway(bus1);
 
         doThrow(new RuntimeException("Mock")).when(serializer).deserialize(argThat(new TypeSafeMatcher<SerializedObject<byte[]>>() {
@@ -140,7 +150,7 @@ public class JgroupsConnectorTest_Gossip {
 
     private void waitForConnectorSync(int timeoutInSeconds) throws InterruptedException {
         int t = 0;
-        while (ConsistentHash.emptyRing().equals(connector1.getConsistentHash())
+        while ((connector1.getConsistentHash().getMembers().isEmpty())
                 || !connector1.getConsistentHash().equals(connector2.getConsistentHash())) {
             // don't have a member for String yet, which means we must wait a little longer
             if (t++ > timeoutInSeconds * 10) {
@@ -164,7 +174,7 @@ public class JgroupsConnectorTest_Gossip {
         }
 
         @Override
-        public Object handle(CommandMessage<?> stringCommandMessage) throws Exception {
+        public Object handle(CommandMessage<?> message) throws Exception {
             counter.incrementAndGet();
             return "The Reply!";
         }

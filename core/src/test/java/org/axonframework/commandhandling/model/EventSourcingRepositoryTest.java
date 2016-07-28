@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,13 @@ package org.axonframework.commandhandling.model;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.After;
@@ -121,23 +120,23 @@ public class EventSourcingRepositoryTest {
 
         public StubAggregate(String id, String message) {
             this.id = id;
-            AggregateLifecycle.doApply(message).andThenApply(() -> "Got messages: " + messages.size());
+            AggregateLifecycle.apply(message).andThenApply(() -> "Got messages: " + messages.size());
         }
 
         @CommandHandler
         public void handle(String command) {
-            AggregateLifecycle.doApply(command);
+            AggregateLifecycle.apply(command);
         }
 
         public void changeState() {
-            AggregateLifecycle.doApply("Test more");
+            AggregateLifecycle.apply("Test more");
         }
 
         @EventHandler
         public void handle(String value, DomainEventMessage<String> message) {
             this.id = message.getAggregateIdentifier();
             if (value.startsWith("Test")) {
-                AggregateLifecycle.doApply("Last one").andThenApply(
+                AggregateLifecycle.apply("Last one").andThenApply(
                         () -> new GenericMessage<>("Got messages: " + messages.size(), MetaData.with("key", "value")));
             }
             this.messages.add(message);

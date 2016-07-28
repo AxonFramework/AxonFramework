@@ -16,20 +16,37 @@
 
 package org.axonframework.commandhandling;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.*;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
+import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
-
-import java.util.Arrays;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -116,7 +133,6 @@ public class SimpleCommandBusTest {
         assertFalse(CurrentUnitOfWork.isStarted());
     }
 
-
     @Test
     @SuppressWarnings("unchecked")
     public void testDispatchCommand_UnitOfWorkIsCommittedOnCheckedException() throws Exception {
@@ -147,26 +163,18 @@ public class SimpleCommandBusTest {
 
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = NoHandlerForCommandException.class)
     public void testDispatchCommand_NoHandlerSubscribed() {
-        final CommandCallback<Object, Object> callback = mock(CommandCallback.class);
-        final CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("test");
-        testSubject.dispatch(command, callback);
-
-        verify(callback).onFailure(eq(command), isA(NoHandlerForCommandException.class));
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"), mock(CommandCallback.class));
     }
 
     @SuppressWarnings("unchecked")
-    @Test
+    @Test(expected = NoHandlerForCommandException.class)
     public void testDispatchCommand_HandlerUnsubscribed() throws Exception {
-        final CommandCallback<Object, Object> callback = mock(CommandCallback.class);
         MyStringCommandHandler commandHandler = new MyStringCommandHandler();
         Registration subscription = testSubject.subscribe(String.class.getName(), commandHandler);
         subscription.close();
-        final CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("Say hi!");
-        testSubject.dispatch(command, callback);
-
-        verify(callback).onFailure(eq(command), isA(NoHandlerForCommandException.class));
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("Say hi!"), mock(CommandCallback.class));
     }
 
     @SuppressWarnings({"unchecked"})

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.IdentifierFactory;
@@ -30,7 +31,6 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
@@ -84,7 +84,7 @@ public class DisruptorCommandBusTest_MultiThreaded {
     }
 
     @SuppressWarnings("unchecked")
-    @Test(timeout = 10000)
+    @Test//(timeout = 10000)
     public void testDispatchLargeNumberCommandForDifferentAggregates() throws Exception {
         testSubject = new DisruptorCommandBus(
                 inMemoryEventStore, new DisruptorConfiguration().setBufferSize(4)

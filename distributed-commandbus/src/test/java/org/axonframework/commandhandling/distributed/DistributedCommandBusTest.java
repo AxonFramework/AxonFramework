@@ -1,116 +1,137 @@
-/*
- * Copyright (c) 2010-2012. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.axonframework.commandhandling.distributed;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
+import org.axonframework.monitoring.MessageMonitor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Collections;
-
-import static org.mockito.Mockito.*;
-
-/**
- * @author Allard Buijze
- */
+@SuppressWarnings("unchecked")
+@RunWith(MockitoJUnitRunner.class)
 public class DistributedCommandBusTest {
 
     private DistributedCommandBus testSubject;
-    private CommandBusConnector mockConnector;
-    private Registration mockSubscription;
-    private RoutingStrategy mockRoutingStrategy;
-    private MessageHandler<? super CommandMessage<?>> mockHandler;
-    private CommandMessage<?> message;
-    private FutureCallback<Object, Object> callback;
-    private MessageDispatchInterceptor mockDispatchInterceptor;
 
-    @SuppressWarnings("unchecked")
+    @Mock
+    private CommandRouter mockCommandRouter;
+    @Spy
+    private CommandBusConnector mockConnector = new StubCommandBusConnector();
+    @Mock
+    private MessageMonitor<? super CommandMessage<?>> mockMessageMonitor;
+    @Mock
+    private MessageMonitor.MonitorCallback mockMonitorCallback;
+    @Mock
+    private Member mockMember;
+
     @Before
     public void setUp() throws Exception {
-        mockConnector = mock(CommandBusConnector.class);
-        mockSubscription = mock(Registration.class);
-        when(mockConnector.subscribe(any(), any())).thenReturn(mockSubscription);
-        mockRoutingStrategy = mock(RoutingStrategy.class);
-        when(mockRoutingStrategy.getRoutingKey(isA(CommandMessage.class))).thenReturn("key");
-
-        testSubject = new DistributedCommandBus(mockConnector, mockRoutingStrategy);
-        mockHandler = mock(MessageHandler.class);
-        message = new GenericCommandMessage<>(new Object());
-        callback = new FutureCallback<>();
-        mockDispatchInterceptor = mock(MessageDispatchInterceptor.class);
-        when(mockDispatchInterceptor.handle(isA(CommandMessage.class))).thenAnswer(invocation -> invocation.getArguments()[0]);
-        testSubject.setCommandDispatchInterceptors(Collections.singleton(mockDispatchInterceptor));
+        testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector, mockMessageMonitor);
+        when(mockCommandRouter.findDestination(any())).thenReturn(Optional.of(mockMember));
+        when(mockMessageMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testDispatchIsDelegatedToConnection_WithCallback() throws Exception {
-        testSubject.dispatch(message, callback);
+    public void testDispatchWithoutCallbackWithMessageMonitor() throws Exception {
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
-        verify(mockRoutingStrategy).getRoutingKey(message);
-        verify(mockConnector).send("key", message, callback);
-        verify(mockDispatchInterceptor).handle(message);
+        testSubject.dispatch(testCommandMessage);
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockMessageMonitor).onMessageIngested(any());
+        verify(mockMonitorCallback).reportSuccess();
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void testDispatchIsDelegatedToConnection_WithoutCallback() throws Exception {
-        testSubject.dispatch(message);
+    public void testDispatchFailingCommandWithoutCallbackWithMessageMonitor() throws Exception {
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
 
-        verify(mockRoutingStrategy).getRoutingKey(message);
-        verify(mockConnector).send("key", message);
-        verify(mockDispatchInterceptor).handle(message);
-    }
+        testSubject.dispatch(testCommandMessage);
 
-    @SuppressWarnings("unchecked")
-    @Test(expected = CommandDispatchException.class)
-    public void testDispatchErrorIsPropagated_WithCallback() throws Exception {
-        doThrow(new Exception()).when(mockConnector).send(anyString(),
-                                                          any(CommandMessage.class),
-                                                          any(CommandCallback.class));
-        testSubject.dispatch(message, callback);
-    }
-
-    @Test(expected = CommandDispatchException.class)
-    @SuppressWarnings("unchecked")
-    public void testDispatchErrorIsPropagated_WithoutCallback() throws Exception {
-        doThrow(new Exception("Mock")).when(mockConnector).send(anyString(), any(CommandMessage.class));
-        testSubject.dispatch(message);
-        // exception is logged.
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockMessageMonitor).onMessageIngested(any());
+        verify(mockMonitorCallback).reportFailure(isA(Exception.class));
     }
 
     @Test
-    public void testSubscribeIsDoneOnConnector() {
-        testSubject.subscribe(Object.class.getName(), mockHandler);
+    public void testDispatchWithoutCallbackAndWithoutMessageMonitor() throws Exception {
+        testSubject = new DistributedCommandBus(mockCommandRouter, mockConnector);
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
-        verify(mockConnector).subscribe(Object.class.getName(), mockHandler);
+        testSubject.dispatch(testCommandMessage);
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector, never()).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockConnector).send(eq(mockMember), eq(testCommandMessage));
+        verify(mockMessageMonitor, never()).onMessageIngested(any());
+        verify(mockMonitorCallback, never()).reportSuccess();
     }
 
     @Test
-    public void testUnsubscribeIsDoneOnConnector() {
-        Registration subscription = testSubject.subscribe(Object.class.getName(), mockHandler);
-        subscription.cancel();
+    public void testDispatchWithCallbackAndMessageMonitor() throws Exception {
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("test");
 
-        verify(mockSubscription).cancel();
+        CommandCallback mockCallback = mock(CommandCallback.class);
+        testSubject.dispatch(testCommandMessage, mockCallback);
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockMessageMonitor).onMessageIngested(any());
+        verify(mockMonitorCallback).reportSuccess();
+        verify(mockCallback).onSuccess(testCommandMessage, null);
+
+    }
+
+    @Test
+    public void testDispatchFailingCommandWithCallbackAndMessageMonitor() throws Exception {
+        CommandMessage<Object> testCommandMessage = GenericCommandMessage.asCommandMessage("fail");
+
+        CommandCallback mockCallback = mock(CommandCallback.class);
+        testSubject.dispatch(testCommandMessage, mockCallback);
+
+        verify(mockCommandRouter).findDestination(testCommandMessage);
+        verify(mockConnector).send(eq(mockMember), eq(testCommandMessage), any(CommandCallback.class));
+        verify(mockMessageMonitor).onMessageIngested(any());
+        verify(mockMonitorCallback).reportFailure(isA(Exception.class));
+        verify(mockCallback).onFailure(eq(testCommandMessage), isA(Exception.class));
+    }
+
+    private static class StubCommandBusConnector implements CommandBusConnector {
+        @Override
+        public <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception {
+            //Do nothing
+        }
+
+        @Override
+        public <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception {
+            if ("fail".equals(command.getPayload())) {
+                callback.onFailure(command, new Exception("Failing"));
+            } else {
+                callback.onSuccess(command, null);
+            }
+        }
+
+        @Override
+        public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
+            return null;
+        }
     }
 }

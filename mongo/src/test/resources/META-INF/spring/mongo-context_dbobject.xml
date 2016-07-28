@@ -39,6 +39,7 @@
         <property name="mongoOptions">
             <bean factory-bean="mongoOptionsFactory" factory-method="createMongoOptions"/>
         </property>
+        <property name="writeConcern" value="JOURNALED"/>
     </bean>
 
     <bean id="mongoOptionsFactory" class="org.axonframework.mongo.eventsourcing.eventstore.MongoOptionsFactory">

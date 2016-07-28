@@ -17,8 +17,8 @@
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.metadata.CorrelationDataProvider;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.correlation.CorrelationDataProvider;
 
 import java.util.Map;
 import java.util.Optional;

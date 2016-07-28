@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,25 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
+
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.MonitorAwareCallback;
+import org.axonframework.commandhandling.distributed.commandfilter.CommandNameFilter;
+import org.axonframework.commandhandling.distributed.commandfilter.DenyAll;
+import org.axonframework.commandhandling.distributed.commandfilter.DenyCommandNameFilter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.monitoring.NoOpMessageMonitor;
 
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
@@ -40,45 +48,63 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class DistributedCommandBus implements CommandBus {
 
+    public static final int INITIAL_LOAD_FACTOR = 100;
     private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command "
             + "on the DistributedCommandBus";
 
-    private final RoutingStrategy routingStrategy;
+    private final CommandRouter commandRouter;
     private final CommandBusConnector connector;
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
+    private volatile int loadFactor = INITIAL_LOAD_FACTOR;
+    private AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
+    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
 
     /**
-     * Initializes the command bus with the given <code>connector</code> and an {@link AnnotationRoutingStrategy}.
+     * Initializes the command bus with the given {@code commandRouter} and {@code connector}. The
+     * {@code commandRouter} is used to determine the target node for each dispatched command. The {@code connector}
+     * performs the actual transport of the message to the destination node.
      *
-     * @param connector the connector that connects the different command bus segments
+     * @param commandRouter the service registry that discovers the network of worker nodes
+     * @param connector     the connector that connects the different command bus segments
      */
-    public DistributedCommandBus(CommandBusConnector connector) {
-        this(connector, new AnnotationRoutingStrategy());
+    public DistributedCommandBus(CommandRouter commandRouter, CommandBusConnector connector) {
+        this(commandRouter, connector, NoOpMessageMonitor.INSTANCE);
     }
 
     /**
-     * Initializes the command bus with the given <code>connector</code> and <code>routingStrategy</code>. The
-     * <code>routingStrategy</code> is used to calculate a routing key for each dispatched command. For a given
-     * configuration of segments, commands resulting in the same routing key are routed to the same segment.
+     * Initializes the command bus with the given {@code commandRouter}, {@code connector} and {@code messageMonitor}.
+     * The {@code commandRouter} is used to determine the target node for each dispatched command.
+     * The {@code connector} performs the actual transport of the message to the destination node.
+     * The {@code messageMonitor} is used to monitor incoming messages and their execution result.
      *
-     * @param connector       the connector that connects the different command bus segments
-     * @param routingStrategy the RoutingStrategy to define routing keys for each command
+     * @param commandRouter the service registry that discovers the network of worker nodes
+     * @param connector     the connector that connects the different command bus segments
+     * @param messageMonitor the message monitor to notify of incoming messages and their execution result
      */
-    public DistributedCommandBus(CommandBusConnector connector, RoutingStrategy routingStrategy) {
+    public DistributedCommandBus(CommandRouter commandRouter, CommandBusConnector connector, MessageMonitor<? super CommandMessage<?>> messageMonitor) {
+        Assert.notNull(commandRouter, "serviceRegistry may not be null");
         Assert.notNull(connector, "connector may not be null");
-        Assert.notNull(routingStrategy, "routingStrategy may not be null");
+        Assert.notNull(messageMonitor, "messageMonitor may not be null");
+
+        this.commandRouter = commandRouter;
         this.connector = connector;
-        this.routingStrategy = routingStrategy;
+        this.messageMonitor = messageMonitor;
     }
 
     @Override
     public <C> void dispatch(CommandMessage<C> command) {
-        CommandMessage<? extends C> interceptedCommand = intercept(command);
-        String routingKey = routingStrategy.getRoutingKey(interceptedCommand);
-        try {
-            connector.send(routingKey, interceptedCommand);
-        } catch (Exception e) {
-            throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
+        if (NoOpMessageMonitor.INSTANCE.equals(messageMonitor)) {
+            CommandMessage<? extends C> interceptedCommand = intercept(command);
+            Member destination = commandRouter.findDestination(command)
+                    .orElseThrow(() -> new CommandDispatchException("No node known to accept " + command.getCommandName()));
+            try {
+                connector.send(destination, interceptedCommand);
+            } catch (Exception e) {
+                destination.suspect();
+                throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
+            }
+        } else {
+            dispatch(command, null);
         }
     }
 
@@ -90,10 +116,14 @@ public class DistributedCommandBus implements CommandBus {
     @Override
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         CommandMessage<? extends C> interceptedCommand = intercept(command);
-        String routingKey = routingStrategy.getRoutingKey(interceptedCommand);
+        MonitorAwareCallback<? super C, R> monitorAwareCallback = new MonitorAwareCallback<>(callback, messageMonitor.onMessageIngested(command));
+
+        Member destination = commandRouter.findDestination(command)
+                .orElseThrow(() -> new CommandDispatchException("No node known to accept " + command.getCommandName()));
         try {
-            connector.send(routingKey, interceptedCommand, callback);
+            connector.send(destination, interceptedCommand, monitorAwareCallback);
         } catch (Exception e) {
+            destination.suspect();
             throw new CommandDispatchException(DISPATCH_ERROR_MESSAGE + ": " + e.getMessage(), e);
         }
     }
@@ -114,7 +144,29 @@ public class DistributedCommandBus implements CommandBus {
      */
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        return connector.subscribe(commandName, handler);
+        Registration reg = connector.subscribe(commandName, handler);
+        updateFilter(commandFilter.get().or(new CommandNameFilter(commandName)));
+
+        return () -> {
+            updateFilter(commandFilter.get().and(new DenyCommandNameFilter(commandName)));
+            return reg.cancel();
+        };
+
+    }
+
+    private void updateFilter(Predicate<CommandMessage<?>> newFilter) {
+        if (!commandFilter.getAndSet(newFilter).equals(newFilter)) {
+            commandRouter.updateMembership(loadFactor, newFilter);
+        }
+    }
+
+    public int getLoadFactor() {
+        return loadFactor;
+    }
+
+    public void updateLoadFactor(int loadFactor) {
+        this.loadFactor = loadFactor;
+        commandRouter.updateMembership(loadFactor, commandFilter.get());
     }
 
     /**

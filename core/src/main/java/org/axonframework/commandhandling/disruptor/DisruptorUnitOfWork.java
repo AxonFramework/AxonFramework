@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,18 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.*;
-
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.AbstractUnitOfWork;
+import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ExecutionResult;
+import org.axonframework.messaging.unitofwork.MessageProcessingContext;
+import org.axonframework.messaging.unitofwork.RollbackConfiguration;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 /**
  * Specialized UnitOfWork instance for the {@link DisruptorCommandBus}. It expects the executing command message to
@@ -31,7 +36,7 @@ import java.util.function.UnaryOperator;
  * @author Allard Buijze
  * @since 2.0
  */
-public class DisruptorUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
+public abstract class DisruptorUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
     private MessageProcessingContext<T> processingContext;
 
@@ -48,6 +53,8 @@ public class DisruptorUnitOfWork<T extends Message<?>> extends AbstractUnitOfWor
             processingContext.reset(message);
         }
         setPhase(Phase.NOT_STARTED);
+        resources().clear();
+        correlationDataProviders().clear();
     }
 
     /**

@@ -16,6 +16,22 @@
 
 package org.axonframework.commandhandling;
 
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -24,13 +40,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
-
-import java.util.Arrays;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -100,13 +109,10 @@ public class AsynchronousCommandBusTest {
     }
 
     @SuppressWarnings("unchecked")
-    @Test
-    public void testCallbackIsInvokedWhenNoHandlerIsRegistered() {
-        final CommandCallback callback = mock(CommandCallback.class);
-        final CommandMessage<Object> command = GenericCommandMessage.asCommandMessage("test");
-        testSubject.dispatch(command, callback);
+    @Test(expected = NoHandlerForCommandException.class)
+    public void testExceptionIsThrownWhenNoHandlerIsRegistered() {
+        testSubject.dispatch(GenericCommandMessage.asCommandMessage("test"));
 
-        verify(callback).onFailure(eq(command), isA(NoHandlerForCommandException.class));
     }
 
     @Test

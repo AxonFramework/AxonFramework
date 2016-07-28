@@ -18,7 +18,7 @@ package org.axonframework.mongo.eventsourcing.eventstore;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
-import org.axonframework.mongo.common.AbstractMongoTemplate;
+import org.axonframework.mongo.AbstractMongoTemplate;
 import org.bson.Document;
 
 /**

@@ -16,20 +16,52 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import com.lmax.disruptor.SleepingWaitStrategy;
-import com.lmax.disruptor.dsl.ProducerType;
+import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
 import org.axonframework.commandhandling.model.Aggregate;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.MockException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.EventStreamDecorator;
+import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
@@ -40,6 +72,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.monitoring.MessageMonitor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -49,18 +82,8 @@ import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.*;
-import java.util.function.Consumer;
-
-import static java.util.Arrays.asList;
-import static junit.framework.TestCase.*;
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.mockito.Mockito.*;
+import com.lmax.disruptor.SleepingWaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 
 /**
  * @author Allard Buijze
@@ -286,6 +309,56 @@ public class DisruptorCommandBusTest {
         // we expect 2 events, 1 from aggregate constructor, one from doSomething method invocation
         assertEquals(1, lastEvent.getSequenceNumber());
         assertEquals(aggregateIdentifier, lastEvent.getAggregateIdentifier());
+    }
+
+    @Test
+    public void testMessageMonitoring() throws InterruptedException {
+        eventStore.storedEvents.clear();
+        final AtomicLong successCounter = new AtomicLong();
+        final AtomicLong failureCounter = new AtomicLong();
+        final AtomicLong ignoredCounter = new AtomicLong();
+
+        testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration()
+                .setBufferSize(8)
+                .setMessageMonitor(msg -> new MessageMonitor.MonitorCallback() {
+            @Override
+            public void reportSuccess() {
+                successCounter.incrementAndGet();
+            }
+
+            @Override
+            public void reportFailure(Throwable cause) {
+                failureCounter.incrementAndGet();
+            }
+
+            @Override
+            public void reportIgnored() {
+                ignoredCounter.incrementAndGet();
+            }
+        }));
+        testSubject.subscribe(StubCommand.class.getName(), stubHandler);
+        testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
+        testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
+        stubHandler.setRepository(testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class)));
+
+        String aggregateIdentifier2 = UUID.randomUUID().toString();
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new ErrorCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)));
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier)));
+
+        testSubject.dispatch(asCommandMessage(new CreateCommand(aggregateIdentifier2)));
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
+        testSubject.dispatch(asCommandMessage(new ErrorCommand(aggregateIdentifier2)));
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
+        testSubject.dispatch(asCommandMessage(new StubCommand(aggregateIdentifier2)));
+
+        testSubject.stop();
+
+        assertEquals(8, successCounter.get());
+        assertEquals(2, failureCounter.get());
+        assertEquals(0, ignoredCounter.get());
     }
 
     @Test(expected = IllegalStateException.class)

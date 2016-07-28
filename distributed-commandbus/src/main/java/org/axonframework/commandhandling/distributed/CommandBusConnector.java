@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,11 @@ public interface CommandBusConnector {
      * will result in the command being sent to the same member. Each message must be sent to <em>exactly one
      * member</em>.
      *
-     * @param routingKey The key describing the routing requirements of this command. Generally, commands with the same
-     *                   routingKey will be sent to the same destination.
-     * @param command    The command to send to the (remote) member
+     * @param destination The member of the network to send the message to
+     * @param command     The command to send to the (remote) member
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <C> void send(String routingKey, CommandMessage<C> command) throws Exception;
+    <C> void send(Member destination, CommandMessage<? extends C> command) throws Exception;
 
     /**
      * Sends the given <code>command</code> to the node assigned to handle messages with the given
@@ -64,28 +63,14 @@ public interface CommandBusConnector {
      * Connectors route the commands based on the given <code>routingKey</code>. Using the same <code>routingKey</code>
      * will result in the command being sent to the same member.
      *
-     * @param routingKey The key describing the routing requirements of this command. Generally, commands with the same
-     *                   routingKey will be sent to the same destination.
-     * @param command    The command to send to the (remote) member
-     * @param callback   The callback on which result notifications are sent
-     * @param <R>        The type of object expected as return value in the callback
+     * @param destination The member of the network to send the message to
+     * @param command     The command to send to the (remote) member
+     * @param callback    The callback
+     * @param <C>         The type of object expected as command
+     * @param <R>         The type of object expected as result of the command
      * @throws Exception when an error occurs before or during the sending of the message
      */
-    <C, R> void send(String routingKey, CommandMessage<C> command, CommandCallback<? super C, R> callback)
-            throws Exception;
+    <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception;
 
-    /**
-     * Subscribe the given <code>handler</code> to commands of type <code>commandType</code> to the local segment of
-     * the
-     * command bus.
-     * <p/>
-     * If a subscription already exists for the given type, the behavior is undefined. Implementations may throw an
-     * Exception to refuse duplicate subscription or alternatively decide whether the existing or new
-     * <code>handler</code> gets the subscription.
-     *
-     * @param commandName The name of the command to subscribe the handler to
-     * @param handler     The handler instance that handles the given type of command
-     * @return a handle to unsubscribe the <code>handler</code>. When unsubscribed it will no longer receive commands.
-     */
     Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 }

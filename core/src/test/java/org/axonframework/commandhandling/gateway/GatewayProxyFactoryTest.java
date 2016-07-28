@@ -95,7 +95,7 @@ public class GatewayProxyFactoryTest {
         final Object metaTest = new Object();
         GatewayProxyFactory testSubject = new GatewayProxyFactory(mockCommandBus);
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
-        gateway.fireAndForget("Command", org.axonframework.messaging.metadata.MetaData.from(singletonMap("otherKey", "otherVal")),
+        gateway.fireAndForget("Command", org.axonframework.messaging.MetaData.from(singletonMap("otherKey", "otherVal")),
                               metaTest, "value");
         // in this case, no callback is used
         verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<Object>>() {
@@ -531,7 +531,7 @@ public class GatewayProxyFactoryTest {
 
     private interface CompleteGateway {
 
-        void fireAndForget(Object command, org.axonframework.messaging.metadata.MetaData meta,
+        void fireAndForget(Object command, org.axonframework.messaging.MetaData meta,
                            @MetaData("test") Object metaTest, @MetaData("key") Object metaKey);
 
         String waitForReturnValue(Object command);

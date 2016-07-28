@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.TargetAggregateIdentifier;
+import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventsourcing.AggregateIdentifier;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 

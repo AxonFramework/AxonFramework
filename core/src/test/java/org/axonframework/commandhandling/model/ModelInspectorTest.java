@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.annotation.MessageHandler;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.junit.Test;
 
 import javax.persistence.Id;

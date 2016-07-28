@@ -16,7 +16,7 @@
 
 package org.axonframework.commandhandling.model;
 
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -27,10 +27,6 @@ import java.util.concurrent.Callable;
 public abstract class AggregateLifecycle {
 
     private static final ThreadLocal<AggregateLifecycle> CURRENT = new ThreadLocal<>();
-
-    public static ApplyMore doApply(Object payload) {
-        return AggregateLifecycle.getInstance().doApply(payload, MetaData.emptyInstance());
-    }
 
     public static ApplyMore apply(Object payload, MetaData metaData) {
         return AggregateLifecycle.getInstance().doApply(payload, metaData);

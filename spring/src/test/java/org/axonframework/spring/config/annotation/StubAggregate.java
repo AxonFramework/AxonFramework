@@ -16,12 +16,12 @@
 
 package org.axonframework.spring.config.annotation;
 
+import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.AggregateIdentifier;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.messaging.metadata.MetaData;
+import org.axonframework.messaging.MetaData;
 
 import java.util.UUID;
 
