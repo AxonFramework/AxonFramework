@@ -16,12 +16,12 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark.mongo;
 
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.mongo.DefaultMongoTemplate;
-import org.axonframework.eventsourcing.eventstore.mongo.MongoEventStorageEngine;
+import org.axonframework.mongo.eventsourcing.eventstore.DefaultMongoTemplate;
+import org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
 
 /**
@@ -32,14 +32,14 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
     private static final IdentifierFactory IDENTIFIER_FACTORY = IdentifierFactory.getInstance();
     private EventStore eventStore;
 
-    private Mongo mongoDb;
+    private MongoClient mongoDb;
 
     public static void main(String[] args) throws Exception {
         AbstractEventStoreBenchmark benchmark = prepareBenchMark("META-INF/spring/benchmark-mongo-context.xml");
         benchmark.startBenchMark();
     }
 
-    public MongoEventStoreBenchMark(Mongo mongoDb, MongoEventStorageEngine mongoEventStorageEngine) {
+    public MongoEventStoreBenchMark(MongoClient mongoDb, MongoEventStorageEngine mongoEventStorageEngine) {
         this.mongoDb = mongoDb;
         this.eventStore = new EmbeddedEventStore(mongoEventStorageEngine);
     }
@@ -52,8 +52,8 @@ public class MongoEventStoreBenchMark extends AbstractEventStoreBenchmark {
     @Override
     protected void prepareEventStore() {
         DefaultMongoTemplate mongoTemplate = new DefaultMongoTemplate(mongoDb);
-        mongoTemplate.eventCollection().getDB().dropDatabase();
-        mongoTemplate.snapshotCollection().getDB().dropDatabase();
+        mongoTemplate.eventCollection().drop();
+        mongoTemplate.snapshotCollection().drop();
     }
 
     private class MongoBenchmark implements Runnable {

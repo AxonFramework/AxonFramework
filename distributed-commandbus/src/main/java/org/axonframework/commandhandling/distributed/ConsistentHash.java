@@ -16,21 +16,12 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.function.Predicate;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.Assert;
 import org.axonframework.common.digest.Digester;
+
+import java.util.*;
+import java.util.function.Predicate;
 
 public class ConsistentHash {
 

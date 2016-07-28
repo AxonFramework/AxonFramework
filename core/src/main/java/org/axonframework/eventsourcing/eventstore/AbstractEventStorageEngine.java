@@ -38,6 +38,13 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     private EventUpcasterChain upcasterChain = new DefaultEventUpcasterChain();
     private PersistenceExceptionResolver persistenceExceptionResolver;
 
+    public AbstractEventStorageEngine() {
+    }
+
+    public AbstractEventStorageEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
+        this.persistenceExceptionResolver = persistenceExceptionResolver;
+    }
+
     @Override
     public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
         Stream<? extends TrackedEventData<?>> input = readEventData(trackingToken, mayBlock);
