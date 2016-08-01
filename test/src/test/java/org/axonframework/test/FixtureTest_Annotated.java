@@ -18,7 +18,6 @@ package org.axonframework.test;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -50,7 +49,7 @@ public class FixtureTest_Annotated {
         }
     }
 
-    @Test(expected = IncompatibleAggregateException.class)
+    @Test
     public void testNullIdentifierIsRejected() {
         try {
             fixture.given(new MyEvent(null, 0))
@@ -59,7 +58,7 @@ public class FixtureTest_Annotated {
                     .expectVoidReturnType();
             fail("Expected test fixture to report failure");
         } catch (AxonAssertionError error) {
-            assertEquals("Expected test to fail with IncompatibleAggregateException", IncompatibleAggregateException.class, error.getCause().getClass());
+            assertTrue("Expected test to fail with IncompatibleAggregateException", error.getMessage().contains("IncompatibleAggregateException"));
         }
     }
 
