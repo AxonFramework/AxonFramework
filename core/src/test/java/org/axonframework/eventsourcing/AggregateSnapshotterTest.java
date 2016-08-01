@@ -42,7 +42,7 @@ public class AggregateSnapshotterTest {
     public void setUp() throws Exception {
         EventStorageEngine mockStorageEngine = mock(EventStorageEngine.class);
         mockAggregateFactory = mock(AggregateFactory.class);
-        when(mockAggregateFactory.getAggregateType()).thenReturn(Object.class);
+        when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
         testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory));
     }
 
@@ -53,10 +53,10 @@ public class AggregateSnapshotterTest {
         DomainEventMessage firstEvent = new GenericDomainEventMessage<>("type", aggregateIdentifier, (long) 0,
                                                                         "Mock contents", MetaData.emptyInstance());
         DomainEventStream eventStream = DomainEventStream.of(firstEvent);
-        Object aggregate = new Object();
+        StubAggregate aggregate = new StubAggregate(aggregateIdentifier);
         when(mockAggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent)).thenReturn(aggregate);
 
-        DomainEventMessage snapshot = testSubject.createSnapshot(Object.class,
+        DomainEventMessage snapshot = testSubject.createSnapshot(StubAggregate.class,
                                                                  aggregateIdentifier, eventStream);
 
         verify(mockAggregateFactory).createAggregateRoot(aggregateIdentifier, firstEvent);
@@ -78,7 +78,7 @@ public class AggregateSnapshotterTest {
         when(mockAggregateFactory.createAggregateRoot(any(), any(DomainEventMessage.class)))
                 .thenAnswer(invocation -> ((DomainEventMessage) invocation.getArguments()[1]).getPayload());
 
-        DomainEventMessage snapshot = testSubject.createSnapshot(Object.class,
+        DomainEventMessage snapshot = testSubject.createSnapshot(StubAggregate.class,
                                                                  aggregateIdentifier.toString(), eventStream);
         assertSame("Snapshotter did not recognize the aggregate snapshot", aggregate, snapshot.getPayload());
 
