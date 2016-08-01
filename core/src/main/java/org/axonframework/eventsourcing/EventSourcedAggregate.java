@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -103,6 +104,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             lastEventSequenceNumber = ((DomainEventMessage) msg).getSequenceNumber();
         }
         super.publish(msg);
+        if (identifier() == null) {
+            throw new IncompatibleAggregateException("Aggregate identifier must be non-null after applying an event. " +
+                                                             "Make sure the aggregate identifier is initialized at " +
+                                                             "the latest when handling the creation event.");
+        }
     }
 
     @Override
@@ -120,7 +126,8 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
     @Override
     protected void publishOnEventBus(EventMessage<?> msg) {
         if (!initializing) {
-            super.publishOnEventBus(msg);
+            // force conversion of LazyIdentifierDomainEventMessage to Generic to release reference to Aggregate.
+            super.publishOnEventBus(msg.andMetaData(Collections.emptyMap()));
         }
     }
 
@@ -192,8 +199,9 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             String identifier = identifier();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       new GenericEventMessage<>(identifier,
-                                                                                 getPayload(), getMetaData(), getTimestamp()));
+                                                       new GenericEventMessage<>(identifier, getPayload(),
+                                                                                 getMetaData(), getTimestamp()))
+                        .andMetaData(additionalMetaData);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
                                                               getMetaData().mergedWith(additionalMetaData));

@@ -18,6 +18,7 @@ package org.axonframework.test;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.IncompatibleAggregateException;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -46,6 +47,19 @@ public class FixtureTest_Annotated {
     public void tearDown() throws Exception {
         if (CurrentUnitOfWork.isStarted()) {
             fail("A unit of work is still running");
+        }
+    }
+
+    @Test(expected = IncompatibleAggregateException.class)
+    public void testNullIdentifierIsRejected() {
+        try {
+            fixture.given(new MyEvent(null, 0))
+                    .when(new TestCommand("test"))
+                    .expectEvents(new MyEvent("test", 1))
+                    .expectVoidReturnType();
+            fail("Expected test fixture to report failure");
+        } catch (AxonAssertionError error) {
+            assertEquals("Expected test to fail with IncompatibleAggregateException", IncompatibleAggregateException.class, error.getCause().getClass());
         }
     }
 
