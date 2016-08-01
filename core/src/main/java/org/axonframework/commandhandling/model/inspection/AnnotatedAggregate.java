@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateInvocationException;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ApplyMore;
-import org.axonframework.common.annotation.MessageHandler;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -156,7 +156,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public Object handle(CommandMessage<?> msg) throws Exception {
         return executeWithResult(() -> {
-            MessageHandler<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
+            MessageHandlingMember<? super T> handler = inspector.commandHandlers().get(msg.getCommandName());
             Object result = handler.handle(msg, aggregateRoot);
             if (aggregateRoot == null) {
                 aggregateRoot = (T) result;

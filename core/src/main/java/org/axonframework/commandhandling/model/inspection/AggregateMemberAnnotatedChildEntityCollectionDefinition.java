@@ -35,6 +35,7 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
 
 public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements ChildEntityDefinition {
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
         Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
@@ -43,26 +44,27 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements 
         }
 
         EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
-        String parentRoutingKey = declaringEntity.routingKey();
         Map<String, Property<Object>> routingKeyProperties =
                 childEntityModel.commandHandlers().values().stream()
+                        .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
+                        .filter(h -> h != null)
                         .collect(Collectors.toConcurrentMap(
-                                CommandMessageHandler::commandName,
+                                CommandMessageHandlingMember::commandName,
                                 h -> getProperty(h.payloadType(),
-                                                 getOrDefault(h.routingKey(), childEntityModel.routingKey()))));
+                                                 getOrDefault(childEntityModel.routingKey(), h.routingKey()))));
         //noinspection unchecked
         return Optional.of(new AnnotatedChildEntity<>(
-                parentRoutingKey, field, childEntityModel,
+                field, childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
                 (Boolean) attributes.get("forwardEvents"),
                 (msg, parent) -> {
                     Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
-                    Iterable<?> iterable = (Iterable) ReflectionUtils.getFieldValue(field, parent);
+                    Iterable<?> iterable = ReflectionUtils.getFieldValue(field, parent);
                     return StreamSupport.stream(iterable.spliterator(), false)
-                            .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i)))
-                            .findFirst()
-                            .orElse(null);
-                }));
+                            .filter(i -> Objects.equals(Objects.toString(routingValue, ""), childEntityModel.getIdentifier(i)))
+                            .findFirst().orElse(null);
+                },
+                (msg, parent) -> ReflectionUtils.getFieldValue(field, parent)));
     }
 
     private static Class<?> resolveType(Map<String, Object> attributes, Field field) {

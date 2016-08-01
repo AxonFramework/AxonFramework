@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.Map;
 
@@ -31,10 +32,10 @@ public interface EntityModel<T> {
 
     void publish(EventMessage<?> message, T target);
 
-    Map<String, CommandMessageHandler<? super T>> commandHandlers();
+    Map<String, MessageHandlingMember<? super T>> commandHandlers();
 
-    default CommandMessageHandler<? super T> commandHandler(String commandName) {
-        CommandMessageHandler<? super T> handler = commandHandlers().get(commandName);
+    default MessageHandlingMember<? super T> commandHandler(String commandName) {
+        MessageHandlingMember<? super T> handler = commandHandlers().get(commandName);
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandName));
         }

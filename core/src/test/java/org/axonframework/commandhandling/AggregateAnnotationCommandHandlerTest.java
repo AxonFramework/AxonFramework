@@ -28,10 +28,10 @@ import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.FixedValueParameterResolver;
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -551,8 +551,7 @@ public class AggregateAnnotationCommandHandlerTest {
         final StubCommandAnnotatedAggregate root = new StubCommandAnnotatedAggregate(aggregateIdentifier);
         root.initializeEntity("1");
         when(mockRepository.load(any(String.class), anyLong())).thenReturn(createAggregate(root));
-        commandBus.dispatch(asCommandMessage(
-                new UpdateEntityFromMapStateCommand("abc123", null)),
+        commandBus.dispatch(asCommandMessage(new UpdateEntityFromMapStateCommand("abc123", null)),
                             new CommandCallback<Object, Object>() {
                                 @Override
                                 public void onSuccess(CommandMessage<?> commandMessage, Object result) {
@@ -601,7 +600,7 @@ public class AggregateAnnotationCommandHandlerTest {
         @CommandHandler
         public StubCommandAnnotatedAggregate(CreateCommand createCommand, MetaData metaData,
                                              UnitOfWork<CommandMessage<?>> unitOfWork,
-                                             @org.axonframework.common.annotation.MetaData("notExist") String value) {
+                                             @org.axonframework.messaging.annotation.MetaData("notExist") String value) {
             super(createCommand.getId());
             Assert.assertNotNull(metaData);
             Assert.assertNotNull(unitOfWork);

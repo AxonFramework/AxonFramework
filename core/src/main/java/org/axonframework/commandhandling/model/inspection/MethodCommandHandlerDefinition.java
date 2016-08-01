@@ -18,43 +18,37 @@ package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.model.AbstractMessageHandler;
-import org.axonframework.common.annotation.HandlerDefinition;
-import org.axonframework.common.annotation.MessageHandler;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.util.Map;
-import java.util.Optional;
 
-import static org.axonframework.common.annotation.AnnotationUtils.findAnnotationAttributes;
+public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition {
 
-public class MethodCommandHandlerDefinition implements HandlerDefinition {
-
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> Optional<MessageHandler<T>> createHandler(Class<T> declaringType, Executable executable, ParameterResolverFactory parameterResolverFactory) {
-        Map<String, Object> annotation = findAnnotationAttributes(executable, CommandHandler.class).orElse(null);
-        if (annotation != null && executable.getParameterCount() > 0) {
-            return Optional.of(new MethodCommandMessageHandler<>(executable, annotation,
-                                                                 parameterResolverFactory));
-        }
-        return Optional.empty();
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
+        return original.annotationAttributes(CommandHandler.class)
+                .map(attr -> (MessageHandlingMember<T>) new MethodCommandMessageHandlingMember(original, attr))
+                .orElse(original);
     }
 
-    private class MethodCommandMessageHandler<T> extends AbstractMessageHandler<T> implements CommandMessageHandler<T> {
+    private class MethodCommandMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements CommandMessageHandlingMember<T> {
 
         private final String commandName;
         private final boolean isFactoryHandler;
         private final String routingKey;
 
-        public MethodCommandMessageHandler(Executable executable, Map<String, Object> annotationAttributes,
-                                           ParameterResolverFactory parameterResolverFactory) {
-            super(executable,
-                  (Class<?>) annotationAttributes.getOrDefault("payloadType", Object.class),
-                  parameterResolverFactory);
+        public MethodCommandMessageHandlingMember(MessageHandlingMember<T> delegate, Map<String, Object> annotationAttributes) {
+            super(delegate);
             this.routingKey = "".equals(annotationAttributes.get("routingKey")) ? null : (String) annotationAttributes.get("routingKey");
+            Executable executable = delegate.unwrap(Executable.class)
+                    .orElseThrow(() -> new AxonConfigurationException("The @CommandHandler annotation must be put on an Executable (either directly or as Meta Annotation)"));
             if ("".equals(annotationAttributes.get("commandName"))) {
                 commandName = executable.getParameters()[0].getType().getName();
             } else {
@@ -64,8 +58,8 @@ public class MethodCommandHandlerDefinition implements HandlerDefinition {
         }
 
         @Override
-        protected boolean typeMatches(Message<?> message) {
-            return message instanceof CommandMessage && commandName.equals(((CommandMessage) message).getCommandName());
+        public boolean canHandle(Message<?> message) {
+            return super.canHandle(message) && commandName.equals(((CommandMessage) message).getCommandName());
         }
 
         @Override

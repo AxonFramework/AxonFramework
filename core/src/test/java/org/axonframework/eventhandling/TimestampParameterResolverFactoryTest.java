@@ -13,7 +13,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolver;
 import org.junit.Before;
 import org.junit.Test;
 

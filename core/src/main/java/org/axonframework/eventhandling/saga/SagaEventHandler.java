@@ -62,5 +62,5 @@ public @interface SagaEventHandler {
      * payload assignable to the given payload type. If unspecified, the first parameter of the method defines the type
      * of supported event.
      */
-    Class<?> payloadType() default Void.class;
+    Class<?> payloadType() default Object.class;
 }

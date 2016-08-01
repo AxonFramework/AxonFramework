@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;

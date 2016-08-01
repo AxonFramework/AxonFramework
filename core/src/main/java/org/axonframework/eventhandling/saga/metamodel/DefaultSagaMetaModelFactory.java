@@ -17,13 +17,13 @@
 package org.axonframework.eventhandling.saga.metamodel;
 
 
-import org.axonframework.common.annotation.AnnotatedHandlerInspector;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MessageHandler;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.AssociationValue;
-import org.axonframework.eventhandling.saga.SagaMethodMessageHandler;
+import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,18 +59,18 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
     }
 
     private class InspectedSagaModel<T> implements SagaModel<T> {
-        private final List<MessageHandler<? super T>> handlers;
+        private final List<MessageHandlingMember<? super T>> handlers;
 
-        public InspectedSagaModel(List<MessageHandler<? super T>> handlers) {
+        public InspectedSagaModel(List<MessageHandlingMember<? super T>> handlers) {
             this.handlers = handlers;
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage) {
-            for (MessageHandler<? super T> handler : handlers) {
+            for (MessageHandlingMember<? super T> handler : handlers) {
                 if (handler.canHandle(eventMessage)) {
-                    return handler.unwrap(SagaMethodMessageHandler.class).map(mh -> mh.getAssociationValue(eventMessage));
+                    return handler.unwrap(SagaMethodMessageHandlingMember.class).map(mh -> mh.getAssociationValue(eventMessage));
                 }
             }
             return Optional.empty();
@@ -78,10 +78,10 @@ public class DefaultSagaMetaModelFactory implements SagaMetaModelFactory {
 
         @Override
         @SuppressWarnings("unchecked")
-        public List<SagaMethodMessageHandler<T>> findHandlerMethods(EventMessage<?> eventMessage) {
+        public List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> eventMessage) {
             return handlers.stream()
                     .filter(h -> h.canHandle(eventMessage))
-                    .map(h -> (SagaMethodMessageHandler<T>) h.unwrap(SagaMethodMessageHandler.class).orElse(null))
+                    .map(h -> (SagaMethodMessageHandlingMember<T>) h.unwrap(SagaMethodMessageHandlingMember.class).orElse(null))
                     .filter(h -> h != null)
                     .collect(Collectors.toCollection(ArrayList::new));
         }

@@ -65,8 +65,8 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     @SuppressWarnings("unchecked")
     @Override
     protected SagaInitializationPolicy getSagaCreationPolicy(EventMessage<?> event) {
-        List<SagaMethodMessageHandler<T>> handlers = sagaMetaModel.findHandlerMethods(event);
-        for (SagaMethodMessageHandler handler : handlers) {
+        List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
+        for (SagaMethodMessageHandlingMember handler : handlers) {
             if (handler.getCreationPolicy() != SagaCreationPolicy.NONE) {
                 return new SagaInitializationPolicy(handler.getCreationPolicy(), handler.getAssociationValue(event));
             }
@@ -77,7 +77,7 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     @SuppressWarnings("unchecked")
     @Override
     protected Set<AssociationValue> extractAssociationValues(EventMessage<?> event) {
-        List<SagaMethodMessageHandler<T>> handlers = sagaMetaModel.findHandlerMethods(event);
+        List<SagaMethodMessageHandlingMember<T>> handlers = sagaMetaModel.findHandlerMethods(event);
         return handlers.stream().map(handler -> handler.getAssociationValue(event)).collect(Collectors.toSet());
     }
 

@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
-import org.axonframework.common.annotation.MessageHandler;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.junit.Test;
@@ -72,7 +72,7 @@ public class ModelInspectorTest {
         AggregateModel<SomeSubclass> inspector = ModelInspector.inspectAggregate(SomeSubclass.class);
         GenericCommandMessage<?> message = new GenericCommandMessage<>(BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
-        MessageHandler<? super SomeSubclass> handler = inspector.commandHandler(message.getCommandName());
+        MessageHandlingMember<? super SomeSubclass> handler = inspector.commandHandler(message.getCommandName());
         assertEquals("1", handler.handle(message, target));
 
         long startTime = System.currentTimeMillis();

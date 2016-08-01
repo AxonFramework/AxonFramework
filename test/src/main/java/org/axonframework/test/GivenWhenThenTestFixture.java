@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;

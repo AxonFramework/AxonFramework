@@ -18,8 +18,8 @@ package org.axonframework.spring.config;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.aop.IntroductionInfo;
 import org.springframework.aop.IntroductionInterceptor;
 import org.springframework.aop.framework.Advised;

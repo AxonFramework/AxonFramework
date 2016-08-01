@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.saga.metamodel;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.AssociationValue;
-import org.axonframework.eventhandling.saga.SagaMethodMessageHandler;
+import org.axonframework.eventhandling.saga.SagaMethodMessageHandlingMember;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +27,7 @@ public interface SagaModel<T> {
 
     Optional<AssociationValue> resolveAssociation(EventMessage<?> eventMessage);
 
-    List<SagaMethodMessageHandler<T>> findHandlerMethods(EventMessage<?> event);
+    List<SagaMethodMessageHandlingMember<T>> findHandlerMethods(EventMessage<?> event);
 
     SagaMetaModelFactory modelFactory();
 }

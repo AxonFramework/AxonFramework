@@ -14,8 +14,10 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Priority;
-import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.time.Instant;
 
@@ -33,7 +35,7 @@ public final class TimestampParameterResolverFactory
     private final ParameterResolver<Instant> resolver;
 
     /**
-     * Initializes a {@link org.axonframework.common.annotation.ParameterResolverFactory} for {@link Timestamp}
+     * Initializes a {@link ParameterResolverFactory} for {@link Timestamp}
      * annotated parameters
      */
     public TimestampParameterResolverFactory() {

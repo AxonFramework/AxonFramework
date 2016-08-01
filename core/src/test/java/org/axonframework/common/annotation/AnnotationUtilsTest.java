@@ -35,6 +35,8 @@ public class AnnotationUtilsTest {
         Map<String, Object> results = AnnotationUtils.findAnnotationAttributes(getClass().getDeclaredMethod("directAnnotated"), TheTarget.class).get();
 
         assertEquals("value", results.get("property"));
+        assertFalse("value property should use annotation Simple class name as key", results.containsKey("value"));
+        assertEquals("value()", results.get("theTarget"));
     }
 
     @Test
@@ -58,6 +60,7 @@ public class AnnotationUtilsTest {
 
         assertEquals("dynamic-override", results.get("property"));
         assertEquals("extra", results.get("extraValue"));
+        assertEquals("otherValue", results.get("theTarget"));
     }
 
     @Test
@@ -84,6 +87,8 @@ public class AnnotationUtilsTest {
     public @interface TheTarget {
 
         String property() default "value";
+
+        String value() default "value()";
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -101,6 +106,8 @@ public class AnnotationUtilsTest {
         String property();
 
         String extraValue() default "extra";
+
+        String theTarget() default "otherValue";
     }
 
 }

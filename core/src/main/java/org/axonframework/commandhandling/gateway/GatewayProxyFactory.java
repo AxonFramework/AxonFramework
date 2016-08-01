@@ -24,7 +24,7 @@ import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.MetaData;
+import org.axonframework.messaging.annotation.MetaData;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.lang.annotation.Annotation;

@@ -17,10 +17,10 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.common.Priority;
-import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.eventhandling.AbstractAnnotatedParameterResolverFactory;
-import org.axonframework.eventhandling.SequenceNumber;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 
 /**
@@ -39,7 +39,7 @@ public final class SequenceNumberParameterResolverFactory extends
     private final ParameterResolver<Long> resolver;
 
     /**
-     * Initializes a {@link org.axonframework.common.annotation.ParameterResolverFactory} for {@link SequenceNumber}
+     * Initializes a {@link ParameterResolverFactory} for {@link SequenceNumber}
      * annotated parameters
      */
     public SequenceNumberParameterResolverFactory() {

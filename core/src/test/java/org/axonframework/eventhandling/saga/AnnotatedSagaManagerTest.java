@@ -13,7 +13,7 @@
 
 package org.axonframework.eventhandling.saga;
 
-import org.axonframework.common.annotation.MetaData;
+import org.axonframework.messaging.annotation.MetaData;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;

@@ -16,11 +16,13 @@ package org.axonframework.commandhandling;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
+import org.axonframework.commandhandling.model.inspection.CommandMessageHandlingMember;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.Assert;
 import org.axonframework.common.Registration;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.MessageHandler;
 
 import java.util.*;
@@ -130,7 +132,9 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
         Map<String, MessageHandler<CommandMessage<?>>> handlersFound = new HashMap<>();
         AggregateCommandHandler aggregateCommandHandler = new AggregateCommandHandler();
         aggregateModel.commandHandlers().forEach((k, v) -> {
-            if (v.isFactoryHandler()) {
+            if (v.unwrap(CommandMessageHandlingMember.class)
+                    .map(CommandMessageHandlingMember::isFactoryHandler)
+                    .orElse(false)) {
                 handlersFound.put(k, new AggregateConstructorCommandHandler(v));
             } else {
                 handlersFound.put(k, aggregateCommandHandler);
@@ -165,9 +169,9 @@ public class AggregateAnnotationCommandHandler<T> implements MessageHandler<Comm
 
     private class AggregateConstructorCommandHandler implements MessageHandler<CommandMessage<?>> {
 
-        private final org.axonframework.common.annotation.MessageHandler<?> handler;
+        private final MessageHandlingMember<?> handler;
 
-        public AggregateConstructorCommandHandler(org.axonframework.common.annotation.MessageHandler<?> handler) {
+        public AggregateConstructorCommandHandler(MessageHandlingMember<?> handler) {
             this.handler = handler;
         }
 

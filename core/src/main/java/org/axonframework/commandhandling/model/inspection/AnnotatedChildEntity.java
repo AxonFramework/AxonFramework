@@ -17,8 +17,8 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -29,22 +29,29 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     private final Field field;
     private final EntityModel<C> entityModel;
     private final boolean forwardEvents;
-    private final Map<String, CommandMessageHandler<? super P>> commandHandlers;
+    private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
+    private final BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver;
 
-    public AnnotatedChildEntity(String parentRoutingKey, Field field, EntityModel<C> entityModel,
+    @SuppressWarnings("unchecked")
+    public AnnotatedChildEntity(Field field, EntityModel<C> entityModel,
                                 boolean forwardCommands, boolean forwardEvents,
-                                BiFunction<CommandMessage<?>, P, C> targetResolver) {
+                                BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
+                                BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver) {
         this.field = field;
         this.entityModel = entityModel;
         this.forwardEvents = forwardEvents;
-
+        this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
         if (forwardCommands) {
-            entityModel.commandHandlers().forEach((commandType, childHandler) -> commandHandlers.put(commandType,
-                                                                                                     new ChildForwardingCommandMessageHandler<>(
-                                                                                                             parentRoutingKey,
-                                                                                                             childHandler,
-                                                                                                             targetResolver)));
+            entityModel
+                    .commandHandlers()
+                    .forEach((commandType, childHandler) -> {
+                        commandHandlers.put(commandType,
+                                            new ChildForwardingCommandMessageHandlingMember<>(
+                                                    entityModel.routingKey(),
+                                                    childHandler,
+                                                    commandTargetResolver));
+                    });
         }
     }
 
@@ -52,17 +59,16 @@ public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     @Override
     public void publish(EventMessage<?> msg, P declaringInstance) {
         if (forwardEvents) {
-            Object instance = ReflectionUtils.getFieldValue(field, declaringInstance);
-            if (instance != null) {
-                EntityModel runtimeModel = this.entityModel.modelOf(instance.getClass());
-                runtimeModel.publish(msg, instance);
+            Iterable<C> targets = eventTargetResolver.apply(msg, declaringInstance);
+            if (targets != null) {
+                targets.forEach(target -> this.entityModel.publish(msg, target));
             }
         }
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Map<String, CommandMessageHandler<? super P>> commandHandlers() {
+    public Map<String, MessageHandlingMember<? super P>> commandHandlers() {
         return commandHandlers;
     }
 

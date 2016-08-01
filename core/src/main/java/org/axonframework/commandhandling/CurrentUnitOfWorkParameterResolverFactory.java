@@ -14,8 +14,8 @@
 package org.axonframework.commandhandling;
 
 import org.axonframework.common.Priority;
-import org.axonframework.common.annotation.ParameterResolver;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;

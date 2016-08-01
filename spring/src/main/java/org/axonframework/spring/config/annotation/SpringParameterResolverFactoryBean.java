@@ -16,9 +16,9 @@
 
 package org.axonframework.spring.config.annotation;
 
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -35,7 +35,7 @@ import java.util.List;
  *
  * @author Allard Buijze
  * @see SpringBeanParameterResolverFactory
- * @see org.axonframework.common.annotation.ClasspathParameterResolverFactory
+ * @see ClasspathParameterResolverFactory
  * @since 2.3.1
  */
 public class SpringParameterResolverFactoryBean implements FactoryBean<ParameterResolverFactory>,
@@ -75,7 +75,7 @@ public class SpringParameterResolverFactoryBean implements FactoryBean<Parameter
      *
      * @param additionalFactories The extra factories to register
      * @see SpringBeanParameterResolverFactory
-     * @see org.axonframework.common.annotation.ClasspathParameterResolverFactory
+     * @see ClasspathParameterResolverFactory
      */
     public void setAdditionalFactories(List<ParameterResolverFactory> additionalFactories) {
         this.factories.addAll(additionalFactories);

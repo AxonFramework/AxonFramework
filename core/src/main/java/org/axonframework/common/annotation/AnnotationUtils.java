@@ -27,8 +27,8 @@ import java.util.*;
 /**
  * Utility class for locating annotations and attribute values on elements.
  *
- * @since 3.0
  * @author Allard Buijze
+ * @since 3.0
  */
 public abstract class AnnotationUtils {
 
@@ -110,7 +110,10 @@ public abstract class AnnotationUtils {
      * meta-annotation.
      * <p>
      * The map of attributes contains all the attributes found on the annotation, as well as attributes of any
-     * annotations on which the targeted annotation was placed (directly, or indirectly).
+     * annotations on which the targeted annotation was placed (directly, or indirectly). Note that the {@code value}
+     * property of annotations is reported as the simple class name (lowercase first character) of the annotation. This
+     * allows specific attribute overrides for annotations that have multiple meta-annotation with the {@code value}
+     * property.
      *
      * @param element        The element for find the annotation on
      * @param annotationType The type of the annotation to find
@@ -152,12 +155,20 @@ public abstract class AnnotationUtils {
             if (method.getParameterTypes().length == 0 && method.getReturnType() != void.class) {
                 try {
                     Object value = method.invoke(ann);
-                    attributes.put(method.getName(), value);
+                    attributes.put(resolveName(method), value);
                 } catch (IllegalAccessException | InvocationTargetException e) {
                     throw new AxonConfigurationException("Error while inspecting annotation values", e);
                 }
             }
         }
+    }
+
+    private static String resolveName(Method method) {
+        if ("value".equals(method.getName())) {
+            String simpleName = method.getDeclaringClass().getSimpleName();
+            return simpleName.substring(0, 1).toLowerCase(Locale.ENGLISH).concat(simpleName.substring(1));
+        }
+        return method.getName();
     }
 
     private static Annotation getAnnotation(Class<? extends Annotation> target, String annotationType,

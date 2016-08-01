@@ -24,6 +24,9 @@ import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
+
 public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntityDefinition {
 
     @Override
@@ -37,11 +40,14 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
         }
 
         EntityModel entityModel = declaringEntity.modelOf(field.getType());
-        String parentRoutingKey = declaringEntity.routingKey();
-        return Optional.of(new AnnotatedChildEntity<>(parentRoutingKey, field, entityModel,
+        return Optional.of(new AnnotatedChildEntity<>(field, entityModel,
                                                       (Boolean) attributes.get("forwardCommands"),
                                                       (Boolean) attributes.get("forwardEvents"),
-                                                      (msg, parent) -> ReflectionUtils.getFieldValue(field, parent)));
+                                                      (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),
+                                                      (msg, parent) -> {
+                                                          Object fieldVal = ReflectionUtils.getFieldValue(field, parent);
+                                                          return fieldVal == null ? emptyList() : singleton(fieldVal);
+                                                      }));
     }
 
 }

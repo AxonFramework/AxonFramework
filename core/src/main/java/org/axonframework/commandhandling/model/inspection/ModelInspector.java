@@ -24,6 +24,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.*;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.annotation.*;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -36,8 +37,8 @@ public class ModelInspector<T> implements AggregateModel<T> {
     private final Map<Class<?>, ModelInspector> registry;
     private final List<ChildEntity<T>> children;
     private final AnnotatedHandlerInspector<T> handlerInspector;
-    private final Map<String, CommandMessageHandler<? super T>> commandHandlers;
-    private final List<MessageHandler<? super T>> eventHandlers;
+    private final Map<String, MessageHandlingMember<? super T>> commandHandlers;
+    private final List<MessageHandlingMember<? super T>> eventHandlers;
 
     private String aggregateType;
     private Field identifierField;
@@ -86,10 +87,10 @@ public class ModelInspector<T> implements AggregateModel<T> {
 
     @SuppressWarnings("unchecked")
     private void prepareHandlers() {
-        for (MessageHandler<? super T> handler : handlerInspector.getHandlers()) {
-            if (handler instanceof CommandMessageHandler) {
-                CommandMessageHandler<T> commandMessageHandler = (CommandMessageHandler<T>) handler;
-                commandHandlers.putIfAbsent(commandMessageHandler.commandName(), commandMessageHandler);
+        for (MessageHandlingMember<? super T> handler : handlerInspector.getHandlers()) {
+            Optional<CommandMessageHandlingMember> commandHandler = handler.unwrap(CommandMessageHandlingMember.class);
+            if (commandHandler.isPresent()) {
+                commandHandlers.putIfAbsent(commandHandler.get().commandName(), handler);
             } else {
                 eventHandlers.add(handler);
             }
@@ -107,10 +108,12 @@ public class ModelInspector<T> implements AggregateModel<T> {
         ServiceLoader<ChildEntityDefinition> childEntityDefinitions = ServiceLoader.load(ChildEntityDefinition.class,
                                                                                          inspectedType.getClassLoader());
         for (Field field : ReflectionUtils.fieldsOf(inspectedType)) {
-            childEntityDefinitions.forEach(def -> def.createChildDefinition(field, this).ifPresent(child -> {
-                children.add(child);
-                child.commandHandlers().forEach(commandHandlers::putIfAbsent);
-            }));
+            childEntityDefinitions
+                    .forEach(def -> def.createChildDefinition(field, this)
+                            .ifPresent(child -> {
+                                children.add(child);
+                                child.commandHandlers().forEach(commandHandlers::putIfAbsent);
+                            }));
 
             AnnotationUtils.findAnnotationAttributes(field, EntityId.class).ifPresent(attributes -> {
                 identifierField = field;
@@ -139,13 +142,13 @@ public class ModelInspector<T> implements AggregateModel<T> {
     }
 
     @Override
-    public Map<String, CommandMessageHandler<? super T>> commandHandlers() {
+    public Map<String, MessageHandlingMember<? super T>> commandHandlers() {
         return Collections.unmodifiableMap(commandHandlers);
     }
 
     @Override
-    public CommandMessageHandler<? super T> commandHandler(String commandName) {
-        CommandMessageHandler<? super T> handler = commandHandlers.get(commandName);
+    public MessageHandlingMember<? super T> commandHandler(String commandName) {
+        MessageHandlingMember<? super T> handler = commandHandlers.get(commandName);
         if (handler == null) {
             throw new NoHandlerForCommandException(format("No handler available to handle command [%s]", commandName));
         }
@@ -159,7 +162,9 @@ public class ModelInspector<T> implements AggregateModel<T> {
 
     @Override
     public void publish(EventMessage<?> message, T target) {
-        runtimeModelOf(target).doPublish(message, target);
+        if (target != null) {
+            runtimeModelOf(target).doPublish(message, target);
+        }
     }
 
     private void doPublish(EventMessage<?> message, T target) {
@@ -188,8 +193,8 @@ public class ModelInspector<T> implements AggregateModel<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected Optional<MessageHandler<? super T>> getHandler(Message<?> message) {
-        for (MessageHandler<? super T> handler : eventHandlers) {
+    protected Optional<MessageHandlingMember<? super T>> getHandler(Message<?> message) {
+        for (MessageHandlingMember<? super T> handler : eventHandlers) {
             if (handler.canHandle(message)) {
                 return Optional.of(handler);
             }

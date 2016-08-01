@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.model.inspection;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.Map;
 
@@ -40,6 +41,6 @@ public interface ChildEntity<T> {
      *
      * @return a map containing with the Command Names as keys and the handlers as values.
      */
-    Map<String, CommandMessageHandler<? super T>> commandHandlers();
+    Map<String, MessageHandlingMember<? super T>> commandHandlers();
 
 }

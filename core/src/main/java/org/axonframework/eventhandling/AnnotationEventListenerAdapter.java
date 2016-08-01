@@ -13,10 +13,10 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.annotation.AnnotatedHandlerInspector;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MessageHandler;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link
@@ -59,7 +59,7 @@ public class AnnotationEventListenerAdapter implements EventListenerProxy {
 
     @Override
     public void handle(EventMessage event) throws Exception {
-        for (MessageHandler<? super Object> handler : inspector.getHandlers()) {
+        for (MessageHandlingMember<? super Object> handler : inspector.getHandlers()) {
             if (handler.canHandle(event)) {
                 handler.handle(event, annotatedEventListener);
                 break;

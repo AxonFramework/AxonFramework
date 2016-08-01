@@ -21,9 +21,9 @@ import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.common.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.common.annotation.MultiParameterResolverFactory;
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -122,7 +122,7 @@ public class AggregateAnnotationCommandHandlerFactoryBean<T>
 
     /**
      * Sets the ParameterResolverFactory to create parameter resolver instances with. Defaults to a {@link
-     * org.axonframework.common.annotation.ClasspathParameterResolverFactory} that uses the aggregateType's class
+     * ClasspathParameterResolverFactory} that uses the aggregateType's class
      * loader.
      *
      * @param parameterResolverFactory the ParameterResolverFactory to create parameter resolver instances with.

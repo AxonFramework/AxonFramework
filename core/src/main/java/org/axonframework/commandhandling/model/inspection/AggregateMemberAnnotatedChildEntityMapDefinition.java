@@ -23,8 +23,7 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.property.Property;
 
 import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
@@ -32,43 +31,6 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEntityDefinition {
-
-    @Override
-    public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
-        Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
-        if (attributes == null || !Map.class.isAssignableFrom(field.getType())) {
-            return Optional.empty();
-        }
-
-        EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
-        String parentRoutingKey = declaringEntity.routingKey();
-        Map<String, Property<Object>> routingKeyProperties =
-                childEntityModel.commandHandlers().values().stream()
-                        .collect(Collectors.toConcurrentMap(
-                                CommandMessageHandler::commandName,
-                                h -> {
-                                    String routingKey = getOrDefault(h.routingKey(),
-                                                                     childEntityModel.routingKey());
-                                    Property<Object> property = getProperty(h.payloadType(),
-                                                                            routingKey);
-                                    if (property == null) {
-                                        throw new AxonConfigurationException(format("Command of type [%s] doesn't have a property matching the routing key [%s] necessary to route through field [%s]",
-                                                                                    h.payloadType(), routingKey, field.toGenericString()));
-                                    }
-                                    return property;
-                                }));
-        //noinspection unchecked
-        return Optional.of(new AnnotatedChildEntity<>(
-                parentRoutingKey, field, childEntityModel,
-                (Boolean) attributes.get("forwardCommands"),
-                (Boolean) attributes.get("forwardEvents"),
-                (msg, parent) -> {
-                    Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
-                    Map<?, ?> fieldValue = (Map<?, ?>) ReflectionUtils.getFieldValue(field, parent);
-                    return fieldValue.get(routingValue);
-                }));
-
-    }
 
     private static Class<?> resolveType(Map<String, Object> attributes, Field field) {
         Class<?> entityType = (Class<?>) attributes.get("type");
@@ -82,5 +44,46 @@ public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEn
         }
 
         return entityType;
+    }
+
+    @Override
+    public <T> Optional<ChildEntity<T>> createChildDefinition(Field field, EntityModel<T> declaringEntity) {
+        Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field, AggregateMember.class).orElse(null);
+        if (attributes == null || !Map.class.isAssignableFrom(field.getType())) {
+            return Optional.empty();
+        }
+
+        EntityModel<Object> childEntityModel = declaringEntity.modelOf(resolveType(attributes, field));
+        Map<String, Property<Object>> routingKeyProperties =
+                childEntityModel.commandHandlers().values().stream()
+                        .map(h -> h.unwrap(CommandMessageHandlingMember.class).orElse(null))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toMap(
+                                CommandMessageHandlingMember::commandName,
+                                h -> {
+                                    String routingKey = getOrDefault(h.routingKey(),
+                                                                     childEntityModel.routingKey());
+                                    Property<Object> property = getProperty(h.payloadType(), routingKey);
+                                    if (property == null) {
+                                        throw new AxonConfigurationException(format("Command of type [%s] doesn't have a property matching the routing key [%s] necessary to route through field [%s]",
+                                                                                    h.payloadType(), routingKey, field.toGenericString()));
+                                    }
+                                    return property;
+                                }));
+        //noinspection unchecked
+        return Optional.of(new AnnotatedChildEntity<>(
+                field, childEntityModel,
+                (Boolean) attributes.get("forwardCommands"),
+                (Boolean) attributes.get("forwardEvents"),
+                (msg, parent) -> {
+                    Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
+                    Map<?, ?> fieldValue = ReflectionUtils.getFieldValue(field, parent);
+                    return fieldValue == null ? null : fieldValue.get(routingValue);
+                },
+                (msg, parent) -> {
+                    Map<?, Object> fieldValue = ReflectionUtils.getFieldValue(field, parent);
+                    return fieldValue == null ? Collections.emptyList() : fieldValue.values();
+                }));
+
     }
 }

@@ -16,7 +16,9 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.common.annotation.ParameterResolver;
+import org.axonframework.eventsourcing.SequenceNumber;
+import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.eventsourcing.SequenceNumberParameterResolverFactory;
 import org.junit.Test;
 

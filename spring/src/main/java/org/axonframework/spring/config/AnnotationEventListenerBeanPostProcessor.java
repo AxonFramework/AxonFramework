@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.common.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.eventhandling.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventListener;

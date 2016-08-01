@@ -14,8 +14,8 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.annotation.HandlerEnhancerDefinition;
-import org.axonframework.common.annotation.MessageHandler;
+import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 
@@ -35,7 +35,7 @@ import static java.lang.String.format;
 public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefinition {
 
     @Override
-    public <T> MessageHandler<T> wrapHandler(MessageHandler<T> original) {
+    public <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original) {
         Optional<Map<String, Object>> annotationAttributes = original.annotationAttributes(SagaEventHandler.class);
         SagaCreationPolicy creationPolicy = original.annotationAttributes(StartSaga.class)
                 .map(attr -> ((boolean)attr.getOrDefault("forceNew", false)) ? SagaCreationPolicy.ALWAYS : SagaCreationPolicy.IF_NONE_FOUND).orElse(SagaCreationPolicy.NONE);
@@ -45,8 +45,8 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
                 .orElse(original);
     }
 
-    private <T> MessageHandler<T> doWrapHandler(MessageHandler<T> original, SagaCreationPolicy creationPolicy,
-                                                String associationKeyName, String associationPropertyName) {
+    private <T> MessageHandlingMember<T> doWrapHandler(MessageHandlingMember<T> original, SagaCreationPolicy creationPolicy,
+                                                       String associationKeyName, String associationPropertyName) {
         String associationKey = associationKey(associationKeyName, associationPropertyName);
         Property<?> associationProperty = PropertyAccessStrategy.getProperty(original.payloadType(),
                                                                              associationPropertyName);
@@ -60,8 +60,8 @@ public class SagaMethodMessageHandlerDefinition implements HandlerEnhancerDefini
             ));
         }
 
-        return new SagaMethodMessageHandler<>(original, creationPolicy,
-                                              associationKey, associationProperty, endingHandler);
+        return new SagaMethodMessageHandlingMember<>(original, creationPolicy,
+                                                     associationKey, associationProperty, endingHandler);
     }
 
     private String associationKey(String keyName, String associationProperty) {

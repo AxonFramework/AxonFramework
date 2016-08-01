@@ -18,6 +18,8 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.lang.annotation.*;
 
@@ -63,17 +65,18 @@ import java.lang.annotation.*;
  *
  * @author Allard Buijze
  * @see AnnotationEventListenerAdapter
- * @see org.axonframework.common.annotation.ParameterResolverFactory
+ * @see ParameterResolverFactory
  * @since 0.1
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@MessageHandler(messageType = EventMessage.class)
 public @interface EventHandler {
 
     /**
      * The type of event this method handles. This handler will only be considered for invocation if the event message's
      * payload is assignable to this type.
      */
-    Class<?> eventType() default Object.class;
+    Class<?> payloadType() default Object.class;
 }

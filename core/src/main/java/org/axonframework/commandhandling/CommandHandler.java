@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.annotation.MessageHandler;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.lang.annotation.*;
@@ -42,6 +43,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.ANNOTATION_TYPE})
+@MessageHandler(messageType = CommandMessage.class)
 public @interface CommandHandler {
 
     /**
@@ -56,4 +58,10 @@ public @interface CommandHandler {
      * value to the correct instance.
      */
     String routingKey() default "";
+
+    /**
+     * The type of payload expected by this handler. Defaults to the expected types expresses by (primarily the first)
+     * parameters of the annotated Method or Constructor.
+     */
+    Class<?> payloadType() default Object.class;
 }
