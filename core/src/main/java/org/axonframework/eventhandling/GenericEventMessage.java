@@ -68,11 +68,17 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
 
     @Override
     public GenericEventMessage<T> withMetaData(Map<String, ?> metaData) {
+        if (getMetaData().equals(metaData)) {
+            return this;
+        }
         return new GenericEventMessage<>(getDelegate().withMetaData(metaData), timestamp);
     }
 
     @Override
     public GenericEventMessage<T> andMetaData(Map<String, ?> metaData) {
+        if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
+            return this;
+        }
         return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestamp);
     }
 }

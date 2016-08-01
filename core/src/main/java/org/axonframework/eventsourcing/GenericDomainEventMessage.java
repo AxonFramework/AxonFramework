@@ -79,12 +79,18 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
 
     @Override
     public GenericDomainEventMessage<T> withMetaData(Map<String, ?> metaData) {
+        if (getMetaData().equals(metaData)) {
+            return this;
+        }
         return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
                                                getDelegate().withMetaData(metaData), getTimestamp());
     }
 
     @Override
     public GenericDomainEventMessage<T> andMetaData(Map<String, ?> metaData) {
+        if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
+            return this;
+        }
         return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
                                                getDelegate().andMetaData(metaData), getTimestamp());
     }
