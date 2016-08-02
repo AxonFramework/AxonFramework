@@ -17,7 +17,7 @@
 package org.axonframework.messaging.annotation;
 
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.*;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.Message;
 
 import java.lang.annotation.Annotation;
@@ -44,6 +44,9 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
         Class<?> supportedPayloadType = explicitPayloadType;
         for (int i = 0; i < parameterCount; i++) {
             parameterResolvers[i] = parameterResolverFactory.createInstance(executable, parameters, i);
+            if (parameterResolvers[i] == null) {
+                throw new UnsupportedHandlerException("Unable to resolver parameter " + i + " (" + parameters[i].getType().getSimpleName() + ") in handler " + executable.toGenericString() + ".", executable);
+            }
             if (supportedPayloadType.isAssignableFrom(parameterResolvers[i].supportedPayloadType())) {
                 supportedPayloadType = parameterResolvers[i].supportedPayloadType();
             } else if (!parameterResolvers[i].supportedPayloadType().isAssignableFrom(supportedPayloadType)) {
