@@ -31,6 +31,7 @@ import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventStreamDecorator;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,17 +112,18 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
      * Create a repository instance for an aggregate created by the given {@code aggregateFactory}. The returning
      * repository must be sage to use by this invoker instance.
      *
+     * @param <T>              The type of aggregate created by the factory
      * @param aggregateFactory The factory creating aggregate instances
      * @param decorator        The decorator to decorate event streams with
-     * @param <T>              The type of aggregate created by the factory
      * @return A Repository instance for the given aggregate
      */
     @SuppressWarnings("unchecked")
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
-                                              EventStreamDecorator decorator) {
+                                              EventStreamDecorator decorator, ParameterResolverFactory parameterResolverFactory) {
         return repositories.computeIfAbsent(aggregateFactory.getAggregateType(),
                                             k -> new DisruptorRepository<>(aggregateFactory, cache,
-                                                                           eventStore, decorator));
+                                                                           eventStore, parameterResolverFactory,
+                                                                           decorator));
     }
 
     private void removeEntry(String aggregateIdentifier) {
@@ -156,12 +158,13 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
         private final AggregateModel<T> model;
 
         private DisruptorRepository(AggregateFactory<T> aggregateFactory, Cache cache, EventStore eventStore,
+                                    ParameterResolverFactory parameterResolverFactory,
                                     EventStreamDecorator decorator) {
             this.aggregateFactory = aggregateFactory;
             this.cache = cache;
             this.eventStore = eventStore;
             this.decorator = decorator;
-            this.model = ModelInspector.inspectAggregate(aggregateFactory.getAggregateType());
+            this.model = ModelInspector.inspectAggregate(aggregateFactory.getAggregateType(), parameterResolverFactory);
         }
 
         @Override

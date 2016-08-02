@@ -16,35 +16,8 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import static java.util.Arrays.asList;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
-
+import com.lmax.disruptor.SleepingWaitStrategy;
+import com.lmax.disruptor.dsl.ProducerType;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
@@ -57,11 +30,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
@@ -70,6 +39,8 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
@@ -82,8 +53,20 @@ import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.lmax.disruptor.SleepingWaitStrategy;
-import com.lmax.disruptor.dsl.ProducerType;
+import java.lang.reflect.Executable;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+
+import static java.util.Arrays.asList;
+import static junit.framework.TestCase.*;
+import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
+import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -96,6 +79,7 @@ public class DisruptorCommandBusTest {
     private DisruptorCommandBus testSubject;
     private String aggregateIdentifier;
     private TransactionManager mockTransactionManager;
+    private ParameterResolverFactory parameterResolverFactory;
 
     @Before
     public void setUp() throws Exception {
@@ -104,6 +88,7 @@ public class DisruptorCommandBusTest {
         eventStore = new InMemoryEventStore();
         eventStore.publish(Collections.singletonList(
                 new GenericDomainEventMessage<>("type", aggregateIdentifier, 0, new StubDomainEvent())));
+        parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(DisruptorCommandBusTest.class));
     }
 
     @After
@@ -125,7 +110,7 @@ public class DisruptorCommandBusTest {
                 .setExecutor(customExecutor).setInvokerThreadCount(2).setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         GenericAggregateFactory<StubAggregate> aggregateFactory = new GenericAggregateFactory<>(StubAggregate.class);
-        stubHandler.setRepository(testSubject.createRepository(aggregateFactory));
+        stubHandler.setRepository(testSubject.createRepository(aggregateFactory, parameterResolverFactory));
         Consumer<UnitOfWork<CommandMessage<?>>> mockPrepareCommitConsumer = mock(Consumer.class);
         Consumer<UnitOfWork<CommandMessage<?>>> mockAfterCommitConsumer = mock(Consumer.class);
         Consumer<UnitOfWork<CommandMessage<?>>> mockCleanUpConsumer = mock(Consumer.class);
@@ -205,6 +190,15 @@ public class DisruptorCommandBusTest {
         // invoked only once, because the second time, the aggregate comes from the 1st level cache
         verify(mockDecorator).decorateForRead(eq(aggregateIdentifier), isA(DomainEventStream.class));
         verify(mockDecorator, times(2)).decorateForAppend(isA(Aggregate.class), isA(List.class));
+    }
+
+    @Test
+    public void usesProvidedParameterResolverFactoryToResolveParameters() throws Exception {
+        testSubject = new DisruptorCommandBus(eventStore);
+        testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class), parameterResolverFactory);
+
+        verify(parameterResolverFactory, atLeastOnce()).createInstance(isA(Executable.class), isA(java.lang.reflect.Parameter[].class), anyInt());
+        verifyNoMoreInteractions(parameterResolverFactory);
     }
 
     @Test

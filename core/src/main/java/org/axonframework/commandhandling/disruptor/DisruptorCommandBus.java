@@ -16,23 +16,9 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import static java.lang.String.format;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandTargetResolver;
-import org.axonframework.commandhandling.MonitorAwareCallback;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.dsl.Disruptor;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
@@ -48,12 +34,17 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.dsl.Disruptor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+
+import static java.lang.String.format;
 
 /**
  * Asynchronous CommandBus implementation with very high performance characteristics. It divides the command handling
@@ -126,9 +117,9 @@ public class DisruptorCommandBus implements CommandBus {
     private final long coolingDownPeriod;
     private final CommandTargetResolver commandTargetResolver;
     private final int publisherCount;
+    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
     private volatile boolean started = true;
     private volatile boolean disruptorShutDown = false;
-    private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
 
     /**
      * Initialize the DisruptorCommandBus with given resources, using default configuration settings. Uses a Blocking
@@ -294,10 +285,47 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory, EventStreamDecorator decorator) {
+        return createRepository(aggregateFactory,
+                                decorator, ClasspathParameterResolverFactory.forClass(aggregateFactory.getAggregateType())
+        );
+    }
+
+    /**
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given
+     * {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
+     * {@code parameterResolverFactory}.
+     *
+     * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
+     * @param parameterResolverFactory The ParameterResolverFactory to resolve parameter values of annotated handler
+     *                                 with
+     * @param <T>                      The type of aggregate managed by this repository
+     * @return the repository that provides access to stored aggregates
+     */
+    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
+                                              ParameterResolverFactory parameterResolverFactory) {
+        return createRepository(aggregateFactory, NoOpEventStreamDecorator.INSTANCE, parameterResolverFactory);
+    }
+
+
+    /**
+     * Creates a repository instance for an Event Sourced aggregate that is created by the given
+     * {@code aggregateFactory}. Parameters of the annotated methods are resolved using the given
+     * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
+     *
+     * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
+     * @param decorator                The decorator to decorate events streams with
+     * @param parameterResolverFactory The ParameterResolverFactory to resolve parameter values of annotated handler
+     *                                 with
+     * @param <T>                      The type of aggregate managed by this repository
+     * @return the repository that provides access to stored aggregates
+     */
+    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
+                                              EventStreamDecorator decorator, ParameterResolverFactory parameterResolverFactory) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
-            invoker.createRepository(aggregateFactory, decorator);
+            invoker.createRepository(aggregateFactory, decorator, parameterResolverFactory);
         }
         return new DisruptorRepository<>(aggregateFactory.getAggregateType());
+
     }
 
     @Override
