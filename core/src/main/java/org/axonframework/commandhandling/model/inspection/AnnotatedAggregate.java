@@ -21,12 +21,12 @@ import org.axonframework.commandhandling.model.Aggregate;
 import org.axonframework.commandhandling.model.AggregateInvocationException;
 import org.axonframework.commandhandling.model.AggregateLifecycle;
 import org.axonframework.commandhandling.model.ApplyMore;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -51,10 +51,10 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
 
     private final AggregateModel<T> inspector;
     private final Queue<Runnable> delayedTasks = new LinkedList<>();
+    private final EventBus eventBus;
     private T aggregateRoot;
     private boolean applying = false;
     private boolean isDeleted = false;
-    private final EventBus eventBus;
 
     /**
      * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given
@@ -74,8 +74,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
      * Initialize an Aggregate instance for the given {@code aggregateRoot}, described by the given
      * {@code aggregateModel} that will publish events to the given {@code eventBus}.
      *
-     * @param inspector     The AggregateModel that describes the aggregate
-     * @param eventBus      The Event Bus to publish generated events on
+     * @param inspector The AggregateModel that describes the aggregate
+     * @param eventBus  The Event Bus to publish generated events on
      */
     protected AnnotatedAggregate(AggregateModel<T> inspector, EventBus eventBus) {
         this.inspector = inspector;
@@ -140,10 +140,8 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     protected void publish(EventMessage<?> msg) {
-        execute(() -> {
-            inspector.publish(msg, aggregateRoot);
-            publishOnEventBus(msg);
-        });
+        inspector.publish(msg, aggregateRoot);
+        publishOnEventBus(msg);
     }
 
     protected void publishOnEventBus(EventMessage<?> msg) {
