@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2014. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package org.axonframework.quickstart;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 /**
  * Setting up the basic ToDoItem sample with a disruptor command and event bus and a file based event store. The
@@ -30,7 +29,7 @@ public class RunDisruptorCommandBusWithSpring {
 
     public static void main(String[] args) throws InterruptedException {
         // Load the spring beans from the xml configuration file.
-        ConfigurableApplicationContext applicationContext = new ClassPathXmlApplicationContext("disruptor-config.xml");
+        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(AxonDisruptorSpringConfiguration.class);
 
         // Obtain the gateway from the context to send commands.
         CommandGateway commandGateway = applicationContext.getBean("commandGateway", CommandGateway.class);
