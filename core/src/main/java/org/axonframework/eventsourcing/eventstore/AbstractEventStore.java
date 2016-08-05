@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * Abstract implementation of an {@link EventStore} that uses a {@link EventStorageEngine} to store and load events.
+ *
  * @author Rene de Waele
  */
 public abstract class AbstractEventStore extends AbstractEventBus implements EventStore {
@@ -35,11 +37,23 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
 
     private final EventStorageEngine storageEngine;
 
-    public AbstractEventStore(EventStorageEngine storageEngine) {
+    /**
+     * Initializes an event store with given {@code storageEngine} and {@link NoOpMessageMonitor}.
+     *
+     * @param storageEngine The storage engine used to store and load events
+     */
+    protected AbstractEventStore(EventStorageEngine storageEngine) {
         this(storageEngine, NoOpMessageMonitor.INSTANCE);
     }
 
-    public AbstractEventStore(EventStorageEngine storageEngine, MessageMonitor<? super EventMessage<?>> messageMonitor) {
+    /**
+     * Initializes an event store with given {@code storageEngine} and {@code messageMonitor}.
+     *
+     * @param storageEngine  The storage engine used to store and load events
+     * @param messageMonitor The monitor used to record event publications
+     */
+    protected AbstractEventStore(EventStorageEngine storageEngine,
+                                 MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(messageMonitor);
         this.storageEngine = storageEngine;
     }
@@ -50,6 +64,12 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         super.prepareCommit(events);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This implementation returns a {@link DomainEventStream} starting with the last stored snapshot of the aggregate
+     * followed by subsequent domain events.
+     */
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier) {
         Optional<DomainEventMessage<?>> optionalSnapshot;
@@ -69,6 +89,11 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         }
     }
 
+    /**
+     * Returns the {@link EventStorageEngine} used by the event store.
+     *
+     * @return The event storage engine used by this event store
+     */
     protected EventStorageEngine storageEngine() {
         return storageEngine;
     }

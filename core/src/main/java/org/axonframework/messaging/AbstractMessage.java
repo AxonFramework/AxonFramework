@@ -27,6 +27,11 @@ public abstract class AbstractMessage<T> implements Message<T> {
 
     private final String identifier;
 
+    /**
+     * Initializes a new message with given identifier.
+     *
+     * @param identifier the message identifier
+     */
     public AbstractMessage(String identifier) {
         this.identifier = identifier;
     }
@@ -52,5 +57,11 @@ public abstract class AbstractMessage<T> implements Message<T> {
         return withMetaData(getMetaData().mergedWith(metaData));
     }
 
+    /**
+     * Returns a new message instance with the same payload and properties as this message but given {@code metaData}.
+     *
+     * @param metaData The metadata in the new message
+     * @return a copy of this instance with given metadata
+     */
     protected abstract Message<T> withMetaData(MetaData metaData);
 }

@@ -18,7 +18,16 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.AxonException;
 
+/**
+ * Exception thrown when an invocation on a method of an aggregate gives rise to an exception.
+ */
 public class AggregateInvocationException extends AxonException {
+    /**
+     * Initializes the exception using the given {@code message} and {@code cause}.
+     *
+     * @param message The message describing the exception
+     * @param cause   The underlying cause of the exception
+     */
     public AggregateInvocationException(String message, Throwable cause) {
         super(message, cause);
     }

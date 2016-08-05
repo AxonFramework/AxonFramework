@@ -55,7 +55,8 @@ public interface SagaStore<T> {
 
     /**
      * Deletes a Saga with given {@code sagaType} and {@code sagaIdentifier} and all its associations. For convenience
-     * all known association values are passed along as well.
+     * all known association values are passed along as well, which has the  advantage that the saga store is not
+     * required to keep an index of association value to saga identifier.
      *
      * @param sagaType          The type of saga to delete
      * @param sagaIdentifier    The identifier of the saga to delete

@@ -128,6 +128,11 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
         this.suppressExceptions = suppressExceptions;
     }
 
+    /**
+     * Returns the class of Saga managed by this SagaManager
+     *
+     * @return the managed saga type
+     */
     public Class<T> getSagaType() {
         return sagaType;
     }

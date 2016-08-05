@@ -21,6 +21,8 @@ import javax.persistence.Entity;
 import java.time.Instant;
 
 /**
+ * Implementation of a token entry that stores its serialized token as a byte array.
+ *
  * @author Rene de Waele
  */
 @Entity
@@ -29,14 +31,33 @@ public class TokenEntry extends AbstractTokenEntry<byte[]> {
     @Basic(optional = false)
     private String timestamp;
 
+    /**
+     * Initializes a new token entry for given {@code token}, {@code process} and {@code segment}. The given {@code
+     * serializer} can be used to serialize the token before it is stored.
+     *
+     * @param token       The tracking token to store
+     * @param process     The name of the process to store this token for
+     * @param segment     The segment index of the process
+     * @param timestamp   The timestamp of the stored token
+     * @param serializer  The serializer to use when storing a serialized token
+     */
     public TokenEntry(String process, int segment, TrackingToken token, Instant timestamp, Serializer serializer) {
-        super(process, segment, token, serializer, byte[].class);
+        super(token, process, segment, serializer, byte[].class);
         this.timestamp = timestamp.toString();
     }
+
+    /**
+     * Default constructor for JPA
+     */
     protected TokenEntry() {
     }
 
-    public String timestamp() {
-        return timestamp;
+    /**
+     * Returns the storage timestamp of this token entry.
+     *
+     * @return The storage timestamp
+     */
+    public Instant timestamp() {
+        return Instant.parse(timestamp);
     }
 }

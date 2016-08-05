@@ -23,6 +23,9 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
+ * Implementation of a token store that uses JPA to save and load tokens. This implementation uses {@link TokenEntry}
+ * entities.
+ *
  * @author Rene de Waele
  */
 public class JpaTokenStore implements TokenStore {
@@ -30,6 +33,12 @@ public class JpaTokenStore implements TokenStore {
     private final EntityManagerProvider entityManagerProvider;
     private final Serializer serializer;
 
+    /**
+     * Initializes a token store with given {@code entityManagerProvider} and {@code serializer}.
+     *
+     * @param entityManagerProvider The provider of the entity manager
+     * @param serializer            The serializer used to serialize tokens
+     */
     public JpaTokenStore(EntityManagerProvider entityManagerProvider, Serializer serializer) {
         this.entityManagerProvider = entityManagerProvider;
         this.serializer = serializer;
@@ -38,17 +47,8 @@ public class JpaTokenStore implements TokenStore {
     @Override
     public void storeToken(TrackingToken token, String processName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
-        AbstractTokenEntry<?> entity = createEntity(processName, segment, token, serializer);
-        int count = entityManager.createQuery("UPDATE " + tokenEntryName() + " SET token = :token " +
-                                                      "WHERE processName = :processName AND segment = :segment")
-                .setParameter("token", entity.getToken().getData())
-                .setParameter("processName", processName)
-                .setParameter("segment", segment)
-                .executeUpdate();
-        if (count == 0) {
-            entityManager.persist(entity);
-        }
-        entityManager.flush();
+        Object entity = createEntity(token, processName, segment, serializer);
+        entityManager.merge(entity);
     }
 
     @Override
@@ -56,19 +56,32 @@ public class JpaTokenStore implements TokenStore {
         Optional<SerializedToken> serializedToken = entityManagerProvider.getEntityManager().createQuery(
                 "SELECT NEW org.axonframework.eventhandling.tokenstore.jpa.SerializedToken(token, tokenType) " +
                         "FROM " + tokenEntryName() + " WHERE processName = :processName AND segment = :segment",
-                    SerializedToken.class)
-                .setParameter("processName", processName)
-                .setParameter("segment", segment)
-                .setMaxResults(1)
-                .getResultList().stream().findFirst();
+                SerializedToken.class).setParameter("processName", processName).setParameter("segment", segment)
+                .setMaxResults(1).getResultList().stream().findFirst();
         return serializedToken.map(token -> token.getToken(serializer)).orElse(null);
     }
 
+    /**
+     * Returns the name of the JPA entity used by the store. Override this when storing token entries that differ from
+     * {@link TokenEntry}.
+     *
+     * @return The entity name
+     */
     protected String tokenEntryName() {
         return TokenEntry.class.getSimpleName();
     }
 
-    protected AbstractTokenEntry<?> createEntity(String processName, int segment, TrackingToken token,
+    /**
+     * Returns a new token entity to add to the store. Use the given {@code serializer} to serialize the given {@code
+     * token}.
+     *
+     * @param token The tracking token to store
+     * @param processName The name of the process to which this token belongs
+     * @param segment The segment index of the process
+     * @param serializer The serializer to use on the token
+     * @return a new entity for the store. This returns a {@link TokenEntry} by default.
+     */
+    protected Object createEntity(TrackingToken token, String processName, int segment,
                                                  Serializer serializer) {
         return new TokenEntry(processName, segment, token, Instant.now(), serializer);
     }
