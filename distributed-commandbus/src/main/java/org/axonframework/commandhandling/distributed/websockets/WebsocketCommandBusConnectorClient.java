@@ -32,10 +32,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.websocket.*;
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 @ClientEndpoint
-public class WebsocketCommandBusConnectorClient extends Endpoint implements MessageHandler.Whole<ByteBuffer> {
+public class WebsocketCommandBusConnectorClient extends Endpoint implements MessageHandler.Whole<ByteBuffer>, Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebsocketCommandBusConnectorClient.class);
     private static final int DEFAULT_SESSION_COUNT = 10;
 
@@ -121,6 +123,8 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
         if (callbackWrapper != null) {
             if (message.getCause() != null) {
                 callbackWrapper.fail(message.getCause());
+            } else {
+                callbackWrapper.success(message.getResult());
             }
         } else {
             LOGGER.error("Did not find callback for ID " + message.getCommandId());
@@ -134,7 +138,7 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
         try {
             Session session = sessions.borrowObject();
             try {
-                LOGGER.info("Using session " + session.getId() + " to send " + command.getCommandName());
+                LOGGER.debug("Using session " + session.getId() + " to send " + command.getCommandName());
                 if (callback != null) {
                     repository.store(command.getIdentifier(), new CommandCallbackWrapper<>(session.getId(), command, callback));
                 }
@@ -148,6 +152,15 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
                 callback.onFailure(command, new CommandBusConnectorCommunicationException(
                         "Failed to send command of type " + command.getCommandName() + " to remote", e));
             }
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            sessions.close();
+        } catch (Exception e) {
+            throw new IOException(e);
         }
     }
 }

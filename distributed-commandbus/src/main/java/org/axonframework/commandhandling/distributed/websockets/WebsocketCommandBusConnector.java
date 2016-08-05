@@ -26,12 +26,13 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 
 import javax.websocket.*;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class WebsocketCommandBusConnector implements CommandBusConnector {
+public class WebsocketCommandBusConnector implements CommandBusConnector, Closeable {
     public static final int MESSAGE_BUFFER_SIZE = 16 * 1024 * 1024;
     private final ConcurrentHashMap<URI, WebsocketCommandBusConnectorClient> clients = new ConcurrentHashMap<>();
     private final AuthorizationConfigurator authorizationConfigurator;
@@ -95,5 +96,13 @@ public class WebsocketCommandBusConnector implements CommandBusConnector {
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
         return WebsocketCommandBusConnectorServerConfigurator.getLocalSegment().subscribe(commandName, handler);
+    }
+
+    @Override
+    public void close() throws IOException {
+        for (WebsocketCommandBusConnectorClient websocketCommandBusConnectorClient : clients.values()) {
+            websocketCommandBusConnectorClient.close();
+        }
+
     }
 }
