@@ -77,6 +77,10 @@ public @interface EventHandler {
     /**
      * The type of event this method handles. This handler will only be considered for invocation if the event message's
      * payload is assignable to this type.
+     * <p>
+     * Optional. If unspecified, the first parameter of the method defines the type of supported event.
+     *
+     * @return The type of the event this method handles.
      */
     Class<?> payloadType() default Object.class;
 }

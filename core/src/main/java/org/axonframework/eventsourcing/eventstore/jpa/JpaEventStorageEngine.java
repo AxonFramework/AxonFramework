@@ -64,8 +64,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
         return entityManager()
-                .createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericDomainEventEntry(" +
-                                     "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                .createQuery("SELECT new org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry(" +
+                                     "e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, " +
                                      "e.eventIdentifier, e.timeStamp, e.payloadType, " +
                                      "e.payloadRevision, e.payload, e.metaData) " +
                                      "FROM " + domainEventEntryEntityName() + " e " +

@@ -18,9 +18,17 @@ package org.axonframework.commandhandling.model;
 
 import java.lang.annotation.*;
 
+/**
+ * Annotation placed on types that should be treated as the root of an aggregate. Such types will be the entry point for
+ * command messages that target the aggregate.
+ */
 @Documented
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AggregateRoot {
+    /**
+     * Get the String representation of the aggregate's type. Optional. This defaults to the simple name of the
+     * annotated class.
+     */
     String type() default "";
 }

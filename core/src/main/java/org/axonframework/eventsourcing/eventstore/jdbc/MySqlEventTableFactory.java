@@ -16,19 +16,20 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 /**
  * @author Rene de Waele
  */
-public class PostgresEventSchemaFactory extends AbstractEventSchemaFactory {
-    public static final PostgresEventSchemaFactory INSTANCE = new PostgresEventSchemaFactory();
+public class MySqlEventTableFactory extends AbstractEventTableFactory {
+    public static final MySqlEventTableFactory INSTANCE = new MySqlEventTableFactory();
 
-    protected PostgresEventSchemaFactory() {
+    protected MySqlEventTableFactory() {
     }
 
     @Override
     protected String autoIncrement() {
-        return "SERIAL";
+        return "AUTO_INCREMENT";
     }
 
     @Override
     protected String payloadType() {
-        return "bytea";
+        return "blob";
     }
+
 }

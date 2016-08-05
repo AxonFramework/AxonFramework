@@ -17,6 +17,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
@@ -91,6 +92,22 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
         LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
         return new LegacyTrackingToken(legacyToken.getTimestamp(),
                                        legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
+                                                                   int batchSize) {
+        return entityManager()
+                .createQuery("SELECT new org.axonframework.eventsourcing.eventstore.legacy.GenericLegacyDomainEventEntry(" +
+                                     "e.type, e.aggregateIdentifier, e.sequenceNumber, " +
+                                     "e.eventIdentifier, e.timeStamp, e.payloadType, " +
+                                     "e.payloadRevision, e.payload, e.metaData) " +
+                                     "FROM " + domainEventEntryEntityName() + " e " +
+                                     "WHERE e.aggregateIdentifier = :id " +
+                                     "AND e.sequenceNumber >= :seq " + "ORDER BY e.sequenceNumber ASC")
+                .setParameter("id", aggregateIdentifier).setParameter("seq", firstSequenceNumber)
+                .setMaxResults(batchSize).getResultList();
     }
 
     @Override

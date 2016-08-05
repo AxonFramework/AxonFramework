@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore.jdbc.legacy;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
@@ -103,11 +102,6 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
                                                    resultSet.getString(schema().payloadRevisionColumn()),
                                                    readPayload(resultSet, schema().payloadColumn()),
                                                    readPayload(resultSet, schema().metaDataColumn()));
-    }
-
-    @Override
-    public DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
-        return (DomainEventData<?>) getTrackedEventData(resultSet);
     }
 
     @Override

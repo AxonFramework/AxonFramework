@@ -44,7 +44,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         Connection connection = dataSource.getConnection();
         connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
         connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-        testSubject.createSchema(HsqlEventSchemaFactory.INSTANCE);
+        testSubject.createSchema(HsqlEventTableFactory.INSTANCE);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
         Connection connection = dataSource.getConnection();
         connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
         connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-        testSubject.createSchema(new HsqlEventSchemaFactory() {
+        testSubject.createSchema(new HsqlEventTableFactory() {
             @Override
             protected String payloadType() {
                 return "LONGVARCHAR";

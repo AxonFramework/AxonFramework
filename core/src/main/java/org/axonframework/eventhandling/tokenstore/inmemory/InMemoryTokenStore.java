@@ -28,7 +28,7 @@ public class InMemoryTokenStore implements TokenStore {
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
 
     @Override
-    public void storeToken(String processName, int segment, TrackingToken token) {
+    public void storeToken(TrackingToken token, String processName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processName, segment), token));
         } else {

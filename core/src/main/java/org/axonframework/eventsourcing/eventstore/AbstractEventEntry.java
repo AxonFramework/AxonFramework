@@ -24,6 +24,9 @@ import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 
 /**
+ * Abstract base class of a serialized event. Fields in this class contain JPA annotations that direct JPA event storage
+ * engines how to store event entries.
+ *
  * @author Rene de Waele
  */
 @MappedSuperclass
@@ -44,6 +47,17 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     @Lob
     private T metaData;
 
+    /**
+     * Construct a new event entry from a published event message to enable storing the event or sending it to a remote
+     * location.
+     * <p>
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code eventMessage}.
+     * The type of the serialized data will be the same as the given {@code contentType}.
+     *
+     * @param eventMessage The event message to convert to a serialized event entry
+     * @param serializer   The serializer to convert the event
+     * @param contentType  The data type of the payload and metadata after serialization
+     */
     public AbstractEventEntry(EventMessage<?> eventMessage, Serializer serializer, Class<T> contentType) {
         SerializedObject<T> payload = serializer.serialize(eventMessage.getPayload(), contentType);
         SerializedObject<T> metaData = serializer.serialize(eventMessage.getMetaData(), contentType);
@@ -55,6 +69,16 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
         this.timeStamp = eventMessage.getTimestamp().toString();
     }
 
+    /**
+     * Reconstruct an event entry from a stored object.
+     *
+     * @param eventIdentifier The identifier of the event
+     * @param timestamp       The time at which the event was originally created
+     * @param payloadType     The fully qualified class name or alias of the event payload
+     * @param payloadRevision The revision of the event payload
+     * @param payload         The serialized payload
+     * @param metaData        The serialized metadata
+     */
     public AbstractEventEntry(String eventIdentifier, Object timestamp, String payloadType, String payloadRevision,
                               T payload, T metaData) {
         this.eventIdentifier = eventIdentifier;
@@ -69,6 +93,9 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
         this.metaData = metaData;
     }
 
+    /**
+     * Default constructor required by JPA
+     */
     protected AbstractEventEntry() {
     }
 
@@ -91,10 +118,7 @@ public abstract class AbstractEventEntry<T> implements EventData<T> {
     @Override
     @SuppressWarnings("unchecked")
     public SerializedObject<T> getPayload() {
-        return new SimpleSerializedObject<>(payload, (Class<T>) payload.getClass(), getPayloadType());
-    }
-
-    protected SerializedType getPayloadType() {
-        return new SimpleSerializedType(payloadType, payloadRevision);
+        return new SimpleSerializedObject<>(payload, (Class<T>) payload.getClass(),
+                                            new SimpleSerializedType(payloadType, payloadRevision));
     }
 }

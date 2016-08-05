@@ -48,7 +48,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     }
 
     @Override
-    public void createSchema(EventSchemaFactory schemaFactory) {
+    public void createSchema(EventTableFactory schemaFactory) {
         executeUpdates(e -> {
                            throw new EventStoreException("Failed to create event tables", e);
                        }, connection -> schemaFactory.createDomainEventTable(connection, schema),
@@ -101,9 +101,9 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     @Override
     public PreparedStatement readEventData(Connection connection, String identifier,
                                            long firstSequenceNumber) throws SQLException {
-        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() +
-                " WHERE " + schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() +
-                " >= ? ORDER BY " + schema.sequenceNumberColumn() + " ASC";
+        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
+                schema.aggregateIdentifierColumn() + " = ? AND " + schema.sequenceNumberColumn() + " >= ? ORDER BY " +
+                schema.sequenceNumberColumn() + " ASC";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setString(1, identifier);
         preparedStatement.setLong(2, firstSequenceNumber);
@@ -114,8 +114,8 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     public PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException {
         Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
                       String.format("Token [%s] is of the wrong type", lastToken));
-        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() +
-                " WHERE " + schema.globalIndexColumn() + " > ? ORDER BY " + schema.globalIndexColumn() + " ASC";
+        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
+                schema.globalIndexColumn() + " > ? ORDER BY " + schema.globalIndexColumn() + " ASC";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.setLong(1, lastToken == null ? -1 : ((GlobalIndexTrackingToken) lastToken).getGlobalIndex());
         return preparedStatement;
@@ -151,6 +151,11 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
 
     @Override
     public DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
+        return (DomainEventData<?>) getTrackedEventData(resultSet);
+    }
+
+    @Override
+    protected DomainEventData<?> getSnapshotData(ResultSet resultSet) throws SQLException {
         return new GenericDomainEventEntry<>(resultSet.getString(schema.typeColumn()),
                                              resultSet.getString(schema.aggregateIdentifierColumn()),
                                              resultSet.getLong(schema.sequenceNumberColumn()),

@@ -37,6 +37,16 @@ import static java.util.stream.Collectors.toMap;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
+ * Abstract implementation of an {@link EventProcessor}. Before processing of a batch of messages this implementation
+ * creates a Unit of Work to process the batch.
+ * <p>
+ * Actual handling of events is deferred to an {@link EventHandlerInvoker}. Before each message is handled by the
+ * invoker this event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
+ * interceptors}.
+ * <p>
+ * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
+ * can be passed to method {@link #process(List)} for processing.
+ *
  * @author Rene de Waele
  */
 public abstract class AbstractEventProcessor implements EventProcessor {
@@ -48,16 +58,27 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     private final ErrorHandler errorHandler;
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
 
+    /**
+     * Initializes an event processor with given {@code name}. Actual handling of event messages is deferred to the
+     * given {@code eventHandlerInvoker}.
+     *
+     * @param name                  The name of the event processor
+     * @param eventHandlerInvoker   The component that handles the individual events
+     * @param rollbackConfiguration Determines rollback behavior of the UnitOfWork while processing a batch of events
+     * @param errorHandler          Invoked when a UnitOfWork is rolled back during processing. If {@code null} a {@link
+     *                              NoOpErrorHandler} is used.
+     * @param messageMonitor        Monitor to be invoked before and after event processing. If {@code null} a {@link
+     *                              NoOpMessageMonitor} is used.
+     */
     public AbstractEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                   RollbackConfiguration rollbackConfiguration, ErrorHandler errorHandler,
                                   MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this.name = requireNonNull(name);
         this.eventHandlerInvoker = requireNonNull(eventHandlerInvoker);
         this.rollbackConfiguration = requireNonNull(rollbackConfiguration);
-        this.errorHandler = getOrDefault(errorHandler, ()-> NoOpErrorHandler.INSTANCE);
+        this.errorHandler = getOrDefault(errorHandler, () -> NoOpErrorHandler.INSTANCE);
         this.messageMonitor = getOrDefault(messageMonitor,
-                                           (Supplier<MessageMonitor<? super EventMessage<?>>>)
-                                                   NoOpMessageMonitor::instance);
+                                           (Supplier<MessageMonitor<? super EventMessage<?>>>) NoOpMessageMonitor::instance);
     }
 
     @Override
@@ -76,27 +97,32 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         return getName();
     }
 
-    protected void doProcessBatch(List<? extends EventMessage<?>> eventMessages) {
+    /**
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is handled
+     * the event processor creates an interceptor chain containing all registered {@link MessageHandlerInterceptor
+     * interceptors}.
+     *
+     * @param eventMessages The batch of messages that is to be processed
+     */
+    protected void process(List<? extends EventMessage<?>> eventMessages) {
         Map<? extends EventMessage<?>, MessageMonitor.MonitorCallback> monitorCallbacks =
                 eventMessages.stream().collect(toMap(Function.identity(), messageMonitor::onMessageIngested));
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
         try {
-            unitOfWork.executeWithResult(
-                    () -> {
-                        unitOfWork.onRollback(uow -> errorHandler
-                                .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
-                                             () -> doProcessBatch(eventMessages)));
-                        unitOfWork.onCleanup(uow -> {
-                            MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
-                            if (uow.isRolledBack()) {
-                                callback.reportFailure(uow.getExecutionResult().getExceptionResult());
-                            } else {
-                                callback.reportSuccess();
-                            }
-                        });
-                        return new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed();
-                    },
-                    rollbackConfiguration);
+            unitOfWork.executeWithResult(() -> {
+                unitOfWork.onRollback(uow -> errorHandler
+                        .handleError(getName(), uow.getExecutionResult().getExceptionResult(), eventMessages,
+                                     () -> process(eventMessages)));
+                unitOfWork.onCleanup(uow -> {
+                    MessageMonitor.MonitorCallback callback = monitorCallbacks.get(uow.getMessage());
+                    if (uow.isRolledBack()) {
+                        callback.reportFailure(uow.getExecutionResult().getExceptionResult());
+                    } else {
+                        callback.reportSuccess();
+                    }
+                });
+                return new DefaultInterceptorChain<>(unitOfWork, interceptors, eventHandlerInvoker).proceed();
+            }, rollbackConfiguration);
         } catch (Exception e) {
             throw new EventProcessingException(
                     String.format("An exception occurred while processing events in EventProcessor [%s].%s", getName(),

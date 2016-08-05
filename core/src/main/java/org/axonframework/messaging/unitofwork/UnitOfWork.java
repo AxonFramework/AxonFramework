@@ -230,6 +230,7 @@ public interface UnitOfWork<T extends Message<?>> {
      * the {@code mappingFunction} is invoked to provide the mapping.
      *
      * @param key The name under which the resource was attached
+     * @param mappingFunction The function that provides the mapping if there is no mapped resource yet
      * @param <R> The type of resource
      * @return The resource mapped to the given {@code key}, or the resource returned by the
      * {@code mappingFunction} if no resource was found.
@@ -284,6 +285,8 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @param <R>  the type of result that is returned after successful execution
      * @param task the task to execute
+     * @return The result of the task
+     * @throws Exception if an Exception was raised while executing the task
      */
     default <R> R executeWithResult(Callable<R> task) throws Exception {
         return executeWithResult(task, RollbackConfigurationType.ANY_THROWABLE);
@@ -301,6 +304,8 @@ public interface UnitOfWork<T extends Message<?>> {
      * @param task                  the task to execute
      * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when task
      *                              execution fails
+     * @return The result of the task
+     * @throws Exception if an Exception was raised while executing the task
      */
     <R> R executeWithResult(Callable<R> task, RollbackConfiguration rollbackConfiguration) throws Exception;
 

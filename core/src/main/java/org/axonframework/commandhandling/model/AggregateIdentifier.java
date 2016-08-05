@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation that indicates the field contains the identifier of the Aggregate.
+ * Field annotation that identifies the field containing the identifier of the Aggregate.
  *
  * @author Allard Buijze
  * @since 2.0
@@ -32,5 +32,11 @@ import java.lang.annotation.Target;
 @EntityId
 public @interface AggregateIdentifier {
 
+    /**
+     * Get the name of the routing key property on commands that provides the identifier that should be used
+     * to target the aggregate root with the annotated field.
+     * <p>
+     * Optional. If left empty this defaults to field name.
+     */
     String routingKey() default "";
 }

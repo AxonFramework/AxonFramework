@@ -19,7 +19,22 @@ package org.axonframework.messaging.annotation;
 import java.lang.reflect.Executable;
 import java.util.Optional;
 
+/**
+ * Interface that describes an object capable of inspecting a method to determine if the method is suitable for message
+ * handling. If the method is suitable the definition returns a {@link MessageHandler} instance to invoke the method.
+ */
 public interface HandlerDefinition {
 
-    <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable, ParameterResolverFactory parameterResolverFactory);
+    /**
+     * Create a {@link MessageHandlingMember} for the given {@code executable} method. Use the given {@code
+     * parameterResolverFactory} to resolve the method's parameters.
+     *
+     * @param declaringType            The type of object declaring the given executable method
+     * @param executable               The method to inspect
+     * @param parameterResolverFactory Factory for a {@link ParameterResolver} of the method
+     * @param <T>                      The type of the declaring object
+     * @return An optional containing the handler if the method is suitable, or an empty Nullable otherwise
+     */
+    <T> Optional<MessageHandlingMember<T>> createHandler(Class<T> declaringType, Executable executable,
+                                                  ParameterResolverFactory parameterResolverFactory);
 }

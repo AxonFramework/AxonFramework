@@ -32,7 +32,7 @@ import java.lang.annotation.*;
 public @interface MetaData {
 
     /**
-     * The key of the MetaData field to inject.
+     * The key of the MetaData field to inject as method parameter.
      */
     String value();
 

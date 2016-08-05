@@ -19,10 +19,19 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.MessageHandler;
 
 /**
+ * Interface for an event message handler that defers handling to one or more other handlers.
+ *
  * @author Rene de Waele
  */
 public interface EventHandlerInvoker extends MessageHandler<EventMessage<?>> {
 
+    /**
+     * Check whether or not this invoker has handlers that can handle the given {@code eventMessage}.
+     *
+     * @param eventMessage The message to be processed
+     * @return {@code true} if the invoker has one or more handlers that can handle the given message, {@code false}
+     * otherwise
+     */
     boolean hasHandler(EventMessage<?> eventMessage);
 
 }

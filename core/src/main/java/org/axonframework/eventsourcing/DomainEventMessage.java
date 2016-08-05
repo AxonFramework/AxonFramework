@@ -48,11 +48,16 @@ public interface DomainEventMessage<T> extends EventMessage<T> {
      */
     String getAggregateIdentifier();
 
+    /**
+     * Returns the type of the Aggregate that generated this DomainEvent. By default this is equal to the simple class
+     * name of the aggregate root.
+     *
+     * @return the type of the Aggregate that generated this DomainEvent
+     */
     String getType();
 
     /**
-     * Returns a copy of this DomainEventMessage with the given {@code metaData}. The payload, {@link
-     * #getTimestamp()
+     * Returns a copy of this DomainEventMessage with the given {@code metaData}. The payload, {@link #getTimestamp()
      * Timestamp} and {@link #getIdentifier() EventIdentifier}, as well as the {@link #getAggregateIdentifier()
      * Aggregate Identifier} and {@link #getSequenceNumber() Sequence Number} remain unchanged.
      *

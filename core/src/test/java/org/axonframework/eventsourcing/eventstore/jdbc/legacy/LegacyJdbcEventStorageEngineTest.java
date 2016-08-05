@@ -17,7 +17,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.jdbc.AbstractJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventSchemaFactory;
+import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventTableFactory;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.Before;
@@ -45,27 +45,27 @@ public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngine
         Connection connection = dataSource.getConnection();
         connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
         connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-        testSubject.createSchema(new LegacyEventSchemaFactory());
+        testSubject.createSchema(new LegacyEventTableFactory());
     }
 
-    private static class LegacyEventSchemaFactory extends HsqlEventSchemaFactory {
+    private static class LegacyEventTableFactory extends HsqlEventTableFactory {
         @Override
         public PreparedStatement createDomainEventTable(Connection connection,
-                                                        EventSchema configuration) throws SQLException {
-            String sql = "CREATE TABLE IF NOT EXISTS " + configuration.domainEventTable() + " (\n" +
-                    configuration.aggregateIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
-                    configuration.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +
-                    configuration.typeColumn() + " VARCHAR(255) NOT NULL,\n" +
-                    configuration.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
-                    configuration.metaDataColumn() + " " + payloadType() + ",\n" +
-                    configuration.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
-                    configuration.payloadRevisionColumn() + " VARCHAR(255),\n" +
-                    configuration.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
-                    configuration.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
-                    "PRIMARY KEY (" + configuration.aggregateIdentifierColumn() + ", " +
-                    configuration.sequenceNumberColumn() + ", " +
-                    configuration.typeColumn() + "),\n" +
-                    "UNIQUE (" + configuration.eventIdentifierColumn() + ")\n" +
+                                                        EventSchema schema) throws SQLException {
+            String sql = "CREATE TABLE IF NOT EXISTS " + schema.domainEventTable() + " (\n" +
+                    schema.aggregateIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
+                    schema.sequenceNumberColumn() + " BIGINT NOT NULL,\n" +
+                    schema.typeColumn() + " VARCHAR(255) NOT NULL,\n" +
+                    schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
+                    schema.metaDataColumn() + " " + payloadType() + ",\n" +
+                    schema.payloadColumn() + " " + payloadType() + " NOT NULL,\n" +
+                    schema.payloadRevisionColumn() + " VARCHAR(255),\n" +
+                    schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
+                    schema.timestampColumn() + " VARCHAR(255) NOT NULL,\n" +
+                    "PRIMARY KEY (" + schema.aggregateIdentifierColumn() + ", " +
+                    schema.sequenceNumberColumn() + ", " +
+                    schema.typeColumn() + "),\n" +
+                    "UNIQUE (" + schema.eventIdentifierColumn() + ")\n" +
                     ")";
             return connection.prepareStatement(sql);
         }

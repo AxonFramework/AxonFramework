@@ -86,11 +86,21 @@ public interface SagaSqlSchema {
      * @return a PreparedStatement that creates a ResultSet containing only saga identifiers when executed
      * @throws SQLException when an error occurs creating the PreparedStatement
      */
-    PreparedStatement sql_findAssocSagaIdentifiers(Connection connection, String key, String value, String sagaType)
-            throws SQLException;
+    PreparedStatement sql_findAssocSagaIdentifiers(Connection connection, String key, String value,
+                                                   String sagaType) throws SQLException;
 
-    PreparedStatement sql_findAssociations(Connection connection, String sagaIdentifier, String sagaType)
-            throws SQLException;
+    /**
+     * Creates a PreparedStatement that finds the associations of a Saga of given {@code sagaType} and given {@code
+     * sagaIdentifier}.
+     *
+     * @param connection The connection to create the PreparedStatement for
+     * @param sagaIdentifier The identifier of the Saga
+     * @param sagaType The type of saga to find associations for
+     * @return a PreparedStatement that creates a ResultSet containing association keys and their values
+     * @throws SQLException when an error occurs while creating the PreparedStatement
+     */
+    PreparedStatement sql_findAssociations(Connection connection, String sagaIdentifier,
+                                           String sagaType) throws SQLException;
 
     /**
      * Creates a PreparedStatement that deletes a Saga with given {@code sagaIdentifier}.
@@ -173,7 +183,22 @@ public interface SagaSqlSchema {
      */
     SerializedObject<?> readSerializedSaga(ResultSet resultSet) throws SQLException;
 
+    /**
+     * Reads a Set of AssociationValues from the given {@code resultSet}, which has been returned by executing the
+     * Statement returned from {@link #sql_findAssociations(Connection, String, String)}.
+     *
+     * @param resultSet The result set to read data from.
+     * @return a Set of AssociationValues from the resultSet
+     * @throws SQLException when an exception occurs reading from the resultSet
+     */
     Set<AssociationValue> readAssociationValues(ResultSet resultSet) throws SQLException;
 
+    /**
+     * Reads a token from the given {@code resultSet}.
+     *
+     * @param resultSet The result set to read data from.
+     * @return the token from the resultSet
+     * @throws SQLException when an exception occurs reading from the resultSet
+     */
     String readToken(ResultSet resultSet) throws SQLException;
 }

@@ -16,10 +16,19 @@ package org.axonframework.eventhandling;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 /**
+ * Represents an {@link EventMessage} containing a {@link TrackingToken}. The tracking token can be used be {@link
+ * EventProcessor event processors} to keep track of which events it has processed.
+ *
+ * @param <T> The type of payload contained in this Message
  * @author Rene de Waele
  */
 public interface TrackedEventMessage<T> extends EventMessage<T> {
 
+    /**
+     * Returns the {@link TrackingToken} of the event message.
+     *
+     * @return the tracking token of the event
+     */
     TrackingToken trackingToken();
 
 }

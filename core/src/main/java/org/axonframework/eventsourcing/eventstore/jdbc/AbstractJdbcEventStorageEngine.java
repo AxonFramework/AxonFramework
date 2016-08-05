@@ -68,12 +68,14 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
 
     protected abstract DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException;
 
+    protected abstract DomainEventData<?> getSnapshotData(ResultSet resultSet) throws SQLException;
+
     /**
      * Performs the DDL queries to create the schema necessary for this storage engine implementation.
      *
      * @throws EventStoreException when an error occurs executing SQL statements
      */
-    public abstract void createSchema(EventSchemaFactory schemaFactory);
+    public abstract void createSchema(EventTableFactory schemaFactory);
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
@@ -118,7 +120,7 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     @Override
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         List<DomainEventData<?>> result =
-                executeQuery(connection -> readSnapshotData(connection, aggregateIdentifier), this::getDomainEventData,
+                executeQuery(connection -> readSnapshotData(connection, aggregateIdentifier), this::getSnapshotData,
                              e -> new EventStoreException(
                                      format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
         return result.stream().findFirst();

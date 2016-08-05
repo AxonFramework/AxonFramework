@@ -38,7 +38,7 @@ public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition
                 .orElse(original);
     }
 
-    private class MethodCommandMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements CommandMessageHandlingMember<T> {
+    private static class MethodCommandMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> implements CommandMessageHandlingMember<T> {
 
         private final String commandName;
         private final boolean isFactoryHandler;

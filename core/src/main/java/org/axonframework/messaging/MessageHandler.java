@@ -26,7 +26,7 @@ public interface MessageHandler<T extends Message<?>> {
     /**
      * Handles the given {@code message}.
      *
-     * @param message        The message to be processed.
+     * @param message  The message to be processed.
      * @return The result of the message processing.
      *
      * @throws Exception any exception that occurs during message handling

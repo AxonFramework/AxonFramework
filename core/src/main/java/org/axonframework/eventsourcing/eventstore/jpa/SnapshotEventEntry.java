@@ -20,15 +20,32 @@ import org.axonframework.serialization.Serializer;
 import javax.persistence.Entity;
 
 /**
+ * Default implementation of an event entry containing a serialized snapshot of an aggregate. This implementation is
+ * used by the {@link JpaEventStorageEngine} to store snapshot events. Event payload and metadata are serialized to a
+ * byte array.
+ *
  * @author Rene de Waele
  */
 @Entity
 public class SnapshotEventEntry extends AbstractLegacyDomainEventEntry<byte[]> {
 
+    /**
+     * Construct a new default snapshot event entry from an aggregate. The snapshot payload and metadata will be
+     * serialized to a byte array.
+     * <p>
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code
+     * eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
+     *
+     * @param eventMessage The snapshot event message to convert to a serialized event entry
+     * @param serializer   The serializer to convert the snapshot event
+     */
     public SnapshotEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
         super(eventMessage, serializer, byte[].class);
     }
 
+    /**
+     * Default constructor required by JPA
+     */
     protected SnapshotEventEntry() {
     }
 }

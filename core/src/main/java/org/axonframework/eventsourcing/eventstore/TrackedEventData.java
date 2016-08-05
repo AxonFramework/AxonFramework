@@ -14,10 +14,19 @@
 package org.axonframework.eventsourcing.eventstore;
 
 /**
+ * Interface describing the properties of serialized Event Messages containing a {@link TrackingToken}. Event Storage
+ * Engine implementations should have their storage entries implement this interface.
+ *
+ * @param <T> The content type of the serialized data
  * @author Rene de Waele
  */
 public interface TrackedEventData<T> extends EventData<T> {
 
+    /**
+     * Returns the {@link TrackingToken} of the serialized event.
+     *
+     * @return the tracking token of the serialized event
+     */
     TrackingToken trackingToken();
 
 }

@@ -27,16 +27,37 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
+ * Interface describing the intermediate representation of an event during upcasting.
+ *
  * @author Rene de Waele
  */
 public interface IntermediateEventRepresentation {
 
+    /**
+     * Upcast the serialized payload of the event (leaving other aspects of the event the same).
+     *
+     * @param outputType                 The output type of the event after upcasting
+     * @param expectedRepresentationType The type of the serialized payload required by the upcast function
+     * @param upcastFunction             The upcast function for the event's payload
+     * @param <T>                        The expected payload type before and after upcasting
+     * @return The intermediate representation of the event after upcasting
+     */
     default <T> IntermediateEventRepresentation upcastPayload(SerializedType outputType,
                                                               Class<T> expectedRepresentationType,
                                                               Function<T, T> upcastFunction) {
         return upcast(outputType, expectedRepresentationType, upcastFunction, Function.identity());
     }
 
+    /**
+     * Upcast the serialized payload of the event (leaving other aspects of the event the same).
+     *
+     * @param outputType                 The output type of the event after upcasting
+     * @param expectedRepresentationType The type of the serialized payload required by the upcast function
+     * @param upcastFunction             The upcast function for the event's payload
+     * @param metaDataUpcastFunction     The upcast function for the event's metadata
+     * @param <T>                        The expected payload type before and after upcasting
+     * @return The intermediate representation of the event after upcasting
+     */
     <T> IntermediateEventRepresentation upcast(SerializedType outputType, Class<T> expectedRepresentationType,
                                                Function<T, T> upcastFunction,
                                                Function<MetaData, MetaData> metaDataUpcastFunction);

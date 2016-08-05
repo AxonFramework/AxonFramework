@@ -25,16 +25,36 @@ import javax.persistence.Index;
 import javax.persistence.Table;
 
 /**
+ * Legacy implementation of a serialized domain event with a format that is compatible with that of events stored using
+ * Axon 2. These entries have a primary key that is a combination of the aggregate's identifier, sequence number and
+ * type.
+ * <p>
+ * This implementation is used by the {@link LegacyJpaEventStorageEngine} to store events. Event payload and metadata
+ * are serialized to a byte array.
+ *
  * @author Rene de Waele
  */
 @Entity
 @Table(name = "DomainEventEntry", indexes = {@Index(columnList = "timeStamp,sequenceNumber,aggregateIdentifier")})
 public class LegacyDomainEventEntry extends AbstractLegacyDomainEventEntry<byte[]> implements TrackedEventData<byte[]> {
 
+    /**
+     * Construct a new legacy domain event entry from a published domain event message to enable storing the event or
+     * sending it to a remote location. The event payload and metadata will be serialized to a byte array.
+     * <p>
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code
+     * eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
+     *
+     * @param eventMessage The event message to convert to a serialized event entry
+     * @param serializer   The serializer to convert the event
+     */
     public LegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
         super(eventMessage, serializer, byte[].class);
     }
 
+    /**
+     * Default constructor required by JPA
+     */
     protected LegacyDomainEventEntry() {
     }
 

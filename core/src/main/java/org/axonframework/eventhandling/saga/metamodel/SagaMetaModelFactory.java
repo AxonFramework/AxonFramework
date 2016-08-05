@@ -16,7 +16,18 @@
 
 package org.axonframework.eventhandling.saga.metamodel;
 
+/**
+ * Interface of a factory for a {@link SagaModel} for any given saga type.
+ */
 public interface SagaMetaModelFactory {
 
+    /**
+     * Create a saga meta model for the given {@code sagaType}. The meta model will inspect the capabilities and
+     * characteristics of the given type.
+     *
+     * @param sagaType The saga class to be inspected
+     * @param <T> The saga type
+     * @return Model describing the capabilities and characteristics of the inspected saga class
+     */
     <T> SagaModel<T> modelOf(Class<T> sagaType);
 }

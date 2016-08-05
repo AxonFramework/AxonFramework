@@ -53,7 +53,7 @@ public interface TrackingEventStream extends AutoCloseable {
      * @param timeout the maximum number of time units to wait for events to become available
      * @param unit    the time unit for the timeout
      * @return true if an event is available or becomes available before the given timeout, false otherwise
-     * @throws InterruptedException
+     * @throws InterruptedException when the thread is interrupted before the indicated time is up
      */
     boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException;
 
@@ -63,13 +63,22 @@ public interface TrackingEventStream extends AutoCloseable {
      * or without a timeout to check if the stream has available events before calling this method.
      *
      * @return the next available event message
-     * @throws InterruptedException
+     * @throws InterruptedException when the thread is interrupted before the next event is returned
      */
     TrackedEventMessage<?> nextAvailable() throws InterruptedException;
 
     @Override
     void close();
 
+    /**
+     * Returns this TrackingEventStream as a {@link Stream} of TrackedEventMessages. Note that the returned Stream will
+     * start at the current position of the TrackingEventStream.
+     * <p>
+     * Note that iterating over the returned Stream may affect this TrackingEventStream and vice versa. It is therefore
+     * not recommended to use this TrackingEventStream after invoking this method.
+     *
+     * @return This TrackingEventStream as a Stream of event messages
+     */
     default Stream<? extends TrackedEventMessage> asStream() {
         return EventUtils.asStream(this);
     }

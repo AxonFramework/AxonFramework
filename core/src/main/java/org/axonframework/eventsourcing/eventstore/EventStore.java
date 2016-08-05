@@ -16,7 +16,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventBus;
 
 /**
- * Provides a mechanism to load events from the underlying event storage.
+ * Provides a mechanism to open streams from events in the the underlying event storage.
  * <p/>
  * The EventStore provides access to both the global event stream comprised of all domain and application events, as
  * well as streams containing only events of a single aggregate.

@@ -52,7 +52,7 @@ public abstract class AbstractEventBus implements EventBus {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventBus.class);
 
-    final String eventsKey = this + "_EVENTS";
+    private final String eventsKey = this + "_EVENTS";
     private final MessageMonitor<? super EventMessage<?>> messageMonitor;
     private final Set<Consumer<List<? extends EventMessage<?>>>> eventProcessors = new CopyOnWriteArraySet<>();
     private final Set<MessageDispatchInterceptor<EventMessage<?>>> dispatchInterceptors = new CopyOnWriteArraySet<>();

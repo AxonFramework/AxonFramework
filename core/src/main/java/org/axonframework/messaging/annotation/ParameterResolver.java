@@ -44,6 +44,12 @@ public interface ParameterResolver<T> {
      */
     boolean matches(Message message);
 
+    /**
+     * Returns the class of the payload that is supported by this resolver. Defaults to the {@link Object} class
+     * indicating that the payload type is irrelevant for this resolver.
+     *
+     * @return The class of the payload that is supported by this resolver
+     */
     default Class<?> supportedPayloadType() {
         return Object.class;
     }

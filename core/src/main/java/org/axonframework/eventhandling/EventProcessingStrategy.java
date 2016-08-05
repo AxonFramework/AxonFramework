@@ -17,10 +17,23 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
+ * Interface describing a strategy for the processing of a batch of events. This is used by the {@link
+ * SubscribingEventProcessor} to handle events directly (in the same thread) or asynchronously.
+ *
  * @author Rene de Waele
  */
 public interface EventProcessingStrategy {
 
+    /**
+     * Handle the given batch of {@code events}. Once the strategy decides it is opportune to process the events it
+     * should pass them back to the given {@code processor}.
+     * <p>
+     * Note that the strategy may call back to the processor more than once for a single invocation of this method. Also
+     * note that a batch of events passed back to the processor may be made up of events from different batches.
+     *
+     * @param events    Events to be processed
+     * @param processor Callback method on the processor that carries out the actual processing of events
+     */
     void handle(List<? extends EventMessage<?>> events, Consumer<List<? extends EventMessage<?>>> processor);
 
 }

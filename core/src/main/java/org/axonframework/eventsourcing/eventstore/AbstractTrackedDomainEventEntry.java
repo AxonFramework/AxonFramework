@@ -25,6 +25,9 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 /**
+ * Abstract base class of a serialized domain event that can be used by tracking event stores. Fields in this class
+ * contain JPA annotations that direct JPA event storage engines how to store event entries.
+ *
  * @author Rene de Waele
  */
 @MappedSuperclass
@@ -34,19 +37,47 @@ public abstract class AbstractTrackedDomainEventEntry<T> extends AbstractDomainE
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long globalIndex;
 
+    /**
+     * Construct a new event entry from a published domain event message to enable storing the event or sending it to a
+     * remote location.
+     * <p>
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code eventMessage}.
+     * The type of the serialized data will be the same as the given {@code contentType}.
+     *
+     * @param eventMessage The event message to convert to a serialized event entry
+     * @param serializer   The serializer to convert the event
+     * @param contentType  The data type of the payload and metadata after serialization
+     */
     public AbstractTrackedDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
                                            Class<T> contentType) {
         super(eventMessage, serializer, contentType);
     }
 
-    public AbstractTrackedDomainEventEntry(long globalIndex, String eventIdentifier, Object timeStamp,
+    /**
+     * Reconstruct an event entry from a stored object.
+     *
+     * @param type                The type of aggregate that published this event
+     * @param aggregateIdentifier The identifier of the aggregate that published this event
+     * @param sequenceNumber      The sequence number of the event in the aggregate
+     * @param globalIndex         The global sequence number of the event
+     * @param eventIdentifier     The identifier of the event
+     * @param timestamp           The time at which the event was originally created
+     * @param payloadType         The fully qualified class name or alias of the event payload
+     * @param payloadRevision     The revision of the event payload
+     * @param payload             The serialized payload
+     * @param metaData            The serialized metadata
+     */
+    public AbstractTrackedDomainEventEntry(long globalIndex, String eventIdentifier, Object timestamp,
                                            String payloadType, String payloadRevision, T payload, T metaData,
                                            String type, String aggregateIdentifier, long sequenceNumber) {
-        super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timeStamp, payloadType, payloadRevision,
+        super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timestamp, payloadType, payloadRevision,
               payload, metaData);
         this.globalIndex = globalIndex;
     }
 
+    /**
+     * Default constructor required by JPA
+     */
     protected AbstractTrackedDomainEventEntry() {
     }
 

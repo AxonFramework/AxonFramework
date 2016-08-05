@@ -56,8 +56,8 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     }
 
     @Override
-    public Object handle(CommandMessage<?> msg) throws Exception {
-        return wrappedAggregate.handle(msg);
+    public Object handle(CommandMessage<?> commandMessage) throws Exception {
+        return wrappedAggregate.handle(commandMessage);
     }
 
     @Override

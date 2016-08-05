@@ -24,7 +24,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventSchemaFactory;
+import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventTableFactory;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
@@ -64,7 +64,7 @@ public class RunUpcaster {
         JdbcEventStorageEngine storageEngine = new JdbcEventStorageEngine(
                 new UnitOfWorkAwareConnectionProviderWrapper(new DataSourceConnectionProvider(dataSource)),
                 NoTransactionManager.INSTANCE);
-        storageEngine.createSchema(HsqlEventSchemaFactory.INSTANCE);
+        storageEngine.createSchema(HsqlEventTableFactory.INSTANCE);
         storageEngine.setSerializer(serializer);
         // initialize the upcaster chain with our upcaster
         storageEngine.setUpcasterChain(new DefaultEventUpcasterChain(new ToDoItemUpcaster()));

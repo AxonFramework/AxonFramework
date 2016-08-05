@@ -46,9 +46,6 @@ public interface EventBus {
      * <p>
      * In case the event bus cannot open a stream for a given tracking token, for instance because the event bus does
      * not persist or cache events, the event bus will throw an {@link UnsupportedOperationException}.
-     * <p>
-     * In case any underlying storage has no more events the event store will block the thread that processes the event
-     * stream until new events are added to the store or until the stream is closed.
      *
      * @param trackingToken object describing the global index of the last processed event or {@code null} to create a
      *                      stream of all events in the store

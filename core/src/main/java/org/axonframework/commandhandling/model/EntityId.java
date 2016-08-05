@@ -18,11 +18,22 @@ package org.axonframework.commandhandling.model;
 
 import java.lang.annotation.*;
 
+/**
+ * Field annotation that marks the field containing the identifier of an Entity. Commands for a child Entity are
+ * routed to the Entity if the value of the Command's {@link #routingKey()} property matches the value of the annotated
+ * field.
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD})
 public @interface EntityId {
 
+    /**
+     * Get the name of the routing key property on commands and events that provides the identifier that should be used
+     * to target the entity with the annotated field.
+     * <p>
+     * Optional. If left empty this defaults to field name.
+     */
     String routingKey() default "";
 
 }

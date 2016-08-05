@@ -36,7 +36,7 @@ public class JpaTokenStore implements TokenStore {
     }
 
     @Override
-    public void storeToken(String processName, int segment, TrackingToken token) {
+    public void storeToken(TrackingToken token, String processName, int segment) {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
         AbstractTokenEntry<?> entity = createEntity(processName, segment, token, serializer);
         int count = entityManager.createQuery("UPDATE " + tokenEntryName() + " SET token = :token " +

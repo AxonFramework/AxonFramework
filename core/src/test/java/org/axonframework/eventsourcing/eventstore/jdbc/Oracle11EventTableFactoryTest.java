@@ -11,15 +11,15 @@ import java.sql.SQLException;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 import static org.junit.Assume.assumeNoException;
 
-public class Oracle11EventSchemaFactoryTest {
+public class Oracle11EventTableFactoryTest {
 
-    private Oracle11EventSchemaFactory testSubject;
+    private Oracle11EventTableFactory testSubject;
     private Connection connection;
     private EventSchema eventSchema;
 
     @Before
     public void setUp() throws Exception {
-        testSubject = new Oracle11EventSchemaFactory();
+        testSubject = new Oracle11EventTableFactory();
         eventSchema = new EventSchema();
         try {
             connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "axon", "axon");

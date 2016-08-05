@@ -31,8 +31,8 @@ import org.mockito.ArgumentCaptor;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
+import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -65,8 +65,9 @@ public class AbstractEventBusTest {
         verify(unitOfWork).onPrepareCommit(any());
         verify(unitOfWork).onCommit(any());
         verify(unitOfWork).afterCommit(any());
-        List<EventMessage<?>> actual = unitOfWork.getResource(testSubject.eventsKey);
-        assertEquals(Collections.singletonList(event), actual);
+        assertEquals(emptyList(), testSubject.committedEvents);
+        unitOfWork.commit();
+        assertEquals(Collections.singletonList(event), testSubject.committedEvents);
     }
 
     @Test
@@ -79,7 +80,9 @@ public class AbstractEventBusTest {
         verify(unitOfWork, never()).onPrepareCommit(any());
         verify(unitOfWork, never()).onCommit(any());
         verify(unitOfWork, never()).afterCommit(any());
-        List<EventMessage<?>> actual = unitOfWork.getResource(testSubject.eventsKey);
+
+        unitOfWork.commit();
+        List<EventMessage<?>> actual = testSubject.committedEvents;
         assertEquals(Arrays.asList(event, event), actual);
     }
 

@@ -85,7 +85,7 @@ public class TrackingEventProcessorTest {
         }));
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
-        verify(tokenStore).storeToken(any(), anyInt(), any());
+        verify(tokenStore).storeToken(any(), any(), anyInt());
         assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
@@ -104,7 +104,7 @@ public class TrackingEventProcessorTest {
         }));
         eventBus.publish(createEvent());
         assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
-        verify(tokenStore).storeToken(any(), anyInt(), any());
+        verify(tokenStore).storeToken(any(), any(), anyInt());
         assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
     }
 
@@ -116,7 +116,7 @@ public class TrackingEventProcessorTest {
         tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(10));
         TrackedEventMessage<?> firstEvent = eventBus.streamEvents(null).nextAvailable();
-        tokenStore.storeToken(testSubject.getName(), 0, firstEvent.trackingToken());
+        tokenStore.storeToken(firstEvent.trackingToken(), testSubject.getName(), 0);
         assertEquals(firstEvent.trackingToken(), tokenStore.fetchToken(testSubject.getName(), 0));
 
         List<EventMessage<?>> ackedEvents = new ArrayList<>();

@@ -16,8 +16,19 @@
 
 package org.axonframework.messaging.annotation;
 
+/**
+ * Interface describing objects that are capable of enhancing a {@link MessageHandler}, giving it additional
+ * functionality.
+ */
 public interface HandlerEnhancerDefinition {
 
+    /**
+     * Enhance the given {@code original} handler. Implementations may return the original message handler.
+     *
+     * @param original The original message handler
+     * @param <T> The type of object that will perform the actual handling of the message
+     * @return The enhanced message handler
+     */
     <T> MessageHandlingMember<T> wrapHandler(MessageHandlingMember<T> original);
 
 }

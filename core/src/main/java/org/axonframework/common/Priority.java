@@ -16,11 +16,7 @@
 
 package org.axonframework.common;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Indicates the relative priority of the annotated component. Components with a higher priority are considered before
@@ -54,7 +50,6 @@ public @interface Priority {
      * Value indicating the annotated member should be the very first
      */
     int FIRST = Integer.MAX_VALUE;
-
 
     /**
      * A value indicating the priority. Members with higher values must come before members with a lower value

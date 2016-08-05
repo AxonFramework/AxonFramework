@@ -25,6 +25,10 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
+ * Abstract base class of a serialized domain event with a format that is compatible with that of events stored using
+ * Axon 2. If JPA is used these entries have a primary key that is a combination of the aggregate's identifier,
+ * sequence number and type.
+ *
  * @author Rene de Waele
  */
 @MappedSuperclass
@@ -38,6 +42,17 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
     @Id
     private String type;
 
+    /**
+     * Construct a new event entry from a published domain event message to enable storing the event or sending it to a
+     * remote location.
+     * <p>
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code
+     * eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
+     *
+     * @param eventMessage The event message to convert to a serialized event entry
+     * @param serializer   The serializer to convert the event
+     * @param contentType  The data type of the payload and metadata after serialization
+     */
     public AbstractLegacyDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
                                           Class<T> contentType) {
         super(eventMessage, serializer, contentType);
@@ -46,6 +61,19 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
         sequenceNumber = eventMessage.getSequenceNumber();
     }
 
+    /**
+     * Reconstruct an event entry from a stored object.
+     *
+     * @param type                The type of aggregate that published this event
+     * @param aggregateIdentifier The identifier of the aggregate that published this event
+     * @param sequenceNumber      The sequence number of the event in the aggregate
+     * @param eventIdentifier     The identifier of the event
+     * @param timestamp           The time at which the event was originally created
+     * @param payloadType         The fully qualified class name or alias of the event payload
+     * @param payloadRevision     The revision of the event payload
+     * @param payload             The serialized payload
+     * @param metaData            The serialized metadata
+     */
     public AbstractLegacyDomainEventEntry(String type, String aggregateIdentifier, long sequenceNumber,
                                           String eventIdentifier, Object timestamp, String payloadType,
                                           String payloadRevision, T payload, T metaData) {
@@ -55,6 +83,9 @@ public abstract class AbstractLegacyDomainEventEntry<T> extends AbstractEventEnt
         this.sequenceNumber = sequenceNumber;
     }
 
+    /**
+     * Default constructor required by JPA
+     */
     protected AbstractLegacyDomainEventEntry() {
     }
 

@@ -20,12 +20,12 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.model.ApplyMore;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -118,7 +118,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public Object handle(CommandMessage<?> msg) {
+        public Object handle(CommandMessage<?> commandMessage) {
             throw new UnsupportedOperationException("Aggregate instance is read-only");
         }
 

@@ -49,6 +49,8 @@ public @interface CommandHandler {
     /**
      * The name of the Command this handler listens to. Defaults to the fully qualified class name of the payload type
      * (i.e. first parameter).
+     *
+     * @return The command name
      */
     String commandName() default "";
 
@@ -56,6 +58,8 @@ public @interface CommandHandler {
      * The property of the command to be used as a routing key towards this command handler instance. If multiple
      * handlers instances are available, a sending component is responsible to route commands with the same routing key
      * value to the correct instance.
+     *
+     * @return The property of the command to use as routing key
      */
     String routingKey() default "";
 

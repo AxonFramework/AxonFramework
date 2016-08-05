@@ -82,12 +82,20 @@ public abstract class EventUtils {
                 upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes);
         return upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
-                                                                             new LazyDeserializingObject<>(ir::getOutputData,
-                                                                                                     ir.getOutputType(),
-                                                                                                     serializer),
+                                                                             new LazyDeserializingObject<>(
+                                                                                     ir::getOutputData,
+                                                                                     ir.getOutputType(), serializer),
                                                                              ir.getMetaData());
-            return new GenericDomainEventMessage<>(ir.getAggregateType().get(), ir.getAggregateIdentifier().get(),
-                                                   ir.getSequenceNumber().get(), serializedMessage, ir.getTimestamp());
+            if (ir.getTrackingToken().isPresent()) {
+                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().get(),
+                                                              ir.getAggregateIdentifier().get(),
+                                                              ir.getSequenceNumber().get(), serializedMessage,
+                                                              ir.getTimestamp());
+            } else {
+                return new GenericDomainEventMessage<>(ir.getAggregateType().get(), ir.getAggregateIdentifier().get(),
+                                                       ir.getSequenceNumber().get(), serializedMessage,
+                                                       ir.getTimestamp());
+            }
         });
     }
 
@@ -112,12 +120,13 @@ public abstract class EventUtils {
                 upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes);
         return upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
-                                                                             new LazyDeserializingObject<>(ir::getOutputData,
-                                                                                                     ir.getOutputType(),
-                                                                                                     serializer),
+                                                                             new LazyDeserializingObject<>(
+                                                                                     ir::getOutputData,
+                                                                                     ir.getOutputType(), serializer),
                                                                              ir.getMetaData());
             if (ir.getAggregateIdentifier().isPresent()) {
-                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().orElse(null),
+                return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(),
+                                                              ir.getAggregateType().orElse(null),
                                                               ir.getAggregateIdentifier().get(),
                                                               ir.getSequenceNumber().get(), serializedMessage,
                                                               ir.getTimestamp());

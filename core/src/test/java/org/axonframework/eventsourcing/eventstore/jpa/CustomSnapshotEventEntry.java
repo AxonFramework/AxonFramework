@@ -32,6 +32,9 @@ public class CustomSnapshotEventEntry extends AbstractLegacyDomainEventEntry<Str
         super(event, serializer, String.class);
     }
 
+    /**
+     * Default constructor required by JPA
+     */
     protected CustomSnapshotEventEntry() {
     }
 }

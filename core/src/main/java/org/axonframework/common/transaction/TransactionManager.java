@@ -37,11 +37,18 @@ public interface TransactionManager {
      * Starts a transaction with given {@code isolationLevel}. The return value is the started transaction that can
      * be committed or rolled back.
      *
+     * @param isolationLevel The required isolation level of the returned Transaction
      * @return The object representing the transaction
      */
     Transaction startTransaction(TransactionIsolationLevel isolationLevel);
 
-    default void executeInTransaction(TransactionIsolationLevel isolationLevel, Runnable task) {
+    /**
+     * Executes the given {@code task} in a new {@link Transaction} of given {@code isolationLevel}.
+     *
+     * @param task           The task to execute
+     * @param isolationLevel The isolation level of the transaction in which to execute the task
+     */
+    default void executeInTransaction(Runnable task, TransactionIsolationLevel isolationLevel) {
         Transaction transaction = startTransaction(isolationLevel);
         try {
             task.run();
@@ -52,7 +59,13 @@ public interface TransactionManager {
         }
     }
 
+    /**
+     * Executes the given {@code task} in a new {@link Transaction} of {@link TransactionIsolationLevel#READ_COMMITTED}
+     * isolation level.
+     *
+     * @param task           The task to execute
+     */
     default void executeInTransaction(Runnable task) {
-        executeInTransaction(TransactionIsolationLevel.READ_COMMITTED, task);
+        executeInTransaction(task, TransactionIsolationLevel.READ_COMMITTED);
     }
 }

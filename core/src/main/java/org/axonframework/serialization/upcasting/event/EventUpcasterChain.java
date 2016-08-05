@@ -15,4 +15,10 @@ package org.axonframework.serialization.upcasting.event;
 
 import org.axonframework.serialization.upcasting.UpcasterChain;
 
+/**
+ * Upcaster chain used when upcasting events. The chain uses {@link IntermediateEventRepresentation} objects as
+ * intermediate representation.
+ *
+ * @author Rene de Waele
+ */
 public interface EventUpcasterChain extends UpcasterChain<IntermediateEventRepresentation> {}

@@ -22,28 +22,102 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 
 import java.util.Set;
 
+/**
+ * Provides a mechanism to find, load update and delete sagas of type {@link T} from an underlying storage like a
+ * database.
+ *
+ * @param <T> The saga type
+ */
 public interface SagaStore<T> {
 
+    /**
+     * Returns identifiers of saga instances of the given {@code sagaType} that have been associated with the given
+     * {@code associationValue}.
+     *
+     * @param sagaType         The type of the returned sagas
+     * @param associationValue The value that the returned sagas must be associated with
+     * @return A set of identifiers of sagas having the correct type and association value
+     */
     Set<String> findSagas(Class<? extends T> sagaType, AssociationValue associationValue);
 
+    /**
+     * Loads a known saga {@link Entry} instance with given {@code sagaType} and unique {@code sagaIdentifier}.
+     * <p>
+     * Due to the concurrent nature of Sagas, it is not unlikely for a Saga to have ceased to exist after it has been
+     * found based on associations. Therefore, a repository should return {@code null} in case a Saga doesn't
+     * exists, as opposed to throwing an exception.
+     *
+     * @param sagaType       The type of the returned saga entry
+     * @param sagaIdentifier The unique identifier of the returned saga entry
+     * @return The saga entry, or {@code null} if no such saga exists
+     */
     <S extends T> Entry<S> loadSaga(Class<S> sagaType, String sagaIdentifier);
 
+    /**
+     * Deletes a Saga with given {@code sagaType} and {@code sagaIdentifier} and all its associations. For convenience
+     * all known association values are passed along as well.
+     *
+     * @param sagaType          The type of saga to delete
+     * @param sagaIdentifier    The identifier of the saga to delete
+     * @param associationValues The known associations of the saga
+     */
     void deleteSaga(Class<? extends T> sagaType, String sagaIdentifier, Set<AssociationValue> associationValues);
 
-    void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga,
-                    TrackingToken token,
+    /**
+     * Adds a new Saga and its initial association values to the store. The tracking token of the event last handled by
+     * the Saga (usually the event that started the Saga) is also passed as a parameter. Note that the given {@code
+     * token} may be {@code null} if the Saga is not tracking the event store.
+     *
+     * @param sagaType          The type of the Saga
+     * @param sagaIdentifier    The identifier of the Saga
+     * @param saga              The Saga instance
+     * @param token             The tracking token of the event last handled by the Saga. May be {@code null}.
+     * @param associationValues The initial association values of the Saga
+     */
+    void insertSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
                     Set<AssociationValue> associationValues);
 
-    void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga,
-                    TrackingToken token,
+    /**
+     * Updates a given Saga after its state was modified. The tracking token of the event last handled by the Saga is
+     * also passed as a parameter. Note that the given {@code token} may be {@code null} if the Saga is not tracking the
+     * event store.
+     *
+     * @param sagaType          The type of the Saga
+     * @param sagaIdentifier    The identifier of the Saga
+     * @param saga              The Saga instance
+     * @param token             The tracking token of the event last handled by the Saga. May be {@code null}.
+     * @param associationValues The initial association values of the Saga
+     */
+    void updateSaga(Class<? extends T> sagaType, String sagaIdentifier, T saga, TrackingToken token,
                     AssociationValues associationValues);
 
+    /**
+     * Interface describing a Saga entry fetched from a SagaStore.
+     *
+     * @param <T> The type of the Saga
+     */
     interface Entry<T> {
 
+        /**
+         * Returns the tracking token of the last event handled by the Saga. May be {@code null} if this Saga has not
+         * been tracking the event store.
+         *
+         * @return the last handled event token. May be {@code null}.
+         */
         TrackingToken trackingToken();
 
+        /**
+         * Returns the Set of association values of the fetched Saga entry.
+         *
+         * @return association values of the Saga
+         */
         Set<AssociationValue> associationValues();
 
+        /**
+         * Returns the Saga instance in unserialized form.
+         *
+         * @return the saga instance
+         */
         T saga();
     }
 }

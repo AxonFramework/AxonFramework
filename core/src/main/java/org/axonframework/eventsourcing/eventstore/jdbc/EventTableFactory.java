@@ -18,28 +18,30 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
+ * Interface describing a factory for JDBC to create the Domain and Snapshot Event schemas.
+ *
  * @author Rene de Waele
  */
-public interface EventSchemaFactory {
+public interface EventTableFactory {
 
     /**
      * Creates a PreparedStatement that allows for the creation of the table to store Event entries.
      *
      * @param connection The connection to create the PreparedStatement for
-     * @return The Prepared Statement, ready to be executed
+     * @param schema     The event schema with the name of the table and its columns
+     * @return The statement to create the table, ready to be executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    PreparedStatement createDomainEventTable(Connection connection,
-                                             EventSchema schemaConfiguration) throws SQLException;
+    PreparedStatement createDomainEventTable(Connection connection, EventSchema schema) throws SQLException;
 
     /**
      * Creates a PreparedStatement that allows for the creation of the table to store Snapshots.
      *
      * @param connection The connection to create the PreparedStatement for
-     * @return The Prepared Statement, ready to be executed
+     * @param schema     The event schema with the name of the table and its columns
+     * @return The statement to create the table, ready to be executed
      * @throws SQLException when an exception occurs while creating the prepared statement
      */
-    PreparedStatement createSnapshotEventTable(Connection connection,
-                                               EventSchema schemaConfiguration) throws SQLException;
+    PreparedStatement createSnapshotEventTable(Connection connection, EventSchema schema) throws SQLException;
 
 }

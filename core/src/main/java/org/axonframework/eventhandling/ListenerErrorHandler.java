@@ -14,6 +14,9 @@
 package org.axonframework.eventhandling;
 
 /**
+ * Interface of an error handler that is invoked when an exception is triggered as result of an {@link EventListener}
+ * handling an event.
+ *
  * @author Rene de Waele
  */
 public interface ListenerErrorHandler {
@@ -31,7 +34,7 @@ public interface ListenerErrorHandler {
      * @param exception     The exception thrown by the given eventListener
      * @param event         The event that triggered the exception
      * @param eventListener The listener that failed to handle given event
-     * @throws Exception    To stop further handling of the event
+     * @throws Exception To stop further handling of the event
      */
     void onError(Exception exception, EventMessage<?> event, EventListener eventListener) throws Exception;
 

@@ -19,8 +19,13 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
+ * The DomainEventStream represents a stream of historical events published by an Aggregate. The order of events in this
+ * stream must represent the actual chronological order in which the events happened. A DomainEventStream may provide
+ * access to all events (from the first to the most recent) or any subset of these.
+ *
  * @author Rene de Waele
  */
 public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
@@ -67,10 +72,35 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Returns this DomainEventStream as a {@link Stream} of DomainEventMessages. Note that the returned Stream will
+     * start at the current position of the DomainEventStream.
+     * <p>
+     * Note that iterating over the returned Stream may affect this DomainEventStream and vice versa. It is therefore
+     * not recommended to use this DomainEventStream after invoking this method.
+     *
+     * @return This DomainEventStream as a Stream of event messages
+     */
+    default Stream<? extends DomainEventMessage<?>> asStream() {
+        return EventUtils.asStream(this);
+    }
+
+    /**
+     * Create a new DomainEventStream from the given {@code events}.
+     *
+     * @param events Events to add to the resulting DomainEventStream
+     * @return A DomainEventStream consisting of all given events
+     */
     static DomainEventStream of(DomainEventMessage<?>... events) {
         return DomainEventStream.of(Arrays.asList(events).iterator());
     }
 
+    /**
+     * Create a new DomainEventStream containing only the given {@code event}.
+     *
+     * @param event The event to add to the resulting DomainEventStream
+     * @return A DomainEventStream consisting of only the given event
+     */
     static DomainEventStream of(DomainEventMessage<?> event) {
         Objects.requireNonNull(event);
         return new DomainEventStream() {
@@ -100,6 +130,12 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
         };
     }
 
+    /**
+     * Create a new DomainEventStream with events obtained from the given {@code iterator}.
+     *
+     * @param iterator The iterator that serves as a source of events in the resulting DomainEventStream
+     * @return A DomainEventStream containing all events returned by the iterator
+     */
     static DomainEventStream of(Iterator<? extends DomainEventMessage<?>> iterator) {
         Objects.requireNonNull(iterator);
         return new DomainEventStream() {
@@ -133,6 +169,14 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
         };
     }
 
+    /**
+     * Concatenate two DomainEventStreams. In the resulting stream events from stream {@code a} will be followed by
+     * events from stream {@code b}.
+     *
+     * @param a The first stream
+     * @param b The second stream that will follow the first stream
+     * @return A concatenation of stream a and b
+     */
     static DomainEventStream concat(DomainEventStream a, DomainEventStream b) {
         Objects.requireNonNull(a);
         Objects.requireNonNull(b);

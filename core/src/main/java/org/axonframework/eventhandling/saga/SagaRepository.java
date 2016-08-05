@@ -35,8 +35,8 @@ public interface SagaRepository<T> {
      * <p/>
      *
      * @param associationValue The value that the returned Sagas must be associated with
-     * @return A Set containing the found Saga instances. If none are found, an empty Set is returned. Will never
-     * return {@code null}.
+     * @return A Set containing the found Saga instances. If none are found, an empty Set is returned. Will never return
+     * {@code null}.
      */
     Set<String> find(AssociationValue associationValue);
 
@@ -51,6 +51,13 @@ public interface SagaRepository<T> {
      */
     Saga<T> load(String sagaIdentifier);
 
+    /**
+     * Creates a new Saga instance. The returned Saga will delegate event handling to the instance supplied by the given
+     * {@code factoryMethod}.
+     *
+     * @param factoryMethod Used to create a new Saga delegate
+     * @return a new Saga instance wrapping an instance of type {@link T}
+     */
     Saga<T> newInstance(Supplier<T> factoryMethod);
 
 }

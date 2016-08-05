@@ -22,16 +22,32 @@ import javax.persistence.Index;
 import javax.persistence.Table;
 
 /**
+ * Default implementation of a tracked domain event entry. This implementation is used by the {@link
+ * JpaEventStorageEngine} to store events. Event payload and metadata are serialized to a byte array.
+ *
  * @author Rene de Waele
  */
 @Entity
 @Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber", unique = true))
 public class DomainEventEntry extends AbstractTrackedDomainEventEntry<byte[]> {
 
+    /**
+     * Construct a new default domain event entry from a published domain event message to enable storing the event or
+     * sending it to a remote location. The event payload and metadata will be serialized to a byte array.
+     * <p>
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code eventMessage}.
+     * The type of the serialized data will be the same as the given {@code contentType}.
+     *
+     * @param eventMessage The event message to convert to a serialized event entry
+     * @param serializer   The serializer to convert the event
+     */
     public DomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
         super(eventMessage, serializer, byte[].class);
     }
 
+    /**
+     * Default constructor required by JPA
+     */
     protected DomainEventEntry() {
     }
 }

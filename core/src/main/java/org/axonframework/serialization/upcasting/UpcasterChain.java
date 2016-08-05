@@ -16,10 +16,20 @@ package org.axonframework.serialization.upcasting;
 import java.util.stream.Stream;
 
 /**
+ * Represents a series of upcasters which are combined to upcast a stream of input representations to the most recent
+ * revision of that representation.
+ *
  * @author Rene de Waele
  */
 public interface UpcasterChain<T> {
 
+    /**
+     * Pass the given Stream of {@code intermediateRepresentations} through the chain of upcasters. The result is a
+     * list of zero or more representations representing the latest revision of the input objects.
+     *
+     * @param intermediateRepresentations  the representations to upcast
+     * @return the Stream of upcast objects
+     */
     Stream<T> upcast(Stream<T> intermediateRepresentations);
 
 }
