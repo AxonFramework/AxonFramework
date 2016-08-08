@@ -24,23 +24,21 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.websocket.*;
+import javax.websocket.CloseReason;
+import javax.websocket.Endpoint;
+import javax.websocket.EndpointConfig;
+import javax.websocket.MessageHandler;
+import javax.websocket.OnMessage;
+import javax.websocket.Session;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class WebsocketCommandBusConnectorServer extends Endpoint {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WebsocketCommandBusConnectorServer.class);
-    private final CommandBus localSegment;
-    private final Serializer serializer;
+public abstract class AbstractWebsocketCommandBusConnectorServer extends Endpoint {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractWebsocketCommandBusConnectorServer.class);
 
-    public WebsocketCommandBusConnectorServer(CommandBus localSegment, Serializer serializer) {
-        if (localSegment == null) {
-            throw new IllegalStateException("Trying to create a connection while no local segment is configured, " +
-                    "supply one by calling WebsocketCommandBusConnectorServerConfigurator.setLocalSegment()");
-        }
-        this.serializer = serializer;
-        this.localSegment = localSegment;
-    }
+    public abstract Serializer getSerializer();
+
+    public abstract CommandBus getCommandBus();
 
     @Override
     public void onOpen(final Session session, EndpointConfig config) {
@@ -67,11 +65,11 @@ public class WebsocketCommandBusConnectorServer extends Endpoint {
 
     @OnMessage
     public <C, R> void receive(final ByteBuffer data, final Session session) {
-        WebsocketCommandMessage message = serializer.deserialize(new SimpleSerializedObject<>(data.array(), byte[].class,
-                                                                                              serializer.typeForClass(WebsocketCommandMessage.class)));
+        WebsocketCommandMessage message = getSerializer().deserialize(new SimpleSerializedObject<>(data.array(),
+                byte[].class, getSerializer().typeForClass(WebsocketCommandMessage.class)));
         if (message.isWithCallback()) {
             try {
-               localSegment.dispatch(
+               getCommandBus().dispatch(
                        message.getCommandMessage(),
                        new CommandCallback<C, R>() {
                            @Override
@@ -95,7 +93,7 @@ public class WebsocketCommandBusConnectorServer extends Endpoint {
            }
         } else {
             try {
-                localSegment.dispatch(message.getCommandMessage());
+                getCommandBus().dispatch(message.getCommandMessage());
             } catch (Exception e) {
                 LOGGER.error("Error processing command " + message.getCommandMessage().getCommandName(), e);
             }
@@ -104,7 +102,7 @@ public class WebsocketCommandBusConnectorServer extends Endpoint {
 
     private <R> void sendResult(Session session, WebsocketResultMessage<R> obj) {
         //serialize the message outside the synchronized block
-        ByteBuffer data = ByteBuffer.wrap(serializer.serialize(obj, byte[].class).getData());
+        ByteBuffer data = ByteBuffer.wrap(getSerializer().serialize(obj, byte[].class).getData());
         try {
             //prevent sending mutiple responses in parallel, otherwise messages may get lost
             synchronized (this) {

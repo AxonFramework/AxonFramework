@@ -1,21 +1,27 @@
-package org.axonframework.commandhandling.distributed.websockets;
+package org.axonframework.quickstart;
 
-import org.axonframework.commandhandling.*;
+import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandCallback;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.StaticCommandRouter;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
+import org.axonframework.commandhandling.distributed.websockets.DefaultWebsocketCommandBusConnectorServer;
+import org.axonframework.commandhandling.distributed.websockets.WebsocketCommandBusConnector;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.jsr356.server.ServerContainer;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
-import javax.websocket.server.ServerContainer;
 import javax.websocket.server.ServerEndpointConfig;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 
-public class WebsocketsRunner {
+public class RunDistributedCommandBusOverWebsockets {
     public static void main(String[] args) throws Exception {
         CountDownLatch latch = new CountDownLatch(10000);
         CommandBus commandBus = new SimpleCommandBus();
@@ -33,12 +39,12 @@ public class WebsocketsRunner {
         // Initialize javax.websocket layer
         ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(servletContextHandler);
         ServerEndpointConfig config = ServerEndpointConfig.Builder
-                .create(WebsocketCommandBusConnectorServer.class, "/test")
+                .create(DefaultWebsocketCommandBusConnectorServer.class, "/test")
                 .configurator(
                         new ServerEndpointConfig.Configurator() {
                             @Override
                             public <T> T getEndpointInstance(Class<T> endpointClass) throws InstantiationException {
-                                return endpointClass.cast(new WebsocketCommandBusConnectorServer(commandBus, new XStreamSerializer()));
+                                return endpointClass.cast(new DefaultWebsocketCommandBusConnectorServer(commandBus, new XStreamSerializer()));
                             }
                         }
                 ).build();
@@ -49,11 +55,12 @@ public class WebsocketsRunner {
 
         commandBus.subscribe("java.lang.String", CommandMessage::getPayload);
 
-        try (WebsocketCommandBusConnector connector = new WebsocketCommandBusConnector()) {
+        try (WebsocketCommandBusConnector connector = new WebsocketCommandBusConnector(commandBus)) {
             DistributedCommandBus distributedCommandBus = new DistributedCommandBus(
                     new StaticCommandRouter(
                             payload -> (String) payload.getPayload(),
-                            new StaticCommandRouter.ServiceMember<>("test", new URI("ws://localhost:8080/test"), 100, AcceptAll.INSTANCE)),
+                            new StaticCommandRouter.ServiceMember<>("test",
+                                    new URI("ws://localhost:8080/test"), 100, AcceptAll.INSTANCE)),
                     connector);
 
             server.start();
@@ -82,8 +89,8 @@ public class WebsocketsRunner {
             }
 
             latch.await();
-        } finally {
-            server.stop();
         }
+
+        server.stop();
     }
 }

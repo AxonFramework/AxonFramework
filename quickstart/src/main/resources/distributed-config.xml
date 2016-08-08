@@ -43,7 +43,7 @@
     <bean class="org.axonframework.spring.config.CommandHandlerSubscriber"/>
 
     <!-- The bean containing the command handler methods -->
-    <bean class="org.axonframework.quickstart.RunDistributedCommandBus$ToDoLoggingCommandHandler"/>
+    <bean class="org.axonframework.quickstart.RunDistributedCommandBusOverJGroups$ToDoLoggingCommandHandler"/>
 
     <!-- Serializer used by the jgroups connector -->
     <bean class="org.axonframework.serialization.xml.XStreamSerializer"/>

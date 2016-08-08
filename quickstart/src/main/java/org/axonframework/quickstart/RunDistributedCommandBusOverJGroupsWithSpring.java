@@ -36,14 +36,14 @@ import org.springframework.context.annotation.Primary;
 import java.net.BindException;
 
 /**
- * See {@link RunDistributedCommandBus}, only difference is that we use spring to wire all the beans.
+ * See {@link RunDistributedCommandBusOverJGroups}, only difference is that we use spring to wire all the beans.
  *
  * @author Jettro Coenradie
  */
-public class RunDistributedCommandBusWithSpring {
+public class RunDistributedCommandBusOverJGroupsWithSpring {
     public static void main(String[] args) throws Exception {
         // Load the Load factor from the command line or use default 100
-        Integer loadFactor = RunDistributedCommandBus.determineLoadFactor();
+        Integer loadFactor = RunDistributedCommandBusOverJGroups.determineLoadFactor();
 
         System.setProperty("loadFactor", loadFactor.toString());
 
@@ -62,7 +62,7 @@ public class RunDistributedCommandBusWithSpring {
         CommandGateway commandGateway = applicationContext.getBean("commandGateway", CommandGateway.class);
 
         // Load the amount of times to send the commands from the command line or use default 1
-        Integer numberOfCommandLoops = RunDistributedCommandBus.determineNumberOfCommandLoops();
+        Integer numberOfCommandLoops = RunDistributedCommandBusOverJGroups.determineNumberOfCommandLoops();
 
         for (int i = 0; i < numberOfCommandLoops; i++) {
             CommandGenerator.sendCommands(commandGateway);
@@ -101,8 +101,8 @@ public class RunDistributedCommandBusWithSpring {
         }
 
         @Bean
-        public RunDistributedCommandBus.ToDoLoggingCommandHandler commandHandler() {
-            return new RunDistributedCommandBus.ToDoLoggingCommandHandler();
+        public RunDistributedCommandBusOverJGroups.ToDoLoggingCommandHandler commandHandler() {
+            return new RunDistributedCommandBusOverJGroups.ToDoLoggingCommandHandler();
         }
     }
 }
