@@ -105,7 +105,9 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
 
     @Override
     public void onClose(Session session, CloseReason closeReason) {
-        LOGGER.warn("Session closed because " + closeReason.getReasonPhrase());
+        if (closeReason.getCloseCode() != CloseReason.CloseCodes.NORMAL_CLOSURE) {
+            LOGGER.warn("Session closed because " + closeReason.getReasonPhrase());
+        }
         try {
             sessions.invalidateObject(session);
             repository.cancelCallbacks(session.getId());

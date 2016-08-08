@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Jettro Coenradie
  */
-public class RunDistributedCommandBus {
+public class RunDistributedCommandBusOverJGroups {
     public static void main(String[] args) throws Exception {
         // Load the Load factor from the command line or use default 100
         Integer loadFactor = determineLoadFactor();
