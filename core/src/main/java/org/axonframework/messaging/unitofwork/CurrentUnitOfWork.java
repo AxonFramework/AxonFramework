@@ -57,7 +57,7 @@ public abstract class CurrentUnitOfWork {
      * @return an optional containing the result of the function, or an empty Optional when no Unit of Work was started
      * @throws NullPointerException when a Unit of Work is present and the function returns null
      */
-    public static <T> Optional<T> map(Function<UnitOfWork, T> function) {
+    public static <T> Optional<T> map(Function<UnitOfWork<?>, T> function) {
         return isStarted() ? Optional.of(function.apply(get())) : Optional.empty();
     }
 
@@ -127,6 +127,15 @@ public abstract class CurrentUnitOfWork {
         }
     }
 
+    /**
+     * Returns the Correlation Data attached to the current Unit of Work, or an empty {@link MetaData} instance
+     * if no Unit of Work is started.
+     *
+     * @return a MetaData instance representing the current Unit of Work's correlation data, or an empty MetaData
+     * instance if no Unit of Work is started.
+     *
+     * @see UnitOfWork#getCorrelationData()
+     */
     public static MetaData correlationData() {
         return CurrentUnitOfWork.map(UnitOfWork::getCorrelationData).orElse(MetaData.emptyInstance());
     }
