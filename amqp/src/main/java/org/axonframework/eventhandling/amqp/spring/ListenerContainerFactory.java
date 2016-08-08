@@ -86,6 +86,9 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
         if (config.getRecoveryInterval() != null) {
             newContainer.setRecoveryInterval(config.getRecoveryInterval());
         }
+        if (config.getExclusive() != null) {
+            rabbitMqStrategy.setExclusive(newContainer, config.getExclusive());
+        }
         if (config.getConcurrentConsumers() != null) {
             newContainer.setConcurrentConsumers(config.getConcurrentConsumers());
         }
@@ -106,9 +109,6 @@ public class ListenerContainerFactory implements InitializingBean, ApplicationCo
         }
         if (config.getAcknowledgeMode() != null) {
             newContainer.setAcknowledgeMode(config.getAcknowledgeMode());
-        }
-        if (config.getExclusive() != null) {
-            rabbitMqStrategy.setExclusive(newContainer, config.getExclusive());
         }
         newContainer.afterPropertiesSet();
         return newContainer;
