@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Date;
 
 import static org.quartz.JobKey.jobKey;
@@ -54,7 +54,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
 
     @Override
-    public ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event) {
+    public ScheduleToken schedule(Instant triggerDateTime, Object event) {
         Assert.state(initialized, "Scheduler is not yet initialized");
         EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
         String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
@@ -99,16 +99,16 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      * @param jobKey          The key of the job to be triggered
      * @return a configured Trigger for the Job with key {@code jobKey}
      */
-    protected Trigger buildTrigger(ZonedDateTime triggerDateTime, JobKey jobKey) {
+    protected Trigger buildTrigger(Instant triggerDateTime, JobKey jobKey) {
         return TriggerBuilder.newTrigger()
                              .forJob(jobKey)
-                             .startAt(Date.from(triggerDateTime.toInstant()))
+                             .startAt(Date.from(triggerDateTime))
                              .build();
     }
 
     @Override
     public ScheduleToken schedule(Duration triggerDuration, Object event) {
-        return schedule(ZonedDateTime.now().plus(triggerDuration), event);
+        return schedule(Instant.now().plus(triggerDuration), event);
     }
 
     @Override

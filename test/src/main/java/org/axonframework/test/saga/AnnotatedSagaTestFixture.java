@@ -38,9 +38,8 @@ import org.axonframework.test.utils.RecordingCommandBus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.time.Clock;
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -106,7 +105,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     }
 
     @Override
-    public FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception {
+    public FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
             eventScheduler.advanceTime(newDateTime, this::handleInSaga);
@@ -135,7 +134,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
     @Override
     public ContinuedGivenState givenAPublished(Object event) throws Exception {
-        handleInSaga(GenericEventMessage.asEventMessage(event));
+        handleInSaga(timeCorrectedEventMessage(event));
         return this;
     }
 
@@ -156,14 +155,14 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     }
 
     @Override
-    public ContinuedGivenState andThenTimeAdvancesTo(final ZonedDateTime newDateTime) throws Exception {
+    public ContinuedGivenState andThenTimeAdvancesTo(final Instant newDateTime) throws Exception {
         eventScheduler.advanceTime(newDateTime, this::handleInSaga);
         return this;
     }
 
     @Override
     public ContinuedGivenState andThenAPublished(Object event) throws Exception {
-        handleInSaga(GenericEventMessage.asEventMessage(event));
+        handleInSaga(timeCorrectedEventMessage(event));
         return this;
     }
 
@@ -177,7 +176,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     public FixtureExecutionResult whenPublishingA(Object event) throws Exception {
         try {
             fixtureExecutionResult.startRecording();
-            handleInSaga(GenericEventMessage.asEventMessage(event));
+            handleInSaga(timeCorrectedEventMessage(event));
         } finally {
             FixtureResourceParameterResolverFactory.clear();
         }
@@ -185,8 +184,13 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         return fixtureExecutionResult;
     }
 
+    private EventMessage<Object> timeCorrectedEventMessage(Object event) {
+        EventMessage<?> msg = GenericEventMessage.asEventMessage(event);
+        return new GenericEventMessage<>(msg.getIdentifier(), msg.getPayload(), msg.getMetaData(), currentTime());
+    }
+
     @Override
-    public ZonedDateTime currentTime() {
+    public Instant currentTime() {
         return eventScheduler.getCurrentDateTime();
     }
 
@@ -290,7 +294,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
         public AggregateEventPublisherImpl(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
-            this.type = "typeOf_" + aggregateIdentifier;
+            this.type = "Stub_" + aggregateIdentifier;
         }
 
         @Override
@@ -310,23 +314,14 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         }
 
         private void publish(Object... events) throws Exception {
-            try {
-                Clock.fixed(currentTime().toInstant(), currentTime().getZone());
-                for (Object event : events) {
-                    if (event instanceof EventMessage<?>) {
-                        EventMessage<?> eventMessage = (EventMessage<?>) event;
-                        handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,
-                                                                     sequenceNumber++, eventMessage.getPayload(),
-                                                                     eventMessage.getMetaData(),
-                                                                     eventMessage.getIdentifier(),
-                                                                     eventMessage.getTimestamp()));
-                    } else {
-                        handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,
-                                                                     sequenceNumber++, event));
-                    }
-                }
-            } finally {
-                Clock.systemDefaultZone();
+            for (Object event : events) {
+                EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(event);
+                handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                                                             sequenceNumber++,
+                                                             eventMessage.getPayload(),
+                                                             eventMessage.getMetaData(),
+                                                             eventMessage.getIdentifier(),
+                                                             currentTime()));
             }
         }
     }

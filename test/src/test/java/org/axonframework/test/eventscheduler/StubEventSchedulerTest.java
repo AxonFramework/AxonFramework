@@ -22,7 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,7 +40,7 @@ public class StubEventSchedulerTest {
 
     @Test
     public void testScheduleEvent() {
-        testSubject.schedule(ZonedDateTime.now().plus(Duration.ofDays(1)), event(new MockEvent()));
+        testSubject.schedule(Instant.now().plus(Duration.ofDays(1)), event(new MockEvent()));
         assertEquals(1, testSubject.getScheduledItems().size());
     }
 

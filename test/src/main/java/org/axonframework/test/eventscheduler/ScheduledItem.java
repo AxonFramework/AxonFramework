@@ -18,7 +18,7 @@ package org.axonframework.test.eventscheduler;
 
 import org.axonframework.eventhandling.EventMessage;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 
 /**
@@ -34,7 +34,7 @@ public interface ScheduledItem {
      *
      * @return time the event was scheduled for publication
      */
-    ZonedDateTime getScheduleTime();
+    Instant getScheduleTime();
 
     /**
      * The Event scheduled for publication.
