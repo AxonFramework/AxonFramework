@@ -141,7 +141,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public ContinuedGivenState givenAPublished(Object event) {
-        sagaManager.handle(GenericEventMessage.asEventMessage(event));
+        sagaManager.handle(timeCorrectedEventMessage(event));
         return this;
     }
 
@@ -173,7 +173,7 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
 
     @Override
     public ContinuedGivenState andThenAPublished(Object event) {
-        sagaManager.handle(GenericEventMessage.asEventMessage(event));
+        sagaManager.handle(timeCorrectedEventMessage(event));
         return this;
     }
 
@@ -186,13 +186,25 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
     @Override
     public FixtureExecutionResult whenPublishingA(Object event) {
         try {
+            DateTimeUtils.setCurrentMillisProvider(eventScheduler);
             fixtureExecutionResult.startRecording();
-            sagaManager.handle(GenericEventMessage.asEventMessage(event));
+            sagaManager.handle(timeCorrectedEventMessage(event));
         } finally {
+            DateTimeUtils.setCurrentMillisSystem();
             FixtureResourceParameterResolverFactory.clear();
         }
 
         return fixtureExecutionResult;
+    }
+
+    private EventMessage<Object> timeCorrectedEventMessage(Object event) {
+        if (event instanceof EventMessage) {
+            EventMessage<?> msg = (EventMessage<?>) event;
+            return new GenericEventMessage<Object>(msg.getIdentifier(), currentTime(),
+                                                   msg.getPayload(), msg.getMetaData());
+        } else {
+            return timeCorrectedEventMessage(GenericEventMessage.asEventMessage(event));
+        }
     }
 
     @Override
@@ -230,56 +242,6 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
             aggregatePublishers.put(aggregateIdentifier, new AggregateEventPublisherImpl(aggregateIdentifier));
         }
         return aggregatePublishers.get(aggregateIdentifier);
-    }
-
-    private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
-
-        private final Object aggregateIdentifier;
-        private int sequenceNumber = 0;
-
-        public AggregateEventPublisherImpl(Object aggregateIdentifier) {
-            this.aggregateIdentifier = aggregateIdentifier;
-        }
-
-        @Override
-        public ContinuedGivenState published(Object... events) {
-            publish(events);
-            return AnnotatedSagaTestFixture.this;
-        }
-
-        @Override
-        public FixtureExecutionResult publishes(Object event) {
-            try {
-                publish(event);
-            } finally {
-                FixtureResourceParameterResolverFactory.clear();
-            }
-            return fixtureExecutionResult;
-        }
-
-        private void publish(Object... events) {
-            DateTimeUtils.setCurrentMillisFixed(currentTime().getMillis());
-
-            try {
-                for (Object event : events) {
-                    if (event instanceof EventMessage) {
-                        EventMessage eventMessage = (EventMessage) event;
-                        sagaManager.handle(new GenericDomainEventMessage<Object>(eventMessage.getIdentifier(),
-                                                                                 eventMessage.getTimestamp(),
-                                                                                 aggregateIdentifier,
-                                                                                 sequenceNumber++,
-                                                                                 eventMessage.getPayload(),
-                                                                                 eventMessage.getMetaData()));
-                    } else {
-                        sagaManager.handle(new GenericDomainEventMessage<Object>(aggregateIdentifier,
-                                                                                 sequenceNumber++,
-                                                                                 event));
-                    }
-                }
-            } finally {
-                DateTimeUtils.setCurrentMillisSystem();
-            }
-        }
     }
 
     /**
@@ -340,6 +302,48 @@ public class AnnotatedSagaTestFixture implements FixtureConfiguration, Continued
                 return future.get();
             }
             return null;
+        }
+    }
+
+    private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
+
+        private final Object aggregateIdentifier;
+        private int sequenceNumber = 0;
+
+        public AggregateEventPublisherImpl(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
+        }
+
+        @Override
+        public ContinuedGivenState published(Object... events) {
+            publish(events);
+            return AnnotatedSagaTestFixture.this;
+        }
+
+        @Override
+        public FixtureExecutionResult publishes(Object event) {
+            try {
+                publish(event);
+            } finally {
+                FixtureResourceParameterResolverFactory.clear();
+            }
+            return fixtureExecutionResult;
+        }
+
+        private void publish(Object... events) {
+            for (Object event : events) {
+                sagaManager.handle(timeCorrectedDomainEventMessage(event));
+            }
+        }
+
+        private GenericDomainEventMessage<Object> timeCorrectedDomainEventMessage(Object event) {
+            EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(event);
+            return new GenericDomainEventMessage<Object>(eventMessage.getIdentifier(),
+                                                         currentTime(),
+                                                         aggregateIdentifier,
+                                                         sequenceNumber++,
+                                                         eventMessage.getPayload(),
+                                                         eventMessage.getMetaData());
         }
     }
 

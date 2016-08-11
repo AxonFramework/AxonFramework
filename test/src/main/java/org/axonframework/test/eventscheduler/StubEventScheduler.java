@@ -21,6 +21,7 @@ import org.axonframework.domain.GenericEventMessage;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeUtils;
 import org.joda.time.Duration;
 import org.joda.time.ReadableInstant;
 
@@ -42,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Allard Buijze
  * @since 1.1
  */
-public class StubEventScheduler implements EventScheduler {
+public class StubEventScheduler implements EventScheduler, DateTimeUtils.MillisProvider {
 
     private final NavigableSet<StubScheduleToken> scheduledEvents = new TreeSet<StubScheduleToken>();
     private final AtomicInteger counter = new AtomicInteger(0);
@@ -157,5 +158,10 @@ public class StubEventScheduler implements EventScheduler {
      */
     public List<EventMessage> advanceTime(Duration duration) {
         return advanceTime(currentDateTime.plus(duration));
+    }
+
+    @Override
+    public long getMillis() {
+        return currentDateTime.getMillis();
     }
 }
