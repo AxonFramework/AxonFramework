@@ -176,9 +176,6 @@ public abstract class AbstractEventBus implements EventBus {
 
     private void doWithEvents(Consumer<List<? extends EventMessage<?>>> eventsConsumer,
                               List<? extends EventMessage<?>> events) {
-        if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().resources().remove(eventsKey);
-        }
         eventsConsumer.accept(events);
     }
 
