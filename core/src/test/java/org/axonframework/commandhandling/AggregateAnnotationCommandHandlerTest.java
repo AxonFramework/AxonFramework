@@ -28,16 +28,17 @@ import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.FixedValueParameterResolver;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.StubDomainEvent;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.FixedValueParameterResolver;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -87,7 +88,8 @@ public class AggregateAnnotationCommandHandlerTest {
                         invocation ->
                                 EventSourcedAggregate.initialize((Callable<StubCommandAnnotatedAggregate>) invocation.getArguments()[0],
                                                                  aggregateModel,
-                                                                 mock(EventStore.class)));
+                                                                 mock(EventStore.class),
+                                                                 NoSnapshotTriggerDefinition.TRIGGER));
 
         ParameterResolverFactory parameterResolverFactory = MultiParameterResolverFactory.ordered(
                 ClasspathParameterResolverFactory.forClass(AggregateAnnotationCommandHandler.class),

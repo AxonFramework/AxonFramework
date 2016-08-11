@@ -114,7 +114,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
 
     private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {
         private SnapshotAggregate(T aggregateRoot, AggregateModel<T> aggregateModel) {
-            super(aggregateRoot, aggregateModel, null);
+            super(aggregateRoot, aggregateModel, null, NoSnapshotTriggerDefinition.TRIGGER);
         }
 
         @Override

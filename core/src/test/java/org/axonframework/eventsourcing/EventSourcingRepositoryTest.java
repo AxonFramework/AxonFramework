@@ -30,16 +30,13 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -53,12 +50,17 @@ public class EventSourcingRepositoryTest {
     private EventSourcingRepository<TestAggregate> testSubject;
     private UnitOfWork<?> unitOfWork;
     private StubAggregateFactory stubAggregateFactory;
+    private SnapshotTriggerDefinition triggerDefinition;
+    private SnapshotTrigger snapshotTrigger;
 
     @Before
     public void setUp() {
         mockEventStore = mock(EventStore.class);
         stubAggregateFactory = new StubAggregateFactory();
-        testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore);
+        snapshotTrigger = mock(SnapshotTrigger.class);
+        triggerDefinition = mock(SnapshotTriggerDefinition.class);
+        when(triggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
+        testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore, triggerDefinition);
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
     }
 
@@ -151,47 +153,22 @@ public class EventSourcingRepositoryTest {
     }
 
     @Test
-    public void testLoadEventsWithDecorators() {
+    public void testLoadEventsWithSnapshotter() {
         String identifier = UUID.randomUUID().toString();
-        SpyEventPreprocessor decorator1 = new SpyEventPreprocessor();
-        SpyEventPreprocessor decorator2 = new SpyEventPreprocessor();
-        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
         when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
                 new GenericDomainEventMessage<>("type", identifier, (long) 1, "Mock contents", MetaData.emptyInstance()),
                 new GenericDomainEventMessage<>("type", identifier, (long) 2, "Mock contents", MetaData.emptyInstance()),
                 new GenericDomainEventMessage<>("type", identifier, (long) 3, "Mock contents",
                                                 MetaData.emptyInstance())));
         Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
-        // loading them in...
-        InOrder inOrder = Mockito.inOrder(decorator1.lastSpy, decorator2.lastSpy);
-        inOrder.verify(decorator2.lastSpy).forEachRemaining(any());
-        inOrder.verify(decorator1.lastSpy).next();
-        inOrder.verify(decorator1.lastSpy).next();
-        inOrder.verify(decorator1.lastSpy).next();
-        aggregate.execute(r -> r.apply(new StubDomainEvent()));
-        aggregate.execute(r -> r.apply(new StubDomainEvent()));
-    }
-
-    @Ignore("TODO: Figure out how to do event decoration on append")
-    @Test
-    public void testSaveEventsWithDecorators() {
-        testSubject = new EventSourcingRepository<>(stubAggregateFactory, mockEventStore);
-        SpyEventPreprocessor decorator1 = spy(new SpyEventPreprocessor());
-        SpyEventPreprocessor decorator2 = spy(new SpyEventPreprocessor());
-        testSubject.setEventStreamDecorators(Arrays.asList(decorator1, decorator2));
-        String identifier = UUID.randomUUID().toString();
-        when(mockEventStore.readEvents(identifier)).thenReturn(DomainEventStream.of(
-                new GenericDomainEventMessage<>("type", identifier, (long) 3, "Mock contents",
-                                                MetaData.emptyInstance())));
-        Aggregate<TestAggregate> aggregate = testSubject.load(identifier);
         aggregate.execute(r -> r.apply(new StubDomainEvent()));
         aggregate.execute(r -> r.apply(new StubDomainEvent()));
 
-        CurrentUnitOfWork.commit();
-
-        InOrder inOrder = Mockito.inOrder(decorator1, decorator2);
-        inOrder.verify(decorator1).decorateForAppend(eq(aggregate), anyList());
-        inOrder.verify(decorator2).decorateForAppend(eq(aggregate), anyList());
+        InOrder inOrder = Mockito.inOrder(triggerDefinition, snapshotTrigger);
+        inOrder.verify(triggerDefinition).prepareTrigger(stubAggregateFactory.getAggregateType());
+        inOrder.verify(snapshotTrigger, times(3)).eventHandled(any());
+        inOrder.verify(snapshotTrigger).initializationFinished();
+        inOrder.verify(snapshotTrigger, times(2)).eventHandled(any());
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<TestAggregate> {
@@ -238,38 +215,6 @@ public class EventSourcingRepositoryTest {
 
         public String getIdentifier() {
             return identifier;
-        }
-    }
-
-    public static class SpyEventPreprocessor implements EventStreamDecorator {
-
-        private DomainEventStream lastSpy;
-
-        @Override
-        public DomainEventStream decorateForRead(String aggregateIdentifier,
-                                                 DomainEventStream eventStream) {
-            createSpy(eventStream);
-            return lastSpy;
-        }
-
-        @Override
-        public List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
-                                                             List<DomainEventMessage<?>> events) {
-            return events;
-        }
-
-        private void createSpy(final DomainEventStream eventStream) {
-            lastSpy = mock(DomainEventStream.class);
-            when(lastSpy.next()).thenAnswer(invocation -> eventStream.next());
-            when(lastSpy.hasNext()).thenAnswer(invocation -> eventStream.hasNext());
-            when(lastSpy.peek()).thenAnswer(invocation -> eventStream.peek());
-            doAnswer(invocation -> {
-                Consumer c = (Consumer) invocation.getArguments()[0];
-                while (eventStream.hasNext()) {
-                    c.accept(eventStream.next());
-                }
-                return null;
-            }).when(lastSpy).forEachRemaining(any());
         }
     }
 }

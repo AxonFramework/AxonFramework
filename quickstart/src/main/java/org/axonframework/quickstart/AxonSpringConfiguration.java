@@ -27,6 +27,7 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -58,7 +59,8 @@ public class AxonSpringConfiguration {
 
     @Bean
     public Repository<ToDoItem> repository(ParameterResolverFactory parameterResolverFactory) {
-        return new EventSourcingRepository<>(new GenericAggregateFactory<>(ToDoItem.class), eventStore(), parameterResolverFactory);
+        return new EventSourcingRepository<>(new GenericAggregateFactory<>(ToDoItem.class), eventStore(), parameterResolverFactory,
+                                             NoSnapshotTriggerDefinition.INSTANCE);
     }
 
     @Bean
