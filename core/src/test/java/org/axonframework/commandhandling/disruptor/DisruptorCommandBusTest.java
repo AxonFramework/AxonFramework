@@ -144,10 +144,10 @@ public class DisruptorCommandBusTest {
     public void testPublishUnsupportedCommand() throws Exception {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration().setBufferSize(8)
-                                                      .setProducerType(ProducerType.SINGLE)
-                                                      .setWaitStrategy(new SleepingWaitStrategy())
-                                                      .setExecutor(customExecutor).setInvokerThreadCount(2)
-                                                      .setPublisherThreadCount(3));
+                .setProducerType(ProducerType.SINGLE)
+                .setWaitStrategy(new SleepingWaitStrategy())
+                .setExecutor(customExecutor).setInvokerThreadCount(2)
+                .setPublisherThreadCount(3));
         try {
             testSubject.dispatch(asCommandMessage("Test"));
             fail("Expected exception");
@@ -162,10 +162,10 @@ public class DisruptorCommandBusTest {
     public void testEventStreamsDecoratedOnReadAndWrite() throws InterruptedException {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration().setBufferSize(8)
-                                                      .setProducerType(ProducerType.SINGLE)
-                                                      .setWaitStrategy(new SleepingWaitStrategy())
-                                                      .setExecutor(customExecutor).setInvokerThreadCount(2)
-                                                      .setPublisherThreadCount(3));
+                .setProducerType(ProducerType.SINGLE)
+                .setWaitStrategy(new SleepingWaitStrategy())
+                .setExecutor(customExecutor).setInvokerThreadCount(2)
+                .setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
 
         SnapshotTriggerDefinition snapshotTriggerDefinition = mock(SnapshotTriggerDefinition.class);
@@ -286,9 +286,9 @@ public class DisruptorCommandBusTest {
     public void testCreateAggregate() {
         eventStore.storedEvents.clear();
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration().setBufferSize(8)
-                                                      .setProducerType(ProducerType.SINGLE)
-                                                      .setWaitStrategy(new SleepingWaitStrategy())
-                                                      .setInvokerThreadCount(2).setPublisherThreadCount(3));
+                .setProducerType(ProducerType.SINGLE)
+                .setWaitStrategy(new SleepingWaitStrategy())
+                .setInvokerThreadCount(2).setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
@@ -316,21 +316,21 @@ public class DisruptorCommandBusTest {
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration()
                 .setBufferSize(8)
                 .setMessageMonitor(msg -> new MessageMonitor.MonitorCallback() {
-            @Override
-            public void reportSuccess() {
-                successCounter.incrementAndGet();
-            }
+                    @Override
+                    public void reportSuccess() {
+                        successCounter.incrementAndGet();
+                    }
 
-            @Override
-            public void reportFailure(Throwable cause) {
-                failureCounter.incrementAndGet();
-            }
+                    @Override
+                    public void reportFailure(Throwable cause) {
+                        failureCounter.incrementAndGet();
+                    }
 
-            @Override
-            public void reportIgnored() {
-                ignoredCounter.incrementAndGet();
-            }
-        }));
+                    @Override
+                    public void reportIgnored() {
+                        ignoredCounter.incrementAndGet();
+                    }
+                }));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
@@ -456,6 +456,10 @@ public class DisruptorCommandBusTest {
         @Override
         public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void storeSnapshot(DomainEventMessage<?> snapshot) {
         }
     }
 

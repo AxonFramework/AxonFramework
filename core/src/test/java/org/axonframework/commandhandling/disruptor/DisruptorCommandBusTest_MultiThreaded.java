@@ -201,6 +201,10 @@ public class DisruptorCommandBusTest_MultiThreaded {
         }
 
         @Override
+        public void storeSnapshot(DomainEventMessage<?> snapshot) {
+        }
+
+        @Override
         public TrackingEventStream streamEvents(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }

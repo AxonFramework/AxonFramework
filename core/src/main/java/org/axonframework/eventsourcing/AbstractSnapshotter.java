@@ -21,7 +21,7 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSnapshotter.class);
 
-    private final EventStorageEngine eventStorageEngine;
+    private final EventStore eventStore;
     private final Executor executor;
     private final TransactionManager transactionManager;
 
@@ -46,10 +46,10 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * Initializes the Snapshotter to append snapshots in the given {@code eventStore}. This snapshotter will create the
      * snapshots in the process that triggers them, and save them into the Event Store without any transaction.
      *
-     * @param eventStorageEngine the EventStore instance to store snapshots in
+     * @param eventStore the EventStore instance to store snapshots in
      */
-    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine) {
-        this(eventStorageEngine, NoTransactionManager.INSTANCE);
+    protected AbstractSnapshotter(EventStore eventStore) {
+        this(eventStore, NoTransactionManager.INSTANCE);
     }
 
     /**
@@ -57,11 +57,11 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * snapshots in the process that triggers them, and save them into the Event Store in a transaction managed by the
      * given {@code transactionManager}.
      *
-     * @param eventStorageEngine the EventStore instance to store snapshots in
+     * @param eventStore the EventStore instance to store snapshots in
      * @param transactionManager The transaction manager to create the surrounding transaction with
      */
-    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine, TransactionManager transactionManager) {
-        this(eventStorageEngine, DirectExecutor.INSTANCE, transactionManager);
+    protected AbstractSnapshotter(EventStore eventStore, TransactionManager transactionManager) {
+        this(eventStore, DirectExecutor.INSTANCE, transactionManager);
     }
 
     /**
@@ -69,13 +69,13 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * snapshots in the process provided by the given {@code executor}, and save them into the Event Store in a
      * transaction managed by the given {@code transactionManager}.
      *
-     * @param eventStorageEngine The EventStore instance to store snapshots in
+     * @param eventStore The EventStore instance to store snapshots in
      * @param executor           The executor that handles the actual snapshot creation process
      * @param transactionManager The transaction manager to create the surrounding transaction with
      */
-    protected AbstractSnapshotter(EventStorageEngine eventStorageEngine, Executor executor,
+    protected AbstractSnapshotter(EventStore eventStore, Executor executor,
                                   TransactionManager transactionManager) {
-        this.eventStorageEngine = eventStorageEngine;
+        this.eventStore = eventStore;
         this.executor = executor;
         this.transactionManager = transactionManager;
     }
@@ -114,8 +114,8 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @return the event store this snapshotter uses to load domain events and store snapshot events.
      */
-    protected EventStorageEngine getEventStorageEngine() {
-        return eventStorageEngine;
+    protected EventStore getEventStore() {
+        return eventStore;
     }
 
     /**
@@ -164,12 +164,12 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
         @Override
         public void run() {
-            DomainEventStream eventStream = eventStorageEngine.readEvents(identifier);
+            DomainEventStream eventStream = eventStore.readEvents(identifier);
             // a snapshot should only be stored if the snapshot replaces at least more than one event
             long firstEventSequenceNumber = eventStream.peek().getSequenceNumber();
             DomainEventMessage snapshotEvent = createSnapshot(aggregateType, identifier, eventStream);
             if (snapshotEvent != null && snapshotEvent.getSequenceNumber() > firstEventSequenceNumber) {
-                eventStorageEngine.storeSnapshot(snapshotEvent);
+                eventStore.storeSnapshot(snapshotEvent);
             }
         }
     }

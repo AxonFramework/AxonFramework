@@ -22,11 +22,12 @@ import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.commandhandling.model.inspection.ModelInspector;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,12 +53,24 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
      * which represent the snapshots.
      *
-     * @param eventStorageEngine         The Event Store to store snapshots in
+     * @param eventStore         The Event Store to store snapshots in
      * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
      * @see ClasspathParameterResolverFactory
      */
-    public AggregateSnapshotter(EventStorageEngine eventStorageEngine, List<AggregateFactory<?>> aggregateFactories) {
-        this(eventStorageEngine, aggregateFactories, ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
+    public AggregateSnapshotter(EventStore eventStore, AggregateFactory<?>... aggregateFactories) {
+        this(eventStore, Arrays.asList(aggregateFactories));
+    }
+    /**
+     * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
+     * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
+     * which represent the snapshots.
+     *
+     * @param eventStore         The Event Store to store snapshots in
+     * @param aggregateFactories The factories for the aggregates supported by this snapshotter.
+     * @see ClasspathParameterResolverFactory
+     */
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories) {
+        this(eventStore, aggregateFactories, ClasspathParameterResolverFactory.forClass(AggregateSnapshotter.class));
     }
 
     /**
@@ -65,14 +78,14 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * are used to instantiate the relevant Aggregate Root instances, which represent the snapshots. Snapshots are
      * stores in the given {@code eventStore}.
      *
-     * @param eventStorageEngine               The Event Store to store snapshots in
+     * @param eventStore               The Event Store to store snapshots in
      * @param aggregateFactories       The factories for the aggregates supported by this snapshotter.
      * @param parameterResolverFactory The ParameterResolverFactory instance to resolve parameter values for annotated
      *                                 handlers with
      */
-    public AggregateSnapshotter(EventStorageEngine eventStorageEngine, List<AggregateFactory<?>> aggregateFactories,
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory) {
-        super(eventStorageEngine);
+        super(eventStore);
         aggregateFactories.forEach(f -> this.aggregateFactories.put(f.getAggregateType(), f));
         this.parameterResolverFactory = parameterResolverFactory;
     }
@@ -88,7 +101,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * @param transactionManager       The transaction manager to handle the transactions around the snapshot creation
      *                                 process with
      */
-    public AggregateSnapshotter(EventStorageEngine eventStore, List<AggregateFactory<?>> aggregateFactories,
+    public AggregateSnapshotter(EventStore eventStore, List<AggregateFactory<?>> aggregateFactories,
                                 ParameterResolverFactory parameterResolverFactory, Executor executor,
                                 TransactionManager transactionManager) {
         super(eventStore, executor, transactionManager);
