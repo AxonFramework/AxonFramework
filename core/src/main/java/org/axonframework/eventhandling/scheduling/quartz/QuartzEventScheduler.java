@@ -41,6 +41,8 @@ import static org.quartz.JobKey.jobKey;
  *
  * @author Allard Buijze
  * @since 0.7
+ * @see EventJobDataBinder
+ * @see FireEventJob
  */
 public class QuartzEventScheduler implements org.axonframework.eventhandling.scheduling.EventScheduler {
 
@@ -49,6 +51,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     private static final String DEFAULT_GROUP_NAME = "AxonFramework-Events";
     private String groupIdentifier = DEFAULT_GROUP_NAME;
     private Scheduler scheduler;
+    private EventJobDataBinder jobDataBinder = new DirectEventJobDataBinder();
     private EventBus eventBus;
     private volatile boolean initialized;
     private UnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory();
@@ -82,13 +85,12 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      * @return a JobDetail describing the Job to be executed
      */
     protected JobDetail buildJobDetail(EventMessage event, JobKey jobKey) {
-        JobDataMap jobDataMap = new JobDataMap();
-        jobDataMap.put(FireEventJob.EVENT_KEY, event);
+        JobDataMap jobData = jobDataBinder.toJobData(event);
         return JobBuilder.newJob(FireEventJob.class)
-                         .withDescription(event.getPayloadType().getName())
-                         .withIdentity(jobKey)
-                         .usingJobData(jobDataMap)
-                         .build();
+                .withDescription(event.getPayloadType().getName())
+                .withIdentity(jobKey)
+                .usingJobData(jobData)
+                .build();
     }
 
     /**
@@ -129,7 +131,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Initializes the QuartzEventScheduler. Will make the configured Event Bus available to the Quartz Scheduler
+     * Initializes the QuartzEventScheduler. Makes the configured {@link EventBus} available to the Quartz Scheduler.
      *
      * @throws SchedulerException if an error occurs preparing the Quartz Scheduler for use.
      */
@@ -137,8 +139,10 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     public void initialize() throws SchedulerException {
         Assert.notNull(scheduler, "A Scheduler must be provided.");
         Assert.notNull(eventBus, "An EventBus must be provided.");
+        Assert.notNull(jobDataBinder, "An EventJobDataBinder must be provided.");
         scheduler.getContext().put(FireEventJob.EVENT_BUS_KEY, eventBus);
         scheduler.getContext().put(FireEventJob.UNIT_OF_WORK_FACTORY_KEY, unitOfWorkFactory);
+        scheduler.getContext().put(FireEventJob.EVENT_MESSAGE_BINDER_KEY, jobDataBinder);
         initialized = true;
     }
 
@@ -191,5 +195,39 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      */
     public void setUnitOfWorkFactory(UnitOfWorkFactory unitOfWorkFactory) {
         this.unitOfWorkFactory = unitOfWorkFactory;
+    }
+
+    /**
+     * Sets the {@link EventJobDataBinder} instance which reads / writes the event message to publish to the
+     * {@link JobDataMap}. Defaults to {@link }.
+     *
+     * @param jobDataBinder to use
+     */
+    public void setEventJobDataBinder(EventJobDataBinder jobDataBinder) {
+        this.jobDataBinder = jobDataBinder;
+    }
+
+    /**
+     * Binds the {@link EventMessage} as is to {@link JobDataMap}. In order for {@link JobDataMap} to successfully
+     * serialize, the payload of the {@link EventMessage} must be {@link java.io.Serializable}.
+     */
+    public static class DirectEventJobDataBinder implements EventJobDataBinder {
+
+        /**
+         * The key used to locate the event in the JobExecutionContext.
+         */
+        public static final String EVENT_KEY = EventMessage.class.getName();
+
+        @Override
+        public JobDataMap toJobData(Object eventMessage) {
+            JobDataMap jobData = new JobDataMap();
+            jobData.put(EVENT_KEY, eventMessage);
+            return jobData;
+        }
+
+        @Override
+        public Object fromJobData(JobDataMap jobData) {
+            return jobData.get(EVENT_KEY);
+        }
     }
 }
