@@ -24,7 +24,7 @@ public interface EventJobDataBinder {
     JobDataMap toJobData(Object eventMessage);
 
     /**
-     * Read an {@link org.axonframework.domain.EventMessage} (or its payload) from a {@link JobDataMap}.
+     * Read an {@link org.axonframework.eventhandling.EventMessage} (or its payload) from the {@link JobDataMap}.
      *
      * @param jobData to read from
      * @return event message (or its payload)
