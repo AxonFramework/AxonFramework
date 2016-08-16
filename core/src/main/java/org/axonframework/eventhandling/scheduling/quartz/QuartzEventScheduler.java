@@ -199,7 +199,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
 
     /**
      * Sets the {@link EventJobDataBinder} instance which reads / writes the event message to publish to the
-     * {@link JobDataMap}. Defaults to {@link }.
+     * {@link JobDataMap}. Defaults to {@link DirectEventJobDataBinder}.
      *
      * @param jobDataBinder to use
      */
@@ -208,13 +208,14 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
     }
 
     /**
-     * Binds the {@link EventMessage} as is to {@link JobDataMap}. In order for {@link JobDataMap} to successfully
-     * serialize, the payload of the {@link EventMessage} must be {@link java.io.Serializable}.
+     * Binds the {@link EventMessage} as is to {@link JobDataMap} under {@link #EVENT_KEY}. In order for
+     * {@link JobDataMap} to successfully serialize, the payload of the {@link EventMessage} must be
+     * {@link java.io.Serializable}.
      */
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
         /**
-         * The key used to locate the event in the JobExecutionContext.
+         * The key used to locate the event in the {@link JobDataMap}.
          */
         public static final String EVENT_KEY = EventMessage.class.getName();
 
