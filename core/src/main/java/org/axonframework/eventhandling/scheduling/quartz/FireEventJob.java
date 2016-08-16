@@ -42,7 +42,7 @@ public class FireEventJob implements Job {
     /**
      * The key used to locate the {@link EventJobDataBinder} in the scheduler context.
      */
-    public static final String EVENT_MESSAGE_BINDER_KEY = EventJobDataBinder.class.getName();
+    public static final String EVENT_JOB_DATA_BINDER_KEY = EventJobDataBinder.class.getName();
 
     /**
      * The key used to locate the Event Bus in the scheduler context.
@@ -63,7 +63,7 @@ public class FireEventJob implements Job {
         try {
             SchedulerContext schedulerContext = context.getScheduler().getContext();
 
-            EventJobDataBinder jobDataBinder = (EventJobDataBinder) schedulerContext.get(EVENT_MESSAGE_BINDER_KEY);
+            EventJobDataBinder jobDataBinder = (EventJobDataBinder) schedulerContext.get(EVENT_JOB_DATA_BINDER_KEY);
             Object event = jobDataBinder.fromJobData(jobData);
             EventMessage<?> eventMessage = createMessage(event);
 
