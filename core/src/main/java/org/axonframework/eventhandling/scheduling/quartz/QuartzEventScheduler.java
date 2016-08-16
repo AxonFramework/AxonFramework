@@ -142,7 +142,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         Assert.notNull(jobDataBinder, "An EventJobDataBinder must be provided.");
         scheduler.getContext().put(FireEventJob.EVENT_BUS_KEY, eventBus);
         scheduler.getContext().put(FireEventJob.UNIT_OF_WORK_FACTORY_KEY, unitOfWorkFactory);
-        scheduler.getContext().put(FireEventJob.EVENT_MESSAGE_BINDER_KEY, jobDataBinder);
+        scheduler.getContext().put(FireEventJob.EVENT_JOB_DATA_BINDER_KEY, jobDataBinder);
         initialized = true;
     }
 
