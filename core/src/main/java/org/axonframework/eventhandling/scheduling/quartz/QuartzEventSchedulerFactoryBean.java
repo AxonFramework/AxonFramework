@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.scheduling.quartz;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.SpringTransactionManager;
+import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
@@ -44,6 +45,7 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
     private Scheduler scheduler;
     private EventBus eventBus;
     private String groupIdentifier;
+    private EventJobDataBinder eventJobDataBinder;
     private PlatformTransactionManager transactionManager;
     private TransactionDefinition transactionDefinition;
 
@@ -77,6 +79,9 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
         eventScheduler.setEventBus(eventBus);
         if (groupIdentifier != null) {
             eventScheduler.setGroupIdentifier(groupIdentifier);
+        }
+        if (eventJobDataBinder != null) {
+            eventScheduler.setEventJobDataBinder(eventJobDataBinder);
         }
         if (transactionManager != null) {
             eventScheduler.setTransactionManager(new SpringTransactionManager(transactionManager,
@@ -115,6 +120,16 @@ public class QuartzEventSchedulerFactoryBean implements FactoryBean<QuartzEventS
      */
     public void setGroupIdentifier(String groupIdentifier) {
         this.groupIdentifier = groupIdentifier;
+    }
+
+    /**
+     * Sets the {@link EventJobDataBinder} instance which reads / writes the event message to publish to the
+     * {@link JobDataMap}. Defaults to {@link QuartzEventScheduler.DirectEventJobDataBinder}.
+     *
+     * @param eventJobDataBinder to use
+     */
+    public void setEventJobDataBinder(EventJobDataBinder eventJobDataBinder) {
+        this.eventJobDataBinder = eventJobDataBinder;
     }
 
     /**

@@ -22,27 +22,27 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.unitofwork.TransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
 import org.axonframework.unitofwork.UnitOfWorkFactory;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Quartz Job that publishes an event on an Event Bus. The event is retrieved from the JobExecutionContext. The Event
- * Bus is fetched from the scheduler context.
+ * Quartz Job that publishes an event on an Event Bus. The event is retrieved from the JobExecutionContexts
+ * {@link org.quartz.JobDataMap}. Both the {@link EventBus} and {@link EventJobDataBinder} are fetched from the
+ * scheduler context.
  *
  * @author Allard Buijze
  * @since 0.7
+ * @see EventJobDataBinder
  */
 public class FireEventJob implements Job {
 
     private static final Logger logger = LoggerFactory.getLogger(FireEventJob.class);
 
     /**
-     * The key used to locate the event in the JobExecutionContext.
+     * The key used to locate the {@link EventJobDataBinder} in the scheduler context.
      */
-    public static final String EVENT_KEY = EventMessage.class.getName();
+    public static final String EVENT_JOB_DATA_BINDER_KEY = EventJobDataBinder.class.getName();
 
     /**
      * The key used to locate the Event Bus in the scheduler context.
@@ -56,12 +56,20 @@ public class FireEventJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         logger.debug("Starting job to publish a scheduled event");
-        Object event = context.getJobDetail().getJobDataMap().get(EVENT_KEY);
-        EventMessage<?> eventMessage = createMessage(event);
+
+        JobDetail jobDetail = context.getJobDetail();
+        JobDataMap jobData = jobDetail.getJobDataMap();
+
         try {
-            EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            UnitOfWorkFactory unitOfWorkFactory =
-                    (UnitOfWorkFactory) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
+            SchedulerContext schedulerContext = context.getScheduler().getContext();
+
+            EventJobDataBinder jobDataBinder = (EventJobDataBinder) schedulerContext.get(EVENT_JOB_DATA_BINDER_KEY);
+            Object event = jobDataBinder.fromJobData(jobData);
+            EventMessage<?> eventMessage = createMessage(event);
+
+            EventBus eventBus = (EventBus) schedulerContext.get(EVENT_BUS_KEY);
+            UnitOfWorkFactory unitOfWorkFactory = (UnitOfWorkFactory) schedulerContext.get(UNIT_OF_WORK_FACTORY_KEY);
+
             UnitOfWork uow = unitOfWorkFactory.createUnitOfWork();
             try {
                 uow.publishEvent(eventMessage, eventBus);
@@ -70,11 +78,10 @@ public class FireEventJob implements Job {
             }
             if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
-                            eventMessage.getPayloadType().getSimpleName());
+                        eventMessage.getPayloadType().getSimpleName());
             }
         } catch (Exception e) {
-            logger.warn("Exception occurred while publishing scheduled event [{}]",
-                        eventMessage.getPayloadType().getSimpleName());
+            logger.warn("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription());
             throw new JobExecutionException(e);
         }
     }
