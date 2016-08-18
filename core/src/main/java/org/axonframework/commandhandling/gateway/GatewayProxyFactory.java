@@ -24,8 +24,8 @@ import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.messaging.annotation.MetaData;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.annotation.MetaData;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -671,7 +671,7 @@ public class GatewayProxyFactory {
         }
     }
 
-    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, R> {
+    private static class TypeSafeCallbackWrapper<C, R> implements CommandCallback<C, Object> {
 
         private final CommandCallback<C, R> delegate;
         private final Class<R> parameterType;
@@ -695,8 +695,8 @@ public class GatewayProxyFactory {
         }
 
         @Override
-        public void onSuccess(CommandMessage<? extends C> commandMessage, R result) {
-            if (parameterType.isInstance(result)) {
+        public void onSuccess(CommandMessage<? extends C> commandMessage, Object result) {
+            if (parameterType.isInstance(result) || (!parameterType.isPrimitive() && result == null)) {
                 delegate.onSuccess(commandMessage, parameterType.cast(result));
             }
         }
