@@ -53,10 +53,10 @@ public class EventCountSnapshotTriggerDefinitionTest {
         mockSnapshotter = mock(Snapshotter.class);
         testSubject = new EventCountSnapshotTriggerDefinition(mockSnapshotter, 3);
         aggregateIdentifier = "aggregateIdentifier";
-        aggregate = new AnnotatedAggregate<>(new StubAggregate(aggregateIdentifier),
-                                             ModelInspector.inspectAggregate(StubAggregate.class), null);
-
         unitOfWork = DefaultUnitOfWork.startAndGet(new GenericMessage<>("test"));
+        aggregate = AnnotatedAggregate.initialize(new StubAggregate(aggregateIdentifier),
+                                                  ModelInspector.inspectAggregate(StubAggregate.class), null);
+
     }
 
     @After

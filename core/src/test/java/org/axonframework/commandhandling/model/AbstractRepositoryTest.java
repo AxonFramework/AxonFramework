@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class AbstractRepositoryTest {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod) throws Exception {
-                return new AnnotatedAggregate<>(factoryMethod.call(), aggregateModel(), null);
+                return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), null);
             }
 
             @Override
@@ -53,7 +53,7 @@ public class AbstractRepositoryTest {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
-                return new AnnotatedAggregate<>(new JpaAggregate(), aggregateModel(), null);
+                return AnnotatedAggregate.initialize(new JpaAggregate(), aggregateModel(), null);
             }
         };
         DefaultUnitOfWork.startAndGet(null);
@@ -68,11 +68,13 @@ public class AbstractRepositoryTest {
 
     @Test
     public void testAggregateTypeVerification_CorrectType() throws Exception {
+        //noinspection unchecked
         testSubject.newInstance(() -> new JpaAggregate("hi"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testAggregateTypeVerification_WrongType() throws Exception {
+        //noinspection unchecked
         testSubject.newInstance(() -> "Not allowed");
     }
 }

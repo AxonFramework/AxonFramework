@@ -64,7 +64,7 @@ public class CommandHandlingBenchmark {
 
             @Override
             protected AnnotatedAggregate<MyAggregate> doLoad(String aggregateIdentifier, Long expectedVersion) {
-                return new AnnotatedAggregate<>(myAggregate, aggregateModel(), eventStore);
+                return AnnotatedAggregate.initialize(myAggregate, aggregateModel(), eventStore);
             }
 
             @Override
