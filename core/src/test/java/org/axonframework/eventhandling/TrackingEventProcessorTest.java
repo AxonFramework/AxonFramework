@@ -61,7 +61,7 @@ public class TrackingEventProcessorTest {
 
     @After
     public void tearDown() throws Exception {
-        testSubject.shutDown();
+        testSubject.shutdown();
         eventBus.shutDown();
     }
 
@@ -111,7 +111,7 @@ public class TrackingEventProcessorTest {
     @Test
     @DirtiesContext
     public void testContinueFromPreviousToken() throws Exception {
-        testSubject.shutDown();
+        testSubject.shutdown();
 
         tokenStore = new InMemoryTokenStore();
         eventBus.publish(createEvents(10));

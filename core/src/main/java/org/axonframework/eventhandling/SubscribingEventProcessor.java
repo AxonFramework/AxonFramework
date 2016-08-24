@@ -98,6 +98,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     /**
      * Start this processor. This will register the processor with the {@link EventBus}.
      */
+    @Override
     public void start() {
         eventBusRegistration =
                 eventBus.subscribe(eventMessages -> processingStrategy.handle(eventMessages, this::process));
@@ -106,7 +107,8 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
     /**
      * Shut down this processor. This will deregister the processor with the {@link EventBus}.
      */
-    public void shutDown() {
+    @Override
+    public void shutdown() {
         IOUtils.closeQuietly(eventBusRegistration);
     }
 }
