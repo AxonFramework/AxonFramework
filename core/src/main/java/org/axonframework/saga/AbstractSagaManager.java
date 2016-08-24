@@ -188,7 +188,7 @@ public abstract class AbstractSagaManager extends AbstractReplayAwareSagaManager
         } else {
             CurrentUnitOfWork.get().registerListener(new UnitOfWorkListenerAdapter() {
                 @Override
-                public void afterCommit(UnitOfWork unitOfWork) {
+                public void onCleanup(UnitOfWork unitOfWork) {
                     sagaMap.remove(sagaIdentifier);
                 }
             });

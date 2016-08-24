@@ -29,12 +29,15 @@ import org.axonframework.eventhandling.replay.ReplayingCluster;
 import org.axonframework.eventstore.management.EventStoreManagement;
 import org.axonframework.saga.annotation.AssociationValuesImpl;
 import org.axonframework.testutils.MockException;
+import org.axonframework.unitofwork.CurrentUnitOfWork;
 import org.axonframework.unitofwork.DefaultUnitOfWork;
 import org.axonframework.unitofwork.NoTransactionManager;
 import org.axonframework.unitofwork.UnitOfWork;
-import org.junit.*;
-import org.mockito.invocation.*;
-import org.mockito.stubbing.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,7 +45,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.*;
 
 /**
@@ -90,6 +94,14 @@ public class SagaManagerTest {
         testSubject = new TestableAbstractSagaManager(mockSagaRepository, mockSagaFactory, Saga.class);
     }
 
+    @After
+    public void cleanupCurrentUnitOfWork() {
+        if (CurrentUnitOfWork.isStarted()) {
+            CurrentUnitOfWork.clear(CurrentUnitOfWork.get());
+            cleanupCurrentUnitOfWork();
+        }
+    }
+
     @Deprecated
     @Test
     public void testSubscriptionIsIgnoredWithoutEventBus() {
@@ -119,6 +131,34 @@ public class SagaManagerTest {
         verify(mockSagaRepository).commit(mockSaga1);
         verify(mockSagaRepository).commit(mockSaga2);
         verify(mockSagaRepository, never()).commit(mockSaga3);
+    }
+
+    @Test
+    public void testSagasInCreationShouldBeClearedAfterRollback() throws InterruptedException {
+        //given saga manager with with saga throwing exception when being created
+        when(mockSagaFactory.createSaga(isA(Class.class))).thenReturn(mockSaga1);
+        reset(mockSagaRepository);
+        when(mockSagaRepository.find(isA(Class.class), isA(AssociationValue.class)))
+                .thenReturn(Collections.<String>emptySet());
+        sagaCreationPolicy = SagaCreationPolicy.IF_NONE_FOUND;
+        final EventMessage event = GenericEventMessage.asEventMessage(new Object());
+        DefaultUnitOfWork.startAndGet();
+        doThrow(new RuntimeException()).doNothing().when(mockSaga1).handle(eq(event));
+
+        testSubject.handle(event);
+
+        //we want to clear saga manager sagasInCreation map
+        CurrentUnitOfWork.get().rollback();
+
+        //no saga should be created till now and no saga should be created
+        sagaCreationPolicy = SagaCreationPolicy.NONE;
+
+        //when handling event for second time but with NONE creation policy and no exception
+        doNothing().when(mockSaga1).handle(eq(event));
+        testSubject.handle(event);
+
+        //then - second event shouldn't be handled to saga - just the first event should be handled
+        verify(mockSaga1, times(1)).handle(eq(event));
     }
 
     @Test
