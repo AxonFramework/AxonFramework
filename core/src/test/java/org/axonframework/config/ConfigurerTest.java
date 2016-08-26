@@ -18,12 +18,14 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.callbacks.FutureCallback;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.persistence.*;
@@ -44,7 +46,7 @@ public class ConfigurerTest {
         properties.put("hibernate.hbm2ddl.auto", "create-drop");
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("eventStore", properties);
         EntityManager em = emf.createEntityManager();
-        Configuration config = Configurer.defaultConfiguration()
+        Configuration config = SimpleConfigurer.defaultConfiguration()
                 .withTransactionManager(c -> isolationLevel -> {
                     EntityTransaction tx = em.getTransaction();
                     tx.begin();
@@ -66,7 +68,9 @@ public class ConfigurerTest {
                                 .useRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em), StubAggregate.class, c.eventBus())))
                 .initialize();
 
-        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"));
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
+        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        Assert.assertEquals("test", callback.get());
         assertNotNull(config.repository(StubAggregate.class));
     }
 

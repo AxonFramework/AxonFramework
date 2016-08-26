@@ -18,9 +18,9 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.model.Repository;
 
-public interface AggregateConfiguration extends ModuleConfiguration {
+public interface AggregateConfiguration<A> extends ModuleConfiguration {
 
-    Repository repository();
+    Repository<A> repository();
 
-    Class<?> aggregateType();
+    Class<A> aggregateType();
 }

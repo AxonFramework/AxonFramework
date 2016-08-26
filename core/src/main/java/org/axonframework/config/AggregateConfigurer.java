@@ -26,8 +26,8 @@ import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import java.util.function.Function;
 
-public class AggregateConfigurer<A> implements AggregateConfiguration {
-    private final Class<?> aggregate;
+public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
+    private final Class<A> aggregate;
 
     private final Component<AggregateAnnotationCommandHandler> commandHandler;
     private final Component<Repository<A>> repository;
@@ -95,7 +95,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration {
     }
 
     @Override
-    public Class<?> aggregateType() {
+    public Class<A> aggregateType() {
         return aggregate;
     }
 }
