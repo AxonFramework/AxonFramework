@@ -28,6 +28,9 @@ import org.axonframework.eventhandling.saga.SagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -83,6 +86,7 @@ public class SimpleConfigurer implements Configurer {
     private Component<ParameterResolverFactory> parameterResolverFactory = new Component<>(config, "parameterResolverFactory",
                                                                                            c -> ClasspathParameterResolverFactory.forClass(getClass()));
     private Component<SagaStore<?>> sagaStore = new Component<>(config, "sagaStore", c -> new InMemorySagaStore());
+    private Component<TokenStore> tokenStore = new Component<>(config, "tokenStore", c -> new InMemoryTokenStore());
 
     private Map<Class<?>, AggregateConfiguration> aggregate = new HashMap<>();
 
@@ -96,14 +100,27 @@ public class SimpleConfigurer implements Configurer {
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
         return new SimpleConfigurer()
                 .withEmbeddedEventStore(c -> new JpaEventStorageEngine(entityManagerProvider, c.transactionManager()))
-                .withSagaStore(c -> new JpaSagaStore(entityManagerProvider));
+                .withTokenStore(c -> new JpaTokenStore(entityManagerProvider, c.serializer()))
+                .withSagaStore(c -> {
+                    JpaSagaStore sagaStore = new JpaSagaStore(entityManagerProvider);
+                    sagaStore.setSerializer(c.serializer());
+                    return sagaStore;
+                });
+
     }
 
     protected SimpleConfigurer() {
     }
 
-    private Configurer withSagaStore(Function<Configuration, SagaStore<?>> sagaStoreBuilder) {
+    @Override
+    public Configurer withSagaStore(Function<Configuration, SagaStore<?>> sagaStoreBuilder) {
         sagaStore.update(sagaStoreBuilder);
+        return this;
+    }
+
+    @Override
+    public Configurer withTokenStore(Function<Configuration, TokenStore> tokenStoreBuilder) {
+        tokenStore.update(tokenStoreBuilder);
         return this;
     }
 
@@ -226,6 +243,7 @@ public class SimpleConfigurer implements Configurer {
             return messageMonitorFactory.get().apply(componentType, componentName);
         }
 
+        @Override
         public Serializer serializer() {
             return serializer.get();
         }

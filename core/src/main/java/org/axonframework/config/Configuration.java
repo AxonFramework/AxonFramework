@@ -27,6 +27,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.serialization.Serializer;
 
 import java.util.List;
 
@@ -49,6 +50,8 @@ public interface Configuration {
     <T> SagaStore<? super T> sagaStore(Class<T> sagaType);
 
     <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType, String componentName);
+
+    Serializer serializer();
 
     void shutdown();
 

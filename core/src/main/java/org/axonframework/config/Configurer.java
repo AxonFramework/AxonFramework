@@ -19,6 +19,8 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.saga.repository.SagaStore;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
@@ -31,6 +33,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public interface Configurer {
+
+    Configurer withSagaStore(Function<Configuration, SagaStore<?>> sagaStoreBuilder);
+
+    Configurer withTokenStore(Function<Configuration, TokenStore> tokenStoreBuilder);
 
     Configurer withMessageMonitor(Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder);
 

@@ -19,8 +19,10 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
+import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
@@ -39,6 +41,12 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         return new AggregateConfigurer<>(aggregate);
     }
 
+    public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregate,
+                                                                    EntityManagerProvider entityManagerProvider) {
+        return new AggregateConfigurer<>(aggregate)
+                .useRepository(c -> new GenericJpaRepository<>(entityManagerProvider, aggregate, c.eventBus()));
+    }
+
     protected AggregateConfigurer(Class<A> aggregate) {
         this.aggregate = aggregate;
 
@@ -48,14 +56,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                            c -> new GenericAggregateFactory<>(aggregate));
         repository = new Component<>(() -> parent, "Repository<" + aggregate.getSimpleName() + ">",
                                      c -> {
+                                         Assert.state(c.eventBus() instanceof EventStore, "Default configuration requires the use of event sourcing. Either configure an Event Store to use, or configure a specific repository implementation for " + aggregate.toString());
                                          if (c.commandBus() instanceof DisruptorCommandBus) {
                                              return ((DisruptorCommandBus) c.commandBus())
                                                      .createRepository(aggregateFactory.get(),
                                                                        c.parameterResolverFactory());
                                          }
-                                         Assert.state(c.eventBus() instanceof EventStore, "Default configuration requires the use of event sourcing. Either configure an Event Store to use, or configure a specific repository implementation for " + aggregate.toString());
                                          return new EventSourcingRepository<>(aggregateFactory.get(),
-                                                                              (EventStore) c.eventBus(),
+                                                                              c.eventStore(),
                                                                               c.parameterResolverFactory(),
                                                                               snapshotTriggerDefinition.get());
                                      });
@@ -86,7 +94,6 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
     @Override
     public void shutdown() {
-
     }
 
     @Override
