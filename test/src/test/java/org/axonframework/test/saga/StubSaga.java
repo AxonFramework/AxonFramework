@@ -19,6 +19,7 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventhandling.saga.EndSaga;
 import org.axonframework.eventhandling.saga.SagaEventHandler;
 import org.axonframework.eventhandling.saga.SagaLifecycle;
@@ -27,6 +28,8 @@ import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,15 +49,15 @@ public class StubSaga {
     @SagaEventHandler(associationProperty = "identifier")
     public void handleSagaStart(TriggerSagaStartEvent event, EventMessage<TriggerSagaStartEvent> message) {
         handledEvents.add(event);
-        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
+        timer = scheduler.schedule(message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 
     @StartSaga(forceNew = true)
     @SagaEventHandler(associationProperty = "identifier")
-    public void handleForcedSagaStart(ForceTriggerSagaStartEvent event) {
+    public void handleForcedSagaStart(ForceTriggerSagaStartEvent event, @Timestamp Instant timestamp) {
         handledEvents.add(event);
-        timer = scheduler.schedule(Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
+        timer = scheduler.schedule(timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
                                    new GenericEventMessage<>(new TimerTriggeredEvent(event.getIdentifier())));
     }
 

@@ -21,7 +21,7 @@ import org.axonframework.test.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.utils.CallbackBehavior;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 
 /**
@@ -151,5 +151,5 @@ public interface FixtureConfiguration {
      *
      * @return the simulated "current time" of the fixture.
      */
-    ZonedDateTime currentTime();
+    Instant currentTime();
 }

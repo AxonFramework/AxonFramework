@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling.scheduling;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 /**
  * Interface towards a mechanism capable of scheduling the publication of events. The accuracy of the publication time
@@ -40,7 +40,7 @@ public interface EventScheduler {
      * @param event           The event to publish
      * @return the token to use when cancelling the schedule
      */
-    ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event);
+    ScheduleToken schedule(Instant triggerDateTime, Object event);
 
     /**
      * Schedule the given {@code event} for publication after the given {@code triggerDuration}.  The

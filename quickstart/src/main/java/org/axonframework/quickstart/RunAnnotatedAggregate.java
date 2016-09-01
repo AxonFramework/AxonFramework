@@ -24,7 +24,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -48,8 +48,15 @@ public class RunAnnotatedAggregate {
         // we'll store Events in memory
         EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
 
-        // we need to configure the repository
-        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(ToDoItem.class, eventStore);
+        // we need to configure the repository, first an AggregateFactory (optional)
+        AggregateFactory<ToDoItem> aggregateFactory = new GenericAggregateFactory<>(ToDoItem.class);
+
+        // next, we define the snapshotter that we wish to use to create our snapshots
+        Snapshotter snapshotter = new AggregateSnapshotter(eventStore, aggregateFactory);
+
+        // we configure the factory and the snapshotter in the EventSourcingRepository
+        EventSourcingRepository<ToDoItem> repository = new EventSourcingRepository<>(
+                aggregateFactory, eventStore, new EventCountSnapshotTriggerDefinition(snapshotter, 10));
 
         // Axon needs to know that our ToDoItem Aggregate can handle commands
         new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository).subscribe(commandBus);

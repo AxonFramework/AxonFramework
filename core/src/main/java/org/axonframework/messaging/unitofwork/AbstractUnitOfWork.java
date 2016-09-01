@@ -16,19 +16,15 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * Abstract implementation of the Unit of Work. It provides default implementations of all methods related to the
@@ -54,11 +50,11 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
         Assert.state(Phase.NOT_STARTED.equals(phase()), "UnitOfWork is already started");
         rolledBack = false;
         onRollback(u -> rolledBack = true);
-        if (CurrentUnitOfWork.isStarted()) {
+        CurrentUnitOfWork.ifStarted(parent -> {
             // we're nesting.
-            this.parentUnitOfWork = CurrentUnitOfWork.get();
-            root().onCleanup(u -> changePhase(Phase.CLEANUP, Phase.CLOSED));
-        }
+            this.parentUnitOfWork = parent;
+            root().onCleanup(r -> changePhase(Phase.CLEANUP, Phase.CLOSED));
+        });
         changePhase(Phase.STARTED);
         CurrentUnitOfWork.set(this);
     }
@@ -117,7 +113,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
             logger.debug("Rolling back Unit Of Work.", cause);
         }
         Assert.state(isActive() && phase().isBefore(Phase.ROLLBACK),
-                String.format("The UnitOfWork is in an incompatible phase: %s", phase()));
+                     String.format("The UnitOfWork is in an incompatible phase: %s", phase()));
         Assert.state(isCurrent(), "The UnitOfWork is not the current Unit of Work");
         try {
             setRollbackCause(cause);
@@ -240,8 +236,8 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
      * Register the given {@code handler} with the Unit of Work. The handler will be invoked when the
      * Unit of Work changes its phase to the given {@code phase}.
      *
-     * @param phase     the Phase of the Unit of Work at which to invoke the handler
-     * @param handler   the handler to add
+     * @param phase   the Phase of the Unit of Work at which to invoke the handler
+     * @param handler the handler to add
      */
     protected abstract void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler);
 

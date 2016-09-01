@@ -82,11 +82,17 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
         }
         if (optionalSnapshot.isPresent()) {
             DomainEventMessage<?> snapshot = optionalSnapshot.get();
-            return DomainEventStream.concat(DomainEventStream.of(snapshot), storageEngine
-                    .readEvents(aggregateIdentifier, snapshot.getSequenceNumber() + 1));
+            return DomainEventStream.concat(DomainEventStream.of(snapshot),
+                                            storageEngine.readEvents(aggregateIdentifier,
+                                                                     snapshot.getSequenceNumber() + 1));
         } else {
             return storageEngine.readEvents(aggregateIdentifier);
         }
+    }
+
+    @Override
+    public void storeSnapshot(DomainEventMessage<?> snapshot) {
+        storageEngine.storeSnapshot(snapshot);
     }
 
     /**

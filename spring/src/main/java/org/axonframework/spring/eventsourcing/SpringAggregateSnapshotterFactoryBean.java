@@ -17,15 +17,15 @@
 package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.spring.config.annotation.SpringBeanParameterResolverFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
@@ -56,7 +56,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
     private boolean autoDetectAggregateFactories = true;
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-    private EventStorageEngine eventStorage;
+    private EventStore eventStore;
     private Executor executor = DirectExecutor.INSTANCE;
     private List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
     private ParameterResolverFactory parameterResolverFactory;
@@ -81,8 +81,8 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
             }
         }
 
-        if (eventStorage == null) {
-            eventStorage = applicationContext.getBean(EventStorageEngine.class);
+        if (eventStore == null) {
+            eventStore = applicationContext.getBean(EventStore.class);
         }
 
         if (parameterResolverFactory == null) {
@@ -94,7 +94,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        return new AggregateSnapshotter(eventStorage, factoriesFound, parameterResolverFactory, executor, txManager);
+        return new AggregateSnapshotter(eventStore, factoriesFound, parameterResolverFactory, executor, txManager);
     }
 
     @Override
@@ -140,12 +140,12 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
     }
 
     /**
-     * Sets the Event Storage Engine instance to append the snapshots to
+     * Sets the Event Store instance to write the snapshots to
      *
-     * @param eventStorageEngine The Event Storage Engine to store the snapshot events in
+     * @param eventStore The Event Store to store the snapshot events in
      */
-    public void setEventStorageEngine(EventStorageEngine eventStorageEngine) {
-        this.eventStorage = eventStorageEngine;
+    public void setEventStore(EventStore eventStore) {
+        this.eventStore = eventStore;
     }
 
     @Override

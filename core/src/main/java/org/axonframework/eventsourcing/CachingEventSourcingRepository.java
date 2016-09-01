@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.model.LockAwareAggregate;
 import org.axonframework.commandhandling.model.LockingRepository;
 import org.axonframework.commandhandling.model.inspection.AggregateModel;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.common.caching.NoCache;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -43,18 +42,37 @@ import java.util.concurrent.Callable;
  */
 public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T> {
 
-    private Cache cache = NoCache.INSTANCE;
     private final EventStore eventStore;
+    private final Cache cache;
+    private final SnapshotTriggerDefinition snapshotTriggerDefinition;
+
+    /**
+     * Initializes a repository with a the given {@code aggregateFactory} and a pessimistic locking strategy. It stores
+     * Aggregates in the given {@code cache}.
+     * <p>
+     * A repository initialized using this constructor does not create snapshots for aggregates.
+     *
+     * @param aggregateFactory The factory for new aggregate instances
+     * @param eventStore       The event store that holds the event streams for this repository
+     * @param cache            The cache in which entries will be stored
+     * @see LockingRepository#LockingRepository(Class)
+     */
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache) {
+        this(aggregateFactory, eventStore, new PessimisticLockFactory(), cache, NoSnapshotTriggerDefinition.INSTANCE);
+    }
 
     /**
      * Initializes a repository with a the given {@code aggregateFactory} and a pessimistic locking strategy.
      *
-     * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore       The event store that holds the event streams for this repository
+     * @param aggregateFactory          The factory for new aggregate instances
+     * @param eventStore                The event store that holds the event streams for this repository
+     * @param cache                     The cache in which entries will be stored
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @see LockingRepository#LockingRepository(Class)
      */
-    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache) {
-        this(aggregateFactory, eventStore, new PessimisticLockFactory(), cache);
+    public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, Cache cache,
+                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        this(aggregateFactory, eventStore, new PessimisticLockFactory(), cache, snapshotTriggerDefinition);
     }
 
     /**
@@ -62,16 +80,20 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * <p>
      * Note that an optimistic locking strategy is not compatible with caching.
      *
-     * @param aggregateFactory The factory for new aggregate instances
-     * @param eventStore       The event store that holds the event streams for this repository
-     * @param lockFactory      The lock factory restricting concurrent access to aggregate instances
+     * @param aggregateFactory          The factory for new aggregate instances
+     * @param eventStore                The event store that holds the event streams for this repository
+     * @param lockFactory               The lock factory restricting concurrent access to aggregate instances
+     * @param cache                     The cache in which entries will be stored
+     * @param snapshotTriggerDefinition The definition describing when to trigger a snapshot
      * @see LockingRepository#LockingRepository(Class)
      */
     public CachingEventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore,
-                                          LockFactory lockFactory, Cache cache) {
-        super(aggregateFactory, eventStore, lockFactory);
+                                          LockFactory lockFactory, Cache cache,
+                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        super(aggregateFactory, eventStore, lockFactory, snapshotTriggerDefinition);
         this.cache = cache;
         this.eventStore = eventStore;
+        this.snapshotTriggerDefinition = snapshotTriggerDefinition;
     }
 
     @Override
@@ -114,7 +136,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         EventSourcedAggregate<T> aggregate = null;
         CacheEntry<T> cacheEntry = cache.get(aggregateIdentifier);
         if (cacheEntry != null) {
-            aggregate = cacheEntry.recreateAggregate(aggregateModel(), eventStore);
+            aggregate = cacheEntry.recreateAggregate(aggregateModel(), eventStore, snapshotTriggerDefinition);
         }
         if (aggregate == null) {
             aggregate = super.doLoadWithLock(aggregateIdentifier, expectedVersion);
@@ -130,6 +152,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
         private final T aggregateRoot;
         private final Long version;
         private final boolean deleted;
+        private final SnapshotTrigger snapshotTrigger;
 
         private final transient EventSourcedAggregate<T> aggregate;
 
@@ -138,13 +161,19 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
             this.aggregateRoot = aggregate.getAggregateRoot();
             this.version = aggregate.version();
             this.deleted = aggregate.isDeleted();
+            this.snapshotTrigger = (aggregate.getSnapshotTrigger() instanceof Serializable)
+                    ? aggregate.getSnapshotTrigger()
+                    : NoSnapshotTriggerDefinition.TRIGGER;
         }
 
-        public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore) {
+        public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore,
+                                                          SnapshotTriggerDefinition snapshotTriggerDefinition) {
             if (aggregate != null) {
                 return aggregate;
             }
-            return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore);
+            return EventSourcedAggregate.reconstruct(aggregateRoot, model, version, deleted, eventStore,
+                                                     snapshotTriggerDefinition.reconfigure(aggregateRoot.getClass(),
+                                                                                           snapshotTrigger));
         }
     }
 }

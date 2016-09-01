@@ -18,7 +18,7 @@ package org.axonframework.test.saga;
 
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 /**
  * Interface describing methods that can be executed after the first "given" state has been supplied. Either more
@@ -56,7 +56,7 @@ public interface ContinuedGivenState extends WhenState {
      * @param newDateTime The time to advance the clock to
      * @return an object that allows registration of the actual events to send
      */
-    ContinuedGivenState andThenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception;
+    ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime) throws Exception;
 
     /**
      * Indicates that the given <code>event</code> has been published in the past. This event is sent to the associated

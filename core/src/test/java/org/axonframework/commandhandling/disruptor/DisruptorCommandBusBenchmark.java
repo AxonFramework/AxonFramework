@@ -103,6 +103,11 @@ public class DisruptorCommandBusBenchmark {
         }
 
         @Override
+        public void storeSnapshot(DomainEventMessage<?> snapshot) {
+            // not implemented
+        }
+
+        @Override
         public TrackingEventStream streamEvents(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
         }

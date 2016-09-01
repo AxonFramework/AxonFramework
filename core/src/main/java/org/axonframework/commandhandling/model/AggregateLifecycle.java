@@ -58,9 +58,9 @@ public abstract class AggregateLifecycle {
     protected abstract void doMarkDeleted();
 
     protected void registerWithUnitOfWork() {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-        HashSet<AggregateLifecycle> managedAggregates = unitOfWork.getOrComputeResource("ManagedAggregates", k -> new HashSet<>());
-        managedAggregates.add(this);
+        CurrentUnitOfWork.ifStarted(u ->
+            u.getOrComputeResource("ManagedAggregates", k -> new HashSet<>()).add(this)
+        );
     }
 
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);

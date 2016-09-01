@@ -33,7 +33,6 @@ import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
-import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -58,7 +57,8 @@ public class CommandHandlerInvokerTest {
     private String aggregateIdentifier;
     private CommandMessage<?> mockCommandMessage;
     private MessageHandler<CommandMessage<?>> mockCommandHandler;
-    private EventStreamDecorator eventStreamDecorator;
+    private SnapshotTriggerDefinition snapshotTriggerDefinition;
+    private SnapshotTrigger mockTrigger;
 
     @Before
     public void setUp() throws Exception {
@@ -72,18 +72,17 @@ public class CommandHandlerInvokerTest {
         commandHandlingEntry.reset(mockCommandMessage, mockCommandHandler, 0, 0, null,
                                    Collections.emptyList(),
                                    Collections.emptyList());
-        eventStreamDecorator = mock(EventStreamDecorator.class);
-        when(eventStreamDecorator.decorateForAppend(any(), any())).thenAnswer(new ReturnsArgumentAt(1));
-        when(eventStreamDecorator.decorateForRead(any(), any(DomainEventStream.class)))
-                .thenAnswer(new ReturnsArgumentAt(1));
+        mockTrigger = mock(SnapshotTrigger.class);
+        snapshotTriggerDefinition = mock(SnapshotTriggerDefinition.class);
+        when(snapshotTriggerDefinition.prepareTrigger(any())).thenReturn(mockTrigger);
     }
 
     @Test
     public void usesProvidedParameterResolverFactoryToResolveParameters() throws Exception {
         ParameterResolverFactory parameterResolverFactory = spy(ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         final Repository<StubAggregate> repository = testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator,
-                                  parameterResolverFactory);
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class),
+                                  snapshotTriggerDefinition, parameterResolverFactory);
 
         verify(parameterResolverFactory).createInstance(argThat(new TypeSafeMatcher<Executable>() {
             @Override
@@ -103,7 +102,7 @@ public class CommandHandlerInvokerTest {
     @SuppressWarnings("unchecked")
     public void testLoadFromRepositoryStoresLoadedAggregateInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator,
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         when(mockCommandHandler.handle(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
@@ -123,7 +122,7 @@ public class CommandHandlerInvokerTest {
     @SuppressWarnings("unchecked")
     public void testLoadFromRepositoryLoadsFromCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator,
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         when(mockCommandHandler.handle(eq(mockCommandMessage)))
                 .thenAnswer(invocationOnMock -> repository.load(aggregateIdentifier));
@@ -132,7 +131,7 @@ public class CommandHandlerInvokerTest {
             public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
                 return EventSourcedAggregate.initialize(new StubAggregate(aggregateIdentifier),
                                                         ModelInspector.inspectAggregate(StubAggregate.class),
-                                                        mockEventStore);
+                                                        mockEventStore, mockTrigger);
             }
         });
         testSubject.onEvent(commandHandlingEntry, 0, true);
@@ -145,7 +144,7 @@ public class CommandHandlerInvokerTest {
     @SuppressWarnings("unchecked")
     public void testAddToRepositoryAddsInCache() throws Exception {
         final Repository<StubAggregate> repository = testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator,
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         when(mockCommandHandler.handle(eq(mockCommandMessage))).thenAnswer(invocationOnMock -> {
             Aggregate<StubAggregate> aggregate = repository.newInstance(() -> new StubAggregate(aggregateIdentifier));
@@ -172,10 +171,10 @@ public class CommandHandlerInvokerTest {
     @Test
     public void testCreateRepositoryReturnsSameInstanceOnSecondInvocation() {
         final Repository<StubAggregate> repository1 = testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator,
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
         final Repository<StubAggregate> repository2 = testSubject
-                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), eventStreamDecorator,
+                .createRepository(new GenericAggregateFactory<>(StubAggregate.class), snapshotTriggerDefinition,
                                   ClasspathParameterResolverFactory.forClass(StubAggregate.class));
 
         assertSame(repository1, repository2);

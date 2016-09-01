@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.annotation.MetaData;
 import org.axonframework.common.lock.DeadlockException;
+import org.axonframework.messaging.annotation.MetaData;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
@@ -74,6 +74,11 @@ public class GatewayProxyFactoryTest {
 
     @Test//(timeout = 2000)
     public void testGateway_FireAndForget() {
+        doAnswer(i -> {
+            ((CommandCallback) i.getArguments()[1]).onSuccess((CommandMessage) i.getArguments()[0], null);
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
         final Object metaTest = new Object();
         gateway.fireAndForget("Command", null, metaTest, "value");
         verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<Object>>() {
@@ -88,6 +93,9 @@ public class GatewayProxyFactoryTest {
                 description.appendText("A command with 2 meta data entries");
             }
         }), isA(RetryingCallback.class));
+
+        // check that the callback is invoked, despite the null return value
+        verify(callback).onSuccess(isA(CommandMessage.class), any());
     }
 
     @Test(timeout = 2000)

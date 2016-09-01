@@ -45,7 +45,7 @@ public class ComplexAggregateStructureTest {
         AggregateModel<Book> bookAggregateModel = ModelInspector.inspectAggregate(Book.class);
         EventBus mockEventBus = new SimpleEventBus();
         mockEventBus.subscribe(m -> m.forEach(i -> System.out.println(i.getPayloadType().getName())));
-        AnnotatedAggregate<Book> bookAggregate = new AnnotatedAggregate<>(null, bookAggregateModel, mockEventBus);
+        AnnotatedAggregate<Book> bookAggregate = AnnotatedAggregate.initialize((Book)null, bookAggregateModel, mockEventBus);
         bookAggregate.handle(command(new CreateBookCommand("book1")));
         bookAggregate.handle(command(new CreatePageCommand("book1")));
         bookAggregate.handle(command(new CreateParagraphCommand("book1", 0)));

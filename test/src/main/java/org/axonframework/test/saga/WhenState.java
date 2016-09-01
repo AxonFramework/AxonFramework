@@ -18,7 +18,7 @@ package org.axonframework.test.saga;
 
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 
 /**
  * Interface providing an API to methods in the "when" state of the fixture execution. Unlike the methods in the
@@ -80,5 +80,5 @@ public interface WhenState {
      * @param newDateTime The time to advance the clock to
      * @return an object allowing you to verify the test results
      */
-    FixtureExecutionResult whenTimeAdvancesTo(ZonedDateTime newDateTime) throws Exception;
+    FixtureExecutionResult whenTimeAdvancesTo(Instant newDateTime) throws Exception;
 }

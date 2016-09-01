@@ -27,9 +27,8 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.EventStreamDecorator;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
+import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -266,7 +265,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory) {
-        return createRepository(aggregateFactory, NoOpEventStreamDecorator.INSTANCE);
+        return createRepository(aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE);
     }
 
     /**
@@ -279,14 +278,14 @@ public class DisruptorCommandBus implements CommandBus {
      * Note that a second invocation of this method with an aggregate factory for the same aggregate type <em>may</em>
      * return the same instance as the first invocation, even if the given {@code decorator} is different.
      *
-     * @param aggregateFactory The factory creating uninitialized instances of the Aggregate
-     * @param decorator        The decorator to decorate events streams with
-     * @param <T>              The type of aggregate to create the repository for
+     * @param aggregateFactory   The factory creating uninitialized instances of the Aggregate
+     * @param snapshotTriggerDefinition The trigger definition for creating snapshots
+     * @param <T>                The type of aggregate to create the repository for
      * @return the repository that provides access to stored aggregates
      */
-    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory, EventStreamDecorator decorator) {
-        return createRepository(aggregateFactory,
-                                decorator, ClasspathParameterResolverFactory.forClass(aggregateFactory.getAggregateType())
+    public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory, SnapshotTriggerDefinition snapshotTriggerDefinition) {
+        return createRepository(aggregateFactory, snapshotTriggerDefinition,
+                                ClasspathParameterResolverFactory.forClass(aggregateFactory.getAggregateType())
         );
     }
 
@@ -303,7 +302,7 @@ public class DisruptorCommandBus implements CommandBus {
      */
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
                                               ParameterResolverFactory parameterResolverFactory) {
-        return createRepository(aggregateFactory, NoOpEventStreamDecorator.INSTANCE, parameterResolverFactory);
+        return createRepository(aggregateFactory, NoSnapshotTriggerDefinition.INSTANCE, parameterResolverFactory);
     }
 
 
@@ -313,16 +312,17 @@ public class DisruptorCommandBus implements CommandBus {
      * {@code parameterResolverFactory}. The given {@code decorator} is used to intercept incoming streams of events
      *
      * @param aggregateFactory         The factory creating uninitialized instances of the Aggregate
-     * @param decorator                The decorator to decorate events streams with
+     * @param snapshotTriggerDefinition       The trigger definition for snapshots
      * @param parameterResolverFactory The ParameterResolverFactory to resolve parameter values of annotated handler
      *                                 with
      * @param <T>                      The type of aggregate managed by this repository
      * @return the repository that provides access to stored aggregates
      */
     public <T> Repository<T> createRepository(AggregateFactory<T> aggregateFactory,
-                                              EventStreamDecorator decorator, ParameterResolverFactory parameterResolverFactory) {
+                                              SnapshotTriggerDefinition snapshotTriggerDefinition,
+                                              ParameterResolverFactory parameterResolverFactory) {
         for (CommandHandlerInvoker invoker : commandHandlerInvokers) {
-            invoker.createRepository(aggregateFactory, decorator, parameterResolverFactory);
+            invoker.createRepository(aggregateFactory, snapshotTriggerDefinition, parameterResolverFactory);
         }
         return new DisruptorRepository<>(aggregateFactory.getAggregateType());
 
@@ -399,23 +399,6 @@ public class DisruptorCommandBus implements CommandBus {
         @Override
         public Aggregate<T> newInstance(Callable<T> factoryMethod) throws Exception {
             return CommandHandlerInvoker.<T>getRepository(type).newInstance(factoryMethod);
-        }
-    }
-
-    private static class NoOpEventStreamDecorator implements EventStreamDecorator {
-
-        public static final EventStreamDecorator INSTANCE = new NoOpEventStreamDecorator();
-
-        @Override
-        public DomainEventStream decorateForRead(String aggregateIdentifier,
-                                                 DomainEventStream eventStream) {
-            return eventStream;
-        }
-
-        @Override
-        public List<DomainEventMessage<?>> decorateForAppend(Aggregate<?> aggregate,
-                                                             List<DomainEventMessage<?>> events) {
-            return events;
         }
     }
 

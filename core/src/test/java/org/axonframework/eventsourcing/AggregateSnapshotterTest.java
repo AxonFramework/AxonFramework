@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.commandhandling.StubAggregate;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class AggregateSnapshotterTest {
     @Before
     @SuppressWarnings({"unchecked"})
     public void setUp() throws Exception {
-        EventStorageEngine mockStorageEngine = mock(EventStorageEngine.class);
+        EventStore mockStorageEngine = mock(EventStore.class);
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
         testSubject = new AggregateSnapshotter(mockStorageEngine, singletonList(mockAggregateFactory));

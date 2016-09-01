@@ -46,10 +46,8 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InOrder;
-import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -146,10 +144,10 @@ public class DisruptorCommandBusTest {
     public void testPublishUnsupportedCommand() throws Exception {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration().setBufferSize(8)
-                                                      .setProducerType(ProducerType.SINGLE)
-                                                      .setWaitStrategy(new SleepingWaitStrategy())
-                                                      .setExecutor(customExecutor).setInvokerThreadCount(2)
-                                                      .setPublisherThreadCount(3));
+                .setProducerType(ProducerType.SINGLE)
+                .setWaitStrategy(new SleepingWaitStrategy())
+                .setExecutor(customExecutor).setInvokerThreadCount(2)
+                .setPublisherThreadCount(3));
         try {
             testSubject.dispatch(asCommandMessage("Test"));
             fail("Expected exception");
@@ -160,22 +158,23 @@ public class DisruptorCommandBusTest {
         }
     }
 
-    @Ignore("TODO: Figure out how to do event decoration on append")
     @Test
     public void testEventStreamsDecoratedOnReadAndWrite() throws InterruptedException {
         ExecutorService customExecutor = Executors.newCachedThreadPool();
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration().setBufferSize(8)
-                                                      .setProducerType(ProducerType.SINGLE)
-                                                      .setWaitStrategy(new SleepingWaitStrategy())
-                                                      .setExecutor(customExecutor).setInvokerThreadCount(2)
-                                                      .setPublisherThreadCount(3));
+                .setProducerType(ProducerType.SINGLE)
+                .setWaitStrategy(new SleepingWaitStrategy())
+                .setExecutor(customExecutor).setInvokerThreadCount(2)
+                .setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
-        final EventStreamDecorator mockDecorator = mock(EventStreamDecorator.class);
-        when(mockDecorator.decorateForAppend(any(), any())).thenAnswer(new ReturnsArgumentAt(1));
-        when(mockDecorator.decorateForRead(any(), any())).thenAnswer(new ReturnsArgumentAt(1));
+
+        SnapshotTriggerDefinition snapshotTriggerDefinition = mock(SnapshotTriggerDefinition.class);
+        SnapshotTrigger snapshotTrigger = mock(SnapshotTrigger.class);
+        when(snapshotTriggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
 
         stubHandler.setRepository(
-                testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class), mockDecorator));
+                testSubject.createRepository(new GenericAggregateFactory<>(StubAggregate.class),
+                                             snapshotTriggerDefinition));
 
         CommandMessage<StubCommand> command = asCommandMessage(new StubCommand(aggregateIdentifier));
         CommandCallback mockCallback = mock(CommandCallback.class);
@@ -187,9 +186,11 @@ public class DisruptorCommandBusTest {
         customExecutor.shutdown();
         assertTrue(customExecutor.awaitTermination(5, TimeUnit.SECONDS));
 
-        // invoked only once, because the second time, the aggregate comes from the 1st level cache
-        verify(mockDecorator).decorateForRead(eq(aggregateIdentifier), isA(DomainEventStream.class));
-        verify(mockDecorator, times(2)).decorateForAppend(isA(Aggregate.class), isA(List.class));
+        // invoked 3 times, 1 during initialization, and 2 for the executed commands
+        InOrder inOrder = inOrder(snapshotTrigger);
+        inOrder.verify(snapshotTrigger).eventHandled(isA(DomainEventMessage.class));
+        inOrder.verify(snapshotTrigger).initializationFinished();
+        inOrder.verify(snapshotTrigger, times(2)).eventHandled(isA(DomainEventMessage.class));
     }
 
     @Test
@@ -285,9 +286,9 @@ public class DisruptorCommandBusTest {
     public void testCreateAggregate() {
         eventStore.storedEvents.clear();
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration().setBufferSize(8)
-                                                      .setProducerType(ProducerType.SINGLE)
-                                                      .setWaitStrategy(new SleepingWaitStrategy())
-                                                      .setInvokerThreadCount(2).setPublisherThreadCount(3));
+                .setProducerType(ProducerType.SINGLE)
+                .setWaitStrategy(new SleepingWaitStrategy())
+                .setInvokerThreadCount(2).setPublisherThreadCount(3));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
@@ -315,21 +316,21 @@ public class DisruptorCommandBusTest {
         testSubject = new DisruptorCommandBus(eventStore, new DisruptorConfiguration()
                 .setBufferSize(8)
                 .setMessageMonitor(msg -> new MessageMonitor.MonitorCallback() {
-            @Override
-            public void reportSuccess() {
-                successCounter.incrementAndGet();
-            }
+                    @Override
+                    public void reportSuccess() {
+                        successCounter.incrementAndGet();
+                    }
 
-            @Override
-            public void reportFailure(Throwable cause) {
-                failureCounter.incrementAndGet();
-            }
+                    @Override
+                    public void reportFailure(Throwable cause) {
+                        failureCounter.incrementAndGet();
+                    }
 
-            @Override
-            public void reportIgnored() {
-                ignoredCounter.incrementAndGet();
-            }
-        }));
+                    @Override
+                    public void reportIgnored() {
+                        ignoredCounter.incrementAndGet();
+                    }
+                }));
         testSubject.subscribe(StubCommand.class.getName(), stubHandler);
         testSubject.subscribe(CreateCommand.class.getName(), stubHandler);
         testSubject.subscribe(ErrorCommand.class.getName(), stubHandler);
@@ -455,6 +456,10 @@ public class DisruptorCommandBusTest {
         @Override
         public Registration registerDispatchInterceptor(MessageDispatchInterceptor<EventMessage<?>> dispatchInterceptor) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void storeSnapshot(DomainEventMessage<?> snapshot) {
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2015. Axon Framework
+ * Copyright (c) 2010-2016. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
                                                  format("Aggregate [%s] with identifier [%s] not found",
                                                         getAggregateType().getSimpleName(), aggregateIdentifier));
         }
-        AnnotatedAggregate<T> aggregate = new AnnotatedAggregate<>(aggregateRoot, aggregateModel(), eventBus);
+        AnnotatedAggregate<T> aggregate = AnnotatedAggregate.initialize(aggregateRoot, aggregateModel(), eventBus);
         if (expectedVersion != null && aggregate.version() != null && !expectedVersion.equals(aggregate.version())) {
             throw new ConflictingAggregateVersionException(aggregateIdentifier, expectedVersion, aggregate.version());
         }
@@ -94,7 +94,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
 
     @Override
     protected AnnotatedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
-        return new AnnotatedAggregate<>(factoryMethod.call(), aggregateModel(), eventBus);
+        return AnnotatedAggregate.initialize(factoryMethod, aggregateModel(), eventBus);
     }
 
     @Override

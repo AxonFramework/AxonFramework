@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.model.AggregateNotFoundException;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -31,6 +30,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.messaging.*;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -524,6 +524,10 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
         @Override
         public TrackingEventStream streamEvents(TrackingToken trackingToken) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void storeSnapshot(DomainEventMessage<?> snapshot) {
         }
 
         @Override

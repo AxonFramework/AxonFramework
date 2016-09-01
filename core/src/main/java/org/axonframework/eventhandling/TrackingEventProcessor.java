@@ -131,6 +131,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * {@link EventBus#streamEvents(TrackingToken)}. The {@link TrackingToken} used to open the stream will be
      * fetched from the {@link TokenStore}.
      */
+    @Override
     public void start() {
         if (state == State.NOT_STARTED) {
             state = State.STARTED;
@@ -157,7 +158,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     /**
      * Shut down the processor.
      */
-    public void shutDown() {
+    @Override
+    public void shutdown() {
         if (state != State.SHUT_DOWN) {
             state = State.SHUT_DOWN;
             executorService.shutdown();

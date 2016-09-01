@@ -23,9 +23,8 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
-
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -55,19 +54,18 @@ public class EventSchedulerValidator {
      * @param matcher  The matcher that must match with the event scheduled at the given time
      */
     public void assertScheduledEventMatching(Duration duration, Matcher<?> matcher) {
-        ZonedDateTime targetTime = eventScheduler.getCurrentDateTime().plus(duration);
+        Instant targetTime = eventScheduler.getCurrentDateTime().plus(duration);
         assertScheduledEventMatching(targetTime, matcher);
     }
 
     /**
-     * Asserts that an event matching the given <code>matcher</code> is scheduled for publication at the given
-     * <code>scheduledTime</code>.
+     * Asserts that an event matching the given {@code matcher} is scheduled for publication at the given
+     * {@code scheduledTime}.
      *
      * @param scheduledTime the time at which the event should be published
      * @param matcher       The matcher that must match with the event scheduled at the given time
      */
-    public void assertScheduledEventMatching(ZonedDateTime scheduledTime,
-                                             Matcher<?> matcher) {
+    public void assertScheduledEventMatching(Instant scheduledTime, Matcher<?> matcher) {
 
         List<ScheduledItem> schedule = eventScheduler.getScheduledItems();
         for (ScheduledItem item : schedule) {
@@ -90,10 +88,10 @@ public class EventSchedulerValidator {
         }
         for (ScheduledItem item : scheduledItems) {
             description.appendText("\n<")
-                       .appendText(item.getEvent().toString())
-                       .appendText("> at <")
-                       .appendText(item.getScheduleTime().toString())
-                       .appendText(">");
+                    .appendText(item.getEvent().toString())
+                    .appendText("> at <")
+                    .appendText(item.getScheduleTime().toString())
+                    .appendText(">");
         }
     }
 

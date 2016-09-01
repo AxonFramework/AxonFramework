@@ -24,6 +24,7 @@ import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
+import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -207,7 +208,8 @@ public class LockingRepositoryTest {
 
         @Override
         protected Aggregate<StubAggregate> doCreateNewForLock(Callable<StubAggregate> factoryMethod) throws Exception {
-            return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore);
+            return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore,
+                                                    NoSnapshotTriggerDefinition.TRIGGER);
         }
 
         public int getSaveCount() {

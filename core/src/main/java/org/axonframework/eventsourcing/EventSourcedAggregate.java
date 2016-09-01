@@ -34,45 +34,24 @@ import java.util.function.Supplier;
 
 public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
+    private final SnapshotTrigger snapshotTrigger;
     private boolean initializing = false;
     private long lastEventSequenceNumber;
-
-    public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
-                                                          EventStore eventStore) {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(aggregateRoot, inspector, eventStore);
-        aggregate.registerWithUnitOfWork();
-        return aggregate;
-    }
-
-    public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
-                                                          EventStore eventStore) throws Exception {
-        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(inspector, eventStore);
-        aggregate.registerWithUnitOfWork();
-        aggregate.registerRoot(aggregateFactory);
-        return aggregate;
-    }
-
-    public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
-                                                           boolean isDeleted, EventStore eventStore) {
-        EventSourcedAggregate<T> aggregate = initialize(aggregateRoot, model, eventStore);
-        aggregate.lastEventSequenceNumber = seqNo;
-        if (isDeleted) {
-            aggregate.doMarkDeleted();
-        }
-        return aggregate;
-    }
 
     /**
      * Initializes an Aggregate instance for the given {@code aggregateRoot}, based on the given {@code model}, which
      * publishes events to the given {@code eventBus} and stores events in the given {@code eventStore}.
      *
-     * @param aggregateRoot The aggregate root instance
-     * @param model         The model describing the aggregate structure
-     * @param eventStore    The event store to store generated events in
+     * @param aggregateRoot   The aggregate root instance
+     * @param model           The model describing the aggregate structure
+     * @param eventStore      The event store to store generated events in
+     * @param snapshotTrigger The trigger to notify of events and initialization
      */
-    protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventStore eventStore) {
+    protected EventSourcedAggregate(T aggregateRoot, AggregateModel<T> model, EventStore eventStore,
+                                    SnapshotTrigger snapshotTrigger) {
         super(aggregateRoot, model, eventStore);
         this.lastEventSequenceNumber = -1;
+        this.snapshotTrigger = snapshotTrigger;
     }
 
     /**
@@ -80,13 +59,44 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      * {@code eventBus} and stores events in the given {@code eventStore}.
      * This aggregate is not assigned a root instance yet.
      *
-     * @param model      The model describing the aggregate structure
-     * @param eventStore The event store to store generated events in
+     * @param model           The model describing the aggregate structure
+     * @param eventStore      The event store to store generated events in
+     * @param snapshotTrigger The trigger to notify of events and initialization
      * @see #registerRoot(Callable)
      */
-    protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventStore) {
+    protected EventSourcedAggregate(AggregateModel<T> model, EventBus eventStore,
+                                    SnapshotTrigger snapshotTrigger) {
         super(model, eventStore);
         this.lastEventSequenceNumber = -1;
+        this.snapshotTrigger = snapshotTrigger;
+    }
+
+    public static <T> EventSourcedAggregate<T> initialize(T aggregateRoot, AggregateModel<T> inspector,
+                                                          EventStore eventStore, SnapshotTrigger snapshotTrigger) {
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(aggregateRoot, inspector, eventStore,
+                                                                         snapshotTrigger);
+        aggregate.registerWithUnitOfWork();
+        return aggregate;
+    }
+
+    public static <T> EventSourcedAggregate<T> initialize(Callable<T> aggregateFactory, AggregateModel<T> inspector,
+                                                          EventStore eventStore, SnapshotTrigger snapshotTrigger)
+            throws Exception {
+        EventSourcedAggregate<T> aggregate = new EventSourcedAggregate<>(inspector, eventStore, snapshotTrigger);
+        aggregate.registerWithUnitOfWork();
+        aggregate.registerRoot(aggregateFactory);
+        return aggregate;
+    }
+
+    public static <T> EventSourcedAggregate<T> reconstruct(T aggregateRoot, AggregateModel<T> model, long seqNo,
+                                                           boolean isDeleted, EventStore eventStore,
+                                                           SnapshotTrigger snapshotTrigger) {
+        EventSourcedAggregate<T> aggregate = initialize(aggregateRoot, model, eventStore, snapshotTrigger);
+        aggregate.lastEventSequenceNumber = seqNo;
+        if (isDeleted) {
+            aggregate.doMarkDeleted();
+        }
+        return aggregate;
     }
 
     @Override
@@ -103,6 +113,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         if (msg instanceof DomainEventMessage) {
             lastEventSequenceNumber = ((DomainEventMessage) msg).getSequenceNumber();
         }
+        snapshotTrigger.eventHandled(msg);
         super.publish(msg);
         if (identifier() == null) {
             throw new IncompatibleAggregateException("Aggregate identifier must be non-null after applying an event. " +
@@ -158,7 +169,17 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             eventStream.forEachRemaining(this::publish);
         } finally {
             this.initializing = false;
+            snapshotTrigger.initializationFinished();
         }
+    }
+
+    /**
+     * The trigger instance that monitors this aggregate to trigger a snapshot
+     *
+     * @return the trigger instance assigned to this aggregate instance
+     */
+    public SnapshotTrigger getSnapshotTrigger() {
+        return snapshotTrigger;
     }
 
     private static class IgnoreApplyMore implements ApplyMore {

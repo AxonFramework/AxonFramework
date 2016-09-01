@@ -58,4 +58,14 @@ public interface EventProcessor {
      * no longer receive events from this event processor.
      */
     Registration registerInterceptor(MessageHandlerInterceptor<EventMessage<?>> interceptor);
+
+    /**
+     * Start processing events.
+     */
+    void start();
+
+    /**
+     * Stop processing events.
+     */
+    void shutdown();
 }

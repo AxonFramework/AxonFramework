@@ -18,7 +18,7 @@ package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.spring.config.annotation.StubAggregate;
 import org.hamcrest.BaseMatcher;
@@ -43,44 +43,41 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
     private SpringAggregateSnapshotterFactoryBean testSubject;
     private PlatformTransactionManager mockTransactionManager;
     private String aggregateIdentifier;
-    private EventStorageEngine mockEventStorage;
-    private String type = "testAggregate";
+    private EventStore mockEventStore;
 
     @Before
     public void setUp() throws Exception {
         ApplicationContext mockApplicationContext = mock(ApplicationContext.class);
-        mockEventStorage = mock(EventStorageEngine.class);
+        mockEventStore = mock(EventStore.class);
 
         testSubject = new SpringAggregateSnapshotterFactoryBean();
         testSubject.setApplicationContext(mockApplicationContext);
         when(mockApplicationContext.getBeansOfType(AggregateFactory.class)).thenReturn(
-                Collections.<String, AggregateFactory>singletonMap("myFactory",
-                                                                   new AbstractAggregateFactory<StubAggregate>(
-                                                                           StubAggregate.class) {
-                                                                       @Override
-                                                                       public StubAggregate doCreateAggregate(
-                                                                               String aggregateIdentifier,
-                                                                               DomainEventMessage firstEvent) {
-                                                                           return new StubAggregate(
-                                                                                   aggregateIdentifier);
-                                                                       }
-                                                                   }));
-        testSubject.setEventStorageEngine(mockEventStorage);
+                Collections.singletonMap("myFactory",
+                                         new AbstractAggregateFactory<StubAggregate>(StubAggregate.class) {
+                                             @Override
+                                             public StubAggregate doCreateAggregate(String aggregateIdentifier,
+                                                                                    DomainEventMessage firstEvent) {
+                                                 return new StubAggregate(aggregateIdentifier);
+                                             }
+                                         }));
+        testSubject.setEventStore(mockEventStore);
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID().toString();
 
+        String type = "testAggregate";
         DomainEventMessage event1 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 0L, "Mock contents",
                                                                     MetaData.emptyInstance());
         DomainEventMessage event2 = new GenericDomainEventMessage<>(type, aggregateIdentifier, 1L, "Mock contents",
                                                                     MetaData.emptyInstance());
-        when(mockEventStorage.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(event1, event2));
+        when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(event1, event2));
     }
 
     @Test
     public void testSnapshotCreated_NoTransaction() throws Exception {
         testSubject.getObject().scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStorage).storeSnapshot(eventSequence(1L));
+        verify(mockEventStore).storeSnapshot(eventSequence(1L));
     }
 
     @Test
@@ -93,7 +90,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
 
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStorage).storeSnapshot(eventSequence(1L));
+        verify(mockEventStore).storeSnapshot(eventSequence(1L));
         verify(mockTransactionManager).commit(newlyCreatedTransaction);
     }
 
@@ -106,7 +103,7 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
 
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStorage).storeSnapshot(eventSequence(1L));
+        verify(mockEventStore).storeSnapshot(eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
     }
 
@@ -116,11 +113,11 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         AggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class))).thenReturn(existingTransaction);
-        doThrow(new RuntimeException("Stub")).when(mockEventStorage).storeSnapshot(isA(DomainEventMessage.class));
+        doThrow(new RuntimeException("Stub")).when(mockEventStore).storeSnapshot(isA(DomainEventMessage.class));
 
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStorage).storeSnapshot(eventSequence(1L));
+        verify(mockEventStore).storeSnapshot(eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
         verify(mockTransactionManager, never()).rollback(existingTransaction);
     }
@@ -131,11 +128,11 @@ public class SpringAggregateSnapshotterFactoryBeanTest {
         AggregateSnapshotter snapshotter = testSubject.getObject();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(true);
         when(mockTransactionManager.getTransaction(any())).thenReturn(existingTransaction);
-        doThrow(new RuntimeException("Stub")).when(mockEventStorage).storeSnapshot(isA(DomainEventMessage.class));
+        doThrow(new RuntimeException("Stub")).when(mockEventStore).storeSnapshot(isA(DomainEventMessage.class));
 
         snapshotter.scheduleSnapshot(StubAggregate.class, aggregateIdentifier);
 
-        verify(mockEventStorage).storeSnapshot(eventSequence(1L));
+        verify(mockEventStore).storeSnapshot(eventSequence(1L));
         verify(mockTransactionManager, never()).commit(existingTransaction);
         verify(mockTransactionManager).rollback(existingTransaction);
     }

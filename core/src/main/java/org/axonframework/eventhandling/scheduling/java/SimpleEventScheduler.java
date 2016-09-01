@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -88,8 +88,8 @@ public class SimpleEventScheduler implements EventScheduler {
     }
 
     @Override
-    public ScheduleToken schedule(ZonedDateTime triggerDateTime, Object event) {
-        return schedule(Duration.between(ZonedDateTime.now(), triggerDateTime), event);
+    public ScheduleToken schedule(Instant triggerDateTime, Object event) {
+        return schedule(Duration.between(Instant.now(), triggerDateTime), event);
     }
 
     @Override

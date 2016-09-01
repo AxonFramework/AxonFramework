@@ -79,5 +79,5 @@ public @interface EventSourcingHandler {
      *
      * @return The type of the event this method handles.
      */
-    Class<?> eventType() default Object.class;
+    Class<?> payloadType() default Object.class;
 }

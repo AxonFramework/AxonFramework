@@ -21,6 +21,7 @@ import org.axonframework.messaging.MetaData;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -34,9 +35,6 @@ public abstract class CurrentUnitOfWork {
 
     private static final ThreadLocal<Deque<UnitOfWork<?>>> CURRENT = new ThreadLocal<>();
 
-    private CurrentUnitOfWork() {
-    }
-
     /**
      * Indicates whether a unit of work has already been started. This method can be used by interceptors to prevent
      * nesting of UnitOfWork instances.
@@ -45,6 +43,18 @@ public abstract class CurrentUnitOfWork {
      */
     public static boolean isStarted() {
         return CURRENT.get() != null && !CURRENT.get().isEmpty();
+    }
+
+    /**
+     * If a UnitOfWork is started, invokes the given {@code consumer} with the active Unit of Work. Otherwise,
+     * it does nothing
+     *
+     * @param consumer The consumer to invoke if a Unit of Work is active
+     */
+    public static void ifStarted(Consumer<UnitOfWork<?>> consumer) {
+        if (isStarted()) {
+            consumer.accept(get());
+        }
     }
 
     /**
@@ -57,7 +67,7 @@ public abstract class CurrentUnitOfWork {
      * @return an optional containing the result of the function, or an empty Optional when no Unit of Work was started
      * @throws NullPointerException when a Unit of Work is present and the function returns null
      */
-    public static <T> Optional<T> map(Function<UnitOfWork, T> function) {
+    public static <T> Optional<T> map(Function<UnitOfWork<?>, T> function) {
         return isStarted() ? Optional.of(function.apply(get())) : Optional.empty();
     }
 
@@ -127,7 +137,18 @@ public abstract class CurrentUnitOfWork {
         }
     }
 
+    /**
+     * Returns the Correlation Data attached to the current Unit of Work, or an empty {@link MetaData} instance
+     * if no Unit of Work is started.
+     *
+     * @return a MetaData instance representing the current Unit of Work's correlation data, or an empty MetaData
+     * instance if no Unit of Work is started.
+     * @see UnitOfWork#getCorrelationData()
+     */
     public static MetaData correlationData() {
         return CurrentUnitOfWork.map(UnitOfWork::getCorrelationData).orElse(MetaData.emptyInstance());
+    }
+
+    private CurrentUnitOfWork() {
     }
 }
