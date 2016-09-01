@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author koen
- *         on 11-5-16.
+ * This class retains a list of callbacks for CommandCallbackConnectors to use.
+ * @param <A> The type of the endpoint identifier.
  */
 public class CommandCallbackRepository<A> {
     final Map<String, CommandCallbackWrapper> callbacks = new ConcurrentHashMap<>();
@@ -24,12 +24,29 @@ public class CommandCallbackRepository<A> {
         }
     }
 
+    /**
+     * Fetches and removes a callback. The callback will not be used a second time, so removal should be fine
+     *
+     * @param callbackId The Callback Id to fetch the callback for
+     * @param <E> The type of the remote endpoint identifier
+     * @param <C> The type of the command
+     * @param <R> The type of the result
+     * @return The stored CommandCallbackWrapper or null if not found
+     */
     @SuppressWarnings("unchecked")
-    public <A, C, R> CommandCallbackWrapper<A, C, R> fetchAndRemove(String callbackId) {
+    public <E, C, R> CommandCallbackWrapper<E, C, R> fetchAndRemove(String callbackId) {
         return callbacks.remove(callbackId);
     }
 
-    public <A, C, R> void store(String callbackId, CommandCallbackWrapper<A, C, R> commandCallbackWrapper) {
+    /**
+     * Stores a callback
+     * @param callbackId The id to store the callback with
+     * @param commandCallbackWrapper The CommandCallbackWrapper to store
+     * @param <E> The type of the remote endpoint identifier
+     * @param <C> The type of the command
+     * @param <R> The type of the result
+     */
+    public <E, C, R> void store(String callbackId, CommandCallbackWrapper<E, C, R> commandCallbackWrapper) {
         CommandCallbackWrapper previous;
         if ((previous = callbacks.put(callbackId, commandCallbackWrapper)) != null) {
             //a previous callback with the same command ID was already found, we will cancel the callback as the command

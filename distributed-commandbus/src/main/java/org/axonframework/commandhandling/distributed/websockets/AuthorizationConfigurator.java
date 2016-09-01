@@ -7,6 +7,11 @@ import java.util.Map;
 
 import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
+/**
+ * A Configurator which enabled connecting to a Websocket server and authenticate using Basic authentication.
+ *
+ * @author Koen Lavooij
+ */
 public class AuthorizationConfigurator extends ClientEndpointConfig.Configurator {
     private final String username;
     private final String password;

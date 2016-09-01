@@ -36,6 +36,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * The client to connect to the Websocket server. It is capable of scaling up the amount of clients in a pool if a
+ * single connection is not sufficient for the load applied.
+ *
+ * @author Koen Lavooij
+ */
 @ClientEndpoint
 public class WebsocketCommandBusConnectorClient extends Endpoint implements MessageHandler.Whole<ByteBuffer>, Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(WebsocketCommandBusConnectorClient.class);
@@ -50,6 +56,9 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
     }
 
     public WebsocketCommandBusConnectorClient(ClientSessionFactory clientSessionFactory, int sessionCount) {
+        //Create the pool. Server side connections are bound to the commands in process. Therefore scaling down the
+        //amount of connections results in losing callbacks of pending commands. We will therefore never scale down or
+        //invalidate connections.
         GenericObjectPool.Config config = new GenericObjectPool.Config();
         config.maxActive = sessionCount;
         config.maxIdle = sessionCount;
@@ -96,6 +105,7 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
 
     @Override
     public void onOpen(Session session, EndpointConfig config) {
+        //log here?
     }
 
     @Override
@@ -118,9 +128,11 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
 
     @SuppressWarnings("unchecked")
     public void onMessage(ByteBuffer data) {
+        //deserialize a message
         WebsocketResultMessage message = serializer.deserialize(new SimpleSerializedObject<>(data.array(), byte[].class,
                                                                                              serializer.typeForClass(WebsocketResultMessage.class)));
 
+        //get the waiting callback
         CommandCallbackWrapper callbackWrapper = repository.fetchAndRemove(message.getCommandId());
         if (callbackWrapper != null) {
             if (message.getCause() != null) {
@@ -133,6 +145,13 @@ public class WebsocketCommandBusConnectorClient extends Endpoint implements Mess
         }
     }
 
+    /**
+     * Sends a command to the servewr
+     * @param command The command to send
+     * @param callback The callback to send Command results to. May be null if no callback is required
+     * @param <C> The type of the Command
+     * @param <R> The type of the Command result.
+     */
     public <C, R> void send(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
         ByteBuffer data = ByteBuffer.wrap(serializer.serialize(new WebsocketCommandMessage<>(command, callback != null),
                 byte[].class).getData());

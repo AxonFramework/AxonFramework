@@ -21,6 +21,11 @@ import org.axonframework.commandhandling.CommandMessage;
 import java.io.Serializable;
 import java.util.function.Predicate;
 
+/**
+ * A Command Message predicate that denies all CommandMessages
+ *
+ * @author Koen Lavooij
+ */
 public class DenyAll implements Predicate<CommandMessage<?>>, Serializable {
     public static final DenyAll INSTANCE = new DenyAll();
 

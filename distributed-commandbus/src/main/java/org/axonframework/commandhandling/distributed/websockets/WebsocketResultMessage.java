@@ -1,8 +1,9 @@
 package org.axonframework.commandhandling.distributed.websockets;
 
 /**
- * @author koen
- *         on 10-5-16.
+ * The message containing the feedback from the remotely executed Command.
+ *
+ * @author Koen Lavooij
  */
 public class WebsocketResultMessage<R> {
     private final String commandId;

@@ -27,6 +27,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A Predicate for CommandMessage's that will deny given command name. It can be combined with other
+ * DenyCommandNameFilter's in an efficient manner
+ *
+ * @author Koen Lavooij
+ */
 public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Serializable {
     private final Set<String> commandNames;
 

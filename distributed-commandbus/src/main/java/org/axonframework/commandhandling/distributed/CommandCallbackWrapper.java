@@ -4,10 +4,14 @@ import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 
 /**
- * @author koen
- *         on 11-5-16.
+ * Wrapper for a Command callback. This is used in a CommandCallbackRepository
+ *
+ * @author Koen Lavooij
+ *
+ * @param <A> The type of the session identifier
+ * @param <C> The type of the command
+ * @param <R> The type of the expected result
  */
-
 public class CommandCallbackWrapper<A, C, R> implements CommandCallback<C, R> {
     private final CommandCallback<? super C, R> wrapped;
     private final A sessionId;

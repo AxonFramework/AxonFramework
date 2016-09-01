@@ -18,6 +18,11 @@ package org.axonframework.commandhandling.distributed;
 
 import java.util.Optional;
 
+/**
+ * Member of the Axon network.
+ *
+ * @author Koen Lavooij
+ */
 public interface Member {
 
     String name();
