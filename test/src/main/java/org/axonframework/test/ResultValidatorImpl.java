@@ -19,7 +19,6 @@ package org.axonframework.test;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.test.matchers.EqualFieldsMatcher;
 import org.axonframework.test.matchers.FieldFilter;
 import org.hamcrest.Matcher;
@@ -39,47 +38,26 @@ import static org.hamcrest.CoreMatchers.*;
  */
 public class ResultValidatorImpl implements ResultValidator, CommandCallback<Object, Object> {
 
-    private final Collection<DomainEventMessage<?>> storedEvents;
     private final Collection<EventMessage<?>> publishedEvents;
-
+    private final Reporter reporter = new Reporter();
+    private final FieldFilter fieldFilter;
     private Object actualReturnValue;
     private Throwable actualException;
 
-    private final Reporter reporter = new Reporter();
-    private final FieldFilter fieldFilter;
-
     /**
-     * Initialize the ResultValidatorImpl with the given <code>storedEvents</code> and <code>publishedEvents</code>.
-     *  @param storedEvents    The events that were stored during command execution
+     * Initialize the ResultValidatorImpl with the given {@code storedEvents} and {@code publishedEvents}.
+     *
      * @param publishedEvents The events that were published during command execution
      * @param fieldFilter     The filter describing which fields to include in the comparison
      */
-    public ResultValidatorImpl(Collection<DomainEventMessage<?>> storedEvents, Collection<EventMessage<?>> publishedEvents,
+    public ResultValidatorImpl(Collection<EventMessage<?>> publishedEvents,
                                FieldFilter fieldFilter) {
-        this.storedEvents = storedEvents;
         this.publishedEvents = publishedEvents;
         this.fieldFilter = fieldFilter;
     }
 
     @Override
     public ResultValidator expectEvents(Object... expectedEvents) {
-        if (publishedEvents.size() != storedEvents.size()) {
-            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
-        }
-        return expectPublishedEvents(expectedEvents);
-    }
-
-    @Override
-    public ResultValidator expectEventsMatching(Matcher<? extends Iterable<?>> matcher) {
-        if (publishedEvents.size() != storedEvents.size()) {
-            reporter.reportDifferenceInStoredVsPublished(storedEvents, publishedEvents, actualException);
-        }
-
-        return expectPublishedEventsMatching(matcher);
-    }
-
-    @Override
-    public ResultValidator expectPublishedEvents(Object... expectedEvents) {
         if (expectedEvents.length != publishedEvents.size()) {
             reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
         }
@@ -95,7 +73,7 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
     }
 
     @Override
-    public ResultValidator expectPublishedEventsMatching(Matcher<? extends Iterable<?>> matcher) {
+    public ResultValidator expectEventsMatching(Matcher<? extends Iterable<?>> matcher) {
         if (!matcher.matches(publishedEvents)) {
             reporter.reportWrongEvent(publishedEvents, descriptionOf(matcher), actualException);
         }
@@ -106,29 +84,6 @@ public class ResultValidatorImpl implements ResultValidator, CommandCallback<Obj
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         return description;
-    }
-
-    @Override
-    public ResultValidator expectStoredEvents(Object... expectedEvents) {
-        if (expectedEvents.length != storedEvents.size()) {
-            reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
-        }
-        Iterator<DomainEventMessage<?>> iterator = storedEvents.iterator();
-        for (Object expectedEvent : expectedEvents) {
-            DomainEventMessage actualEvent = iterator.next();
-            if (!verifyEventEquality(expectedEvent, actualEvent.getPayload())) {
-                reporter.reportWrongEvent(storedEvents, Arrays.asList(expectedEvents), actualException);
-            }
-        }
-        return this;
-    }
-
-    @Override
-    public ResultValidator expectStoredEventsMatching(Matcher<? extends Iterable<?>> matcher) {
-        if (!matcher.matches(storedEvents)) {
-            reporter.reportWrongEvent(storedEvents, descriptionOf(matcher), actualException);
-        }
-        return this;
     }
 
     @Override

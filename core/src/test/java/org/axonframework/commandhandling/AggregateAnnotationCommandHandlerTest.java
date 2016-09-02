@@ -349,7 +349,6 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    cause.printStackTrace();
                                     if (!cause.getMessage().contains("entity")) {
                                         fail("Got an exception, but not the right one.");
                                     }
@@ -557,7 +556,6 @@ public class AggregateAnnotationCommandHandlerTest {
 
                                 @Override
                                 public void onFailure(CommandMessage<?> commandMessage, Throwable cause) {
-                                    cause.printStackTrace();
                                     assertTrue(cause instanceof IllegalStateException);
                                 }
                             }

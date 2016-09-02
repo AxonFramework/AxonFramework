@@ -96,8 +96,6 @@ public class FixtureTest_RegularParams {
                 .given(givenEvents)
                 .when(new TestCommand("aggregateId"))
                 .expectEvents(new MyEvent("aggregateId", 4))
-                .expectStoredEvents(new MyEvent("aggregateId", 4))
-                .expectPublishedEvents(new MyEvent("aggregateId", 4))
                 .expectVoidReturnType();
     }
 
@@ -211,8 +209,7 @@ public class FixtureTest_RegularParams {
                 .registerAnnotatedCommandHandler(commandHandler)
                 .given(givenEvents)
                 .when(new PublishEventCommand("aggregateId"))
-                .expectStoredEvents()
-                .expectPublishedEvents(new MyApplicationEvent());
+                .expectEvents(new MyApplicationEvent());
     }
 
     @Test

@@ -234,7 +234,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
             commandHandlerInterceptors.add(new AggregateRegisteringInterceptor());
             finalizeConfiguration();
             final MatchAllFieldFilter fieldFilter = new MatchAllFieldFilter(fieldFilters);
-            ResultValidatorImpl resultValidator = new ResultValidatorImpl(storedEvents, publishedEvents, fieldFilter);
+            ResultValidatorImpl resultValidator = new ResultValidatorImpl(publishedEvents, fieldFilter);
 
             commandBus.dispatch(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), resultValidator);
 
