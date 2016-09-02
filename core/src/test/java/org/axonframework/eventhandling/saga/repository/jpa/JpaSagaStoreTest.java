@@ -26,7 +26,6 @@ import org.axonframework.eventhandling.saga.repository.StubSaga;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,7 +60,6 @@ public class JpaSagaStoreTest {
 
     @PersistenceContext
     private EntityManager entityManager;
-    private XStreamSerializer serializer;
     private DefaultUnitOfWork<Message<?>> unitOfWork;
 
     @Before
@@ -77,8 +75,6 @@ public class JpaSagaStoreTest {
         // So we must alter the table to prevent data truncation
         entityManager.createNativeQuery("ALTER TABLE SagaEntry ALTER COLUMN serializedSaga VARBINARY(1024)")
                 .executeUpdate();
-        serializer = new XStreamSerializer();
-        sagaStore.setSerializer(serializer);
 
         startUnitOfWork();
 

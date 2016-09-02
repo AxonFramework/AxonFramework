@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.saga.AssociationValues;
 import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
-import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,19 +85,29 @@ public class JpaSagaStore implements SagaStore<Object> {
 
     private final EntityManagerProvider entityManagerProvider;
     private ResourceInjector injector;
-    private Serializer serializer;
+    private final Serializer serializer;
     private volatile boolean useExplicitFlush = true;
 
     /**
-     * Initializes a Saga Repository with a {@code JavaSerializer}.
+     * Initializes a Saga Repository with an {@link XStreamSerializer} and given {@code entityManagerProvider}.
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      */
     public JpaSagaStore(EntityManagerProvider entityManagerProvider) {
+        this(new XStreamSerializer(), entityManagerProvider);
+    }
+
+    /**
+     * Initializes a Saga Repository with the given {@code serializer} and {@code entityManagerProvider}.
+     *
+     * @param serializer The serializer to serialize saga instances with
+     * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
+     */
+    public JpaSagaStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
         Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
 
-        serializer = new JavaSerializer();
+        this.serializer = serializer;
 
         EntityManager entityManager = this.entityManagerProvider.getEntityManager();
         EntityManagerFactory entityManagerFactory = entityManager.getEntityManagerFactory();
@@ -251,15 +261,6 @@ public class JpaSagaStore implements SagaStore<Object> {
      */
     public void setResourceInjector(ResourceInjector resourceInjector) {
         this.injector = resourceInjector;
-    }
-
-    /**
-     * Sets the Serializer instance to serialize Sagas with. Defaults to the XStream Serializer.
-     *
-     * @param serializer the Serializer instance to serialize Sagas with
-     */
-    public void setSerializer(Serializer serializer) {
-        this.serializer = serializer;
     }
 
     /**
