@@ -23,8 +23,8 @@ public class MySqlEventTableFactory extends AbstractEventTableFactory {
     }
 
     @Override
-    protected String autoIncrement() {
-        return "AUTO_INCREMENT";
+    protected String idColumnType() {
+        return "BIGINT AUTO_INCREMENT";
     }
 
     @Override

@@ -23,8 +23,8 @@ public class PostgresEventTableFactory extends AbstractEventTableFactory {
     }
 
     @Override
-    protected String autoIncrement() {
-        return "SERIAL";
+    protected String idColumnType() {
+        return "BIGSERIAL";
     }
 
     @Override
