@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.distributed.websockets;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.CommandBusConnector;
@@ -26,47 +27,64 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageHandler;
 
 import javax.websocket.*;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class WebsocketCommandBusConnector implements CommandBusConnector {
+/**
+ * The WebsocketCommandBusConnector is an CommandBusConnector for the DistributedCommandBus. It will send messages
+ * through Websockets.
+ *
+ * @author Koen Lavooij
+ */
+public class WebsocketCommandBusConnector implements CommandBusConnector, Closeable {
     public static final int MESSAGE_BUFFER_SIZE = 16 * 1024 * 1024;
     private final ConcurrentHashMap<URI, WebsocketCommandBusConnectorClient> clients = new ConcurrentHashMap<>();
     private final AuthorizationConfigurator authorizationConfigurator;
     private final WebSocketContainer container;
+    private final CommandBus commandBus;
 
-    public WebsocketCommandBusConnector() {
-        this(null, MESSAGE_BUFFER_SIZE);
+    public WebsocketCommandBusConnector(CommandBus commandBus) {
+        this(commandBus, null, MESSAGE_BUFFER_SIZE);
     }
 
-    public WebsocketCommandBusConnector(String username, String password) {
-        this(username, password, MESSAGE_BUFFER_SIZE);
+    public WebsocketCommandBusConnector(CommandBus commandBus, String username, String password) {
+        this(commandBus, username, password, MESSAGE_BUFFER_SIZE);
     }
 
-    public WebsocketCommandBusConnector(String username, String password, int messageSize) {
-        this(new AuthorizationConfigurator(username, password), messageSize);
+    public WebsocketCommandBusConnector(CommandBus commandBus, String username, String password, int messageSize) {
+        this(commandBus, new AuthorizationConfigurator(username, password), messageSize);
     }
 
-    WebsocketCommandBusConnector(AuthorizationConfigurator authorizationConfigurator, int messageSize) {
+    WebsocketCommandBusConnector(CommandBus commandBus, AuthorizationConfigurator authorizationConfigurator, int messageSize) {
+        this.commandBus = commandBus;
         this.authorizationConfigurator = authorizationConfigurator;
 
         container = ContainerProvider.getWebSocketContainer();
-        container.setAsyncSendTimeout(-1);
-        container.setDefaultMaxSessionIdleTimeout(-1);
+        container.setAsyncSendTimeout(0);
+        container.setDefaultMaxSessionIdleTimeout(0);
         container.setDefaultMaxBinaryMessageBufferSize(messageSize);
-        container.setDefaultMaxTextMessageBufferSize(messageSize);
+        //we send binary messages only
+        container.setDefaultMaxTextMessageBufferSize(1);
     }
 
+    /**
+     * Creates a connection to a websocket server and then wraps it in a WebsocketCommandBusConnectorClient
+     * @param uri The URI of the endpoint of the server to connect to
+     * @return The WebsocketCommandBusConnectorClient to use to communicate with the server.
+     */
     private WebsocketCommandBusConnectorClient getClientTo(URI uri) {
         return clients.computeIfAbsent(uri, (key) -> {
+            //Create the websocket configuration
             ClientEndpointConfig.Builder builder = ClientEndpointConfig.Builder.create();
             if (authorizationConfigurator != null) {
                 builder.configurator(authorizationConfigurator);
             }
             return new WebsocketCommandBusConnectorClient((endpoint) -> {
                 try {
+                    //Create the connection to the server
                     Session session = container.connectToServer(endpoint, builder.build(), uri);
                     session.addMessageHandler(ByteBuffer.class, endpoint);
                     return session;
@@ -94,6 +112,14 @@ public class WebsocketCommandBusConnector implements CommandBusConnector {
 
     @Override
     public Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler) {
-        return WebsocketCommandBusConnectorServerConfigurator.getLocalSegment().subscribe(commandName, handler);
+        return commandBus.subscribe(commandName, handler);
+    }
+
+    @Override
+    public void close() throws IOException {
+        for (WebsocketCommandBusConnectorClient websocketCommandBusConnectorClient : clients.values()) {
+            websocketCommandBusConnectorClient.close();
+        }
+
     }
 }

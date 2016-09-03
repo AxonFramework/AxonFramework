@@ -21,6 +21,11 @@ import org.axonframework.commandhandling.CommandMessage;
 import java.io.Serializable;
 import java.util.function.Predicate;
 
+/**
+ * A command filter that accepts all CommandMessages
+ *
+ * @author Koen Lavooij
+ */
 public class AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
     public static final AcceptAll INSTANCE = new AcceptAll();
 

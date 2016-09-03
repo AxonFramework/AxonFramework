@@ -27,6 +27,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A filter for CommandMessages which filters CommandMessages by a Command Name. It can be combined with other
+ * CommandNameFilters in an efficient manner.
+ *
+ * @author Koen Lavooij
+ */
 public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializable {
 
     private final Set<String> commandNames;
