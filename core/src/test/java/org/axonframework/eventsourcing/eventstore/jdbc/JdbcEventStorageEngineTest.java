@@ -13,9 +13,14 @@
 
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,20 +36,17 @@ import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.cre
  */
 public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
+    private JDBCDataSource dataSource;
+    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
     private AbstractJdbcEventStorageEngine testSubject;
 
     @Before
     public void setUp() throws SQLException {
-        JDBCDataSource dataSource = new JDBCDataSource();
+        dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
-        testSubject = new JdbcEventStorageEngine(dataSource::getConnection, NoTransactionManager.INSTANCE);
-        testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
-        setTestSubject(testSubject);
-
-        Connection connection = dataSource.getConnection();
-        connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
-        connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-        testSubject.createSchema(HsqlEventTableFactory.INSTANCE);
+        defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
+        setTestSubject(testSubject = createEngine(NoOpEventUpcasterChain.INSTANCE, defaultPersistenceExceptionResolver,
+                                                  new EventSchema(), byte[].class, HsqlEventTableFactory.INSTANCE));
     }
 
     @Test
@@ -57,27 +59,47 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     public void testCustomSchemaConfig() throws Exception {
-        EventSchema customConfiguration =
-                EventSchema.builder().withEventTable("CustomDomainEvent").withPayloadColumn("eventData").build();
-
-        JDBCDataSource dataSource = new JDBCDataSource();
-        dataSource.setUrl("jdbc:hsqldb:mem:test");
-
-        testSubject = new JdbcEventStorageEngine(dataSource::getConnection, NoTransactionManager.INSTANCE,
-                                                 customConfiguration, String.class);
-        testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
-        setTestSubject(testSubject);
-
-        Connection connection = dataSource.getConnection();
-        connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
-        connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-        testSubject.createSchema(new HsqlEventTableFactory() {
-            @Override
-            protected String payloadType() {
-                return "LONGVARCHAR";
-            }
-        });
-
+        setTestSubject(testSubject = createEngine(NoOpEventUpcasterChain.INSTANCE, defaultPersistenceExceptionResolver,
+                                                  EventSchema.builder().withEventTable("CustomDomainEvent")
+                                                          .withPayloadColumn("eventData").build(), String.class,
+                                                  new HsqlEventTableFactory() {
+                                                      @Override
+                                                      protected String payloadType() {
+                                                          return "LONGVARCHAR";
+                                                      }
+                                                  }));
         testStoreAndLoadEvents();
+    }
+
+    @Override
+    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+        return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(),
+                            byte[].class, HsqlEventTableFactory.INSTANCE);
+
+    }
+
+    @Override
+    protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
+        return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver, new EventSchema(),
+                            byte[].class,
+                            HsqlEventTableFactory.INSTANCE);
+    }
+
+    protected AbstractJdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+                                                          PersistenceExceptionResolver persistenceExceptionResolver,
+                                                          EventSchema eventSchema, Class<?> dataType, EventTableFactory tableFactory) {
+        AbstractJdbcEventStorageEngine result =
+                new JdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,
+                                           NoTransactionManager.INSTANCE, 100, dataSource::getConnection, dataType,
+                                           eventSchema);
+        try {
+            Connection connection = dataSource.getConnection();
+            connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
+            connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
+            result.createSchema(tableFactory);
+            return result;
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

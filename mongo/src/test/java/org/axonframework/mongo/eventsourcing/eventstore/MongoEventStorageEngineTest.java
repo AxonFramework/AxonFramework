@@ -20,8 +20,14 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
+import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -87,5 +93,18 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
     @Override
     public void testUniqueKeyConstraintOnEventIdentifier() {
         logger.info("Unique event identifier is not currently guaranteed in the Mongo Event Storage Engine");
+    }
+
+    @Override
+    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+        return new MongoEventStorageEngine(new XStreamSerializer(), upcasterChain, mongoTemplate,
+                                           new DocumentPerEventStorageStrategy());
+    }
+
+    @Override
+    protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
+        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcasterChain.INSTANCE,
+                                           persistenceExceptionResolver, 100, mongoTemplate,
+                                           new DocumentPerEventStorageStrategy());
     }
 }

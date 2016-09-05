@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore.jdbc.legacy;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
@@ -25,6 +26,9 @@ import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.legacy.GenericLegacyDomainEventEntry;
 import org.axonframework.eventsourcing.eventstore.legacy.LegacyTrackingToken;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,23 +38,75 @@ import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 
 /**
+ * EventStorageEngine implementation that uses JDBC to store and fetch events in a way that is compatible with the event
+ * store format of Axon version 2.x.
+ * <p>
+ * By default the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
+ * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
+ *
  * @author Rene de Waele
  */
 public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
 
-    private static final long DEFAULT_GAP_DETECTION_INTERVAL_MILLIS = 10000L;
-
-    private final long gapDetectionInterval;
-
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
+     * The payload and metadata of events is stored as a serialized blob of bytes using a new {@link XStreamSerializer}.
+     * <p>
+     * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
+     *
+     * @param connectionProvider The provider of connections to the underlying database
+     * @param transactionManager The transaction manager used to set the isolation level of the transaction when loading
+     *                           events
+     */
     public LegacyJdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
         super(connectionProvider, transactionManager);
-        this.gapDetectionInterval = DEFAULT_GAP_DETECTION_INTERVAL_MILLIS;
     }
 
-    public LegacyJdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager,
-                                        EventSchema eventSchema, Class<?> dataType, long gapDetectionInterval) {
-        super(connectionProvider, transactionManager, eventSchema, dataType);
-        this.gapDetectionInterval = gapDetectionInterval;
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
+     * The payload and metadata of events is stored as a serialized blob of bytes using the given {@code serializer}.
+     * <p>
+     * Events are read in batches of 100. The given {@code upcasterChain} is used to upcast events before
+     * deserialization.
+     *
+     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
+     *                                     persistence exceptions are not explicitly resolved.
+     * @param connectionProvider           The provider of connections to the underlying database
+     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
+     *                                     when loading events
+     */
+    public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+                                        PersistenceExceptionResolver persistenceExceptionResolver,
+                                        TransactionManager transactionManager, ConnectionProvider connectionProvider) {
+        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, connectionProvider);
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events.
+     *
+     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
+     *                                     persistence exceptions are not explicitly resolved.
+     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
+     *                                     when loading events
+     * @param batchSize                    The number of events that should be read at each database access. When more
+     *                                     than this number of events must be read to rebuild an aggregate's state, the
+     *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
+     *                                     sure to choose snapshot trigger and batch size such that a single batch will
+     *                                     generally retrieve all events required to rebuild an aggregate's state.
+     * @param connectionProvider           The provider of connections to the underlying database
+     * @param dataType                     The data type for serialized event payload and metadata
+     * @param schema                       Object that describes the database schema of event entries
+     */
+    public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+                                        PersistenceExceptionResolver persistenceExceptionResolver,
+                                        TransactionManager transactionManager, Integer batchSize,
+                                        ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema) {
+        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, batchSize,
+              connectionProvider, dataType, schema);
     }
 
     @Override
@@ -60,8 +116,8 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
         }
         Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
         LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp(),
-                                       legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
+        return new LegacyTrackingToken(legacyToken.getTimestamp(), legacyToken.getAggregateIdentifier(),
+                                       legacyToken.getSequenceNumber());
     }
 
     @Override
@@ -76,10 +132,10 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
             return connection.prepareStatement(selectFrom + orderBy);
         } else {
             LegacyTrackingToken lastItem = (LegacyTrackingToken) lastToken;
-            String where = " WHERE ((" + schema().timestampColumn() + " > ?) " +
-                    "OR (" + schema().timestampColumn() + " = ? AND " + schema().sequenceNumberColumn() + " > ?) " +
-                    "OR (" + schema().timestampColumn() + " = ? AND " + schema().sequenceNumberColumn() + " = ? " +
-                    "AND " + schema().aggregateIdentifierColumn() + " > ?))";
+            String where = " WHERE ((" + schema().timestampColumn() + " > ?) " + "OR (" + schema().timestampColumn() +
+                    " = ? AND " + schema().sequenceNumberColumn() + " > ?) " + "OR (" + schema().timestampColumn() +
+                    " = ? AND " + schema().sequenceNumberColumn() + " = ? " + "AND " +
+                    schema().aggregateIdentifierColumn() + " > ?))";
             PreparedStatement statement = connection.prepareStatement(selectFrom + where + orderBy);
             writeTimestamp(statement, 1, lastItem.getTimestamp());
             writeTimestamp(statement, 2, lastItem.getTimestamp());

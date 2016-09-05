@@ -24,6 +24,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+/**
+ * Abstract base class of a component that models an aggregate life cycle. This implementation
+ */
 public abstract class AggregateLifecycle {
 
     private static final ThreadLocal<AggregateLifecycle> CURRENT = new ThreadLocal<>();

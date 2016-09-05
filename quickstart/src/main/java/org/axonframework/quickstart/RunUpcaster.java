@@ -60,14 +60,12 @@ public class RunUpcaster {
         JDBCDataSource dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:temp");
 
-        // configure EventStorage to use this database
-        JdbcEventStorageEngine storageEngine = new JdbcEventStorageEngine(
-                new UnitOfWorkAwareConnectionProviderWrapper(new DataSourceConnectionProvider(dataSource)),
-                NoTransactionManager.INSTANCE);
+        // initialize EventStorage to use our upcaster
+        JdbcEventStorageEngine storageEngine =
+                new JdbcEventStorageEngine(serializer, new DefaultEventUpcasterChain(new ToDoItemUpcaster()), null,
+                                           NoTransactionManager.INSTANCE, new UnitOfWorkAwareConnectionProviderWrapper(
+                        new DataSourceConnectionProvider(dataSource)));
         storageEngine.createSchema(HsqlEventTableFactory.INSTANCE);
-        storageEngine.setSerializer(serializer);
-        // initialize the upcaster chain with our upcaster
-        storageEngine.setUpcasterChain(new DefaultEventUpcasterChain(new ToDoItemUpcaster()));
 
         // create an EmdeddedEventStore (we don't want to run a separate server)
         EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngine);

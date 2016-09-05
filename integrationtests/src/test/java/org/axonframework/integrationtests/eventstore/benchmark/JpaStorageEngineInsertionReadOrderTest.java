@@ -25,6 +25,7 @@ import org.axonframework.eventsourcing.eventstore.GlobalIndexTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.Before;
@@ -77,17 +78,15 @@ public class JpaStorageEngineInsertionReadOrderTest {
             return null;
         });
 
-        testSubject = new JpaEventStorageEngine(new SimpleEntityManagerProvider(entityManager),
-                                                new SpringTransactionManager(tx));
-
-        testSubject.setSerializer(serializer);
-        testSubject.setBatchSize(20);
+        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcasterChain.INSTANCE, null,
+                                                new SpringTransactionManager(tx), 20,
+                                                new SimpleEntityManagerProvider(entityManager));
     }
 
     @Test(timeout = 30000)
     public void testInsertConcurrentlyAndCheckReadOrder() throws Exception {
-        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 7,
-                rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 7, rollbacksPerThread =
+                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         List<TrackedEventMessage<?>> readEvents = readEvents(expectedEventCount);
@@ -100,8 +99,8 @@ public class JpaStorageEngineInsertionReadOrderTest {
 
     @Test(timeout = 10000)
     public void testInsertConcurrentlyAndReadUsingBlockingStreams() throws Exception {
-        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 2,
-                rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        int threadCount = 10, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
+                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject);
@@ -115,18 +114,22 @@ public class JpaStorageEngineInsertionReadOrderTest {
         for (Thread thread : writerThreads) {
             thread.join();
         }
-        assertEquals("The actually read list of events is shorted than the expected value",
-                     expectedEventCount, counter);
+        assertEquals("The actually read list of events is shorted than the expected value", expectedEventCount,
+                     counter);
     }
 
     @Test(timeout = 30000)
     public void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
-        testSubject.setBatchSize(100);
-        int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2,
-                rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
+        //increase batch size to 100
+        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcasterChain.INSTANCE, null,
+                                                new SpringTransactionManager(tx), 100,
+                                                new SimpleEntityManagerProvider(entityManager));
+        int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
+                (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
-        EmbeddedEventStore embeddedEventStore = new EmbeddedEventStore(testSubject, null, 20, 1000, 100, TimeUnit.MILLISECONDS);
+        EmbeddedEventStore embeddedEventStore =
+                new EmbeddedEventStore(testSubject, null, 20, 1000, 100, TimeUnit.MILLISECONDS);
         TrackingEventStream readEvents = embeddedEventStore.streamEvents(null);
         int counter = 0;
         while (counter < expectedEventCount) {
@@ -139,8 +142,8 @@ public class JpaStorageEngineInsertionReadOrderTest {
         for (Thread thread : writerThreads) {
             thread.join();
         }
-        assertEquals("The actually read list of events is shorted than the expected value",
-                     expectedEventCount, counter);
+        assertEquals("The actually read list of events is shorted than the expected value", expectedEventCount,
+                     counter);
     }
 
     private Thread[] storeEvents(int threadCount, int eventsPerThread, int inverseRollbackRate) {
@@ -181,9 +184,9 @@ public class JpaStorageEngineInsertionReadOrderTest {
                     testSubject.readEvents(new GlobalIndexTrackingToken(lastToken), false).collect(Collectors.toList());
             for (TrackedEventMessage<?> message : batch) {
                 result.add(message);
-                logger.info(message.getPayload() + " / " +
-                                    ((DomainEventMessage<?>) message).getSequenceNumber() + " => " +
-                                    message.trackingToken().toString());
+                logger.info(
+                        message.getPayload() + " / " + ((DomainEventMessage<?>) message).getSequenceNumber() + " => " +
+                                message.trackingToken().toString());
                 lastToken = ((GlobalIndexTrackingToken) message.trackingToken()).getGlobalIndex();
             }
         }

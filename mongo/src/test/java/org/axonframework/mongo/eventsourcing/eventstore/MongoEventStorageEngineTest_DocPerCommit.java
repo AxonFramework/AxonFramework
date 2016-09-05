@@ -21,9 +21,14 @@ import com.mongodb.MongoClient;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import org.axonframework.commandhandling.model.ConcurrencyException;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.mongo.eventsourcing.eventstore.documentpercommit.DocumentPerCommitStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -105,8 +110,21 @@ public class MongoEventStorageEngineTest_DocPerCommit extends BatchingEventStora
     @Test(expected = EventStoreException.class)
     @Override
     public void testStoreDuplicateEventWithExceptionTranslator() {
-        testSubject.setPersistenceExceptionResolver(null);
+        testSubject = createEngine((PersistenceExceptionResolver) null);
         testSubject.appendEvents(createEvent(0));
         testSubject.appendEvents(createEvent(0));
+    }
+
+    @Override
+    protected MongoEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+        return new MongoEventStorageEngine(new XStreamSerializer(), upcasterChain, mongoTemplate,
+                                           new DocumentPerCommitStorageStrategy());
+    }
+
+    @Override
+    protected MongoEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
+        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcasterChain.INSTANCE,
+                                           persistenceExceptionResolver, 100, mongoTemplate,
+                                           new DocumentPerCommitStorageStrategy());
     }
 }

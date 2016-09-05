@@ -16,16 +16,20 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedTypeException;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,12 +68,14 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @Autowired
     private DataSource dataSource;
 
+    private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
+
     @Before
     public void setUp() throws SQLException {
         entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
-        testSubject = new JpaEventStorageEngine(entityManagerProvider, NoTransactionManager.INSTANCE);
-        testSubject.setPersistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
-        setTestSubject(testSubject);
+        defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
+        setTestSubject(
+                testSubject = createEngine(NoOpEventUpcasterChain.INSTANCE, defaultPersistenceExceptionResolver));
     }
 
     @Test
@@ -98,7 +104,9 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     public void testStoreEventsWithCustomEntity() throws Exception {
-        testSubject = new JpaEventStorageEngine(entityManagerProvider, NoTransactionManager.INSTANCE) {
+        testSubject = new JpaEventStorageEngine(new XStreamSerializer(), NoOpEventUpcasterChain.INSTANCE,
+                                                defaultPersistenceExceptionResolver, NoTransactionManager.INSTANCE, 100,
+                                                entityManagerProvider) {
 
             @Override
             protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
@@ -106,8 +114,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
             }
 
             @Override
-            protected DomainEventData<?> createSnapshotEntity(DomainEventMessage<?> snapshot,
-                                                              Serializer serializer) {
+            protected DomainEventData<?> createSnapshotEntity(DomainEventMessage<?> snapshot, Serializer serializer) {
                 return new CustomSnapshotEventEntry(snapshot, serializer);
             }
 
@@ -121,7 +128,6 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
                 return CustomSnapshotEventEntry.class.getSimpleName();
             }
         };
-        testSubject.setSerializer(new XStreamSerializer());
 
         testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"));
         testSubject.storeSnapshot(createEvent(AGGREGATE, 1, "Snapshot1"));
@@ -130,5 +136,21 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         assertFalse(entityManager.createQuery("SELECT e FROM CustomDomainEventEntry e").getResultList().isEmpty());
         assertEquals("Snapshot1", testSubject.readSnapshot(AGGREGATE).get().getPayload());
         assertEquals("Payload1", testSubject.readEvents(AGGREGATE).peek().getPayload());
+    }
+
+    @Override
+    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+        return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
+    }
+
+    @Override
+    protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
+        return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver);
+    }
+
+    protected JpaEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+                                                 PersistenceExceptionResolver persistenceExceptionResolver) {
+        return new JpaEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,
+                                         NoTransactionManager.INSTANCE, 100, entityManagerProvider);
     }
 }

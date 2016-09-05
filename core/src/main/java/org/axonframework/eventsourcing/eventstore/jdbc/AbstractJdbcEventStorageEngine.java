@@ -14,11 +14,15 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,12 +37,11 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
 /**
- * Abstract implementation of an event storage engine that uses JDBC to store and load events. By default the payload of
- * events is stored as a serialized blob of bytes. Other columns are used to store meta-data that allow quick finding of
- * DomainEvents for a specific aggregate in the correct order.
+ * Abstract implementation of an event storage engine that uses JDBC to store and load events.
  *
  * @author Rene de Waele
  */
@@ -46,15 +49,30 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     private final ConnectionProvider connectionProvider;
 
     /**
-     * Initializes a JDBC storage engine with given {@code connectionProvider} and {@code transactionManager}.
+     * Initializes an EventStorageEngine that uses JDBC to store and load events.
      *
-     * @param connectionProvider The provider of connections to the underlying database
-     * @param transactionManager The transaction manager used to set the isolation level of the transaction when loading
-     *                           events
+     * @param serializer                   Used to serialize and deserialize event payload and metadata. If {@code null}
+     *                                     an {@link XStreamSerializer} is used.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
+     *                                     null} a {@link NoOpEventUpcasterChain} is used.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null},
+     *                                     a .
+     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
+     *                                     when loading events.
+     * @param batchSize                    The number of events that should be read at each database access. When more
+     *                                     than this number of events must be read to rebuild an aggregate's state, the
+     *                                     events are read in batches of this size. If {@code null} a batch size of 100
+     *                                     is used. Tip: if you use a snapshotter, make sure to choose snapshot trigger
+     *                                     and batch size such that a single batch will generally retrieve all events
+     *                                     required to rebuild an aggregate's state.
+     * @param connectionProvider           The provider of connections to the underlying database.
      */
-    protected AbstractJdbcEventStorageEngine(ConnectionProvider connectionProvider,
-                                             TransactionManager transactionManager) {
-        super(transactionManager);
+    protected AbstractJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+                                             PersistenceExceptionResolver persistenceExceptionResolver,
+                                             TransactionManager transactionManager, Integer batchSize,
+                                             ConnectionProvider connectionProvider) {
+        super(serializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
+              transactionManager, batchSize);
         this.connectionProvider = connectionProvider;
     }
 
@@ -194,9 +212,8 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
             return;
         }
         executeUpdates(events.stream().map(EventUtils::asDomainEventMessage)
-                               .map(event -> connection -> appendEvent(connection, event, serializer)), e -> {
-            handlePersistenceException(e, events.get(0));
-        });
+                               .map(event -> connection -> appendEvent(connection, event, serializer)),
+                       e -> handlePersistenceException(e, events.get(0)));
     }
 
     @Override
@@ -217,6 +234,7 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
 
     /**
      * Returns a {@link Connection} to the database.
+     *
      * @return a database Connection
      */
     protected Connection getConnection() {
@@ -250,7 +268,7 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     }
 
     private <R> List<R> executeQuery(SqlFunction sqlFunction, SqlResultConverter<R> sqlResultConverter,
-                                       Function<SQLException, RuntimeException> errorHandler) {
+                                     Function<SQLException, RuntimeException> errorHandler) {
         Connection connection = getConnection();
         try {
             PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);

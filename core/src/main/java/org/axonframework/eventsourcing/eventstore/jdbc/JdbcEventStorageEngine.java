@@ -15,11 +15,14 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,6 +32,11 @@ import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
 
 /**
+ * EventStorageEngine implementation that uses JDBC to store and fetch events.
+ * <p>
+ * By default the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
+ * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
+ *
  * @author Rene de Waele
  */
 public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
@@ -36,13 +44,66 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     private final Class<?> dataType;
     private final EventSchema schema;
 
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
+     * The payload and metadata of events is stored as a serialized blob of bytes using a new {@link XStreamSerializer}.
+     * <p>
+     * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
+     *
+     * @param connectionProvider The provider of connections to the underlying database
+     * @param transactionManager The transaction manager used to set the isolation level of the transaction when loading
+     *                           events
+     */
     public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
-        this(connectionProvider, transactionManager, new EventSchema(), byte[].class);
+        this(null, null, null, transactionManager, null, connectionProvider, byte[].class, new EventSchema());
     }
 
-    public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager,
-                                  EventSchema schema, Class<?> dataType) {
-        super(connectionProvider, transactionManager);
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
+     * The payload and metadata of events is stored as a serialized blob of bytes using the given {@code serializer}.
+     * <p>
+     * Events are read in batches of 100. The given {@code upcasterChain} is used to upcast events before
+     * deserialization.
+     *
+     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
+     *                                     persistence exceptions are not explicitly resolved.
+     * @param connectionProvider           The provider of connections to the underlying database
+     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
+     *                                     when loading events
+     */
+    public JdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  TransactionManager transactionManager, ConnectionProvider connectionProvider) {
+        this(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, null, connectionProvider,
+             byte[].class, new EventSchema());
+    }
+
+    /**
+     * Initializes an EventStorageEngine that uses JDBC to store and load events.
+     *
+     * @param serializer                   Used to serialize and deserialize event payload and metadata.
+     * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
+     *                                     persistence exceptions are not explicitly resolved.
+     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
+     *                                     when loading events
+     * @param batchSize                    The number of events that should be read at each database access. When more
+     *                                     than this number of events must be read to rebuild an aggregate's state, the
+     *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
+     *                                     sure to choose snapshot trigger and batch size such that a single batch will
+     *                                     generally retrieve all events required to rebuild an aggregate's state.
+     * @param connectionProvider           The provider of connections to the underlying database
+     * @param dataType                     The data type for serialized event payload and metadata
+     * @param schema                       Object that describes the database schema of event entries
+     */
+    public JdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+                                  PersistenceExceptionResolver persistenceExceptionResolver,
+                                  TransactionManager transactionManager, Integer batchSize,
+                                  ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema) {
+        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, batchSize,
+              connectionProvider);
         this.dataType = dataType;
         this.schema = schema;
     }

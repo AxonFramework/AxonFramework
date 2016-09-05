@@ -14,10 +14,9 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.commandhandling.model.ConcurrencyException;
+import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +40,6 @@ import static org.mockito.Mockito.when;
 public abstract class AbstractEventStorageEngineTest extends EventStorageEngineTest {
 
     private AbstractEventStorageEngine testSubject;
-    private final Serializer serializer = new XStreamSerializer();
 
     @Test(expected = ConcurrencyException.class)
     public void testUniqueKeyConstraintOnEventIdentifier() {
@@ -53,12 +51,11 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
     @SuppressWarnings({"unchecked", "OptionalGetWithoutIsPresent"})
     public void testStoreAndLoadEventsWithUpcaster() {
         EventUpcasterChain mockUpcasterChain = mock(EventUpcasterChain.class);
-        when(mockUpcasterChain.upcast(isA(Stream.class)))
-                .thenAnswer(invocation -> {
-                    Stream<?> inputStream = (Stream) invocation.getArguments()[0];
-                    return inputStream.flatMap(e -> Stream.of(e, e));
-                });
-        testSubject.setUpcasterChain(mockUpcasterChain);
+        when(mockUpcasterChain.upcast(isA(Stream.class))).thenAnswer(invocation -> {
+            Stream<?> inputStream = (Stream) invocation.getArguments()[0];
+            return inputStream.flatMap(e -> Stream.of(e, e));
+        });
+        testSubject = createEngine(mockUpcasterChain);
 
         testSubject.appendEvents(createEvents(4));
         List<DomainEventMessage> upcastedEvents = asStream(testSubject.readEvents(AGGREGATE)).collect(toList());
@@ -82,13 +79,16 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
     @DirtiesContext
     @Test(expected = EventStoreException.class)
     public void testStoreDuplicateEventWithoutExceptionResolver() {
-        testSubject.setPersistenceExceptionResolver(null);
+        testSubject = createEngine((PersistenceExceptionResolver) e -> false);
         testSubject.appendEvents(createEvent(0), createEvent(0));
     }
 
     protected void setTestSubject(AbstractEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
-        testSubject.setSerializer(serializer);
     }
+
+    protected abstract AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain);
+
+    protected abstract AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver);
 
 }
