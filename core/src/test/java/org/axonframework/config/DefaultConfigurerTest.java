@@ -36,18 +36,30 @@ import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 import static org.axonframework.config.AggregateConfigurer.defaultConfiguration;
 import static org.junit.Assert.assertNotNull;
 
-public class ConfigurerTest {
-
+public class DefaultConfigurerTest {
 
     @Test
     public void defaultConfigurationWithEventSourcing() throws Exception {
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                .configureAggregate(StubAggregate.class)
+                .initialize();
+
+        FutureCallback<Object, Object> callback = new FutureCallback<>();
+        config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
+        Assert.assertEquals("test", callback.get());
+        assertNotNull(config.repository(StubAggregate.class));
+    }
+
+    @Test
+    public void defaultConfigurationWithJpaRepository() throws Exception {
         Map<String, String> properties = new HashMap<>();
         properties.put("hibernate.connection.url", "jdbc:hsqldb:mem:axontest");
         properties.put("hibernate.hbm2ddl.auto", "create-drop");
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("eventStore", properties);
         EntityManager em = emf.createEntityManager();
-        Configuration config = SimpleConfigurer.defaultConfiguration()
-                .withTransactionManager(c -> isolationLevel -> {
+        Configuration config = DefaultConfigurer.defaultConfiguration()
+                .configureTransactionManager(c -> isolationLevel -> {
                     EntityTransaction tx = em.getTransaction();
                     tx.begin();
                     return new Transaction() {
@@ -62,8 +74,7 @@ public class ConfigurerTest {
                         }
                     };
                 })
-                .withEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                .registerAggregate(
+                .configureAggregate(
                         defaultConfiguration(StubAggregate.class)
                                 .useRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em), StubAggregate.class, c.eventBus())))
                 .initialize();

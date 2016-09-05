@@ -16,9 +16,9 @@
 
 package org.axonframework.config;
 
-import org.axonframework.eventhandling.EventProcessor;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
+import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 
 import java.util.*;
 import java.util.function.Function;
@@ -30,11 +30,13 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     private List<Component<Object>> eventHandlers = new ArrayList<>();
     private Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
-    private EventProcessorBuilder defaultEventProcessorBuilder =
-            (conf, name, eh) -> new SubscribingEventProcessor(name,
-                                                              new SimpleEventHandlerInvoker(eh),
-                                                              conf.eventBus(),
-                                                              conf.messageMonitor(SubscribingEventProcessor.class, name));
+    private EventProcessorBuilder defaultEventProcessorBuilder = (conf, name, eh) ->
+            new SubscribingEventProcessor(name,
+                                          new SimpleEventHandlerInvoker(
+                                                  eh, conf.getComponent(ListenerErrorHandler.class,
+                                                                        LoggingListenerErrorHandler::new)),
+                                          conf.eventBus(),
+                                          conf.messageMonitor(SubscribingEventProcessor.class, name));
     private List<ProcessorSelector> selectors = new ArrayList<>();
     private ProcessorSelector defaultSelector;
 
@@ -46,6 +48,20 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     private EventHandlingConfiguration() {
+    }
+
+    public EventHandlingConfiguration usingTrackingProcessors() {
+        return registerEventProcessorFactory(
+                (conf, name, handlers) ->
+                        new TrackingEventProcessor(name,
+                                                   new SimpleEventHandlerInvoker(
+                                                           handlers,
+                                                           conf.getComponent(ListenerErrorHandler.class,
+                                                                             LoggingListenerErrorHandler::new)),
+                                                   conf.eventBus(),
+                                                   conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                                                   conf.messageMonitor(EventProcessor.class, name)
+                        ));
     }
 
     public EventHandlingConfiguration registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder) {
@@ -103,7 +119,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                               .createEventProcessor(config, name, handlers));
         });
     }
-
 
     @Override
     public void start() {

@@ -19,8 +19,6 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
-import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
@@ -34,31 +32,39 @@ import java.util.function.Function;
 
 public interface Configurer {
 
-    Configurer withSagaStore(Function<Configuration, SagaStore<?>> sagaStoreBuilder);
+    Configurer configureMessageMonitor(Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder);
 
-    Configurer withTokenStore(Function<Configuration, TokenStore> tokenStoreBuilder);
-
-    Configurer withMessageMonitor(Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder);
-
-    Configurer withCorrelationDataProviders(Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder);
+    Configurer configureCorrelationDataProviders(Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder);
 
     Configurer registerModule(ModuleConfiguration module);
 
-    Configurer withEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder);
+    <C> Configurer registerComponent(Class<C> componentType, Function<Configuration, ? extends C> componentBuilder);
 
-    Configurer withEventStore(Function<Configuration, EventStore> eventStoreBuilder);
+    Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder);
 
-    Configurer withEventBus(Function<Configuration, EventBus> eventBusBuilder);
+    default Configurer configureEventStore(Function<Configuration, EventStore> eventStoreBuilder) {
+        return registerComponent(EventBus.class, eventStoreBuilder);
+    }
 
-    Configurer withCommandBus(Function<Configuration, CommandBus> commandBusBuilder);
+    default Configurer configureEventBus(Function<Configuration, EventBus> eventBusBuilder) {
+        return registerComponent(EventBus.class, eventBusBuilder);
+    }
 
-    Configurer withSerializer(Function<Configuration, Serializer> serializerBuilder);
+    default Configurer configureCommandBus(Function<Configuration, CommandBus> commandBusBuilder) {
+        return registerComponent(CommandBus.class, commandBusBuilder);
+    }
 
-    Configurer withTransactionManager(Function<Configuration, TransactionManager> transactionManagerBuilder);
+    default Configurer configureSerializer(Function<Configuration, Serializer> serializerBuilder) {
+        return registerComponent(Serializer.class, serializerBuilder);
+    }
 
-    <A> Configurer registerAggregate(AggregateConfiguration<A> aggregateConfiguration);
+    default Configurer configureTransactionManager(Function<Configuration, TransactionManager> transactionManagerBuilder) {
+        return registerComponent(TransactionManager.class, transactionManagerBuilder);
+    }
 
-    <A> Configurer registerAggregate(Class<A> aggregate);
+    <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration);
+
+    <A> Configurer configureAggregate(Class<A> aggregate);
 
     Configuration initialize();
 }

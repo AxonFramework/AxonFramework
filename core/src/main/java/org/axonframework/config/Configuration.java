@@ -18,10 +18,8 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.saga.SagaRepository;
-import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -30,32 +28,45 @@ import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.serialization.Serializer;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public interface Configuration {
 
-    EventBus eventBus();
-
-    default EventStore eventStore() {
-        return (EventStore) eventBus();
+    default EventBus eventBus() {
+        return getComponent(EventBus.class);
     }
 
-    CommandBus commandBus();
+    default EventStore eventStore() {
+        EventBus eventBus = eventBus();
+        if (!(eventBus instanceof EventStore)) {
+            throw new AxonConfigurationException("A component is requesting an Event Store, however, there is none configured");
+        }
+        return (EventStore) eventBus;
+    }
+
+    default CommandBus commandBus() {
+        return getComponent(CommandBus.class);
+    }
 
     <T> Repository<T> repository(Class<T> aggregate);
 
-    TransactionManager transactionManager();
+    default <T> T getComponent(Class<T> componentType) {
+        return getComponent(componentType, () -> null);
+    }
 
-    <T> SagaRepository<T> sagaRepository(Class<T> sagaType);
-
-    <T> SagaStore<? super T> sagaStore(Class<T> sagaType);
+    <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl);
 
     <M extends Message<?>> MessageMonitor<? super M> messageMonitor(Class<?> componentType, String componentName);
 
-    Serializer serializer();
+    default Serializer serializer() {
+        return getComponent(Serializer.class);
+    }
 
     void shutdown();
 
     List<CorrelationDataProvider> correlationDataProviders();
 
-    ParameterResolverFactory parameterResolverFactory();
+    default ParameterResolverFactory parameterResolverFactory() {
+        return getComponent(ParameterResolverFactory.class);
+    }
 }
