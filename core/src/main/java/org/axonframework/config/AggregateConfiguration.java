@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.stereotype;
+package org.axonframework.config;
 
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
+import org.axonframework.commandhandling.model.Repository;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+public interface AggregateConfiguration<A> extends ModuleConfiguration {
 
-@Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@Component
-@Scope("prototype")
-public @interface Saga {
+    Repository<A> repository();
 
-    String sagaStore() default "";
-
+    Class<A> aggregateType();
 }

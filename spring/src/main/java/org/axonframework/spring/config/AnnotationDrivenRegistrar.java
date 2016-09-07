@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -54,7 +55,7 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
      * Create the {@link org.springframework.beans.factory.config.BeanDefinition} for the {@link
      * AnnotationEventListenerBeanPostProcessor} and register it.
      *
-     * @param registry              The registry containing bean definitions
+     * @param registry The registry containing bean definitions
      */
     public void registerAnnotationEventListenerBeanPostProcessor(BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
@@ -68,7 +69,7 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
      * Create the {@link org.springframework.beans.factory.config.BeanDefinition} for the {@link
      * AnnotationCommandHandlerBeanPostProcessor} and register it.
      *
-     * @param registry              The registry containing bean definitions
+     * @param registry The registry containing bean definitions
      */
     public void registerAnnotationCommandHandlerBeanPostProcessor(BeanDefinitionRegistry registry) {
         GenericBeanDefinition beanDefinition = new GenericBeanDefinition();

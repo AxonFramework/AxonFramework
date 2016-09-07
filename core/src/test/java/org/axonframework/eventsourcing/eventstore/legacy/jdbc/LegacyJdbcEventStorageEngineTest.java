@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.jdbc.legacy;
+package org.axonframework.eventsourcing.eventstore.legacy.jdbc;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.transaction.NoTransactionManager;

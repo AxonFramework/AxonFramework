@@ -26,8 +26,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.BeanFactory;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
@@ -38,7 +40,11 @@ public class AnnotationEventListenerBeanPostProcessorTest {
 
     @Before
     public void setUp() {
-        testSubject = Mockito.spy(new AnnotationEventListenerBeanPostProcessor());
+        AnnotationEventListenerBeanPostProcessor postProcessor = new AnnotationEventListenerBeanPostProcessor();
+        BeanFactory mockBeanFactory = mock(BeanFactory.class);
+        postProcessor.setBeanFactory(mockBeanFactory);
+
+        testSubject = Mockito.spy(postProcessor);
     }
 
     @Test

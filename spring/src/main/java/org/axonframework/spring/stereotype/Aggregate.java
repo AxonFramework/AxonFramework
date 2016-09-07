@@ -28,8 +28,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Component
 @Scope("prototype")
-public @interface Saga {
+public @interface Aggregate {
 
-    String sagaStore() default "";
-
+    String repository() default "";
 }

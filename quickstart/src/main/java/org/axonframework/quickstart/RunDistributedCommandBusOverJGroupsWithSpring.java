@@ -19,13 +19,13 @@ package org.axonframework.quickstart;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
-import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.axonframework.spring.config.AnnotationDriven;
-import org.axonframework.spring.config.EnableHandlerSubscription;
+import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
+import org.axonframework.spring.config.AxonConfiguration;
+import org.axonframework.spring.config.EnableAxonAutoConfiguration;
 import org.jgroups.stack.GossipRouter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -69,8 +69,7 @@ public class RunDistributedCommandBusOverJGroupsWithSpring {
         }
     }
 
-    @AnnotationDriven
-    @EnableHandlerSubscription(subscribeEventListeners = false, subscribeEventProcessors = false)
+    @EnableAxonAutoConfiguration
     @Configuration
     public static class Config {
 
@@ -83,16 +82,12 @@ public class RunDistributedCommandBusOverJGroupsWithSpring {
         }
 
         @Bean
-        public JGroupsConnectorFactoryBean jGroupsConnector() throws Exception {
+        public JGroupsConnectorFactoryBean jGroupsConnector(AxonConfiguration configuration) throws Exception {
             JGroupsConnectorFactoryBean jGroupsConnector = new JGroupsConnectorFactoryBean();
             jGroupsConnector.setClusterName("myChannel");
             jGroupsConnector.setConfiguration("tcp_gossip.xml");
+            jGroupsConnector.setSerializer(configuration.serializer());
             return jGroupsConnector;
-        }
-
-        @Bean
-        public Serializer serializer() {
-            return new XStreamSerializer();
         }
 
         @Bean
