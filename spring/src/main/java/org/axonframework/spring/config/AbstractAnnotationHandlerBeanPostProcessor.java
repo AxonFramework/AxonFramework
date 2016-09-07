@@ -26,6 +26,8 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.util.ClassUtils;
 
@@ -43,9 +45,10 @@ import java.util.Arrays;
  * @since 0.4
  */
 public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
-        implements BeanPostProcessor {
+        implements BeanPostProcessor, BeanFactoryAware {
 
     private ParameterResolverFactory parameterResolverFactory;
+    private BeanFactory beanFactory;
 
     /**
      * {@inheritDoc}
@@ -60,6 +63,10 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     @Override
     public Object postProcessAfterInitialization(final Object bean, final String beanName) throws BeansException {
+        if (!beanFactory.isSingleton(beanName)) {
+            return bean;
+        }
+
         Class<?> targetClass = bean.getClass();
         final ClassLoader classLoader = targetClass.getClassLoader();
         if (parameterResolverFactory == null) {
@@ -163,6 +170,11 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
      */
     public void setParameterResolverFactory(ParameterResolverFactory parameterResolverFactory) {
         this.parameterResolverFactory = parameterResolverFactory;
+    }
+
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
     }
 
     private static final class ProxyOrImplementationInvocationInterceptor
