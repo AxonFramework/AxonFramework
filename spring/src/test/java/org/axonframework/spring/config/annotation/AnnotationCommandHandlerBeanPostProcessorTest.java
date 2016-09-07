@@ -22,9 +22,11 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageHandler;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.beans.factory.BeanFactory;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author Allard Buijze
@@ -41,6 +43,8 @@ public class AnnotationCommandHandlerBeanPostProcessorTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void testEventHandlerCallsRedirectToAdapter() throws Exception {
+        BeanFactory mockBeanFactory = mock(BeanFactory.class);
+        testSubject.setBeanFactory(mockBeanFactory);
         Object result1 = testSubject.postProcessBeforeInitialization(new AnnotatedCommandHandler(), "beanName");
         Object postProcessedBean = testSubject.postProcessAfterInitialization(result1, "beanName");
 
