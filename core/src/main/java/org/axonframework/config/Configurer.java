@@ -40,6 +40,8 @@ public interface Configurer {
 
     <C> Configurer registerComponent(Class<C> componentType, Function<Configuration, ? extends C> componentBuilder);
 
+    Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder);
+
     Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder);
 
     default Configurer configureEventStore(Function<Configuration, EventStore> eventStoreBuilder) {
@@ -66,5 +68,5 @@ public interface Configurer {
 
     <A> Configurer configureAggregate(Class<A> aggregate);
 
-    Configuration initialize();
+    Configuration buildConfiguration();
 }

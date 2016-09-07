@@ -43,7 +43,8 @@ public class DefaultConfigurerTest {
         Configuration config = DefaultConfigurer.defaultConfiguration()
                 .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
                 .configureAggregate(StubAggregate.class)
-                .initialize();
+                .buildConfiguration();
+        config.start();
 
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
@@ -76,9 +77,10 @@ public class DefaultConfigurerTest {
                 })
                 .configureAggregate(
                         defaultConfiguration(StubAggregate.class)
-                                .useRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em), StubAggregate.class, c.eventBus())))
-                .initialize();
+                                .configureRepository(c -> new GenericJpaRepository<>(new SimpleEntityManagerProvider(em), StubAggregate.class, c.eventBus())))
+                .buildConfiguration();
 
+        config.start();
         FutureCallback<Object, Object> callback = new FutureCallback<>();
         config.commandBus().dispatch(GenericCommandMessage.asCommandMessage("test"), callback);
         Assert.assertEquals("test", callback.get());

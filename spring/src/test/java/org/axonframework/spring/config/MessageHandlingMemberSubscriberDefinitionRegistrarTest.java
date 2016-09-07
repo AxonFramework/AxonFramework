@@ -67,7 +67,6 @@ public class MessageHandlingMemberSubscriberDefinitionRegistrarTest {
 
     @Configuration
     @AnnotationDriven
-    @EnableHandlerSubscription(eventBus = "eventBus")
     public static class Context {
 
         @Bean

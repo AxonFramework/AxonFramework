@@ -62,6 +62,8 @@ public interface Configuration {
         return getComponent(Serializer.class);
     }
 
+    void start();
+
     void shutdown();
 
     List<CorrelationDataProvider> correlationDataProviders();

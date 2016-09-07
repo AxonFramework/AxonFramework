@@ -16,9 +16,11 @@
 
 package org.axonframework.config;
 
+import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.model.Repository;
+import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
@@ -78,6 +80,8 @@ public class DefaultConfigurer implements Configurer {
     private List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private List<Runnable> startHandlers = new ArrayList<>();
     private List<Runnable> shutdownHandlers = new ArrayList<>();
+
+    private boolean initialized = false;
 
     public static Configurer defaultConfiguration() {
         return new DefaultConfigurer();
@@ -140,9 +144,22 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configurer registerModule(ModuleConfiguration module) {
-        initHandlers.add(module::initialize);
+        if (initialized) {
+            module.initialize(config);
+        } else {
+            initHandlers.add(module::initialize);
+        }
         startHandlers.add(module::start);
         shutdownHandlers.add(module::shutdown);
+        return this;
+    }
+
+    @Override
+    public Configurer registerCommandHandler(Function<Configuration, Object> annotatedCommandHandlerBuilder) {
+        startHandlers.add(() -> {
+            Registration registration = new AnnotationCommandHandlerAdapter(annotatedCommandHandlerBuilder.apply(config), config.parameterResolverFactory()).subscribe(config.commandBus());
+            shutdownHandlers.add(registration::cancel);
+        });
         return this;
     }
 
@@ -177,9 +194,25 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configuration initialize() {
-        initHandlers.forEach(h -> h.accept(config));
+    public Configuration buildConfiguration() {
+        invokeInitHandlers();
+        return config;
+    }
+
+    protected void invokeStartHandlers() {
         startHandlers.forEach(Runnable::run);
+    }
+
+    protected void invokeInitHandlers() {
+        initialized = true;
+        initHandlers.forEach(h -> h.accept(config));
+    }
+
+    protected void invokeShutdownHandlers() {
+        shutdownHandlers.forEach(Runnable::run);
+    }
+
+    protected Configuration getConfig() {
         return config;
     }
 
@@ -210,13 +243,22 @@ public class DefaultConfigurer implements Configurer {
         }
 
         @Override
-        public void shutdown() {
-            shutdownHandlers.forEach(Runnable::run);
+        public void start() {
+            invokeStartHandlers();
         }
 
+        @Override
+        public void shutdown() {
+            invokeShutdownHandlers();
+        }
         @Override
         public List<CorrelationDataProvider> correlationDataProviders() {
             return correlationProviders.get();
         }
+
+    }
+
+    public Map<Class<?>, Component<?>> getComponents() {
+        return components;
     }
 }

@@ -22,10 +22,13 @@ import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Assert;
+import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.eventsourcing.*;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
@@ -37,6 +40,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
     private Configuration parent;
 
+    private List<Registration> registrations = new ArrayList<>();
+
     public static <A> AggregateConfigurer<A> defaultConfiguration(Class<A> aggregate) {
         return new AggregateConfigurer<>(aggregate);
     }
@@ -44,7 +49,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregate,
                                                                     EntityManagerProvider entityManagerProvider) {
         return new AggregateConfigurer<>(aggregate)
-                .useRepository(c -> new GenericJpaRepository<>(entityManagerProvider, aggregate, c.eventBus()));
+                .configureRepository(c -> new GenericJpaRepository<>(entityManagerProvider, aggregate, c.eventBus()));
     }
 
     protected AggregateConfigurer(Class<A> aggregate) {
@@ -77,8 +82,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         return prefix + "<" + aggregate.getSimpleName() + ">";
     }
 
-    public AggregateConfigurer<A> useRepository(Function<Configuration, Repository<A>> repositoryBuilder) {
+    public AggregateConfigurer<A> configureRepository(Function<Configuration, Repository<A>> repositoryBuilder) {
         repository.update(repositoryBuilder);
+        return this;
+    }
+
+    public AggregateConfigurer<A> configureAggregateFactory(Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
+        aggregateFactory.update(aggregateFactoryBuilder);
         return this;
     }
 
@@ -89,11 +99,13 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
     @Override
     public void start() {
-        commandHandler.get().subscribe(parent.commandBus());
+        registrations.add(commandHandler.get().subscribe(parent.commandBus()));
     }
 
     @Override
     public void shutdown() {
+        registrations.forEach(Registration::cancel);
+        registrations.clear();
     }
 
     @Override
