@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.jdbc.legacy;
+package org.axonframework.eventsourcing.eventstore.legacy.jdbc;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;

@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.jpa.legacy;
+package org.axonframework.eventsourcing.eventstore.legacy.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
