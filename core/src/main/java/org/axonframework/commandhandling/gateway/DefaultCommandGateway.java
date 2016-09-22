@@ -50,7 +50,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      */
     @SafeVarargs
     public DefaultCommandGateway(CommandBus commandBus,
-                                 MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+                                 MessageDispatchInterceptor<? super CommandMessage<?>>... messageDispatchInterceptors) {
         this(commandBus, null, messageDispatchInterceptors);
     }
 
@@ -66,7 +66,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      */
     @SafeVarargs
     public DefaultCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                 MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+                                 MessageDispatchInterceptor<? super CommandMessage<?>>... messageDispatchInterceptors) {
         this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
     }
 
@@ -81,7 +81,7 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
      * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     public DefaultCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                 List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
+                                 List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
         super(commandBus, retryScheduler, messageDispatchInterceptors);
     }
 

@@ -40,7 +40,7 @@ public abstract class AbstractCommandGateway {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
 
     /**
      * Initialize the AbstractCommandGateway with given {@code commandBus}, {@code retryScheduler} and
@@ -52,7 +52,7 @@ public abstract class AbstractCommandGateway {
      * @param messageDispatchInterceptors The interceptors to invoke when dispatching a command
      */
     protected AbstractCommandGateway(CommandBus commandBus, RetryScheduler retryScheduler,
-                                     List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
+                                     List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors) {
         Assert.notNull(commandBus, "commandBus may not be null");
         this.commandBus = commandBus;
         if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {
@@ -103,7 +103,7 @@ public abstract class AbstractCommandGateway {
     @SuppressWarnings("unchecked")
     protected <C> CommandMessage<? extends C> processInterceptors(CommandMessage<C> commandMessage) {
         CommandMessage<? extends C> message = commandMessage;
-        for (MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor : dispatchInterceptors) {
+        for (MessageDispatchInterceptor<? super CommandMessage<?>> dispatchInterceptor : dispatchInterceptors) {
             message = (CommandMessage) dispatchInterceptor.handle(message);
         }
         return message;

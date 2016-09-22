@@ -97,7 +97,7 @@ public class GatewayProxyFactory {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
-    private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors;
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
     private final List<CommandCallback<?, ?>> commandCallbacks;
 
     /**
@@ -416,7 +416,7 @@ public class GatewayProxyFactory {
 
         public GatewayInvocationHandler(Map<Method, InvocationHandler> dispatchers, CommandBus commandBus,
                                         RetryScheduler retryScheduler,
-                                        List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors) {
+                                        List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
             super(commandBus, retryScheduler, dispatchInterceptors);
             this.dispatchers = new HashMap<>(dispatchers);
         }
@@ -440,7 +440,7 @@ public class GatewayProxyFactory {
         private final boolean forceCallbacks;
 
         protected DispatchOnInvocationHandler(CommandBus commandBus, RetryScheduler retryScheduler,
-                                              List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors,
+                                              List<MessageDispatchInterceptor<? super CommandMessage<?>>> messageDispatchInterceptors,
                                               MetaDataExtractor[] metaDataExtractors, // NOSONAR
                                               List<CommandCallback<? super C, ? super R>> commandCallbacks,
                                               boolean forceCallbacks) {
