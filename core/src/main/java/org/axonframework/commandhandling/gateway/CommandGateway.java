@@ -16,11 +16,12 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.messaging.Message;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Interface towards the Command Handling components of an application. This interface provides a friendlier API toward
@@ -100,6 +101,7 @@ public interface CommandGateway {
      * CommandMessage is constructed from that message's payload and MetaData.
      *
      * @param command The command to dispatch
+     * @return a {@link CompletableFuture<R>} which is resolved when the command is executed
      */
-    void send(Object command);
+    <R> CompletableFuture<R> send(Object command);
 }

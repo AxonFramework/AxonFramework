@@ -16,6 +16,27 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -30,16 +51,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
@@ -110,7 +121,7 @@ public class DefaultCommandGatewayTest {
                 .thenAnswer(new RescheduleCommand())
                 .thenReturn(false);
 
-        testSubject.send("Command");
+        CompletableFuture<?> future = testSubject.send("Command");
 
         verify(mockCommandMessageTransformer).handle(isA(CommandMessage.class));
         ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
@@ -120,6 +131,24 @@ public class DefaultCommandGatewayTest {
         assertEquals(1, captor.getAllValues().get(0).size());
         assertEquals(2, captor.getValue().size());
         assertEquals(2, ((Class<? extends Throwable>[]) captor.getValue().get(0)).length);
+        assertTrue(future.isDone());
+        assertTrue(future.isCompletedExceptionally());
+    }
+
+    @SuppressWarnings({"unchecked", "serial"})
+    @Test
+    public void testSendWithoutCallback_() throws ExecutionException, InterruptedException {
+        doAnswer(invocation -> {
+            ((CommandCallback) invocation.getArguments()[1])
+                    .onSuccess((CommandMessage) invocation.getArguments()[0],
+                               "returnValue");
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        CompletableFuture<?> future = testSubject.send("Command");
+
+        assertTrue(future.isDone());
+        assertEquals(future.get(), "returnValue");
     }
 
     @SuppressWarnings({"unchecked", "serial"})
