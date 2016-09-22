@@ -24,9 +24,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.*;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -64,7 +62,10 @@ public class AutoConfigurationTest {
     private org.axonframework.config.Configuration axonConfig;
 
     @Autowired
-    private MyEventHandler myEventHandler;
+    private Context.MyEventHandler myEventHandler;
+
+    @Autowired
+    private Context.MyOtherEventHandler myOtherEventHandler;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -88,6 +89,7 @@ public class AutoConfigurationTest {
         eventBus.publish(asEventMessage("Testing 123"));
 
         assertTrue(myEventHandler.received.contains("Testing 123"));
+        assertTrue(myOtherEventHandler.received.contains("Testing 123"));
     }
 
     @Test
@@ -110,6 +112,7 @@ public class AutoConfigurationTest {
     }
 
     @EnableAxonAutoConfiguration
+    @Scope( proxyMode = ScopedProxyMode.TARGET_CLASS )
     @Configuration
     public static class Context {
 
@@ -139,9 +142,17 @@ public class AutoConfigurationTest {
             return new InMemorySagaStore();
         }
 
-        @Bean
-        public MyEventHandler myEventHandler() {
-            return new MyEventHandler();
+        @Aggregate
+        public static class MyAggregate {
+
+            @AggregateIdentifier
+            private String id;
+
+            @EventSourcingHandler
+            public void on(String event) {
+                fail("Event Handler on aggregate shouldn't be invoked");
+            }
+
         }
 
         @Component
@@ -159,19 +170,6 @@ public class AutoConfigurationTest {
             }
         }
 
-        @Aggregate
-        public static class MyAggregate {
-
-            @AggregateIdentifier
-            private String id;
-
-            @EventSourcingHandler
-            public void on(String event) {
-                fail("Event Handler on aggregate shouldn't be invoked");
-            }
-
-        }
-
         @Saga(sagaStore = "customSagaStore")
         public static class MySaga {
 
@@ -183,6 +181,37 @@ public class AutoConfigurationTest {
                 events.add(event.getId());
             }
         }
+
+        @Component
+        public static class MyEventHandler {
+
+            private EventBus eventBus;
+
+            public List<String> received = new ArrayList<>();
+
+            @Autowired
+            public MyEventHandler(EventBus eventBus) {
+                this.eventBus = eventBus;
+            }
+
+            @EventHandler
+            public void handle(String event) {
+                assertNotNull(eventBus);
+                received.add(event);
+            }
+        }
+
+        @Component
+        public static class MyOtherEventHandler {
+
+            public List<String> received = new ArrayList<>();
+
+            @EventHandler
+            public void handle(String event) {
+                received.add(event);
+            }
+        }
+
     }
 
     public static class SomeEvent {
@@ -198,14 +227,5 @@ public class AutoConfigurationTest {
         }
     }
 
-    public static class MyEventHandler {
 
-        private List<String> received = new ArrayList<>();
-
-        @EventHandler
-        public void on(String event) {
-            received.add(event);
-        }
-
-    }
 }

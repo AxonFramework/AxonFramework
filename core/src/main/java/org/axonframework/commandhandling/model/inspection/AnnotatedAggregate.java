@@ -240,7 +240,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         if (payloadOrMessage instanceof Message) {
             Message message = (Message) payloadOrMessage;
             apply(message.getPayload(), message.getMetaData());
-        } else {
+        } else if (payloadOrMessage != null) {
             apply(payloadOrMessage, MetaData.emptyInstance());
         }
     }

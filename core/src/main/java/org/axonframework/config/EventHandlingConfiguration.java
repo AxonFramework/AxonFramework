@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 
 import java.util.*;
 import java.util.function.Function;
@@ -52,16 +53,21 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     public EventHandlingConfiguration usingTrackingProcessors() {
         return registerEventProcessorFactory(
-                (conf, name, handlers) ->
-                        new TrackingEventProcessor(name,
-                                                   new SimpleEventHandlerInvoker(
-                                                           handlers,
-                                                           conf.getComponent(ListenerErrorHandler.class,
-                                                                             LoggingListenerErrorHandler::new)),
-                                                   conf.eventBus(),
-                                                   conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
-                                                   conf.messageMonitor(EventProcessor.class, name)
-                        ));
+                (conf, name, handlers) -> {
+                    TrackingEventProcessor processor = new TrackingEventProcessor(name,
+                                                                                               new SimpleEventHandlerInvoker(
+                                                                                                       handlers,
+                                                                                                       conf.getComponent(ListenerErrorHandler.class,
+                                                                                                                         LoggingListenerErrorHandler::new)),
+                                                                                               conf.eventBus(),
+                                                                                               conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
+                                                                                               conf.messageMonitor(EventProcessor.class, name)
+                    );
+                    CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();
+                    interceptor.registerCorrelationDataProviders(conf.correlationDataProviders());
+                    processor.registerInterceptor(interceptor);
+                    return processor;
+                });
     }
 
     public EventHandlingConfiguration registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder) {

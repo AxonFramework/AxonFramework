@@ -18,6 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
 import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
+import org.axonframework.commandhandling.CommandTargetResolver;
 import org.axonframework.commandhandling.disruptor.DisruptorCommandBus;
 import org.axonframework.commandhandling.model.GenericJpaRepository;
 import org.axonframework.commandhandling.model.Repository;
@@ -38,6 +39,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Component<Repository<A>> repository;
     private final Component<AggregateFactory<A>> aggregateFactory;
     private final Component<SnapshotTriggerDefinition> snapshotTriggerDefinition;
+    private final Component<CommandTargetResolver> commandTargetResolver;
     private Configuration parent;
 
     private List<Registration> registrations = new ArrayList<>();
@@ -55,6 +57,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     protected AggregateConfigurer(Class<A> aggregate) {
         this.aggregate = aggregate;
 
+        commandTargetResolver = new Component<>(() -> parent, name("commandTargetResolver"),
+                                                c -> new AnnotationCommandTargetResolver());
         snapshotTriggerDefinition = new Component<>(() -> parent, name("snapshotTriggerDefinition"),
                                                     c -> NoSnapshotTriggerDefinition.INSTANCE);
         aggregateFactory = new Component<>(() -> parent, name("aggregateFactory"),
@@ -74,7 +78,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                      });
         commandHandler = new Component<>(() -> parent, "aggregateCommandHandler<" + aggregate.getSimpleName() + ">",
                                          c -> new AggregateAnnotationCommandHandler<>(aggregate, repository.get(),
-                                                                                      new AnnotationCommandTargetResolver(),
+                                                                                      commandTargetResolver.get(),
                                                                                       c.parameterResolverFactory()));
     }
 
@@ -89,6 +93,16 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
     public AggregateConfigurer<A> configureAggregateFactory(Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
         aggregateFactory.update(aggregateFactoryBuilder);
+        return this;
+    }
+
+    public AggregateConfigurer<A> configureCommandHandler(Function<Configuration, AggregateAnnotationCommandHandler> aggregateCommandHandlerBuilder) {
+        commandHandler.update(aggregateCommandHandlerBuilder);
+        return this;
+    }
+
+    public AggregateConfigurer<A> configureCommandTargetResolver(Function<Configuration, CommandTargetResolver> commandTargetResolverBuilder) {
+        commandTargetResolver.update(commandTargetResolverBuilder);
         return this;
     }
 

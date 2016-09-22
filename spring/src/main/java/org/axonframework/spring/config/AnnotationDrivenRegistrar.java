@@ -17,7 +17,6 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -35,10 +34,6 @@ import static org.axonframework.spring.config.annotation.SpringContextParameterR
 public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar {
 
     /**
-     * The bean name used for registering the {@link AnnotationEventListenerBeanPostProcessor}.
-     */
-    private static final String EVENT_LISTENER_BEAN_NAME = "__axon-annotation-event-listener-bean-post-processor";
-    /**
      * The bean name used for registering the {@link AnnotationCommandHandlerBeanPostProcessor}.
      */
     private static final String COMMAND_HANDLER_BEAN_NAME = "__axon-annotation-command-handler-bean-post-processor";
@@ -47,22 +42,6 @@ public class AnnotationDrivenRegistrar implements ImportBeanDefinitionRegistrar 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         registerAnnotationCommandHandlerBeanPostProcessor(registry);
-        registerAnnotationEventListenerBeanPostProcessor(registry);
-    }
-
-
-    /**
-     * Create the {@link org.springframework.beans.factory.config.BeanDefinition} for the {@link
-     * AnnotationEventListenerBeanPostProcessor} and register it.
-     *
-     * @param registry The registry containing bean definitions
-     */
-    public void registerAnnotationEventListenerBeanPostProcessor(BeanDefinitionRegistry registry) {
-        GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
-        beanDefinition.setBeanClass(AnnotationEventListenerBeanPostProcessor.class);
-        beanDefinition.getPropertyValues().add("parameterResolverFactory", getBeanReference(registry));
-
-        registry.registerBeanDefinition(EVENT_LISTENER_BEAN_NAME, beanDefinition);
     }
 
     /**

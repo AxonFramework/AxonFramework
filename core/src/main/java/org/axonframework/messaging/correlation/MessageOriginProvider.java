@@ -39,4 +39,5 @@ public enum MessageOriginProvider implements CorrelationDataProvider {
     public Map<String, ?> correlationDataFor(Message<?> message) {
         return Collections.singletonMap(DEFAULT_CORRELATION_KEY, message.getIdentifier());
     }
+
 }

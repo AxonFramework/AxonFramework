@@ -18,8 +18,6 @@ package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.spring.config.annotation.AnnotationCommandHandlerBeanPostProcessor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,7 +31,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Allard Buijze
@@ -47,22 +44,6 @@ public class AnnotationDrivenConfigurationTest_CustomValues {
 
     @Autowired
     private DefaultListableBeanFactory beanFactory;
-
-    @Test
-    public void testAnnotationConfigurationAnnotationWrapsBeans() throws Exception {
-        Object eventHandler = applicationContext.getBean("eventHandler");
-        Object commandHandler = applicationContext.getBean("commandHandler");
-
-        assertTrue(eventHandler instanceof EventListener);
-        assertTrue(commandHandler instanceof MessageHandler<?>);
-    }
-
-    @Test
-    public void testEventListenerPostProcessorBeanDefinitionContainCustomValues() {
-        BeanDefinition beanDefinition = beanFactory.getBeanDefinition(
-                "__axon-annotation-event-listener-bean-post-processor");
-        assertEquals(AnnotationEventListenerBeanPostProcessor.class.getName(), beanDefinition.getBeanClassName());
-    }
 
     @Test
     public void testCommandHandlerPostProcessorBeanDefinitionContainCustomValues() {

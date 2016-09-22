@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.config;
 
+import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
@@ -39,7 +40,7 @@ public @interface NoBeanOfType {
         public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
             Map<String, Object> attributes = metadata.getAnnotationAttributes(NoBeanOfType.class.getName(), false);
             Class<?> clazz = (Class<?>) attributes.get("value");
-            return context.getBeanFactory().getBeanNamesForType(clazz).length == 0;
+            return BeanFactoryUtils.beanNamesForTypeIncludingAncestors(context.getBeanFactory(), clazz).length == 0;
         }
     }
 

@@ -18,10 +18,9 @@ package org.axonframework.spring.config.annotation;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventListener;
-import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.*;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.spring.config.AnnotationDriven;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,6 +54,9 @@ public class SpringBeanParameterResolverFactoryTest {
 
     private static final AtomicInteger counter = new AtomicInteger();
 
+    @Autowired
+    private ParameterResolverFactory parameterResolver;
+
     @Before
     public void setUp() throws Exception {
         counter.set(0);
@@ -63,30 +65,31 @@ public class SpringBeanParameterResolverFactoryTest {
     @Test
     public void testMethodsAreProperlyInjected() throws Exception {
         assertNotNull(annotatedHandler);
-        assertTrue(annotatedHandler instanceof EventListener);
-        ((EventListener) annotatedHandler).handle(asEventMessage("Hello"));
+        new AnnotationEventListenerAdapter(annotatedHandler, parameterResolver).handle(asEventMessage("Hello"));
         // make sure the invocation actually happened
         assertEquals(1, counter.get());
     }
 
     @Test
     public void testNewInstanceIsCreatedEachTimePrototypeResourceIsInjected() throws Exception {
-        EventListener handler = (EventListener) applicationContext.getBean("prototypeResourceHandler");
-        handler.handle(asEventMessage("Hello1"));
-        handler.handle(asEventMessage("Hello2"));
+        Object handler = applicationContext.getBean("prototypeResourceHandler");
+        AnnotationEventListenerAdapter adapter = new AnnotationEventListenerAdapter(handler, applicationContext.getBean(ParameterResolverFactory.class));
+        adapter.handle(asEventMessage("Hello1"));
+        adapter.handle(asEventMessage("Hello2"));
         assertEquals(2, counter.get());
     }
 
-    @Test(expected = BeanCreationException.class)
+    @Test(expected = UnsupportedHandlerException.class)
     public void testMethodsAreProperlyInjected_ErrorOnMissingParameterType() {
         // this should generate an error
-        applicationContext.getBean("missingResourceHandler");
+        new AnnotationEventListenerAdapter(applicationContext.getBean("missingResourceHandler"), parameterResolver);
+
     }
 
-    @Test(expected = BeanCreationException.class)
+    @Test(expected = UnsupportedHandlerException.class)
     public void testMethodsAreProperlyInjected_ErrorOnDuplicateParameterType() {
         // this should generate an error
-        applicationContext.getBean("duplicateResourceHandler");
+        new AnnotationEventListenerAdapter(applicationContext.getBean("duplicateResourceHandler"), parameterResolver);
     }
 
     @Test

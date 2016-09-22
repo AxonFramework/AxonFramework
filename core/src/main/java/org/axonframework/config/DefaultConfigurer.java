@@ -195,7 +195,9 @@ public class DefaultConfigurer implements Configurer {
 
     @Override
     public Configuration buildConfiguration() {
-        invokeInitHandlers();
+        if (!initialized) {
+            invokeInitHandlers();
+        }
         return config;
     }
 
