@@ -46,7 +46,7 @@ public class LockAwareAggregate<AR, A extends Aggregate<AR>> implements Aggregat
     }
 
     @Override
-    public String identifier() {
+    public Object identifier() {
         return wrappedAggregate.identifier();
     }
 

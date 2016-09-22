@@ -115,7 +115,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         }
         snapshotTrigger.eventHandled(msg);
         super.publish(msg);
-        if (identifier() == null) {
+        if (identifierAsString() == null) {
             throw new IncompatibleAggregateException("Aggregate identifier must be non-null after applying an event. " +
                                                              "Make sure the aggregate identifier is initialized at " +
                                                              "the latest when handling the creation event.");
@@ -124,14 +124,14 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
     @Override
     protected <P> GenericDomainEventMessage<P> createMessage(P payload, MetaData metaData) {
-        String id = identifier();
+        String id = identifierAsString();
         long seq = nextSequence();
         if (id == null) {
             Assert.state(seq == 0, "The aggregate identifier has not been set. It must be set at the latest by the " +
                     "event sourcing handler of the creation event");
             return new LazyIdentifierDomainEventMessage<>(type(), seq, payload, metaData);
         }
-        return new GenericDomainEventMessage<>(type(), identifier(), nextSequence(), payload, metaData);
+        return new GenericDomainEventMessage<>(type(), identifierAsString(), nextSequence(), payload, metaData);
     }
 
     @Override
@@ -199,12 +199,12 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
         @Override
         public String getAggregateIdentifier() {
-            return identifier();
+            return identifierAsString();
         }
 
         @Override
         public GenericDomainEventMessage<P> withMetaData(Map<String, ?> newMetaData) {
-            String identifier = identifier();
+            String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
                                                        new GenericEventMessage<>(identifier,
@@ -217,7 +217,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
 
         @Override
         public GenericDomainEventMessage<P> andMetaData(Map<String, ?> additionalMetaData) {
-            String identifier = identifier();
+            String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
                                                        new GenericEventMessage<>(identifier, getPayload(),

@@ -89,7 +89,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         uow = startAndGetUnitOfWork();
         Aggregate<JpaAggregate> storedAggregate = repository.load(originalId);
         uow.commit();
-        assertEquals(storedAggregate.identifier(), originalId);
+        assertEquals(storedAggregate.identifierAsString(), originalId);
         assertTrue(capturedEvents.isEmpty());
     }
 
@@ -108,7 +108,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
         assertEquals((Long) 1L, aggregate.version());
         assertEquals(2, capturedEvents.size());
-        assertNotNull(entityManager.find(JpaAggregate.class, aggregate.identifier()));
+        assertNotNull(entityManager.find(JpaAggregate.class, aggregate.identifierAsString()));
     }
 
     @Test
@@ -129,7 +129,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
         entityManager.clear();
 
         assertEquals(2, capturedEvents.size());
-        assertNull(entityManager.find(JpaAggregate.class, aggregate.identifier()));
+        assertNull(entityManager.find(JpaAggregate.class, aggregate.identifierAsString()));
     }
 
     @Override

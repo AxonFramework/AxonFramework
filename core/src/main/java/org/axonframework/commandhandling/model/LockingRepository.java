@@ -98,7 +98,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
     @Override
     protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNewForLock(factoryMethod);
-        final String aggregateIdentifier = aggregate.identifier();
+        final String aggregateIdentifier = aggregate.identifierAsString();
         Lock lock = lockFactory.obtainLock(aggregateIdentifier);
         try {
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
@@ -156,7 +156,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
                             + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
                             + "the current thread had released its lock earlier on.",
                     aggregate.getClass().getSimpleName(),
-                    aggregate.identifier()));
+                    aggregate.identifierAsString()));
         }
         doSaveWithLock(aggregate.getWrappedAggregate());
     }
@@ -175,7 +175,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
                             + "saved, as a valid lock is not held. Either another thread has saved an aggregate, or "
                             + "the current thread had released its lock earlier on.",
                     aggregate.getClass().getSimpleName(),
-                    aggregate.identifier()));
+                    aggregate.identifierAsString()));
         }
         doDeleteWithLock(aggregate.getWrappedAggregate());
     }

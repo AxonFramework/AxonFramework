@@ -186,7 +186,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             ((CommandHandlingEntry) CurrentUnitOfWork.get()).registerAggregateIdentifier(aggregateIdentifier);
             EventSourcedAggregate<T> aggregateRoot = null;
             for (EventSourcedAggregate<T> cachedAggregate : firstLevelCache.keySet()) {
-                if (aggregateIdentifier.equals(cachedAggregate.identifier())) {
+                if (aggregateIdentifier.equals(cachedAggregate.identifierAsString())) {
                     logger.debug("Aggregate {} found in first level cache", aggregateIdentifier);
                     aggregateRoot = cachedAggregate;
                 }
@@ -229,13 +229,13 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
             EventSourcedAggregate<T> aggregate = EventSourcedAggregate.initialize(factoryMethod, model, eventStore,
                                                                                   trigger);
             firstLevelCache.put(aggregate, PLACEHOLDER_VALUE);
-            cache.put(aggregate.identifier(), aggregate);
+            cache.put(aggregate.identifierAsString(), aggregate);
             return aggregate;
         }
 
         private void removeFromCache(String aggregateIdentifier) {
             for (EventSourcedAggregate<T> cachedAggregate : firstLevelCache.keySet()) {
-                if (aggregateIdentifier.equals(cachedAggregate.identifier())) {
+                if (aggregateIdentifier.equals(cachedAggregate.identifierAsString())) {
                     firstLevelCache.remove(cachedAggregate);
                     logger.debug("Aggregate {} removed from first level cache for recovery purposes.",
                                  aggregateIdentifier);

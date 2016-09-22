@@ -441,12 +441,12 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
         }
 
         private void validateIdentifier(String aggregateIdentifier, Aggregate<T> aggregate) {
-            if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.identifier())) {
+            if (aggregateIdentifier != null && !aggregateIdentifier.equals(aggregate.identifierAsString())) {
                 throw new AssertionError(String.format(
                         "The aggregate used in this fixture was initialized with an identifier different than " +
                                 "the one used to load it. Loaded [%s], but actual identifier is [%s].\n" +
                                 "Make sure the identifier passed in the Command matches that of the given Events.",
-                        aggregateIdentifier, aggregate.identifier()));
+                        aggregateIdentifier, aggregate.identifierAsString()));
             }
         }
     }

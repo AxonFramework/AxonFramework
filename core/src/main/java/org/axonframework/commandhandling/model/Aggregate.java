@@ -18,6 +18,7 @@ package org.axonframework.commandhandling.model;
 
 import org.axonframework.commandhandling.CommandMessage;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -44,11 +45,19 @@ public interface Aggregate<T> {
     String type();
 
     /**
-     * Get the unique identifier of this aggregate.
+     * Get the unique identifier of this aggregate, represented as a String.
      *
+     * @return The aggregate's identifier as a String
+     */
+    default String identifierAsString() {
+        return Objects.toString(identifier(), null);
+    }
+
+    /**
+     * Get the unique identifier of this aggregate
      * @return The aggregate's identifier
      */
-    String identifier();
+    Object identifier();
 
     /**
      * Get the aggregate's version. For event sourced aggregates this is identical to the sequence number of the last

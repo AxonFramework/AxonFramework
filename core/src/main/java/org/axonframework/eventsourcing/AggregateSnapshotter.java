@@ -120,7 +120,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         Object aggregateRoot = aggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent);
         SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot, aggregateModels.get(aggregateType));
         aggregate.initializeState(eventStream);
-        return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifier(), aggregate.version(),
+        return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifierAsString(), aggregate.version(),
                                                aggregate.getAggregateRoot());
 
     }

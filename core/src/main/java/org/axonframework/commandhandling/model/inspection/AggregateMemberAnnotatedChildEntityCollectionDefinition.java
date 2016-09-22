@@ -61,7 +61,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements 
                     Object routingValue = routingKeyProperties.get(msg.getCommandName()).getValue(msg.getPayload());
                     Iterable<?> iterable = ReflectionUtils.getFieldValue(field, parent);
                     return StreamSupport.stream(iterable.spliterator(), false)
-                            .filter(i -> Objects.equals(Objects.toString(routingValue, ""), childEntityModel.getIdentifier(i)))
+                            .filter(i -> Objects.equals(routingValue, childEntityModel.getIdentifier(i)))
                             .findFirst().orElse(null);
                 },
                 (msg, parent) -> ReflectionUtils.getFieldValue(field, parent)));

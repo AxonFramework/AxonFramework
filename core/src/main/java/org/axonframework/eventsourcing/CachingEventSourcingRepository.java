@@ -99,13 +99,13 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     @Override
     protected void prepareForCommit(LockAwareAggregate<T, EventSourcedAggregate<T>> aggregate) {
         super.prepareForCommit(aggregate);
-        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifier()));
+        CurrentUnitOfWork.get().onRollback(u -> cache.remove(aggregate.identifierAsString()));
     }
 
     @Override
     protected EventSourcedAggregate<T> doCreateNewForLock(Callable<T> factoryMethod) throws Exception {
         EventSourcedAggregate<T> aggregate = super.doCreateNewForLock(factoryMethod);
-        String aggregateIdentifier = aggregate.identifier();
+        String aggregateIdentifier = aggregate.identifierAsString();
         cache.put(aggregateIdentifier, new CacheEntry<>(aggregate));
         return aggregate;
     }
@@ -113,13 +113,13 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     @Override
     protected void doSaveWithLock(EventSourcedAggregate<T> aggregate) {
         super.doSaveWithLock(aggregate);
-        cache.put(aggregate.identifier(), new CacheEntry<>(aggregate));
+        cache.put(aggregate.identifierAsString(), new CacheEntry<>(aggregate));
     }
 
     @Override
     protected void doDeleteWithLock(EventSourcedAggregate<T> aggregate) {
         super.doDeleteWithLock(aggregate);
-        cache.put(aggregate.identifier(), new CacheEntry<>(aggregate));
+        cache.put(aggregate.identifierAsString(), new CacheEntry<>(aggregate));
     }
 
     /**

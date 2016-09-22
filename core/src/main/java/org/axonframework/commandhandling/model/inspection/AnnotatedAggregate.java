@@ -134,7 +134,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     @Override
-    public String identifier() {
+    public Object identifier() {
         return inspector.getIdentifier(aggregateRoot);
     }
 
@@ -194,7 +194,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
             Object result = handler.handle(msg, aggregateRoot);
             if (aggregateRoot == null) {
                 aggregateRoot = (T) result;
-                return identifier();
+                return identifierAsString();
             }
             return result;
         });

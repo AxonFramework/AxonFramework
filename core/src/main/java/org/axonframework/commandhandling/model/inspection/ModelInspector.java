@@ -24,21 +24,10 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MessageHandlerInvocationException;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.*;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.ServiceLoader;
+import java.util.*;
 
 import static java.lang.String.format;
 
@@ -213,11 +202,10 @@ public class ModelInspector<T> implements AggregateModel<T> {
         return Optional.empty();
     }
 
-
     @Override
-    public String getIdentifier(T target) {
+    public Object getIdentifier(T target) {
         if (identifierField != null) {
-            return Objects.toString(ReflectionUtils.getFieldValue(identifierField, target), null);
+            return ReflectionUtils.getFieldValue(identifierField, target);
         }
         return null;
     }

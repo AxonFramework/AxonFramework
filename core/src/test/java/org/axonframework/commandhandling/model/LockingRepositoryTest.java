@@ -191,13 +191,13 @@ public class LockingRepositoryTest {
 
         @Override
         protected void doSaveWithLock(Aggregate<StubAggregate> aggregate) {
-            store.put(aggregate.identifier(), aggregate);
+            store.put(aggregate.identifierAsString(), aggregate);
             saveCount++;
         }
 
         @Override
         protected void doDeleteWithLock(Aggregate<StubAggregate> aggregate) {
-            store.remove(aggregate.identifier());
+            store.remove(aggregate.identifierAsString());
             saveCount++;
         }
 

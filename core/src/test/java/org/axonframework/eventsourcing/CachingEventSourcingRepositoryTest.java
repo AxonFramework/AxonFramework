@@ -109,7 +109,7 @@ public class CachingEventSourcingRepositoryTest {
         assertEquals(3, eventList.size());
         ehCache.removeAll();
 
-        reloadedAggregate1 = testSubject.load(aggregate1.identifier(), null);
+        reloadedAggregate1 = testSubject.load(aggregate1.identifierAsString(), null);
 
         assertNotSame(aggregate1.getWrappedAggregate(), reloadedAggregate1.getWrappedAggregate());
         assertEquals(aggregate1.version(),

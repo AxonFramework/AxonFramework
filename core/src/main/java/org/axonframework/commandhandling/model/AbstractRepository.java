@@ -78,9 +78,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
                                                 "Unsuitable aggregate for this repository: wrong type"));
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, Aggregate<T>> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
-        Assert.isTrue(aggregates.putIfAbsent(aggregate.identifier(), aggregate) == null,
+        Assert.isTrue(aggregates.putIfAbsent(aggregate.identifierAsString(), aggregate) == null,
                       "The Unit of Work already has an Aggregate with the same identifier");
-        uow.onRollback(u -> aggregates.remove(aggregate.identifier()));
+        uow.onRollback(u -> aggregates.remove(aggregate.identifierAsString()));
         prepareForCommit(aggregate);
 
         return aggregate;
@@ -126,7 +126,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && aggregate.version() != null &&
                 !expectedVersion.equals(aggregate.version())) {
-            throw new ConflictingAggregateVersionException(aggregate.identifier(),
+            throw new ConflictingAggregateVersionException(aggregate.identifierAsString(),
                                                            expectedVersion,
                                                            aggregate.version());
         }

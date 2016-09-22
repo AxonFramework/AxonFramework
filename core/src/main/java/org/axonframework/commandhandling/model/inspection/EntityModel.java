@@ -39,7 +39,7 @@ public interface EntityModel<T> {
      * @param target The entity instance
      * @return The identifier of the given target entity
      */
-    String getIdentifier(T target);
+    Object getIdentifier(T target);
 
     /**
      * Get the name of the routing key property on commands and events that provides the identifier that should be used
