@@ -16,17 +16,17 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import static java.util.Arrays.asList;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.callbacks.FutureCallback;
-import org.axonframework.commandhandling.callbacks.NoOpCallback;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Arrays.asList;
 
 /**
  * Default implementation of the CommandGateway interface. It allow configuration of a {@link RetryScheduler} and
@@ -132,13 +132,10 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
         return (R) futureCallback.getResult(timeout, unit);
     }
 
-    /**
-     * Sends the given {@code command} and returns immediately. This implementation
-     *
-     * @param command The command to send
-     */
     @Override
-    public void send(Object command) {
-        send(command, new NoOpCallback());
+    public <R> CompletableFuture<R> send(Object command) {
+        FutureCallback<Object, R> callback = new FutureCallback<>();
+        send(command, callback);
+        return callback.toCompletableFuture();
     }
 }
