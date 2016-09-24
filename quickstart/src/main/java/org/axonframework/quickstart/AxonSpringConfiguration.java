@@ -29,45 +29,26 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.quickstart.annotated.ToDoEventHandler;
 import org.axonframework.quickstart.annotated.ToDoItem;
 import org.axonframework.spring.config.AnnotationDriven;
+import org.axonframework.spring.config.EnableAxonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 
-@AnnotationDriven
 @Configuration
+@EnableAxonAutoConfiguration
+@Import(ToDoItem.class)
 public class AxonSpringConfiguration {
 
     @Bean
-    public CommandBus commandBus() {
-        return new SimpleCommandBus();
-    }
-
-    @Bean
-    public EventStore eventStore() {
-        return new EmbeddedEventStore(new InMemoryEventStorageEngine());
-    }
-
-    @Bean
-    public CommandGateway commandGateway() {
-        return new DefaultCommandGateway(commandBus());
-    }
-
-    @Bean
-    public Repository<ToDoItem> repository(ParameterResolverFactory parameterResolverFactory) {
-        return new EventSourcingRepository<>(new GenericAggregateFactory<>(ToDoItem.class), eventStore(), parameterResolverFactory,
-                                             NoSnapshotTriggerDefinition.INSTANCE);
-    }
-
-    @Bean
-    public AggregateAnnotationCommandHandler aggregateAnnotationCommandHandler(ParameterResolverFactory parameterResolverFactory, Repository<ToDoItem> repository) {
-        AggregateAnnotationCommandHandler<ToDoItem> ch = new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository, new AnnotationCommandTargetResolver(), parameterResolverFactory);
-        ch.subscribe(commandBus());
-        return ch;
+    public EventStorageEngine eventStorageEngine() {
+        return new InMemoryEventStorageEngine();
     }
 
     @Bean
@@ -75,10 +56,4 @@ public class AxonSpringConfiguration {
         return new ToDoEventHandler();
     }
 
-    @Bean
-    public SubscribingEventProcessor eventProcessor() {
-        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor("eventProcessor", new SimpleEventHandlerInvoker(eventHandler()), eventStore());
-        eventProcessor.start();
-        return eventProcessor;
-    }
 }

@@ -1,6 +1,8 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
@@ -49,6 +51,12 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public ResourceInjector resourceInjector() {
         return new SpringResourceInjector();
+    }
+
+    @NoBeanOfType(CommandGateway.class)
+    @Bean
+    public CommandGateway commandGateway(CommandBus commandBus) {
+        return new DefaultCommandGateway(commandBus);
     }
 
     @Override
