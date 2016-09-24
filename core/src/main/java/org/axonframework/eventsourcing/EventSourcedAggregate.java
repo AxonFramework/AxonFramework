@@ -207,7 +207,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       new GenericEventMessage<>(identifier,
+                                                       new GenericEventMessage<>(getIdentifier(),
                                                                                  getPayload(), getMetaData(), getTimestamp()));
             } else {
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
@@ -220,7 +220,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       new GenericEventMessage<>(identifier, getPayload(),
+                                                       new GenericEventMessage<>(getIdentifier(), getPayload(),
                                                                                  getMetaData(), getTimestamp()))
                         .andMetaData(additionalMetaData);
             } else {
