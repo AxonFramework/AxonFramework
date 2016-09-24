@@ -5,9 +5,11 @@ import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
+import org.axonframework.spring.saga.SpringResourceInjector;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -40,6 +42,13 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public EventBus eventBus() {
         return config.eventBus();
+    }
+
+    @NoBeanOfType(ResourceInjector.class)
+    @Bean
+    @Override
+    public ResourceInjector resourceInjector() {
+        return new SpringResourceInjector();
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.*;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -17,6 +18,7 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.saga.SpringResourceInjector;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
@@ -63,23 +65,22 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                                      c -> beanFactory.getBean(parameterResolver.getBeanName(),
                                                               ParameterResolverFactory.class));
 
-
-        findComponent(CommandBus.class)
-                .ifPresent(commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
-        findComponent(EventStorageEngine.class)
-                .ifPresent(ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
-        findComponent(EventBus.class)
-                .ifPresent(eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));
-        findComponent(Serializer.class)
-                .ifPresent(serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
-        findComponent(TokenStore.class)
-                .ifPresent(tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
-        findComponent(PlatformTransactionManager.class)
-                .ifPresent(ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
-        findComponent(TransactionManager.class)
-                .ifPresent(tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
-        findComponent(SagaStore.class)
-                .ifPresent(sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
+        findComponent(CommandBus.class).ifPresent(
+                commandBus -> configurer.configureCommandBus(c -> getBean(commandBus, c)));
+        findComponent(EventStorageEngine.class).ifPresent(
+                ese -> configurer.configureEmbeddedEventStore(c -> getBean(ese, c)));
+        findComponent(EventBus.class).ifPresent(
+                eventBus -> configurer.configureEventBus(c -> getBean(eventBus, c)));
+        findComponent(Serializer.class).ifPresent(
+                serializer -> configurer.configureSerializer(c -> getBean(serializer, c)));
+        findComponent(TokenStore.class).ifPresent(
+                tokenStore -> configurer.registerComponent(TokenStore.class, c -> getBean(tokenStore, c)));
+        findComponent(PlatformTransactionManager.class).ifPresent(
+                ptm -> configurer.configureTransactionManager(c -> new SpringTransactionManager(getBean(ptm, c))));
+        findComponent(TransactionManager.class).ifPresent(
+                tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
+        findComponent(SagaStore.class).ifPresent(
+                sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
 
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer, registry);
@@ -128,13 +129,14 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         return modules;
     }
 
-
     private void registerSagaBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
+        configurer.configureResourceInjector(c -> getBean("resourceInjector", c));
+
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
             SagaConfiguration<?> sagaConfiguration = SagaConfiguration.subscribingSagaManager(beanFactory.getType(saga));
-            // TODO: Register resource injector here.
+
             if (!"".equals(sagaAnnotation.sagaStore())) {
                 sagaConfiguration.configureSagaStore(c -> beanFactory.getBean(sagaAnnotation.sagaStore(), SagaStore.class));
             }

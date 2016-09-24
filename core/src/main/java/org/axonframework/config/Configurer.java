@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
@@ -62,6 +63,10 @@ public interface Configurer {
 
     default Configurer configureTransactionManager(Function<Configuration, TransactionManager> transactionManagerBuilder) {
         return registerComponent(TransactionManager.class, transactionManagerBuilder);
+    }
+
+    default Configurer configureResourceInjector(Function<Configuration, ResourceInjector> resourceInjectorBuilder) {
+        return registerComponent(ResourceInjector.class, resourceInjectorBuilder);
     }
 
     <A> Configurer configureAggregate(AggregateConfiguration<A> aggregateConfiguration);
