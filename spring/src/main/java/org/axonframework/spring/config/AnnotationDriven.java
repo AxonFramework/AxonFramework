@@ -24,12 +24,8 @@ import java.lang.annotation.*;
 
 /**
  * Annotation for {@link org.springframework.context.annotation.Configuration @Configuration} that will automatically
- * subscribe {@link CommandHandler @CommandHandler} and {@link
- * EventHandler @EventHandler} annotated beans with the CommandBus and
- * EventBus, respectively.
- * <p/>
- * If a context contains multiple EventBus or CommandBus implementations, you must indicate the isntance to use as
- * a property on this annotation.
+ * subscribe {@link CommandHandler @CommandHandler} and {@link EventHandler @EventHandler} annotated beans with the
+ * CommandBus and EventBus, respectively.
  *
  * @author Allard Buijze
  * @since 2.3
