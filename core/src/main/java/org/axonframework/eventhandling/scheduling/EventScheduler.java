@@ -63,4 +63,22 @@ public interface EventScheduler {
      * @throws IllegalArgumentException if the token belongs to another scheduler
      */
     void cancelSchedule(ScheduleToken scheduleToken);
+
+    /**
+     * Cancel a scheduled event and schedule another in its place.
+     * <p/>
+     * Convenience method around {@link #cancelSchedule(ScheduleToken)} and {@link #schedule(Duration, Object)}.
+     *
+     * @param scheduleToken   the token returned when the event was scheduled, might be null
+     * @param triggerDuration The amount of time to wait before publishing the event
+     * @param event           The event to publish
+     * @throws IllegalArgumentException if the token belongs to another scheduler
+     * @return the token to use when cancelling the schedule
+     */
+    default ScheduleToken reschedule(ScheduleToken scheduleToken, Duration triggerDuration, Object event) {
+        if (null != scheduleToken) {
+            cancelSchedule(scheduleToken);
+        }
+        return schedule(triggerDuration, event);
+    }
 }
