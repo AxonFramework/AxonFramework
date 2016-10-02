@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
@@ -45,12 +45,13 @@ import java.util.Set;
  * @since 0.6
  */
 public class SpringAggregateSnapshotter extends AggregateSnapshotter
-        implements InitializingBean, ApplicationContextAware {
+        implements ApplicationContextAware, SmartLifecycle {
 
     private PlatformTransactionManager transactionManager;
     private boolean autoDetectAggregateFactories = true;
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
+    private boolean running = false;
 
     /**
      * Sets the transaction manager to manager underlying transaction with. If none is provided, an attempt is made to
@@ -73,9 +74,36 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
         this.transactionDefinition = transactionDefinition;
     }
 
-    @SuppressWarnings({"unchecked"})
+    /**
+     * Optionally sets the aggregate factories to use. By default, this implementation will auto detect available
+     * factories from the application context. Configuring them using this method will prevent auto detection.
+     *
+     * @param aggregateFactories The list of aggregate factories creating the aggregates to store.
+     */
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void setAggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
+        this.autoDetectAggregateFactories = false;
+        super.setAggregateFactories(aggregateFactories);
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    @Override
+    public boolean isAutoStartup() {
+        return true;
+    }
+
+    @Override
+    public void stop(Runnable runnable) {
+        stop();
+        runnable.run();
+    }
+
+    @Override
+    public void start() {
         if (autoDetectAggregateFactories) {
             Set<AggregateFactory> factoriesFound = new HashSet<AggregateFactory>();
             factoriesFound.addAll(applicationContext.getBeansOfType(AggregateFactory.class).values());
@@ -97,23 +125,22 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter
         if (transactionManager != null) {
             setTxManager(new SpringTransactionManager(transactionManager, transactionDefinition));
         }
-    }
 
-    /**
-     * Optionally sets the aggregate factories to use. By default, this implementation will auto detect available
-     * factories from the application context. Configuring them using this method will prevent auto detection.
-     *
-     * @param aggregateFactories The list of aggregate factories creating the aggregates to store.
-     */
-    @Override
-    public void setAggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
-        this.autoDetectAggregateFactories = false;
-        super.setAggregateFactories(aggregateFactories);
+        running = true;
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+    public void stop() {
+        running = false;
     }
 
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public int getPhase() {
+        return 0;
+    }
 }
