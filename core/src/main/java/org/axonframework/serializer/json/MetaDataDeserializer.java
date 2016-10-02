@@ -21,7 +21,7 @@ public class MetaDataDeserializer extends JsonDeserializer<MetaData> {
     public MetaData deserialize(JsonParser jp, DeserializationContext ctxt)
             throws IOException {
         JsonDeserializer<Object> deserializer = ctxt.findRootValueDeserializer(
-                ctxt.getTypeFactory().constructMapType(Map.class, String.class, String.class));
+                ctxt.getTypeFactory().constructMapType(Map.class, String.class, Object.class));
 
         return MetaData.from((Map) deserializer.deserialize(jp, ctxt));
     }
