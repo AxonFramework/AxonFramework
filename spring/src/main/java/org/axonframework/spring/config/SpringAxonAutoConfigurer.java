@@ -81,6 +81,8 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
         findComponent(SagaStore.class).ifPresent(
                 sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
+        findComponent(ResourceInjector.class).ifPresent(
+                resourceInjector -> configurer.configureResourceInjector(c -> getBean(resourceInjector, c)));
 
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer, registry);
@@ -130,8 +132,6 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     }
 
     private void registerSagaBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
-        configurer.configureResourceInjector(c -> getBean("resourceInjector", c));
-
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);

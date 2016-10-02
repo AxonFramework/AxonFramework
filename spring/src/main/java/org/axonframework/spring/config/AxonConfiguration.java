@@ -11,7 +11,6 @@ import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
-import org.axonframework.spring.saga.SpringResourceInjector;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -46,11 +45,9 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.eventBus();
     }
 
-    @NoBeanOfType(ResourceInjector.class)
-    @Bean
     @Override
     public ResourceInjector resourceInjector() {
-        return new SpringResourceInjector();
+        return config.resourceInjector();
     }
 
     @NoBeanOfType(CommandGateway.class)
