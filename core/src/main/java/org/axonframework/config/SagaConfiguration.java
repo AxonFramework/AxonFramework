@@ -37,7 +37,8 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
         String processorName = sagaType.getSimpleName() + "Processor";
         String repositoryName = sagaType.getSimpleName() + "Repository";
         sagaStore = new Component<>(() -> config, "sagaStore", c -> c.getComponent(SagaStore.class, InMemorySagaStore::new));
-        sagaRepository = new Component<>(() -> config, repositoryName, c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get()));
+        sagaRepository = new Component<>(() -> config, repositoryName,
+                                         c -> new AnnotatedSagaRepository<>(sagaType, sagaStore.get(), c.resourceInjector()));
         sagaManager = new Component<>(() -> config, managerName, c -> new AnnotatedSagaManager<>(sagaType, sagaRepository.get()));
         processor = new Component<>(() -> config, processorName,
                                     c -> new SubscribingEventProcessor(managerName, sagaManager.get(), c.eventBus()));
@@ -62,4 +63,5 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     public void shutdown() {
         processor.get().shutdown();
     }
+
 }

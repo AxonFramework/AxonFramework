@@ -239,4 +239,8 @@ public class JacksonSerializer implements Serializer {
     public ConverterFactory getConverterFactory() {
         return converterFactory;
     }
+
+    protected RevisionResolver getRevisionResolver() {
+        return revisionResolver;
+    }
 }

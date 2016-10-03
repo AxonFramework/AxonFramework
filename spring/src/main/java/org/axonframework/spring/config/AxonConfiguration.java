@@ -1,10 +1,13 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.monitoring.MessageMonitor;
@@ -40,6 +43,17 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     @Override
     public EventBus eventBus() {
         return config.eventBus();
+    }
+
+    @Override
+    public ResourceInjector resourceInjector() {
+        return config.resourceInjector();
+    }
+
+    @NoBeanOfType(CommandGateway.class)
+    @Bean
+    public CommandGateway commandGateway(CommandBus commandBus) {
+        return new DefaultCommandGateway(commandBus);
     }
 
     @Override

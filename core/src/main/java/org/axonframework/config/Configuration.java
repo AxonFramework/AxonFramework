@@ -20,6 +20,8 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.saga.ResourceInjector;
+import org.axonframework.eventhandling.saga.repository.NoResourceInjector;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -46,6 +48,10 @@ public interface Configuration {
 
     default CommandBus commandBus() {
         return getComponent(CommandBus.class);
+    }
+
+    default ResourceInjector resourceInjector() {
+        return getComponent(ResourceInjector.class, () -> new NoResourceInjector());
     }
 
     <T> Repository<T> repository(Class<T> aggregate);

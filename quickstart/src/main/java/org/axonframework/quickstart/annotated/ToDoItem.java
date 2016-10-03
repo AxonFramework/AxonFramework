@@ -23,12 +23,14 @@ import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
 import org.axonframework.quickstart.api.ToDoItemCompletedEvent;
 import org.axonframework.quickstart.api.ToDoItemCreatedEvent;
+import org.axonframework.spring.stereotype.Aggregate;
 
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 /**
  * @author Jettro Coenradie
  */
+@Aggregate
 public class ToDoItem {
 
     @AggregateIdentifier
