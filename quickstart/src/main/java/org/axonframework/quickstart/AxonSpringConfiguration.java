@@ -16,33 +16,17 @@
 
 package org.axonframework.quickstart;
 
-import org.axonframework.commandhandling.AggregateAnnotationCommandHandler;
-import org.axonframework.commandhandling.AnnotationCommandTargetResolver;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.model.Repository;
-import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
-import org.axonframework.eventhandling.SubscribingEventProcessor;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.quickstart.annotated.ToDoEventHandler;
 import org.axonframework.quickstart.annotated.ToDoItem;
-import org.axonframework.spring.config.AnnotationDriven;
-import org.axonframework.spring.config.EnableAxonAutoConfiguration;
+import org.axonframework.spring.config.EnableAxon;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 @Configuration
-@EnableAxonAutoConfiguration
+@EnableAxon
 @Import(ToDoItem.class)
 public class AxonSpringConfiguration {
 

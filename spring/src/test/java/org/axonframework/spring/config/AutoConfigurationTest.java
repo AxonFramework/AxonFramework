@@ -88,6 +88,7 @@ public class AutoConfigurationTest {
     public void testEventHandlerIsRegistered() {
         eventBus.publish(asEventMessage("Testing 123"));
 
+        assertNotNull("Expected EventBus to be wired", myEventHandler.eventBus);
         assertTrue(myEventHandler.received.contains("Testing 123"));
         assertTrue(myOtherEventHandler.received.contains("Testing 123"));
     }
@@ -111,7 +112,7 @@ public class AutoConfigurationTest {
         assertTrue(ch.getCommands().contains("test"));
     }
 
-    @EnableAxonAutoConfiguration
+    @EnableAxon
     @Scope( proxyMode = ScopedProxyMode.TARGET_CLASS )
     @Configuration
     public static class Context {

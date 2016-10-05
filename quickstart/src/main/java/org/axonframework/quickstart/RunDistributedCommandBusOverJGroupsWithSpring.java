@@ -21,11 +21,9 @@ import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.jgroups.JGroupsConnector;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.commandhandling.distributed.jgroups.JGroupsConnectorFactoryBean;
 import org.axonframework.spring.config.AxonConfiguration;
-import org.axonframework.spring.config.EnableAxonAutoConfiguration;
+import org.axonframework.spring.config.EnableAxon;
 import org.jgroups.stack.GossipRouter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -69,7 +67,7 @@ public class RunDistributedCommandBusOverJGroupsWithSpring {
         }
     }
 
-    @EnableAxonAutoConfiguration
+    @EnableAxon
     @Configuration
     public static class Config {
 
