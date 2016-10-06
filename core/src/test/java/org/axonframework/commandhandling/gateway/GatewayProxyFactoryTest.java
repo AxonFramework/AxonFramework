@@ -31,6 +31,7 @@ import org.mockito.invocation.*;
 import org.mockito.stubbing.*;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -375,6 +376,25 @@ public class GatewayProxyFactoryTest {
     }
 
     @Test(timeout = 2000)
+    public void testFireAndGetCompletionStageWithTimeout() throws Throwable {
+        final AtomicReference<CompletionStage<Object>> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.fireAndGetCompletionStage("Command"));
+            } catch (Throwable e) {
+                error.set(e);
+            }
+        });
+        t.start();
+        t.join();
+        if (error.get() != null) {
+            throw error.get();
+        }
+        assertNotNull("Expected to get a CompletionStage return value", result.get());
+    }
+
+    @Test(timeout = 2000)
     public void testRetrySchedulerInvokedOnFailure() throws Throwable {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -614,6 +634,8 @@ public class GatewayProxyFactoryTest {
         Future<Object> fireAndGetFuture(Object command);
 
         CompletableFuture<Object> fireAndGetCompletableFuture(Object command);
+
+        CompletionStage<Object> fireAndGetCompletionStage(Object command);
 
         CompletableFuture<Object> futureWithTimeout(Object command, int timeout, TimeUnit unit);
 

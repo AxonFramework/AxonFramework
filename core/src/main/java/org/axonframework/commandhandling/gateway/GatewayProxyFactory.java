@@ -37,6 +37,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -191,7 +192,8 @@ public class GatewayProxyFactory {
             InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
                                                                            dispatchInterceptors, extractors,
                                                                            commandCallbacks, true);
-            if (!Future.class.isAssignableFrom(gatewayMethod.getReturnType())) {
+            if (!Future.class.isAssignableFrom(gatewayMethod.getReturnType())
+                    && !CompletionStage.class.isAssignableFrom(gatewayMethod.getReturnType())) {
                 // no wrapping
                 if (arguments.length >= 3
                         && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
