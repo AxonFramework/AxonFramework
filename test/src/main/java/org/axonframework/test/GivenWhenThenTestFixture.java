@@ -294,7 +294,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
             } catch (Exception e) {
                 throw new FixtureExecutionException("An Exception occurred while reconstructing the Aggregate from " +
                                                             "given and published events. This may be an indication " +
-                                                            "that the aggregate cannot be recreated from it events.");
+                                                            "that the aggregate cannot be recreated from it events.", e);
             } finally {
                 // rollback to prevent changes bing pushed to event store
                 uow.rollback();
