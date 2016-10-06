@@ -40,7 +40,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -239,19 +244,21 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<Future<R>> delegate) {
+        protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<CompletableFuture<R>> delegate) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<Future<R>> delegate,
-                                                                        long timeout, TimeUnit timeUnit) {
+        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(
+                InvocationHandler<CompletableFuture<R>> delegate,
+                long timeout, TimeUnit timeUnit) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(InvocationHandler<Future<R>> delegate,
-                                                                              int timeoutIndex, int timeUnitIndex) {
+        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
+                InvocationHandler<CompletableFuture<R>> delegate,
+                int timeoutIndex, int timeUnitIndex) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
     }
@@ -265,10 +272,11 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
      */
     private static class ReturnResultFromStub<R> implements GatewayProxyFactory.InvocationHandler<R> {
 
-        private final GatewayProxyFactory.InvocationHandler<Future<R>> dispatcher;
+        private final GatewayProxyFactory.InvocationHandler<CompletableFuture<R>> dispatcher;
         private final Object stubGateway;
 
-        public ReturnResultFromStub(GatewayProxyFactory.InvocationHandler<Future<R>> dispatcher, Object stubGateway) {
+        public ReturnResultFromStub(GatewayProxyFactory.InvocationHandler<CompletableFuture<R>> dispatcher,
+                                    Object stubGateway) {
             this.dispatcher = dispatcher;
             this.stubGateway = stubGateway;
         }

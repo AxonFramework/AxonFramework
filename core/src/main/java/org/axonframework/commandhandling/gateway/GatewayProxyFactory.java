@@ -31,8 +31,17 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -73,7 +82,8 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
  * </ul>
  * <p/>
  * <em>Effect of unchecked exceptions</em> <ul>
- * <li>Any unchecked exception thrown during command handling will cause it to block. If the method is blocking (see below) the
+ * <li>Any unchecked exception thrown during command handling will cause it to block. If the method is blocking (see
+ * below) the
  * unchecked exception will be thrown from the method</li>
  * </ul>
  * <p/>
@@ -181,7 +191,7 @@ public class GatewayProxyFactory {
             InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
                                                                            dispatchInterceptors, extractors,
                                                                            commandCallbacks, true);
-            if (!Future.class.equals(gatewayMethod.getReturnType())) {
+            if (!Future.class.isAssignableFrom(gatewayMethod.getReturnType())) {
                 // no wrapping
                 if (arguments.length >= 3
                         && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
@@ -286,7 +296,7 @@ public class GatewayProxyFactory {
      * @param <R>      The response type of the command handler
      * @return an InvocationHandler that wraps returns immediately after invoking the delegate
      */
-    protected <R> InvocationHandler<R> wrapToFireAndForget(final InvocationHandler<Future<R>> delegate) {
+    protected <R> InvocationHandler<R> wrapToFireAndForget(final InvocationHandler<CompletableFuture<R>> delegate) {
         return new FireAndForget<>(delegate);
     }
 
@@ -298,7 +308,7 @@ public class GatewayProxyFactory {
      * @param <R>      The result of the command handler
      * @return the result of the Future, either a return value or an exception
      */
-    protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<Future<R>> delegate) {
+    protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<CompletableFuture<R>> delegate) {
         return new WaitForResult<>(delegate);
     }
 
@@ -312,7 +322,7 @@ public class GatewayProxyFactory {
      * @param <R>      The result of the command handler
      * @return the result of the Future, either a return value or an exception
      */
-    protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<Future<R>> delegate,
+    protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<CompletableFuture<R>> delegate,
                                                                     long timeout, TimeUnit timeUnit) {
         return new WaitForResultWithFixedTimeout<>(delegate, timeout, timeUnit);
     }
@@ -328,7 +338,7 @@ public class GatewayProxyFactory {
      * @return the result of the Future, either a return value or an exception
      */
     protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
-            final InvocationHandler<Future<R>> delegate, int timeoutIndex, int timeUnitIndex) {
+            final InvocationHandler<CompletableFuture<R>> delegate, int timeoutIndex, int timeUnitIndex) {
         return new WaitForResultWithTimeoutInArguments<>(delegate, timeoutIndex, timeUnitIndex);
     }
 
@@ -433,7 +443,7 @@ public class GatewayProxyFactory {
     }
 
     private static class DispatchOnInvocationHandler<C, R> extends AbstractCommandGateway
-            implements InvocationHandler<Future<R>> {
+            implements InvocationHandler<CompletableFuture<R>> {
 
         private final MetaDataExtractor[] metaDataExtractors;
         private final List<CommandCallback<? super C, ? super R>> commandCallbacks;
@@ -452,7 +462,7 @@ public class GatewayProxyFactory {
 
         @SuppressWarnings("unchecked")
         @Override
-        public Future<R> invoke(Object proxy, Method invokedMethod, Object[] args) {
+        public CompletableFuture<R> invoke(Object proxy, Method invokedMethod, Object[] args) {
             Object command = args[0];
             if (metaDataExtractors.length != 0) {
                 Map<String, Object> metaDataValues = new HashMap<>();
@@ -523,7 +533,7 @@ public class GatewayProxyFactory {
                 return delegate.invoke(proxy, invokedMethod, args);
             } catch (ExecutionException e) {
                 Throwable cause = e.getCause();
-                if(cause instanceof RuntimeException){
+                if (cause instanceof RuntimeException) {
                     throw (RuntimeException) cause;
                 }
                 for (Class<?> exception : declaredExceptions) {
@@ -576,11 +586,12 @@ public class GatewayProxyFactory {
 
     private static class WaitForResultWithFixedTimeout<R> implements InvocationHandler<R> {
 
-        private final InvocationHandler<Future<R>> delegate;
+        private final InvocationHandler<CompletableFuture<R>> delegate;
         private final long timeout;
         private final TimeUnit timeUnit;
 
-        private WaitForResultWithFixedTimeout(InvocationHandler<Future<R>> delegate, long timeout, TimeUnit timeUnit) {
+        private WaitForResultWithFixedTimeout(InvocationHandler<CompletableFuture<R>> delegate, long timeout,
+                                              TimeUnit timeUnit) {
             this.delegate = delegate;
             this.timeout = timeout;
             this.timeUnit = timeUnit;
@@ -594,11 +605,11 @@ public class GatewayProxyFactory {
 
     private static class WaitForResultWithTimeoutInArguments<R> implements InvocationHandler<R> {
 
-        private final InvocationHandler<Future<R>> delegate;
+        private final InvocationHandler<CompletableFuture<R>> delegate;
         private final int timeoutIndex;
         private final int timeUnitIndex;
 
-        private WaitForResultWithTimeoutInArguments(InvocationHandler<Future<R>> delegate, int timeoutIndex,
+        private WaitForResultWithTimeoutInArguments(InvocationHandler<CompletableFuture<R>> delegate, int timeoutIndex,
                                                     int timeUnitIndex) {
             this.delegate = delegate;
             this.timeoutIndex = timeoutIndex;
@@ -621,9 +632,9 @@ public class GatewayProxyFactory {
 
     private static class WaitForResult<R> implements InvocationHandler<R> {
 
-        private final InvocationHandler<Future<R>> delegate;
+        private final InvocationHandler<CompletableFuture<R>> delegate;
 
-        private WaitForResult(InvocationHandler<Future<R>> delegate) {
+        private WaitForResult(InvocationHandler<CompletableFuture<R>> delegate) {
             this.delegate = delegate;
         }
 
@@ -635,9 +646,9 @@ public class GatewayProxyFactory {
 
     private static class FireAndForget<R> implements InvocationHandler<R> {
 
-        private final InvocationHandler<Future<R>> delegate;
+        private final InvocationHandler<CompletableFuture<R>> delegate;
 
-        private FireAndForget(InvocationHandler<Future<R>> delegate) {
+        private FireAndForget(InvocationHandler<CompletableFuture<R>> delegate) {
             this.delegate = delegate;
         }
 
