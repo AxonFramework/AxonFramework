@@ -192,8 +192,10 @@ public class GatewayProxyFactory {
             InvocationHandler dispatcher = new DispatchOnInvocationHandler(commandBus, retryScheduler,
                                                                            dispatchInterceptors, extractors,
                                                                            commandCallbacks, true);
-            if (!Future.class.isAssignableFrom(gatewayMethod.getReturnType())
-                    && !CompletionStage.class.isAssignableFrom(gatewayMethod.getReturnType())) {
+
+            if( !(CompletableFuture.class.isAssignableFrom(gatewayMethod.getReturnType())
+                    || Future.class.isAssignableFrom(gatewayMethod.getReturnType())
+                    || CompletionStage.class.isAssignableFrom(gatewayMethod.getReturnType()))) {
                 // no wrapping
                 if (arguments.length >= 3
                         && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
