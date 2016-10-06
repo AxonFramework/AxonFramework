@@ -51,7 +51,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -61,6 +60,21 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
+/**
+ * Entry point of the Axon Configuration API. It implements the Configurer interface, providing access to the methods to
+ * configure the default Axon components.
+ * <p>
+ * Using {@link #defaultConfiguration()}, you will get a Configurer instance with default components configured. You
+ * will need to register your Aggregates (using {@link #configureAggregate(AggregateConfiguration)} and provide a
+ * repository implementation for each of them, or if you wish to use event sourcing, register your aggregates through
+ * {@link #configureAggregate(Class)} and configure an Event Store ({@link #configureEventStore(Function)} or
+ * {@link #configureEmbeddedEventStore(Function)}).
+ * <p>
+ * Use {@link #buildConfiguration()} to build the configuration, which provides access to the configured building
+ * blocks, such as the {@link CommandBus} and {@link EventBus}.
+ * <p>
+ * Note that this Configurer implementation is not thread-safe.
+ */
 public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
@@ -75,7 +89,6 @@ public class DefaultConfigurer implements Configurer {
 
     private Map<Class<?>, Component<?>> components = new HashMap<>();
     private Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
-    private Map<Object, MessageMonitor<?>> monitors = new ConcurrentHashMap<>();
 
     private List<Consumer<Configuration>> initHandlers = new ArrayList<>();
     private List<Runnable> startHandlers = new ArrayList<>();
@@ -83,17 +96,30 @@ public class DefaultConfigurer implements Configurer {
 
     private boolean initialized = false;
 
+    /**
+     * Returns a Configurer instance with default components configured, such as a {@link SimpleCommandBus} and
+     * {@link SimpleEventBus}.
+     *
+     * @return Configurer instance for further configuration
+     */
     public static Configurer defaultConfiguration() {
         return new DefaultConfigurer();
     }
 
+    /**
+     * Returns a Configurer instance which has JPA versions of building blocks configured, such as a JPA based Event
+     * Store (see {@link JpaEventStorageEngine}), a {@link JpaTokenStore} and {@link JpaSagaStore}.
+     *
+     * @param entityManagerProvider The instance that provides access to the JPA EntityManager
+     * @return a Configurer instance for further configuration
+     */
     public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
         return new DefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(c.getComponent(EntityManagerProvider.class,
                                                                                            () -> entityManagerProvider),
                                                                             c.getComponent(TransactionManager.class,
-                                                                                      () -> NoTransactionManager.INSTANCE)))
+                                                                                           () -> NoTransactionManager.INSTANCE)))
                 .registerComponent(TokenStore.class, c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class,
                                                                                            () -> entityManagerProvider),
                                                                             c.serializer()))
@@ -101,6 +127,9 @@ public class DefaultConfigurer implements Configurer {
                                                                                          () -> entityManagerProvider)));
     }
 
+    /**
+     * Initialize the Configurer
+     */
     protected DefaultConfigurer() {
         components.put(ParameterResolverFactory.class,
                        new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
@@ -109,25 +138,49 @@ public class DefaultConfigurer implements Configurer {
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
     }
 
-    protected ParameterResolverFactory defaultParameterResolverFactory(Configuration configuration) {
+    /**
+     * Provides the default ParameterResolverFactory. Subclasses may override this method to provide their own default
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return the default ParameterResolverFactory to use
+     */
+    protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
         return ClasspathParameterResolverFactory.forClass(getClass());
     }
 
-    protected CommandBus defaultCommandBus(Configuration configuration) {
-        SimpleCommandBus cb = new SimpleCommandBus(messageMonitorFactory.get().apply(SimpleCommandBus.class, "commandBus"));
+    /**
+     * Provides the default CommandBus implementation. Subclasses may override this method to provide their own default
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return the default CommandBus to use
+     */
+    protected CommandBus defaultCommandBus(Configuration config) {
+        SimpleCommandBus cb = new SimpleCommandBus(config.messageMonitor(SimpleCommandBus.class, "commandBus"));
         cb.setHandlerInterceptors(singletonList(interceptor.get()));
-        DefaultUnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory(configuration.getComponent(TransactionManager.class));
-        configuration.correlationDataProviders().forEach(unitOfWorkFactory::registerCorrelationDataProvider);
+        DefaultUnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory(config.getComponent(TransactionManager.class));
+        config.correlationDataProviders().forEach(unitOfWorkFactory::registerCorrelationDataProvider);
         cb.setUnitOfWorkFactory(unitOfWorkFactory);
         return cb;
     }
 
-    protected EventBus defaultEventBus(Configuration configuration) {
-        return new SimpleEventBus(Integer.MAX_VALUE, configuration.messageMonitor(EventBus.class, "eventBus"));
+    /**
+     * Provides the default EventBus implementation. Subclasses may override this method to provide their own default
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return the default EventBus to use
+     */
+    protected EventBus defaultEventBus(Configuration config) {
+        return new SimpleEventBus(Integer.MAX_VALUE, config.messageMonitor(EventBus.class, "eventBus"));
     }
 
-    protected Serializer defaultSerializer(Configuration configuration) {
-        return new XStreamSerializer(configuration.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
+    /**
+     * Provides the default Serializer implementation. Subclasses may override this method to provide their own default
+     *
+     * @param config The configuration based on which the component is initialized
+     * @return the default Serializer to use
+     */
+    protected Serializer defaultSerializer(Configuration config) {
+        return new XStreamSerializer(config.getComponent(RevisionResolver.class, AnnotationRevisionResolver::new));
     }
 
     @Override
@@ -173,9 +226,7 @@ public class DefaultConfigurer implements Configurer {
     public Configurer configureEmbeddedEventStore(Function<Configuration, EventStorageEngine> storageEngineBuilder) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor = messageMonitorFactory.get().apply(EmbeddedEventStore.class, "eventStore");
-            EmbeddedEventStore eventStore = new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
-            monitors.put(eventStore, monitor);
-            return eventStore;
+            return new EmbeddedEventStore(storageEngineBuilder.apply(c), monitor);
         });
     }
 
@@ -189,11 +240,6 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public <A> Configurer configureAggregate(Class<A> aggregate) {
-        return configureAggregate(AggregateConfigurer.defaultConfiguration(aggregate));
-    }
-
-    @Override
     public Configuration buildConfiguration() {
         if (!initialized) {
             invokeInitHandlers();
@@ -201,31 +247,58 @@ public class DefaultConfigurer implements Configurer {
         return config;
     }
 
-    protected void invokeStartHandlers() {
-        startHandlers.forEach(Runnable::run);
-    }
-
+    /**
+     * Calls all registered init handlers. Registration of init handlers after this invocation will result in an
+     * immediate invocation of that handler.
+     */
     protected void invokeInitHandlers() {
         initialized = true;
         initHandlers.forEach(h -> h.accept(config));
     }
 
+    /**
+     * Invokes all registered start handlers
+     */
+    protected void invokeStartHandlers() {
+        startHandlers.forEach(Runnable::run);
+    }
+
+    /**
+     * Invokes all registered shutdown handlers
+     */
     protected void invokeShutdownHandlers() {
         shutdownHandlers.forEach(Runnable::run);
     }
 
+    /**
+     * Returns the current Configuration object being built by this Configurer, without initializing it. Note that
+     * retrieving objects from this configuration may lead to premature initialization of certain components.
+     *
+     * @return the current Configuration object being built by this Configurer
+     */
     protected Configuration getConfig() {
         return config;
+    }
+
+    /**
+     * Returns a map of all registered components in this configuration. The key of the map is the registered component
+     * type (typically an interface), the value is a Component instance that wraps the actual implementation. Note that
+     * calling {@link Component#get()} may prematurely initialize a component.
+     *
+     * @return a map of all registered components in this configuration
+     */
+    public Map<Class<?>, Component<?>> getComponents() {
+        return components;
     }
 
     private class ConfigurationImpl implements Configuration {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> Repository<T> repository(Class<T> aggregate) {
-            AggregateConfiguration<T> aggregateConfigurer = DefaultConfigurer.this.aggregateConfigurations.get(aggregate);
+        public <T> Repository<T> repository(Class<T> aggregateType) {
+            AggregateConfiguration<T> aggregateConfigurer = DefaultConfigurer.this.aggregateConfigurations.get(aggregateType);
             if (aggregateConfigurer == null) {
-                throw new IllegalArgumentException("Aggregate " + aggregate.getSimpleName() + " has not been configured");
+                throw new IllegalArgumentException("Aggregate " + aggregateType.getSimpleName() + " has not been configured");
             }
             return aggregateConfigurer.repository();
         }
@@ -234,9 +307,9 @@ public class DefaultConfigurer implements Configurer {
         public <T> T getComponent(Class<T> componentType, Supplier<T> defaultImpl) {
             return componentType.cast(
                     components.computeIfAbsent(componentType,
-                                                    k -> new Component<>(config,
-                                                                         componentType.getSimpleName(),
-                                                                         c -> defaultImpl.get())).get());
+                                               k -> new Component<>(config,
+                                                                    componentType.getSimpleName(),
+                                                                    c -> defaultImpl.get())).get());
         }
 
         @Override
@@ -253,14 +326,11 @@ public class DefaultConfigurer implements Configurer {
         public void shutdown() {
             invokeShutdownHandlers();
         }
+
         @Override
         public List<CorrelationDataProvider> correlationDataProviders() {
             return correlationProviders.get();
         }
 
-    }
-
-    public Map<Class<?>, Component<?>> getComponents() {
-        return components;
     }
 }

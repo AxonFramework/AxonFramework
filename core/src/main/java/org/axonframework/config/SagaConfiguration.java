@@ -9,9 +9,14 @@ import org.axonframework.eventhandling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 
 import java.util.function.Function;
 
+/**
+ * Module Configuration implementation that defines a Saga. This component allows the configuration of the type of
+ * Event Processor used, as well as where to store Saga instances.
+ */
 public class SagaConfiguration<S> implements ModuleConfiguration {
 
     private final Component<EventProcessor> processor;
@@ -20,18 +25,38 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
     private final Component<SagaStore<? super S>> sagaStore;
     private Configuration config;
 
+    /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Subscribing Event Processor to process
+     * incoming Events.
+     *
+     * @param sagaType The type of Saga to handle events with
+     * @param <S>      The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
     public static <S> SagaConfiguration<S> subscribingSagaManager(Class<S> sagaType) {
         return new SagaConfiguration<S>(sagaType);
     }
 
+
+    /**
+     * Initialize a configuration for a Saga of given {@code sagaType}, using a Tracking Event Processor to process
+     * incoming Events. Note that a Token Store should be configured in the global configuration, or the Saga Manager
+     * will default to an in-memory token store, which is not recommended for production environments.
+     *
+     * @param sagaType The type of Saga to handle events with
+     * @param <S>      The type of Saga configured in this configuration
+     * @return a SagaConfiguration instance, ready for further configuration
+     */
     public static <S> SagaConfiguration<S> trackingSagaManager(Class<S> sagaType) {
         SagaConfiguration<S> configuration = new SagaConfiguration<>(sagaType);
-        configuration.processor.update(c -> new TrackingEventProcessor(sagaType.getSimpleName() + "Processor",
-                                                                       configuration.sagaManager.get(),
-                                                                       c.eventBus(), c.getComponent(TokenStore.class)));
+        configuration.processor.update(c -> new TrackingEventProcessor(
+                sagaType.getSimpleName() + "Processor",
+                configuration.sagaManager.get(),
+                c.eventBus(), c.getComponent(TokenStore.class, InMemoryTokenStore::new)));
         return configuration;
     }
 
+    @SuppressWarnings("unchecked")
     private SagaConfiguration(Class<S> sagaType) {
         String managerName = sagaType.getSimpleName() + "Manager";
         String processorName = sagaType.getSimpleName() + "Processor";
@@ -44,6 +69,15 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
                                     c -> new SubscribingEventProcessor(managerName, sagaManager.get(), c.eventBus()));
     }
 
+    /**
+     * Configures the Saga Store to use to store Saga instances of this type. By default, Sagas are stored in the
+     * Saga Store configured in the global Configuration. This method can be used to override the store for specific
+     * Sagas.
+     *
+     * @param sagaStoreBuilder The builder that returnes a fully initialized Saga Store instance based on the global
+     *                         Configuration
+     * @return this SagaConfiguration instance, ready for further configuration
+     */
     public SagaConfiguration<S> configureSagaStore(Function<Configuration, SagaStore<? super S>> sagaStoreBuilder) {
         sagaStore.update(sagaStoreBuilder);
         return this;

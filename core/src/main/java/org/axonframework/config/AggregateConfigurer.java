@@ -32,6 +32,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Axon Configuration API extension that allows the definition of an Aggregate. This component will automatically
+ * setup all components required for the Aggregate to operate.
+ *
+ * @param <A> The type of Aggregate configured
+ */
 public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Class<A> aggregate;
 
@@ -44,16 +50,41 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
     private List<Registration> registrations = new ArrayList<>();
 
-    public static <A> AggregateConfigurer<A> defaultConfiguration(Class<A> aggregate) {
-        return new AggregateConfigurer<>(aggregate);
+    /**
+     * Creates a default Configuration for an aggregate of the given {@code aggregateType}. This required either a
+     * Repository to be configured using {@link #configureRepository(Function)}, or that the Global Configuration
+     * contains an Event Store and the Aggregate support Event Sourcing.
+     *
+     * @param aggregateType The type of Aggregate to configure
+     * @param <A>           The type of Aggregate to configure
+     * @return An AggregateConfigurer instance for further configuration of the Aggregate
+     */
+    public static <A> AggregateConfigurer<A> defaultConfiguration(Class<A> aggregateType) {
+        return new AggregateConfigurer<>(aggregateType);
     }
 
-    public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregate,
+    /**
+     * Creates a Configuration for an aggregate of given {@code aggregateType}, which is mapped to a relational
+     * database using an EntityManager provided by given {@code entityManagerProvider}. The given {@code aggregateType}
+     * is expected to be a proper JPA Entity.
+     *
+     * @param aggregateType         The type of Aggregate to configure
+     * @param entityManagerProvider The provider for Axon to retrieve the EntityManager from
+     * @param <A>                   The type of Aggregate to configure
+     * @return An AggregateConfigurer instance for further configuration of the Aggregate
+     */
+    public static <A> AggregateConfigurer<A> jpaMappedConfiguration(Class<A> aggregateType,
                                                                     EntityManagerProvider entityManagerProvider) {
-        return new AggregateConfigurer<>(aggregate)
-                .configureRepository(c -> new GenericJpaRepository<>(entityManagerProvider, aggregate, c.eventBus()));
+        return new AggregateConfigurer<>(aggregateType)
+                .configureRepository(c -> new GenericJpaRepository<>(entityManagerProvider, aggregateType, c.eventBus()));
     }
 
+    /**
+     * Creates a default configuration as described in {@link #defaultConfiguration(Class)}. This constructor is
+     * available for subclasses that provide additional configuration possibilities.
+     *
+     * @param aggregate The type of aggregate to configure
+     */
     protected AggregateConfigurer(Class<A> aggregate) {
         this.aggregate = aggregate;
 
@@ -86,21 +117,47 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         return prefix + "<" + aggregate.getSimpleName() + ">";
     }
 
+    /**
+     * Defines the repository to use to load and store Aggregates of this type. The builder function receives the
+     * global configuration object from which it can retrieve components the repository depends on.
+     *
+     * @param repositoryBuilder The builder function for the repository
+     * @return this configurer instance for chaining
+     */
     public AggregateConfigurer<A> configureRepository(Function<Configuration, Repository<A>> repositoryBuilder) {
         repository.update(repositoryBuilder);
         return this;
     }
 
+    /**
+     * Defines the factory to use to to create new Aggregates instances of the type under configuration.
+     *
+     * @param aggregateFactoryBuilder The builder function for the AggregateFactory
+     * @return this configurer instance for chaining
+     */
     public AggregateConfigurer<A> configureAggregateFactory(Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
         aggregateFactory.update(aggregateFactoryBuilder);
         return this;
     }
 
+    /**
+     * Defines the AggregateAnnotationCommandHandler instance to use.
+     *
+     * @param aggregateCommandHandlerBuilder The builder function for the AggregateCommandHandler
+     * @return this configurer instance for chaining
+     */
     public AggregateConfigurer<A> configureCommandHandler(Function<Configuration, AggregateAnnotationCommandHandler> aggregateCommandHandlerBuilder) {
         commandHandler.update(aggregateCommandHandlerBuilder);
         return this;
     }
 
+    /**
+     * Defines the CommandTargetResolver to use for the Aggregate type under configuration. The CommandTargetResolver
+     * defines which Aggregate instance must be loaded to handle a specific Command.
+     *
+     * @param commandTargetResolverBuilder the builder function for the CommandTargetResolver.
+     * @return this configurer instance for chaining
+     */
     public AggregateConfigurer<A> configureCommandTargetResolver(Function<Configuration, CommandTargetResolver> commandTargetResolverBuilder) {
         commandTargetResolver.update(commandTargetResolverBuilder);
         return this;

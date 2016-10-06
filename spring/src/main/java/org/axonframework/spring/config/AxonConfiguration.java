@@ -21,6 +21,10 @@ import org.springframework.context.annotation.Bean;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * Spring Configuration class that defines a number of conditional beans. It also allows for access to components that
+ * are available in the Configuration, but not made available as Spring beans by default.
+ */
 @org.springframework.context.annotation.Configuration
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
@@ -57,8 +61,8 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
-    public <T> Repository<T> repository(Class<T> aggregate) {
-        return config.repository(aggregate);
+    public <T> Repository<T> repository(Class<T> aggregateType) {
+        return config.repository(aggregateType);
     }
 
     @Override
@@ -117,7 +121,6 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        // TODO: Build configurer based on blocks available in context
         config = configurer.buildConfiguration();
     }
 

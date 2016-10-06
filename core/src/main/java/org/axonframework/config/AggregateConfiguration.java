@@ -18,9 +18,25 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.model.Repository;
 
+/**
+ * Specialization of the Module Configuration for modules that define an Aggregate Configuration. This interface allows
+ * components to retrieve the Repository used to load Aggregates of the type defined in this Configuration.
+ *
+ * @param <A> The type of Aggregate defined in this Configuration
+ */
 public interface AggregateConfiguration<A> extends ModuleConfiguration {
 
+    /**
+     * Returns the repository defined to load instances of the Aggregate type defined in this configuration
+     *
+     * @return the repository to load aggregates
+     */
     Repository<A> repository();
 
+    /**
+     * Returns the type of Aggregate defined in this Configuration.
+     *
+     * @return the type of Aggregate defined in this Configuration
+     */
     Class<A> aggregateType();
 }

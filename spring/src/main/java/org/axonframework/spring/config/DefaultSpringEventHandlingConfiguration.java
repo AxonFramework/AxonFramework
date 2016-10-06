@@ -2,24 +2,25 @@ package org.axonframework.spring.config;
 
 import org.axonframework.config.Configuration;
 import org.axonframework.config.EventHandlingConfiguration;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class SpringEventHandlingConfiguration implements ApplicationContextAware, InitializingBean, SmartLifecycle {
+/**
+ * Spring Bean that registers Event Handler beans with the Configuration, which assigns them to Event Processors based
+ * on their package name.
+ *
+ * To customize this behavior, define a Bean in the application context that implements
+ * {@link EventHandlingConfiguration}.
+ */
+public class DefaultSpringEventHandlingConfiguration implements InitializingBean, SmartLifecycle {
 
     private final EventHandlingConfiguration delegate;
-    private final List<String> beans = new ArrayList<>();
-    private ApplicationContext applicationContext;
     private Configuration config;
     private volatile boolean running = false;
 
-    public SpringEventHandlingConfiguration() {
+    public DefaultSpringEventHandlingConfiguration() {
         delegate = EventHandlingConfiguration.assigningHandlersByPackage();
     }
 
@@ -29,11 +30,6 @@ public class SpringEventHandlingConfiguration implements ApplicationContextAware
 
     public void setAxonConfiguration(AxonConfiguration axonConfiguration) {
         this.config = axonConfiguration;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -71,10 +67,6 @@ public class SpringEventHandlingConfiguration implements ApplicationContextAware
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        for (String beanName : beans) {
-            Object bean = applicationContext.getBean(beanName);
-            delegate.registerEventHandler(c -> bean);
-        }
         delegate.initialize(config);
     }
 }

@@ -18,7 +18,6 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
-import org.axonframework.spring.saga.SpringResourceInjector;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
@@ -117,7 +116,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             }
         });
         registry.registerBeanDefinition("eventHandlingConfiguration",
-                                        BeanDefinitionBuilder.genericBeanDefinition(SpringEventHandlingConfiguration.class)
+                                        BeanDefinitionBuilder.genericBeanDefinition(DefaultSpringEventHandlingConfiguration.class)
                                                 .addPropertyReference("axonConfiguration", "axonConfiguration")
                                                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }

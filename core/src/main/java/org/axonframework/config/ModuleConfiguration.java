@@ -16,11 +16,32 @@
 
 package org.axonframework.config;
 
+/**
+ * Interface describing a module for the Axon Configuration API. These modules are relatively independent, but have
+ * access to the component available in the main Configuration.
+ * <p>
+ * Modules have callback methods for the initialization, start and shutdown phases of the application's lifecycle.
+ */
 public interface ModuleConfiguration {
 
+    /**
+     * Initialize the module configuration using the given global {@code config}
+     *
+     * @param config the global configuration, providing access to generic components
+     */
     void initialize(Configuration config);
 
+    /**
+     * Invoked when the Configuration is started.
+     *
+     * @see Configuration#start()
+     */
     void start();
 
+    /**
+     * Invoked prior to shutdown of the application.
+     *
+     * @see Configuration#shutdown()
+     */
     void shutdown();
 }
