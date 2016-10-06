@@ -22,6 +22,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -36,6 +37,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -50,7 +55,7 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<AggregateSnapshotter>, ApplicationContextAware {
+public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Snapshotter>, ApplicationContextAware {
 
     private PlatformTransactionManager transactionManager;
     private boolean autoDetectAggregateFactories = true;
@@ -62,7 +67,13 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
     private ParameterResolverFactory parameterResolverFactory;
 
     @Override
-    public AggregateSnapshotter getObject() throws Exception {
+    public Snapshotter getObject() throws Exception {
+        return (Snapshotter) Proxy.newProxyInstance(Snapshotter.class.getClassLoader(),
+                                                    new Class[]{Snapshotter.class},
+                                                    new LazyInitializationInvocationHandler());
+    }
+
+    private Snapshotter createInstance() {
         List<AggregateFactory<?>> factoriesFound = new ArrayList<>(aggregateFactories);
         if (autoDetectAggregateFactories) {
             applicationContext.getBeansOfType(AggregateFactory.class).values().forEach(factoriesFound::add);
@@ -95,6 +106,25 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
         return new AggregateSnapshotter(eventStore, factoriesFound, parameterResolverFactory, executor, txManager);
+    }
+
+    private class LazyInitializationInvocationHandler implements InvocationHandler {
+
+        private Snapshotter delegate;
+
+        @Override
+        public Object invoke(Object o, Method method, Object[] objects) throws Throwable {
+            synchronized (this) {
+                if (delegate == null) {
+                    delegate = createInstance();
+                }
+            }
+            try {
+                return method.invoke(delegate, objects);
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        }
     }
 
     @Override
