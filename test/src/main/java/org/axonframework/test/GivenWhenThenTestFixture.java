@@ -292,8 +292,9 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                             + "aggregate, as it is considered deleted there.");
                 }
             } catch (Exception e) {
-                logger.warn("An Exception occurred while detecting illegal state changes in {}.",
-                        workingAggregate.getClass().getName(), e);
+                throw new FixtureExecutionException("An Exception occurred while reconstructing the Aggregate from " +
+                                                            "given and published events. This may be an indication " +
+                                                            "that the aggregate cannot be recreated from it events.");
             } finally {
                 // rollback to prevent changes bing pushed to event store
                 uow.rollback();
