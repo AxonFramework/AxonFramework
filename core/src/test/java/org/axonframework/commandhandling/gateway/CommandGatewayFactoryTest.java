@@ -26,11 +26,12 @@ import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.junit.*;
+import org.mockito.invocation.*;
+import org.mockito.stubbing.*;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -45,10 +46,10 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-public class GatewayProxyFactoryTest {
+public class CommandGatewayFactoryTest {
 
     private CommandBus mockCommandBus;
-    private GatewayProxyFactory testSubject;
+    private CommandGatewayFactory testSubject;
     private CompleteGateway gateway;
     private RetryScheduler mockRetryScheduler;
     private CommandCallback callback;
@@ -57,7 +58,7 @@ public class GatewayProxyFactoryTest {
     public void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
-        testSubject = new GatewayProxyFactory(mockCommandBus, mockRetryScheduler);
+        testSubject = new CommandGatewayFactory(mockCommandBus, mockRetryScheduler);
         callback = spy(new StringCommandCallback());
         testSubject.registerCommandCallback(new CommandCallback<Object, String>() {
             @Override
@@ -101,10 +102,12 @@ public class GatewayProxyFactoryTest {
     @Test(timeout = 2000)
     public void testGateway_FireAndForgetWithoutRetryScheduler() {
         final Object metaTest = new Object();
-        GatewayProxyFactory testSubject = new GatewayProxyFactory(mockCommandBus);
+        CommandGatewayFactory testSubject = new CommandGatewayFactory(mockCommandBus);
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
-        gateway.fireAndForget("Command", org.axonframework.messaging.MetaData.from(singletonMap("otherKey", "otherVal")),
-                              metaTest, "value");
+        gateway.fireAndForget("Command",
+                              org.axonframework.messaging.MetaData.from(singletonMap("otherKey", "otherVal")),
+                              metaTest,
+                              "value");
         // in this case, no callback is used
         verify(mockCommandBus).dispatch(argThat(new TypeSafeMatcher<CommandMessage<Object>>() {
             @Override
@@ -195,11 +198,11 @@ public class GatewayProxyFactoryTest {
         RuntimeException runtimeException = new RuntimeException();
         doAnswer(new Failure(null, runtimeException))
                 .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
-            try {
-                result.set(gateway.waitForReturnValue("Command"));
-            } catch (Throwable e) {
-                error.set(e);
-            }
+        try {
+            result.set(gateway.waitForReturnValue("Command"));
+        } catch (Throwable e) {
+            error.set(e);
+        }
         assertNull("Did not expect ReturnValue", result.get());
         assertSame("Expected exact instance of RunTimeException being propagated", runtimeException, error.get());
         verify(callback).onFailure(any(), isA(RuntimeException.class));
@@ -337,6 +340,23 @@ public class GatewayProxyFactoryTest {
     }
 
     @Test(timeout = 2000)
+    public void testFireAndGetCompletableFuture() throws InterruptedException {
+        final AtomicReference<CompletableFuture<Object>> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.fireAndGetCompletableFuture("Command"));
+            } catch (Throwable e) {
+                error.set(e);
+            }
+        });
+        t.start();
+        t.join();
+        assertNotNull("Expected to get a Future return value", result.get());
+        assertNull(error.get());
+    }
+
+    @Test(timeout = 2000)
     public void testFireAndGetFutureWithTimeout() throws Throwable {
         final AtomicReference<Future<Object>> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -353,6 +373,25 @@ public class GatewayProxyFactoryTest {
             throw error.get();
         }
         assertNotNull("Expected to get a Future return value", result.get());
+    }
+
+    @Test(timeout = 2000)
+    public void testFireAndGetCompletionStageWithTimeout() throws Throwable {
+        final AtomicReference<CompletionStage<Object>> result = new AtomicReference<>();
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+        Thread t = new Thread(() -> {
+            try {
+                result.set(gateway.fireAndGetCompletionStage("Command"));
+            } catch (Throwable e) {
+                error.set(e);
+            }
+        });
+        t.start();
+        t.join();
+        if (error.get() != null) {
+            throw error.get();
+        }
+        assertNotNull("Expected to get a CompletionStage return value", result.get());
     }
 
     @Test(timeout = 2000)
@@ -438,7 +477,6 @@ public class GatewayProxyFactoryTest {
         verify(callback2).onSuccess(any(), eq(result));
     }
 
-
     @Test(timeout = 2000)
     public void testCreateGateway_WaitForResultAndInvokeCallbacks_Failure() {
         final CommandCallback callback1 = mock(CommandCallback.class);
@@ -506,6 +544,43 @@ public class GatewayProxyFactoryTest {
     }
 
     @Test(timeout = 2000)
+    public void testCreateGateway_CompletableFuture_Failure() throws Throwable {
+        final RuntimeException exception = new RuntimeException();
+        doAnswer(new Failure(exception))
+                .when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        CompletableFuture future = gateway.fireAndGetCompletableFuture("Command");
+        assertTrue(future.isDone());
+        assertTrue(future.isCompletedExceptionally());
+    }
+
+    @Test(timeout = 2000)
+    public void testCreateGateway_CompletableFuture_SuccessfulResult() throws Throwable {
+        doAnswer(invocationOnMock -> {
+            ((CommandCallback) invocationOnMock.getArguments()[1])
+                    .onSuccess((CommandMessage) invocationOnMock.getArguments()[0], "returnValue");
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        CompletableFuture future = gateway.fireAndGetCompletableFuture("Command");
+        assertTrue(future.isDone());
+        assertEquals(future.get(), "returnValue");
+    }
+
+    @Test(timeout = 2000)
+    public void testCreateGateway_Future_SuccessfulResult() throws Throwable {
+        doAnswer(invocationOnMock -> {
+            ((CommandCallback) invocationOnMock.getArguments()[1])
+                    .onSuccess((CommandMessage) invocationOnMock.getArguments()[0], "returnValue");
+            return null;
+        }).when(mockCommandBus).dispatch(isA(CommandMessage.class), isA(CommandCallback.class));
+
+        Future future = gateway.fireAndGetFuture("Command");
+        assertTrue(future.isDone());
+        assertEquals(future.get(), "returnValue");
+    }
+
+    @Test(timeout = 2000)
     public void testRetrySchedulerNotInvokedOnExceptionCausedByDeadlockAndActiveUnitOfWork() throws Throwable {
         final AtomicReference<Object> result = new AtomicReference<>();
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -558,7 +633,11 @@ public class GatewayProxyFactoryTest {
 
         Future<Object> fireAndGetFuture(Object command);
 
-        Future<Object> futureWithTimeout(Object command, int timeout, TimeUnit unit);
+        CompletableFuture<Object> fireAndGetCompletableFuture(Object command);
+
+        CompletionStage<Object> fireAndGetCompletionStage(Object command);
+
+        CompletableFuture<Object> futureWithTimeout(Object command, int timeout, TimeUnit unit);
 
         Object fireAndWaitAndInvokeCallbacks(Object command, CommandCallback first, CommandCallback second);
 

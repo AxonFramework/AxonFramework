@@ -16,8 +16,8 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -40,7 +40,12 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -201,8 +206,8 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
     @Override
     public <I> I registerCommandGateway(Class<I> gatewayInterface, final I stubImplementation) {
-        GatewayProxyFactory factory = new StubAwareGatewayProxyFactory(stubImplementation,
-                                                                       AnnotatedSagaTestFixture.this.commandBus);
+        CommandGatewayFactory factory = new StubAwareCommandGatewayFactory(stubImplementation,
+                                                                           AnnotatedSagaTestFixture.this.commandBus);
         final I gateway = factory.createGateway(gatewayInterface);
         registerResource(gateway);
         return gateway;
@@ -227,31 +232,33 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     }
 
     /**
-     * GatewayProxyFactory that is aware of a stub implementation that defines the behavior for the callback.
+     * CommandGatewayFactory that is aware of a stub implementation that defines the behavior for the callback.
      */
-    private static class StubAwareGatewayProxyFactory extends GatewayProxyFactory {
+    private static class StubAwareCommandGatewayFactory extends CommandGatewayFactory {
 
         private final Object stubImplementation;
 
-        public StubAwareGatewayProxyFactory(Object stubImplementation, RecordingCommandBus commandBus) {
+        public StubAwareCommandGatewayFactory(Object stubImplementation, RecordingCommandBus commandBus) {
             super(commandBus);
             this.stubImplementation = stubImplementation;
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<Future<R>> delegate) {
+        protected <R> InvocationHandler<R> wrapToWaitForResult(final InvocationHandler<CompletableFuture<R>> delegate) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(InvocationHandler<Future<R>> delegate,
-                                                                        long timeout, TimeUnit timeUnit) {
+        protected <R> InvocationHandler<R> wrapToReturnWithFixedTimeout(
+                InvocationHandler<CompletableFuture<R>> delegate,
+                long timeout, TimeUnit timeUnit) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
 
         @Override
-        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(InvocationHandler<Future<R>> delegate,
-                                                                              int timeoutIndex, int timeUnitIndex) {
+        protected <R> InvocationHandler<R> wrapToReturnWithTimeoutInArguments(
+                InvocationHandler<CompletableFuture<R>> delegate,
+                int timeoutIndex, int timeUnitIndex) {
             return new ReturnResultFromStub<>(delegate, stubImplementation);
         }
     }
@@ -263,12 +270,13 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
      *
      * @param <R> The return type of the method invocation
      */
-    private static class ReturnResultFromStub<R> implements GatewayProxyFactory.InvocationHandler<R> {
+    private static class ReturnResultFromStub<R> implements CommandGatewayFactory.InvocationHandler<R> {
 
-        private final GatewayProxyFactory.InvocationHandler<Future<R>> dispatcher;
+        private final CommandGatewayFactory.InvocationHandler<CompletableFuture<R>> dispatcher;
         private final Object stubGateway;
 
-        public ReturnResultFromStub(GatewayProxyFactory.InvocationHandler<Future<R>> dispatcher, Object stubGateway) {
+        public ReturnResultFromStub(CommandGatewayFactory.InvocationHandler<CompletableFuture<R>> dispatcher,
+                                    Object stubGateway) {
             this.dispatcher = dispatcher;
             this.stubGateway = stubGateway;
         }
