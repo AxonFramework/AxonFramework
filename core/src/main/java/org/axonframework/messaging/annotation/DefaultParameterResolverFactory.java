@@ -53,7 +53,7 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         return null;
     }
 
-    private static class AnnotatedMetaDataParameterResolver implements ParameterResolver {
+    private static class AnnotatedMetaDataParameterResolver implements ParameterResolver<Object> {
 
         private final MetaData metaData;
         private final Class parameterType;
@@ -64,12 +64,12 @@ public class DefaultParameterResolverFactory implements ParameterResolverFactory
         }
 
         @Override
-        public Object resolveParameterValue(Message message) {
+        public Object resolveParameterValue(Message<?> message) {
             return message.getMetaData().get(metaData.value());
         }
 
         @Override
-        public boolean matches(Message message) {
+        public boolean matches(Message<?> message) {
             return !(parameterType.isPrimitive() || metaData.required())
                     || (
                     message.getMetaData().containsKey(metaData.value())

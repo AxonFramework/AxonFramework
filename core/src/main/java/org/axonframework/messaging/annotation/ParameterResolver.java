@@ -34,7 +34,7 @@ public interface ParameterResolver<T> {
      * @param message The message to resolve the value from
      * @return the parameter value for the handler
      */
-    T resolveParameterValue(Message message);
+    T resolveParameterValue(Message<?> message);
 
     /**
      * Indicates whether this resolver is capable of providing a value for the given {@code message}.
@@ -42,7 +42,7 @@ public interface ParameterResolver<T> {
      * @param message The message to evaluate
      * @return {@code true} if this resolver can provide a value for the message, otherwise {@code false}
      */
-    boolean matches(Message message);
+    boolean matches(Message<?> message);
 
     /**
      * Returns the class of the payload that is supported by this resolver. Defaults to the {@link Object} class
