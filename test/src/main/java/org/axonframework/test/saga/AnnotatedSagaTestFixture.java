@@ -16,8 +16,8 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -206,8 +206,8 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
 
     @Override
     public <I> I registerCommandGateway(Class<I> gatewayInterface, final I stubImplementation) {
-        GatewayProxyFactory factory = new StubAwareGatewayProxyFactory(stubImplementation,
-                                                                       AnnotatedSagaTestFixture.this.commandBus);
+        CommandGatewayFactory factory = new StubAwareCommandGatewayFactory(stubImplementation,
+                                                                           AnnotatedSagaTestFixture.this.commandBus);
         final I gateway = factory.createGateway(gatewayInterface);
         registerResource(gateway);
         return gateway;
@@ -232,13 +232,13 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     }
 
     /**
-     * GatewayProxyFactory that is aware of a stub implementation that defines the behavior for the callback.
+     * CommandGatewayFactory that is aware of a stub implementation that defines the behavior for the callback.
      */
-    private static class StubAwareGatewayProxyFactory extends GatewayProxyFactory {
+    private static class StubAwareCommandGatewayFactory extends CommandGatewayFactory {
 
         private final Object stubImplementation;
 
-        public StubAwareGatewayProxyFactory(Object stubImplementation, RecordingCommandBus commandBus) {
+        public StubAwareCommandGatewayFactory(Object stubImplementation, RecordingCommandBus commandBus) {
             super(commandBus);
             this.stubImplementation = stubImplementation;
         }
@@ -270,12 +270,12 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
      *
      * @param <R> The return type of the method invocation
      */
-    private static class ReturnResultFromStub<R> implements GatewayProxyFactory.InvocationHandler<R> {
+    private static class ReturnResultFromStub<R> implements CommandGatewayFactory.InvocationHandler<R> {
 
-        private final GatewayProxyFactory.InvocationHandler<CompletableFuture<R>> dispatcher;
+        private final CommandGatewayFactory.InvocationHandler<CompletableFuture<R>> dispatcher;
         private final Object stubGateway;
 
-        public ReturnResultFromStub(GatewayProxyFactory.InvocationHandler<CompletableFuture<R>> dispatcher,
+        public ReturnResultFromStub(CommandGatewayFactory.InvocationHandler<CompletableFuture<R>> dispatcher,
                                     Object stubGateway) {
             this.dispatcher = dispatcher;
             this.stubGateway = stubGateway;

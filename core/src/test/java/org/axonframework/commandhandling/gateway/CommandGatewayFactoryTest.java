@@ -46,10 +46,10 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 @SuppressWarnings({"unchecked", "ThrowableResultOfMethodCallIgnored"})
-public class GatewayProxyFactoryTest {
+public class CommandGatewayFactoryTest {
 
     private CommandBus mockCommandBus;
-    private GatewayProxyFactory testSubject;
+    private CommandGatewayFactory testSubject;
     private CompleteGateway gateway;
     private RetryScheduler mockRetryScheduler;
     private CommandCallback callback;
@@ -58,7 +58,7 @@ public class GatewayProxyFactoryTest {
     public void setUp() {
         mockCommandBus = mock(CommandBus.class);
         mockRetryScheduler = mock(RetryScheduler.class);
-        testSubject = new GatewayProxyFactory(mockCommandBus, mockRetryScheduler);
+        testSubject = new CommandGatewayFactory(mockCommandBus, mockRetryScheduler);
         callback = spy(new StringCommandCallback());
         testSubject.registerCommandCallback(new CommandCallback<Object, String>() {
             @Override
@@ -102,7 +102,7 @@ public class GatewayProxyFactoryTest {
     @Test(timeout = 2000)
     public void testGateway_FireAndForgetWithoutRetryScheduler() {
         final Object metaTest = new Object();
-        GatewayProxyFactory testSubject = new GatewayProxyFactory(mockCommandBus);
+        CommandGatewayFactory testSubject = new CommandGatewayFactory(mockCommandBus);
         CompleteGateway gateway = testSubject.createGateway(CompleteGateway.class);
         gateway.fireAndForget("Command",
                               org.axonframework.messaging.MetaData.from(singletonMap("otherKey", "otherVal")),

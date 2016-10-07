@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.GatewayProxyFactory;
+import org.axonframework.commandhandling.gateway.CommandGatewayFactory;
 import org.axonframework.commandhandling.gateway.RetryScheduler;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -37,12 +37,12 @@ import java.util.List;
  * FactoryBean that creates a gateway instance for any given (compatible) interface. If no explicit interface is
  * provided, the {@link CommandGateway} interface is assumed.
  * <p/>
- * For details about the structure of compatible interfaces, see {@link GatewayProxyFactory}.
+ * For details about the structure of compatible interfaces, see {@link CommandGatewayFactory}.
  *
  * @param <T> The type of gateway to be created by this factory bean. Note that the correct interface must also be set
  *            using {@link #setGatewayInterface(Class)}. Failure to do so may result in class cast exceptions.
  * @author Allard Buijze
- * @see GatewayProxyFactory
+ * @see CommandGatewayFactory
  * @since 2.0
  */
 public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, InitializingBean {
@@ -81,7 +81,7 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
         if (gatewayInterface == null) {
             gatewayInterface = (Class<T>) CommandGateway.class;
         }
-        final GatewayProxyFactory factory = new GatewayProxyFactory(commandBus, retryScheduler, dispatchInterceptors);
+        final CommandGatewayFactory factory = new CommandGatewayFactory(commandBus, retryScheduler, dispatchInterceptors);
         commandCallbacks.forEach(factory::registerCommandCallback);
         gateway = factory.createGateway(gatewayInterface);
     }

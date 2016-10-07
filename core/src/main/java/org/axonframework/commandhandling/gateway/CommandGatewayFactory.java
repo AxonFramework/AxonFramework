@@ -31,18 +31,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
@@ -104,7 +94,7 @@ import static org.axonframework.commandhandling.GenericCommandMessage.asCommandM
  * @author Allard Buijze
  * @since 2.0
  */
-public class GatewayProxyFactory {
+public class CommandGatewayFactory {
 
     private final CommandBus commandBus;
     private final RetryScheduler retryScheduler;
@@ -122,8 +112,8 @@ public class GatewayProxyFactory {
      * @param dispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     @SafeVarargs
-    public GatewayProxyFactory(CommandBus commandBus,
-                               MessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
+    public CommandGatewayFactory(CommandBus commandBus,
+                                 MessageDispatchInterceptor<CommandMessage<?>>... dispatchInterceptors) {
         this(commandBus, null, dispatchInterceptors);
     }
 
@@ -141,8 +131,8 @@ public class GatewayProxyFactory {
      * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
     @SafeVarargs
-    public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                               MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
+    public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
+                                 MessageDispatchInterceptor<CommandMessage<?>>... messageDispatchInterceptors) {
         this(commandBus, retryScheduler, asList(messageDispatchInterceptors));
     }
 
@@ -159,8 +149,8 @@ public class GatewayProxyFactory {
      *                                    {@code null} to report failures without rescheduling
      * @param messageDispatchInterceptors The interceptors to invoke before dispatching commands to the Command Bus
      */
-    public GatewayProxyFactory(CommandBus commandBus, RetryScheduler retryScheduler,
-                               List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
+    public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
+                                 List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
         Assert.notNull(commandBus, "commandBus may not be null");
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
@@ -193,10 +183,9 @@ public class GatewayProxyFactory {
                                                                            dispatchInterceptors, extractors,
                                                                            commandCallbacks, true);
 
-            if( !(CompletableFuture.class.isAssignableFrom(gatewayMethod.getReturnType())
-                    || Future.class.isAssignableFrom(gatewayMethod.getReturnType())
-                    || CompletionStage.class.isAssignableFrom(gatewayMethod.getReturnType()))) {
-                // no wrapping
+            if (!Collections.conArrays.asList(CompletableFuture.class, Future.class, CompletionStage.class)
+                    .contains(gatewayMethod.getReturnType())) {
+
                 if (arguments.length >= 3
                         && TimeUnit.class.isAssignableFrom(arguments[arguments.length - 1])
                         && (Long.TYPE.isAssignableFrom(arguments[arguments.length - 2])
@@ -367,7 +356,7 @@ public class GatewayProxyFactory {
      * @param <R>      The type of return value the callback is interested in
      * @return this instance for further configuration
      */
-    public <C, R> GatewayProxyFactory registerCommandCallback(CommandCallback<C, R> callback) {
+    public <C, R> CommandGatewayFactory registerCommandCallback(CommandCallback<C, R> callback) {
         this.commandCallbacks.add(new TypeSafeCallbackWrapper<>(callback));
         return this;
     }
@@ -379,7 +368,7 @@ public class GatewayProxyFactory {
      * @param dispatchInterceptor The interceptor to register.
      * @return this instance for further configuration
      */
-    public GatewayProxyFactory registerDispatchInterceptor(
+    public CommandGatewayFactory registerDispatchInterceptor(
             MessageDispatchInterceptor<CommandMessage<?>> dispatchInterceptor) {
         this.dispatchInterceptors.add(dispatchInterceptor);
         return this;
@@ -417,14 +406,13 @@ public class GatewayProxyFactory {
          * @param invokedMethod The method being invoked
          * @param args          The arguments of the invocation
          * @return the return value of the invocation
-         *
          * @throws Exception any exceptions that occurred while processing the invocation
          */
         R invoke(Object proxy, Method invokedMethod, Object[] args) throws Exception;
     }
 
     private static class GatewayInvocationHandler extends AbstractCommandGateway implements
-            java.lang.reflect.InvocationHandler {
+                                                                                 java.lang.reflect.InvocationHandler {
 
         private final Map<Method, InvocationHandler> dispatchers;
 
