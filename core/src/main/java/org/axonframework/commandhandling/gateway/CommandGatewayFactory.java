@@ -183,7 +183,7 @@ public class CommandGatewayFactory {
                                                                            dispatchInterceptors, extractors,
                                                                            commandCallbacks, true);
 
-            if (!Collections.conArrays.asList(CompletableFuture.class, Future.class, CompletionStage.class)
+            if (!Arrays.asList(CompletableFuture.class, Future.class, CompletionStage.class)
                     .contains(gatewayMethod.getReturnType())) {
 
                 if (arguments.length >= 3
