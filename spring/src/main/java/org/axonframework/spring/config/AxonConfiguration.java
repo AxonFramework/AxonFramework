@@ -81,6 +81,16 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     }
 
     @Override
+    public void onStart(Runnable startHandler) {
+        config.onStart(startHandler);
+    }
+
+    @Override
+    public void onShutdown(Runnable shutdownHandler) {
+        config.onShutdown(shutdownHandler);
+    }
+
+    @Override
     public void start() {
         config.start();
         this.running = true;

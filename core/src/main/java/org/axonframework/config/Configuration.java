@@ -162,4 +162,26 @@ public interface Configuration {
     default ParameterResolverFactory parameterResolverFactory() {
         return getComponent(ParameterResolverFactory.class);
     }
+
+    /**
+     * Registers a handler to be executed when this Configuration is started.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already started is undefined.
+     *
+     * @param startHandler The handler to execute when the configuration is started
+     * @see #start()
+     * @see #onShutdown(Runnable)
+     */
+    void onStart(Runnable startHandler);
+
+    /**
+     * Registers a handler to be executed when the Configuration is shut down.
+     * <p>
+     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
+     *
+     * @param shutdownHandler The handler to execute when the Configuration is shut down
+     * @see #shutdown()
+     * @see #onStart(Runnable)
+     */
+    void onShutdown(Runnable shutdownHandler);
 }

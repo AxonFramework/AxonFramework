@@ -332,5 +332,14 @@ public class DefaultConfigurer implements Configurer {
             return correlationProviders.get();
         }
 
+        @Override
+        public void onShutdown(Runnable shutdownHandler) {
+            shutdownHandlers.add(shutdownHandler);
+        }
+
+        @Override
+        public void onStart(Runnable startHandler) {
+            startHandlers.add(startHandler);
+        }
     }
 }
