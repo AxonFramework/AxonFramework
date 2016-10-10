@@ -136,6 +136,6 @@ public class DefaultCommandGateway extends AbstractCommandGateway implements Com
     public <R> CompletableFuture<R> send(Object command) {
         FutureCallback<Object, R> callback = new FutureCallback<>();
         send(command, callback);
-        return callback.toCompletableFuture();
+        return callback;
     }
 }

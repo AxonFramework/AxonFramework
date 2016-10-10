@@ -80,17 +80,15 @@ public class EventCountSnapshotTriggerDefinition implements SnapshotTriggerDefin
                     CurrentUnitOfWork.get().onPrepareCommit(
                             u -> scheduleSnapshot((DomainEventMessage) msg));
                 } else {
-                    scheduleSnapshot(msg);
+                    scheduleSnapshot((DomainEventMessage) msg);
                 }
                 counter = 0;
             }
         }
 
-        protected void scheduleSnapshot(EventMessage msg) {
-            if (msg instanceof DomainEventMessage) {
-                snapshotter.scheduleSnapshot(aggregateType, ((DomainEventMessage) msg).getAggregateIdentifier());
-                counter = 0;
-            }
+        protected void scheduleSnapshot(DomainEventMessage msg) {
+            snapshotter.scheduleSnapshot(aggregateType, msg.getAggregateIdentifier());
+            counter = 0;
         }
 
         @Override
