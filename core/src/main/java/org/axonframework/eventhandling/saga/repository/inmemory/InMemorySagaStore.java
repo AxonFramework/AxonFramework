@@ -41,7 +41,7 @@ public class InMemorySagaStore implements SagaStore<Object> {
     public Set<String> findSagas(Class<?> sagaType, AssociationValue associationValue) {
         return managedSagas.entrySet()
                 .stream()
-                .filter(avEntry -> sagaType.isAssignableFrom(avEntry.getValue().saga().getClass()))
+                .filter(avEntry -> sagaType.isInstance(avEntry.getValue().saga()))
                 .filter(avEntry -> avEntry.getValue().associationValues().contains(associationValue))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
