@@ -25,7 +25,7 @@ import java.util.function.Supplier;
  * Spring Configuration class that defines a number of conditional beans. It also allows for access to components that
  * are available in the Configuration, but not made available as Spring beans by default.
  */
-@org.springframework.context.annotation.Configuration
+@org.springframework.context.annotation.Configuration("org.axonframework.spring.config.AxonConfiguration")
 public class AxonConfiguration implements Configuration, InitializingBean, ApplicationContextAware, SmartLifecycle {
 
     private Configuration config;
