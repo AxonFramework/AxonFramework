@@ -18,19 +18,19 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.spring.config.annotation.SpringContextParameterResolverFactoryBuilder;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.axonframework.spring.saga.SpringResourceInjector;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.ManagedList;
+import org.springframework.beans.factory.support.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 import java.util.stream.StreamSupport;
 
 import static org.axonframework.common.ReflectionUtils.methodsOf;
+import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 
@@ -54,7 +55,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
         registry.registerBeanDefinition("commandHandlerSubscriber",
-                                        BeanDefinitionBuilder.genericBeanDefinition(CommandHandlerSubscriber.class)
+                                        genericBeanDefinition(CommandHandlerSubscriber.class)
                                                 .getBeanDefinition());
 
         Configurer configurer = DefaultConfigurer.defaultConfiguration();
@@ -80,8 +81,11 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 tm -> configurer.configureTransactionManager(c -> getBean(tm, c)));
         findComponent(SagaStore.class).ifPresent(
                 sagaStore -> configurer.registerComponent(SagaStore.class, c -> getBean(sagaStore, c)));
-        findComponent(ResourceInjector.class).ifPresent(
-                resourceInjector -> configurer.configureResourceInjector(c -> getBean(resourceInjector, c)));
+
+        String resourceInjector = findComponent(ResourceInjector.class, registry,
+                                                () -> genericBeanDefinition(SpringResourceInjector.class)
+                                                        .getBeanDefinition());
+        configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
         registerAggregateBeanDefinitions(configurer, registry);
         registerSagaBeanDefinitions(configurer, registry);
@@ -92,11 +96,12 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         }
 
         registry.registerBeanDefinition("axonConfiguration",
-                                        BeanDefinitionBuilder.genericBeanDefinition(AxonConfiguration.class)
+                                        genericBeanDefinition(AxonConfiguration.class)
                                                 .addConstructorArgValue(configurer)
                                                 .getBeanDefinition());
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T getBean(String beanName, Configuration configuration) {
         return (T) configuration.getComponent(ApplicationContext.class).getBean(beanName);
     }
@@ -116,7 +121,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             }
         });
         registry.registerBeanDefinition("eventHandlingConfiguration",
-                                        BeanDefinitionBuilder.genericBeanDefinition(DefaultSpringEventHandlingConfiguration.class)
+                                        genericBeanDefinition(DefaultSpringEventHandlingConfiguration.class)
                                                 .addPropertyReference("axonConfiguration", "axonConfiguration")
                                                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }
@@ -155,7 +160,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                     aggregateConf.configureRepository(c -> beanFactory.getBean(repositoryName, Repository.class));
                 } else {
                     if (!registry.isBeanNameInUse(factoryName)) {
-                        registry.registerBeanDefinition(factoryName, BeanDefinitionBuilder.genericBeanDefinition(
+                        registry.registerBeanDefinition(factoryName, genericBeanDefinition(
                                 SpringPrototypeAggregateFactory.class)
                                 .addPropertyValue("prototypeBeanName", aggregate)
                                 .getBeanDefinition());
@@ -168,6 +173,15 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
 
             configurer.configureAggregate(aggregateConf);
         }
+    }
+
+    private <T> String findComponent(Class<T> componentType, BeanDefinitionRegistry registry, Supplier<BeanDefinition> defaultBean) {
+        return findComponent(componentType).orElseGet(() -> {
+            BeanDefinition beanDefinition = defaultBean.get();
+            String beanName = BeanDefinitionReaderUtils.generateBeanName(beanDefinition, registry);
+            registry.registerBeanDefinition(beanName, beanDefinition);
+            return beanName;
+        });
     }
 
     private <T> Optional<String> findComponent(Class<T> componentType) {

@@ -19,6 +19,8 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -26,6 +28,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.saga.ResourceInjector;
 import org.axonframework.eventhandling.saga.repository.SagaStore;
 import org.axonframework.eventhandling.saga.repository.jpa.JpaSagaStore;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -47,6 +50,7 @@ import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -136,6 +140,12 @@ public class DefaultConfigurer implements Configurer {
         components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
+        components.put(CommandGateway.class, new Component<>(config, "resourceInjector", this::defaultCommandGateway));
+        components.put(ResourceInjector.class, new Component<>(config, "resourceInjector", this::defaultResourceInjector));
+    }
+
+    protected CommandGateway defaultCommandGateway(Configuration config) {
+        return new DefaultCommandGateway(config.commandBus());
     }
 
     /**
@@ -161,6 +171,10 @@ public class DefaultConfigurer implements Configurer {
         config.correlationDataProviders().forEach(unitOfWorkFactory::registerCorrelationDataProvider);
         cb.setUnitOfWorkFactory(unitOfWorkFactory);
         return cb;
+    }
+
+    protected ResourceInjector defaultResourceInjector(Configuration config) {
+        return new ConfigurationResourceInjector(config);
     }
 
     /**

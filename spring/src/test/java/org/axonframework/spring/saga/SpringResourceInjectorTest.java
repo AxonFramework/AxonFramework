@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNull;
 /**
  * @author Allard Buijze
  */
-public class SpringSagaResourceInjectorTest {
+public class SpringResourceInjectorTest {
 
     private static ResourceInjector testSubject;
 

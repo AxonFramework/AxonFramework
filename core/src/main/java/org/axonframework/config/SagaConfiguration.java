@@ -34,7 +34,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
      * @return a SagaConfiguration instance, ready for further configuration
      */
     public static <S> SagaConfiguration<S> subscribingSagaManager(Class<S> sagaType) {
-        return new SagaConfiguration<S>(sagaType);
+        return new SagaConfiguration<>(sagaType);
     }
 
 
