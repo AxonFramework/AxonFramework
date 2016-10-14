@@ -25,6 +25,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -49,6 +50,7 @@ public abstract class AbstractEventStoreBenchmark {
     public void startBenchMark() throws InterruptedException {
         prepareEventStore();
 
+        System.out.println(String.format("Start benchmark at: %s", new Date()));
         long start = System.currentTimeMillis();
         List<Thread> threads = new ArrayList<>();
         for (int t = 0; t < getThreadCount(); t++) {
@@ -66,6 +68,7 @@ public abstract class AbstractEventStoreBenchmark {
                 getClass().getSimpleName(), getThreadCount(), getTransactionCount(), getTransactionSize(),
                 (end - start), (((float) getThreadCount() * getTransactionCount() * getTransactionSize()) /
                         ((float) (end - start) / 1000))));
+        System.out.println(String.format("End writing at: %s", new Date()));
     }
 
     protected abstract Runnable getRunnableInstance();

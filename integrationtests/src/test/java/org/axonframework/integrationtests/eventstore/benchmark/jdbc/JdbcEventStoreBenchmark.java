@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2010-2012. Axon Framework
- *
+ * Copyright (c) 2010-2016. Axon Framework
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,19 +11,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.eventstore.benchmark.jpa;
+package org.axonframework.integrationtests.eventstore.benchmark.jdbc;
 
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.MySqlEventTableFactory;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
+import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,23 +36,25 @@ import static org.junit.Assert.assertFalse;
 /**
  * @author Jettro Coenradie
  */
-public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
+public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
 
     private EventStore eventStore;
+    private JdbcEventStorageEngine eventStorageEngine;
+    private DataSource dataSource;
     private PlatformTransactionManager transactionManager;
 
-    @PersistenceContext
-    private EntityManager entityManager;
-
     public static void main(String[] args) throws Exception {
-        AbstractEventStoreBenchmark benchmark = prepareBenchMark("META-INF/spring/benchmark-jpa-context.xml");
+        AbstractEventStoreBenchmark benchmark = prepareBenchMark("META-INF/spring/benchmark-jdbc-context.xml");
         benchmark.startBenchMark();
         System.out.println(String.format("End benchmark at: %s", new Date()));
     }
 
-    public JpaEventStoreBenchMark(JpaEventStorageEngine storageEngine, PlatformTransactionManager transactionManager) {
-        this.eventStore = new EmbeddedEventStore(storageEngine);
+    public JdbcEventStoreBenchmark(DataSource dataSource, PlatformTransactionManager transactionManager) {
+        this.dataSource = dataSource;
         this.transactionManager = transactionManager;
+        this.eventStorageEngine = new JdbcEventStorageEngine(dataSource::getConnection,
+                new SpringTransactionManager(transactionManager));
+        this.eventStore = new EmbeddedEventStore(eventStorageEngine);
     }
 
     @Override
@@ -61,7 +63,14 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
         template.execute(new TransactionCallbackWithoutResult() {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus status) {
-                entityManager.createQuery("DELETE FROM DomainEventEntry s").executeUpdate();
+                try {
+                    Connection connection = dataSource.getConnection();
+                    connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
+                    connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
+                    eventStorageEngine.createSchema(MySqlEventTableFactory.INSTANCE);
+                } catch (SQLException e) {
+                    throw new IllegalStateException(e);
+                }
             }
         });
     }
@@ -84,8 +93,7 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
                     @Override
                     protected void doInTransactionWithoutResult(TransactionStatus status) {
                         assertFalse(status.isRollbackOnly());
-                        eventSequence
-                                .set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get()));
+                        eventSequence.set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get()));
                     }
                 });
             }
