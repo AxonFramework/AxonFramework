@@ -47,7 +47,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
 
     @Override
     public Connection getConnection() throws SQLException {
-        if (!CurrentUnitOfWork.isStarted()) {
+        if (!CurrentUnitOfWork.isStarted() || CurrentUnitOfWork.get().phase().isAfter(UnitOfWork.Phase.PREPARE_COMMIT)) {
             return delegate.getConnection();
         }
 
@@ -55,6 +55,9 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
         Connection connection = uow.root().getResource(CONNECTION_RESOURCE_NAME);
         if (connection == null || connection.isClosed()) {
             final Connection delegateConnection = delegate.getConnection();
+            if (delegateConnection.getAutoCommit()) {
+                delegateConnection.setAutoCommit(false);
+            }
             connection = ConnectionWrapperFactory.wrap(delegateConnection,
                                                        UoWAttachedConnection.class,
                                                        new UoWAttachedConnectionImpl(delegateConnection),
@@ -71,14 +74,14 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
                 }
             });
             uow.onCleanup(u -> {
-                Connection cx = u.getResource(CONNECTION_RESOURCE_NAME);
+                Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
                 JdbcUtils.closeQuietly(cx);
                 if (cx instanceof UoWAttachedConnection) {
                     ((UoWAttachedConnection) cx).forceClose();
                 }
             });
             uow.onRollback(u -> {
-                Connection cx = u.getResource(CONNECTION_RESOURCE_NAME);
+                Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
                 try {
                     if (!cx.isClosed() && !cx.getAutoCommit()) {
                         cx.rollback();

@@ -13,11 +13,18 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark.jdbc;
 
+import org.axonframework.common.jdbc.ConnectionProvider;
+import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.MySqlEventTableFactory;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -31,8 +38,6 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertFalse;
-
 /**
  * @author Jettro Coenradie
  */
@@ -42,6 +47,7 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
     private JdbcEventStorageEngine eventStorageEngine;
     private DataSource dataSource;
     private PlatformTransactionManager transactionManager;
+    private MessageHandlerInterceptor<Message<?>> transactionManagingInterceptor;
 
     public static void main(String[] args) throws Exception {
         AbstractEventStoreBenchmark benchmark = prepareBenchMark("META-INF/spring/benchmark-jdbc-context.xml");
@@ -52,9 +58,11 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
     public JdbcEventStoreBenchmark(DataSource dataSource, PlatformTransactionManager transactionManager) {
         this.dataSource = dataSource;
         this.transactionManager = transactionManager;
-        this.eventStorageEngine = new JdbcEventStorageEngine(dataSource::getConnection,
-                new SpringTransactionManager(transactionManager));
+        ConnectionProvider connectionProvider = new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection);
+        TransactionManager axonTransactionManager = new SpringTransactionManager(transactionManager);
+        this.eventStorageEngine = new JdbcEventStorageEngine(connectionProvider, axonTransactionManager);
         this.eventStore = new EmbeddedEventStore(eventStorageEngine);
+        this.transactionManagingInterceptor = new TransactionManagingInterceptor<>(axonTransactionManager);
     }
 
     @Override
@@ -84,18 +92,12 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
 
         @Override
         public void run() {
-            TransactionTemplate template = new TransactionTemplate(transactionManager);
             final String aggregateId = UUID.randomUUID().toString();
             // the inner class forces us into a final variable, hence the AtomicInteger
             final AtomicInteger eventSequence = new AtomicInteger(0);
             for (int t = 0; t < getTransactionCount(); t++) {
-                template.execute(new TransactionCallbackWithoutResult() {
-                    @Override
-                    protected void doInTransactionWithoutResult(TransactionStatus status) {
-                        assertFalse(status.isRollbackOnly());
-                        eventSequence.set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get()));
-                    }
-                });
+                new DefaultUnitOfWork<>(null).execute(() -> eventSequence
+                        .set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get())));
             }
         }
     }

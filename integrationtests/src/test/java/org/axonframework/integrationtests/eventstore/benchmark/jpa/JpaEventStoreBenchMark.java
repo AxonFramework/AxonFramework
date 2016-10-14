@@ -20,6 +20,14 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
@@ -31,7 +39,7 @@ import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertFalse;
+import static java.util.Collections.singleton;
 
 /**
  * @author Jettro Coenradie
@@ -40,6 +48,7 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
     private EventStore eventStore;
     private PlatformTransactionManager transactionManager;
+    private MessageHandlerInterceptor<Message<?>> transactionManagingInterceptor;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -53,6 +62,8 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
     public JpaEventStoreBenchMark(JpaEventStorageEngine storageEngine, PlatformTransactionManager transactionManager) {
         this.eventStore = new EmbeddedEventStore(storageEngine);
         this.transactionManager = transactionManager;
+        this.transactionManagingInterceptor =
+                new TransactionManagingInterceptor<>(new SpringTransactionManager(transactionManager));
     }
 
     @Override
@@ -75,17 +86,21 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
         @Override
         public void run() {
-            TransactionTemplate template = new TransactionTemplate(transactionManager);
             final String aggregateId = UUID.randomUUID().toString();
             // the inner class forces us into a final variable, hence the AtomicInteger
             final AtomicInteger eventSequence = new AtomicInteger(0);
             for (int t = 0; t < getTransactionCount(); t++) {
-                template.execute(new TransactionCallbackWithoutResult() {
-                    @Override
-                    protected void doInTransactionWithoutResult(TransactionStatus status) {
-                        assertFalse(status.isRollbackOnly());
-                        eventSequence
-                                .set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get()));
+                UnitOfWork<?> unitOfWork = new DefaultUnitOfWork<>(null);
+                unitOfWork.execute(() -> {
+                    InterceptorChain interceptorChain = new DefaultInterceptorChain<Message<?>>(unitOfWork, singleton(
+                            transactionManagingInterceptor), message -> {
+                        eventSequence.set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get()));
+                        return null;
+                    });
+                    try {
+                        interceptorChain.proceed();
+                    } catch (Exception e) {
+                        throw new IllegalStateException(e);
                     }
                 });
             }
