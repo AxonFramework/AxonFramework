@@ -35,6 +35,8 @@ import javax.validation.ConstraintViolation;
 public class JSR303ViolationException extends StructuralCommandValidationFailedException {
 
     private static final long serialVersionUID = -1585918243998401966L;
+
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private final Set<ConstraintViolation<Object>> violations;
 
     /**
@@ -43,8 +45,7 @@ public class JSR303ViolationException extends StructuralCommandValidationFailedE
      * @param violations The violations that were detected
      */
     public JSR303ViolationException(Set<ConstraintViolation<Object>> violations) {
-        super("One or more JSR303 constraints were violated: " + System.lineSeparator()
-            + convert(violations));
+        super("One or more JSR303 constraints were violated: " + LINE_SEPARATOR + convert(violations));
         this.violations = violations;
     }
 
@@ -76,12 +77,12 @@ public class JSR303ViolationException extends StructuralCommandValidationFailedE
             msg += " " + violation.getMessage();
             sortedViolations.add(msg);
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Iterator<String> it = sortedViolations.iterator();
         while (it.hasNext()) {
             sb.append(it.next());
             if (it.hasNext()) {
-                sb.append(System.lineSeparator());
+                sb.append(LINE_SEPARATOR);
             }
         }
         return sb.toString();
