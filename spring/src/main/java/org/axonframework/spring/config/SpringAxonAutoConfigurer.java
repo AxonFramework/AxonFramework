@@ -4,7 +4,13 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.*;
+import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
+import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventHandlingConfiguration;
+import org.axonframework.config.ModuleConfiguration;
+import org.axonframework.config.SagaConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.ResourceInjector;
@@ -23,14 +29,15 @@ import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.spring.stereotype.Saga;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.support.*;
+import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
@@ -109,14 +116,19 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
     private void registerDefaultEventHandlerConfiguration(BeanDefinitionRegistry registry) {
         List<RuntimeBeanReference> beans = new ManagedList<>();
         beanFactory.getBeanNamesIterator().forEachRemaining(bean -> {
-            Class<?> beanType = beanFactory.getType(bean);
-            if (beanFactory.containsBeanDefinition(bean) && beanFactory.getBeanDefinition(bean).isSingleton()) {
-                boolean hasHandler = StreamSupport.stream(methodsOf(beanType).spliterator(), false)
-                        .map(m -> AnnotationUtils.findAnnotationAttributes(m, MessageHandler.class).orElse(null))
-                        .filter(Objects::nonNull)
-                        .anyMatch(attr -> EventMessage.class.isAssignableFrom((Class) attr.get("messageType")));
-                if (hasHandler) {
-                    beans.add(new RuntimeBeanReference(bean));
+            if (!beanFactory.isFactoryBean(bean)) {
+                Class<?> beanType = beanFactory.getType(bean);
+                if (beanFactory.containsBeanDefinition(bean) && beanFactory.getBeanDefinition(bean).isSingleton()) {
+                    boolean hasHandler = StreamSupport.stream(methodsOf(beanType).spliterator(), false)
+                                                      .map(m -> AnnotationUtils
+                                                              .findAnnotationAttributes(m, MessageHandler.class)
+                                                              .orElse(null))
+                                                      .filter(Objects::nonNull)
+                                                      .anyMatch(attr -> EventMessage.class
+                                                              .isAssignableFrom((Class) attr.get("messageType")));
+                    if (hasHandler) {
+                        beans.add(new RuntimeBeanReference(bean));
+                    }
                 }
             }
         });
