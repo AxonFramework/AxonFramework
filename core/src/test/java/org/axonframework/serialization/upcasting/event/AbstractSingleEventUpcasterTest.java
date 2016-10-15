@@ -19,7 +19,7 @@ package org.axonframework.serialization.upcasting.event;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.eventsourcing.eventstore.GenericTrackedDomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.GlobalIndexTrackingToken;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.SerializedObject;
@@ -69,13 +69,13 @@ public class AbstractSingleEventUpcasterTest {
     public void testUpcastingDomainEventData() {
         String aggregateType = "test";
         String aggregateId = "aggregateId";
-        GlobalIndexTrackingToken trackingToken = new GlobalIndexTrackingToken(10);
+        GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(10);
         long sequenceNumber = 100;
         Serializer serializer = new XStreamSerializer();
         Object payload = new StubEvent("oldName");
         SerializedObject<String> serializedPayload = serializer.serialize(payload, String.class);
         EventData<?> eventData =
-                new GenericTrackedDomainEventEntry<>(trackingToken.getGlobalIndex(), aggregateType, aggregateId,
+                new GenericTrackedDomainEventEntry<>(trackingToken, aggregateType, aggregateId,
                                                      sequenceNumber, "eventId", Instant.now(),
                                                      serializedPayload.getType().getName(),
                                                      serializedPayload.getType().getRevision(), serializedPayload,

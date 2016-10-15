@@ -11,43 +11,49 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.jpa;
+package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.AbstractSequencedDomainEventEntry;
 import org.axonframework.serialization.Serializer;
 
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.Table;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 /**
- * Default implementation of a tracked domain event entry. This implementation is used by the {@link
- * JpaEventStorageEngine} to store events. Event payload and metadata are serialized to a byte array.
+ * Abstract base class of a serialized domain event. Fields in this class contain JPA annotations that direct JPA event
+ * storage engines how to store event entries.
  *
  * @author Rene de Waele
  */
-@Entity
-@Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber", unique = true))
-public class DomainEventEntry extends AbstractSequencedDomainEventEntry<byte[]> {
+@MappedSuperclass
+public abstract class AbstractSequencedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements DomainEventData<T> {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SuppressWarnings("unused")
+    private long globalIndex;
 
     /**
      * Construct a new default domain event entry from a published domain event message to enable storing the event or
      * sending it to a remote location. The event payload and metadata will be serialized to a byte array.
      * <p>
-     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code eventMessage}.
-     * The type of the serialized data will be the same as the given {@code contentType}.
+     * The given {@code serializer} will be used to serialize the payload and metadata in the given {@code
+     * eventMessage}. The type of the serialized data will be the same as the given {@code contentType}.
      *
      * @param eventMessage The event message to convert to a serialized event entry
      * @param serializer   The serializer to convert the event
+     * @param contentType  The data type of the payload and metadata after serialization
      */
-    public DomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer) {
-        super(eventMessage, serializer, byte[].class);
+    public AbstractSequencedDomainEventEntry(DomainEventMessage<?> eventMessage, Serializer serializer,
+                                             Class<T> contentType) {
+        super(eventMessage, serializer, contentType);
     }
 
     /**
      * Default constructor required by JPA
      */
-    protected DomainEventEntry() {
+    protected AbstractSequencedDomainEventEntry() {
     }
 }

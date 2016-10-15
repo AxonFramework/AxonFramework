@@ -20,6 +20,7 @@ public class EventSchema {
     private final String domainEventTable, snapshotTable, globalIndexColumn, timestampColumn, eventIdentifierColumn,
             aggregateIdentifierColumn, sequenceNumberColumn, typeColumn, payloadTypeColumn, payloadRevisionColumn,
             payloadColumn, metaDataColumn;
+    private final long lowestGlobalSequence;
 
     public EventSchema() {
         this(builder());
@@ -38,6 +39,7 @@ public class EventSchema {
         payloadRevisionColumn = builder.payloadRevisionColumn;
         payloadColumn = builder.payloadColumn;
         metaDataColumn = builder.metaDataColumn;
+        lowestGlobalSequence = builder.lowestGlobalSequence;
     }
 
     public static Builder builder() {
@@ -92,6 +94,10 @@ public class EventSchema {
         return metaDataColumn;
     }
 
+    public long lowestGlobalSequence() {
+        return lowestGlobalSequence;
+    }
+
     @SuppressWarnings("SqlResolve")
     protected static class Builder {
         private String domainEventTable = "DomainEventEntry";
@@ -106,6 +112,7 @@ public class EventSchema {
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
         private String metaDataColumn = "metaData";
+        private long lowestGlobalSequence = 1L;
 
         public Builder withEventTable(String eventTable) {
             this.domainEventTable = eventTable;
@@ -164,6 +171,11 @@ public class EventSchema {
 
         public Builder withMetaDataColumn(String metaDataColumn) {
             this.metaDataColumn = metaDataColumn;
+            return this;
+        }
+
+        public Builder withLowestGlobalSequence(long lowestGlobalSequence) {
+            this.lowestGlobalSequence = lowestGlobalSequence;
             return this;
         }
 

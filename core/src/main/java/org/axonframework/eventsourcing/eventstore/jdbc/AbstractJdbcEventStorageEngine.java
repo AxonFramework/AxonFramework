@@ -15,7 +15,6 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
@@ -55,10 +54,8 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
      *                                     an {@link XStreamSerializer} is used.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
      *                                     null} a {@link NoOpEventUpcasterChain} is used.
-     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null},
-     *                                     a .
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}, a
+     *                                     .
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. If {@code null} a batch size of 100
@@ -69,10 +66,9 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
      */
     protected AbstractJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
                                              PersistenceExceptionResolver persistenceExceptionResolver,
-                                             TransactionManager transactionManager, Integer batchSize,
-                                             ConnectionProvider connectionProvider) {
+                                             Integer batchSize, ConnectionProvider connectionProvider) {
         super(serializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
-              transactionManager, batchSize);
+              batchSize);
         this.connectionProvider = connectionProvider;
     }
 
@@ -152,11 +148,13 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     /**
      * Extracts the next tracked event entry from the given {@code resultSet}.
      *
-     * @param resultSet The results of a query for tracked events
+     * @param resultSet     The results of a query for tracked events
+     * @param previousToken
      * @return The next tracked event
      * @throws SQLException when an exception occurs while creating the event data
      */
-    protected abstract TrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException;
+    protected abstract TrackedEventData<?> getTrackedEventData(ResultSet resultSet,
+                                                               TrackingToken previousToken) throws SQLException;
 
     /**
      * Extracts the next domain event entry from the given {@code resultSet}.
@@ -187,12 +185,19 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         return executeQuery(connection -> {
-                                PreparedStatement statement = readEventData(connection, lastToken);
-                                statement.setMaxRows(batchSize);
-                                return statement;
-                            }, this::getTrackedEventData,
-                            e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken),
-                                                         e));
+            PreparedStatement statement = readEventData(connection, lastToken);
+            statement.setMaxRows(batchSize);
+            return statement;
+        }, resultSet -> {
+            TrackingToken previousToken = lastToken;
+            List<TrackedEventData<?>> results = new ArrayList<>();
+            while (resultSet.next()) {
+                TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
+                results.add(next);
+                previousToken = next.trackingToken();
+            }
+            return results;
+        }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
     }
 
     @Override
@@ -202,7 +207,7 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
             PreparedStatement statement = readEventData(connection, aggregateIdentifier, firstSequenceNumber);
             statement.setMaxRows(batchSize);
             return statement;
-        }, this::getDomainEventData, e -> new EventStoreException(
+        }, resultSet -> listResults(resultSet, this::getDomainEventData), e -> new EventStoreException(
                 format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
     }
 
@@ -225,10 +230,11 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
 
     @Override
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        List<DomainEventData<?>> result =
-                executeQuery(connection -> readSnapshotData(connection, aggregateIdentifier), this::getSnapshotData,
-                             e -> new EventStoreException(
-                                     format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
+        List<DomainEventData<?>> result = executeQuery(connection -> readSnapshotData(connection, aggregateIdentifier),
+                                                       resultSet -> listResults(resultSet, this::getSnapshotData),
+                                                       e -> new EventStoreException(
+                                                               format("Error reading aggregate snapshot [%s]",
+                                                                      aggregateIdentifier), e));
         return result.stream().findFirst();
     }
 
@@ -267,8 +273,8 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
         }
     }
 
-    private <R> List<R> executeQuery(SqlFunction sqlFunction, SqlResultConverter<R> sqlResultConverter,
-                                     Function<SQLException, RuntimeException> errorHandler) {
+    protected <R> List<R> executeQuery(SqlFunction sqlFunction, SqlResultsConverter<R> sqlResultsConverter,
+                                       Function<SQLException, RuntimeException> errorHandler) {
         Connection connection = getConnection();
         try {
             PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
@@ -280,11 +286,7 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
                     throw errorHandler.apply(e);
                 }
                 try {
-                    List<R> results = new ArrayList<>();
-                    while (resultSet.next()) {
-                        results.add(sqlResultConverter.apply(resultSet));
-                    }
-                    return results;
+                    return sqlResultsConverter.apply(resultSet);
                 } catch (SQLException e) {
                     throw errorHandler.apply(e);
                 } finally {
@@ -298,12 +300,21 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
         }
     }
 
-    private PreparedStatement createSqlStatement(Connection connection, SqlFunction sqlFunction) {
+    private static PreparedStatement createSqlStatement(Connection connection, SqlFunction sqlFunction) {
         try {
             return sqlFunction.apply(connection);
         } catch (SQLException e) {
             throw new EventStoreException("Failed to create a SQL statement", e);
         }
+    }
+
+    private static <R> List<R> listResults(ResultSet resultSet,
+                                           SqlResultConverter<R> singleResultConverter) throws SQLException {
+        List<R> results = new ArrayList<>();
+        while (resultSet.next()) {
+            results.add(singleResultConverter.apply(resultSet));
+        }
+        return results;
     }
 
     @FunctionalInterface
@@ -314,5 +325,10 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     @FunctionalInterface
     protected interface SqlResultConverter<R> {
         R apply(ResultSet resultSet) throws SQLException;
+    }
+
+    @FunctionalInterface
+    protected interface SqlResultsConverter<R> {
+        List<R> apply(ResultSet resultSet) throws SQLException;
     }
 }

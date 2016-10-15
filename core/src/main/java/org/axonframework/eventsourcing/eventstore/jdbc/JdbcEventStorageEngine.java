@@ -16,7 +16,6 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.SerializedObject;
@@ -30,6 +29,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.TemporalAccessor;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+import static java.util.stream.Collectors.toSet;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
  * EventStorageEngine implementation that uses JDBC to store and fetch events.
@@ -41,8 +47,11 @@ import java.time.temporal.TemporalAccessor;
  */
 public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
 
+    private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
+
     private final Class<?> dataType;
     private final EventSchema schema;
+    private final int maxGapOffset;
 
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
@@ -51,11 +60,9 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
      * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
      *
      * @param connectionProvider The provider of connections to the underlying database
-     * @param transactionManager The transaction manager used to set the isolation level of the transaction when loading
-     *                           events
      */
-    public JdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
-        this(null, null, null, transactionManager, null, connectionProvider, byte[].class, new EventSchema());
+    public JdbcEventStorageEngine(ConnectionProvider connectionProvider) {
+        this(null, null, null, null, connectionProvider, byte[].class, new EventSchema(), null);
     }
 
     /**
@@ -70,14 +77,12 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
      * @param connectionProvider           The provider of connections to the underlying database
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver,
-                                  TransactionManager transactionManager, ConnectionProvider connectionProvider) {
-        this(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, null, connectionProvider,
-             byte[].class, new EventSchema());
+                                  ConnectionProvider connectionProvider) {
+        this(serializer, upcasterChain, persistenceExceptionResolver, null, connectionProvider, byte[].class,
+             new EventSchema(), null);
     }
 
     /**
@@ -87,8 +92,6 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
@@ -97,15 +100,16 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
      * @param connectionProvider           The provider of connections to the underlying database
      * @param dataType                     The data type for serialized event payload and metadata
      * @param schema                       Object that describes the database schema of event entries
+     * @param maxGapOffset
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
-                                  PersistenceExceptionResolver persistenceExceptionResolver,
-                                  TransactionManager transactionManager, Integer batchSize,
-                                  ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, batchSize,
-              connectionProvider);
+                                  PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
+                                  ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema,
+                                  Integer maxGapOffset) {
+        super(serializer, upcasterChain, persistenceExceptionResolver, batchSize, connectionProvider);
         this.dataType = dataType;
         this.schema = schema;
+        this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
     }
 
     @Override
@@ -173,18 +177,28 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
 
     @Override
     public PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException {
-        Assert.isTrue(lastToken == null || lastToken instanceof GlobalIndexTrackingToken,
+        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
                       String.format("Token [%s] is of the wrong type", lastToken));
-        final String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
-                schema.globalIndexColumn() + " > ? ORDER BY " + schema.globalIndexColumn() + " ASC";
+        GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
+        String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
+                schema.globalIndexColumn() + " > ? ";
+        List<Long> gaps;
+        if (previousToken != null) {
+            gaps = previousToken.getGaps().stream().collect(Collectors.toList());
+            if (!gaps.isEmpty()) {
+                sql += " OR " + schema.globalIndexColumn() + " IN (" +
+                        String.join(",", Collections.nCopies(gaps.size(), "?")) + ") ";
+            }
+        } else {
+            gaps = Collections.emptyList();
+        }
+        sql += "ORDER BY " + schema.globalIndexColumn() + " ASC";
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        preparedStatement.setLong(1, lastToken == null ? -1 : ((GlobalIndexTrackingToken) lastToken).getGlobalIndex());
+        preparedStatement.setLong(1, previousToken == null ? -1 : previousToken.getIndex());
+        for (int i = 0; i < gaps.size(); i++) {
+            preparedStatement.setLong(i + 2, gaps.get(i));
+        }
         return preparedStatement;
-    }
-
-    @Override
-    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
-        return token;
     }
 
     @Override
@@ -197,9 +211,17 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     }
 
     @Override
-    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException {
-        return new GenericTrackedDomainEventEntry<>(resultSet.getLong(schema.globalIndexColumn()),
-                                                    resultSet.getString(schema.typeColumn()),
+    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet,
+                                                   TrackingToken previousToken) throws SQLException {
+        long globalSequence = resultSet.getLong(schema.globalIndexColumn());
+        TrackingToken trackingToken;
+        if (previousToken == null) {
+            trackingToken = GapAwareTrackingToken.newInstance(globalSequence, LongStream
+                    .range(schema.lowestGlobalSequence(), globalSequence).mapToObj(Long::valueOf).collect(toSet()));
+        } else {
+            trackingToken = ((GapAwareTrackingToken) previousToken).advanceTo(globalSequence, maxGapOffset);
+        }
+        return new GenericTrackedDomainEventEntry<>(trackingToken, resultSet.getString(schema.typeColumn()),
                                                     resultSet.getString(schema.aggregateIdentifierColumn()),
                                                     resultSet.getLong(schema.sequenceNumberColumn()),
                                                     resultSet.getString(schema.eventIdentifierColumn()),
@@ -212,7 +234,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
 
     @Override
     public DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException {
-        return (DomainEventData<?>) getTrackedEventData(resultSet);
+        return (DomainEventData<?>) getTrackedEventData(resultSet, null);
     }
 
     @Override

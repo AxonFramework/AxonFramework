@@ -60,7 +60,7 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
         this.transactionManager = transactionManager;
         ConnectionProvider connectionProvider = new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection);
         TransactionManager axonTransactionManager = new SpringTransactionManager(transactionManager);
-        this.eventStorageEngine = new JdbcEventStorageEngine(connectionProvider, axonTransactionManager);
+        this.eventStorageEngine = new JdbcEventStorageEngine(connectionProvider);
         this.eventStore = new EmbeddedEventStore(eventStorageEngine);
         this.transactionManagingInterceptor = new TransactionManagingInterceptor<>(axonTransactionManager);
     }

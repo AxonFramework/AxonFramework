@@ -18,29 +18,24 @@ import java.util.Objects;
 /**
  * @author Rene de Waele
  */
-public class GlobalIndexTrackingToken implements TrackingToken {
+public class GlobalSequenceTrackingToken implements TrackingToken {
 
     private final long globalIndex;
 
-    public GlobalIndexTrackingToken(long globalIndex) {
+    public GlobalSequenceTrackingToken(long globalIndex) {
         this.globalIndex = globalIndex;
-    }
-
-    @Override
-    public boolean isGuaranteedNext(TrackingToken otherToken) {
-        return ((GlobalIndexTrackingToken) otherToken).globalIndex - globalIndex == 1;
     }
 
     public long getGlobalIndex() {
         return globalIndex;
     }
 
-    public GlobalIndexTrackingToken offsetBy(int offset) {
-        return new GlobalIndexTrackingToken(globalIndex + offset);
+    public GlobalSequenceTrackingToken offsetBy(int offset) {
+        return new GlobalSequenceTrackingToken(globalIndex + offset);
     }
 
-    public GlobalIndexTrackingToken next() {
-        return new GlobalIndexTrackingToken(globalIndex + 1);
+    public GlobalSequenceTrackingToken next() {
+        return new GlobalSequenceTrackingToken(globalIndex + 1);
     }
 
     @Override
@@ -51,7 +46,7 @@ public class GlobalIndexTrackingToken implements TrackingToken {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        GlobalIndexTrackingToken that = (GlobalIndexTrackingToken) o;
+        GlobalSequenceTrackingToken that = (GlobalSequenceTrackingToken) o;
         return globalIndex == that.globalIndex;
     }
 
@@ -62,7 +57,7 @@ public class GlobalIndexTrackingToken implements TrackingToken {
 
     @Override
     public int compareTo(TrackingToken o) {
-        return Long.compare(globalIndex, ((GlobalIndexTrackingToken) o).globalIndex);
+        return Long.compare(globalIndex, ((GlobalSequenceTrackingToken) o).globalIndex);
     }
 
     @Override

@@ -29,7 +29,7 @@ public class TrackingTokenParameterResolverFactoryTest {
         assertNotNull(resolver);
         GenericEventMessage<String> message = new GenericEventMessage<>("test");
         assertFalse(resolver.matches(message));
-        GlobalIndexTrackingToken trackingToken = new GlobalIndexTrackingToken(1L);
+        GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(1L);
         GenericTrackedEventMessage<String> trackedEventMessage = new GenericTrackedEventMessage<>(trackingToken,
                                                                                        message);
         assertTrue(resolver.matches(trackedEventMessage));

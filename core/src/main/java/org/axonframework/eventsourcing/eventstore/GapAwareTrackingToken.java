@@ -13,8 +13,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import java.util.Objects;
-import java.util.SortedSet;
+import java.util.*;
+import java.util.stream.LongStream;
 
 /**
  * Implementation of a {@link TrackingToken} that uses the global insertion sequence number of the event to determine
@@ -30,21 +30,68 @@ import java.util.SortedSet;
  */
 public class GapAwareTrackingToken implements TrackingToken {
 
+    private static final Comparator<GapAwareTrackingToken> COMPARATOR =
+            Comparator.comparingLong(GapAwareTrackingToken::getIndex).thenComparing((t1, t2) -> {
+                if (t1.gaps.equals(t2.gaps)) {
+                    return 0;
+                }
+                int sizeDelta = t1.gaps.size() - t2.gaps.size();
+                if (sizeDelta != 0) {
+                    return -sizeDelta;
+                }
+                Iterator<Long> it1 = t1.gaps.iterator(), it2 = t2.gaps.iterator();
+                while (it1.hasNext()) {
+                    int sign = Long.signum(it1.next() - it2.next());
+                    if (sign != 0) {
+                        return sign;
+                    }
+                }
+                throw new AssertionError("This point should be unreachable");
+            });
+
     private final long index;
     private final SortedSet<Long> gaps;
 
-    public GapAwareTrackingToken(long index, SortedSet<Long> gaps) {
+    public static GapAwareTrackingToken newInstance(long index, Collection<Long> gaps) {
+        if (gaps.isEmpty()) {
+            return new GapAwareTrackingToken(index, Collections.emptySortedSet());
+        }
+        SortedSet<Long> gapSet = new TreeSet<>(gaps);
+        if (gapSet.last() >= index) {
+            throw new IllegalArgumentException(
+                    String.format("Gap indices [%s] should all be smaller than head index [%d]", gaps, index));
+        }
+        return new GapAwareTrackingToken(index, gapSet);
+    }
+
+    private GapAwareTrackingToken(long index, SortedSet<Long> gaps) {
         this.index = index;
         this.gaps = gaps;
     }
 
-    @Override
-    public boolean isGuaranteedNext(TrackingToken otherToken) {
-        return ((GapAwareTrackingToken) otherToken).index - index == 1;
+    public GapAwareTrackingToken advanceTo(long index, int maxGapOffset) {
+        long newIndex;
+        SortedSet<Long> gaps = new TreeSet<>(this.gaps);
+        if (gaps.remove(index)) {
+            newIndex = this.index;
+        } else if (index > this.index) {
+            newIndex = index;
+            LongStream.range(this.index + 1L, index).forEach(gaps::add);
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "The given index [%d] should be larger than the token index [%d] or one of the token's gaps [%s]",
+                    index, this.index, gaps));
+        }
+        gaps = gaps.tailSet(newIndex - maxGapOffset);
+        return new GapAwareTrackingToken(newIndex, gaps);
     }
 
     public long getIndex() {
         return index;
+    }
+
+    public SortedSet<Long> getGaps() {
+        return Collections.unmodifiableSortedSet(gaps);
     }
 
     public GapAwareTrackingToken next() {
@@ -53,11 +100,10 @@ public class GapAwareTrackingToken implements TrackingToken {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) { return true; }
+        if (o == null || getClass() != o.getClass()) { return false; }
         GapAwareTrackingToken that = (GapAwareTrackingToken) o;
-        return index == that.index &&
-                Objects.equals(gaps, that.gaps);
+        return index == that.index && Objects.equals(gaps, that.gaps);
     }
 
     @Override
@@ -67,14 +113,11 @@ public class GapAwareTrackingToken implements TrackingToken {
 
     @Override
     public int compareTo(TrackingToken o) {
-        return Long.compare(index, ((GapAwareTrackingToken) o).index);
+        return COMPARATOR.compare(this, (GapAwareTrackingToken) o);
     }
 
     @Override
     public String toString() {
-        return "GapAwareTrackingToken{" +
-                "index=" + index +
-                ", gaps=" + gaps +
-                '}';
+        return "GapAwareTrackingToken{" + "index=" + index + ", gaps=" + gaps + '}';
     }
 }

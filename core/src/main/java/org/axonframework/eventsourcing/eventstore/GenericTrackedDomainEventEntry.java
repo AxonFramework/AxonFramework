@@ -19,12 +19,14 @@ package org.axonframework.eventsourcing.eventstore;
  *
  * @author Rene de Waele
  */
-public class GenericTrackedDomainEventEntry<T> extends AbstractTrackedDomainEventEntry<T> {
+public class GenericTrackedDomainEventEntry<T> extends AbstractDomainEventEntry<T> implements TrackedEventData<T> {
+
+    private final TrackingToken trackingToken;
 
     /**
      * Reconstruct an event entry from a stored object.
      *
-     * @param globalIndex         The global index of the event in the underlying storage
+     * @param trackingToken       The tracking token of the event entry
      * @param type                The type of aggregate that published this event
      * @param aggregateIdentifier The identifier of the aggregate that published this event
      * @param sequenceNumber      The sequence number of the event in the aggregate
@@ -35,10 +37,24 @@ public class GenericTrackedDomainEventEntry<T> extends AbstractTrackedDomainEven
      * @param payload             The serialized payload
      * @param metaData            The serialized metadata
      */
-    public GenericTrackedDomainEventEntry(long globalIndex, String type, String aggregateIdentifier,
+    public GenericTrackedDomainEventEntry(TrackingToken trackingToken, String type, String aggregateIdentifier,
                                           long sequenceNumber, String eventIdentifier, Object timestamp,
                                           String payloadType, String payloadRevision, T payload, T metaData) {
-        super(globalIndex, eventIdentifier, timestamp, payloadType, payloadRevision, payload, metaData, type,
-              aggregateIdentifier, sequenceNumber);
+        super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timestamp, payloadType, payloadRevision,
+                payload, metaData);
+        this.trackingToken = trackingToken;
+    }
+
+    public GenericTrackedDomainEventEntry(long globalSequence, String type, String aggregateIdentifier,
+                                          long sequenceNumber, String eventIdentifier, Object timestamp,
+                                          String payloadType, String payloadRevision, T payload, T metaData) {
+        super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timestamp, payloadType, payloadRevision,
+              payload, metaData);
+        this.trackingToken = new GlobalSequenceTrackingToken(globalSequence);
+    }
+
+    @Override
+    public TrackingToken trackingToken() {
+        return trackingToken;
     }
 }
