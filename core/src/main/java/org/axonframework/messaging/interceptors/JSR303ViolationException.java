@@ -76,7 +76,7 @@ public class JSR303ViolationException extends AxonNonTransientException {
             msg += " " + violation.getMessage();
             sortedViolations.add(msg);
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Iterator<String> it = sortedViolations.iterator();
         while (it.hasNext()) {
             sb.append(it.next());
