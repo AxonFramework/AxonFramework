@@ -74,7 +74,7 @@ public class SpringAggregateSnapshotterTest {
                             }
                         }));
         testSubject.setEventStore(mockEventStore);
-        testSubject.afterPropertiesSet();
+        testSubject.start();
         mockTransactionManager = mock(PlatformTransactionManager.class);
         aggregateIdentifier = UUID.randomUUID();
 
@@ -96,7 +96,7 @@ public class SpringAggregateSnapshotterTest {
     @Test
     public void testSnapshotCreated_NewlyCreatedTransactionCommitted() throws Exception {
         testSubject.setTransactionManager(mockTransactionManager);
-        testSubject.afterPropertiesSet();
+        testSubject.start();
         SimpleTransactionStatus newlyCreatedTransaction = new SimpleTransactionStatus(true);
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(newlyCreatedTransaction);
@@ -110,7 +110,7 @@ public class SpringAggregateSnapshotterTest {
     @Test
     public void testSnapshotCreated_ExistingTransactionNotCommitted() throws Exception {
         testSubject.setTransactionManager(mockTransactionManager);
-        testSubject.afterPropertiesSet();
+        testSubject.start();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
@@ -124,7 +124,7 @@ public class SpringAggregateSnapshotterTest {
     @Test
     public void testSnapshotCreated_ExistingTransactionNotRolledBack() throws Exception {
         testSubject.setTransactionManager(mockTransactionManager);
-        testSubject.afterPropertiesSet();
+        testSubject.start();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(false);
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
@@ -141,7 +141,7 @@ public class SpringAggregateSnapshotterTest {
     @Test
     public void testSnapshotCreated_NewTransactionRolledBack() throws Exception {
         testSubject.setTransactionManager(mockTransactionManager);
-        testSubject.afterPropertiesSet();
+        testSubject.start();
         SimpleTransactionStatus existingTransaction = new SimpleTransactionStatus(true);
         when(mockTransactionManager.getTransaction(isA(TransactionDefinition.class)))
                 .thenReturn(existingTransaction);
