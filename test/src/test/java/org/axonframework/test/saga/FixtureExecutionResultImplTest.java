@@ -149,7 +149,7 @@ public class FixtureExecutionResultImplTest {
             testSubject.expectDispatchedCommandsEqualTo(new SimpleCommand("Second"), new SimpleCommand("Thrid"));
             fail("Expected exception");
         } catch (AxonAssertionError e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("expected <Second>"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(CommandValidator.REASON_COMMAND_MISMATCH));
         }
     }
 
@@ -162,7 +162,7 @@ public class FixtureExecutionResultImplTest {
             testSubject.expectDispatchedCommandsEqualTo("Second", new SimpleCommand("Thrid"));
             fail("Expected exception");
         } catch (AxonAssertionError e) {
-            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains("Expected <String>"));
+            assertTrue("Wrong message: " + e.getMessage(), e.getMessage().contains(CommandValidator.REASON_COMMAND_MISMATCH));
         }
     }
 

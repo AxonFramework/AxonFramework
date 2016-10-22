@@ -41,8 +41,8 @@ public class CommandValidator {
 
     private final RecordingCommandBus commandBus;
     private final FieldFilter fieldFilter;
-    private final static String REASON_SIZE_MISMATCH = "Number of commands dispatched is equal.";
-    private final static String REASON_COMMAND_MISMATCH = "Expected command is present in actual list.";
+    public final static String REASON_SIZE_MISMATCH = "Number of commands dispatched is equal.";
+    public final static String REASON_COMMAND_MISMATCH = "Expected command is not present in actual list.";
 
     /**
      * Creates a validator with {@link AllFieldsFilter} which monitors the given <code>commandBus</code>.
@@ -76,13 +76,17 @@ public class CommandValidator {
      *
      * @param expected The commands expected to have been published on the bus
      */
-    public void assertDispatchedEqualTo(Object... expected) {
-        assertThat(CommandValidator.REASON_SIZE_MISMATCH,
-                commandBus.getDispatchedCommands().size(),
-                Matchers.equalTo(expected.length));
-        assertThat(CommandValidator.REASON_COMMAND_MISMATCH,
-                commandBus.getDispatchedCommands(),
-                Matchers.payloadsMatching(Matchers.exactSequenceOf(equalsTo(expected))));
+    public void assertDispatchedEqualTo(Object... expected) throws AxonAssertionError {
+        try {
+            assertThat(CommandValidator.REASON_SIZE_MISMATCH,
+                    commandBus.getDispatchedCommands().size(),
+                    Matchers.equalTo(expected.length));
+            assertThat(CommandValidator.REASON_COMMAND_MISMATCH,
+                    commandBus.getDispatchedCommands(),
+                    Matchers.payloadsMatching(Matchers.exactSequenceOf(equalsTo(expected))));
+        } catch (AssertionError e) {
+            throw new AxonAssertionError(e.getMessage());
+        }
     }
 
     /**
@@ -90,13 +94,17 @@ public class CommandValidator {
      *
      * @param expected The commands expected to have been published on the bus
      */
-    public void assertDispatchedEqualToIgnoringSequence(Object... expected) {
-        assertThat(CommandValidator.REASON_SIZE_MISMATCH,
-                commandBus.getDispatchedCommands().size(),
-                Matchers.equalTo(expected.length));
-        assertThat(CommandValidator.REASON_COMMAND_MISMATCH,
-                commandBus.getDispatchedCommands(),
-                Matchers.payloadsMatching(Matchers.listWithAllOf(equalsTo(expected))));
+    public void assertDispatchedEqualToIgnoringSequence(Object... expected) throws AxonAssertionError {
+        try {
+            assertThat(CommandValidator.REASON_SIZE_MISMATCH,
+                    commandBus.getDispatchedCommands().size(),
+                    Matchers.equalTo(expected.length));
+            assertThat(CommandValidator.REASON_COMMAND_MISMATCH,
+                    commandBus.getDispatchedCommands(),
+                    Matchers.payloadsMatching(Matchers.listWithAllOf(equalsTo(expected))));
+        } catch (AssertionError e) {
+            throw new AxonAssertionError(e.getMessage());
+        }
     }
 
     private Matcher[] equalsTo(Object... expected) {
