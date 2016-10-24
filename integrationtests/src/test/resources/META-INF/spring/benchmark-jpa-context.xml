@@ -27,9 +27,7 @@
     </bean>
 
     <bean id="eventStorageEngine" class="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine">
-        <constructor-arg name="dataSource" ref="dataSource"/>
         <constructor-arg name="entityManagerProvider" ref="entityManagerProvider"/>
-        <constructor-arg name="transactionManager" ref="axonTransactionManager"/>
     </bean>
 
     <!-- Infrastructure configuration -->
@@ -43,13 +41,13 @@
         <property name="jpaVendorAdapter">
             <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
                 <property name="databasePlatform" value="${hibernate.sql.dialect}"/>
-                <property name="generateDdl" value="${hibernate.sql.generateddl}"/>
                 <property name="showSql" value="${hibernate.sql.show}"/>
             </bean>
         </property>
         <property name="dataSource" ref="dataSource"/>
         <property name="jpaPropertyMap">
             <map>
+                <entry key="javax.persistence.schema-generation.database.action" value="${javax.schema.generation}"/>
                 <entry key="hibernate.jdbc.batch_size" value="20"/>
             </map>
         </property>

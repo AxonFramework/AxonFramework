@@ -159,7 +159,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Shut down the processor.
      */
     @Override
-    public void shutdown() {
+    public void shutDown() {
         if (state != State.SHUT_DOWN) {
             state = State.SHUT_DOWN;
             executorService.shutdown();

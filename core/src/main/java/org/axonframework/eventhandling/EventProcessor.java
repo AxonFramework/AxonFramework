@@ -67,5 +67,5 @@ public interface EventProcessor {
     /**
      * Stop processing events.
      */
-    void shutdown();
+    void shutDown();
 }

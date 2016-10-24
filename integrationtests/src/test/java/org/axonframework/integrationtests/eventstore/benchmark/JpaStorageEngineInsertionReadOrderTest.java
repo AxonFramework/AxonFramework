@@ -181,9 +181,10 @@ public class JpaStorageEngineInsertionReadOrderTest {
                     testSubject.readEvents(lastToken, false).collect(Collectors.toList());
             for (TrackedEventMessage<?> message : batch) {
                 result.add(message);
-                logger.info(
-                        message.getPayload() + " / " + ((DomainEventMessage<?>) message).getSequenceNumber() + " => " +
-                                message.trackingToken().toString());
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message.getPayload() + " / " + ((DomainEventMessage<?>) message).getSequenceNumber() +
+                                         " => " + message.trackingToken().toString());
+                }
                 lastToken = message.trackingToken();
             }
         }

@@ -94,6 +94,10 @@ public class GapAwareTrackingToken implements TrackingToken {
         return Collections.unmodifiableSortedSet(gaps);
     }
 
+    public boolean hasGaps() {
+        return !gaps.isEmpty();
+    }
+
     public GapAwareTrackingToken next() {
         return new GapAwareTrackingToken(index + 1, gaps);
     }

@@ -13,19 +13,12 @@
 
 package org.axonframework.integrationtests.eventstore.benchmark.jdbc;
 
-import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.MySqlEventTableFactory;
 import org.axonframework.integrationtests.eventstore.benchmark.AbstractEventStoreBenchmark;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
@@ -34,39 +27,29 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Date;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author Jettro Coenradie
+ * @author Rene de Waele
  */
 public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
 
-    private EventStore eventStore;
-    private JdbcEventStorageEngine eventStorageEngine;
-    private DataSource dataSource;
-    private PlatformTransactionManager transactionManager;
-    private MessageHandlerInterceptor<Message<?>> transactionManagingInterceptor;
+    private final DataSource dataSource;
+    private final PlatformTransactionManager transactionManager;
 
     public static void main(String[] args) throws Exception {
-        AbstractEventStoreBenchmark benchmark = prepareBenchMark("META-INF/spring/benchmark-jdbc-context.xml");
-        benchmark.startBenchMark();
-        System.out.println(String.format("End benchmark at: %s", new Date()));
+        ApplicationContext context = new ClassPathXmlApplicationContext("META-INF/spring/benchmark-jdbc-context.xml");
+        AbstractEventStoreBenchmark benchmark = context.getBean(AbstractEventStoreBenchmark.class);
+        benchmark.start();
     }
 
     public JdbcEventStoreBenchmark(DataSource dataSource, PlatformTransactionManager transactionManager) {
+        super(new JdbcEventStorageEngine(new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection)));
         this.dataSource = dataSource;
         this.transactionManager = transactionManager;
-        ConnectionProvider connectionProvider = new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection);
-        TransactionManager axonTransactionManager = new SpringTransactionManager(transactionManager);
-        this.eventStorageEngine = new JdbcEventStorageEngine(connectionProvider);
-        this.eventStore = new EmbeddedEventStore(eventStorageEngine);
-        this.transactionManagingInterceptor = new TransactionManagingInterceptor<>(axonTransactionManager);
     }
 
     @Override
-    protected void prepareEventStore() {
+    protected void prepareForBenchmark() {
         TransactionTemplate template = new TransactionTemplate(transactionManager);
         template.execute(new TransactionCallbackWithoutResult() {
             @Override
@@ -75,31 +58,12 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
                     Connection connection = dataSource.getConnection();
                     connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
                     connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-                    eventStorageEngine.createSchema(MySqlEventTableFactory.INSTANCE);
+                    ((JdbcEventStorageEngine) getStorageEngine()).createSchema(MySqlEventTableFactory.INSTANCE);
                 } catch (SQLException e) {
-                    throw new IllegalStateException(e);
+                    throw new IllegalStateException("Failed to drop or create event table", e);
                 }
             }
         });
+        super.prepareForBenchmark();
     }
-
-    @Override
-    protected Runnable getRunnableInstance() {
-        return new TransactionalBenchmark();
-    }
-
-    private class TransactionalBenchmark implements Runnable {
-
-        @Override
-        public void run() {
-            final String aggregateId = UUID.randomUUID().toString();
-            // the inner class forces us into a final variable, hence the AtomicInteger
-            final AtomicInteger eventSequence = new AtomicInteger(0);
-            for (int t = 0; t < getTransactionCount(); t++) {
-                new DefaultUnitOfWork<>(null).execute(() -> eventSequence
-                        .set(saveAndLoadLargeNumberOfEvents(aggregateId, eventStore, eventSequence.get())));
-            }
-        }
-    }
-
 }

@@ -1,97 +1,167 @@
-/*
- * Copyright (c) 2010-2012. Axon Framework
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.axonframework.integrationtests.eventstore.benchmark;
 
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.integrationtests.commandhandling.StubDomainEvent;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.util.Assert;
+import org.axonframework.eventhandling.*;
+import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
+import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.GapAwareTrackingToken;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StopWatch;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.text.DecimalFormat;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.NavigableSet;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 
 /**
- * Base class for benchmarks of eventstore implementations.
- *
- * @author Jettro Coenradie
+ * @author Rene de Waele
  */
 public abstract class AbstractEventStoreBenchmark {
 
-    private static final int THREAD_COUNT = 100;
-    private static final int TRANSACTION_COUNT = 50;
-    private static final int TRANSACTION_SIZE = 50;
+    private static final int DEFAULT_THREAD_COUNT = 100, DEFAULT_BATCH_SIZE = 50, DEFAULT_BATCH_COUNT = 50;
+    private static final DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
-    protected static AbstractEventStoreBenchmark prepareBenchMark(String... appContexts) {
-        Assert.notEmpty(appContexts);
-        ApplicationContext context = new ClassPathXmlApplicationContext(appContexts);
-        return context.getBean(AbstractEventStoreBenchmark.class);
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final EmbeddedEventStore eventStore;
+    private final EventProcessor eventProcessor;
+    private final EventStorageEngine storageEngine;
+    private final int threadCount, batchSize, batchCount;
+    private final ExecutorService executorService;
+    private final CountDownLatch remainingEvents;
+    private final GapDetector gapDetector;
+
+    protected AbstractEventStoreBenchmark(EventStorageEngine storageEngine) {
+        this(storageEngine, DEFAULT_THREAD_COUNT, DEFAULT_BATCH_SIZE, DEFAULT_BATCH_COUNT);
     }
 
-    protected abstract void prepareEventStore();
-
-    public void startBenchMark() throws InterruptedException {
-        prepareEventStore();
-
-        System.out.println(String.format("Start benchmark at: %s", new Date()));
-        long start = System.currentTimeMillis();
-        List<Thread> threads = new ArrayList<>();
-        for (int t = 0; t < getThreadCount(); t++) {
-            Thread thread = new Thread(getRunnableInstance());
-            thread.start();
-            threads.add(thread);
-        }
-        for (Thread thread : threads) {
-            thread.join();
-        }
-        long end = System.currentTimeMillis();
-
-        System.out.println(String.format(
-                "Result (%s): %s threads concurrently wrote %s * %s events each in %s milliseconds. That is an average of %.0f events per second",
-                getClass().getSimpleName(), getThreadCount(), getTransactionCount(), getTransactionSize(),
-                (end - start), (((float) getThreadCount() * getTransactionCount() * getTransactionSize()) /
-                        ((float) (end - start) / 1000))));
-        System.out.println(String.format("End writing at: %s", new Date()));
+    protected AbstractEventStoreBenchmark(EventStorageEngine storageEngine, int threadCount, int batchSize, int batchCount) {
+        this.eventStore = new EmbeddedEventStore(this.storageEngine = storageEngine);
+        this.threadCount = threadCount;
+        this.batchSize = batchSize;
+        this.batchCount = batchCount;
+        this.remainingEvents = new CountDownLatch(getTotalEventCount());
+        this.gapDetector = new GapDetector();
+        this.eventProcessor =
+                new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(gapDetector), eventStore,
+                                           new InMemoryTokenStore());
+        this.executorService = Executors.newFixedThreadPool(threadCount);
     }
 
-    protected abstract Runnable getRunnableInstance();
-
-    protected int saveAndLoadLargeNumberOfEvents(String aggregateId, EventStore eventStore, int eventSequence) {
-        List<DomainEventMessage<?>> events = new ArrayList<>(getTransactionSize());
-        for (int t = 0; t < getTransactionSize(); t++) {
-            events.add(
-                    new GenericDomainEventMessage<>("test", aggregateId, eventSequence++, new StubDomainEvent(), null));
+    public void start() {
+        logger.info("Preparing for benchmark", getTotalEventCount());
+        List<Callable<Object>> storageJobs = createStorageJobs(threadCount, batchSize, batchCount);
+        Collections.shuffle(storageJobs);
+        logger.info("Created {} event storage jobs", storageJobs.size());
+        prepareForBenchmark();
+        logger.info("Started benchmark. Storing {} events", getTotalEventCount());
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start("Storing events");
+        try {
+            executorService.invokeAll(storageJobs);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Benchmark was interrupted", e);
         }
+        stopWatch.stop();
+        logger.info("Stored {} events in {} seconds. That's about {} events/sec", getTotalEventCount(),
+                    decimalFormat.format(stopWatch.getTotalTimeSeconds()),
+                    (int) (getTotalEventCount() / stopWatch.getTotalTimeSeconds()));
+        stopWatch.start("Waiting for event processor to catch up");
+        try {
+            remainingEvents.await(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Benchmark was interrupted", e);
+        }
+        stopWatch.stop();
+        logger.info(
+                "Read {} events in {} seconds. That's about {} events/sec. {} tracking tokens had one or more gaps. " +
+                        "Largest gap was {}.", getTotalEventCount(),
+                decimalFormat.format(stopWatch.getTotalTimeSeconds()),
+                (int) (getTotalEventCount() / stopWatch.getTotalTimeSeconds()), gapDetector.getTokensWithGaps(),
+                gapDetector.getLargestGap());
+        logger.info("Cleaning up");
+        cleanUpAfterBenchmark();
+    }
+
+    protected void prepareForBenchmark() {
+        eventProcessor.start();
+    }
+
+    protected void cleanUpAfterBenchmark() {
+        executorService.shutdown();
+        eventProcessor.shutDown();
+        eventStore.shutDown();
+    }
+
+    protected List<Callable<Object>> createStorageJobs(int threadCount, int batchSize, int batchCount) {
+        return IntStream.range(0, threadCount)
+                .mapToObj(i -> createStorageJobs(String.valueOf(i), batchSize, batchCount)).flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    protected List<Callable<Object>> createStorageJobs(String aggregateId, int batchSize, int batchCount) {
+        return IntStream.range(0, batchCount).mapToObj(i -> (Callable<Object>) () -> {
+            executeStorageJob(aggregateId, i, batchSize);
+            return i;
+        }).collect(Collectors.toList());
+    }
+
+    protected void executeStorageJob(String aggregateId, int batchIndex, int batchSize) {
+        UnitOfWork<?> unitOfWork = new DefaultUnitOfWork<>(null);
+        unitOfWork.execute(() -> storeEvents(createEvents(aggregateId, batchIndex * batchSize, batchSize)));
+    }
+
+    protected EventMessage<?>[] createEvents(String aggregateId, int startSequenceNumber, int count) {
+        Stream<EventMessage<?>> stream = IntStream.range(startSequenceNumber, startSequenceNumber + count)
+                .mapToObj(sequenceNumber -> createEvent(aggregateId, sequenceNumber));
+        return stream.toArray(EventMessage[]::new);
+    }
+
+    protected void storeEvents(EventMessage<?>... events) {
         eventStore.publish(events);
-        return eventSequence;
     }
 
-    protected int getThreadCount() {
-        return THREAD_COUNT;
+    public int getTotalEventCount() {
+        return threadCount * batchSize * batchCount;
     }
 
-    protected int getTransactionCount() {
-        return TRANSACTION_COUNT;
+    protected EventStorageEngine getStorageEngine() {
+        return storageEngine;
     }
 
-    protected int getTransactionSize() {
-        return TRANSACTION_SIZE;
+    private class GapDetector implements EventListener {
+
+        private final NavigableSet<GapAwareTrackingToken> trackingTokensWithGap = new ConcurrentSkipListSet<>();
+
+        @Override
+        public void handle(EventMessage event) throws Exception {
+            remainingEvents.countDown();
+            TrackedEventMessage<?> trackedEvent = (TrackedEventMessage<?>) event;
+            if (trackedEvent.trackingToken() instanceof GapAwareTrackingToken) {
+                GapAwareTrackingToken trackingToken = (GapAwareTrackingToken) trackedEvent.trackingToken();
+                if (trackingToken.hasGaps()) {
+                    trackingTokensWithGap.add(trackingToken);
+                }
+            }
+        }
+
+        private int getTokensWithGaps() {
+            return trackingTokensWithGap.size();
+        }
+
+        private int getLargestGap() {
+            return trackingTokensWithGap.stream()
+                    .reduce((t1, t2) -> t1.getGaps().size() > t2.getGaps().size() ? t1 : t2)
+                    .map(GapAwareTrackingToken::getGaps).map(Collection::size).orElse(0);
+        }
     }
 }
