@@ -58,7 +58,7 @@ public abstract class EventUtils {
             return (DomainEventMessage<?>) eventMessage;
         }
         return new GenericDomainEventMessage<>(null, eventMessage.getIdentifier(), 0L, eventMessage,
-                                               eventMessage.getTimestamp());
+                                               eventMessage::getTimestamp);
     }
 
     /**
@@ -90,11 +90,11 @@ public abstract class EventUtils {
                 return new GenericTrackedDomainEventMessage<>(ir.getTrackingToken().get(), ir.getAggregateType().get(),
                                                               ir.getAggregateIdentifier().get(),
                                                               ir.getSequenceNumber().get(), serializedMessage,
-                                                              ir.getTimestamp());
+                                                              ir::getTimestamp);
             } else {
                 return new GenericDomainEventMessage<>(ir.getAggregateType().get(), ir.getAggregateIdentifier().get(),
                                                        ir.getSequenceNumber().get(), serializedMessage,
-                                                       ir.getTimestamp());
+                                                       ir::getTimestamp);
             }
         });
     }
@@ -129,10 +129,10 @@ public abstract class EventUtils {
                                                               ir.getAggregateType().orElse(null),
                                                               ir.getAggregateIdentifier().get(),
                                                               ir.getSequenceNumber().get(), serializedMessage,
-                                                              ir.getTimestamp());
+                                                              ir::getTimestamp);
             } else {
                 return new GenericTrackedEventMessage<>(ir.getTrackingToken().get(), serializedMessage,
-                                                        ir.getTimestamp());
+                                                        ir::getTimestamp);
             }
         });
     }

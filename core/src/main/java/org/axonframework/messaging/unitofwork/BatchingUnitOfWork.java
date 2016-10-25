@@ -39,14 +39,14 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     public BatchingUnitOfWork(List<T> messages) {
-        Assert.isFalse(messages.isEmpty(), "The list of Messages to process is empty");
+        Assert.isFalse(messages.isEmpty(), () -> "The list of Messages to process is empty");
         processingContexts = messages.stream().map(MessageProcessingContext::new).collect(Collectors.toList());
         processingContext = processingContexts.get(0);
     }
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * <p/>
      * This implementation executes the given {@code task} for each of its messages. The return value is the
      * result of the last executed task.
@@ -56,7 +56,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
-        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        Assert.state(phase() == Phase.STARTED,
+                     () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result = null;
         Exception exception = null;
         for (MessageProcessingContext<T> processingContext : processingContexts) {
@@ -92,8 +93,8 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
      * @return a Map of ExecutionResult per Message processed by this Unit of Work
      */
     public Map<Message<?>, ExecutionResult> getExecutionResults() {
-        return processingContexts.stream().collect(Collectors.toMap(
-                MessageProcessingContext::getMessage, MessageProcessingContext::getExecutionResult));
+        return processingContexts.stream().collect(
+                Collectors.toMap(MessageProcessingContext::getMessage, MessageProcessingContext::getExecutionResult));
     }
 
     @Override
@@ -114,8 +115,9 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
 
     @Override
     protected void notifyHandlers(Phase phase) {
-        Iterator<MessageProcessingContext<T>> iterator = phase.isReverseCallbackOrder()
-                ? new LinkedList<>(processingContexts).descendingIterator() : processingContexts.iterator();
+        Iterator<MessageProcessingContext<T>> iterator =
+                phase.isReverseCallbackOrder() ? new LinkedList<>(processingContexts).descendingIterator() :
+                        processingContexts.iterator();
         iterator.forEachRemaining(context -> (processingContext = context).notifyHandlers(this, phase));
     }
 

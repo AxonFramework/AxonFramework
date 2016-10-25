@@ -72,25 +72,24 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
-        return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(),
-                            byte[].class, HsqlEventTableFactory.INSTANCE);
+        return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(), byte[].class,
+                            HsqlEventTableFactory.INSTANCE);
 
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
         return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver, new EventSchema(),
-                            byte[].class,
-                            HsqlEventTableFactory.INSTANCE);
+                            byte[].class, HsqlEventTableFactory.INSTANCE);
     }
 
     protected AbstractJdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
                                                           PersistenceExceptionResolver persistenceExceptionResolver,
-                                                          EventSchema eventSchema, Class<?> dataType, EventTableFactory tableFactory) {
-        AbstractJdbcEventStorageEngine result =
+                                                          EventSchema eventSchema, Class<?> dataType,
+                                                          EventTableFactory tableFactory) {
+        JdbcEventStorageEngine result =
                 new JdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
-                                           dataSource::getConnection, dataType,
-                                           eventSchema, null);
+                                           dataSource::getConnection, dataType, eventSchema, null);
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();

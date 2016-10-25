@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 
 import java.util.List;
@@ -66,8 +65,7 @@ public class EventStoreTestUtils {
 
     public static DomainEventMessage<String> createEvent(String type, String eventId, String aggregateId,
                                                          long sequenceNumber, String payload, MetaData metaData) {
-        return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber,
-                                               new GenericMessage<>(eventId, payload, metaData), now());
+        return new GenericDomainEventMessage<>(type, aggregateId, sequenceNumber, payload, metaData, eventId, now());
     }
 
     private EventStoreTestUtils() {

@@ -55,9 +55,6 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
         Connection connection = uow.root().getResource(CONNECTION_RESOURCE_NAME);
         if (connection == null || connection.isClosed()) {
             final Connection delegateConnection = delegate.getConnection();
-            if (delegateConnection.getAutoCommit()) {
-                delegateConnection.setAutoCommit(false);
-            }
             connection = ConnectionWrapperFactory.wrap(delegateConnection,
                                                        UoWAttachedConnection.class,
                                                        new UoWAttachedConnectionImpl(delegateConnection),

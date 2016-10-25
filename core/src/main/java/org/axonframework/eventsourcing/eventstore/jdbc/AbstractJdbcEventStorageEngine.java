@@ -15,9 +15,8 @@ package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
@@ -30,12 +29,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
-import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.io.IOUtils.closeQuietly;
 
@@ -73,172 +69,6 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     }
 
     /**
-     * Creates a statement to append the given {@code event} to the event storage using given {@code connection} to the
-     * database. Use the given {@code serializer} to serialize the payload and metadata of the event.
-     *
-     * @param connection The connection to the database
-     * @param event      The event to append
-     * @param serializer The serializer that should be used when serializing the event's payload and metadata
-     * @return A {@link PreparedStatement} that appends the event when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
-     */
-    protected abstract PreparedStatement appendEvent(Connection connection, DomainEventMessage<?> event,
-                                                     Serializer serializer) throws SQLException;
-
-    /**
-     * Creates a statement to append the given {@code snapshot} to the event storage using given {@code connection} to
-     * the database. Use the given {@code serializer} to serialize the payload and metadata of the event.
-     *
-     * @param connection The connection to the database
-     * @param snapshot   The snapshot to append
-     * @param serializer The serializer that should be used when serializing the event's payload and metadata
-     * @return A {@link PreparedStatement} that appends the snapshot when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
-     */
-    protected abstract PreparedStatement appendSnapshot(Connection connection, DomainEventMessage<?> snapshot,
-                                                        Serializer serializer) throws SQLException;
-
-    /**
-     * Creates a statement to delete all snapshots of the aggregate with given {@code aggregateIdentifier}.
-     *
-     * @param connection          The connection to the database
-     * @param aggregateIdentifier The identifier of the aggregate whose snapshots to delete
-     * @return A {@link PreparedStatement} that deletes all the aggregate's snapshots when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
-     */
-    protected abstract PreparedStatement deleteSnapshots(Connection connection,
-                                                         String aggregateIdentifier) throws SQLException;
-
-    /**
-     * Creates a statement to read domain event entries for an aggregate with given identifier starting with the first
-     * entry having a sequence number that is equal or larger than the given {@code firstSequenceNumber}.
-     *
-     * @param connection          The connection to the database
-     * @param identifier          The identifier of the aggregate
-     * @param firstSequenceNumber The expected sequence number of the first returned entry
-     * @return A {@link PreparedStatement} that returns event entries for the given query when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
-     */
-    protected abstract PreparedStatement readEventData(Connection connection, String identifier,
-                                                       long firstSequenceNumber) throws SQLException;
-
-    /**
-     * Creates a statement to read tracked event entries stored since given tracking token. Pass a {@code trackingToken}
-     * of {@code null} to create a statement for all entries in the storage.
-     *
-     * @param connection The connection to the database
-     * @param lastToken  Object describing the global index of the last processed event or {@code null} to return all
-     *                   entries in the store
-     * @return A {@link PreparedStatement} that returns event entries for the given query when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
-     */
-    protected abstract PreparedStatement readEventData(Connection connection,
-                                                       TrackingToken lastToken) throws SQLException;
-
-    /**
-     * Creates a statement to read the snapshot entry of an aggregate with given identifier
-     *
-     * @param connection The connection to the database
-     * @param identifier The aggregate identifier
-     * @return A {@link PreparedStatement} that returns the last snapshot entry of the aggregate (if any) when executed
-     * @throws SQLException when an exception occurs while creating the prepared statement
-     */
-    protected abstract PreparedStatement readSnapshotData(Connection connection, String identifier) throws SQLException;
-
-    /**
-     * Extracts the next tracked event entry from the given {@code resultSet}.
-     *
-     * @param resultSet     The results of a query for tracked events
-     * @param previousToken
-     * @return The next tracked event
-     * @throws SQLException when an exception occurs while creating the event data
-     */
-    protected abstract TrackedEventData<?> getTrackedEventData(ResultSet resultSet,
-                                                               TrackingToken previousToken) throws SQLException;
-
-    /**
-     * Extracts the next domain event entry from the given {@code resultSet}.
-     *
-     * @param resultSet The results of a query for domain events of an aggregate
-     * @return The next domain event
-     * @throws SQLException when an exception occurs while creating the event data
-     */
-    protected abstract DomainEventData<?> getDomainEventData(ResultSet resultSet) throws SQLException;
-
-    /**
-     * Extracts the next snapshot entry from the given {@code resultSet}.
-     *
-     * @param resultSet The results of a query for a snapshot of an aggregate
-     * @return The next snapshot data
-     * @throws SQLException when an exception occurs while creating the event data
-     */
-    protected abstract DomainEventData<?> getSnapshotData(ResultSet resultSet) throws SQLException;
-
-    /**
-     * Performs the DDL queries to create the schema necessary for this storage engine implementation.
-     *
-     * @param schemaFactory factory of the event schema
-     * @throws EventStoreException when an error occurs executing SQL statements
-     */
-    public abstract void createSchema(EventTableFactory schemaFactory);
-
-    @Override
-    protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        return executeQuery(connection -> {
-            PreparedStatement statement = readEventData(connection, lastToken);
-            statement.setMaxRows(batchSize);
-            return statement;
-        }, resultSet -> {
-            TrackingToken previousToken = lastToken;
-            List<TrackedEventData<?>> results = new ArrayList<>();
-            while (resultSet.next()) {
-                TrackedEventData<?> next = getTrackedEventData(resultSet, previousToken);
-                results.add(next);
-                previousToken = next.trackingToken();
-            }
-            return results;
-        }, e -> new EventStoreException(format("Failed to read events from token [%s]", lastToken), e));
-    }
-
-    @Override
-    protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
-                                                                   int batchSize) {
-        return executeQuery(connection -> {
-            PreparedStatement statement = readEventData(connection, aggregateIdentifier, firstSequenceNumber);
-            statement.setMaxRows(batchSize);
-            return statement;
-        }, resultSet -> listResults(resultSet, this::getDomainEventData), e -> new EventStoreException(
-                format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
-    }
-
-    @Override
-    protected void appendEvents(List<? extends EventMessage<?>> events, Serializer serializer) {
-        if (events.isEmpty()) {
-            return;
-        }
-        executeUpdates(events.stream().map(EventUtils::asDomainEventMessage)
-                               .map(event -> connection -> appendEvent(connection, event, serializer)),
-                       e -> handlePersistenceException(e, events.get(0)));
-    }
-
-    @Override
-    protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        executeUpdates(e -> handlePersistenceException(e, snapshot),
-                       connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
-                       connection -> appendSnapshot(connection, snapshot, serializer));
-    }
-
-    @Override
-    protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        List<DomainEventData<?>> result = executeQuery(connection -> readSnapshotData(connection, aggregateIdentifier),
-                                                       resultSet -> listResults(resultSet, this::getSnapshotData),
-                                                       e -> new EventStoreException(
-                                                               format("Error reading aggregate snapshot [%s]",
-                                                                      aggregateIdentifier), e));
-        return result.stream().findFirst();
-    }
-
-    /**
      * Returns a {@link Connection} to the database.
      *
      * @return a database Connection
@@ -252,13 +82,9 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
     }
 
     protected void executeUpdates(Consumer<SQLException> errorHandler, SqlFunction... sqlFunctions) {
-        executeUpdates(Arrays.stream(sqlFunctions), errorHandler);
-    }
-
-    protected void executeUpdates(Stream<SqlFunction> sqlFunctions, Consumer<SQLException> errorHandler) {
         Connection connection = getConnection();
         try {
-            sqlFunctions.forEach(sqlFunction -> {
+            Arrays.stream(sqlFunctions).forEach(sqlFunction -> {
                 PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
                 try {
                     preparedStatement.executeUpdate();
@@ -268,6 +94,22 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
                     closeQuietly(preparedStatement);
                 }
             });
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    protected void executeBatch(SqlFunction sqlFunction, Consumer<SQLException> errorHandler) {
+        Connection connection = getConnection();
+        try {
+            PreparedStatement preparedStatement = createSqlStatement(connection, sqlFunction);
+            try {
+                preparedStatement.executeBatch();
+            } catch (SQLException e) {
+                errorHandler.accept(e);
+            } finally {
+                closeQuietly(preparedStatement);
+            }
         } finally {
             closeQuietly(connection);
         }
@@ -300,7 +142,7 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
         }
     }
 
-    private static PreparedStatement createSqlStatement(Connection connection, SqlFunction sqlFunction) {
+    protected static PreparedStatement createSqlStatement(Connection connection, SqlFunction sqlFunction) {
         try {
             return sqlFunction.apply(connection);
         } catch (SQLException e) {
@@ -308,7 +150,7 @@ public abstract class AbstractJdbcEventStorageEngine extends BatchingEventStorag
         }
     }
 
-    private static <R> List<R> listResults(ResultSet resultSet,
+    protected static <R> List<R> listResults(ResultSet resultSet,
                                            SqlResultConverter<R> singleResultConverter) throws SQLException {
         List<R> results = new ArrayList<>();
         while (resultSet.next()) {

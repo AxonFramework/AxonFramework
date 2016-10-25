@@ -17,6 +17,7 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.Message;
 
 import java.time.Instant;
+import java.util.function.Supplier;
 
 /**
  * @author Rene de Waele
@@ -29,7 +30,12 @@ public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implem
         this.trackingToken = trackingToken;
     }
 
-    public GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Instant timestamp) {
+    protected GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Instant timestamp) {
+        super(delegate, timestamp);
+        this.trackingToken = trackingToken;
+    }
+
+    public GenericTrackedEventMessage(TrackingToken trackingToken, Message<T> delegate, Supplier<Instant> timestamp) {
         super(delegate, timestamp);
         this.trackingToken = trackingToken;
     }

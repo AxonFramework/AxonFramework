@@ -54,7 +54,6 @@ public class XStreamSerializerTest {
         TestEvent actualEvent = (TestEvent) actualResult;
         assertEquals(testEvent, actualEvent);
     }
-
     
     @Test
     public void testSerializeAndDeserializeDomainEvent_WithXomUpcasters(){

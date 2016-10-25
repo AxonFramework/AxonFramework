@@ -34,7 +34,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.temporal.TemporalAccessor;
 
 /**
  * EventStorageEngine implementation that uses JDBC to store and fetch events in a way that is compatible with the event
@@ -148,8 +147,8 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
 
     @Override
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,
-                                  TemporalAccessor input) throws SQLException {
-        preparedStatement.setString(position, Instant.from(input).toString());
+                                  Instant timestamp) throws SQLException {
+        preparedStatement.setString(position, Instant.from(timestamp).toString());
     }
 
     @Override
