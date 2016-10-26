@@ -37,7 +37,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     private JDBCDataSource dataSource;
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
-    private AbstractJdbcEventStorageEngine testSubject;
+    private JdbcEventStorageEngine testSubject;
 
     @Before
     public void setUp() throws SQLException {
@@ -83,7 +83,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                             byte[].class, HsqlEventTableFactory.INSTANCE);
     }
 
-    protected AbstractJdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+    protected JdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
                                                           PersistenceExceptionResolver persistenceExceptionResolver,
                                                           EventSchema eventSchema, Class<?> dataType,
                                                           EventTableFactory tableFactory) {

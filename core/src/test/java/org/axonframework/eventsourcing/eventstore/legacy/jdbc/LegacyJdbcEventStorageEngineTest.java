@@ -16,9 +16,9 @@ package org.axonframework.eventsourcing.eventstore.legacy.jdbc;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.jdbc.AbstractJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventTableFactory;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
@@ -56,8 +56,8 @@ public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngine
         return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver);
     }
 
-    private AbstractJdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
-                                                        PersistenceExceptionResolver persistenceExceptionResolver) {
+    private JdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+                                                PersistenceExceptionResolver persistenceExceptionResolver) {
         LegacyJdbcEventStorageEngine result =
                 new LegacyJdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,
                                                  dataSource::getConnection);

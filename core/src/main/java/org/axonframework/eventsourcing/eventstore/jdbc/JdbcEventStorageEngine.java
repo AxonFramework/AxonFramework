@@ -39,6 +39,7 @@ import java.util.stream.LongStream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
+import static org.axonframework.common.jdbc.JdbcUtils.*;
 import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
@@ -50,10 +51,11 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  *
  * @author Rene de Waele
  */
-public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
+public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
 
+    private final ConnectionProvider connectionProvider;
     private final Class<?> dataType;
     private final EventSchema schema;
     private final int maxGapOffset;
@@ -95,8 +97,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
      *
      * @param serializer                   Used to serialize and deserialize event payload and metadata.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
-     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
-     *                                     persistence exceptions are not explicitly resolved.
+     * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database.
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
@@ -111,7 +112,9 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
                                   PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                   ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, batchSize, connectionProvider);
+        super(serializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
+              batchSize);
+        this.connectionProvider = connectionProvider;
         this.dataType = dataType;
         this.schema = schema;
         this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
@@ -124,7 +127,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
      * @throws EventStoreException when an error occurs executing SQL statements
      */
     public void createSchema(EventTableFactory schemaFactory) {
-        executeUpdates(e -> {
+        executeUpdates(getConnection(), e -> {
                            throw new EventStoreException("Failed to create event tables", e);
                        }, connection -> schemaFactory.createDomainEventTable(connection, schema),
                        connection -> schemaFactory.createSnapshotEventTable(connection, schema));
@@ -141,7 +144,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
                             schema.sequenceNumberColumn(), schema.typeColumn(), schema.timestampColumn(),
                             schema.payloadTypeColumn(), schema.payloadRevisionColumn(), schema.payloadColumn(),
                             schema.metaDataColumn()) + ") VALUES (?,?,?,?,?,?,?,?,?)";
-        executeBatch(connection -> {
+        executeBatch(getConnection(), connection -> {
             PreparedStatement preparedStatement = connection.prepareStatement(sql);
 
             for (EventMessage<?> eventMessage : events) {
@@ -165,7 +168,7 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
 
     @Override
     protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
-        executeUpdates(e -> handlePersistenceException(e, snapshot),
+        executeUpdates(getConnection(), e -> handlePersistenceException(e, snapshot),
                        connection -> deleteSnapshots(connection, snapshot.getAggregateIdentifier()),
                        connection -> appendSnapshot(connection, snapshot, serializer));
     }
@@ -220,17 +223,17 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
     @Override
     protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
                                                                    int batchSize) {
-        return executeQuery(connection -> {
+        return executeQuery(getConnection(), connection -> {
             PreparedStatement statement = readEventData(connection, aggregateIdentifier, firstSequenceNumber);
             statement.setMaxRows(batchSize);
             return statement;
-        }, resultSet -> listResults(resultSet, this::getDomainEventData), e -> new EventStoreException(
+        }, listResults(this::getDomainEventData), e -> new EventStoreException(
                 format("Failed to read events for aggregate [%s]", aggregateIdentifier), e));
     }
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        return executeQuery(connection -> {
+        return executeQuery(getConnection(), connection -> {
             PreparedStatement statement = readEventData(connection, lastToken);
             statement.setMaxRows(batchSize);
             return statement;
@@ -248,11 +251,10 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
 
     @Override
     protected Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        List<DomainEventData<?>> result = executeQuery(connection -> readSnapshotData(connection, aggregateIdentifier),
-                                                       resultSet -> listResults(resultSet, this::getSnapshotData),
-                                                       e -> new EventStoreException(
-                                                               format("Error reading aggregate snapshot [%s]",
-                                                                      aggregateIdentifier), e));
+        List<DomainEventData<?>> result =
+                executeQuery(getConnection(), connection -> readSnapshotData(connection, aggregateIdentifier),
+                             listResults(this::getSnapshotData), e -> new EventStoreException(
+                                format("Error reading aggregate snapshot [%s]", aggregateIdentifier), e));
         return result.stream().findFirst();
     }
 
@@ -439,5 +441,18 @@ public class JdbcEventStorageEngine extends AbstractJdbcEventStorageEngine {
 
     protected EventSchema schema() {
         return schema;
+    }
+
+    /**
+     * Returns a {@link Connection} to the database.
+     *
+     * @return a database Connection
+     */
+    protected Connection getConnection() {
+        try {
+            return connectionProvider.getConnection();
+        } catch (SQLException e) {
+            throw new EventStoreException("Failed to obtain a database connection", e);
+        }
     }
 }

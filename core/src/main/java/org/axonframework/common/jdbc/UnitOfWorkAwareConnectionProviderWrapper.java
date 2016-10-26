@@ -67,7 +67,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
                         cx.commit();
                     }
                 } catch (SQLException e) {
-                    throw new JdbcTransactionException("Unable to commit transaction", e);
+                    throw new JdbcException("Unable to commit transaction", e);
                 }
             });
             uow.onCleanup(u -> {
@@ -84,7 +84,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
                         cx.rollback();
                     }
                 } catch (SQLException ex) {
-                    throw new JdbcTransactionException("Unable to rollback transaction", ex);
+                    throw new JdbcException("Unable to rollback transaction", ex);
                 }
             });
         }

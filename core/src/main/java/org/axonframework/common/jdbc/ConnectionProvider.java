@@ -25,6 +25,7 @@ import java.sql.SQLException;
  * @author Allard Buijze
  * @since 2.2
  */
+@FunctionalInterface
 public interface ConnectionProvider {
 
     /**
