@@ -18,6 +18,7 @@ package org.axonframework.spring.messaging.eventbus;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.spring.messaging.StubDomainEvent;
+import org.axonframework.spring.messaging.adapter.MessageHandlerAdapter;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Test;

@@ -36,7 +36,7 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
     private final EventBus eventBus;
 
     /**
-     * Initialize the adapter to publish all incoming events to the given <code>eventBus</code>.
+     * Initialize the adapter to publish all incoming events to the given {@code eventBus}.
      *
      * @param eventBus The event bus to publish events on
      */
@@ -46,8 +46,8 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
     }
 
     /**
-     * Initialize the adapter to publish all incoming events to the given <code>eventBus</code> if they accepted by the
-     * given <code>filter</code>.
+     * Initialize the adapter to publish all incoming events to the given {@code eventBus} if they accepted by the
+     * given {@code filter}.
      *
      * @param eventBus The event bus to publish events on.
      * @param filter   The filter that indicates which events to publish.
@@ -58,7 +58,7 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
     }
 
     /**
-     * Handles the given <code>message</code>. If the filter refuses the message, it is ignored.
+     * Handles the given {@code message}. If the filter refuses the message, it is ignored.
      *
      * @param message The message containing the event to publish
      */
