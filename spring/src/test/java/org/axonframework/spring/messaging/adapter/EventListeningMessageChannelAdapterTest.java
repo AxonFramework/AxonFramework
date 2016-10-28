@@ -26,8 +26,6 @@ import org.mockito.ArgumentMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
-import java.util.Collections;
-
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.*;
 

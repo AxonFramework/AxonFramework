@@ -11,10 +11,8 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.FanoutExchange;
@@ -75,7 +73,7 @@ public class SpringAMQPIntegrationTest {
             listenerContainer.stop();
             amqpAdmin.deleteExchange("testExchange");
             amqpAdmin.deleteQueue("testQueue");
-        } catch (Exception e ) {
+        } catch (Exception e) {
             // whatever
         }
     }

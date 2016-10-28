@@ -17,9 +17,9 @@
 package org.axonframework.amqp.eventhandling.spring;
 
 import com.rabbitmq.client.Channel;
+import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.amqp.eventhandling.AMQPMessageConverter;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.serialization.UnknownSerializedTypeException;
 import org.slf4j.Logger;
@@ -29,7 +29,6 @@ import org.springframework.amqp.rabbit.core.ChannelAwareMessageListener;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
