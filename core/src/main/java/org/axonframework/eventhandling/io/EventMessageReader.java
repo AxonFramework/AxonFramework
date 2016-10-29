@@ -99,11 +99,11 @@ public class EventMessageReader {
             return new GenericDomainEventMessage<>(type, aggregateIdentifier, sequenceNumber,
                                                    new SerializedMessage<>(identifier, serializedPayload,
                                                                            serializedMetaData, serializer),
-                                                   Instant.parse(timestamp));
+                                                   () -> Instant.parse(timestamp));
         } else {
             return new GenericEventMessage<>(
                     new SerializedMessage<>(identifier, serializedPayload, serializedMetaData, serializer),
-                    Instant.parse(timestamp));
+                    () -> Instant.parse(timestamp));
         }
     }
 }

@@ -16,7 +16,6 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -24,6 +23,7 @@ import org.axonframework.messaging.MetaData;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * @author Rene de Waele
@@ -33,11 +33,6 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
     private final String type;
     private final String aggregateIdentifier;
     private final long sequenceNumber;
-
-    public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber,
-                                     EventMessage<T> delegate) {
-        this(type, aggregateIdentifier, sequenceNumber, delegate, delegate.getTimestamp());
-    }
 
     public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, T payload) {
         this(type, aggregateIdentifier, sequenceNumber, payload, MetaData.emptyInstance());
@@ -54,8 +49,16 @@ public class GenericDomainEventMessage<T> extends GenericEventMessage<T> impleme
              timestamp);
     }
 
+    protected GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber,
+                                        Message<T> delegate, Instant timestamp) {
+        super(delegate, timestamp);
+        this.type = type;
+        this.aggregateIdentifier = aggregateIdentifier;
+        this.sequenceNumber = sequenceNumber;
+    }
+
     public GenericDomainEventMessage(String type, String aggregateIdentifier, long sequenceNumber, Message<T> delegate,
-                                     Instant timestamp) {
+                                     Supplier<Instant> timestamp) {
         super(delegate, timestamp);
         this.type = type;
         this.aggregateIdentifier = aggregateIdentifier;

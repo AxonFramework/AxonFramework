@@ -95,7 +95,7 @@ public class SagaConfiguration<S> implements ModuleConfiguration {
 
     @Override
     public void shutdown() {
-        processor.get().shutdown();
+        processor.get().shutDown();
     }
 
 }

@@ -20,16 +20,18 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.serialization.CachingSupplier;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * @author Rene de Waele
  */
 public class GenericEventMessage<T> extends MessageDecorator<T> implements EventMessage<T> {
-    private final Instant timestamp;
+    private final Supplier<Instant> timestampSupplier;
 
     public static Clock clock = Clock.systemUTC();
 
@@ -56,14 +58,18 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
         this(new GenericMessage<>(identifier, payload, metaData), timestamp);
     }
 
-    public GenericEventMessage(Message<T> delegate, Instant timestamp) {
+    protected GenericEventMessage(Message<T> delegate, Instant timestamp) {
+        this(delegate, CachingSupplier.of(timestamp));
+    }
+
+    public GenericEventMessage(Message<T> delegate, Supplier<Instant> timestampSupplier) {
         super(delegate);
-        this.timestamp = timestamp;
+        this.timestampSupplier = CachingSupplier.of(timestampSupplier);
     }
 
     @Override
     public Instant getTimestamp() {
-        return timestamp;
+        return timestampSupplier.get();
     }
 
     @Override
@@ -71,7 +77,7 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
         if (getMetaData().equals(metaData)) {
             return this;
         }
-        return new GenericEventMessage<>(getDelegate().withMetaData(metaData), timestamp);
+        return new GenericEventMessage<>(getDelegate().withMetaData(metaData), timestampSupplier);
     }
 
     @Override
@@ -79,6 +85,6 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
         if (metaData == null || metaData.isEmpty() || getMetaData().equals(metaData)) {
             return this;
         }
-        return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestamp);
+        return new GenericEventMessage<>(getDelegate().andMetaData(metaData), timestampSupplier);
     }
 }

@@ -24,7 +24,7 @@ import org.axonframework.common.AxonTransientException;
  * @author Allard Buijze
  * @since 2.2
  */
-public class JdbcTransactionException extends AxonTransientException {
+public class JdbcException extends AxonTransientException {
 
     private static final long serialVersionUID = -4361376818435729797L;
 
@@ -34,7 +34,7 @@ public class JdbcTransactionException extends AxonTransientException {
      * @param message The message describing the error
      * @param cause   The cause of the error
      */
-    public JdbcTransactionException(String message, Throwable cause) {
+    public JdbcException(String message, Throwable cause) {
         super(message, cause);
     }
 }

@@ -34,11 +34,6 @@ public class LegacyTrackingToken implements TrackingToken {
         this.sequenceNumber = sequenceNumber;
     }
 
-    @Override
-    public boolean isGuaranteedNext(TrackingToken otherToken) {
-        return false;
-    }
-
     public Instant getTimestamp() {
         return timestamp;
     }

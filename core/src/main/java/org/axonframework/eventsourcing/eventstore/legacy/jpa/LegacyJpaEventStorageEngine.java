@@ -16,7 +16,6 @@ package org.axonframework.eventsourcing.eventstore.legacy.jpa;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
@@ -54,13 +53,10 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
      * <p>
      * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
      *
-     * @param transactionManager    The transaction manager used to set the isolation level of the transaction when
-     *                              loading events
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
      */
-    public LegacyJpaEventStorageEngine(TransactionManager transactionManager,
-                                       EntityManagerProvider entityManagerProvider) {
-        super(entityManagerProvider, transactionManager);
+    public LegacyJpaEventStorageEngine(EntityManagerProvider entityManagerProvider) {
+        super(entityManagerProvider);
     }
 
     /**
@@ -70,15 +66,12 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
      * @param upcasterChain         Allows older revisions of serialized objects to be deserialized.
      * @param dataSource            Allows the EventStore to detect the database type and define the error codes that
      *                              represent concurrent access failures for most database types.
-     * @param transactionManager    The transaction manager used to set the isolation level of the transaction when
-     *                              loading events
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
      * @throws SQLException If the database product name can not be determined from the given {@code dataSource}
      */
     public LegacyJpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, DataSource dataSource,
-                                       TransactionManager transactionManager,
                                        EntityManagerProvider entityManagerProvider) throws SQLException {
-        super(serializer, upcasterChain, dataSource, transactionManager, entityManagerProvider);
+        super(serializer, upcasterChain, dataSource, entityManagerProvider);
     }
 
     /**
@@ -88,8 +81,6 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
@@ -98,11 +89,9 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
      * @param entityManagerProvider        Provider for the {@link EntityManager} used by this EventStorageEngine.
      */
     public LegacyJpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
-                                       PersistenceExceptionResolver persistenceExceptionResolver,
-                                       TransactionManager transactionManager, Integer batchSize,
+                                       PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                        EntityManagerProvider entityManagerProvider) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, batchSize,
-              entityManagerProvider);
+        super(serializer, upcasterChain, persistenceExceptionResolver, batchSize, entityManagerProvider, 1L, null);
     }
 
     @Override
@@ -134,17 +123,6 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
                 "OR (e.timeStamp = :timestamp AND e.sequenceNumber > :sequenceNumber) " +
                 "OR (e.timeStamp = :timestamp AND e.sequenceNumber = :sequenceNumber " +
                 "AND e.aggregateIdentifier > :aggregateIdentifier))";
-    }
-
-    @Override
-    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
-        if (token == null) {
-            return null;
-        }
-        Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
-        LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp(), legacyToken.getAggregateIdentifier(),
-                                       legacyToken.getSequenceNumber());
     }
 
     @Override

@@ -14,7 +14,6 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
@@ -38,7 +37,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     private JDBCDataSource dataSource;
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
-    private AbstractJdbcEventStorageEngine testSubject;
+    private JdbcEventStorageEngine testSubject;
 
     @Before
     public void setUp() throws SQLException {
@@ -73,25 +72,24 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     @Override
     protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
-        return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(),
-                            byte[].class, HsqlEventTableFactory.INSTANCE);
+        return createEngine(upcasterChain, defaultPersistenceExceptionResolver, new EventSchema(), byte[].class,
+                            HsqlEventTableFactory.INSTANCE);
 
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
         return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver, new EventSchema(),
-                            byte[].class,
-                            HsqlEventTableFactory.INSTANCE);
+                            byte[].class, HsqlEventTableFactory.INSTANCE);
     }
 
-    protected AbstractJdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+    protected JdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
                                                           PersistenceExceptionResolver persistenceExceptionResolver,
-                                                          EventSchema eventSchema, Class<?> dataType, EventTableFactory tableFactory) {
-        AbstractJdbcEventStorageEngine result =
-                new JdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,
-                                           NoTransactionManager.INSTANCE, 100, dataSource::getConnection, dataType,
-                                           eventSchema);
+                                                          EventSchema eventSchema, Class<?> dataType,
+                                                          EventTableFactory tableFactory) {
+        JdbcEventStorageEngine result =
+                new JdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
+                                           dataSource::getConnection, dataType, eventSchema, null);
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();

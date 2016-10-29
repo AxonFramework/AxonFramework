@@ -20,7 +20,6 @@ import org.apache.commons.io.FileUtils;
 import org.axonframework.common.io.IOUtils;
 import org.axonframework.common.jdbc.DataSourceConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -62,8 +61,7 @@ public class RunUpcaster {
 
         // initialize EventStorage to use our upcaster
         JdbcEventStorageEngine storageEngine =
-                new JdbcEventStorageEngine(serializer, new DefaultEventUpcasterChain(new ToDoItemUpcaster()), null,
-                                           NoTransactionManager.INSTANCE, new UnitOfWorkAwareConnectionProviderWrapper(
+                new JdbcEventStorageEngine(serializer, new DefaultEventUpcasterChain(new ToDoItemUpcaster()), null, new UnitOfWorkAwareConnectionProviderWrapper(
                         new DataSourceConnectionProvider(dataSource)));
         storageEngine.createSchema(HsqlEventTableFactory.INSTANCE);
 

@@ -16,6 +16,8 @@
 
 package org.axonframework.common;
 
+import java.util.function.Supplier;
+
 /**
  * Utility class (inspired by Springs Assert class) for doing assertions on parameters and object state. To remove the
  * need for explicit dependencies on Spring, the functionality of that class is migrated to this class.
@@ -27,6 +29,18 @@ public abstract class Assert {
 
     private Assert() {
         // utility class
+    }
+
+    /**
+     * Asserts that the value of {@code state} is true. If not, an IllegalStateException is thrown.
+     *
+     * @param state   the state validation expression
+     * @param message The message that the exception contains if state evaluates to false
+     */
+    public static void state(boolean state, Supplier<String> messageSupplier) {
+        if (!state) {
+            throw new IllegalStateException(messageSupplier.get());
+        }
     }
 
     /**
@@ -66,6 +80,18 @@ public abstract class Assert {
     }
 
     /**
+     * Asserts that the given {@code expression} is false. If not, an IllegalArgumentException is thrown.
+     *
+     * @param expression the state validation expression
+     * @param message    The message that the exception contains if state evaluates to true
+     */
+    public static void isFalse(boolean expression, Supplier<String> message) {
+        if (expression) {
+            throw new IllegalArgumentException(message.get());
+        }
+    }
+
+    /**
      * Assert that the given {@code value} is not {@code null}. If not, an IllegalArgumentException is
      * thrown.
      *
@@ -76,15 +102,4 @@ public abstract class Assert {
         isTrue(value != null, message);
     }
 
-    /**
-     * Assert that the given {@code value} is not {@code null} or empty. If not, an IllegalArgumentException
-     * is thrown.
-     *
-     * @param value   the value to contain at least one character
-     * @param message The message to add to the exception when the assertion fails
-     */
-    public static void notEmpty(String value, String message) {
-        notNull(value, message);
-        isFalse(value.isEmpty(), message);
-    }
 }

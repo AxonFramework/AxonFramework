@@ -100,7 +100,7 @@ public class MessageProcessingContext<T extends Message<?>> {
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
     public void setExecutionResult(ExecutionResult executionResult) {
         Assert.state(this.executionResult == null || executionResult.isExceptionResult(),
-                String.format("Cannot change execution result [%s] to [%s] for message [%s].",
+                     () -> String.format("Cannot change execution result [%s] to [%s] for message [%s].",
                         message, this.executionResult, executionResult));
         if (this.executionResult != null && this.executionResult.isExceptionResult()) {
             this.executionResult.getExceptionResult().addSuppressed(executionResult.getExceptionResult());

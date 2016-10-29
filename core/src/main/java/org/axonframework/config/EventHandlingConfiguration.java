@@ -230,7 +230,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     @Override
     public void shutdown() {
-        initializedProcessors.forEach(EventProcessor::shutdown);
+        initializedProcessors.forEach(EventProcessor::shutDown);
     }
 
     /**

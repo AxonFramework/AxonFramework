@@ -112,7 +112,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * Shut down this processor. This will deregister the processor with the {@link EventBus}.
      */
     @Override
-    public void shutdown() {
+    public void shutDown() {
         IOUtils.closeQuietly(eventBusRegistration);
     }
 }

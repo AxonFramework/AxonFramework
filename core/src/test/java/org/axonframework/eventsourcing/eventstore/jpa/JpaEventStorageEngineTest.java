@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
@@ -105,8 +104,8 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @DirtiesContext
     public void testStoreEventsWithCustomEntity() throws Exception {
         testSubject = new JpaEventStorageEngine(new XStreamSerializer(), NoOpEventUpcasterChain.INSTANCE,
-                                                defaultPersistenceExceptionResolver, NoTransactionManager.INSTANCE, 100,
-                                                entityManagerProvider) {
+                                                defaultPersistenceExceptionResolver, 100,
+                                                entityManagerProvider, 1L, 10000) {
 
             @Override
             protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
@@ -150,7 +149,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     protected JpaEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
                                                  PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new JpaEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,
-                                         NoTransactionManager.INSTANCE, 100, entityManagerProvider);
+        return new JpaEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
+                                         entityManagerProvider, 1L, 10000);
     }
 }

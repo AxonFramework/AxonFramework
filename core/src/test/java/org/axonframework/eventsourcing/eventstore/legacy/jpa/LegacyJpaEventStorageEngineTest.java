@@ -16,7 +16,6 @@ package org.axonframework.eventsourcing.eventstore.legacy.jpa;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
@@ -87,8 +86,7 @@ public class LegacyJpaEventStorageEngineTest extends BatchingEventStorageEngineT
         private CustomLegacyJpaEventStorageEngine(EventUpcasterChain upcasterChain,
                                                   PersistenceExceptionResolver persistenceExceptionResolver,
                                                   EntityManagerProvider entityManagerProvider) {
-            super(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, NoTransactionManager.INSTANCE,
-                  100, entityManagerProvider);
+            super(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100, entityManagerProvider);
         }
 
         @Override

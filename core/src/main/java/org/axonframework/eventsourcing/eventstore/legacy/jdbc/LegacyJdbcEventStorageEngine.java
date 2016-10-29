@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore.legacy.jdbc;
 import org.axonframework.common.Assert;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
@@ -35,7 +34,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.temporal.TemporalAccessor;
 
 /**
  * EventStorageEngine implementation that uses JDBC to store and fetch events in a way that is compatible with the event
@@ -55,11 +53,9 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
      * Events are read in batches of 100. No upcasting is performed after the events have been fetched.
      *
      * @param connectionProvider The provider of connections to the underlying database
-     * @param transactionManager The transaction manager used to set the isolation level of the transaction when loading
-     *                           events
      */
-    public LegacyJdbcEventStorageEngine(ConnectionProvider connectionProvider, TransactionManager transactionManager) {
-        super(connectionProvider, transactionManager);
+    public LegacyJdbcEventStorageEngine(ConnectionProvider connectionProvider) {
+        super(connectionProvider);
     }
 
     /**
@@ -74,13 +70,11 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
      * @param connectionProvider           The provider of connections to the underlying database
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events
      */
     public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
-                                        PersistenceExceptionResolver persistenceExceptionResolver,
-                                        TransactionManager transactionManager, ConnectionProvider connectionProvider) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, connectionProvider);
+                                        PersistenceExceptionResolver persistenceExceptionResolver, ConnectionProvider
+                                                connectionProvider) {
+        super(serializer, upcasterChain, persistenceExceptionResolver, connectionProvider);
     }
 
     /**
@@ -90,8 +84,6 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. Tip: if you use a snapshotter, make
@@ -102,22 +94,10 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
      * @param schema                       Object that describes the database schema of event entries
      */
     public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
-                                        PersistenceExceptionResolver persistenceExceptionResolver,
-                                        TransactionManager transactionManager, Integer batchSize,
+                                        PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                         ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema) {
-        super(serializer, upcasterChain, persistenceExceptionResolver, transactionManager, batchSize,
-              connectionProvider, dataType, schema);
-    }
-
-    @Override
-    protected TrackingToken getTokenForGapDetection(TrackingToken token) {
-        if (token == null) {
-            return null;
-        }
-        Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
-        LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp(), legacyToken.getAggregateIdentifier(),
-                                       legacyToken.getSequenceNumber());
+        super(serializer, upcasterChain, persistenceExceptionResolver, batchSize,
+              connectionProvider, dataType, schema, null);
     }
 
     @Override
@@ -148,7 +128,7 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
     }
 
     @Override
-    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet) throws SQLException {
+    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet, TrackingToken previousToken) throws SQLException {
         return new GenericLegacyDomainEventEntry<>(resultSet.getString(schema().typeColumn()),
                                                    resultSet.getString(schema().aggregateIdentifierColumn()),
                                                    resultSet.getLong(schema().sequenceNumberColumn()),
@@ -167,8 +147,8 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
 
     @Override
     protected void writeTimestamp(PreparedStatement preparedStatement, int position,
-                                  TemporalAccessor input) throws SQLException {
-        preparedStatement.setString(position, Instant.from(input).toString());
+                                  Instant timestamp) throws SQLException {
+        preparedStatement.setString(position, Instant.from(timestamp).toString());
     }
 
     @Override
