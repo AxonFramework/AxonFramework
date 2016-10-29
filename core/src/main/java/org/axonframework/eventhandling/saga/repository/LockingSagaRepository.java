@@ -50,9 +50,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
      */
     @Override
     public Saga<T> load(String sagaIdentifier) {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-        Lock lock = lockFactory.obtainLock(sagaIdentifier);
-        unitOfWork.onCleanup(u -> lock.release());
+        lockSagaAccess(sagaIdentifier);
         return doLoad(sagaIdentifier);
     }
 
@@ -64,10 +62,14 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
      */
     @Override
     public Saga<T> createInstance(String sagaIdentifier, Supplier<T> factoryMethod) {
+        lockSagaAccess(sagaIdentifier);
+        return doCreateInstance(sagaIdentifier, factoryMethod);
+    }
+
+    private void lockSagaAccess(String sagaIdentifier) {
         UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
         Lock lock = lockFactory.obtainLock(sagaIdentifier);
-        unitOfWork.onCleanup(u -> lock.release());
-        return doCreateInstance(sagaIdentifier, factoryMethod);
+        unitOfWork.root().onCleanup(u -> lock.release());
     }
 
     /**
