@@ -25,6 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
  * @author Allard Buijze
  * @since 2.0
  */
+@FunctionalInterface
 public interface RoutingKeyResolver {
 
     /**
@@ -33,5 +34,5 @@ public interface RoutingKeyResolver {
      * @param eventMessage The EventMessage to resolve the routing key for
      * @return the routing key for the event message
      */
-    String resolveRoutingKey(EventMessage eventMessage);
+    String resolveRoutingKey(EventMessage<?> eventMessage);
 }

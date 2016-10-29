@@ -69,20 +69,37 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
     private long publisherAckTimeout;
     private Registration eventBusRegistration;
 
+    /**
+     * Initialize this instance to publish message as they are published on the given {@code messageSource}.
+     *
+     * @param messageSource The component providing messages to be publishes
+     */
     public SpringAMQPPublisher(SubscribableMessageSource<EventMessage<?>> messageSource) {
         this.messageSource = messageSource;
     }
 
+    /**
+     * Subscribes this publisher to the messageSource provided during initialization.
+     */
     public void start() {
         eventBusRegistration = messageSource.subscribe(this::send);
     }
 
+    /**
+     * Shuts down this component and unsubscribes it from its messageSource.
+     */
     public void shutDown() {
         if (eventBusRegistration != null) {
             eventBusRegistration.cancel();
         }
     }
 
+    /**
+     * Sends the given {@code events} to the configured AMQP Exchange. It takes the current Unit of Work into account
+     * when available. Otherwise, it simply publishes directly.
+     *
+     * @param events the events to publish on the AMQP Message Broker
+     */
     protected void send(List<? extends EventMessage<?>> events) {
         Channel channel = connectionFactory.createConnection().createChannel(isTransactional);
         try {

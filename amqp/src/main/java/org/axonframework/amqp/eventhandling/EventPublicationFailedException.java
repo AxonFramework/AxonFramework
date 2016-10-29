@@ -29,7 +29,7 @@ public class EventPublicationFailedException extends AxonException {
     private static final long serialVersionUID = 3663633361627495227L;
 
     /**
-     * Initialize the exception using given descriptive <code>message</code> and <code>cause</code>
+     * Initialize the exception using given descriptive {@code message} and {@code cause}
      *
      * @param message A message describing the exception
      * @param cause   The exception describing the cause of the failure

@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.EventMessage;
 public class PackageRoutingKeyResolver implements RoutingKeyResolver {
 
     @Override
-    public String resolveRoutingKey(EventMessage event) {
+    public String resolveRoutingKey(EventMessage<?> event) {
         return event.getPayloadType().getPackage().getName();
     }
 }
