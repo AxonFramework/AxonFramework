@@ -1,5 +1,7 @@
 package org.axonframework.serialization;
 
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -61,6 +63,15 @@ public class CachingSupplier<T> implements Supplier<T>, Serializable {
             result = value.updateAndGet(v -> v == null ? delegate.get() : v);
         }
         return result;
+    }
+
+    /**
+     * Java Serialization API Method that ensures that an instance of this class can be serialized by first invoking
+     * {@link #get()}.
+     */
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        get();
+        stream.defaultWriteObject();
     }
 
 }
