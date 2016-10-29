@@ -16,8 +16,9 @@
 
 package org.axonframework.eventhandling.saga.repository;
 
-import org.axonframework.eventhandling.saga.AnnotatedSaga;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.saga.AssociationValue;
+import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.saga.repository.inmemory.InMemorySagaStore;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -57,10 +58,11 @@ public class AnnotatedSagaRepositoryTest {
 
     @Test
     public void testLoadedFromUnitOfWorkAfterCreate() throws Exception {
-        AnnotatedSaga<Object> saga = testSubject.newInstance(Object::new);
+        Saga<Object> saga = testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
+                                                       Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
 
-        AnnotatedSaga<Object> saga2 = testSubject.load(saga.getSagaIdentifier());
+        Saga<Object> saga2 = testSubject.load(saga.getSagaIdentifier());
 
         assertSame(saga, saga2);
         currentUnitOfWork.commit();
@@ -71,9 +73,10 @@ public class AnnotatedSagaRepositoryTest {
 
     @Test
     public void testLoadedFromNestedUnitOfWorkAfterCreate() throws Exception {
-        AnnotatedSaga<Object> saga = testSubject.newInstance(Object::new);
+        Saga<Object> saga = testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
+                                                                Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
-        AnnotatedSaga<Object> saga2 = DefaultUnitOfWork.startAndGet(null).executeWithResult(
+        Saga<Object> saga2 = DefaultUnitOfWork.startAndGet(null).executeWithResult(
                 () -> testSubject.load(saga.getSagaIdentifier())
         );
 
@@ -86,12 +89,13 @@ public class AnnotatedSagaRepositoryTest {
 
     @Test
     public void testLoadedFromNestedUnitOfWorkAfterCreateAndStore() throws Exception {
-        AnnotatedSaga<Object> saga = testSubject.newInstance(Object::new);
+        Saga<Object> saga = testSubject.createInstance(IdentifierFactory.getInstance().generateIdentifier(),
+                                                                Object::new);
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
         currentUnitOfWork.onPrepareCommit(u -> {
             DefaultUnitOfWork.startAndGet(null).execute(
                     () -> {
-                        AnnotatedSaga<Object> saga1 = testSubject.load(saga.getSagaIdentifier());
+                        Saga<Object> saga1 = testSubject.load(saga.getSagaIdentifier());
                         saga1.getAssociationValues().add(new AssociationValue("second", "value"));
                     }
             );
@@ -109,15 +113,16 @@ public class AnnotatedSagaRepositoryTest {
 
     @Test
     public void testLoadedFromUnitOfWorkAfterPreviousLoad() throws Exception {
-        AnnotatedSaga<Object> preparedSaga = testSubject.newInstance(Object::new);
+        Saga<Object> preparedSaga = testSubject.createInstance(
+                IdentifierFactory.getInstance().generateIdentifier(), Object::new);
         currentUnitOfWork.commit();
         currentUnitOfWork = DefaultUnitOfWork.startAndGet(null);
         reset(store);
 
-        AnnotatedSaga<Object> saga = testSubject.load(preparedSaga.getSagaIdentifier());
+        Saga<Object> saga = testSubject.load(preparedSaga.getSagaIdentifier());
         saga.getAssociationValues().add(new AssociationValue("test", "value"));
 
-        AnnotatedSaga<Object> saga2 = testSubject.load(preparedSaga.getSagaIdentifier());
+        Saga<Object> saga2 = testSubject.load(preparedSaga.getSagaIdentifier());
 
         assertSame(saga, saga2);
         verify(store).loadSaga(eq(Object.class), any());

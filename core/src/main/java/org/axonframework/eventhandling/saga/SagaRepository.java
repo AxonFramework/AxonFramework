@@ -55,9 +55,10 @@ public interface SagaRepository<T> {
      * Creates a new Saga instance. The returned Saga will delegate event handling to the instance supplied by the given
      * {@code factoryMethod}.
      *
+     * @param sagaIdentifier the identifier to use for the new saga instance
      * @param factoryMethod Used to create a new Saga delegate
      * @return a new Saga instance wrapping an instance of type {@link T}
      */
-    Saga<T> newInstance(Supplier<T> factoryMethod);
+    Saga<T> createInstance(String sagaIdentifier, Supplier<T> factoryMethod);
 
 }

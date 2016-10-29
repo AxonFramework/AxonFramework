@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.Assert;
+import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.slf4j.Logger;
@@ -81,7 +82,7 @@ public abstract class AbstractSagaManager<T> implements EventHandlerInvoker {
     }
 
     private void startNewSaga(EventMessage event, AssociationValue associationValue) {
-        Saga<T> newSaga = sagaRepository.newInstance(sagaFactory);
+        Saga<T> newSaga = sagaRepository.createInstance(IdentifierFactory.getInstance().generateIdentifier(), sagaFactory);
         newSaga.getAssociationValues().add(associationValue);
         doInvokeSaga(event, newSaga);
     }

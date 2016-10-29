@@ -17,20 +17,21 @@
 package org.axonframework.eventhandling.saga.repository;
 
 import org.axonframework.common.CollectionUtils;
-import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.lock.LockFactory;
+import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.saga.AnnotatedSaga;
 import org.axonframework.eventhandling.saga.AssociationValue;
 import org.axonframework.eventhandling.saga.ResourceInjector;
-import org.axonframework.eventhandling.saga.SagaRepository;
+import org.axonframework.eventhandling.saga.Saga;
 import org.axonframework.eventhandling.saga.metamodel.DefaultSagaMetaModelFactory;
 import org.axonframework.eventhandling.saga.metamodel.SagaModel;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Abstract implementation for saga repositories. This (partial) implementation will take care of the uniqueness of
@@ -41,10 +42,10 @@ import java.util.function.Supplier;
  * @author Allard Buijze
  * @since 0.7
  */
-public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
+public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
     private final String unsavedSagasResourceKey;
-    private final String managedSagaResourcePrefix;
+    private final Map<String, AnnotatedSaga<T>> managedSagas;
     private final Class<T> sagaType;
     private final SagaStore<? super T> sagaStore;
     private final SagaModel<T> sagaModel;
@@ -54,32 +55,38 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
         this(sagaType, sagaStore, new NoResourceInjector());
     }
 
-    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore, ResourceInjector resourceInjector) {
-        this(sagaType, sagaStore, new DefaultSagaMetaModelFactory().modelOf(sagaType), resourceInjector);
+    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
+                                   ResourceInjector resourceInjector) {
+        this(sagaType, sagaStore, new DefaultSagaMetaModelFactory().modelOf(sagaType), resourceInjector,
+             new PessimisticLockFactory());
     }
 
-    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
-                                      SagaModel<T> sagaModel, ResourceInjector resourceInjector) {
+    public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore, SagaModel<T> sagaModel,
+                                   ResourceInjector resourceInjector, LockFactory lockFactory) {
+        super(lockFactory);
         this.injector = resourceInjector;
         this.sagaType = sagaType;
         this.sagaStore = sagaStore;
         this.sagaModel = sagaModel;
-        this.managedSagaResourcePrefix = "Repository[" + sagaType.getSimpleName() + "]/";
+        this.managedSagas = new ConcurrentHashMap<>();
         this.unsavedSagasResourceKey = "Repository[" + sagaType.getSimpleName() + "]/UnsavedSagas";
     }
 
     @Override
-    public AnnotatedSaga<T> load(String sagaIdentifier) {
-        String resourceKey = managedSagaResourcePrefix + sagaIdentifier;
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+    public AnnotatedSaga<T> doLoad(String sagaIdentifier) {
+        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get(), processRoot = unitOfWork.root();
 
-        AnnotatedSaga<T> loadedSaga = unitOfWork.root()
-                .getOrComputeResource(resourceKey, id ->  doLoadSaga(sagaIdentifier));
+        AnnotatedSaga<T> loadedSaga = managedSagas.computeIfAbsent(sagaIdentifier, id -> {
+            AnnotatedSaga<T> result = doLoadSaga(sagaIdentifier);
+            if (result != null) {
+                processRoot.onCleanup(u -> managedSagas.remove(id));
+            }
+            return result;
+        });
 
-        if (loadedSaga != null && unsavedSagaResource(unitOfWork.root())
-                .add(sagaIdentifier)) {
+        if (loadedSaga != null && unsavedSagaResource(processRoot).add(sagaIdentifier)) {
             unitOfWork.onPrepareCommit(u -> {
-                unsavedSagaResource(u.root()).remove(sagaIdentifier);
+                unsavedSagaResource(processRoot).remove(sagaIdentifier);
                 commit(loadedSaga);
             });
         }
@@ -87,25 +94,25 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
     }
 
     @Override
-    public AnnotatedSaga<T> newInstance(Supplier<T> sagaFactory) {
+    public AnnotatedSaga<T> doCreateInstance(String sagaIdentifier, Supplier<T> sagaFactory) {
         try {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get(), processRoot = unitOfWork.root();
             T sagaRoot = sagaFactory.get();
             injector.injectResources(sagaRoot);
-            AnnotatedSaga<T> saga = new AnnotatedSaga<>(IdentifierFactory.getInstance().generateIdentifier(),
-                                                        Collections.emptySet(), sagaRoot, null, sagaModel);
+            AnnotatedSaga<T> saga =
+                    new AnnotatedSaga<>(sagaIdentifier, Collections.emptySet(), sagaRoot, null, sagaModel);
+
+            unsavedSagaResource(processRoot).add(sagaIdentifier);
             unitOfWork.onPrepareCommit(u -> {
                 if (saga.isActive()) {
                     storeSaga(saga);
                     saga.getAssociationValues().commit();
-
-                    unsavedSagaResource(unitOfWork)
-                            .remove(saga.getSagaIdentifier());
+                    unsavedSagaResource(processRoot).remove(sagaIdentifier);
                 }
             });
 
-            unsavedSagaResource(unitOfWork).add(saga.getSagaIdentifier());
-            unitOfWork.root().resources().put(managedSagaResourcePrefix + saga.getSagaIdentifier(), saga);
+            managedSagas.put(sagaIdentifier, saga);
+            processRoot.onCleanup(u -> managedSagas.remove(sagaIdentifier));
             return saga;
         } catch (Exception e) {
             throw new SagaCreationException("An error occurred while attempting to create a new managed instance", e);
@@ -125,20 +132,13 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Set<String> find(AssociationValue associationValue) {
-        Set<String> sagasFound = new HashSet<>();
+        Set<String> sagasFound = new TreeSet<>();
+        sagasFound.addAll(managedSagas.values().stream()
+                                  .filter(saga -> saga.getAssociationValues().contains(associationValue))
+                                  .map(Saga::getSagaIdentifier).collect(Collectors.toList()));
         sagasFound.addAll(sagaStore.findSagas(sagaType, associationValue));
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-
-        Set<String> unsavedSagas = unsavedSagaResource(unitOfWork);
-        unsavedSagas.stream()
-                .map(id -> (AnnotatedSaga<T>) unitOfWork.root().getResource(managedSagaResourcePrefix + id))
-                .filter(saga -> saga != null)
-                .filter(saga -> saga.getAssociationValues().contains(associationValue))
-                .map(AnnotatedSaga::getSagaIdentifier)
-                .forEach(sagasFound::add);
         return sagasFound;
     }
 
@@ -149,7 +149,9 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
      * @param saga The saga instance to remove from the repository
      */
     protected void deleteSaga(AnnotatedSaga<T> saga) {
-        Set<AssociationValue> associationValues = CollectionUtils.merge(saga.getAssociationValues().asSet(), saga.getAssociationValues().removedAssociations(), HashSet::new);
+        Set<AssociationValue> associationValues = CollectionUtils
+                .merge(saga.getAssociationValues().asSet(), saga.getAssociationValues().removedAssociations(),
+                       HashSet::new);
         sagaStore.deleteSaga(sagaType, saga.getSagaIdentifier(), associationValues);
     }
 
@@ -159,7 +161,8 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
      * @param saga The saga that has been modified and needs to be updated in the storage
      */
     protected void updateSaga(AnnotatedSaga<T> saga) {
-        sagaStore.updateSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(), saga.getAssociationValues());
+        sagaStore.updateSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(),
+                             saga.getAssociationValues());
     }
 
     /**
@@ -168,7 +171,8 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
      * @param saga The newly created Saga instance to store.
      */
     protected void storeSaga(AnnotatedSaga<T> saga) {
-        sagaStore.insertSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(), saga.getAssociationValues().asSet());
+        sagaStore.insertSaga(sagaType, saga.getSagaIdentifier(), saga.root(), saga.trackingToken(),
+                             saga.getAssociationValues().asSet());
     }
 
     protected AnnotatedSaga<T> doLoadSaga(String sagaIdentifier) {
@@ -176,7 +180,8 @@ public class AnnotatedSagaRepository<T> implements SagaRepository<T> {
         if (entry != null) {
             T saga = entry.saga();
             injector.injectResources(saga);
-            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, entry.trackingToken(), sagaModel);
+            return new AnnotatedSaga<>(sagaIdentifier, entry.associationValues(), saga, entry.trackingToken(),
+                                       sagaModel);
         }
         return null;
     }

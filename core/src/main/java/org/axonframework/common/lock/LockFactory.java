@@ -22,6 +22,7 @@ package org.axonframework.common.lock;
  * @author Allard Buijze
  * @since 0.3
  */
+@FunctionalInterface
 public interface LockFactory {
 
     /**
