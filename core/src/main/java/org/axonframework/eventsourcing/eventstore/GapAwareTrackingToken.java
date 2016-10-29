@@ -39,7 +39,8 @@ public class GapAwareTrackingToken implements TrackingToken {
                 if (sizeDelta != 0) {
                     return -sizeDelta;
                 }
-                Iterator<Long> it1 = t1.gaps.iterator(), it2 = t2.gaps.iterator();
+                Iterator<Long> it1 = t1.gaps.iterator();
+                Iterator<Long> it2 = t2.gaps.iterator();
                 while (it1.hasNext()) {
                     int sign = Long.signum(it1.next() - it2.next());
                     if (sign != 0) {

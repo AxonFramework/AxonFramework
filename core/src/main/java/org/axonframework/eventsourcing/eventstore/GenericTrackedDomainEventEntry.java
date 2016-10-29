@@ -41,7 +41,7 @@ public class GenericTrackedDomainEventEntry<T> extends AbstractDomainEventEntry<
                                           long sequenceNumber, String eventIdentifier, Object timestamp,
                                           String payloadType, String payloadRevision, T payload, T metaData) {
         super(type, aggregateIdentifier, sequenceNumber, eventIdentifier, timestamp, payloadType, payloadRevision,
-                payload, metaData);
+              payload, metaData);
         this.trackingToken = trackingToken;
     }
 

@@ -34,36 +34,6 @@ import java.util.function.Function;
 public class JdbcUtils {
 
     /**
-     * Describes a function that creates a new {@link PreparedStatement} ready to be executed.
-     */
-    @FunctionalInterface
-    public interface SqlFunction {
-        /**
-         * Create a new {@link PreparedStatement} using the given {@code connection}.
-         *
-         * @param connection the connection that will be used to create the statement
-         * @return a new statement ready for execution
-         * @throws SQLException if the statement could not be created
-         */
-        PreparedStatement apply(Connection connection) throws SQLException;
-    }
-
-    /**
-     * Describes a function that converts a {@link ResultSet} into a result of type {@link R}.
-     */
-    @FunctionalInterface
-    public interface SqlResultConverter<R> {
-        /**
-         * Convert the given resultSet to a result of type {@link R}.
-         *
-         * @param resultSet the sql result set containing results of a prior sql query
-         * @return the conversion result
-         * @throws SQLException if the results could not be converted
-         */
-        R apply(ResultSet resultSet) throws SQLException;
-    }
-
-    /**
      * Execute the query given by the {@code sqlFunction}. The {@link ResultSet} returned when the query is executed
      * will be converted using the given {@code sqlResultConverter}. Any errors will be handled by the given {@code
      * errorHandler}.
@@ -226,5 +196,35 @@ public class JdbcUtils {
      * Private default constructor
      */
     private JdbcUtils() {
+    }
+
+    /**
+     * Describes a function that creates a new {@link PreparedStatement} ready to be executed.
+     */
+    @FunctionalInterface
+    public interface SqlFunction {
+        /**
+         * Create a new {@link PreparedStatement} using the given {@code connection}.
+         *
+         * @param connection the connection that will be used to create the statement
+         * @return a new statement ready for execution
+         * @throws SQLException if the statement could not be created
+         */
+        PreparedStatement apply(Connection connection) throws SQLException;
+    }
+
+    /**
+     * Describes a function that converts a {@link ResultSet} into a result of type {@link R}.
+     */
+    @FunctionalInterface
+    public interface SqlResultConverter<R> {
+        /**
+         * Convert the given resultSet to a result of type {@link R}.
+         *
+         * @param resultSet the sql result set containing results of a prior sql query
+         * @return the conversion result
+         * @throws SQLException if the results could not be converted
+         */
+        R apply(ResultSet resultSet) throws SQLException;
     }
 }
