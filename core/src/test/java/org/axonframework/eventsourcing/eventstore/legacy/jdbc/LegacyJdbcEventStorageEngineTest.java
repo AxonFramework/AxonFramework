@@ -26,6 +26,7 @@ import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.Before;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,6 +35,7 @@ import java.sql.SQLException;
 /**
  * @author Rene de Waele
  */
+@Transactional
 public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     private JDBCDataSource dataSource;

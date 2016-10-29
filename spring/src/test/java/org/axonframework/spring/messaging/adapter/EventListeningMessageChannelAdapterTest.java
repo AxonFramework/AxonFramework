@@ -26,6 +26,7 @@ import org.mockito.ArgumentMatcher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 
+import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.*;
 
 /**
@@ -44,13 +45,12 @@ public class EventListeningMessageChannelAdapterTest {
         mockChannel = mock(MessageChannel.class);
         mockFilter = mock(EventFilter.class);
         testSubject = new EventListeningMessageChannelAdapter(mockEventBus, mockChannel);
-        testSubject.setBeanName("stub");
     }
 
     @Test
     public void testMessageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
-        testSubject.handle(new GenericEventMessage<>(event));
+        testSubject.handle(singletonList(new GenericEventMessage<>(event)));
 
         verify(mockChannel).send(messageWithPayload(event));
     }
@@ -67,7 +67,7 @@ public class EventListeningMessageChannelAdapterTest {
     public void testFilterBlocksEvents() throws Exception {
         when(mockFilter.accept(isA(Class.class))).thenReturn(false);
         testSubject = new EventListeningMessageChannelAdapter(mockEventBus, mockChannel, mockFilter);
-        testSubject.handle(newDomainEvent());
+        testSubject.handle(singletonList(newDomainEvent()));
         verify(mockEventBus, never()).publish(isA(EventMessage.class));
     }
 
