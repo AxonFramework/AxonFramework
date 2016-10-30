@@ -103,8 +103,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
-                      String.format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
+        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () ->
+                String.format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
                                     GapAwareTrackingToken.class.getSimpleName()));
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
         Collection<Long> gaps = previousToken == null ? Collections.emptySet() : previousToken.getGaps();

@@ -20,11 +20,10 @@ package org.axonframework.spring.messaging.adapter;
  * @author Allard Buijze
  * @since 2.3.1
  */
-public class NoFilter implements EventFilter {
+public enum NoFilter implements EventFilter {
 
-    /**
-     * {@inheritDoc}
-     */
+    INSTANCE;
+
     @Override
     public boolean accept(Class<?> payloadType) {
         return true;

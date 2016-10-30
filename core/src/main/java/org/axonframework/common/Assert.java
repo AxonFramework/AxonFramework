@@ -34,8 +34,8 @@ public abstract class Assert {
     /**
      * Asserts that the value of {@code state} is true. If not, an IllegalStateException is thrown.
      *
-     * @param state   the state validation expression
-     * @param message The message that the exception contains if state evaluates to false
+     * @param state           the state validation expression
+     * @param messageSupplier Supplier of the exception message if state evaluates to false
      */
     public static void state(boolean state, Supplier<String> messageSupplier) {
         if (!state) {
@@ -44,50 +44,26 @@ public abstract class Assert {
     }
 
     /**
-     * Asserts that the value of {@code state} is true. If not, an IllegalStateException is thrown.
-     *
-     * @param state   the state validation expression
-     * @param message The message that the exception contains if state evaluates to false
-     */
-    public static void state(boolean state, String message) {
-        if (!state) {
-            throw new IllegalStateException(message);
-        }
-    }
-
-    /**
      * Asserts that the given {@code expression} is true. If not, an IllegalArgumentException is thrown.
      *
-     * @param expression the state validation expression
-     * @param message    The message that the exception contains if state evaluates to false
+     * @param expression      the state validation expression
+     * @param messageSupplier Supplier of the exception message if the expression evaluates to false
      */
-    public static void isTrue(boolean expression, String message) {
+    public static void isTrue(boolean expression, Supplier<String> messageSupplier) {
         if (!expression) {
-            throw new IllegalArgumentException(message);
+            throw new IllegalArgumentException(messageSupplier.get());
         }
     }
 
     /**
      * Asserts that the given {@code expression} is false. If not, an IllegalArgumentException is thrown.
      *
-     * @param expression the state validation expression
-     * @param message    The message that the exception contains if state evaluates to true
+     * @param expression      the state validation expression
+     * @param messageSupplier Supplier of the exception message if the expression evaluates to true
      */
-    public static void isFalse(boolean expression, String message) {
+    public static void isFalse(boolean expression, Supplier<String> messageSupplier) {
         if (expression) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    /**
-     * Asserts that the given {@code expression} is false. If not, an IllegalArgumentException is thrown.
-     *
-     * @param expression the state validation expression
-     * @param message    The message that the exception contains if state evaluates to true
-     */
-    public static void isFalse(boolean expression, Supplier<String> message) {
-        if (expression) {
-            throw new IllegalArgumentException(message.get());
+            throw new IllegalArgumentException(messageSupplier.get());
         }
     }
 
@@ -95,11 +71,11 @@ public abstract class Assert {
      * Assert that the given {@code value} is not {@code null}. If not, an IllegalArgumentException is
      * thrown.
      *
-     * @param value   the value not to be {@code null}
-     * @param message The message to add to the exception when the assertion fails
+     * @param value           the value not to be {@code null}
+     * @param messageSupplier Supplier of the exception message if the assertion fails
      */
-    public static void notNull(Object value, String message) {
-        isTrue(value != null, message);
+    public static void notNull(Object value, Supplier<String> messageSupplier) {
+        isTrue(value != null, messageSupplier);
     }
 
 }

@@ -44,7 +44,7 @@ public class LazyDeserializingObject<T> {
      */
     @SuppressWarnings("unchecked")
     public LazyDeserializingObject(T deserializedObject) {
-        Assert.notNull(deserializedObject, "The given deserialized instance may not be null");
+        Assert.notNull(deserializedObject, () -> "The given deserialized instance may not be null");
         this.serializedObject = null;
         this.serializer = null;
         this.deserializedObject = deserializedObject;
@@ -77,9 +77,9 @@ public class LazyDeserializingObject<T> {
     @SuppressWarnings("unchecked")
     public LazyDeserializingObject(Supplier<SerializedObject<?>> serializedObjectSupplier,
                                    SerializedType serializedType, Serializer serializer) {
-        Assert.notNull(serializedObjectSupplier, "The given serializedObjectSupplier may not be null");
-        Assert.notNull(serializedType, "The given serializedType may not be null");
-        Assert.notNull(serializer, "The given serializer may not be null");
+        Assert.notNull(serializedObjectSupplier, () -> "The given serializedObjectSupplier may not be null");
+        Assert.notNull(serializedType, () -> "The given serializedType may not be null");
+        Assert.notNull(serializer, () -> "The given serializer may not be null");
         this.serializedObject = serializedObjectSupplier;
         this.serializer = serializer;
         this.deserializedObjectType = serializer.classForType(serializedType);

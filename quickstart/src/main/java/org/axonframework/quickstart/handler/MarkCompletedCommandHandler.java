@@ -29,7 +29,7 @@ import java.util.function.Function;
  */
 public class MarkCompletedCommandHandler implements MessageHandler<CommandMessage<?>> {
 
-    private Repository<ToDoItem> repository;
+    private final Repository<ToDoItem> repository;
 
     public MarkCompletedCommandHandler(Repository<ToDoItem> repository) {
         this.repository = repository;

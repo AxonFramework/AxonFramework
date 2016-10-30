@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.EventMessage;
 public interface RoutingKeyResolver {
 
     /**
-     * Returns the Routing Key to use when sending the given <code>eventMessage</code> to the Message Broker.
+     * Returns the Routing Key to use when sending the given {@code eventMessage} to the Message Broker.
      *
      * @param eventMessage The EventMessage to resolve the routing key for
      * @return the routing key for the event message

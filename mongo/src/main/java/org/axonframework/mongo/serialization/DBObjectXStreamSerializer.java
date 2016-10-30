@@ -58,7 +58,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
 
     /**
      * Initialize the serializer using the UTF-8 character set. The provided XStream instance  is used to perform
-     * the serialization, while the given <code>revisionResolver</code> is used to resolve the revision of the
+     * the serialization, while the given {@code revisionResolver} is used to resolve the revision of the
      * serialized object.
      *
      * @param xStream          The XStream instance to serialize objects with
@@ -69,7 +69,7 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code>. A default XStream instance (with {@link
+     * Initialize the serializer using the given {@code charset}. A default XStream instance (with {@link
      * com.thoughtworks.xstream.io.xml.XppDriver}) is used to perform the serialization.
      * <p/>
      * An {@link org.axonframework.serialization.AnnotationRevisionResolver} is used to resolve the revision for
@@ -82,8 +82,8 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
-     * <code>xStream</code> instance is configured with several converters for the most common types in Axon.
+     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
+     * {@code xStream} instance is configured with several converters for the most common types in Axon.
      * <p/>
      * An {@link org.axonframework.serialization.AnnotationRevisionResolver} is used to resolve the revision for
      * serialized objects.
@@ -96,8 +96,8 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code>, <code>xStream</code> and
-     * <code>revisionResolver</code> instance. The <code>xStream</code> instance is configured with several converters
+     * Initialize the serializer using the given {@code charset}, {@code xStream} and
+     * {@code revisionResolver} instance. The {@code xStream} instance is configured with several converters
      * for the most common types in Axon.
      *
      * @param charset          The character set to use
@@ -109,8 +109,8 @@ public class DBObjectXStreamSerializer extends AbstractXStreamSerializer {
     }
 
     /**
-     * Initialize the serializer using the given <code>charset</code> and <code>xStream</code> instance. The
-     * given <code>converterFactory</code> instance is used to convert between serialized representation types.
+     * Initialize the serializer using the given {@code charset} and {@code xStream} instance. The
+     * given {@code converterFactory} instance is used to convert between serialized representation types.
      *
      * @param charset          The character set to use
      * @param xStream          The XStream instance to use

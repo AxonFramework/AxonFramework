@@ -36,7 +36,7 @@ public class MessageHandlerAdapter implements MessageHandler {
     private final Consumer<List<? extends EventMessage<?>>> eventProcessor;
 
     /**
-     * Initialize an adapter for the given <code>eventProcessor</code>.
+     * Initialize an adapter for the given {@code eventProcessor}.
      *
      * @param eventProcessor the event processor to adapt
      */

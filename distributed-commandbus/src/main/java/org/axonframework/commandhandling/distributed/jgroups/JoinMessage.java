@@ -28,7 +28,7 @@ import java.util.function.Predicate;
 
 /**
  * This message represents a notification of a Member joining the DistributedCommandBus with a given
- * <code>loadFactor</code>. Upon receiving this message, members should recalculate their Consistent Hash Ring,
+ * {@code loadFactor}. Upon receiving this message, members should recalculate their Consistent Hash Ring,
  * including this member.
  *
  * @author Allard Buijze
@@ -51,7 +51,7 @@ public class JoinMessage implements Externalizable {
     }
 
     /**
-     * Initializes a JoinMessage with the given <code>loadFactor</code>.
+     * Initializes a JoinMessage with the given {@code loadFactor}.
      *
      * @param loadFactor                The loadFactor the member wishes to join with
      * @param messageFilter   A predicate the will filter command messages this node will accept.

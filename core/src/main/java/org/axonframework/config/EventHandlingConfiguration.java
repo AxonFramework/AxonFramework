@@ -34,20 +34,23 @@ import static java.util.Comparator.comparing;
  */
 public class EventHandlingConfiguration implements ModuleConfiguration {
 
-    private List<Component<Object>> eventHandlers = new ArrayList<>();
-    private Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
-    private EventProcessorBuilder defaultEventProcessorBuilder = (conf, name, eh) ->
-            new SubscribingEventProcessor(name,
-                                          new SimpleEventHandlerInvoker(
-                                                  eh, conf.getComponent(ListenerErrorHandler.class,
-                                                                        LoggingListenerErrorHandler::new)),
-                                          conf.eventBus(),
-                                          conf.messageMonitor(SubscribingEventProcessor.class, name));
-    private List<ProcessorSelector> selectors = new ArrayList<>();
+    private final List<Component<Object>> eventHandlers = new ArrayList<>();
+    private final Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
+    private EventProcessorBuilder defaultEventProcessorBuilder = (conf, name, eh) -> new SubscribingEventProcessor(name,
+                                                                                                                   new SimpleEventHandlerInvoker(
+                                                                                                                           eh,
+                                                                                                                           conf.getComponent(
+                                                                                                                                   ListenerErrorHandler.class,
+                                                                                                                                   LoggingListenerErrorHandler::new)),
+                                                                                                                   conf.eventBus(),
+                                                                                                                   conf.messageMonitor(
+                                                                                                                           SubscribingEventProcessor.class,
+                                                                                                                           name));
+    private final List<ProcessorSelector> selectors = new ArrayList<>();
     private ProcessorSelector defaultSelector;
 
     private Configuration config;
-    private List<EventProcessor> initializedProcessors = new ArrayList<>();
+    private final List<EventProcessor> initializedProcessors = new ArrayList<>();
 
     /**
      * Creates a default configuration for an Event Handling module that assigns Event Handlers to Subscribing Event
@@ -76,22 +79,21 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration usingTrackingProcessors() {
-        return registerEventProcessorFactory(
-                (conf, name, handlers) -> {
-                    TrackingEventProcessor processor = new TrackingEventProcessor(
-                            name,
-                            new SimpleEventHandlerInvoker(
-                                    handlers,
-                                    conf.getComponent(ListenerErrorHandler.class, LoggingListenerErrorHandler::new)),
-                            conf.eventBus(),
-                            conf.getComponent(TokenStore.class, InMemoryTokenStore::new),
-                            conf.messageMonitor(EventProcessor.class, name)
-                    );
-                    CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();
-                    interceptor.registerCorrelationDataProviders(conf.correlationDataProviders());
-                    processor.registerInterceptor(interceptor);
-                    return processor;
-                });
+        return registerEventProcessorFactory((conf, name, handlers) -> {
+            TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
+                                                                                                              conf.getComponent(
+                                                                                                                      ListenerErrorHandler.class,
+                                                                                                                      LoggingListenerErrorHandler::new)),
+                                                                          conf.eventBus(),
+                                                                          conf.getComponent(TokenStore.class,
+                                                                                            InMemoryTokenStore::new),
+                                                                          conf.messageMonitor(EventProcessor.class,
+                                                                                              name));
+            CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();
+            interceptor.registerCorrelationDataProviders(conf.correlationDataProviders());
+            processor.registerInterceptor(interceptor);
+            return processor;
+        });
     }
 
     /**
@@ -209,18 +211,16 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         Map<String, List<Object>> assignments = new HashMap<>();
 
         eventHandlers.stream().map(Component::get).forEach(handler -> {
-            String processor = selectors.stream().map(s -> s.select(handler))
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .findFirst()
-                    .orElse(defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
+            String processor =
+                    selectors.stream().map(s -> s.select(handler)).filter(Optional::isPresent).map(Optional::get)
+                            .findFirst()
+                            .orElse(defaultSelector.select(handler).orElseThrow(IllegalStateException::new));
             assignments.computeIfAbsent(processor, k -> new ArrayList<>()).add(handler);
         });
 
-        assignments.forEach((name, handlers) -> {
-            initializedProcessors.add(eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
-                                              .createEventProcessor(config, name, handlers));
-        });
+        assignments.forEach((name, handlers) -> initializedProcessors
+                .add(eventProcessors.getOrDefault(name, defaultEventProcessorBuilder)
+                             .createEventProcessor(config, name, handlers)));
     }
 
     @Override

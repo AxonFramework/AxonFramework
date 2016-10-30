@@ -82,7 +82,7 @@ public class Component<B> {
      * @throws IllegalStateException when the component has already been retrieved using {@link #get()}.
      */
     public void update(Function<Configuration, ? extends B> builderFunction) {
-        Assert.state(instance == null, "Cannot change " + name + ": it is already in use");
+        Assert.state(instance == null, () -> "Cannot change " + name + ": it is already in use");
         this.builderFunction = builderFunction;
     }
 }

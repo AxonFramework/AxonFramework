@@ -126,7 +126,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         String id = identifierAsString();
         long seq = nextSequence();
         if (id == null) {
-            Assert.state(seq == 0, "The aggregate identifier has not been set. It must be set at the latest by the " +
+            Assert.state(seq == 0, () -> "The aggregate identifier has not been set. It must be set at the latest by the " +
                     "event sourcing handler of the creation event");
             return new LazyIdentifierDomainEventMessage<>(type(), seq, payload, metaData);
         }

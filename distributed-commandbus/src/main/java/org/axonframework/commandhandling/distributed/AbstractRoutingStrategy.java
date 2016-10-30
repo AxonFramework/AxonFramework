@@ -38,13 +38,13 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
     private final AtomicLong counter = new AtomicLong(0);
 
     /**
-     * Initializes the strategy using given <code>unresolvedRoutingKeyPolicy</code> prescribing what happens when a
+     * Initializes the strategy using given {@code unresolvedRoutingKeyPolicy} prescribing what happens when a
      * routing key cannot be resolved.
      *
      * @param unresolvedRoutingKeyPolicy The policy for unresolved routing keys.
      */
     public AbstractRoutingStrategy(UnresolvedRoutingKeyPolicy unresolvedRoutingKeyPolicy) {
-        Assert.notNull(unresolvedRoutingKeyPolicy, "unresolvedRoutingKeyPolicy may not be null");
+        Assert.notNull(unresolvedRoutingKeyPolicy, () -> "unresolvedRoutingKeyPolicy may not be null");
         this.unresolvedRoutingKeyPolicy = unresolvedRoutingKeyPolicy;
     }
 
@@ -69,10 +69,10 @@ public abstract class AbstractRoutingStrategy implements RoutingStrategy {
     }
 
     /**
-     * Resolve the Routing Key for the given <code>command</code>.
+     * Resolve the Routing Key for the given {@code command}.
      *
      * @param command The command to resolve the routing key for
-     * @return the String representing the Routing Key, or <code>null</code> if unresolved.
+     * @return the String representing the Routing Key, or {@code null} if unresolved.
      */
     protected abstract String doResolveRoutingKey(CommandMessage<?> command);
 }

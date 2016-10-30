@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * <p>
- * Factory class used to create a <code>MongoOptions</code> instance. The instance makes use of the defaults as provided
+ * Factory class used to create a {@code MongoOptions} instance. The instance makes use of the defaults as provided
  * by the MongoOptions class. The moment you set a valid value, that value is used to create the options object.
  * </p>
  *
@@ -33,7 +33,7 @@ public class MongoOptionsFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(MongoOptionsFactory.class);
 
-    private MongoClientOptions defaults;
+    private final MongoClientOptions defaults;
     private int connectionsPerHost;
     private int connectionTimeout;
     private int maxWaitTime;

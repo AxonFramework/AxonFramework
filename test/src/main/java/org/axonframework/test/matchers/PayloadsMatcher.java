@@ -34,7 +34,7 @@ public class PayloadsMatcher extends BaseMatcher<List<? extends Message<?>>> {
     private final Matcher<? extends Iterable<?>> matcher;
 
     /**
-     * Constructs an instance that uses the given <code>matcher</code> to match the payloads.
+     * Constructs an instance that uses the given {@code matcher} to match the payloads.
      *
      * @param matcher             The matcher to match the payloads with
      */

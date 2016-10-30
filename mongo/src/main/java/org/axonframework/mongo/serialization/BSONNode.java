@@ -22,6 +22,7 @@ import com.mongodb.DBObject;
 import org.axonframework.common.Assert;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a node in a BSON structure. This class provides for an XML like abstraction around BSON for use by the
@@ -37,13 +38,13 @@ public class BSONNode {
 
     private final List<BSONNode> childNodes = new ArrayList<>();
     private String value;
-    private String encodedName;
+    private final String encodedName;
 
     /**
      * Creates a node with given "code" name. Generally, this constructor is used for the root node. For child nodes,
      * see the convenience method {@link #addChildNode(String)}.
      * <p/>
-     * Note that the given <code>name</code> is encoded in a BSON compatible way. That means that periods (".") are
+     * Note that the given {@code name} is encoded in a BSON compatible way. That means that periods (".") are
      * replaced by forward slashes "/", and any slashes are prefixes with additional slash. For example, the String
      * "some.period/slash" would become "some/period//slash". This is only imporant when querying BSON structures
      * directly.
@@ -68,16 +69,15 @@ public class BSONNode {
         BSONNode rootNode = new BSONNode(decode(rootName));
         Object rootContents = node.get(rootName);
         if (rootContents instanceof List) {
-            for (Object childElement : (List) rootContents) {
-                if (childElement instanceof DBObject) {
-                	DBObject dbChild = (DBObject) childElement;
-                	if (dbChild.containsField(VALUE_KEY)) {
-                		rootNode.setValue((String) dbChild.get(VALUE_KEY));
-                	} else {
-                		rootNode.addChildNode(fromDBObject(dbChild));
-                	}
-                }
-            }
+            ((List<?>) rootContents).stream().filter(childElement -> childElement instanceof DBObject)
+                    .forEach(childElement -> {
+                        DBObject dbChild = (DBObject) childElement;
+                        if (dbChild.containsField(VALUE_KEY)) {
+                            rootNode.setValue((String) dbChild.get(VALUE_KEY));
+                        } else {
+                            rootNode.addChildNode(fromDBObject(dbChild));
+                        }
+                    });
         } else if (rootContents instanceof DBObject) {
             rootNode.addChildNode(fromDBObject((DBObject) rootContents));
         } else if (rootContents instanceof String) {
@@ -110,9 +110,7 @@ public class BSONNode {
             if (value != null) {
                 subNodes.add(new BasicDBObject(VALUE_KEY, value));
             }
-            for (BSONNode childNode : childNodes) {
-                subNodes.add(childNode.asDBObject());
-            }
+            subNodes.addAll(childNodes.stream().map(BSONNode::asDBObject).collect(Collectors.toList()));
             return thisNode;
         }
     }
@@ -123,8 +121,8 @@ public class BSONNode {
      * @param value The value to set for this node
      */
     public void setValue(String value) {
-        Assert.isFalse(children().hasNext(), "A child node was already present. "
-                + "A node cannot contain a value as well as child nodes.");
+        Assert.isFalse(children().hasNext(),
+                       () -> "A child node was already present. " + "A node cannot contain a value as well as child nodes.");
         this.value = value;
     }
 
@@ -137,25 +135,25 @@ public class BSONNode {
      * @param attributeValue The value of the attribute
      */
     public void setAttribute(String attributeName, String attributeValue) {
-    	addChild(ATTRIBUTE_PREFIX + attributeName, attributeValue);
+        addChild(ATTRIBUTE_PREFIX + attributeName, attributeValue);
     }
 
     /**
-     * Adds a child node to the current node. Note that the name of a child node must not be <code>null</code> and may
+     * Adds a child node to the current node. Note that the name of a child node must not be {@code null} and may
      * not start with "attr_", in order to differentiate between child nodes and attributes.
      *
      * @param name The name of the child node
      * @return A BSONNode representing the newly created child node.
      */
     public BSONNode addChildNode(String name) {
-        Assert.isTrue(value == null, "A value was already present."
-                + "A node cannot contain a value as well as child nodes");
-        Assert.notNull(name, "Node name must not be null");
-        Assert.isFalse(name.startsWith(ATTRIBUTE_PREFIX), "Node names may not start with '" + ATTRIBUTE_PREFIX + "'");
+        Assert.isTrue(value == null,
+                      () -> "A value was already present." + "A node cannot contain a value as well as child nodes");
+        Assert.notNull(name, () -> "Node name must not be null");
+        Assert.isFalse(name.startsWith(ATTRIBUTE_PREFIX), () -> "Node names may not start with '" + ATTRIBUTE_PREFIX + "'");
 
         return addChild(name, null);
     }
-    
+
     private BSONNode addChild(String name, String nodeValue) {
         BSONNode childNode = new BSONNode(name);
         childNode.setValue(nodeValue);
@@ -170,12 +168,8 @@ public class BSONNode {
      * @return an iterator providing access to the child nodes of the current node
      */
     public Iterator<BSONNode> children() {
-        List<BSONNode> children = new ArrayList<>();
-        for (BSONNode child : childNodes) {
-            if (!child.encodedName.startsWith(ATTRIBUTE_PREFIX)) {
-                children.add(child);
-            }
-        }
+        List<BSONNode> children = childNodes.stream().filter(child -> !child.encodedName.startsWith(ATTRIBUTE_PREFIX))
+                .collect(Collectors.toList());
         return children.iterator();
     }
 
@@ -187,25 +181,23 @@ public class BSONNode {
      */
     public Map<String, String> attributes() {
         Map<String, String> attrs = new HashMap<>();
-        for (BSONNode child : childNodes) {
-            if (!VALUE_KEY.equals(child.encodedName) && child.encodedName.startsWith(ATTRIBUTE_PREFIX)) {
-                attrs.put(child.encodedName, child.value);
-            }
-        }
+        childNodes.stream()
+                .filter(child -> !VALUE_KEY.equals(child.encodedName) && child.encodedName.startsWith(ATTRIBUTE_PREFIX))
+                .forEach(child -> attrs.put(child.encodedName, child.value));
         return attrs;
     }
 
     /**
-     * Returns the value of the attribute with given <code>name</code>.
+     * Returns the value of the attribute with given {@code name}.
      *
      * @param name The name of the attribute to get the value for
-     * @return the value of the attribute, or <code>null</code> if the attribute was not found
+     * @return the value of the attribute, or {@code null} if the attribute was not found
      */
     public String getAttribute(String name) {
         String attr = ATTRIBUTE_PREFIX + name;
         return getChildValue(attr);
     }
-    
+
     private String getChildValue(String name) {
         for (BSONNode node : childNodes) {
             if (name.equals(node.encodedName)) {
@@ -218,7 +210,7 @@ public class BSONNode {
     /**
      * Returns the value of the current node
      *
-     * @return the value of the current node, or <code>null</code> if this node has no value.
+     * @return the value of the current node, or {@code null} if this node has no value.
      */
     public String getValue() {
         return value;

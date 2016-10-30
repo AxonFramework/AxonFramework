@@ -104,7 +104,7 @@ public class JpaSagaStore implements SagaStore<Object> {
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      */
     public JpaSagaStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
-        Assert.notNull(entityManagerProvider, "entityManagerProvider may not be null");
+        Assert.notNull(entityManagerProvider, () -> "entityManagerProvider may not be null");
         this.entityManagerProvider = entityManagerProvider;
 
         this.serializer = serializer;

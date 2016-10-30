@@ -148,7 +148,7 @@ public class ComplexAggregateStructureTest {
 
         @CommandHandler
         public void handle(UpdateParagraphCommand cmd) {
-            Assert.isTrue(cmd.getParagraphId() == paragraphId, "UpdatePageCommand reached the wrong paragraph");
+            Assert.isTrue(cmd.getParagraphId() == paragraphId, () -> "UpdatePageCommand reached the wrong paragraph");
             apply(new ParagraphUpdatedEvent(cmd.getBookId(), cmd.getPageNumber(), paragraphId, cmd.getText()));
         }
 

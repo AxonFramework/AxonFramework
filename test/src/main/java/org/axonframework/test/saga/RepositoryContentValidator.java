@@ -36,8 +36,8 @@ public class RepositoryContentValidator<T> {
     private final InMemorySagaStore sagaStore;
 
     /**
-     * Initialize the validator to validate contents of the given <code>sagaRepository</code>, which contains Sagas of
-     * the given <code>sagaType</code>.
+     * Initialize the validator to validate contents of the given {@code sagaRepository}, which contains Sagas of
+     * the given {@code sagaType}.
      *
      * @param sagaStore The SagaStore to monitor
      */
@@ -47,8 +47,8 @@ public class RepositoryContentValidator<T> {
     }
 
     /**
-     * Asserts that an association is present for the given <code>associationKey</code> and
-     * <code>associationValue</code>.
+     * Asserts that an association is present for the given {@code associationKey} and
+     * {@code associationValue}.
      *
      * @param associationKey   The key of the association
      * @param associationValue The value of the association
@@ -65,8 +65,8 @@ public class RepositoryContentValidator<T> {
     }
 
     /**
-     * Asserts that <em>no</em> association is present for the given <code>associationKey</code> and
-     * <code>associationValue</code>.
+     * Asserts that <em>no</em> association is present for the given {@code associationKey} and
+     * {@code associationValue}.
      *
      * @param associationKey   The key of the association
      * @param associationValue The value of the association
@@ -84,7 +84,7 @@ public class RepositoryContentValidator<T> {
     }
 
     /**
-     * Asserts that the repsitory contains the given <code>expected</code> amount of active sagas.
+     * Asserts that the repsitory contains the given {@code expected} amount of active sagas.
      *
      * @param expected The number of expected sagas.
      */

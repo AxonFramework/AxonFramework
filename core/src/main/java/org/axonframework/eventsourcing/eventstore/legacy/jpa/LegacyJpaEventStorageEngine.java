@@ -98,7 +98,7 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
     @SuppressWarnings("unchecked")
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
         Assert.isTrue(lastToken == null || lastToken instanceof LegacyTrackingToken,
-                      String.format("Token %s is of the wrong type", lastToken));
+                      () -> String.format("Token %s is of the wrong type", lastToken));
         Map<String, Object> paramRegistry = new HashMap<>();
         Query query = entityManager().createQuery(String.format(
                 "SELECT new org.axonframework.eventsourcing.eventstore.legacy.GenericLegacyDomainEventEntry(" +

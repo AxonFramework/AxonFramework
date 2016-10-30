@@ -44,7 +44,7 @@ public class CommandValidator {
     private final FieldFilter fieldFilter;
 
     /**
-     * Creates a validator which monitors the given <code>commandBus</code>.
+     * Creates a validator which monitors the given {@code commandBus}.
      *
      * @param commandBus  the command bus to monitor
      * @param fieldFilter the filter describing the Fields to include in a comparison
@@ -106,7 +106,7 @@ public class CommandValidator {
     }
 
     /**
-     * Assert that commands matching the given <code>matcher</code> has been dispatched on the command bus.
+     * Assert that commands matching the given {@code matcher} has been dispatched on the command bus.
      *
      * @param matcher The matcher validating the actual commands
      */

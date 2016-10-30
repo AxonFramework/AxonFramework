@@ -53,8 +53,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition implements 
                                 h -> getProperty(h.payloadType(),
                                                  getOrDefault(childEntityModel.routingKey(), h.routingKey()))));
         //noinspection unchecked
-        return Optional.of(new AnnotatedChildEntity<>(
-                field, childEntityModel,
+        return Optional.of(new AnnotatedChildEntity<>(childEntityModel,
                 (Boolean) attributes.get("forwardCommands"),
                 (Boolean) attributes.get("forwardEvents"),
                 (msg, parent) -> {

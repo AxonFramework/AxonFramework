@@ -29,7 +29,7 @@ import java.util.Map;
 public interface AMQPMessageConverter {
 
     /**
-     * Creates an AMQPMessage from given <code>eventMessage</code>.
+     * Creates an AMQPMessage from given {@code eventMessage}.
      *
      * @param eventMessage The EventMessage to create the AMQP Message from
      * @return an AMQP Message containing the data and characteristics of the Message to send to the AMQP Message
@@ -38,7 +38,7 @@ public interface AMQPMessageConverter {
     AMQPMessage createAMQPMessage(EventMessage eventMessage);
 
     /**
-     * Reconstruct an EventMessage from the given <code>messageBody</code> and <code>headers</code>.
+     * Reconstruct an EventMessage from the given {@code messageBody} and {@code headers}.
      *
      * @param messageBody The body of the AMQP Message
      * @param headers     The headers attached to the AMQP Message

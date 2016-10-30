@@ -44,7 +44,7 @@ public class EventValidator implements EventListener {
     private final FieldFilter fieldFilter;
 
     /**
-     * Initializes the event validator to monitor the given <code>eventBus</code>.
+     * Initializes the event validator to monitor the given {@code eventBus}.
      *
      * @param eventBus the event bus to monitor
      * @param fieldFilter the filter describing the Fields to include in a comparison
@@ -55,7 +55,7 @@ public class EventValidator implements EventListener {
     }
 
     /**
-     * Asserts that events have been published matching the given <code>matcher</code>.
+     * Asserts that events have been published matching the given {@code matcher}.
      *
      * @param matcher The matcher that will validate the actual events
      */
@@ -71,7 +71,7 @@ public class EventValidator implements EventListener {
     }
 
     /**
-     * Assert that the given <code>expected</code> events have been published.
+     * Assert that the given {@code expected} events have been published.
      *
      * @param expected the events that must have been published.
      */
@@ -83,7 +83,7 @@ public class EventValidator implements EventListener {
                     publishedEvents.size()));
         }
 
-        assertPublishedEventsMatching(payloadsMatching(exactSequenceOf(createEqualToMatchers(expected))));
+        assertPublishedEventsMatching(payloadsMatching(exactSequenceOf((Matcher<?>[]) createEqualToMatchers(expected))));
     }
 
     @Override

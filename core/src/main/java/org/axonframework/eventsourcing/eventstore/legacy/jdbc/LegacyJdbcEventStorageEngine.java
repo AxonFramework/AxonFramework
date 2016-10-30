@@ -103,7 +103,7 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
     @Override
     public PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException {
         Assert.isTrue(lastToken == null || lastToken instanceof LegacyTrackingToken,
-                      String.format("Token [%s] is of the wrong type", lastToken));
+                      () -> String.format("Token [%s] is of the wrong type", lastToken));
         String selectFrom = "SELECT " + trackedEventFields() + " FROM " + schema().domainEventTable();
         String orderBy =
                 " ORDER BY " + schema().timestampColumn() + " ASC, " + schema().sequenceNumberColumn() + " ASC, " +

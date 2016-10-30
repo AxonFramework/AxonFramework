@@ -17,10 +17,10 @@
 package org.axonframework.commandhandling.model;
 
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +78,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      */
     protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory) {
         super(aggregateType);
-        Assert.notNull(lockFactory, "LockFactory may not be null");
+        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
         this.lockFactory = lockFactory;
     }
 
@@ -91,7 +91,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
      */
     protected LockingRepository(Class<T> aggregateType, LockFactory lockFactory, ParameterResolverFactory parameterResolverFactory) {
         super(aggregateType, parameterResolverFactory);
-        Assert.notNull(lockFactory, "LockFactory may not be null");
+        Assert.notNull(lockFactory, () -> "LockFactory may not be null");
         this.lockFactory = lockFactory;
     }
 
@@ -138,7 +138,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends Abstr
 
     @Override
     protected void prepareForCommit(LockAwareAggregate<T, A> aggregate) {
-        Assert.state(aggregate.isLockHeld(), "An aggregate is being used for which a lock is no longer held");
+        Assert.state(aggregate.isLockHeld(), () -> "An aggregate is being used for which a lock is no longer held");
         super.prepareForCommit(aggregate);
     }
 

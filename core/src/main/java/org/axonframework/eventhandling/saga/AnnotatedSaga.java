@@ -58,7 +58,7 @@ public class AnnotatedSaga<T> extends SagaLifecycle implements Saga<T> {
      */
     public AnnotatedSaga(String sagaId, Set<AssociationValue> associationValues,
                          T annotatedSaga, TrackingToken trackingToken, SagaModel<T> metaModel) {
-        Assert.notNull(annotatedSaga, "SagaInstance may not be null");
+        Assert.notNull(annotatedSaga, () -> "SagaInstance may not be null");
         this.sagaId = sagaId;
         this.associationValues = new AssociationValuesImpl(associationValues);
         this.sagaInstance = annotatedSaga;

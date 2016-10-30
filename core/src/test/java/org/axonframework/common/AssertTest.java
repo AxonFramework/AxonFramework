@@ -16,7 +16,7 @@
 
 package org.axonframework.common;
 
-import org.junit.*;
+import org.junit.Test;
 
 /**
  * @author Allard Buijze
@@ -25,21 +25,21 @@ public class AssertTest {
 
     @Test
     public void testState_Accept() throws Exception {
-        Assert.state(true, "Hello");
+        Assert.state(true, () -> "Hello");
     }
 
     @Test(expected = IllegalStateException.class)
     public void testState_Fail() throws Exception {
-        Assert.state(false, "Hello");
+        Assert.state(false, () -> "Hello");
     }
 
     @Test
     public void testIsTrue_Accept() throws Exception {
-        Assert.isTrue(true, "Hello");
+        Assert.isTrue(true, () -> "Hello");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testIsTrue_Fail() throws Exception {
-        org.axonframework.common.Assert.isTrue(false, "Hello");
+        org.axonframework.common.Assert.isTrue(false, () -> "Hello");
     }
 }

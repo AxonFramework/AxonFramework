@@ -49,8 +49,8 @@ public abstract class AbstractAnnotatedParameterResolverFactory<A extends Annota
      * @param declaredParameterType the type that the parameter value should be assignable to
      */
     protected AbstractAnnotatedParameterResolverFactory(Class<A> annotationType, Class<P> declaredParameterType) {
-        Assert.notNull(annotationType, "annotationType may not be null");
-        Assert.notNull(declaredParameterType, "declaredParameterType may not be null");
+        Assert.notNull(annotationType, () -> "annotationType may not be null");
+        Assert.notNull(declaredParameterType, () -> "declaredParameterType may not be null");
         this.annotationType = annotationType;
         this.declaredParameterType = declaredParameterType;
     }

@@ -64,10 +64,9 @@ public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Seri
     @Override
     public Predicate<CommandMessage<?>> or(Predicate<? super CommandMessage<?>> other) {
         if (other instanceof DenyCommandNameFilter) {
-            Set<String> otherCommandNames = ((DenyCommandNameFilter) other).commandNames;
             return new DenyCommandNameFilter(
                     commandNames.stream()
-                            .filter(otherCommandNames::contains)
+                            .filter(((DenyCommandNameFilter) other).commandNames::contains)
                             .collect(Collectors.toSet()));
         } else {
             return (t) -> test(t) || other.test(t);

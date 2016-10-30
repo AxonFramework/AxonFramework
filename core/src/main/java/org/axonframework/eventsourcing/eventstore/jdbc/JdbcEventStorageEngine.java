@@ -291,7 +291,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      */
     protected PreparedStatement readEventData(Connection connection, TrackingToken lastToken) throws SQLException {
         Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken,
-                      format("Token [%s] is of the wrong type", lastToken));
+                      () -> format("Token [%s] is of the wrong type", lastToken));
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
         String sql = "SELECT " + trackedEventFields() + " FROM " + schema.domainEventTable() + " WHERE " +
                 schema.globalIndexColumn() + " > ? ";

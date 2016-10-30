@@ -55,7 +55,7 @@ public class DocumentPerCommitStorageStrategy extends AbstractMongoEventStorageS
 
     public DocumentPerCommitStorageStrategy(EventEntryConfiguration eventConfiguration, long gapDetectionInterval,
                                             CommitEntryConfiguration commitEntryConfiguration) {
-        super(eventConfiguration, gapDetectionInterval);
+        super(eventConfiguration);
         this.commitEntryConfiguration = commitEntryConfiguration;
     }
 

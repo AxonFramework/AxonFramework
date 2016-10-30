@@ -45,8 +45,8 @@ public interface StorageStrategy {
     void deleteSnapshots(MongoCollection<Document> snapshotCollection, String aggregateIdentifier);
 
     /**
-     * Provides a cursor for access to all events for an aggregate with given <code>aggregateIdentifier</code>, with a
-     * sequence number equal or higher than the given <code>firstSequenceNumber</code>. The returned documents should be
+     * Provides a cursor for access to all events for an aggregate with given {@code aggregateIdentifier}, with a
+     * sequence number equal or higher than the given {@code firstSequenceNumber}. The returned documents should be
      * ordered chronologically (typically by using the sequence number).
      *
      * @param eventCollection     The collection in which to find the events
@@ -67,8 +67,8 @@ public interface StorageStrategy {
     TrackingToken getTokenForGapDetection(TrackingToken token);
 
     /**
-     * Finds the entry containing the last snapshot event for an aggregate with given <code>aggregateIdentifier</code>
-     * in the given <code>collection</code>.
+     * Finds the entry containing the last snapshot event for an aggregate with given {@code aggregateIdentifier}
+     * in the given {@code collection}.
      *
      * @param snapshotCollection  The collection to find the last snapshot event in
      * @param aggregateIdentifier The identifier of the aggregate to find a snapshot for

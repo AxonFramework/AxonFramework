@@ -43,9 +43,8 @@ public class RunDisruptorCommandBus {
         EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine());
 
         // we register the event handler
-        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> {
-            System.out.println(event.getPayload());
-        }), eventStore).start();
+        new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker(
+                (EventListener) event -> System.out.println(event.getPayload())), eventStore).start();
 
         // we use default settings for the disruptor command bus
         DisruptorCommandBus commandBus = new DisruptorCommandBus(eventStore);

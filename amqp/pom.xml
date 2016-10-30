@@ -74,12 +74,6 @@
             <artifactId>axon-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-spring</artifactId>
-            <version>${project.version}</version>
-            <optional>true</optional>
-        </dependency>
 
         <dependency>
             <groupId>com.rabbitmq</groupId>

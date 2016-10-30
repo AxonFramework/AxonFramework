@@ -43,7 +43,7 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
     private final boolean durable;
 
     /**
-     * Initializes the AMQPMessageConverter with the given <code>serializer</code>, using a {@link
+     * Initializes the AMQPMessageConverter with the given {@code serializer}, using a {@link
      * PackageRoutingKeyResolver} and requesting durable dispatching.
      *
      * @param serializer The serializer to serialize the Event Message's payload and Meta Data with
@@ -53,16 +53,16 @@ public class DefaultAMQPMessageConverter implements AMQPMessageConverter {
     }
 
     /**
-     * Initializes the AMQPMessageConverter with the given <code>serializer</code>, <code>routingKeyResolver</code> and
-     * requesting durable dispatching when <code>durable</code> is <code>true</code>.
+     * Initializes the AMQPMessageConverter with the given {@code serializer}, {@code routingKeyResolver} and
+     * requesting durable dispatching when {@code durable} is {@code true}.
      *
      * @param serializer         The serializer to serialize the Event Message's payload and Meta Data with
      * @param routingKeyResolver The strategy to use to resolve routing keys for Event Messages
      * @param durable            Whether to request durable message dispatching
      */
     public DefaultAMQPMessageConverter(Serializer serializer, RoutingKeyResolver routingKeyResolver, boolean durable) {
-        Assert.notNull(serializer, "Serializer may not be null");
-        Assert.notNull(routingKeyResolver, "RoutingKeyResolver may not be null");
+        Assert.notNull(serializer, () -> "Serializer may not be null");
+        Assert.notNull(routingKeyResolver, () -> "RoutingKeyResolver may not be null");
         this.serializer = serializer;
         this.routingKeyResolver = routingKeyResolver;
         this.durable = durable;

@@ -42,7 +42,7 @@ public class ApplicationContextLookupParameterResolverFactory implements Factory
     private ApplicationContext applicationContext;
 
     /**
-     * Creates an instance, using the given <code>defaultFactories</code>. These are added, regardless of the beans
+     * Creates an instance, using the given {@code defaultFactories}. These are added, regardless of the beans
      * discovered in the application context.
      *
      * @param defaultFactories The ParameterResolverFactory instances to add by default

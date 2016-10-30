@@ -26,11 +26,8 @@ import java.util.function.Predicate;
  *
  * @author Koen Lavooij
  */
-public class AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
-    public static final AcceptAll INSTANCE = new AcceptAll();
-
-    AcceptAll() {
-    }
+public enum AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
+    INSTANCE;
 
     @Override
     public boolean test(CommandMessage commandMessage) {
@@ -38,6 +35,7 @@ public class AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Predicate<CommandMessage<?>> and(Predicate<? super CommandMessage<?>> other) {
         return (Predicate<CommandMessage<?>>) other;
     }
@@ -50,16 +48,6 @@ public class AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
     @Override
     public Predicate<CommandMessage<?>> or(Predicate<? super CommandMessage<?>> other) {
         return this;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj != null && (obj instanceof AcceptAll);
-    }
-
-    @Override
-    public int hashCode() {
-        return 7;
     }
 
     @Override

@@ -50,7 +50,7 @@ public class EventListeningMessageChannelAdapter implements InitializingBean {
                                                MessageChannel channel) {
         this.messageSource = messageSource;
         this.channel = channel;
-        this.filter = new NoFilter();
+        this.filter = NoFilter.INSTANCE;
     }
 
     /**

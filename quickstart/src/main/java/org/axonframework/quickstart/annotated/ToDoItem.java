@@ -34,6 +34,7 @@ import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 public class ToDoItem {
 
     @AggregateIdentifier
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
     private String id;
 
     // No-arg constructor, required by Axon

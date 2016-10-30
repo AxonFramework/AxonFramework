@@ -141,7 +141,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         this.eventBus = requireNonNull(eventBus);
         this.tokenStore = requireNonNull(tokenStore);
-        Assert.isTrue(batchSize > 0, "batchSize needs to be greater than 0");
+        Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.batchSize = batchSize;
     }
 

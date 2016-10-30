@@ -87,7 +87,7 @@ public class CommandHandlerInvoker implements EventHandler<CommandHandlingEntry>
     @SuppressWarnings("unchecked")
     public static <T> DisruptorRepository<T> getRepository(Class<?> type) {
         final CommandHandlerInvoker invoker = CURRENT_INVOKER.get();
-        Assert.state(invoker != null, "The repositories of a DisruptorCommandBus are only available "
+        Assert.state(invoker != null, () -> "The repositories of a DisruptorCommandBus are only available "
                 + "in the invoker thread");
         return invoker.repositories.get(type);
     }

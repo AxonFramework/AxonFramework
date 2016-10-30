@@ -78,9 +78,9 @@ public class SimpleEventScheduler implements EventScheduler {
      */
     public SimpleEventScheduler(ScheduledExecutorService executorService, EventBus eventBus,
                                 UnitOfWorkFactory unitOfWorkFactory) {
-        Assert.notNull(executorService, "executorService may not be null");
-        Assert.notNull(eventBus, "eventBus may not be null");
-        Assert.notNull(unitOfWorkFactory, "unitOfWorkFactory may not be null");
+        Assert.notNull(executorService, () -> "executorService may not be null");
+        Assert.notNull(eventBus, () -> "eventBus may not be null");
+        Assert.notNull(unitOfWorkFactory, () -> "unitOfWorkFactory may not be null");
 
         this.executorService = executorService;
         this.eventBus = eventBus;

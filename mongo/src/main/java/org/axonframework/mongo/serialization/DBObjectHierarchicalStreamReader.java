@@ -37,7 +37,7 @@ public class DBObjectHierarchicalStreamReader implements HierarchicalStreamReade
     private final Deque<Iterator<BSONNode>> childrenStack = new ArrayDeque<>();
 
     /**
-     * Initialize the reader to read the structure of the given <code>root</code> DBObject.
+     * Initialize the reader to read the structure of the given {@code root} DBObject.
      *
      * @param root the root object containing the serialized structure
      */

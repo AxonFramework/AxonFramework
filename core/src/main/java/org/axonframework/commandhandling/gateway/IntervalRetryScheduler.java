@@ -51,7 +51,7 @@ public class IntervalRetryScheduler implements RetryScheduler {
      * @param maxRetryCount The maximum number of retries allowed for a single command
      */
     public IntervalRetryScheduler(ScheduledExecutorService executor, int interval, int maxRetryCount) {
-        Assert.notNull(executor, "executor may not be null");
+        Assert.notNull(executor, () -> "executor may not be null");
         this.retryExecutor = executor;
         this.retryInterval = interval;
         this.maxRetryCount = maxRetryCount;

@@ -35,7 +35,7 @@ import java.util.List;
  * Interface describing the operations available on a test fixture in the configuration stage. This stage allows a test
  * case to prepare the fixture for test execution.
  * <p/>
- * The fixture is initialized using a Command Handler that expects an <code>@CommandHandler</code> aggregate. If you
+ * The fixture is initialized using a Command Handler that expects an {@code @CommandHandler} aggregate. If you
  * have implemented your own command handler (either using annotations, or by implementing the {@link MessageHandler}
  * interace), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
  * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
@@ -72,7 +72,7 @@ import java.util.List;
  * <p/>
  * Providing the "given" events using the {@link #given(Object...)} or {@link
  * #given(java.util.List) given(List&lt;DomainEvent&gt;)} methods must be the last operation in the configuration
- * stage. To indicate that no "given" events are available, just call <code>given()</code> with no parameters.
+ * stage. To indicate that no "given" events are available, just call {@code given()} with no parameters.
  * <p/>
  * Besides setting configuration, you can also use the FixtureConfiguration to get access to the configured components.
  * This allows you to (manually) inject the EventBus or any other component into you command handler, for example.
@@ -84,7 +84,7 @@ import java.util.List;
 public interface FixtureConfiguration<T> {
 
     /**
-     * Registers an arbitrary event sourcing <code>repository</code> with the fixture. The repository must be wired
+     * Registers an arbitrary event sourcing {@code repository} with the fixture. The repository must be wired
      * with the Event Store of this test fixture.
      * <p/>
      * Should not be used in combination with {@link
@@ -97,7 +97,7 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerRepository(EventSourcingRepository<T> repository);
 
     /**
-     * Registers the given <code>aggregateFactory</code> with the fixture. The repository used by the fixture will use
+     * Registers the given {@code aggregateFactory} with the fixture. The repository used by the fixture will use
      * the given factory to create new aggregate instances. Defaults to an Aggregate Factory that uses the no-arg
      * constructor to create new instances.
      * <p/>
@@ -111,7 +111,7 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory);
 
     /**
-     * Registers an <code>annotatedCommandHandler</code> with this fixture. This will register this command handler
+     * Registers an {@code annotatedCommandHandler} with this fixture. This will register this command handler
      * with the command bus used in this fixture.
      *
      * @param annotatedCommandHandler The command handler to register for this test
@@ -120,7 +120,7 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerAnnotatedCommandHandler(Object annotatedCommandHandler);
 
     /**
-     * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the
+     * Registers a {@code commandHandler} to handle commands of the given {@code commandType} with the
      * command bus used by this fixture.
      *
      * @param payloadType    The type of command to register the handler for
@@ -130,7 +130,7 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerCommandHandler(Class<?> payloadType, MessageHandler<CommandMessage<?>> commandHandler);
 
     /**
-     * Registers a <code>commandHandler</code> to handle commands of the given <code>commandType</code> with the
+     * Registers a {@code commandHandler} to handle commands of the given {@code commandType} with the
      * command bus used by this fixture.
      *
      * @param commandName    The name of the command to register the handler for
@@ -170,7 +170,7 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerCommandHandlerInterceptor(MessageHandlerInterceptor<CommandMessage<?>>  commandHanderInterceptor);
 
     /**
-     * Registers the given <code>fieldFilter</code>, which is used to define which Fields are used when comparing
+     * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
      * objects. The {@link ResultValidator#expectEvents(Object...)} and {@link ResultValidator#expectReturnValue(Object)},
      * for example, use this filter.
      * <p/>
@@ -185,7 +185,7 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerFieldFilter(FieldFilter fieldFilter);
 
     /**
-     * Indicates that a field with given <code>fieldName</code>, which is declared in given <code>declaringClass</code>
+     * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass}
      * is ignored when performing deep equality checks.
      *
      * @param declaringClass The class declaring the field
@@ -196,10 +196,10 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> registerIgnoredField(Class<?> declaringClass, String fieldName);
 
     /**
-     * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
+     * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
      * <p/>
-     * If an item in the given <code>domainEvents</code> implements {@link Message}, the
+     * If an item in the given {@code domainEvents} implements {@link Message}, the
      * payload and meta data from that message are copied into a newly created Domain Event Message. Otherwise, a
      * Domain Event Message with the item as payload and empty meta data is created.
      *
@@ -219,7 +219,7 @@ public interface FixtureConfiguration<T> {
     TestExecutor givenNoPriorActivity();
 
     /**
-     * Configures the given <code>domainEvents</code> as the "given" events. These are the events returned by the event
+     * Configures the given {@code domainEvents} as the "given" events. These are the events returned by the event
      * store when an aggregate is loaded.
      * <p/>
      * If an item in the list implements {@link Message}, the payload and meta data from that
@@ -232,7 +232,7 @@ public interface FixtureConfiguration<T> {
     TestExecutor given(List<?> domainEvents);
 
     /**
-     * Configures the given <code>commands</code> as the command that will provide the "given" events. The commands are
+     * Configures the given {@code commands} as the command that will provide the "given" events. The commands are
      * executed, and the resulting stored events are captured.
      *
      * @param commands the domain events the event store should return
@@ -241,7 +241,7 @@ public interface FixtureConfiguration<T> {
     TestExecutor givenCommands(Object... commands);
 
     /**
-     * Configures the given <code>commands</code> as the command that will provide the "given" events. The commands are
+     * Configures the given {@code commands} as the command that will provide the "given" events. The commands are
      * executed, and the resulting stored events are captured.
      *
      * @param commands the domain events the event store should return

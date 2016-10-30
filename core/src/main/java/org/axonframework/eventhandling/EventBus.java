@@ -24,7 +24,6 @@ import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish

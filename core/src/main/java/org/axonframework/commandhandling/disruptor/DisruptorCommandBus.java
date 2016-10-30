@@ -141,8 +141,8 @@ public class DisruptorCommandBus implements CommandBus {
      */
     @SuppressWarnings("unchecked")
     public DisruptorCommandBus(EventStore eventStore, DisruptorConfiguration configuration) {
-        Assert.notNull(eventStore, "eventStore may not be null");
-        Assert.notNull(configuration, "configuration may not be null");
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
+        Assert.notNull(configuration, () -> "configuration may not be null");
         Executor executor = configuration.getExecutor();
         if (executor == null) {
             executorService = Executors.newCachedThreadPool(new AxonThreadFactory(DISRUPTOR_THREAD_GROUP));
@@ -201,7 +201,7 @@ public class DisruptorCommandBus implements CommandBus {
     @Override
     @SuppressWarnings("unchecked")
     public <C, R> void dispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
-        Assert.state(started, "CommandBus has been shut down. It is not accepting any Commands");
+        Assert.state(started, () -> "CommandBus has been shut down. It is not accepting any Commands");
         CommandMessage<? extends C> commandToDispatch = command;
         for (MessageDispatchInterceptor<? super CommandMessage<?>> interceptor : dispatchInterceptors) {
             commandToDispatch = (CommandMessage) interceptor.handle(commandToDispatch);
@@ -219,7 +219,7 @@ public class DisruptorCommandBus implements CommandBus {
      * @param <R>      The expected return type of the command
      */
     <C, R> void doDispatch(CommandMessage<C> command, CommandCallback<? super C, R> callback) {
-        Assert.state(!disruptorShutDown, "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
+        Assert.state(!disruptorShutDown, () -> "Disruptor has been shut down. Cannot dispatch or re-dispatch commands");
         final MessageHandler<? super CommandMessage<?>> commandHandler = commandHandlers.get(command.getCommandName());
         if (commandHandler == null) {
             throw new NoHandlerForCommandException(

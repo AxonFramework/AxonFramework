@@ -28,10 +28,10 @@ import java.lang.reflect.Field;
 public interface FieldFilter {
 
     /**
-     * Indicates whether the given <code>field</code> should be accepted for processing, or skipped/ignored.
+     * Indicates whether the given {@code field} should be accepted for processing, or skipped/ignored.
      *
      * @param field The field to evaluate
-     * @return <code>true</code> when the field should be processed, otherwise <code>false</code>
+     * @return {@code true} when the field should be processed, otherwise {@code false}
      */
     boolean accept(Field field);
 }

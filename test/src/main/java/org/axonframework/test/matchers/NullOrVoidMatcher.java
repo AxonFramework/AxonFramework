@@ -20,7 +20,7 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
 /**
- * Matcher that matches against a <code>null</code> or <code>void</code> value. Can be used to make sure no trailing
+ * Matcher that matches against a {@code null} or {@code void} value. Can be used to make sure no trailing
  * events remain when using an Exact Sequence Matcher.
  *
  * @param <T> The generic type of the mather

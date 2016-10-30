@@ -60,7 +60,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         if (phase() == Phase.NOT_STARTED) {
             start();
         }
-        Assert.state(phase() == Phase.STARTED, String.format("The UnitOfWork has an incompatible phase: %s", phase()));
+        Assert.state(phase() == Phase.STARTED, () -> String.format("The UnitOfWork has an incompatible phase: %s", phase()));
         R result;
         try {
             result = task.call();
@@ -90,7 +90,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     @Override
     protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
-        Assert.state(!phase.isBefore(phase()), "Cannot register a listener for phase: " + phase
+        Assert.state(!phase.isBefore(phase()), () -> "Cannot register a listener for phase: " + phase
                 + " because the Unit of Work is already in a later phase: " + phase());
         processingContext.addHandler(phase, handler);
     }

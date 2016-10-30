@@ -57,8 +57,8 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
     private EventStore eventStore;
-    private Executor executor = DirectExecutor.INSTANCE;
-    private List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
+    private final Executor executor = DirectExecutor.INSTANCE;
+    private final List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
     private ParameterResolverFactory parameterResolverFactory;
 
     @Override
@@ -68,9 +68,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
             applicationContext.getBeansOfType(AggregateFactory.class).values().forEach(factoriesFound::add);
             Collection<EventSourcingRepository> eventSourcingRepositories =
                     applicationContext.getBeansOfType(EventSourcingRepository.class).values();
-            for (EventSourcingRepository repo : eventSourcingRepositories) {
-                factoriesFound.add(repo.getAggregateFactory());
-            }
+            eventSourcingRepositories.forEach(repo -> factoriesFound.add(repo.getAggregateFactory()));
         }
 
         if (transactionManager == null) {

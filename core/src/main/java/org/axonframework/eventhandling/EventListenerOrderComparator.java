@@ -38,7 +38,7 @@ public class EventListenerOrderComparator implements Comparator<EventListener> {
      * @param orderResolver resolver that provides the "order" value of a given EventListener
      */
     public EventListenerOrderComparator(OrderResolver orderResolver) {
-        Assert.notNull(orderResolver, "An orderResolver instance is mandatory");
+        Assert.notNull(orderResolver, () -> "An orderResolver instance is mandatory");
         this.orderResolver = orderResolver;
     }
 

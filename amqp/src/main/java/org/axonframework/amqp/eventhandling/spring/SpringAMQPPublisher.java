@@ -248,7 +248,7 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
      */
     public void setTransactional(boolean transactional) {
         Assert.isTrue(!waitForAck || !transactional,
-                      "Cannot set transactional behavior when 'waitForServerAck' is enabled.");
+                      () -> "Cannot set transactional behavior when 'waitForServerAck' is enabled.");
         isTransactional = transactional;
     }
 
@@ -266,7 +266,7 @@ public class SpringAMQPPublisher implements InitializingBean, ApplicationContext
      */
     public void setWaitForPublisherAck(boolean waitForPublisherAck) {
         Assert.isTrue(!waitForPublisherAck || !isTransactional,
-                      "Cannot set 'waitForPublisherAck' when using transactions.");
+                      () -> "Cannot set 'waitForPublisherAck' when using transactions.");
         this.waitForAck = waitForPublisherAck;
     }
 

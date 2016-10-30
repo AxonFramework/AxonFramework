@@ -103,8 +103,8 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     }
 
     /**
-     * Returns a Proxy that will redirect calls to the <code>javaProxy</code>, if possible. Alternatively, the
-     * <code>target</code> is invoked.
+     * Returns a Proxy that will redirect calls to the {@code javaProxy}, if possible. Alternatively, the
+     * {@code target} is invoked.
      *
      * @param javaProxy The java proxy to invoke, if possible.
      * @param target    The actual implementation to invoke if the javaProxy provides no method implementation
@@ -131,7 +131,7 @@ public abstract class AbstractAnnotationHandlerBeanPostProcessor<I, T extends I>
     protected abstract Class<?>[] getAdapterInterfaces();
 
     /**
-     * Indicates whether an object of the given <code>targetClass</code> should be post processed.
+     * Indicates whether an object of the given {@code targetClass} should be post processed.
      *
      * @param targetClass The type of bean
      * @return true to post process bean of given type, false otherwise

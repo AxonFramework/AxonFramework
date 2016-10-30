@@ -151,7 +151,7 @@ public class CommandGatewayFactory {
      */
     public CommandGatewayFactory(CommandBus commandBus, RetryScheduler retryScheduler,
                                  List<MessageDispatchInterceptor<CommandMessage<?>>> messageDispatchInterceptors) {
-        Assert.notNull(commandBus, "commandBus may not be null");
+        Assert.notNull(commandBus, () -> "commandBus may not be null");
         this.retryScheduler = retryScheduler;
         this.commandBus = commandBus;
         if (messageDispatchInterceptors != null && !messageDispatchInterceptors.isEmpty()) {

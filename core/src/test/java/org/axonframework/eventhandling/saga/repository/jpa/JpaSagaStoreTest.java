@@ -81,7 +81,8 @@ public class JpaSagaStoreTest {
     }
 
     protected void startUnitOfWork() {
-        Assert.isTrue(unitOfWork == null || !unitOfWork.isActive(), "Cannot start unit of work. There is one still active.");
+        Assert.isTrue(unitOfWork == null || !unitOfWork.isActive(),
+                      () -> "Cannot start unit of work. There is one still active.");
         unitOfWork = DefaultUnitOfWork.startAndGet(null);
         TransactionStatus tx = txManager.getTransaction(new DefaultTransactionDefinition());
         unitOfWork.onRollback(u -> txManager.rollback(tx));
@@ -118,7 +119,8 @@ public class JpaSagaStoreTest {
     @DirtiesContext
     @Test
     public void testAddAndLoadSaga_ByIdentifier() throws Exception {
-        String identifier = unitOfWork.executeWithResult(() -> repository.newInstance(StubSaga::new).getSagaIdentifier());
+        String identifier =
+                unitOfWork.executeWithResult(() -> repository.newInstance(StubSaga::new).getSagaIdentifier());
         entityManager.clear();
         startUnitOfWork();
         unitOfWork.execute(() -> {
@@ -184,8 +186,7 @@ public class JpaSagaStoreTest {
         });
         entityManager.clear();
         assertFalse(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                            .setParameter("id", identifier)
-                            .getResultList().isEmpty());
+                            .setParameter("id", identifier).getResultList().isEmpty());
         startUnitOfWork();
         unitOfWork.execute(() -> {
             Saga<StubSaga> loaded = repository.load(identifier);
@@ -195,8 +196,7 @@ public class JpaSagaStoreTest {
 
         assertNull(entityManager.find(SagaEntry.class, identifier));
         assertTrue(entityManager.createQuery("SELECT ae FROM AssociationValueEntry ae WHERE ae.sagaId = :id")
-                           .setParameter("id", identifier)
-                           .getResultList().isEmpty());
+                           .setParameter("id", identifier).getResultList().isEmpty());
     }
 
 

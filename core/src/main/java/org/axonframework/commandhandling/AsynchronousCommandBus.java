@@ -54,7 +54,7 @@ public class AsynchronousCommandBus extends SimpleCommandBus {
      * @param executor The executor that processes Command dispatching threads
      */
     public AsynchronousCommandBus(Executor executor) {
-        Assert.notNull(executor, "executor may not be null");
+        Assert.notNull(executor, () -> "executor may not be null");
         this.executor = executor;
     }
 

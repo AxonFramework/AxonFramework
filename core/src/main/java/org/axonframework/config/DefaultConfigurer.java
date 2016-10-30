@@ -81,20 +81,20 @@ public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
 
-    private Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory = new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
-    private Component<MessageHandlerInterceptor<Message<?>>> interceptor = new Component<>(config, "correlationInterceptor",
+    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory = new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
+    private final Component<MessageHandlerInterceptor<Message<?>>> interceptor = new Component<>(config, "correlationInterceptor",
                                                                                            c -> new CorrelationDataInterceptor<>());
-    private Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(config, "correlationProviders",
+    private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(config, "correlationProviders",
                                                                                             c -> asList(msg -> singletonMap("correlationId", msg.getIdentifier()),
                                                                                                         msg -> singletonMap("traceId", msg.getMetaData().getOrDefault("traceId", msg.getIdentifier()))
                                                                                             ));
 
-    private Map<Class<?>, Component<?>> components = new HashMap<>();
-    private Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
+    private final Map<Class<?>, Component<?>> components = new HashMap<>();
+    private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
 
-    private List<Consumer<Configuration>> initHandlers = new ArrayList<>();
-    private List<Runnable> startHandlers = new ArrayList<>();
-    private List<Runnable> shutdownHandlers = new ArrayList<>();
+    private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
+    private final List<Runnable> startHandlers = new ArrayList<>();
+    private final List<Runnable> shutdownHandlers = new ArrayList<>();
 
     private boolean initialized = false;
 

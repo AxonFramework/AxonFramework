@@ -42,7 +42,7 @@ public class EventPublishingMessageChannelAdapter implements MessageHandler {
      */
     public EventPublishingMessageChannelAdapter(EventBus eventBus) {
         this.eventBus = eventBus;
-        this.filter = new NoFilter();
+        this.filter = NoFilter.INSTANCE;
     }
 
     /**
