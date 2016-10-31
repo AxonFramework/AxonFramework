@@ -19,9 +19,7 @@ package org.axonframework.spring.eventsourcing;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -36,9 +34,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -50,27 +45,17 @@ import java.util.concurrent.Executor;
  * @author Allard Buijze
  * @since 0.6
  */
-public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<AggregateSnapshotter>, ApplicationContextAware {
+public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<SpringAggregateSnapshotter>, ApplicationContextAware {
 
     private PlatformTransactionManager transactionManager;
-    private boolean autoDetectAggregateFactories = true;
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
     private EventStore eventStore;
     private final Executor executor = DirectExecutor.INSTANCE;
-    private final List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
     private ParameterResolverFactory parameterResolverFactory;
 
     @Override
-    public AggregateSnapshotter getObject() throws Exception {
-        List<AggregateFactory<?>> factoriesFound = new ArrayList<>(aggregateFactories);
-        if (autoDetectAggregateFactories) {
-            applicationContext.getBeansOfType(AggregateFactory.class).values().forEach(factoriesFound::add);
-            Collection<EventSourcingRepository> eventSourcingRepositories =
-                    applicationContext.getBeansOfType(EventSourcingRepository.class).values();
-            eventSourcingRepositories.forEach(repo -> factoriesFound.add(repo.getAggregateFactory()));
-        }
-
+    public SpringAggregateSnapshotter getObject() throws Exception {
         if (transactionManager == null) {
             Map<String, PlatformTransactionManager> candidates =
                     applicationContext.getBeansOfType(PlatformTransactionManager.class);
@@ -92,7 +77,7 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
         TransactionManager txManager = transactionManager == null ? NoTransactionManager.INSTANCE :
                 new SpringTransactionManager(transactionManager, transactionDefinition);
 
-        return new AggregateSnapshotter(eventStore, factoriesFound, parameterResolverFactory, executor, txManager);
+        return new SpringAggregateSnapshotter(SpringAggregateSnapshotterFactoryBean.this.eventStore, SpringAggregateSnapshotterFactoryBean.this.parameterResolverFactory, SpringAggregateSnapshotterFactoryBean.this.executor, txManager);
     }
 
     @Override
@@ -124,17 +109,6 @@ public class SpringAggregateSnapshotterFactoryBean implements FactoryBean<Aggreg
      */
     public void setTransactionDefinition(TransactionDefinition transactionDefinition) {
         this.transactionDefinition = transactionDefinition;
-    }
-
-    /**
-     * Optionally sets the aggregate factories to use. By default, this implementation will auto detect available
-     * factories from the application context. Configuring them using this method will prevent auto detection.
-     *
-     * @param aggregateFactories The list of aggregate factories creating the aggregates to store.
-     */
-    public void setAggregateFactories(List<AggregateFactory<?>> aggregateFactories) {
-        this.autoDetectAggregateFactories = false;
-        this.aggregateFactories.addAll(aggregateFactories);
     }
 
     /**
