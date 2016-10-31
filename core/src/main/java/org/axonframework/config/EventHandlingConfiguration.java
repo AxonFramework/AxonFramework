@@ -36,21 +36,12 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
 
     private final List<Component<Object>> eventHandlers = new ArrayList<>();
     private final Map<String, EventProcessorBuilder> eventProcessors = new HashMap<>();
-    private EventProcessorBuilder defaultEventProcessorBuilder = (conf, name, eh) -> new SubscribingEventProcessor(name,
-                                                                                                                   new SimpleEventHandlerInvoker(
-                                                                                                                           eh,
-                                                                                                                           conf.getComponent(
-                                                                                                                                   ListenerErrorHandler.class,
-                                                                                                                                   LoggingListenerErrorHandler::new)),
-                                                                                                                   conf.eventBus(),
-                                                                                                                   conf.messageMonitor(
-                                                                                                                           SubscribingEventProcessor.class,
-                                                                                                                           name));
     private final List<ProcessorSelector> selectors = new ArrayList<>();
+    private final List<EventProcessor> initializedProcessors = new ArrayList<>();
+    private EventProcessorBuilder defaultEventProcessorBuilder = this::defaultEventProcessor;
     private ProcessorSelector defaultSelector;
 
     private Configuration config;
-    private final List<EventProcessor> initializedProcessors = new ArrayList<>();
 
     /**
      * Creates a default configuration for an Event Handling module that assigns Event Handlers to Subscribing Event
@@ -66,6 +57,17 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
     }
 
     private EventHandlingConfiguration() {
+    }
+
+    private SubscribingEventProcessor defaultEventProcessor(Configuration conf, String name, List<?> eh) {
+        return new SubscribingEventProcessor(name,
+                                             new SimpleEventHandlerInvoker(eh,
+                                                                           conf.getComponent(
+                                                                                   ListenerErrorHandler.class,
+                                                                                   LoggingListenerErrorHandler::new)),
+                                             conf.eventBus(),
+                                             conf.messageMonitor(SubscribingEventProcessor.class,
+                                                                 name));
     }
 
     /**
@@ -109,7 +111,7 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration registerEventProcessorFactory(EventProcessorBuilder eventProcessorBuilder) {
-        defaultEventProcessorBuilder = eventProcessorBuilder;
+        this.defaultEventProcessorBuilder = eventProcessorBuilder;
         return this;
     }
 
