@@ -134,7 +134,9 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         beanFactory.getBeanNamesIterator().forEachRemaining(bean -> {
             if (!beanFactory.isFactoryBean(bean)) {
                 Class<?> beanType = beanFactory.getType(bean);
-                if (beanFactory.containsBeanDefinition(bean) && beanFactory.getBeanDefinition(bean).isSingleton()) {
+                if (beanType != null
+                        && beanFactory.containsBeanDefinition(bean)
+                        && beanFactory.getBeanDefinition(bean).isSingleton()) {
                     boolean hasHandler = StreamSupport.stream(methodsOf(beanType).spliterator(), false)
                             .map(m -> AnnotationUtils
                                     .findAnnotationAttributes(m, MessageHandler.class)
