@@ -32,8 +32,8 @@ public interface ContinuedGivenState extends WhenState {
     /**
      * Use this method to indicate that an aggregate with given identifier published certain events.
      * <p/>
-     * Can be chained to build natural sentences:<br/> <code>andThenAggregate(someIdentifier).published(someEvents)
-     * </code>
+     * Can be chained to build natural sentences:<br/> {@code andThenAggregate(someIdentifier).published(someEvents)
+     * }
      *
      * @param aggregateIdentifier The identifier of the aggregate the events should appear to come from
      * @return an object that allows registration of the actual events to send
@@ -59,7 +59,7 @@ public interface ContinuedGivenState extends WhenState {
     ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime) throws Exception;
 
     /**
-     * Indicates that the given <code>event</code> has been published in the past. This event is sent to the associated
+     * Indicates that the given {@code event} has been published in the past. This event is sent to the associated
      * sagas.
      *
      * @param event The event to publish

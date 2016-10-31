@@ -19,6 +19,7 @@ import org.axonframework.messaging.Message;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * @author Rene de Waele
@@ -31,8 +32,14 @@ public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessa
              delegate, delegate.getTimestamp());
     }
 
-    public GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
+    protected GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
                                              long sequenceNumber, Message<T> delegate, Instant timestamp) {
+        super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
+        this.trackingToken = trackingToken;
+    }
+
+    public GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
+                                            long sequenceNumber, Message<T> delegate, Supplier<Instant> timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
         this.trackingToken = trackingToken;
     }

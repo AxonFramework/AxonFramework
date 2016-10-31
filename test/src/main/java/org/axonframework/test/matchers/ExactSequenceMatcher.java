@@ -23,13 +23,13 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A matcher that will match if all the given <code>matchers</code> against the event in a list at their respective
+ * A matcher that will match if all the given {@code matchers} against the event in a list at their respective
  * index. That means the first matcher must match against the first event, the second matcher against the second event,
  * and so forth.
  * <p/>
  * If the number of Events is larger than the number of matchers, the excess events are not evaluated. Use {@link
  * Matchers#exactSequenceOf(org.hamcrest.Matcher[])} to match the sequence exactly. If there are more matchers
- * than Events, the remainder of matchers is evaluated against a <code>null</code> value.
+ * than Events, the remainder of matchers is evaluated against a {@code null} value.
  *
  * @author Allard Buijze
  * @since 1.1
@@ -37,7 +37,7 @@ import java.util.List;
 public class ExactSequenceMatcher extends ListMatcher {
 
     /**
-     * Construct a matcher that will return true if all the given <code>matchers</code> match against the event with
+     * Construct a matcher that will return true if all the given {@code matchers} match against the event with
      * the same index in a given List if Events.
      *
      * @param matchers The matchers that must match against at least one Event in the list.

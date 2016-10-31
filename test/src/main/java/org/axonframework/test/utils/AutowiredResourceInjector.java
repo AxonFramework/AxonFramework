@@ -29,10 +29,10 @@ import java.util.Optional;
  */
 public class AutowiredResourceInjector extends AbstractResourceInjector {
 
-    private Iterable<?> resources;
+    private final Iterable<?> resources;
 
     /**
-     * Initializes the resource injector to inject to given <code>resources</code>.
+     * Initializes the resource injector to inject to given {@code resources}.
      *
      * @param resources The resources to inject
      */

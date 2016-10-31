@@ -16,12 +16,6 @@
 
 package org.axonframework.commandhandling.distributed;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
-
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandCallback;
 import org.axonframework.commandhandling.CommandMessage;
@@ -35,6 +29,12 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 /**
  * Implementation of a {@link CommandBus} that is aware of multiple instances of a CommandBus working together to
@@ -56,7 +56,7 @@ public class DistributedCommandBus implements CommandBus {
     private final CommandBusConnector connector;
     private final List<MessageDispatchInterceptor<CommandMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private volatile int loadFactor = INITIAL_LOAD_FACTOR;
-    private AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
+    private final AtomicReference<Predicate<CommandMessage<?>>> commandFilter = new AtomicReference<>(DenyAll.INSTANCE);
     private final MessageMonitor<? super CommandMessage<?>> messageMonitor;
 
     /**
@@ -82,9 +82,9 @@ public class DistributedCommandBus implements CommandBus {
      * @param messageMonitor the message monitor to notify of incoming messages and their execution result
      */
     public DistributedCommandBus(CommandRouter commandRouter, CommandBusConnector connector, MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-        Assert.notNull(commandRouter, "serviceRegistry may not be null");
-        Assert.notNull(connector, "connector may not be null");
-        Assert.notNull(messageMonitor, "messageMonitor may not be null");
+        Assert.notNull(commandRouter, () -> "serviceRegistry may not be null");
+        Assert.notNull(connector, () -> "connector may not be null");
+        Assert.notNull(messageMonitor, () -> "messageMonitor may not be null");
 
         this.commandRouter = commandRouter;
         this.connector = connector;

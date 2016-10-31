@@ -92,7 +92,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     public EventSourcingRepository(final AggregateFactory<T> aggregateFactory, EventStore eventStore,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType());
-        Assert.notNull(eventStore, "eventStore may not be null");
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.aggregateFactory = aggregateFactory;
         this.eventStore = eventStore;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
@@ -113,7 +113,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
                                    ParameterResolverFactory parameterResolverFactory,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType(), parameterResolverFactory);
-        Assert.notNull(eventStore, "eventStore may not be null");
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
@@ -130,7 +130,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
     public EventSourcingRepository(AggregateFactory<T> aggregateFactory, EventStore eventStore, LockFactory lockFactory,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType(), lockFactory);
-        Assert.notNull(eventStore, "eventStore may not be null");
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;
@@ -149,7 +149,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
                                    ParameterResolverFactory parameterResolverFactory,
                                    SnapshotTriggerDefinition snapshotTriggerDefinition) {
         super(aggregateFactory.getAggregateType(), lockFactory, parameterResolverFactory);
-        Assert.notNull(eventStore, "eventStore may not be null");
+        Assert.notNull(eventStore, () -> "eventStore may not be null");
         this.eventStore = eventStore;
         this.aggregateFactory = aggregateFactory;
         this.snapshotTriggerDefinition = snapshotTriggerDefinition;

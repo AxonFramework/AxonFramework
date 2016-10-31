@@ -29,6 +29,7 @@ import org.bson.types.Binary;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.eq;
 
@@ -47,16 +48,16 @@ public class SagaEntry<T> {
     private static final String ASSOCIATION_KEY = "key";
     private static final String ASSOCIATION_VALUE = "value";
 
-    private String sagaId;
-    private String sagaType;
+    private final String sagaId;
+    private final String sagaType;
 
-    private byte[] serializedSaga;
+    private final byte[] serializedSaga;
 
     private volatile T saga;
     private final Set<AssociationValue> associationValues;
 
     /**
-     * Constructs a new SagaEntry for the given <code>saga</code>. The given saga must be serializable. The provided
+     * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
      * saga is not modified by this operation.
      *
      * @param saga       The saga to store
@@ -118,13 +119,12 @@ public class SagaEntry<T> {
 
     @SuppressWarnings("unchecked")
     private Set<AssociationValue> toAssociationSet(Document dbSaga) {
-        Set<AssociationValue> values = new HashSet<AssociationValue>();
+        Set<AssociationValue> values = new HashSet<>();
         List<Document> list = (List<Document>) dbSaga.get(ASSOCIATIONS);
         if (list != null) {
-            for (Document item : list) {
-                values.add(new AssociationValue((String) item.get(ASSOCIATION_KEY),
-                                                (String) item.get(ASSOCIATION_VALUE)));
-            }
+            values.addAll(list.stream().map(item -> new AssociationValue((String) item.get(ASSOCIATION_KEY),
+                                                                         (String) item.get(ASSOCIATION_VALUE)))
+                                  .collect(Collectors.toList()));
         }
         return values;
     }

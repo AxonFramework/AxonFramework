@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * The reporter generates extensive human readable reports of what the expected outcome of a test was, and what the
@@ -264,9 +266,8 @@ public class Reporter {
         List<String> actualTypes = new ArrayList<>(rightColumnEvents.size());
         List<String> expectedTypes = new ArrayList<>(leftColumnEvents.size());
         int largestExpectedSize = leftColumnName.length();
-        for (Object event : rightColumnEvents) {
-            actualTypes.add(payloadContentType(event));
-        }
+        actualTypes.addAll(rightColumnEvents.stream().map((Function<Object, String>) this::payloadContentType)
+                                   .collect(Collectors.toList()));
         for (Object event : leftColumnEvents) {
             String simpleName = payloadContentType(event);
             if (simpleName.length() > largestExpectedSize) {

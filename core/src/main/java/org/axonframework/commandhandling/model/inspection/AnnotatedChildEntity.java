@@ -20,38 +20,31 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
 public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
-    private final Field field;
     private final EntityModel<C> entityModel;
     private final boolean forwardEvents;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
     private final BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver;
 
     @SuppressWarnings("unchecked")
-    public AnnotatedChildEntity(Field field, EntityModel<C> entityModel,
-                                boolean forwardCommands, boolean forwardEvents,
+    public AnnotatedChildEntity(EntityModel<C> entityModel, boolean forwardCommands, boolean forwardEvents,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,
                                 BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver) {
-        this.field = field;
         this.entityModel = entityModel;
         this.forwardEvents = forwardEvents;
         this.eventTargetResolver = eventTargetResolver;
         this.commandHandlers = new HashMap<>();
         if (forwardCommands) {
-            entityModel
-                    .commandHandlers()
-                    .forEach((commandType, childHandler) -> {
-                        commandHandlers.put(commandType,
-                                            new ChildForwardingCommandMessageHandlingMember<>(
-                                                    entityModel.routingKey(),
-                                                    childHandler,
-                                                    commandTargetResolver));
-                    });
+            entityModel.commandHandlers().forEach((commandType, childHandler) -> commandHandlers.put(commandType,
+                                                                                                     new ChildForwardingCommandMessageHandlingMember<>(
+                                                                                                             entityModel
+                                                                                                                     .routingKey(),
+                                                                                                             childHandler,
+                                                                                                             commandTargetResolver)));
         }
     }
 

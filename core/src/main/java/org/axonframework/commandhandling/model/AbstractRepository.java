@@ -52,7 +52,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregateType The type of aggregate stored in this repository
      */
     protected AbstractRepository(Class<T> aggregateType) {
-        Assert.notNull(aggregateType, "aggregateType may not be null");
+        Assert.notNull(aggregateType, () -> "aggregateType may not be null");
         this.aggregateType = aggregateType;
         this.aggregateModel = ModelInspector.inspectAggregate(aggregateType);
     }
@@ -65,8 +65,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param parameterResolverFactory  The parameter resolver factory used to resolve parameters of annotated handlers
      */
     protected AbstractRepository(Class<T> aggregateType, ParameterResolverFactory parameterResolverFactory) {
-        Assert.notNull(aggregateType, "aggregateType may not be null");
-        Assert.notNull(parameterResolverFactory, "parameterResolverFactory may not be null");
+        Assert.notNull(aggregateType, () -> "aggregateType may not be null");
+        Assert.notNull(parameterResolverFactory, () -> "parameterResolverFactory may not be null");
         this.aggregateType = aggregateType;
         this.aggregateModel = ModelInspector.inspectAggregate(aggregateType, parameterResolverFactory);
     }
@@ -75,11 +75,11 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     public A newInstance(Callable<T> factoryMethod) throws Exception {
         A aggregate = doCreateNew(factoryMethod);
         aggregate.execute(root -> Assert.isTrue(aggregateType.isInstance(root),
-                                                "Unsuitable aggregate for this repository: wrong type"));
+                                                () -> "Unsuitable aggregate for this repository: wrong type"));
         UnitOfWork<?> uow = CurrentUnitOfWork.get();
         Map<String, Aggregate<T>> aggregates = uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
         Assert.isTrue(aggregates.putIfAbsent(aggregate.identifierAsString(), aggregate) == null,
-                      "The Unit of Work already has an Aggregate with the same identifier");
+                      () -> "The Unit of Work already has an Aggregate with the same identifier");
         uow.onRollback(u -> aggregates.remove(aggregate.identifierAsString()));
         prepareForCommit(aggregate);
 
@@ -194,19 +194,23 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     /**
      * Perform action that needs to be done directly after updating an aggregate and committing the aggregate's
-     * uncommitted events.
+     * uncommitted events. No op by default.
      *
      * @param aggregate The aggregate instance being saved
      */
+    @SuppressWarnings("UnusedParameters")
     protected void postSave(A aggregate) {
+        //no op by default
     }
 
     /**
      * Perform action that needs to be done directly after deleting an aggregate and committing the aggregate's
-     * uncommitted events.
+     * uncommitted events. No op by default.
      *
      * @param aggregate The aggregate instance being saved
      */
+    @SuppressWarnings("UnusedParameters")
     protected void postDelete(A aggregate) {
+        //no op by default
     }
 }

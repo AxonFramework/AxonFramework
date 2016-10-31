@@ -17,21 +17,20 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionIsolationLevel;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.toList;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
@@ -42,7 +41,6 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public abstract class BatchingEventStorageEngine extends AbstractEventStorageEngine {
 
     private static final int DEFAULT_BATCH_SIZE = 100;
-    private final TransactionManager transactionManager;
     private final int batchSize;
 
     /**
@@ -55,8 +53,6 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      *                                     null} a {@link NoOpEventUpcasterChain} is used.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
-     * @param transactionManager           The transaction manager used to set the isolation level of the transaction
-     *                                     when loading events.
      * @param batchSize                    The number of events that should be read at each database access. When more
      *                                     than this number of events must be read to rebuild an aggregate's state, the
      *                                     events are read in batches of this size. If {@code null} a batch size of 100
@@ -65,10 +61,8 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      *                                     required to rebuild an aggregate's state.
      */
     public BatchingEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
-                                      PersistenceExceptionResolver persistenceExceptionResolver,
-                                      TransactionManager transactionManager, Integer batchSize) {
+                                      PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize) {
         super(serializer, upcasterChain, persistenceExceptionResolver);
-        this.transactionManager = transactionManager;
         this.batchSize = getOrDefault(batchSize, DEFAULT_BATCH_SIZE);
     }
 
@@ -121,75 +115,10 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      */
     @Override
     protected Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
-        EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(lastItem -> {
-            List<? extends TrackedEventData<?>> result =
-                    fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize);
-            if (containsGaps(result, trackingToken)) {
-                result = ensureNoGaps(result, trackingToken);
-            }
-            return result;
-        }, batchSize, true);
+        EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
+                lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
+                batchSize, true);
         return StreamSupport.stream(spliterator, false);
-    }
-
-    protected boolean containsGaps(List<? extends TrackedEventData<?>> entries, TrackingToken lastToken) {
-        if (entries.isEmpty()) {
-            return false;
-        }
-        Iterator<? extends TrackedEventData<?>> iterator = entries.iterator();
-        TrackingToken previousToken = lastToken;
-        if (previousToken == null) {
-            previousToken = iterator.next().trackingToken();
-        }
-        while (iterator.hasNext()) {
-            TrackingToken nextToken = iterator.next().trackingToken();
-            if (!previousToken.isGuaranteedNext(nextToken)) {
-                return true;
-            }
-            previousToken = nextToken;
-        }
-        return false;
-    }
-
-    protected List<? extends TrackedEventData<?>> ensureNoGaps(List<? extends TrackedEventData<?>> batch,
-                                                               TrackingToken lastToken) {
-        if (batch.isEmpty()) {
-            return batch;
-        }
-        Transaction transaction = transactionManager.startTransaction(TransactionIsolationLevel.READ_UNCOMMITTED);
-        try {
-            List<TrackingToken> existingTokens =
-                    fetchTokenRange(getTokenForGapDetection(lastToken), batch.get(batch.size() - 1).trackingToken());
-            List<? extends TrackedEventData<?>> result = batch;
-            Iterator<TrackingToken> existingTokenIterator = existingTokens.iterator();
-            for (int i = 0; i < batch.size(); i++) {
-                if (!existingTokenIterator.hasNext() ||
-                        !batch.get(i).trackingToken().equals(existingTokenIterator.next())) {
-                    result = batch.subList(0, i);
-                    break;
-                }
-            }
-            transaction.commit();
-            return result;
-        } catch (Throwable e) {
-            transaction.rollback();
-            throw e;
-        }
-    }
-
-    protected abstract TrackingToken getTokenForGapDetection(TrackingToken token);
-
-    protected List<TrackingToken> fetchTokenRange(TrackingToken lastToken, TrackingToken end) {
-        List<TrackingToken> result = new ArrayList<>();
-        while (end.isAfter(lastToken)) {
-            result.addAll(
-                    fetchTrackedEvents(lastToken, (int) (batchSize * 1.1)).stream().map(TrackedEventData::trackingToken)
-                            .filter(token -> !token.isAfter(end)).collect(toList()));
-            if (!result.isEmpty()) {
-                lastToken = result.get(result.size() - 1);
-            }
-        }
-        return result;
     }
 
     public int batchSize() {

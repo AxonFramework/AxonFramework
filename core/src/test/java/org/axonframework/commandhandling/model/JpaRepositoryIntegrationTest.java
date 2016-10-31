@@ -66,7 +66,7 @@ public class JpaRepositoryIntegrationTest implements EventListener {
 
     @After
     public void tearDown() {
-        eventProcessor.shutdown();
+        eventProcessor.shutDown();
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }

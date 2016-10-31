@@ -33,7 +33,7 @@ import java.util.List;
  */
 public abstract class ListMatcher extends BaseMatcher<List<?>> {
 
-    private List<Matcher<?>> failedMatchers = new ArrayList<>();
+    private final List<Matcher<?>> failedMatchers = new ArrayList<>();
     private final Matcher<?>[] matchers;
 
     /**
@@ -52,18 +52,18 @@ public abstract class ListMatcher extends BaseMatcher<List<?>> {
     }
 
     /**
-     * Evaluates the matcher for argument <code>item</code>. The item has been verified to be a list, but the exact
+     * Evaluates the matcher for argument {@code item}. The item has been verified to be a list, but the exact
      * type of contents of a list cannot be verified, due to Erasure of Generic Types.
      *
      * @param item the object against which the matcher is evaluated.
-     * @return <code>true</code> if <code>item</code> matches, otherwise <code>false</code>.
+     * @return {@code true} if {@code item} matches, otherwise {@code false}.
      *
      * @see BaseMatcher
      */
     protected abstract boolean matchesList(List<?> item);
 
     /**
-     * Matches all the remaining Matchers in the given <code>matcherIterator</code> against <code>null</code>.
+     * Matches all the remaining Matchers in the given {@code matcherIterator} against {@code null}.
      *
      * @param matcherIterator The iterator potentially containing more matchers
      * @return true if no matchers remain or all matchers succeeded
@@ -81,7 +81,7 @@ public abstract class ListMatcher extends BaseMatcher<List<?>> {
     }
 
     /**
-     * Report the given <code>matcher</code> as a failing matcher. This will be used in the error reporting.
+     * Report the given {@code matcher} as a failing matcher. This will be used in the error reporting.
      *
      * @param matcher The failing matcher.
      */

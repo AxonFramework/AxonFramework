@@ -37,14 +37,14 @@ public class DBObjectHierarchicalStreamWriter implements ExtendedHierarchicalStr
     private final DBObject root;
 
     /**
-     * Initialize the writer to write the object structure to the given <code>root</code> DBObject.
+     * Initialize the writer to write the object structure to the given {@code root} DBObject.
      * <p/>
-     * Note that the given <code>root</code> DBObject must not contain any data yet.
+     * Note that the given {@code root} DBObject must not contain any data yet.
      *
      * @param root The root DBObject to which the serialized structure will be added. Must not contain any data.
      */
     public DBObjectHierarchicalStreamWriter(DBObject root) {
-        Assert.isTrue(root.keySet().isEmpty(), "The given root object must be empty.");
+        Assert.isTrue(root.keySet().isEmpty(), () -> "The given root object must be empty.");
         this.root = root;
     }
 

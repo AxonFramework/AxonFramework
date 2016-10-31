@@ -48,17 +48,10 @@ import static java.util.stream.StreamSupport.stream;
 public abstract class AbstractMongoEventStorageStrategy implements StorageStrategy {
 
     protected static final int ORDER_ASC = 1, ORDER_DESC = -1;
-    private static final long DEFAULT_GAP_DETECTION_INTERVAL = 10000L;
     private final EventEntryConfiguration eventConfiguration;
-    private final long gapDetectionInterval;
 
     public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration) {
-        this(eventConfiguration, DEFAULT_GAP_DETECTION_INTERVAL);
-    }
-
-    public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration, long gapDetectionInterval) {
         this.eventConfiguration = eventConfiguration;
-        this.gapDetectionInterval = gapDetectionInterval;
     }
 
     @Override
@@ -108,7 +101,7 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
             cursor = eventCollection.find();
         } else {
             Assert.isTrue(lastToken instanceof LegacyTrackingToken,
-                          String.format("Token %s is of the wrong type", lastToken));
+                          () -> String.format("Token %s is of the wrong type", lastToken));
             LegacyTrackingToken legacyTrackingToken = (LegacyTrackingToken) lastToken;
             cursor = eventCollection.find(
                     and(gte(eventConfiguration.timestampProperty(), legacyTrackingToken
@@ -128,7 +121,7 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
         if (token == null) {
             return null;
         }
-        Assert.isTrue(token instanceof LegacyTrackingToken, String.format("Token %s is of the wrong type", token));
+        Assert.isTrue(token instanceof LegacyTrackingToken, () -> String.format("Token %s is of the wrong type", token));
         LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
         return new LegacyTrackingToken(legacyToken.getTimestamp(),
                                        legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());

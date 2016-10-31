@@ -29,7 +29,7 @@ public interface EventFilter {
      * Whether or not this filter allows an event of the given type to pass through or not.
      *
      * @param payloadType The actual type of payload in the event.
-     * @return <code>true</code> if this event should be forwarded, <code>false</code> otherwise.
+     * @return {@code true} if this event should be forwarded, {@code false} otherwise.
      */
     boolean accept(Class<?> payloadType);
 }

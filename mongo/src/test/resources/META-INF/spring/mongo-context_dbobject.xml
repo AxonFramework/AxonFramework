@@ -46,4 +46,8 @@
         <property name="connectionsPerHost" value="100"/>
     </bean>
 
+    <!-- Spring requires a TxManager to allow running @Transactional tests -->
+    <bean id="transactionManager" class="org.mockito.Mockito" factory-method="mock">
+        <constructor-arg type="java.lang.Class" value="org.springframework.transaction.PlatformTransactionManager"/>
+    </bean>
 </beans>

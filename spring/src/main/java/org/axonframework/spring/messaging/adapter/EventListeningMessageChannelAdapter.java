@@ -16,11 +16,13 @@
 
 package org.axonframework.spring.messaging.adapter;
 
-import org.axonframework.eventhandling.*;
-import org.springframework.beans.factory.BeanNameAware;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
+
+import java.util.List;
 
 /**
  * Adapter class that sends Events from an event bus to a Spring Messaging Message Channel. All events are wrapped in
@@ -31,39 +33,38 @@ import org.springframework.messaging.support.GenericMessage;
  * @author Allard Buijze
  * @since 2.3.1
  */
-public class EventListeningMessageChannelAdapter implements EventListener, InitializingBean, BeanNameAware {
+public class EventListeningMessageChannelAdapter implements InitializingBean {
 
     private final MessageChannel channel;
     private final EventFilter filter;
-    private final EventBus eventBus;
-    private String beanName;
+    private final SubscribableMessageSource<EventMessage<?>> messageSource;
 
     /**
-     * Initialize an adapter to forward messages from the given {@code eventBus} to the given
-     * {@code channel}.
+     * Initialize an adapter to forward messages from the given {@code messageSource} to the given {@code channel}.
      * Messages are not filtered; all messages are forwarded to the MessageChannel
      *
-     * @param eventBus The event bus to subscribe to.
-     * @param channel  The channel to send event messages to.
+     * @param messageSource The event bus to subscribe to.
+     * @param channel       The channel to send event messages to.
      */
-    public EventListeningMessageChannelAdapter(EventBus eventBus, MessageChannel channel) {
-        this.eventBus = eventBus;
+    public EventListeningMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
+                                               MessageChannel channel) {
+        this.messageSource = messageSource;
         this.channel = channel;
-        this.filter = new NoFilter();
+        this.filter = NoFilter.INSTANCE;
     }
 
     /**
-     * Initialize an adapter to forward messages from the given {@code eventBus} to the given
-     * {@code channel}.
-     * Messages are filtered using the given {@code filter}
+     * Initialize an adapter to forward messages from the given {@code messageSource} to the given {@code channel}.
+     * Messages are filtered using the given {@code filter}.
      *
-     * @param eventBus The event bus to subscribe to.
-     * @param channel  The channel to send event messages to.
-     * @param filter   The filter that indicates which messages to forward.
+     * @param messageSource The source of messages to subscribe to.
+     * @param channel       The channel to send event messages to.
+     * @param filter        The filter that indicates which messages to forward.
      */
-    public EventListeningMessageChannelAdapter(EventBus eventBus, MessageChannel channel, EventFilter filter) {
+    public EventListeningMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
+                                               MessageChannel channel, EventFilter filter) {
         this.channel = channel;
-        this.eventBus = eventBus;
+        this.messageSource = messageSource;
         this.filter = filter;
     }
 
@@ -72,24 +73,17 @@ public class EventListeningMessageChannelAdapter implements EventListener, Initi
      */
     @Override
     public void afterPropertiesSet() {
-        new SubscribingEventProcessor(beanName, new SimpleEventHandlerInvoker(this), eventBus).start();
+        messageSource.subscribe(this::handle);
     }
 
     /**
      * If allows by the filter, wraps the given {@code event} in a {@link GenericMessage} ands sends it to the
      * configured {@link MessageChannel}.
      *
-     * @param event the event to handle
+     * @param events the events to handle
      */
-    @Override
-    public void handle(EventMessage event) {
-        if (filter.accept(event.getPayload().getClass())) {
-            channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData()));
-        }
-    }
-
-    @Override
-    public void setBeanName(String name) {
-        this.beanName = name;
+    public void handle(List<? extends EventMessage<?>> events) {
+        events.stream().filter(event -> filter.accept(event.getPayloadType()))
+                .forEach(event -> channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData())));
     }
 }

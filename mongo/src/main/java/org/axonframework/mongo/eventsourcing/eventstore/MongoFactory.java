@@ -62,10 +62,10 @@ public class MongoFactory {
 
     /**
      * Provide a list of ServerAddress objects to use for locating the Mongo replica set. An empty list will result in
-     * a single Mongo instance being used on the default host (<code>127.0.0.1</code>) and port
+     * a single Mongo instance being used on the default host ({@code 127.0.0.1}) and port
      * (<code>{@code com.mongodb.ServerAddress#defaultPort}</code>)
      * <p/>
-     * Defaults to an empty list, which locates a single Mongo instance on the default host (<code>127.0.0.1</code>)
+     * Defaults to an empty list, which locates a single Mongo instance on the default host ({@code 127.0.0.1})
      * and port <code>({@code com.mongodb.ServerAddress#defaultPort})</code>
      *
      * @param mongoAddresses List of ServerAddress instances

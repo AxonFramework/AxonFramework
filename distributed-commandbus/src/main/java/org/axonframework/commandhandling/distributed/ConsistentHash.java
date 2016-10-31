@@ -66,7 +66,7 @@ public class ConsistentHash {
     }
 
     public ConsistentHash without(Member member) {
-        Assert.notNull(member, "Member may not be null");
+        Assert.notNull(member, () -> "Member may not be null");
         SortedMap<String, ConsistentHashMember> newHashes = new TreeMap<>();
         this.hashToMember.forEach((h, v) -> {
             if (!Objects.equals(v.name(), member.name())) {
@@ -77,7 +77,7 @@ public class ConsistentHash {
     }
 
     public ConsistentHash with(Member member, int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
-        Assert.notNull(member, "Member may not be null");
+        Assert.notNull(member, () -> "Member may not be null");
         SortedMap<String, ConsistentHashMember> members = new TreeMap<>(without(member).hashToMember);
 
         ConsistentHashMember newMember = new ConsistentHashMember(member, loadFactor, commandFilter);

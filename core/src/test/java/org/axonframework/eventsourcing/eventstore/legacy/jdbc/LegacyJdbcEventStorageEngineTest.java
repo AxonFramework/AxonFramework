@@ -14,18 +14,18 @@
 package org.axonframework.eventsourcing.eventstore.legacy.jdbc;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.jdbc.AbstractJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventTableFactory;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.Before;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,6 +34,7 @@ import java.sql.SQLException;
 /**
  * @author Rene de Waele
  */
+@Transactional
 public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
 
     private JDBCDataSource dataSource;
@@ -57,11 +58,11 @@ public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngine
         return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver);
     }
 
-    private AbstractJdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
-                                                        PersistenceExceptionResolver persistenceExceptionResolver) {
+    private JdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+                                                PersistenceExceptionResolver persistenceExceptionResolver) {
         LegacyJdbcEventStorageEngine result =
                 new LegacyJdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,
-                                                 NoTransactionManager.INSTANCE, dataSource::getConnection);
+                                                 dataSource::getConnection);
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();

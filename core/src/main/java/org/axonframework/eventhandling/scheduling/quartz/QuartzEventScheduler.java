@@ -58,7 +58,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
 
     @Override
     public ScheduleToken schedule(Instant triggerDateTime, Object event) {
-        Assert.state(initialized, "Scheduler is not yet initialized");
+        Assert.state(initialized, () -> "Scheduler is not yet initialized");
         EventMessage eventMessage = GenericEventMessage.asEventMessage(event);
         String jobIdentifier = JOB_NAME_PREFIX + eventMessage.getIdentifier();
         QuartzScheduleToken tr = new QuartzScheduleToken(jobIdentifier, groupIdentifier);
@@ -118,7 +118,7 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
         if (!QuartzScheduleToken.class.isInstance(scheduleToken)) {
             throw new IllegalArgumentException("The given ScheduleToken was not provided by this scheduler.");
         }
-        Assert.state(initialized, "Scheduler is not yet initialized");
+        Assert.state(initialized, () -> "Scheduler is not yet initialized");
 
         QuartzScheduleToken reference = (QuartzScheduleToken) scheduleToken;
         try {
@@ -137,9 +137,9 @@ public class QuartzEventScheduler implements org.axonframework.eventhandling.sch
      */
     @PostConstruct
     public void initialize() throws SchedulerException {
-        Assert.notNull(scheduler, "A Scheduler must be provided.");
-        Assert.notNull(eventBus, "An EventBus must be provided.");
-        Assert.notNull(jobDataBinder, "An EventJobDataBinder must be provided.");
+        Assert.notNull(scheduler, () -> "A Scheduler must be provided.");
+        Assert.notNull(eventBus, () -> "An EventBus must be provided.");
+        Assert.notNull(jobDataBinder, () -> "An EventJobDataBinder must be provided.");
         scheduler.getContext().put(FireEventJob.EVENT_BUS_KEY, eventBus);
         scheduler.getContext().put(FireEventJob.UNIT_OF_WORK_FACTORY_KEY, unitOfWorkFactory);
         scheduler.getContext().put(FireEventJob.EVENT_JOB_DATA_BINDER_KEY, jobDataBinder);

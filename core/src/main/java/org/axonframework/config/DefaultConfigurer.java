@@ -24,7 +24,6 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -50,7 +49,6 @@ import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -83,20 +81,20 @@ public class DefaultConfigurer implements Configurer {
 
     private final Configuration config = new ConfigurationImpl();
 
-    private Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory = new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
-    private Component<MessageHandlerInterceptor<Message<?>>> interceptor = new Component<>(config, "correlationInterceptor",
+    private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory = new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
+    private final Component<MessageHandlerInterceptor<Message<?>>> interceptor = new Component<>(config, "correlationInterceptor",
                                                                                            c -> new CorrelationDataInterceptor<>());
-    private Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(config, "correlationProviders",
+    private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(config, "correlationProviders",
                                                                                             c -> asList(msg -> singletonMap("correlationId", msg.getIdentifier()),
                                                                                                         msg -> singletonMap("traceId", msg.getMetaData().getOrDefault("traceId", msg.getIdentifier()))
                                                                                             ));
 
-    private Map<Class<?>, Component<?>> components = new HashMap<>();
-    private Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
+    private final Map<Class<?>, Component<?>> components = new HashMap<>();
+    private final Map<Class<?>, AggregateConfiguration> aggregateConfigurations = new HashMap<>();
 
-    private List<Consumer<Configuration>> initHandlers = new ArrayList<>();
-    private List<Runnable> startHandlers = new ArrayList<>();
-    private List<Runnable> shutdownHandlers = new ArrayList<>();
+    private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
+    private final List<Runnable> startHandlers = new ArrayList<>();
+    private final List<Runnable> shutdownHandlers = new ArrayList<>();
 
     private boolean initialized = false;
 
@@ -121,9 +119,7 @@ public class DefaultConfigurer implements Configurer {
         return new DefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .configureEmbeddedEventStore(c -> new JpaEventStorageEngine(c.getComponent(EntityManagerProvider.class,
-                                                                                           () -> entityManagerProvider),
-                                                                            c.getComponent(TransactionManager.class,
-                                                                                           () -> NoTransactionManager.INSTANCE)))
+                                                                                           () -> entityManagerProvider)))
                 .registerComponent(TokenStore.class, c -> new JpaTokenStore(c.getComponent(EntityManagerProvider.class,
                                                                                            () -> entityManagerProvider),
                                                                             c.serializer()))

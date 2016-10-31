@@ -16,9 +16,12 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
 import org.junit.Test;
 
+import java.io.*;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 
@@ -84,5 +87,20 @@ public class GenericEventMessageTest {
         assertEquals("value", message1.getMetaData().get("key"));
         assertEquals(1, message2.getMetaData().size());
         assertEquals("otherValue", message2.getMetaData().get("key"));
+    }
+
+    @Test
+    public void testTimestampInEventMessageIsAlwaysSerialized() throws IOException, ClassNotFoundException {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        GenericEventMessage<String> testSubject =
+                new GenericEventMessage<>(new GenericMessage<>("payload", Collections.singletonMap("key", "value")),
+                                          Instant::now);
+        oos.writeObject(testSubject);
+        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
+        Object read = ois.readObject();
+
+        assertEquals(GenericEventMessage.class, read.getClass());
+        assertNotNull(((GenericEventMessage<?>) read).getTimestamp());
     }
 }

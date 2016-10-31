@@ -58,10 +58,9 @@ public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializ
     @Override
     public Predicate<CommandMessage<?>> and(Predicate<? super CommandMessage<?>> other) {
         if (other instanceof CommandNameFilter) {
-            Set<String> otherCommandNames = ((CommandNameFilter) other).commandNames;
             return new CommandNameFilter(commandNames
                     .stream()
-                    .filter(otherCommandNames::contains)
+                    .filter(((CommandNameFilter) other).commandNames::contains)
                     .collect(Collectors.toSet()));
         } else {
             return (t) -> test(t) && other.test(t);

@@ -28,7 +28,7 @@ import java.util.function.Function;
  */
 public class CreateToDoCommandHandler implements MessageHandler<CommandMessage<?>> {
 
-    private Repository<ToDoItem> repository;
+    private final Repository<ToDoItem> repository;
 
     public CreateToDoCommandHandler(Repository<ToDoItem> repository) {
         this.repository = repository;

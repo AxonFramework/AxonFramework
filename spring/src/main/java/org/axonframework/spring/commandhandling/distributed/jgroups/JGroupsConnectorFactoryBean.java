@@ -29,7 +29,6 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.serialization.Serializer;
 import org.jgroups.JChannel;
 import org.jgroups.util.Util;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;

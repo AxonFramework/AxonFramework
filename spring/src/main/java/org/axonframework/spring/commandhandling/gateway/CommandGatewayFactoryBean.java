@@ -115,8 +115,8 @@ public class CommandGatewayFactoryBean<T> implements FactoryBean<T>, Initializin
      * interface.
      */
     public void setGatewayInterface(Class<T> gatewayInterface) {
-        Assert.notNull(gatewayInterface, "The given gateway interface may not be null");
-        Assert.isTrue(gatewayInterface.isInterface(), "The given gateway interface must be an interface");
+        Assert.notNull(gatewayInterface, () -> "The given gateway interface may not be null");
+        Assert.isTrue(gatewayInterface.isInterface(), () -> "The given gateway interface must be an interface");
         this.gatewayInterface = gatewayInterface;
     }
 

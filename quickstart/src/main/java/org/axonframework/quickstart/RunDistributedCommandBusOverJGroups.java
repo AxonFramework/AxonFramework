@@ -123,7 +123,7 @@ public class RunDistributedCommandBusOverJGroups {
 
     /* Handlers used to log the incoming commands */
     public static class ToDoLoggingCommandHandler {
-        private AtomicInteger numberOfReceivedCommands = new AtomicInteger(0);
+        private final AtomicInteger numberOfReceivedCommands = new AtomicInteger(0);
 
         @CommandHandler
         public void handle(CreateToDoItemCommand commandMessage) {

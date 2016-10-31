@@ -40,11 +40,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +64,7 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     private final MutableFieldFilter fieldFilters = new MutableFieldFilter();
 
     /**
-     * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given <code>sagaType</code>.
+     * Creates an instance of the AnnotatedSagaTestFixture to test sagas of the given {@code sagaType}.
      *
      * @param sagaType The type of saga under test
      */
@@ -264,9 +260,9 @@ public class AnnotatedSagaTestFixture<T> implements FixtureConfiguration, Contin
     }
 
     /**
-     * Invocation handler that uses a stub implementation (of not <code>null</code>) to define the value to return from
+     * Invocation handler that uses a stub implementation (of not {@code null}) to define the value to return from
      * a handler invocation. If none is provided, the returned future is checked for a value. If that future is not
-     * "done" (for example because no callback behavior was provided), it returns <code>null</code>.
+     * "done" (for example because no callback behavior was provided), it returns {@code null}.
      *
      * @param <R> The return type of the method invocation
      */

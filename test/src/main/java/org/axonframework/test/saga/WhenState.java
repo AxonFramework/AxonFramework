@@ -35,7 +35,7 @@ public interface WhenState {
      * {@link org.axonframework.test.saga.ContinuedGivenState#andThenAggregate(String)} andThen} methods, this method
      * will start recording activity on the EventBus and CommandBus.
      * <p/>
-     * Can be chained to build natural sentences:<br/> <code>whenAggregate(someIdentifier).publishes(anEvent)</code>
+     * Can be chained to build natural sentences:<br/> {@code whenAggregate(someIdentifier).publishes(anEvent)}
      * <p/>
      * Note that if you inject resources using {@link FixtureConfiguration#registerResource(Object)}, you may need to
      * reset them yourself if they are manipulated by the Saga in the "given" stage of the test.

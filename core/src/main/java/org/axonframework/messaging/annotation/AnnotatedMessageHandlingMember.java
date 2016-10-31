@@ -75,6 +75,7 @@ public class AnnotatedMessageHandlingMember<T> implements MessageHandlingMember<
         return messageType.isInstance(message);
     }
 
+    @SuppressWarnings("unchecked")
     protected boolean parametersMatch(Message<?> message) {
         for (ParameterResolver resolver : parameterResolvers) {
             if (!resolver.matches(message)) {

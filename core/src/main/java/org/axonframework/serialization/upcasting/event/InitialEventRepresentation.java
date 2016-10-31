@@ -21,14 +21,12 @@ import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.*;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author Rene de Waele
@@ -39,7 +37,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
     private final SerializedObject<Object> outputData;
     private final LazyDeserializingObject<MetaData> metaData;
     private final String eventIdentifier;
-    private final Instant timestamp;
+    private final Supplier<Instant> timestamp;
 
     //optionals
     private final String aggregateType;
@@ -55,7 +53,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
         outputData = (SerializedObject<Object>) eventData.getPayload();
         metaData = new LazyDeserializingObject<>(eventData.getMetaData(), serializer);
         eventIdentifier = eventData.getEventIdentifier();
-        timestamp = eventData.getTimestamp();
+        timestamp = CachingSupplier.of(eventData::getTimestamp);
         if (eventData instanceof DomainEventData<?>) {
             DomainEventData<?> domainEventData = (DomainEventData<?>) eventData;
             aggregateType = domainEventData.getType();
@@ -119,7 +117,7 @@ public class InitialEventRepresentation implements IntermediateEventRepresentati
 
     @Override
     public Instant getTimestamp() {
-        return timestamp;
+        return timestamp.get();
     }
 
     @Override

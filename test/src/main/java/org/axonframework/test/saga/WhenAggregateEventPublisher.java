@@ -26,7 +26,7 @@ package org.axonframework.test.saga;
 public interface WhenAggregateEventPublisher {
 
     /**
-     * Register the given <code>event</code> to be published on behalf of an aggregate. Activity caused by this event
+     * Register the given {@code event} to be published on behalf of an aggregate. Activity caused by this event
      * on
      * the CommandBus and EventBus is monitored and can be checked in the FixtureExecutionResult.
      *

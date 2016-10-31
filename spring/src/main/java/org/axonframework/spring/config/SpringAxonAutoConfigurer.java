@@ -4,13 +4,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.config.EventHandlingConfiguration;
-import org.axonframework.config.ModuleConfiguration;
-import org.axonframework.config.SagaConfiguration;
+import org.axonframework.config.*;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.saga.ResourceInjector;
@@ -53,6 +47,28 @@ import java.util.stream.StreamSupport;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 import static org.springframework.beans.factory.support.BeanDefinitionBuilder.genericBeanDefinition;
 
+/**
+ * ImportBeanDefinitionRegistrar implementation that sets up an infrastructure Configuration based on beans available
+ * in the application context.
+ * <p>
+ * This component is backed by a DefaultConfiguration (see {@link DefaultConfigurer#defaultConfiguration()}
+ * and registers the following beans if present in the ApplicationContext:
+ * <ul>
+ * <li>{@link CommandBus}</li>
+ * <li>{@link EventStorageEngine} or {@link EventBus}</li>
+ * <li>{@link Serializer}</li>
+ * <li>{@link TokenStore}</li>
+ * <li>{@link PlatformTransactionManager}</li>
+ * <li>{@link TransactionManager}</li>
+ * <li>{@link SagaStore}</li>
+ * <li>{@link ResourceInjector} (which defaults to {@link SpringResourceInjector}</li>
+ * </ul>
+ * <p>
+ * Furthermore, all beans with an {@link Aggregate @Aggregate} or {@link Saga @Saga} annotation are inspected and
+ * required components to operate the Aggregate or Saga are registered.
+ *
+ * @see EnableAxon
+ */
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringAxonAutoConfigurer.class);
@@ -120,12 +136,12 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 Class<?> beanType = beanFactory.getType(bean);
                 if (beanFactory.containsBeanDefinition(bean) && beanFactory.getBeanDefinition(bean).isSingleton()) {
                     boolean hasHandler = StreamSupport.stream(methodsOf(beanType).spliterator(), false)
-                                                      .map(m -> AnnotationUtils
-                                                              .findAnnotationAttributes(m, MessageHandler.class)
-                                                              .orElse(null))
-                                                      .filter(Objects::nonNull)
-                                                      .anyMatch(attr -> EventMessage.class
-                                                              .isAssignableFrom((Class) attr.get("messageType")));
+                            .map(m -> AnnotationUtils
+                                    .findAnnotationAttributes(m, MessageHandler.class)
+                                    .orElse(null))
+                            .filter(Objects::nonNull)
+                            .anyMatch(attr -> EventMessage.class
+                                    .isAssignableFrom((Class) attr.get("messageType")));
                     if (hasHandler) {
                         beans.add(new RuntimeBeanReference(bean));
                     }

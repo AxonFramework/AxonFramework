@@ -24,12 +24,7 @@ import org.axonframework.serialization.SimpleSerializedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.websocket.CloseReason;
-import javax.websocket.Endpoint;
-import javax.websocket.EndpointConfig;
-import javax.websocket.MessageHandler;
-import javax.websocket.OnMessage;
-import javax.websocket.Session;
+import javax.websocket.*;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -45,17 +40,7 @@ public abstract class AbstractWebsocketCommandBusConnectorServer extends Endpoin
         session.setMaxIdleTimeout(1000);
         session.setMaxBinaryMessageBufferSize(WebsocketCommandBusConnector.MESSAGE_BUFFER_SIZE);
         session.setMaxTextMessageBufferSize(WebsocketCommandBusConnector.MESSAGE_BUFFER_SIZE);
-        session.addMessageHandler(new MessageHandler.Whole<ByteBuffer>() {
-            @Override
-            public void onMessage(ByteBuffer message) {
-                receive(message, session);
-            }
-        });
-    }
-
-    @Override
-    public void onClose(Session session, CloseReason closeReason) {
-        super.onClose(session, closeReason);
+        session.addMessageHandler((MessageHandler.Whole<ByteBuffer>) message -> receive(message, session));
     }
 
     @Override

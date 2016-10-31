@@ -60,6 +60,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     public AggregateSnapshotter(EventStore eventStore, AggregateFactory<?>... aggregateFactories) {
         this(eventStore, Arrays.asList(aggregateFactories));
     }
+
     /**
      * Initializes a snapshotter using the ParameterResolverFactory instances available on the classpath.
      * The given {@code aggregateFactories} are used to instantiate the relevant Aggregate Root instances,
@@ -115,7 +116,10 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
                                                 String aggregateIdentifier,
                                                 DomainEventStream eventStream) {
         DomainEventMessage firstEvent = eventStream.peek();
-        AggregateFactory<?> aggregateFactory = aggregateFactories.get(aggregateType);
+        AggregateFactory<?> aggregateFactory = getAggregateFactory(aggregateType);
+        if (aggregateFactory == null) {
+            throw new IllegalArgumentException("Aggregate Type is unknown in this snapshotter: " + aggregateType.getName());
+        }
         aggregateModels.computeIfAbsent(aggregateType, k -> ModelInspector.inspectAggregate(k, parameterResolverFactory));
         Object aggregateRoot = aggregateFactory.createAggregateRoot(aggregateIdentifier, firstEvent);
         SnapshotAggregate<Object> aggregate = new SnapshotAggregate(aggregateRoot, aggregateModels.get(aggregateType));
@@ -123,6 +127,30 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         return new GenericDomainEventMessage<>(aggregate.type(), aggregate.identifierAsString(), aggregate.version(),
                                                aggregate.getAggregateRoot());
 
+    }
+
+    /**
+     * Returns the AggregateFactory registered for the given {@code aggregateType}, or {@code null} if no such
+     * AggregateFactory is known.
+     * <p>
+     * Sublasses may override this method to enhance how AggregateFactories are retrieved. They may choose to
+     * {@link #registerAggregateFactory(AggregateFactory)} if it hasn't been found using this implementation.
+     *
+     * @param aggregateType The type to get the AggregateFactory for
+     * @return the appropriate AggregateFactory, or {@code null} if not found
+     */
+    protected AggregateFactory<?> getAggregateFactory(Class<?> aggregateType) {
+        return aggregateFactories.get(aggregateType);
+    }
+
+    /**
+     * Registers the given {@code aggregateFactory} with this snapshotter. If a factory for this type was already
+     * registered, it is overwritten with this one.
+     *
+     * @param aggregateFactory the AggregateFactory to register
+     */
+    protected void registerAggregateFactory(AggregateFactory<?> aggregateFactory) {
+        aggregateFactories.put(aggregateFactory.getAggregateType(), aggregateFactory);
     }
 
     private static class SnapshotAggregate<T> extends EventSourcedAggregate<T> {

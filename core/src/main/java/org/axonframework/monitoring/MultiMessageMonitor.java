@@ -50,7 +50,7 @@ public class MultiMessageMonitor<T extends Message<?>> implements MessageMonitor
      * @param messageMonitors the list of event monitors to delegate to
      */
     public MultiMessageMonitor(List<MessageMonitor<? super T>> messageMonitors) {
-        Assert.notNull(messageMonitors, "MessageMonitor list may not be null");
+        Assert.notNull(messageMonitors, () -> "MessageMonitor list may not be null");
         this.messageMonitors = new ArrayList<>(messageMonitors);
     }
 

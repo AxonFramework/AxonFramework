@@ -24,18 +24,6 @@ package org.axonframework.eventsourcing.eventstore;
 public interface TrackingToken extends Comparable<TrackingToken> {
 
     /**
-     * Returns {@code true} if the {@code otherToken} is guaranteed to be the next token in a stream of events after
-     * this token.
-     * <p>
-     * Note that a return value of {@code false} does not exclude the possibility that the otherToken is the next event
-     * in the stream.
-     *
-     * @param otherToken The token to inspect
-     * @return {@code true} if the given otherToken is guaranteed to be the next token after this token
-     */
-    boolean isGuaranteedNext(TrackingToken otherToken);
-
-    /**
      * Check if a given {@code otherToken} comes after the current token. Note that a return value of {@code true} does
      * not require that the otherToken is the next token in a stream of events, only that it is 'larger' than the
      * current token.

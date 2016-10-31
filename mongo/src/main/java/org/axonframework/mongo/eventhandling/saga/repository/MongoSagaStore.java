@@ -46,13 +46,13 @@ public class MongoSagaStore implements SagaStore<Object> {
     private final Serializer serializer;
 
     /**
-     * Initializes the Repository, using given <code>mongoTemplate</code> to access the collections containing the
+     * Initializes the Repository, using given {@code mongoTemplate} to access the collections containing the
      * stored Saga instances.
      *
      * @param mongoTemplate the template providing access to the collections
      */
     public MongoSagaStore(MongoTemplate mongoTemplate) {
-        Assert.notNull(mongoTemplate, "mongoTemplate may not be null");
+        Assert.notNull(mongoTemplate, () -> "mongoTemplate may not be null");
         this.mongoTemplate = mongoTemplate;
         this.serializer = new XStreamSerializer();
     }

@@ -20,6 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 
 import java.time.Instant;
+import java.util.Objects;
 
 
 /**
@@ -37,7 +38,7 @@ public class StubScheduleToken implements ScheduleToken, Comparable<StubSchedule
     private final int counter;
 
     /**
-     * Initialize the token with the given <code>scheduleTime</code>, <code>event</code> and <code>counter</code>.
+     * Initialize the token with the given {@code scheduleTime}, {@code event} and {@code counter}.
      *
      * @param scheduleTime The time at which to trigger the event
      * @param event        The scheduled event
@@ -76,21 +77,12 @@ public class StubScheduleToken implements ScheduleToken, Comparable<StubSchedule
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         StubScheduleToken that = (StubScheduleToken) o;
-
-        if (counter != that.counter) {
-            return false;
-        }
-        if (!scheduleTime.equals(that.scheduleTime)) {
-            return false;
-        }
-
-        return true;
+        return counter == that.counter && Objects.equals(scheduleTime, that.scheduleTime);
     }
 
     @Override
     public int hashCode() {
-        return scheduleTime.hashCode();
+        return Objects.hash(scheduleTime, counter);
     }
 }

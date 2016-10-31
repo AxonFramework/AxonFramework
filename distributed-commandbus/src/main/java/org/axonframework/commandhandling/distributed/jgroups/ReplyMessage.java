@@ -49,14 +49,14 @@ public class ReplyMessage implements Streamable, Externalizable {
     }
 
     /**
-     * Constructs a message containing a reply to the command with given <code>commandIdentifier</code>, containing
-     * either given <code>returnValue</code> or <code>error</code>, which uses the given <code>serializer</code> to
+     * Constructs a message containing a reply to the command with given {@code commandIdentifier}, containing
+     * either given {@code returnValue} or {@code error}, which uses the given {@code serializer} to
      * deserialize its contents.
      *
      * @param commandIdentifier The identifier of the command to which the message is a reply
      * @param returnValue       The return value of command process
      * @param error             The error that occuered during event processing. When provided (i.e. not
-     *                          <code>null</code>, the given <code>returnValue</code> is ignored.
+     *                          {@code null}, the given {@code returnValue} is ignored.
      * @param serializer        The serializer to serialize the message contents with
      */
     public ReplyMessage(String commandIdentifier, Object returnValue, Throwable error, Serializer serializer) {
@@ -83,16 +83,16 @@ public class ReplyMessage implements Streamable, Externalizable {
      * Whether the reply message represents a successfully executed command. In this case, successful means that the
      * command's execution did not result in an exception.
      *
-     * @return <code>true</code> if this reply contains a return value, <code>false</code> if it contains an error.
+     * @return {@code true} if this reply contains a return value, {@code false} if it contains an error.
      */
     public boolean isSuccess() {
         return success;
     }
 
     /**
-     * Returns the returnValue of the command processing. If {@link #isSuccess()} return <code>false</code>, this
-     * method returns <code>null</code>. This method also returns <code>null</code> if response processing returned
-     * a <code>null</code> value.
+     * Returns the returnValue of the command processing. If {@link #isSuccess()} return {@code false}, this
+     * method returns {@code null}. This method also returns {@code null} if response processing returned
+     * a {@code null} value.
      *
      * @param serializer The serializer to deserialize the result with
      * @return The return value of command processing
@@ -105,8 +105,8 @@ public class ReplyMessage implements Streamable, Externalizable {
     }
 
     /**
-     * Returns the error of the command processing. If {@link #isSuccess()} return <code>true</code>, this
-     * method returns <code>null</code>.
+     * Returns the error of the command processing. If {@link #isSuccess()} return {@code true}, this
+     * method returns {@code null}.
      *
      * @param serializer The serializer to deserialize the result with
      * @return The exception thrown during command processing

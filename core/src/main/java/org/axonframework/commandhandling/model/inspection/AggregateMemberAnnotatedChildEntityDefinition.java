@@ -40,7 +40,7 @@ public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntit
         }
 
         EntityModel entityModel = declaringEntity.modelOf(field.getType());
-        return Optional.of(new AnnotatedChildEntity<>(field, entityModel,
+        return Optional.of(new AnnotatedChildEntity<>(entityModel,
                                                       (Boolean) attributes.get("forwardCommands"),
                                                       (Boolean) attributes.get("forwardEvents"),
                                                       (msg, parent) -> ReflectionUtils.getFieldValue(field, parent),

@@ -114,7 +114,7 @@ public class DisruptorConfiguration {
      * @see com.lmax.disruptor.YieldingWaitStrategy YieldingWaitStrategy
      */
     public DisruptorConfiguration setWaitStrategy(WaitStrategy waitStrategy) { //NOSONAR (setter may hide field)
-        Assert.notNull(waitStrategy, "waitStrategy must not be null");
+        Assert.notNull(waitStrategy, () -> "waitStrategy must not be null");
         this.waitStrategy = waitStrategy;
         return this;
     }
@@ -241,7 +241,7 @@ public class DisruptorConfiguration {
      */
     public DisruptorConfiguration setRollbackConfiguration(
             RollbackConfiguration rollbackConfiguration) { //NOSONAR (setter may hide field)
-        Assert.notNull(rollbackConfiguration, "rollbackConfiguration may not be null");
+        Assert.notNull(rollbackConfiguration, () -> "rollbackConfiguration may not be null");
         this.rollbackConfiguration = rollbackConfiguration;
         return this;
     }
@@ -346,7 +346,7 @@ public class DisruptorConfiguration {
      * @return {@code this} for method chaining
      */
     public DisruptorConfiguration setCommandTargetResolver(CommandTargetResolver newCommandTargetResolver) {
-        Assert.notNull(newCommandTargetResolver, "newCommandTargetResolver may not be null");
+        Assert.notNull(newCommandTargetResolver, () -> "newCommandTargetResolver may not be null");
         this.commandTargetResolver = newCommandTargetResolver;
         return this;
     }
@@ -370,7 +370,7 @@ public class DisruptorConfiguration {
      * @return {@code this} for method chaining
      */
     public DisruptorConfiguration setInvokerThreadCount(int count) {
-        Assert.isTrue(count > 0, "InvokerCount must be at least 1");
+        Assert.isTrue(count > 0, () -> "InvokerCount must be at least 1");
         this.invokerThreadCount = count;
         return this;
     }
@@ -394,7 +394,7 @@ public class DisruptorConfiguration {
      * @return {@code this} for method chaining
      */
     public DisruptorConfiguration setPublisherThreadCount(int count) {
-        Assert.isTrue(count > 0, "PublisherCount must be at least 1");
+        Assert.isTrue(count > 0, () -> "PublisherCount must be at least 1");
         this.publisherThreadCount = count;
         return this;
     }
@@ -482,7 +482,7 @@ public class DisruptorConfiguration {
      * @return {@code this} for method chaining
      */
     public DisruptorConfiguration setProducerType(ProducerType producerType) {
-        Assert.notNull(producerType, "producerType must not be null");
+        Assert.notNull(producerType, () -> "producerType must not be null");
         this.producerType = producerType;
         return this;
     }
@@ -503,7 +503,7 @@ public class DisruptorConfiguration {
      * @return {@code this} for method chaining
      */
     public DisruptorConfiguration setMessageMonitor(MessageMonitor<? super CommandMessage<?>> messageMonitor) {
-        Assert.notNull(messageMonitor, "messageMonitor must not be null");
+        Assert.notNull(messageMonitor, () -> "messageMonitor must not be null");
         this.messageMonitor = messageMonitor;
         return this;
     }

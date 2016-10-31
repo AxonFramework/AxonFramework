@@ -17,16 +17,18 @@
   -->
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:axon="http://www.axonframework.org/schema/core"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.axonframework.org/schema/core http://www.axonframework.org/schema/axon-core.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean id="eventStoreBenchMark"
           class="org.axonframework.integrationtests.eventstore.benchmark.jpa.JpaEventStoreBenchMark">
-        <constructor-arg index="0" ref="eventStore"/>
+        <constructor-arg index="0" ref="eventStorageEngine"/>
         <constructor-arg index="1" ref="transactionManager"/>
     </bean>
 
-    <axon:jpa-event-store id="eventStore"/>
+    <bean id="eventStorageEngine" class="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine">
+        <constructor-arg name="entityManagerProvider" ref="entityManagerProvider"/>
+    </bean>
 
     <!-- Infrastructure configuration -->
 
@@ -39,20 +41,26 @@
         <property name="jpaVendorAdapter">
             <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
                 <property name="databasePlatform" value="${hibernate.sql.dialect}"/>
-                <property name="generateDdl" value="${hibernate.sql.generateddl}"/>
                 <property name="showSql" value="${hibernate.sql.show}"/>
             </bean>
         </property>
         <property name="dataSource" ref="dataSource"/>
         <property name="jpaPropertyMap">
             <map>
+                <entry key="javax.persistence.schema-generation.database.action" value="${javax.schema.generation}"/>
                 <entry key="hibernate.jdbc.batch_size" value="20"/>
             </map>
         </property>
     </bean>
 
+    <bean id="entityManagerProvider" class="org.axonframework.common.jpa.ContainerManagedEntityManagerProvider"/>
+
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+
+    <bean id="axonTransactionManager" class="org.axonframework.spring.messaging.unitofwork.SpringTransactionManager">
+        <constructor-arg name="transactionManager" ref="transactionManager"/>
     </bean>
 
     <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor"/>

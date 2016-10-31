@@ -27,11 +27,10 @@ import org.axonframework.serialization.Serializer;
 public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
 
     private final Message<T> delegate;
-    private transient final SerializedObjectHolder serializedObjectHolder;
+    private transient volatile SerializedObjectHolder serializedObjectHolder;
 
     public MessageDecorator(Message<T> delegate) {
         this.delegate = delegate;
-        serializedObjectHolder = new SerializedObjectHolder(delegate);
     }
 
     @Override
@@ -59,7 +58,7 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
         if (delegate instanceof SerializationAware) {
             return ((SerializationAware) delegate).serializePayload(serializer, expectedRepresentation);
         }
-        return serializedObjectHolder.serializePayload(serializer, expectedRepresentation);
+        return serializedObjectHolder().serializePayload(serializer, expectedRepresentation);
     }
 
     @Override
@@ -67,7 +66,14 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
         if (delegate instanceof SerializationAware) {
             return ((SerializationAware) delegate).serializeMetaData(serializer, expectedRepresentation);
         }
-        return serializedObjectHolder.serializeMetaData(serializer, expectedRepresentation);
+        return serializedObjectHolder().serializeMetaData(serializer, expectedRepresentation);
+    }
+
+    private SerializedObjectHolder serializedObjectHolder() {
+        if (serializedObjectHolder == null) {
+            serializedObjectHolder = new SerializedObjectHolder(delegate);
+        }
+        return serializedObjectHolder;
     }
 
     protected Message<T> getDelegate() {

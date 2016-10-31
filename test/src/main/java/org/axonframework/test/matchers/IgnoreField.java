@@ -31,7 +31,7 @@ public class IgnoreField implements FieldFilter {
     private Field ignoredField;
 
     /**
-     * Initialize an instance that ignores the given <code>field</code>
+     * Initialize an instance that ignores the given {@code field}
      *
      * @param field The field to ignore
      */
@@ -40,9 +40,9 @@ public class IgnoreField implements FieldFilter {
     }
 
     /**
-     * Initialize an instance that ignores the a field with given <code>fieldName</code>, which is declared on the
+     * Initialize an instance that ignores the a field with given {@code fieldName}, which is declared on the
      * given
-     * <code>clazz</code>.
+     * {@code clazz}.
      *
      * @param clazz     The type that declares the field
      * @param fieldName The name of the field

@@ -26,11 +26,8 @@ import java.util.function.Predicate;
  *
  * @author Koen Lavooij
  */
-public class DenyAll implements Predicate<CommandMessage<?>>, Serializable {
-    public static final DenyAll INSTANCE = new DenyAll();
-
-    DenyAll() {
-    }
+public enum DenyAll implements Predicate<CommandMessage<?>>, Serializable {
+    INSTANCE;
 
     @Override
     public boolean test(CommandMessage commandMessage) {
@@ -47,14 +44,10 @@ public class DenyAll implements Predicate<CommandMessage<?>>, Serializable {
         return AcceptAll.INSTANCE;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Predicate<CommandMessage<?>> or(Predicate<? super CommandMessage<?>> other) {
         return (Predicate<CommandMessage<?>>) other;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj != null && (obj instanceof DenyAll);
     }
 
     @Override
@@ -62,9 +55,4 @@ public class DenyAll implements Predicate<CommandMessage<?>>, Serializable {
         return "DenyAll{}";
     }
 
-
-    @Override
-    public int hashCode() {
-        return 13;
-    }
 }

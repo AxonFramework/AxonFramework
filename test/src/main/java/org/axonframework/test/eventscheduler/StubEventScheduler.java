@@ -55,7 +55,7 @@ public class StubEventScheduler implements EventScheduler {
     }
 
     /**
-     * Creates an instance of the StubScheduler that uses the given <code>currentDateTime</code> as its conceptual
+     * Creates an instance of the StubScheduler that uses the given {@code currentDateTime} as its conceptual
      * "current time".
      *
      * @param currentDateTime The instant to use as current Date and Time
@@ -128,7 +128,7 @@ public class StubEventScheduler implements EventScheduler {
     }
 
     /**
-     * Advance time to the given <code>newDateTime</code> and invokes the given <code>eventConsumer</code> for each
+     * Advance time to the given {@code newDateTime} and invokes the given {@code eventConsumer} for each
      * event scheduled for publication until that time.
      *
      * @param newDateTime   The time to advance the "current time" of the scheduler to

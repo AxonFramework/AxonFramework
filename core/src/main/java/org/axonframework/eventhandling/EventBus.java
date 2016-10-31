@@ -20,10 +20,10 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * Specification of the mechanism on which the Event Listeners can subscribe for events and event publishers can publish
@@ -36,7 +36,7 @@ import java.util.function.Consumer;
  * @see SimpleEventBus
  * @since 0.1
  */
-public interface EventBus {
+public interface EventBus extends SubscribableMessageSource<EventMessage<?>> {
 
     /**
      * Open an event stream containing all events since given tracking token. The returned stream is comprised of events
@@ -77,18 +77,6 @@ public interface EventBus {
      * @param events The collection of events to publish
      */
     void publish(List<? extends EventMessage<?>> events);
-
-    /**
-     * Subscribe the given {@code eventProcessor} to this bus. When subscribed, it will receive all events
-     * published to this bus.
-     * <p>
-     * If the given {@code eventProcessor} is already subscribed, nothing happens.
-     *
-     * @param eventProcessor The event processor to subscribe
-     * @return a handle to unsubscribe the {@code eventProcessor}. When unsubscribed it will no longer receive
-     * events.
-     */
-    Registration subscribe(Consumer<List<? extends EventMessage<?>>> eventProcessor);
 
     /**
      * Register the given {@code interceptor} with this bus. When subscribed it will intercept any event messages

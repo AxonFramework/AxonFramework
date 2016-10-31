@@ -44,13 +44,13 @@ public class SpringTransactionManager implements TransactionManager {
      */
     public SpringTransactionManager(PlatformTransactionManager transactionManager,
                                     TransactionDefinition transactionDefinition) {
-        Assert.notNull(transactionManager, "transactionManager may not be null");
+        Assert.notNull(transactionManager, () -> "transactionManager may not be null");
         this.transactionManager = transactionManager;
         this.defaultTransactionDefinition = transactionDefinition;
     }
 
     /**
-     * Initializes the SpringTransactionManager with the given <code>transactionManager</code> and the default
+     * Initializes the SpringTransactionManager with the given {@code transactionManager} and the default
      * transaction definition.
      *
      * @param transactionManager the transaction manager to use
@@ -82,7 +82,7 @@ public class SpringTransactionManager implements TransactionManager {
     }
 
     /**
-     * Commits the transaction with given <code>status</code> if the transaction is new and not completed.
+     * Commits the transaction with given {@code status} if the transaction is new and not completed.
      *
      * @param status The status of the transaction to commit
      */
@@ -93,7 +93,7 @@ public class SpringTransactionManager implements TransactionManager {
     }
 
     /**
-     * Rolls back the transaction with given <code>status</code> if the transaction is new and not completed.
+     * Rolls back the transaction with given {@code status} if the transaction is new and not completed.
      *
      * @param status The status of the transaction to roll back
      */

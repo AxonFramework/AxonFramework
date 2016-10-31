@@ -35,7 +35,7 @@ public class MatchAllFieldFilter implements FieldFilter {
     private final List<FieldFilter> filters = new ArrayList<>();
 
     /**
-     * Initializes a filter that accepts any field that is accepted by all given <code>filters</code>
+     * Initializes a filter that accepts any field that is accepted by all given {@code filters}
      *
      * @param filters The filters to use to evaluate a given Field
      */

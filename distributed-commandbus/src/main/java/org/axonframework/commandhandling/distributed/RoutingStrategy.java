@@ -28,7 +28,7 @@ import org.axonframework.commandhandling.CommandMessage;
 public interface RoutingStrategy {
 
     /**
-     * Generates a routing key for the given <code>command</code>. Commands that should be handled by the same segment,
+     * Generates a routing key for the given {@code command}. Commands that should be handled by the same segment,
      * should result in the same routing key.
      *
      * @param command the command to create a routing key for

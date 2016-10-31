@@ -22,7 +22,6 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 
@@ -127,7 +126,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         String id = identifierAsString();
         long seq = nextSequence();
         if (id == null) {
-            Assert.state(seq == 0, "The aggregate identifier has not been set. It must be set at the latest by the " +
+            Assert.state(seq == 0, () -> "The aggregate identifier has not been set. It must be set at the latest by the " +
                     "event sourcing handler of the creation event");
             return new LazyIdentifierDomainEventMessage<>(type(), seq, payload, metaData);
         }
@@ -207,8 +206,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       new GenericEventMessage<>(getIdentifier(),
-                                                                                 getPayload(), getMetaData(), getTimestamp()));
+                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp());
             } else {
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),
                                                               MetaData.from(newMetaData));
@@ -220,8 +218,7 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
             String identifier = identifierAsString();
             if (identifier != null) {
                 return new GenericDomainEventMessage<>(getType(), getAggregateIdentifier(), getSequenceNumber(),
-                                                       new GenericEventMessage<>(getIdentifier(), getPayload(),
-                                                                                 getMetaData(), getTimestamp()))
+                                                       getPayload(), getMetaData(), getIdentifier(), getTimestamp())
                         .andMetaData(additionalMetaData);
             } else {
                 return new LazyIdentifierDomainEventMessage<>(getType(), getSequenceNumber(), getPayload(),

@@ -86,6 +86,25 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code eventBus} for events.
      * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
      * <p>
+     * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler}, a {@link
+     * RollbackConfigurationType#ANY_THROWABLE} and a {@link NoOpMessageMonitor}.
+     *
+     * @param name                The name of the event processor
+     * @param eventHandlerInvoker The component that handles the individual events
+     * @param eventBus            The EventBus which this event processor will track
+     * @param tokenStore          Used to store and fetch event tokens that enable the processor to track its progress
+     * @param batchSize           The maximum number of events to process in a single batch
+     */
+    public TrackingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker, EventBus eventBus,
+                                  TokenStore tokenStore, int batchSize) {
+        this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, NoOpErrorHandler.INSTANCE, eventBus,
+             tokenStore, batchSize, NoOpMessageMonitor.INSTANCE);
+    }
+
+    /**
+     * Initializes an EventProcessor with given {@code name} that subscribes to the given {@code eventBus} for events.
+     * Actual handling of event messages is deferred to the given {@code eventHandlerInvoker}.
+     * <p>
      * The EventProcessor is initialized with a batch size of 1, a {@link NoOpErrorHandler} and a {@link
      * RollbackConfigurationType#ANY_THROWABLE}.
      *
@@ -122,7 +141,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);
         this.eventBus = requireNonNull(eventBus);
         this.tokenStore = requireNonNull(tokenStore);
-        Assert.isTrue(batchSize > 0, "batchSize needs to be greater than 0");
+        Assert.isTrue(batchSize > 0, () -> "batchSize needs to be greater than 0");
         this.batchSize = batchSize;
     }
 
@@ -159,7 +178,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
      * Shut down the processor.
      */
     @Override
-    public void shutdown() {
+    public void shutDown() {
         if (state != State.SHUT_DOWN) {
             state = State.SHUT_DOWN;
             executorService.shutdown();

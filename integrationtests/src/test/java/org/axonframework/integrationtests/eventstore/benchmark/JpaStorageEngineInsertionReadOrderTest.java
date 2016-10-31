@@ -21,13 +21,12 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.GlobalIndexTrackingToken;
 import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
 import org.axonframework.serialization.xml.XStreamSerializer;
-import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,9 +77,8 @@ public class JpaStorageEngineInsertionReadOrderTest {
             return null;
         });
 
-        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcasterChain.INSTANCE, null,
-                                                new SpringTransactionManager(tx), 20,
-                                                new SimpleEntityManagerProvider(entityManager));
+        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcasterChain.INSTANCE, null, 20,
+                                                new SimpleEntityManagerProvider(entityManager), 1L, 10000);
     }
 
     @Test(timeout = 30000)
@@ -121,9 +119,8 @@ public class JpaStorageEngineInsertionReadOrderTest {
     @Test(timeout = 30000)
     public void testInsertConcurrentlyAndReadUsingBlockingStreams_SlowConsumer() throws Exception {
         //increase batch size to 100
-        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcasterChain.INSTANCE, null,
-                                                new SpringTransactionManager(tx), 100,
-                                                new SimpleEntityManagerProvider(entityManager));
+        testSubject = new JpaEventStorageEngine(serializer, NoOpEventUpcasterChain.INSTANCE, null, 100,
+                                                new SimpleEntityManagerProvider(entityManager), 1L, 10000);
         int threadCount = 4, eventsPerThread = 100, inverseRollbackRate = 2, rollbacksPerThread =
                 (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
@@ -178,16 +175,17 @@ public class JpaStorageEngineInsertionReadOrderTest {
 
     private List<TrackedEventMessage<?>> readEvents(int eventCount) {
         List<TrackedEventMessage<?>> result = new ArrayList<>();
-        long lastToken = -1;
+        TrackingToken lastToken = null;
         while (result.size() < eventCount) {
             List<? extends TrackedEventMessage<?>> batch =
-                    testSubject.readEvents(new GlobalIndexTrackingToken(lastToken), false).collect(Collectors.toList());
+                    testSubject.readEvents(lastToken, false).collect(Collectors.toList());
             for (TrackedEventMessage<?> message : batch) {
                 result.add(message);
-                logger.info(
-                        message.getPayload() + " / " + ((DomainEventMessage<?>) message).getSequenceNumber() + " => " +
-                                message.trackingToken().toString());
-                lastToken = ((GlobalIndexTrackingToken) message.trackingToken()).getGlobalIndex();
+                if (logger.isDebugEnabled()) {
+                    logger.debug(message.getPayload() + " / " + ((DomainEventMessage<?>) message).getSequenceNumber() +
+                                         " => " + message.trackingToken().toString());
+                }
+                lastToken = message.trackingToken();
             }
         }
         return result;

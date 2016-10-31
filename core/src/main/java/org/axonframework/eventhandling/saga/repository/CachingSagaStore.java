@@ -53,9 +53,9 @@ public class CachingSagaStore<T> implements SagaStore<T> {
      * @param sagaCache         The cache to store Saga instances in
      */
     public CachingSagaStore(SagaStore<T> delegate, Cache associationsCache, Cache sagaCache) {
-        Assert.notNull(delegate, "You must provide a SagaRepository instance to delegate to");
-        Assert.notNull(associationsCache, "You must provide a Cache instance to store the association values");
-        Assert.notNull(sagaCache, "You must provide a Cache instance to store the sagas");
+        Assert.notNull(delegate, () -> "You must provide a SagaRepository instance to delegate to");
+        Assert.notNull(associationsCache, () -> "You must provide a Cache instance to store the association values");
+        Assert.notNull(sagaCache, () -> "You must provide a Cache instance to store the sagas");
         this.delegate = delegate;
         this.associationsCache = associationsCache;
         this.sagaCache = sagaCache;

@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import org.axonframework.eventsourcing.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.AbstractTrackedDomainEventEntry;
+import org.axonframework.eventsourcing.eventstore.AbstractSequencedDomainEventEntry;
 import org.axonframework.serialization.Serializer;
 
 import javax.persistence.Entity;
@@ -29,7 +29,7 @@ import javax.persistence.Table;
  */
 @Entity
 @Table(indexes = @Index(columnList = "aggregateIdentifier,sequenceNumber,type", unique = true))
-public class CustomDomainEventEntry extends AbstractTrackedDomainEventEntry<String> {
+public class CustomDomainEventEntry extends AbstractSequencedDomainEventEntry<String> {
 
     public CustomDomainEventEntry(DomainEventMessage event, Serializer serializer) {
         super(event, serializer, String.class);
