@@ -50,9 +50,11 @@ public interface Upcaster<T> {
 
     /**
      * Method that is invoked by the {@link UpcasterChain} after all input objects have been upcast. This method is
-     * invoked to enable stateful Upcasters to release any remaining objects.
+     * invoked to enable stateful Upcasters to release any remaining objects. Defaults to an empty stream.
      *
      * @return A Stream of remainder representations
      */
-    Stream<T> remainder();
+    default Stream<T> remainder() {
+        return Stream.empty();
+    }
 }

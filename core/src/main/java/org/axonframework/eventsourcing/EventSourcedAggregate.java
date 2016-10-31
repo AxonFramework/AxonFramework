@@ -22,11 +22,11 @@ import org.axonframework.commandhandling.model.inspection.AnnotatedAggregate;
 import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.MetaData;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
@@ -162,10 +162,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
      *
      * @param eventStream The Event Stream containing the events to be used to reconstruct this Aggregate's state.
      */
-    public void initializeState(Iterator<? extends DomainEventMessage<?>> eventStream) {
+    public void initializeState(DomainEventStream eventStream) {
         this.initializing = true;
         try {
             eventStream.forEachRemaining(this::publish);
+            lastEventSequenceNumber = eventStream.getLastSequenceNumber();
         } finally {
             this.initializing = false;
             snapshotTrigger.initializationFinished();

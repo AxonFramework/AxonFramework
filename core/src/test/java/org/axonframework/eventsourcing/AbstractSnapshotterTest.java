@@ -69,7 +69,7 @@ public class AbstractSnapshotterTest {
     public void testScheduleSnapshot() {
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier))
-                .thenReturn(DomainEventStream.of(createEvents(2).iterator()));
+                .thenReturn(DomainEventStream.of(createEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
         verify(mockEventStore).storeSnapshot(argThat(event(aggregateIdentifier, 1)));
     }
@@ -82,7 +82,7 @@ public class AbstractSnapshotterTest {
                 .doThrow(new ConcurrencyException("Mock"))
                 .when(mockEventStore).storeSnapshot(isA(DomainEventMessage.class));
         when(mockEventStore.readEvents(aggregateIdentifier))
-                .thenAnswer(invocationOnMock -> DomainEventStream.of(createEvents(2).iterator()));
+                .thenAnswer(invocationOnMock -> DomainEventStream.of(createEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
 
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);

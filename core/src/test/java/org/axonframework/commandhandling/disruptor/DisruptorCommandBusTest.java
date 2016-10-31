@@ -423,7 +423,7 @@ public class DisruptorCommandBusTest {
         @Override
         public DomainEventStream readEvents(String aggregateIdentifier) {
             DomainEventMessage message = storedEvents.get(aggregateIdentifier);
-            return message == null ? DomainEventStream.of(Collections.emptyIterator()) : DomainEventStream.of(message);
+            return message == null ? DomainEventStream.empty() : DomainEventStream.of(message);
         }
 
         @Override

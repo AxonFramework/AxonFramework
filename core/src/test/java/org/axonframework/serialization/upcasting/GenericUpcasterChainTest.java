@@ -193,11 +193,6 @@ public class GenericUpcasterChainTest {
         public Stream<Object> upcast(Object intermediateRepresentation) {
             return Stream.of(intermediateRepresentation, intermediateRepresentation);
         }
-
-        @Override
-        public Stream<Object> remainder() {
-            return Stream.empty();
-        }
     }
 
 }

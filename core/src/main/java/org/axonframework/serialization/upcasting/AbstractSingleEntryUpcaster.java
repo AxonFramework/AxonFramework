@@ -26,10 +26,5 @@ public abstract class AbstractSingleEntryUpcaster<T> implements Upcaster<T> {
         return result == null ? Stream.empty() : Stream.of(result);
     }
 
-    @Override
-    public Stream<T> remainder() {
-        return Stream.empty();
-    }
-
     protected abstract T doUpcast(T intermediateRepresentation);
 }

@@ -31,7 +31,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Spliterator.*;
@@ -75,12 +77,18 @@ public abstract class EventUtils {
      * @return a stream of lazy deserializing events
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public static Stream<DomainEventMessage<?>> upcastAndDeserializeDomainEvents(
+    public static DomainEventStream upcastAndDeserializeDomainEvents(
             Stream<? extends DomainEventData<?>> eventEntryStream, Serializer serializer,
             EventUpcasterChain upcasterChain, boolean skipUnknownTypes) {
+        AtomicReference<Long> currentSequenceNumber = new AtomicReference<>();
         Stream<IntermediateEventRepresentation> upcastResult =
-                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes);
-        return upcastResult.map(ir -> {
+                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes,
+                                     entry -> {
+                                         InitialEventRepresentation result = new InitialEventRepresentation(entry, serializer);
+                                         currentSequenceNumber.set(result.getSequenceNumber().get());
+                                         return result;
+                                     });
+        Stream<? extends DomainEventMessage<?>> stream = upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
                                                                              new LazyDeserializingObject<>(
                                                                                      ir::getOutputData,
@@ -97,6 +105,7 @@ public abstract class EventUtils {
                                                        ir::getTimestamp);
             }
         });
+        return DomainEventStream.of(stream, currentSequenceNumber::get);
     }
 
     /**
@@ -117,7 +126,8 @@ public abstract class EventUtils {
             Stream<? extends TrackedEventData<?>> eventEntryStream, Serializer serializer,
             EventUpcasterChain upcasterChain, boolean skipUnknownTypes) {
         Stream<IntermediateEventRepresentation> upcastResult =
-                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes);
+                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes,
+                                     entry -> new InitialEventRepresentation(entry, serializer));
         return upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
                                                                              new LazyDeserializingObject<>(
@@ -139,12 +149,11 @@ public abstract class EventUtils {
 
     private static Stream<IntermediateEventRepresentation> upcastAndDeserialize(
             Stream<? extends EventData<?>> eventEntryStream, Serializer serializer, EventUpcasterChain upcasterChain,
-            boolean skipUnknownTypes) {
+            boolean skipUnknownTypes, Function<EventData<?>, IntermediateEventRepresentation> entryConverter) {
         Stream<IntermediateEventRepresentation> upcastResult =
-                eventEntryStream.map(entry -> new InitialEventRepresentation(entry, serializer));
-        upcastResult = upcasterChain.upcast(upcastResult);
+                upcasterChain.upcast(eventEntryStream.map(entryConverter));
         if (skipUnknownTypes) {
-            upcastResult.filter(ir -> {
+            return upcastResult.filter(ir -> {
                 try {
                     serializer.classForType(ir.getOutputType());
                     return true;

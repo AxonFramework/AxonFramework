@@ -470,7 +470,7 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
                                                      "No 'given' events were configured for this aggregate, " +
                                                              "nor have any events been stored.");
             }
-            return DomainEventStream.of(allEvents.iterator());
+            return DomainEventStream.of(allEvents);
         }
 
         @Override

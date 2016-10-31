@@ -68,15 +68,16 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     @Override
     public DomainEventStream readEvents(String aggregateIdentifier, long firstSequenceNumber) {
         Stream<? extends DomainEventData<?>> input = readEventData(aggregateIdentifier, firstSequenceNumber);
-        return DomainEventStream
-                .of(EventUtils.upcastAndDeserializeDomainEvents(input, serializer, upcasterChain, false).iterator());
+        return EventUtils.upcastAndDeserializeDomainEvents(input, serializer, upcasterChain, false);
     }
 
     @Override
     public Optional<DomainEventMessage<?>> readSnapshot(String aggregateIdentifier) {
-        return readSnapshotData(aggregateIdentifier).map(entry -> EventUtils
-                .upcastAndDeserializeDomainEvents(Stream.of(entry), serializer, upcasterChain, false).findFirst()
-                .orElse(null));
+        return readSnapshotData(aggregateIdentifier).map(entry -> {
+            DomainEventStream stream =
+                    EventUtils.upcastAndDeserializeDomainEvents(Stream.of(entry), serializer, upcasterChain, false);
+            return stream.hasNext() ? stream.next() : null;
+        });
     }
 
     @Override
