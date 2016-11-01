@@ -153,7 +153,7 @@ public abstract class EventUtils {
         Stream<IntermediateEventRepresentation> upcastResult =
                 upcasterChain.upcast(eventEntryStream.map(entryConverter));
         if (skipUnknownTypes) {
-            return upcastResult.filter(ir -> {
+            upcastResult = upcastResult.filter(ir -> {
                 try {
                     serializer.classForType(ir.getOutputType());
                     return true;

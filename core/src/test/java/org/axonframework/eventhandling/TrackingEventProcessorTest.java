@@ -20,6 +20,9 @@ import org.axonframework.common.MockException;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.GlobalSequenceTrackingToken;
+import org.axonframework.eventsourcing.eventstore.TrackingEventStream;
+import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.After;
 import org.junit.Before;
@@ -27,13 +30,17 @@ import org.junit.Test;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvent;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
+import static org.axonframework.eventsourcing.eventstore.EventUtils.asTrackedEventMessage;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -50,10 +57,10 @@ public class TrackingEventProcessorTest {
 
     @Before
     public void setUp() throws Exception {
-        eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         tokenStore = spy(new InMemoryTokenStore());
         mockListener = mock(EventListener.class);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
+        eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
         testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
 
         testSubject.start();
@@ -131,6 +138,105 @@ public class TrackingEventProcessorTest {
         testSubject.start();
         assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());
+    }
+
+    @Test
+    public void testFirstTokenIsStoredWhenUnitOfWorkIsRolledBackOnSecondEvent() throws Exception {
+        List<? extends EventMessage<?>> events = createEvents(2);
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCommit(uow -> {
+                if (uow.getMessage().equals(events.get(1))) {
+                    throw new MockException();
+                }
+            });
+            return interceptorChain.proceed();
+        }));
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+        eventBus.publish(events);
+        assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
+        verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
+        assertNotNull(tokenStore.fetchToken(testSubject.getName(), 0));
+    }
+
+    @Test
+    @DirtiesContext
+    @SuppressWarnings("unchecked")
+    public void testEventsWithTheSameTokenAreProcessedInTheSameBatch() throws Exception {
+        testSubject.shutDown();
+        eventBus.shutDown();
+
+        eventBus = mock(EmbeddedEventStore.class);
+        TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
+        List<TrackedEventMessage<?>> events =
+                createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
+        when(eventBus.streamEvents(null)).thenReturn(trackingEventStreamOf(events.iterator()));
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
+
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCommit(uow -> {
+                if (uow.getMessage().equals(events.get(1))) {
+                    throw new MockException();
+                }
+            });
+            return interceptorChain.proceed();
+        }));
+
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+
+        testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
+            unitOfWork.onCleanup(uow -> countDownLatch.countDown());
+            return interceptorChain.proceed();
+        }));
+
+        testSubject.start();
+
+        assertTrue("Expected Unit of Work to have reached clean up phase", countDownLatch.await(5, TimeUnit.SECONDS));
+        verify(tokenStore, atLeastOnce()).storeToken(any(), any(), anyInt());
+        assertNull(tokenStore.fetchToken(testSubject.getName(), 0));
+    }
+
+    private static TrackingEventStream trackingEventStreamOf(Iterator<TrackedEventMessage<?>> iterator) {
+        return new TrackingEventStream() {
+            private boolean hasPeeked;
+            private TrackedEventMessage<?> peekEvent;
+
+            @Override
+            public Optional<TrackedEventMessage<?>> peek() {
+                if (!hasPeeked) {
+                    if (!hasNextAvailable()) {
+                        return Optional.empty();
+                    }
+                    peekEvent = iterator.next();
+                    hasPeeked = true;
+                }
+                return Optional.of(peekEvent);
+            }
+
+            @Override
+            public boolean hasNextAvailable(int timeout, TimeUnit unit) {
+                return hasPeeked || iterator.hasNext();
+            }
+
+            @Override
+            public TrackedEventMessage nextAvailable() {
+                if (!hasPeeked) {
+                    return iterator.next();
+                }
+                TrackedEventMessage<?> result = peekEvent;
+                peekEvent = null;
+                hasPeeked = false;
+                return result;
+            }
+
+            @Override
+            public void close() {
+
+            }
+        };
     }
 
 }

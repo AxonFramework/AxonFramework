@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.AGGREGATE;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.createEvents;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 
 /**
  * @author Rene de Waele
@@ -34,9 +33,9 @@ public abstract class BatchingEventStorageEngineTest extends AbstractEventStorag
     public void testLoad_LargeAmountOfEvents() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
-        assertEquals(eventCount, asStream(testSubject.readEvents(AGGREGATE)).count());
+        assertEquals(eventCount, testSubject.readEvents(AGGREGATE).asStream().count());
         assertEquals(eventCount - 1,
-                     asStream(testSubject.readEvents(AGGREGATE)).reduce((a, b) -> b).get().getSequenceNumber());
+                     testSubject.readEvents(AGGREGATE).asStream().reduce((a, b) -> b).get().getSequenceNumber());
     }
 
     protected void setTestSubject(BatchingEventStorageEngine testSubject) {

@@ -46,7 +46,6 @@ import java.sql.SQLException;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -81,7 +80,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     public void testStoreAndLoadEventsFromDatastore() {
         testSubject.appendEvents(createEvents(2));
         entityManager.clear();
-        assertEquals(2, asStream(testSubject.readEvents(AGGREGATE)).count());
+        assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 
     @Test

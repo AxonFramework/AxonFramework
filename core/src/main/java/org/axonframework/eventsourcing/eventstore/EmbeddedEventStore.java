@@ -266,6 +266,11 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return Optional.ofNullable(peekedEvent == null && !hasNextAvailable() ? null : peekedEvent);
+        }
+
+        @Override
         public boolean hasNextAvailable(int timeout, TimeUnit unit) throws InterruptedException {
             return peekedEvent != null || (peekedEvent = peek(timeout, unit)) != null;
         }

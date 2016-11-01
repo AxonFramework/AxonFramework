@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
@@ -58,7 +57,7 @@ public abstract class AbstractEventStorageEngineTest extends EventStorageEngineT
         testSubject = createEngine(mockUpcasterChain);
 
         testSubject.appendEvents(createEvents(4));
-        List<DomainEventMessage> upcastedEvents = asStream(testSubject.readEvents(AGGREGATE)).collect(toList());
+        List<DomainEventMessage> upcastedEvents = testSubject.readEvents(AGGREGATE).asStream().collect(toList());
         assertEquals(8, upcastedEvents.size());
 
         Iterator<DomainEventMessage> iterator = upcastedEvents.iterator();

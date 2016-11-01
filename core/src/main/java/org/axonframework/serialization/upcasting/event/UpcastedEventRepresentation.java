@@ -65,11 +65,13 @@ public class UpcastedEventRepresentation<T> implements IntermediateEventRepresen
     @Override
     @SuppressWarnings("unchecked")
     public SerializedObject<T> getOutputData() {
-        SerializedObject<T> serializedInput =
-                converterFactory.getConverter(source.getOutputData().getContentType(), expectedType)
-                        .convert((SerializedObject) source.getOutputData());
-        T result = upcastFunction.apply(serializedInput.getData());
-        return new SimpleSerializedObject<>(result, expectedType, getOutputType());
+        SerializedObject<?> serializedInput = source.getOutputData();
+        if (!serializedInput.getContentType().equals(expectedType)) {
+            serializedInput = converterFactory.getConverter(source.getOutputData().getContentType(), expectedType)
+                    .convert((SerializedObject) source.getOutputData());
+        }
+        return new SimpleSerializedObject<>(upcastFunction.apply((T) serializedInput.getData()), expectedType,
+                                            getOutputType());
     }
 
     @Override

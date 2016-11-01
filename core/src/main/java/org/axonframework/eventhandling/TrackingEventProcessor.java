@@ -188,6 +188,9 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
     /**
      * Fetch and process event batches continuously for as long as the processor is not shutting down. The processor
      * will process events in batches. The maximum size of size of each event batch is configurable.
+     * <p>
+     * Events with the same tracking token (which is possible as result of upcasting) should always be processed in
+     * the same batch. In those cases the batch size may be larger than the one configured.
      */
     protected void doProcess() {
         while (state != State.SHUT_DOWN) {
@@ -197,23 +200,30 @@ public class TrackingEventProcessor extends AbstractEventProcessor {
             }
             List<TrackedEventMessage<?>> batch = new ArrayList<>();
             try {
-                if (batch.isEmpty()) {
-                    if (eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {
-                        batch.add(eventStream.nextAvailable());
-                    }
+                if (eventStream.hasNextAvailable(1, TimeUnit.SECONDS)) {
+                    batch.add(eventStream.nextAvailable());
                 }
                 while (batch.size() < batchSize && eventStream.hasNextAvailable()) {
                     batch.add(eventStream.nextAvailable());
                 }
+                if (batch.isEmpty()) {
+                    continue;
+                }
+
+                //make sure all subsequent events with the same token as the last are added as well. These are the
+                // result of upcasting and should always be processed in the same batch.
+                lastToken = batch.get(batch.size() - 1).trackingToken();
+                while (eventStream.peek().filter(event -> event.trackingToken().equals(lastToken)).isPresent()) {
+                    batch.add(eventStream.nextAvailable());
+                }
+
             } catch (InterruptedException e) {
                 logger.error(String.format("Event processor [%s] was interrupted. Shutting down.", getName()), e);
                 Thread.currentThread().interrupt();
                 return;
             }
-            if (!batch.isEmpty()) {
-                lastToken = batch.get(batch.size() - 1).trackingToken();
-                process(batch);
-            }
+
+            process(batch);
         }
     }
 

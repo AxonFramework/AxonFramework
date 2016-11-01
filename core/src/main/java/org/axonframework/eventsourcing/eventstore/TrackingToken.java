@@ -15,7 +15,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 /**
  * Describes a token that is used to identify the position of an event in an event stream. Event processors use this
- * token to keep track of the events it has processed and still need to process.
+ * token to keep track of the events they have processed and still need to process.
  * <p>
  * A tracking token is {@link Comparable} to another token of the same type.
  *

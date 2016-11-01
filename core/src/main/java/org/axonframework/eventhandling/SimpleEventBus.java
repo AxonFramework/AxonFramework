@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -109,6 +110,11 @@ public class SimpleEventBus extends AbstractEventBus {
                     Thread.currentThread().interrupt();
                 }
             });
+        }
+
+        @Override
+        public Optional<TrackedEventMessage<?>> peek() {
+            return Optional.ofNullable(peekEvent == null && !hasNextAvailable() ? null : peekEvent);
         }
 
         @Override

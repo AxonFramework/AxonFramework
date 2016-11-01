@@ -38,23 +38,30 @@ public class GenericUpcasterChain<T> implements UpcasterChain<T> {
     }
 
     @Override
-    public Stream<T> upcast(Stream<T> intermediateRepresentations) {
+    public Stream<T> upcast(Stream<T> initialRepresentations) {
         List<Upcaster<T>> upcasters = getUpcasters();
-        Stream<T> result = intermediateRepresentations.flatMap(intermediateRepresentation -> {
-            Stream<T> entryResult = Stream.of(intermediateRepresentation);
-            for (Upcaster<T> upcaster : upcasters) {
-                entryResult = entryResult.flatMap(upcaster::upcast);
-            }
-            return entryResult;
-        });
-        Stream<T> remainder = upcasters.stream().flatMap(upcaster -> {
+        Stream<T> result =
+                initialRepresentations.flatMap(initialRepresentation -> upcastEntry(initialRepresentation, upcasters));
+        Stream<T> remainder = upcastRemainder(upcasters);
+        return Stream.concat(result, remainder);
+    }
+
+    protected Stream<T> upcastEntry(T initialRepresentation, List<Upcaster<T>> upcasters) {
+        Stream<T> result = Stream.of(initialRepresentation);
+        for (Upcaster<T> upcaster : upcasters) {
+            result = result.flatMap(upcaster::upcast);
+        }
+        return result;
+    }
+
+    protected Stream<T> upcastRemainder(List<Upcaster<T>> upcasters) {
+        return upcasters.stream().flatMap(upcaster -> {
             Stream<T> entryResult = upcaster.remainder();
             for (Upcaster<T> otherUpcaster : upcasters.subList(upcasters.indexOf(upcaster) + 1, upcasters.size())) {
                 entryResult = entryResult.flatMap(otherUpcaster::upcast);
             }
             return entryResult;
         });
-        return Stream.concat(result, remainder);
     }
 
     protected List<Upcaster<T>> getUpcasters() {

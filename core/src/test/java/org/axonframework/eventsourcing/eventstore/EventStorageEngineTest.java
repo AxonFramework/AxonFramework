@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import static java.util.Collections.singletonMap;
 import static java.util.UUID.randomUUID;
 import static org.axonframework.eventsourcing.eventstore.EventStoreTestUtils.*;
-import static org.axonframework.eventsourcing.eventstore.EventUtils.asStream;
 import static org.junit.Assert.*;
 
 /**
@@ -34,17 +33,17 @@ public abstract class EventStorageEngineTest {
     @Test
     public void testStoreAndLoadEvents() {
         testSubject.appendEvents(createEvents(4));
-        assertEquals(4, asStream(testSubject.readEvents(AGGREGATE)).count());
+        assertEquals(4, testSubject.readEvents(AGGREGATE).asStream().count());
 
         testSubject.appendEvents(createEvent("otherAggregate", 0));
-        assertEquals(4, asStream(testSubject.readEvents(AGGREGATE)).count());
-        assertEquals(1, asStream(testSubject.readEvents("otherAggregate")).count());
+        assertEquals(4, testSubject.readEvents(AGGREGATE).asStream().count());
+        assertEquals(1, testSubject.readEvents("otherAggregate").asStream().count());
     }
 
     @Test
     public void testStoreAndLoadEventsArray() {
         testSubject.appendEvents(createEvent(0), createEvent(1));
-        assertEquals(2, asStream(testSubject.readEvents(AGGREGATE)).count());
+        assertEquals(2, testSubject.readEvents(AGGREGATE).asStream().count());
     }
 
     @Test
@@ -68,16 +67,16 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void testLoadNonExistent() {
-        assertEquals(0L, asStream(testSubject.readEvents(randomUUID().toString())).count());
+        assertEquals(0L, testSubject.readEvents(randomUUID().toString()).asStream().count());
     }
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void testReadPartialStream() {
         testSubject.appendEvents(createEvents(5));
-        assertEquals(2L, asStream(testSubject.readEvents(AGGREGATE, 2)).findFirst().get().getSequenceNumber());
-        assertEquals(4L, asStream(testSubject.readEvents(AGGREGATE, 2)).reduce((a, b) -> b).get().getSequenceNumber());
-        assertEquals(3L, asStream(testSubject.readEvents(AGGREGATE, 2)).count());
+        assertEquals(2L, testSubject.readEvents(AGGREGATE, 2).asStream().findFirst().get().getSequenceNumber());
+        assertEquals(4L, testSubject.readEvents(AGGREGATE, 2).asStream().reduce((a, b) -> b).get().getSequenceNumber());
+        assertEquals(3L, testSubject.readEvents(AGGREGATE, 2).asStream().count());
     }
 
     @Test

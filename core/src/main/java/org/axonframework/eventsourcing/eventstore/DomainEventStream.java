@@ -74,7 +74,7 @@ public interface DomainEventStream extends Iterator<DomainEventMessage<?>> {
      * <p>
      * If the stream is empty this method returns {@code null}.
      *
-     * @return the sequence number of the last processed upstream event entry
+     * @return the sequence number of the last known upstream event entry
      */
     Long getLastSequenceNumber();
 
