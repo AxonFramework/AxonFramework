@@ -25,8 +25,8 @@ import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.mongo.utils.MongoLauncher;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -96,14 +96,14 @@ public class MongoEventStorageEngineTest extends BatchingEventStorageEngineTest 
     }
 
     @Override
-    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+    protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return new MongoEventStorageEngine(new XStreamSerializer(), upcasterChain, mongoTemplate,
                                            new DocumentPerEventStorageStrategy());
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcasterChain.INSTANCE,
+        return new MongoEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
                                            persistenceExceptionResolver, 100, mongoTemplate,
                                            new DocumentPerEventStorageStrategy());
     }

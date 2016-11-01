@@ -21,7 +21,7 @@ import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.sql.Connection;
@@ -85,7 +85,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      *                                     persistence exceptions are not explicitly resolved.
      * @param connectionProvider           The provider of connections to the underlying database
      */
-    public JdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver,
                                   ConnectionProvider connectionProvider) {
         this(serializer, upcasterChain, persistenceExceptionResolver, null, connectionProvider, byte[].class,
@@ -108,7 +108,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param schema                       Object that describes the database schema of event entries
      * @param maxGapOffset
      */
-    public JdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                   ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema,
                                   Integer maxGapOffset) {

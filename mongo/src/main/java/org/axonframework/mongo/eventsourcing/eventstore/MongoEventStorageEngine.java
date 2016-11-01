@@ -27,7 +27,7 @@ import org.axonframework.eventsourcing.eventstore.TrackedEventData;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import javax.annotation.PostConstruct;
@@ -63,7 +63,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      * @param template        MongoTemplate instance to obtain the database and the collections.
      * @param storageStrategy The strategy for storing and retrieving events from the collections
      */
-    public MongoEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, MongoTemplate template,
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, MongoTemplate template,
                                    StorageStrategy storageStrategy) {
         this(serializer, upcasterChain, null, template, storageStrategy);
     }
@@ -81,7 +81,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      * @param template        MongoTemplate instance to obtain the database and the collections.
      * @param storageStrategy The strategy for storing and retrieving events from the collections
      */
-    public MongoEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, Integer batchSize,
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, Integer batchSize,
                                    MongoTemplate template, StorageStrategy storageStrategy) {
         super(serializer, upcasterChain, MongoEventStorageEngine::isDuplicateKeyException, batchSize);
         this.template = template;
@@ -102,7 +102,7 @@ public class MongoEventStorageEngine extends BatchingEventStorageEngine {
      * @param template                     MongoTemplate instance to obtain the database and the collections.
      * @param storageStrategy              The strategy for storing and retrieving events from the collections
      */
-    public MongoEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public MongoEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                    PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                    MongoTemplate template, StorageStrategy storageStrategy) {
         super(serializer, upcasterChain, persistenceExceptionResolver, batchSize);

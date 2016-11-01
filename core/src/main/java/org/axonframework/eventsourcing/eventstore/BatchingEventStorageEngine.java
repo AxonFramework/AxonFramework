@@ -18,8 +18,8 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.Iterator;
@@ -50,7 +50,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * @param serializer                   Used to serialize and deserialize event payload and metadata. If {@code null}
      *                                     an {@link XStreamSerializer} is used.
      * @param upcasterChain                Allows older revisions of serialized objects to be deserialized. If {@code
-     *                                     null} a {@link NoOpEventUpcasterChain} is used.
+     *                                     null} a {@link NoOpEventUpcaster} is used.
      * @param persistenceExceptionResolver Detects concurrency exceptions from the backing database. If {@code null}
      *                                     persistence exceptions are not explicitly resolved.
      * @param batchSize                    The number of events that should be read at each database access. When more
@@ -60,7 +60,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      *                                     and batch size such that a single batch will generally retrieve all events
      *                                     required to rebuild an aggregate's state.
      */
-    public BatchingEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public BatchingEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                       PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize) {
         super(serializer, upcasterChain, persistenceExceptionResolver);
         this.batchSize = getOrDefault(batchSize, DEFAULT_BATCH_SIZE);

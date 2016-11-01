@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 /**
  * @author Rene de Waele
  */
-public class DefaultEventUpcasterChain extends GenericUpcasterChain<IntermediateEventRepresentation> implements EventUpcasterChain {
+public class DefaultEventUpcasterChain extends GenericUpcasterChain<IntermediateEventRepresentation> implements EventUpcaster {
 
     @SafeVarargs
     public DefaultEventUpcasterChain(Upcaster<IntermediateEventRepresentation>... upcasters) {

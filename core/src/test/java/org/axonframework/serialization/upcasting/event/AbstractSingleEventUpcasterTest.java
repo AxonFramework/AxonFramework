@@ -33,6 +33,7 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.*;
@@ -53,7 +54,7 @@ public class AbstractSingleEventUpcasterTest {
                 serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster(newValue);
         List<IntermediateEventRepresentation> result =
-                upcaster.upcast(new InitialEventRepresentation(eventData, serializer)).collect(toList());
+                upcaster.upcast(Stream.of(new InitialEventRepresentation(eventData, serializer))).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation firstEvent = result.get(0);
         assertEquals("1", firstEvent.getOutputType().getRevision());
@@ -82,7 +83,7 @@ public class AbstractSingleEventUpcasterTest {
                                                      serializer.serialize(MetaData.emptyInstance(), String.class));
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
-        List<IntermediateEventRepresentation> result = upcaster.upcast(input).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation firstEvent = result.get(0);
         assertEquals(aggregateType, firstEvent.getAggregateType().get());
@@ -99,7 +100,7 @@ public class AbstractSingleEventUpcasterTest {
                                      serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = spy(new InitialEventRepresentation(eventData, serializer));
-        List<IntermediateEventRepresentation> result = upcaster.upcast(input).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
         assertEquals(1, result.size());
         IntermediateEventRepresentation output = result.get(0);
         assertSame(input, output);
@@ -113,10 +114,10 @@ public class AbstractSingleEventUpcasterTest {
                 new GenericDomainEventMessage<>("test", "aggregateId", 0, new StubEvent("oldName")), serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");
         IntermediateEventRepresentation input = new InitialEventRepresentation(eventData, serializer);
-        List<IntermediateEventRepresentation> result = upcaster.upcast(input).collect(toList());
+        List<IntermediateEventRepresentation> result = upcaster.upcast(Stream.of(input)).collect(toList());
         input = spy(result.get(0));
         assertEquals("1", input.getOutputType().getRevision()); //initial upcast was successful
-        result = upcaster.upcast(input).collect(toList());
+        result = upcaster.upcast(Stream.of(input)).collect(toList());
         assertFalse(result.isEmpty());
         IntermediateEventRepresentation output = result.get(0);
         assertSame(input, output);

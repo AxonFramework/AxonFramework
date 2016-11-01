@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.legacy.GenericLegacyDomainEventEntry;
 import org.axonframework.eventsourcing.eventstore.legacy.LegacyTrackingToken;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.sql.Connection;
@@ -71,7 +71,7 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
      *                                     persistence exceptions are not explicitly resolved.
      * @param connectionProvider           The provider of connections to the underlying database
      */
-    public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                         PersistenceExceptionResolver persistenceExceptionResolver, ConnectionProvider
                                                 connectionProvider) {
         super(serializer, upcasterChain, persistenceExceptionResolver, connectionProvider);
@@ -93,7 +93,7 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
      * @param dataType                     The data type for serialized event payload and metadata
      * @param schema                       Object that describes the database schema of event entries
      */
-    public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public LegacyJdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                         PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                         ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema) {
         super(serializer, upcasterChain, persistenceExceptionResolver, batchSize,

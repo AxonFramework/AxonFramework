@@ -21,8 +21,8 @@ import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -60,20 +60,20 @@ public class LegacyJpaEventStorageEngineTest extends BatchingEventStorageEngineT
     public void setUp() throws SQLException {
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
         setTestSubject(
-                testSubject = createEngine(NoOpEventUpcasterChain.INSTANCE, defaultPersistenceExceptionResolver));
+                testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver));
     }
 
     @Override
-    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+    protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver);
+        return createEngine(NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver);
     }
 
-    protected LegacyJpaEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+    protected LegacyJpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                        PersistenceExceptionResolver persistenceExceptionResolver) {
         return new CustomLegacyJpaEventStorageEngine(upcasterChain, persistenceExceptionResolver,
                                                      new SimpleEntityManagerProvider(entityManager));
@@ -83,7 +83,7 @@ public class LegacyJpaEventStorageEngineTest extends BatchingEventStorageEngineT
     //conflicts with the one produced by DomainEventEntry
     private static class CustomLegacyJpaEventStorageEngine extends LegacyJpaEventStorageEngine {
 
-        private CustomLegacyJpaEventStorageEngine(EventUpcasterChain upcasterChain,
+        private CustomLegacyJpaEventStorageEngine(EventUpcaster upcasterChain,
                                                   PersistenceExceptionResolver persistenceExceptionResolver,
                                                   EntityManagerProvider entityManagerProvider) {
             super(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100, entityManagerProvider);

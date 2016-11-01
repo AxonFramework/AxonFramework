@@ -27,8 +27,8 @@ import org.axonframework.eventsourcing.eventstore.DomainEventData;
 import org.axonframework.eventsourcing.eventstore.EventData;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.UnknownSerializedTypeException;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +73,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
         entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
         setTestSubject(
-                testSubject = createEngine(NoOpEventUpcasterChain.INSTANCE, defaultPersistenceExceptionResolver));
+                testSubject = createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver));
     }
 
     @Test
@@ -102,7 +102,7 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     @SuppressWarnings({"JpaQlInspection", "OptionalGetWithoutIsPresent"})
     @DirtiesContext
     public void testStoreEventsWithCustomEntity() throws Exception {
-        testSubject = new JpaEventStorageEngine(new XStreamSerializer(), NoOpEventUpcasterChain.INSTANCE,
+        testSubject = new JpaEventStorageEngine(new XStreamSerializer(), NoOpEventUpcaster.INSTANCE,
                                                 defaultPersistenceExceptionResolver, 100,
                                                 entityManagerProvider, 1L, 10000) {
 
@@ -137,16 +137,16 @@ public class JpaEventStorageEngineTest extends BatchingEventStorageEngineTest {
     }
 
     @Override
-    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+    protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver);
+        return createEngine(NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver);
     }
 
-    protected JpaEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+    protected JpaEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                  PersistenceExceptionResolver persistenceExceptionResolver) {
         return new JpaEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
                                          entityManagerProvider, 1L, 10000);

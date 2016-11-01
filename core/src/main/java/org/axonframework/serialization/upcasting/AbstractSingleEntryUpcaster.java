@@ -15,15 +15,20 @@ package org.axonframework.serialization.upcasting;
 
 import java.util.stream.Stream;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * @author Rene de Waele
  */
 public abstract class AbstractSingleEntryUpcaster<T> implements Upcaster<T> {
 
     @Override
-    public Stream<T> upcast(T intermediateRepresentation) {
-        T result = doUpcast(intermediateRepresentation);
-        return result == null ? Stream.empty() : Stream.of(result);
+    public Stream<T> upcast(Stream<T> intermediateRepresentations) {
+        return intermediateRepresentations.map(entry -> requireNonNull(doUpcast(entry),
+                                                                       () -> "Result from #doUpcast() should not be " +
+                                                                               "null. To remove an " +
+                                                                               "intermediateRepresentation add a " +
+                                                                               "filter to the input stream."));
     }
 
     protected abstract T doUpcast(T intermediateRepresentation);

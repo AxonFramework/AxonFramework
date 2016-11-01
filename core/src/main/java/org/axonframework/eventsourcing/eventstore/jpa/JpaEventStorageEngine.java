@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.*;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import javax.persistence.EntityManager;
@@ -71,7 +71,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
      * @throws SQLException If the database product name can not be determined from the given {@code dataSource}
      */
-    public JpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, DataSource dataSource,
+    public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, DataSource dataSource,
                                  EntityManagerProvider entityManagerProvider) throws SQLException {
         this(serializer, upcasterChain, new SQLErrorCodesResolver(dataSource), null, entityManagerProvider, null, null);
     }
@@ -91,7 +91,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param entityManagerProvider        Provider for the {@link EntityManager} used by this EventStorageEngine.
      * @param maxGapOffset
      */
-    public JpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                  PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                  EntityManagerProvider entityManagerProvider, Long lowestGlobalSequence,
                                  Integer maxGapOffset) {

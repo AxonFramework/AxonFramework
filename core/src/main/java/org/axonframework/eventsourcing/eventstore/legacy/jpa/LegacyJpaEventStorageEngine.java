@@ -23,7 +23,7 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.legacy.LegacyTrackingToken;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
 import javax.persistence.EntityManager;
@@ -69,7 +69,7 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
      * @param entityManagerProvider Provider for the {@link EntityManager} used by this EventStorageEngine.
      * @throws SQLException If the database product name can not be determined from the given {@code dataSource}
      */
-    public LegacyJpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain, DataSource dataSource,
+    public LegacyJpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain, DataSource dataSource,
                                        EntityManagerProvider entityManagerProvider) throws SQLException {
         super(serializer, upcasterChain, dataSource, entityManagerProvider);
     }
@@ -88,7 +88,7 @@ public class LegacyJpaEventStorageEngine extends JpaEventStorageEngine {
      *                                     generally retrieve all events required to rebuild an aggregate's state.
      * @param entityManagerProvider        Provider for the {@link EntityManager} used by this EventStorageEngine.
      */
-    public LegacyJpaEventStorageEngine(Serializer serializer, EventUpcasterChain upcasterChain,
+    public LegacyJpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                        PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                        EntityManagerProvider entityManagerProvider) {
         super(serializer, upcasterChain, persistenceExceptionResolver, batchSize, entityManagerProvider, 1L, null);

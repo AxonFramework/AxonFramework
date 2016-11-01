@@ -11,25 +11,25 @@
  * limitations under the License.
  */
 
-package org.axonframework.serialization.upcasting;
+package org.axonframework.serialization.upcasting.event;
 
 import java.util.stream.Stream;
 
 /**
- * Represents a series of upcasters which are combined to upcast a stream of input representations to the most recent
- * revision of that representation.
+ * Event upcaster that does nothing.
  *
  * @author Rene de Waele
  */
-public interface UpcasterChain<T> {
+public enum NoOpEventUpcaster implements EventUpcaster {
 
     /**
-     * Pass the given Stream of {@code intermediateRepresentations} through the chain of upcasters. The result is a
-     * list of zero or more representations representing the latest revision of the input objects.
-     *
-     * @param intermediateRepresentations  the representations to upcast
-     * @return the Stream of upcast objects
+     * Instance of an EventUpcaster that does nothing.
      */
-    Stream<T> upcast(Stream<T> intermediateRepresentations);
+    INSTANCE;
 
+    @Override
+    public Stream<IntermediateEventRepresentation> upcast(
+            Stream<IntermediateEventRepresentation> intermediateRepresentations) {
+        return intermediateRepresentations;
+    }
 }

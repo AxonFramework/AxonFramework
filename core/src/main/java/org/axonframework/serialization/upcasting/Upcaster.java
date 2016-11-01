@@ -23,12 +23,13 @@ import java.util.stream.Stream;
  * <p/>
  * Upcasters work on intermediate representations of the object to upcast. In some cases, this representation contains a
  * byte array, while in other cases they contain an object structure. For performance reasons, it is advisable to ensure
- * that all upcasters in the same {@link UpcasterChain} (where one's output is another's input) use the same
+ * that all upcasters in the same upcaster chain (where one's output is another's input) use the same
  * intermediate representation content type.
  *
  * @param <T> The data format that this upcaster uses to represent the event
  * @author Rene de Waele
  */
+@FunctionalInterface
 public interface Upcaster<T> {
 
     /**
@@ -43,18 +44,8 @@ public interface Upcaster<T> {
      * In some cases the upcasting result of an Upcaster may depend on more than one input object. In that case an
      * Upcaster may build up state while it is used to upcast a stream of input objects.
      *
-     * @param intermediateRepresentation The representation of the object to upcast
+     * @param intermediateRepresentations The representation of the object to upcast
      * @return the new representations of the input object
      */
-    Stream<T> upcast(T intermediateRepresentation);
-
-    /**
-     * Method that is invoked by the {@link UpcasterChain} after all input objects have been upcast. This method is
-     * invoked to enable stateful Upcasters to release any remaining objects. Defaults to an empty stream.
-     *
-     * @return A Stream of remainder representations
-     */
-    default Stream<T> remainder() {
-        return Stream.empty();
-    }
+    Stream<T> upcast(Stream<T> intermediateRepresentations);
 }

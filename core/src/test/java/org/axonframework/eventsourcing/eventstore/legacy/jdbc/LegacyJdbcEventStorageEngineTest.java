@@ -20,8 +20,8 @@ import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.HsqlEventTableFactory;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
 import org.junit.Before;
@@ -45,20 +45,20 @@ public class LegacyJdbcEventStorageEngineTest extends BatchingEventStorageEngine
         dataSource = new JDBCDataSource();
         dataSource.setUrl("jdbc:hsqldb:mem:test");
         defaultPersistenceExceptionResolver = new SQLErrorCodesResolver(dataSource);
-        setTestSubject(createEngine(NoOpEventUpcasterChain.INSTANCE, defaultPersistenceExceptionResolver));
+        setTestSubject(createEngine(NoOpEventUpcaster.INSTANCE, defaultPersistenceExceptionResolver));
     }
 
     @Override
-    protected AbstractEventStorageEngine createEngine(EventUpcasterChain upcasterChain) {
+    protected AbstractEventStorageEngine createEngine(EventUpcaster upcasterChain) {
         return createEngine(upcasterChain, defaultPersistenceExceptionResolver);
     }
 
     @Override
     protected AbstractEventStorageEngine createEngine(PersistenceExceptionResolver persistenceExceptionResolver) {
-        return createEngine(NoOpEventUpcasterChain.INSTANCE, persistenceExceptionResolver);
+        return createEngine(NoOpEventUpcaster.INSTANCE, persistenceExceptionResolver);
     }
 
-    private JdbcEventStorageEngine createEngine(EventUpcasterChain upcasterChain,
+    private JdbcEventStorageEngine createEngine(EventUpcaster upcasterChain,
                                                 PersistenceExceptionResolver persistenceExceptionResolver) {
         LegacyJdbcEventStorageEngine result =
                 new LegacyJdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver,

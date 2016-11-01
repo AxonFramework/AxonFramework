@@ -15,9 +15,8 @@ package org.axonframework.serialization.upcasting;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -33,7 +32,7 @@ public class GenericUpcasterChainTest {
     @Test
     public void testChainWithSingleUpcasterCanUpcastMultipleEvents() {
         Object a = "a", b = "b", c = "c";
-        UpcasterChain<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(a, b));
+        Upcaster<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(a, b));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
         assertEquals(Arrays.asList(b, b, b, c), result.collect(toList()));
     }
@@ -41,7 +40,7 @@ public class GenericUpcasterChainTest {
     @Test
     public void testUpcastingResultOfOtherUpcaster() {
         Object a = "a", b = "b", c = "c";
-        UpcasterChain<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(a, b), new AToBUpcaster(b, c));
+        Upcaster<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(a, b), new AToBUpcaster(b, c));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
         assertEquals(Arrays.asList(c, c, c, c), result.collect(toList()));
     }
@@ -49,7 +48,7 @@ public class GenericUpcasterChainTest {
     @Test
     public void testUpcastingResultOfOtherUpcasterOnlyWorksIfUpcastersAreInCorrectOrder() {
         Object a = "a", b = "b", c = "c";
-        UpcasterChain<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(b, c), new AToBUpcaster(a, b));
+        Upcaster<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(b, c), new AToBUpcaster(a, b));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
         assertEquals(Arrays.asList(b, c, b, c), result.collect(toList()));
     }
@@ -60,7 +59,7 @@ public class GenericUpcasterChainTest {
         Object a = "a", b = "b", c = "c";
         Supplier<Upcaster<Object>> mockSupplier = mock(Supplier.class);
         when(mockSupplier.get()).thenReturn(new AToBUpcaster(a, b));
-        UpcasterChain<Object> testSubject = new GenericUpcasterChain<>(Collections.singletonList(mockSupplier));
+        Upcaster<Object> testSubject = new GenericUpcasterChain<>(Collections.singletonList(mockSupplier));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
         assertEquals(Arrays.asList(b, b, b, c), result.collect(toList()));
         verify(mockSupplier).get();
@@ -72,7 +71,7 @@ public class GenericUpcasterChainTest {
     @Test
     public void testRemainderAddedAndUpcasted() {
         Object a = "a", b = "b", c = "c";
-        UpcasterChain<Object> testSubject =
+        Upcaster<Object> testSubject =
                 new GenericUpcasterChain<>(new UpcasterWithRemainder(a, b), new AToBUpcaster(b, c));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
         assertEquals(Arrays.asList(a, c, a, c, a, c), result.collect(toList()));
@@ -81,7 +80,7 @@ public class GenericUpcasterChainTest {
     @Test
     public void testRemainderReleasedAfterUpcasting() {
         Object a = "a", b = "b", c = "c", d = "d";
-        UpcasterChain<Object> testSubject =
+        Upcaster<Object> testSubject =
                 new GenericUpcasterChain<>(new ConditionalUpcaster(a, b, c), new ConditionalUpcaster(c, d, a));
         Stream<Object> result = testSubject.upcast(Stream.of(a, d, a, b, d, a));
         assertEquals(Arrays.asList(a, d, a, a), result.collect(toList()));
@@ -90,8 +89,7 @@ public class GenericUpcasterChainTest {
     @Test
     public void testUpcastToMultipleTypes() {
         Object a = "a", b = "b", c = "c";
-        UpcasterChain<Object> testSubject =
-                new GenericUpcasterChain<>(new MultipleTypesUpcaster(), new AToBUpcaster(b, c));
+        Upcaster<Object> testSubject = new GenericUpcasterChain<>(new MultipleTypesUpcaster(), new AToBUpcaster(b, c));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, c));
         assertEquals(Arrays.asList(a, a, c, c, c, c), result.collect(toList()));
     }
@@ -110,7 +108,7 @@ public class GenericUpcasterChainTest {
         }
     }
 
-    private static class UpcasterWithRemainder extends AbstractSingleEntryUpcaster<Object> {
+    private static class UpcasterWithRemainder implements Upcaster<Object> {
 
         private final List<Object> remainder;
 
@@ -119,20 +117,14 @@ public class GenericUpcasterChainTest {
         }
 
         @Override
-        protected Object doUpcast(Object intermediateRepresentation) {
-            return intermediateRepresentation;
-        }
-
-        @Override
-        public Stream<Object> remainder() {
-            return remainder.stream();
+        public Stream<Object> upcast(Stream<Object> intermediateRepresentations) {
+            return Stream.concat(intermediateRepresentations, remainder.stream());
         }
     }
 
-    private static class ConditionalUpcaster extends AbstractSingleEntryUpcaster<Object> {
+    private static class ConditionalUpcaster implements Upcaster<Object> {
 
         private final Object first, second, replacement;
-        private Object previous;
 
         public ConditionalUpcaster(Object first, Object second, Object replacement) {
             this.first = first;
@@ -141,57 +133,24 @@ public class GenericUpcasterChainTest {
         }
 
         @Override
-        public Stream<Object> upcast(Object intermediateRepresentation) {
-            if (previous == null) {
-                if (intermediateRepresentation == first) {
-                    previous = intermediateRepresentation;
-                    return null;
-                }
-                return Stream.of(intermediateRepresentation);
-            } else {
-                if (intermediateRepresentation == second) {
-                    previous = null;
-                    return Stream.of(replacement);
-                }
-                Stream<Object> result = Stream.of(previous, intermediateRepresentation);
-                previous = null;
-                return result;
-            }
-        }
-
-        @Override
-        protected Object doUpcast(Object intermediateRepresentation) {
-            if (previous == null) {
-                if (intermediateRepresentation == first) {
-                    previous = intermediateRepresentation;
-                    return null;
-                }
-                return intermediateRepresentation;
-            } else {
-                if (intermediateRepresentation == second) {
-                    previous = null;
-                    return replacement;
-                }
-
-                return intermediateRepresentation;
-            }
-        }
-
-        @Override
-        public Stream<Object> remainder() {
-            try {
-                return previous == null ? Stream.empty() : Stream.of(previous);
-            } finally {
-                previous = null;
-            }
+        public Stream<Object> upcast(Stream<Object> intermediateRepresentations) {
+            AtomicReference<Object> previous = new AtomicReference<>();
+            return Stream.concat(intermediateRepresentations
+                                         .filter(entry -> !(entry == first && previous.compareAndSet(null, entry)))
+                                         .flatMap(entry -> {
+                                             if (entry == second && previous.compareAndSet(first, null)) {
+                                                 return Stream.of(replacement);
+                                             }
+                                             return Optional.ofNullable(previous.getAndSet(null))
+                                                     .map(cached -> Stream.of(cached, entry)).orElse(Stream.of(entry));
+                                         }), Stream.generate(previous::get).limit(1).filter(Objects::nonNull));
         }
     }
 
     private static class MultipleTypesUpcaster implements Upcaster<Object> {
-
         @Override
-        public Stream<Object> upcast(Object intermediateRepresentation) {
-            return Stream.of(intermediateRepresentation, intermediateRepresentation);
+        public Stream<Object> upcast(Stream<Object> intermediateRepresentations) {
+            return intermediateRepresentations.flatMap(entry -> Stream.of(entry, entry));
         }
     }
 
