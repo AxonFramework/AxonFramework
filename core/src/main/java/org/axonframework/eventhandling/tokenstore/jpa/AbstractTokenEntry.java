@@ -26,12 +26,7 @@ import java.util.Objects;
  * @author Rene de Waele
  */
 @MappedSuperclass
-@IdClass(AbstractTokenEntry.PK.class)
 public abstract class AbstractTokenEntry<T> {
-    @Id
-    private String processName;
-    @Id
-    private int segment;
     @Basic(optional = false)
     @Lob
     private T token;
@@ -43,15 +38,11 @@ public abstract class AbstractTokenEntry<T> {
      * serializer} can be used to serialize the token before it is stored.
      *
      * @param token       The tracking token to store
-     * @param process     The name of the process to store this token for
-     * @param segment     The segment index of the process
      * @param serializer  The serializer to use when storing a serialized token
      * @param contentType The content type after serialization
      */
-    protected AbstractTokenEntry(TrackingToken token, String process, int segment, Serializer serializer,
+    protected AbstractTokenEntry(TrackingToken token, Serializer serializer,
                                  Class<T> contentType) {
-        this.processName = process;
-        this.segment = segment;
         SerializedObject<T> serializedToken = serializer.serialize(token, contentType);
         this.token = serializedToken.getData();
         this.tokenType = serializedToken.getType().getName();
@@ -68,18 +59,14 @@ public abstract class AbstractTokenEntry<T> {
      *
      * @return the process name
      */
-    public String getProcessName() {
-        return processName;
-    }
+    public abstract String getProcessName();
 
     /**
      * Returns the segment index of the process to which this token belongs.
      *
      * @return the segment index
      */
-    public int getSegment() {
-        return segment;
-    }
+    public abstract int getSegment();
 
     /**
      * Returns a serialized version of the token.

@@ -16,8 +16,7 @@ package org.axonframework.eventhandling.tokenstore.jpa;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.Serializer;
 
-import javax.persistence.Basic;
-import javax.persistence.Entity;
+import javax.persistence.*;
 import java.time.Instant;
 
 /**
@@ -26,7 +25,13 @@ import java.time.Instant;
  * @author Rene de Waele
  */
 @Entity
+@IdClass(TokenEntry.PK.class)
 public class TokenEntry extends AbstractTokenEntry<byte[]> {
+
+    @Id
+    private String processName;
+    @Id
+    private int segment;
 
     @Basic(optional = false)
     private String timestamp;
@@ -42,7 +47,9 @@ public class TokenEntry extends AbstractTokenEntry<byte[]> {
      * @param serializer  The serializer to use when storing a serialized token
      */
     public TokenEntry(String process, int segment, TrackingToken token, Instant timestamp, Serializer serializer) {
-        super(token, process, segment, serializer, byte[].class);
+        super(token, serializer, byte[].class);
+        this.processName = process;
+        this.segment = segment;
         this.timestamp = timestamp.toString();
     }
 
@@ -59,5 +66,15 @@ public class TokenEntry extends AbstractTokenEntry<byte[]> {
      */
     public Instant timestamp() {
         return Instant.parse(timestamp);
+    }
+
+    @Override
+    public String getProcessName() {
+        return processName;
+    }
+
+    @Override
+    public int getSegment() {
+        return segment;
     }
 }
