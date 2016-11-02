@@ -16,10 +16,13 @@
 
 package org.axonframework.config;
 
+import org.axonframework.common.transaction.NoTransactionManager;
+import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
+import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 
 import java.util.*;
 import java.util.function.Function;
@@ -81,21 +84,36 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * @return this EventHandlingConfiguration instance for further configuration
      */
     public EventHandlingConfiguration usingTrackingProcessors() {
-        return registerEventProcessorFactory((conf, name, handlers) -> {
-            TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
-                                                                                                              conf.getComponent(
-                                                                                                                      ListenerErrorHandler.class,
-                                                                                                                      LoggingListenerErrorHandler::new)),
-                                                                          conf.eventBus(),
-                                                                          conf.getComponent(TokenStore.class,
-                                                                                            InMemoryTokenStore::new),
-                                                                          conf.messageMonitor(EventProcessor.class,
-                                                                                              name));
-            CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();
-            interceptor.registerCorrelationDataProviders(conf.correlationDataProviders());
-            processor.registerInterceptor(interceptor);
-            return processor;
-        });
+        return registerEventProcessorFactory(this::buildTrackingEventProcessor);
+    }
+
+    /**
+     * Register a TrackingProcessor using default configuration for the given {@code name}. Unlike
+     * {@link #usingTrackingProcessors()}, this method will not default to tracking, but instead only use tracking for
+     * event handler that have been assigned to the processor with given {@code name}.
+     *
+     * @param name The name of the processor
+     * @return this EventHandlingConfiguration instance for further configuration
+     */
+    public EventHandlingConfiguration registerTrackingProcessor(String name) {
+        return registerEventProcessor(name, this::buildTrackingEventProcessor);
+    }
+
+    private EventProcessor buildTrackingEventProcessor(Configuration conf, String name, List<?> handlers) {
+        TrackingEventProcessor processor = new TrackingEventProcessor(name, new SimpleEventHandlerInvoker(handlers,
+                                                                                                          conf.getComponent(
+                                                                                                                  ListenerErrorHandler.class,
+                                                                                                                  LoggingListenerErrorHandler::new)),
+                                                                      conf.eventBus(),
+                                                                      conf.getComponent(TokenStore.class,
+                                                                                        InMemoryTokenStore::new),
+                                                                      conf.messageMonitor(EventProcessor.class,
+                                                                                          name));
+        CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();
+        interceptor.registerCorrelationDataProviders(conf.correlationDataProviders());
+        processor.registerInterceptor(interceptor);
+        processor.registerInterceptor(new TransactionManagingInterceptor<>(conf.getComponent(TransactionManager.class, NoTransactionManager::instance)));
+        return processor;
     }
 
     /**

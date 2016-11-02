@@ -27,6 +27,10 @@ public enum NoTransactionManager implements TransactionManager {
 
     INSTANCE;
 
+    public static TransactionManager instance() {
+        return INSTANCE;
+    }
+
     public static final Transaction TRANSACTION = new Transaction() {
         @Override
         public void commit() {
