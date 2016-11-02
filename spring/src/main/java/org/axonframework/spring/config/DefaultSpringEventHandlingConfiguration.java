@@ -20,8 +20,8 @@ public class DefaultSpringEventHandlingConfiguration implements InitializingBean
     private Configuration config;
     private volatile boolean running = false;
 
-    public DefaultSpringEventHandlingConfiguration() {
-        delegate = EventHandlingConfiguration.assigningHandlersByPackage();
+    public DefaultSpringEventHandlingConfiguration(EventHandlingConfiguration configuration) {
+        delegate = configuration;
     }
 
     public void setEventHandlers(List<Object> beans) {

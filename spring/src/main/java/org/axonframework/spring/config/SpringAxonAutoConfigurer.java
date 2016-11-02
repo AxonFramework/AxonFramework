@@ -151,7 +151,12 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
             }
         });
         registry.registerBeanDefinition("eventHandlingConfiguration",
+                                        genericBeanDefinition(EventHandlingConfiguration.class)
+                                                .setFactoryMethod("assigningHandlersByPackage")
+                                                .getBeanDefinition());
+        registry.registerBeanDefinition("springEventHandlingConfiguration",
                                         genericBeanDefinition(DefaultSpringEventHandlingConfiguration.class)
+                                                .addConstructorArgReference("eventHandlingConfiguration")
                                                 .addPropertyReference("axonConfiguration", "axonConfiguration")
                                                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }

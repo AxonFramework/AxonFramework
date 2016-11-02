@@ -24,6 +24,7 @@
     <modules>
         <module>core</module>
         <module>spring</module>
+        <module>spring-boot</module>
         <module>test</module>
         <module>distributed-commandbus</module>
         <module>integrationtests</module>
@@ -94,6 +95,7 @@
         <slf4j.version>1.7.5</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <spring.version>4.3.2.RELEASE</spring.version>
+        <spring.boot.version>1.4.1.RELEASE</spring.boot.version>
         <rabbitmq.version>3.6.5</rabbitmq.version>
         <felix.bundle.plugin.version>2.4.0</felix.bundle.plugin.version>
         <felix.version>4.2.1</felix.version>
