@@ -6,9 +6,10 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.jpa.ContainerManagedEntityManagerProvider;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.tokenstore.TokenStore;
+import org.axonframework.eventhandling.tokenstore.jpa.JpaTokenStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
@@ -20,7 +21,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -57,7 +57,8 @@ public class AxonAutoConfiguration {
 
     @ConditionalOnMissingBean(EventStorageEngine.class)
     @ConditionalOnBean(EntityManagerFactory.class)
-    @EntityScan(basePackageClasses = DomainEventEntry.class)
+    @RegisterAxonDefaultEntities({"org.axonframework.eventsourcing.eventstore.jpa",
+            "org.axonframework.eventhandling.tokenstore"})
     @Configuration
     public static class JpaConfiguration {
 
@@ -82,10 +83,16 @@ public class AxonAutoConfiguration {
             return new SpringTransactionManager(txManager);
         }
 
-        @ConditionalOnMissingBean(EntityManagerProvider.class)
+        @ConditionalOnMissingBean
         @Bean
         public EntityManagerProvider entityManagerProvider() {
             return new ContainerManagedEntityManagerProvider();
+        }
+
+        @ConditionalOnMissingBean
+        @Bean
+        public TokenStore tokenStore(Serializer serializer, EntityManagerProvider entityManagerProvider) {
+            return new JpaTokenStore(entityManagerProvider, serializer);
         }
     }
 }
