@@ -17,19 +17,18 @@ import org.axonframework.serialization.upcasting.GenericUpcasterChain;
 import org.axonframework.serialization.upcasting.Upcaster;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * @author Rene de Waele
  */
-public class DefaultEventUpcasterChain extends GenericUpcasterChain<IntermediateEventRepresentation> implements EventUpcaster {
+public class EventUpcasterChain extends GenericUpcasterChain<IntermediateEventRepresentation> implements EventUpcaster {
 
     @SafeVarargs
-    public DefaultEventUpcasterChain(Upcaster<IntermediateEventRepresentation>... upcasters) {
+    public EventUpcasterChain(Upcaster<IntermediateEventRepresentation>... upcasters) {
         super(upcasters);
     }
 
-    public DefaultEventUpcasterChain(List<Supplier<Upcaster<IntermediateEventRepresentation>>> upcasterSuppliers) {
-        super(upcasterSuppliers);
+    public EventUpcasterChain(List<? extends Upcaster<IntermediateEventRepresentation>> upcasters) {
+        super(upcasters);
     }
 }

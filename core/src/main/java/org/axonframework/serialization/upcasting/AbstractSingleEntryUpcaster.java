@@ -24,12 +24,17 @@ public abstract class AbstractSingleEntryUpcaster<T> implements Upcaster<T> {
 
     @Override
     public Stream<T> upcast(Stream<T> intermediateRepresentations) {
-        return intermediateRepresentations.map(entry -> requireNonNull(doUpcast(entry),
-                                                                       () -> "Result from #doUpcast() should not be " +
-                                                                               "null. To remove an " +
-                                                                               "intermediateRepresentation add a " +
-                                                                               "filter to the input stream."));
+        return intermediateRepresentations.map(entry -> {
+            if (!canUpcast(entry)) {
+                return entry;
+            }
+            return requireNonNull(doUpcast(entry),
+                                  () -> "Result from #doUpcast() should not be null. To remove an " +
+                                          "intermediateRepresentation add a filter to the input stream.");
+        });
     }
+
+    protected abstract boolean canUpcast(T intermediateRepresentation);
 
     protected abstract T doUpcast(T intermediateRepresentation);
 }

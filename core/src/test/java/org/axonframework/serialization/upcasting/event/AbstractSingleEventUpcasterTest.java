@@ -135,14 +135,16 @@ public class AbstractSingleEventUpcasterTest {
         }
 
         @Override
+        protected boolean canUpcast(IntermediateEventRepresentation intermediateRepresentation) {
+            return intermediateRepresentation.getOutputType().equals(targetType);
+        }
+
+        @Override
         protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation ir) {
-            if (ir.getOutputType().equals(targetType)) {
-                return ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"), expectedType, doc -> {
-                    doc.getRootElement().element("name").setText(newNameValue);
-                    return doc;
-                });
-            }
-            return ir;
+            return ir.upcastPayload(new SimpleSerializedType(targetType.getName(), "1"), expectedType, doc -> {
+                doc.getRootElement().element("name").setText(newNameValue);
+                return doc;
+            });
         }
     }
 
