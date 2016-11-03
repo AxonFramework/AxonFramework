@@ -24,7 +24,6 @@
     <modules>
         <module>core</module>
         <module>spring</module>
-        <module>spring-boot</module>
         <module>test</module>
         <module>distributed-commandbus</module>
         <module>integrationtests</module>

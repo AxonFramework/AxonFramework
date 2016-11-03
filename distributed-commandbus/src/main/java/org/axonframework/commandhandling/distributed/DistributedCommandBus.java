@@ -165,7 +165,6 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     public void updateLoadFactor(int loadFactor) {
-        this.loadFactor = loadFactor;
         commandRouter.updateMembership(loadFactor, commandFilter.get());
     }
 
