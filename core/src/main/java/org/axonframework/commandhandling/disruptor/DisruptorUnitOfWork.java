@@ -16,18 +16,13 @@
 
 package org.axonframework.commandhandling.disruptor;
 
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.unitofwork.*;
+
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.AbstractUnitOfWork;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.ExecutionResult;
-import org.axonframework.messaging.unitofwork.MessageProcessingContext;
-import org.axonframework.messaging.unitofwork.RollbackConfiguration;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import java.util.function.Function;
 
 /**
  * Specialized UnitOfWork instance for the {@link DisruptorCommandBus}. It expects the executing command message to
@@ -84,7 +79,7 @@ public abstract class DisruptorUnitOfWork<T extends Message<?>> extends Abstract
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }

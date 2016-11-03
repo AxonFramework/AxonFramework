@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.UnaryOperator;
 
 /**
  * This class represents a Unit of Work that monitors the processing of a {@link Message}.
@@ -180,11 +179,14 @@ public interface UnitOfWork<T extends Message<?>> {
 
     /**
      * Transform the Message being processed using the given operator and stores the result.
+     * <p>
+     * Implementations should take caution not to change the message type to a type incompatible with the current Unit
+     * of Work. For example, do not return a CommandMessage when transforming an EventMessage.
      *
      * @param transformOperator The transform operator to apply to the stored message
      * @return this Unit of Work
      */
-    UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator);
+    UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator);
 
     /**
      * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.
@@ -229,9 +231,9 @@ public interface UnitOfWork<T extends Message<?>> {
      * Returns the resource attached under given {@code name}. If there is no resource mapped to the given key yet
      * the {@code mappingFunction} is invoked to provide the mapping.
      *
-     * @param key The name under which the resource was attached
+     * @param key             The name under which the resource was attached
      * @param mappingFunction The function that provides the mapping if there is no mapped resource yet
-     * @param <R> The type of resource
+     * @param <R>             The type of resource
      * @return The resource mapped to the given {@code key}, or the resource returned by the
      * {@code mappingFunction} if no resource was found.
      */

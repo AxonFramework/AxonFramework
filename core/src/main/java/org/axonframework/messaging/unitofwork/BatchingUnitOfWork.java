@@ -19,7 +19,7 @@ import org.axonframework.messaging.Message;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -103,7 +103,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }

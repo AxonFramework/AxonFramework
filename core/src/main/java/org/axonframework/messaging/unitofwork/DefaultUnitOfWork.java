@@ -21,7 +21,7 @@ import org.axonframework.messaging.Message;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 
 /**
  * Implementation of the UnitOfWork that processes a single message.
@@ -32,13 +32,6 @@ import java.util.function.UnaryOperator;
 public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
     private final MessageProcessingContext<T> processingContext;
-
-    /**
-     * Initializes a Unit of Work (without starting it).
-     */
-    public DefaultUnitOfWork(T message) {
-        processingContext = new MessageProcessingContext<>(message);
-    }
 
     /**
      * Starts a new DefaultUnitOfWork instance, registering it a CurrentUnitOfWork. This methods returns the started
@@ -53,6 +46,13 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
         DefaultUnitOfWork<T> uow = new DefaultUnitOfWork<>(message);
         uow.start();
         return uow;
+    }
+
+    /**
+     * Initializes a Unit of Work (without starting it).
+     */
+    public DefaultUnitOfWork(T message) {
+        processingContext = new MessageProcessingContext<>(message);
     }
 
     @Override
@@ -101,18 +101,18 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }
 
     @Override
-    protected void setExecutionResult(ExecutionResult executionResult) {
-        processingContext.setExecutionResult(executionResult);
+    public ExecutionResult getExecutionResult() {
+        return processingContext.getExecutionResult();
     }
 
     @Override
-    public ExecutionResult getExecutionResult() {
-        return processingContext.getExecutionResult();
+    protected void setExecutionResult(ExecutionResult executionResult) {
+        processingContext.setExecutionResult(executionResult);
     }
 }
