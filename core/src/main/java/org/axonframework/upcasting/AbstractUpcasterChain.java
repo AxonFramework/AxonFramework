@@ -125,8 +125,9 @@ public abstract class AbstractUpcasterChain implements UpcasterChain {
             if (currentUpcaster.canUpcast(serializedObject.getType())) {
                 List<SerializedType> upcastTypes;
                 if (currentUpcaster instanceof ExtendedUpcaster) {
-                    upcastTypes = ((ExtendedUpcaster) currentUpcaster).upcast(serializedObject.getType(),
-                                                                              serializedObject);
+                    upcastTypes = ((ExtendedUpcaster) currentUpcaster).upcast(
+                            serializedObject.getType(),
+                            ensureCorrectContentType(serializedObject, currentUpcaster.expectedRepresentationType()));
                 } else {
                     upcastTypes = currentUpcaster.upcast(serializedObject.getType());
                 }
