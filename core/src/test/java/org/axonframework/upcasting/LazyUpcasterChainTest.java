@@ -74,6 +74,14 @@ public class LazyUpcasterChainTest extends UpcasterChainTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    public void testUpcastingChainWithExtendedUpcasterThroughDataTypeConversion() {
+        Upcaster<String> upcaster = spy(new StubExtendedUpcaster("1", "2"));
+        LazyUpcasterChain testSubject = new LazyUpcasterChain(Arrays.<Upcaster>asList(upcaster));
+        testSubject.upcast(new SimpleSerializedObject<byte[]>("upcast object".getBytes(), byte[].class, "type", "1"), null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     public void testUpcastingChainWithExtendedUpcaster() {
         Upcaster<String> firstUpcaster = spy(new StubUpcaster("1", "2"));
         Upcaster<String> secondUpcaster = spy(new StubExtendedUpcaster("2", "3"));
