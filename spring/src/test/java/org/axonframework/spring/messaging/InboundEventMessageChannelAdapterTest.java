@@ -14,52 +14,44 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.messaging.adapter;
+package org.axonframework.spring.messaging;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.spring.messaging.StubDomainEvent;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.springframework.messaging.support.GenericMessage;
 
-import static org.mockito.Mockito.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Allard Buijze
  */
-public class EventPublishingMessageChannelAdapterTest {
+public class InboundEventMessageChannelAdapterTest {
 
     private EventBus mockEventBus;
-    private EventPublishingMessageChannelAdapter testSubject;
-    private EventFilter mockFilter;
+    private InboundEventMessageChannelAdapter testSubject;
 
     @Before
     public void setUp() {
         mockEventBus = mock(EventBus.class);
-        testSubject = new EventPublishingMessageChannelAdapter(mockEventBus);
-        mockFilter = mock(EventFilter.class);
+        testSubject = new InboundEventMessageChannelAdapter(mockEventBus);
     }
 
     @Test
     public void testMessagePayloadIsPublished() {
+        testSubject = new InboundEventMessageChannelAdapter();
         StubDomainEvent event = new StubDomainEvent();
         testSubject.handleMessage(new GenericMessage<Object>(event));
 
-        verify(mockEventBus).publish(isA(EventMessage.class));
+        verify(mockEventBus, never()).publish(isA(EventMessage.class));
+
+        testSubject.subscribe(mockEventBus::publish);
+
+        testSubject.handleMessage(new GenericMessage<Object>(event));
+
+        verify(mockEventBus).publish(Matchers.<EventMessage<?>>anyList());
     }
 
-    @SuppressWarnings({"unchecked"})
-    public void testFilterRefusesEventMessage() {
-        when(mockFilter.accept(isA(Class.class))).thenReturn(false);
-        testSubject = new EventPublishingMessageChannelAdapter(mockEventBus, mockFilter);
-
-        testSubject.handleMessage(new GenericMessage<Object>(new StubDomainEvent()));
-
-        verifyZeroInteractions(mockEventBus);
-    }
 }

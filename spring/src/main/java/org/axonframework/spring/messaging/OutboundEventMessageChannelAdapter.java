@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.spring.messaging.adapter;
+package org.axonframework.spring.messaging;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.GenericMessage;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Adapter class that sends Events from an event bus to a Spring Messaging Message Channel. All events are wrapped in
@@ -33,10 +35,10 @@ import java.util.List;
  * @author Allard Buijze
  * @since 2.3.1
  */
-public class EventListeningMessageChannelAdapter implements InitializingBean {
+public class OutboundEventMessageChannelAdapter implements InitializingBean {
 
     private final MessageChannel channel;
-    private final EventFilter filter;
+    private final Predicate<? super EventMessage<?>> filter;
     private final SubscribableMessageSource<EventMessage<?>> messageSource;
 
     /**
@@ -46,11 +48,11 @@ public class EventListeningMessageChannelAdapter implements InitializingBean {
      * @param messageSource The event bus to subscribe to.
      * @param channel       The channel to send event messages to.
      */
-    public EventListeningMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
-                                               MessageChannel channel) {
+    public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
+                                              MessageChannel channel) {
         this.messageSource = messageSource;
         this.channel = channel;
-        this.filter = NoFilter.INSTANCE;
+        this.filter = m -> true;
     }
 
     /**
@@ -61,8 +63,8 @@ public class EventListeningMessageChannelAdapter implements InitializingBean {
      * @param channel       The channel to send event messages to.
      * @param filter        The filter that indicates which messages to forward.
      */
-    public EventListeningMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
-                                               MessageChannel channel, EventFilter filter) {
+    public OutboundEventMessageChannelAdapter(SubscribableMessageSource<EventMessage<?>> messageSource,
+                                              MessageChannel channel, Predicate<? super EventMessage<?>> filter) {
         this.channel = channel;
         this.messageSource = messageSource;
         this.filter = filter;
@@ -82,8 +84,20 @@ public class EventListeningMessageChannelAdapter implements InitializingBean {
      *
      * @param events the events to handle
      */
-    public void handle(List<? extends EventMessage<?>> events) {
-        events.stream().filter(event -> filter.accept(event.getPayloadType()))
-                .forEach(event -> channel.send(new GenericMessage<>(event.getPayload(), event.getMetaData())));
+    protected void handle(List<? extends EventMessage<?>> events) {
+        events.stream()
+                .filter(filter::test)
+                .forEach(event -> channel.send(transform(event)));
+    }
+
+    /**
+     * Transforms the given Axon {@code event} into a Spring Messaging Message. This method may be overridden to change
+     * how this transformation should occur.
+     *
+     * @param event The Axon EventMessage to transform
+     * @return The Spring Messaging Message representing the Event Message
+     */
+    protected Message<?> transform(EventMessage<?> event) {
+        return new GenericMessage<>(event.getPayload(), event.getMetaData());
     }
 }
