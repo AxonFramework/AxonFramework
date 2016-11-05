@@ -52,14 +52,9 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
      * with the package name as the processor name. This default behavior can be overridden in the instance returned.
      * <p>
      * At a minimum, the Event Handler beans need to be registered before this component is useful.
-     *
-     * @return an EventHandlingConfiguration instance for further configuration
      */
-    public static EventHandlingConfiguration assigningHandlersByPackage() {
-        return new EventHandlingConfiguration().byDefaultAssignTo(o -> o.getClass().getPackage().getName());
-    }
-
-    private EventHandlingConfiguration() {
+    public EventHandlingConfiguration() {
+        byDefaultAssignTo(o -> o.getClass().getPackage().getName());
     }
 
     private SubscribingEventProcessor defaultEventProcessor(Configuration conf, String name, List<?> eh) {

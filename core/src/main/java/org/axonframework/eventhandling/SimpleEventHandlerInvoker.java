@@ -31,7 +31,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     private final ListenerErrorHandler listenerErrorHandler;
 
     public SimpleEventHandlerInvoker(Object... eventListeners) {
-        this(Arrays.asList(eventListeners), new LoggingListenerErrorHandler());
+        this(detectList(eventListeners), new LoggingListenerErrorHandler());
     }
 
     public SimpleEventHandlerInvoker(List<?> eventListeners, ListenerErrorHandler listenerErrorHandler) {
@@ -41,6 +41,16 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                                               new AnnotationEventListenerAdapter(listener))
                                                       .collect(toList()));
         this.listenerErrorHandler = listenerErrorHandler;
+    }
+
+    /**
+     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     *
+     * @param eventListeners The event listeners to check for a list
+     * @return a list of events listeners
+     */
+    private static List<?> detectList(Object[] eventListeners) {
+        return eventListeners.length == 1 && (eventListeners[0] instanceof List) ? (List<?>) eventListeners[0] : Arrays.asList(eventListeners);
     }
 
     @Override

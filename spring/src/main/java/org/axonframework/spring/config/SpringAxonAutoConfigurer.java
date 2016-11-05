@@ -71,8 +71,8 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ge
  */
 public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, BeanFactoryAware {
 
+    public static final String AXON_CONFIGURATION_BEAN = "org.axonframework.spring.config.AxonConfiguration";
     private static final Logger logger = LoggerFactory.getLogger(SpringAxonAutoConfigurer.class);
-
     private ConfigurableListableBeanFactory beanFactory;
 
     @Override
@@ -111,17 +111,21 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         configurer.configureResourceInjector(c -> getBean(resourceInjector, c));
 
         registerAggregateBeanDefinitions(configurer, registry);
-        registerSagaBeanDefinitions(configurer, registry);
+        registerSagaBeanDefinitions(configurer);
         registerModules(configurer);
 
-        if (!findComponent(EventHandlingConfiguration.class).isPresent()) {
-            registerDefaultEventHandlerConfiguration(registry);
+        Optional<String> eventHandlingConfiguration = findComponent(EventHandlingConfiguration.class);
+        String ehConfigBeanName = eventHandlingConfiguration.orElse("eventHandlingConfiguration");
+        if (!eventHandlingConfiguration.isPresent()) {
+            registry.registerBeanDefinition(ehConfigBeanName,
+                                            genericBeanDefinition(EventHandlingConfiguration.class)
+                                                    .getBeanDefinition());
         }
-
-        registry.registerBeanDefinition("axonConfiguration",
+        registry.registerBeanDefinition(AXON_CONFIGURATION_BEAN,
                                         genericBeanDefinition(AxonConfiguration.class)
                                                 .addConstructorArgValue(configurer)
                                                 .getBeanDefinition());
+        registerEventHandlerRegistrar(ehConfigBeanName, registry);
     }
 
     @SuppressWarnings("unchecked")
@@ -129,7 +133,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         return (T) configuration.getComponent(ApplicationContext.class).getBean(beanName);
     }
 
-    private void registerDefaultEventHandlerConfiguration(BeanDefinitionRegistry registry) {
+    private void registerEventHandlerRegistrar(String ehConfigBeanName, BeanDefinitionRegistry registry) {
         List<RuntimeBeanReference> beans = new ManagedList<>();
         beanFactory.getBeanNamesIterator().forEachRemaining(bean -> {
             if (!beanFactory.isFactoryBean(bean)) {
@@ -150,14 +154,10 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
                 }
             }
         });
-        registry.registerBeanDefinition("eventHandlingConfiguration",
-                                        genericBeanDefinition(EventHandlingConfiguration.class)
-                                                .setFactoryMethod("assigningHandlersByPackage")
-                                                .getBeanDefinition());
-        registry.registerBeanDefinition("springEventHandlingConfiguration",
-                                        genericBeanDefinition(DefaultSpringEventHandlingConfiguration.class)
-                                                .addConstructorArgReference("eventHandlingConfiguration")
-                                                .addPropertyReference("axonConfiguration", "axonConfiguration")
+        registry.registerBeanDefinition("eventHandlerRegistrar",
+                                        genericBeanDefinition(EventHandlerRegistrar.class)
+                                                .addConstructorArgReference(AXON_CONFIGURATION_BEAN)
+                                                .addConstructorArgReference(ehConfigBeanName)
                                                 .addPropertyValue("eventHandlers", beans).getBeanDefinition());
     }
 
@@ -170,7 +170,7 @@ public class SpringAxonAutoConfigurer implements ImportBeanDefinitionRegistrar, 
         return modules;
     }
 
-    private void registerSagaBeanDefinitions(Configurer configurer, BeanDefinitionRegistry registry) {
+    private void registerSagaBeanDefinitions(Configurer configurer) {
         String[] sagas = beanFactory.getBeanNamesForAnnotation(Saga.class);
         for (String saga : sagas) {
             Saga sagaAnnotation = beanFactory.findAnnotationOnBean(saga, Saga.class);
