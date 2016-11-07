@@ -102,6 +102,8 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
                                                                       conf.eventBus(),
                                                                       conf.getComponent(TokenStore.class,
                                                                                         InMemoryTokenStore::new),
+                                                                      conf.getComponent(TransactionManager.class,
+                                                                                        NoTransactionManager::instance),
                                                                       conf.messageMonitor(EventProcessor.class,
                                                                                           name));
         CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();

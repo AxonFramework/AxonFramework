@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.model.ConcurrencyException;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionIsolationLevel;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -189,7 +188,7 @@ public class AbstractSnapshotterTest {
         }
 
         @Override
-        public Transaction startTransaction(TransactionIsolationLevel isolationLevel) {
+        public Transaction startTransaction() {
             return transaction;
         }
     }

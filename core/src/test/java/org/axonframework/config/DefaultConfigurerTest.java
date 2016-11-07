@@ -60,7 +60,7 @@ public class DefaultConfigurerTest {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("eventStore", properties);
         EntityManager em = emf.createEntityManager();
         Configuration config = DefaultConfigurer.defaultConfiguration()
-                .configureTransactionManager(c -> isolationLevel -> {
+                .configureTransactionManager(c -> () -> {
                     EntityTransaction tx = em.getTransaction();
                     tx.begin();
                     return new Transaction() {

@@ -27,6 +27,11 @@ public enum NoTransactionManager implements TransactionManager {
 
     INSTANCE;
 
+    /**
+     * Returns the singleton instance of this TransactionManager
+     *
+     * @return the singleton instance of this TransactionManager
+     */
     public static TransactionManager instance() {
         return INSTANCE;
     }
@@ -44,7 +49,7 @@ public enum NoTransactionManager implements TransactionManager {
     };
 
     @Override
-    public Transaction startTransaction(TransactionIsolationLevel isolationLevel) {
+    public Transaction startTransaction() {
         return TRANSACTION;
     }
 }

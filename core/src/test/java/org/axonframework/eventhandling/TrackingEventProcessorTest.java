@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.MockException;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -61,7 +62,7 @@ public class TrackingEventProcessorTest {
         mockListener = mock(EventListener.class);
         eventHandlerInvoker = new SimpleEventHandlerInvoker(mockListener);
         eventBus = new EmbeddedEventStore(new InMemoryEventStorageEngine());
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
 
         testSubject.start();
     }
@@ -134,7 +135,7 @@ public class TrackingEventProcessorTest {
             return null;
         }).when(mockListener).handle(any());
 
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
         testSubject.start();
         assertTrue("Expected 9 invocations on event listener by now", countDownLatch.await(5, TimeUnit.SECONDS));
         assertEquals(9, ackedEvents.size());
@@ -174,7 +175,7 @@ public class TrackingEventProcessorTest {
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
         when(eventBus.streamEvents(null)).thenReturn(trackingEventStreamOf(events.iterator()));
-        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore);
+        testSubject = new TrackingEventProcessor("test", eventHandlerInvoker, eventBus, tokenStore, NoTransactionManager.INSTANCE);
 
         testSubject.registerInterceptor(((unitOfWork, interceptorChain) -> {
             unitOfWork.onCommit(uow -> {

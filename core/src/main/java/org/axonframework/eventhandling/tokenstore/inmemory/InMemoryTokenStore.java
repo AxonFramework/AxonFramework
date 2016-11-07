@@ -28,26 +28,30 @@ public class InMemoryTokenStore implements TokenStore {
     private final Map<ProcessAndSegment, TrackingToken> tokens = new ConcurrentHashMap<>();
 
     @Override
-    public void storeToken(TrackingToken token, String processName, int segment) {
+    public void storeToken(TrackingToken token, String processorName, int segment) {
         if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processName, segment), token));
+            CurrentUnitOfWork.get().afterCommit(uow -> tokens.put(new ProcessAndSegment(processorName, segment), token));
         } else {
-            tokens.put(new ProcessAndSegment(processName, segment), token);
+            tokens.put(new ProcessAndSegment(processorName, segment), token);
         }
     }
 
     @Override
-    public TrackingToken fetchToken(String processName, int segment) {
-        return tokens.get(new ProcessAndSegment(processName, segment));
+    public TrackingToken fetchToken(String processorName, int segment) {
+        return tokens.get(new ProcessAndSegment(processorName, segment));
     }
 
+    @Override
+    public void releaseClaim(String processorName, int segment) {
+        // no-op, the in-memory implementation isn't accessible my multiple processes
+    }
 
     private static class ProcessAndSegment {
-        private final String processName;
+        private final String processorName;
         private final int segment;
 
-        public ProcessAndSegment(String processName, int segment) {
-            this.processName = processName;
+        public ProcessAndSegment(String processorName, int segment) {
+            this.processorName = processorName;
             this.segment = segment;
         }
 
@@ -60,12 +64,12 @@ public class InMemoryTokenStore implements TokenStore {
                 return false;
             }
             ProcessAndSegment that = (ProcessAndSegment) o;
-            return segment == that.segment && Objects.equals(processName, that.processName);
+            return segment == that.segment && Objects.equals(processorName, that.processorName);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(processName, segment);
+            return Objects.hash(processorName, segment);
         }
     }
 }

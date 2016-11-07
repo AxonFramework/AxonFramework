@@ -1,6 +1,7 @@
 package org.axonframework.integrationtests.eventstore.benchmark;
 
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.*;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
@@ -54,7 +55,7 @@ public abstract class AbstractEventStoreBenchmark {
         this.gapDetector = new GapDetector();
         this.eventProcessor =
                 new TrackingEventProcessor("benchmark", new SimpleEventHandlerInvoker(gapDetector), eventStore,
-                                           new InMemoryTokenStore(), batchSize);
+                                           new InMemoryTokenStore(), NoTransactionManager.INSTANCE, batchSize);
         this.executorService = Executors.newFixedThreadPool(threadCount, new AxonThreadFactory("storageJobs"));
     }
 

@@ -16,9 +16,9 @@ package org.axonframework.eventhandling.tokenstore.jpa;
 import org.axonframework.eventsourcing.eventstore.TrackingToken;
 import org.axonframework.serialization.*;
 
-import javax.persistence.*;
-import java.io.Serializable;
-import java.util.Objects;
+import javax.persistence.Basic;
+import javax.persistence.Lob;
+import javax.persistence.MappedSuperclass;
 
 /**
  * Abstract base class of a JPA entry containing a serialized tracking token belonging to a given process.
@@ -27,10 +27,9 @@ import java.util.Objects;
  */
 @MappedSuperclass
 public abstract class AbstractTokenEntry<T> {
-    @Basic(optional = false)
     @Lob
     private T token;
-    @Basic(optional = false)
+    @Basic
     private String tokenType;
 
     /**
@@ -43,9 +42,11 @@ public abstract class AbstractTokenEntry<T> {
      */
     protected AbstractTokenEntry(TrackingToken token, Serializer serializer,
                                  Class<T> contentType) {
-        SerializedObject<T> serializedToken = serializer.serialize(token, contentType);
-        this.token = serializedToken.getData();
-        this.tokenType = serializedToken.getType().getName();
+        if (token != null) {
+            SerializedObject<T> serializedToken = serializer.serialize(token, contentType);
+            this.token = serializedToken.getData();
+            this.tokenType = serializedToken.getType().getName();
+        }
     }
 
     /**
@@ -59,7 +60,7 @@ public abstract class AbstractTokenEntry<T> {
      *
      * @return the process name
      */
-    public abstract String getProcessName();
+    public abstract String getProcessorName();
 
     /**
      * Returns the segment index of the process to which this token belongs.
@@ -68,14 +69,21 @@ public abstract class AbstractTokenEntry<T> {
      */
     public abstract int getSegment();
 
-    /**
-     * Returns a serialized version of the token.
-     *
-     * @return the serialized token
-     */
     @SuppressWarnings("unchecked")
-    public SerializedObject<T> getToken() {
+    private SerializedObject<T> getSerializedToken() {
+        if (token == null) {
+            return null;
+        }
         return new SimpleSerializedObject<>(token, (Class<T>) token.getClass(), getTokenType());
+    }
+
+    /**
+     * Returns the token, deserializing it with given {@code serializer}
+     * @param serializer The serialize to deserialize the token with
+     * @return the deserialized token stored in this entry
+     */
+    public TrackingToken getToken(Serializer serializer) {
+        return token == null ? null : serializer.deserialize(getSerializedToken());
     }
 
     /**
@@ -88,30 +96,16 @@ public abstract class AbstractTokenEntry<T> {
     }
 
     /**
-     * Primary key for token entries used by JPA
+     * Update the token data to the given {@code token}, using given {@code serializer} to serialize it to the given
+     * {@code contentType}.
+     *
+     * @param token       The token representing the state to update to
+     * @param serializer  The serializer to update token to
+     * @param contentType The type of data to represent the serialized data in
      */
-    @SuppressWarnings("UnusedDeclaration")
-    public static class PK implements Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private String processName;
-        private int segment;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            PK pk = (PK) o;
-            return segment == pk.segment && Objects.equals(processName, pk.processName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(processName, segment);
-        }
+    protected final void updateToken(TrackingToken token, Serializer serializer, Class<T> contentType) {
+        SerializedObject<T> serializedToken = serializer.serialize(token, contentType);
+        this.token = serializedToken.getData();
+        this.tokenType = serializedToken.getType().getName();
     }
 }
