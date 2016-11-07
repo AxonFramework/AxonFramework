@@ -238,12 +238,12 @@ public class EmbeddedEventStore extends AbstractEventStore {
             while (newest != null && last != null && newest.index - last.index >= cachedEvents) {
                 last = last.next;
             }
+            oldest = last;
         }
 
         @Override
         public void close() {
             closed = true;
-            oldest = null;
             if (eventStream != null) {
                 eventStream.close();
             }
