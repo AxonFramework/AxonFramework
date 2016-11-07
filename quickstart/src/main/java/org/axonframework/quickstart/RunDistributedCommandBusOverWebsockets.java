@@ -1,15 +1,11 @@
 package org.axonframework.quickstart;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandCallback;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.*;
 import org.axonframework.commandhandling.distributed.DistributedCommandBus;
 import org.axonframework.commandhandling.distributed.StaticCommandRouter;
 import org.axonframework.commandhandling.distributed.commandfilter.AcceptAll;
-import org.axonframework.commandhandling.distributed.websockets.DefaultWebsocketCommandBusConnectorServer;
 import org.axonframework.commandhandling.distributed.websockets.WebsocketCommandBusConnector;
+import org.axonframework.commandhandling.distributed.websockets.WebsocketCommandBusConnectorServer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -39,12 +35,12 @@ public class RunDistributedCommandBusOverWebsockets {
         // Initialize javax.websocket layer
         ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(servletContextHandler);
         ServerEndpointConfig config = ServerEndpointConfig.Builder
-                .create(DefaultWebsocketCommandBusConnectorServer.class, "/test")
+                .create(WebsocketCommandBusConnectorServer.class, "/test")
                 .configurator(
                         new ServerEndpointConfig.Configurator() {
                             @Override
                             public <T> T getEndpointInstance(Class<T> endpointClass) throws InstantiationException {
-                                return endpointClass.cast(new DefaultWebsocketCommandBusConnectorServer(commandBus, new XStreamSerializer()));
+                                return endpointClass.cast(new WebsocketCommandBusConnectorServer(commandBus, new XStreamSerializer()));
                             }
                         }
                 ).build();

@@ -32,6 +32,11 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
     private final Configurer configurer;
     private volatile boolean running = false;
 
+    /**
+     * Initializes a new {@link AxonConfiguration} that uses the given {@code configurer} to build the configuration.
+     *
+     * @param configurer configuration builder for the AxonConfiguration
+     */
     public AxonConfiguration(Configurer configurer) {
         this.configurer = configurer;
     }
@@ -54,6 +59,12 @@ public class AxonConfiguration implements Configuration, InitializingBean, Appli
         return config.resourceInjector();
     }
 
+    /**
+     * Returns the CommandGateway used to send commands to command handlers.
+     *
+     * @param commandBus the command bus to be used by the gateway
+     * @return the CommandGateway used to send commands to command handlers
+     */
     @NoBeanOfType(CommandGateway.class)
     @Bean
     public CommandGateway commandGateway(CommandBus commandBus) {

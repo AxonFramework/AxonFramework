@@ -72,5 +72,12 @@ public interface CommandBusConnector {
      */
     <C, R> void send(Member destination, CommandMessage<C> command, CommandCallback<? super C, R> callback) throws Exception;
 
+    /**
+     * Subscribes a command message handler for commands with given {@code commandName}.
+     *
+     * @param commandName the command name. Usually this equals the fully qualified class name of the command.
+     * @param handler the handler to subscribe
+     * @return a handle that can be used to end the subscription
+     */
     Registration subscribe(String commandName, MessageHandler<? super CommandMessage<?>> handler);
 }

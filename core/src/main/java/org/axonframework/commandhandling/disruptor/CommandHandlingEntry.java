@@ -16,13 +16,13 @@
 
 package org.axonframework.commandhandling.disruptor;
 
-import java.util.List;
-
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+
+import java.util.List;
 
 /**
  * DataHolder for the DisruptorCommandBus. The CommandHandlingEntry maintains all information required for or produced
@@ -210,6 +210,11 @@ public class CommandHandlingEntry extends DisruptorUnitOfWork<CommandMessage<?>>
         reset(null);
     }
 
+    /**
+     * Registers the identifier of the aggregate that will process the next command.
+     *
+     * @param aggregateIdentifier identifier of the aggregate that will handle the command
+     */
     public void registerAggregateIdentifier(String aggregateIdentifier) {
         if (this.aggregateIdentifier != null && !this.aggregateIdentifier.equals(aggregateIdentifier)) {
             throw new IllegalStateException("Cannot load multiple aggregates in the same unit of work when using" +

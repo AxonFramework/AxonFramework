@@ -32,6 +32,9 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
+ * Implementation of a {@link EventProcessingStrategy} that creates event processing tasks for asynchronous execution.
+ * Clients can decide if events may be processed in sequence or in parallel using a {@link SequencingPolicy}.
+ *
  * @author Rene de Waele
  */
 public class AsynchronousEventProcessingStrategy implements EventProcessingStrategy {
@@ -42,6 +45,14 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
     private final SequencingPolicy<? super EventMessage<?>> sequencingPolicy;
     private final ConcurrentMap<Object, EventProcessorTask> currentTasks = new ConcurrentHashMap<>();
 
+    /**
+     * Initializes a new {@link AsynchronousEventProcessingStrategy} that uses the given {@code executor} to execute
+     * event processing tasks and {@code sequencingPolicy} that determines if an event may be processed in sequence or
+     * in parallel.
+     *
+     * @param executor         the event processing job executor
+     * @param sequencingPolicy the policy that determines if an event may be processed in sequence or in parallel
+     */
     public AsynchronousEventProcessingStrategy(Executor executor,
                                                SequencingPolicy<? super EventMessage<?>> sequencingPolicy) {
         this.executor = requireNonNull(executor);

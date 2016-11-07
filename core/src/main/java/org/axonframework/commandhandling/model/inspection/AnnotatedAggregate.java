@@ -226,6 +226,12 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         return new GenericEventMessage<>(payload, metaData);
     }
 
+    /**
+     * Get the annotated aggregate instance. Note that this method should probably never be used in normal use. If you
+     * need to operate on the aggregate use {@link #invoke(Function)} or {@link #execute(Consumer)} instead.
+     *
+     * @return the aggregate instance
+     */
     public T getAggregateRoot() {
         return aggregateRoot;
     }

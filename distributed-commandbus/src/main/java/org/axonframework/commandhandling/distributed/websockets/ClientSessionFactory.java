@@ -18,7 +18,7 @@ public interface ClientSessionFactory {
      *
      * @param endpoint The endpoint to connect to
      * @return The session to the endpoint
-     * @throws CommandBusConnectorCommunicationException
+     * @throws CommandBusConnectorCommunicationException if a session cannot be created
      */
     Session createSession(WebsocketCommandBusConnectorClient endpoint) throws CommandBusConnectorCommunicationException;
 }

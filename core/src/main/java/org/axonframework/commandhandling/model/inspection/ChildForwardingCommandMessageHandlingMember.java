@@ -25,6 +25,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
+/**
+ * Implementation of a {@link CommandMessageHandlingMember} that forwards commands to a child entity.
+ *
+ * @param <P> the parent entity type
+ * @param <C> the child entity type
+ */
 public class ChildForwardingCommandMessageHandlingMember<P, C> implements CommandMessageHandlingMember<P> {
 
     private final String routingKey;
@@ -33,14 +39,25 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     private final String commandName;
     private final boolean isFactoryHandler;
 
-    public ChildForwardingCommandMessageHandlingMember(String routingKey,
-                                                       MessageHandlingMember<? super C> childHandler,
+    /**
+     * Initializes a {@link ChildForwardingCommandMessageHandlingMember} that routes commands to a compatible child
+     * entity. Child entities are resolved using the given {@code childEntityResolver}. If an entity is found the
+     * command will be handled using the given {@code childHandler}.
+     *
+     * @param routingKey          the property name on the command to determine which entity should handle the command
+     * @param childHandler        handler of the command once a suitable entity is found
+     * @param childEntityResolver resolver of child entities for a given command
+     */
+    public ChildForwardingCommandMessageHandlingMember(String routingKey, MessageHandlingMember<? super C> childHandler,
                                                        BiFunction<CommandMessage<?>, P, C> childEntityResolver) {
         this.routingKey = routingKey;
         this.childHandler = childHandler;
         this.childEntityResolver = childEntityResolver;
-        this.commandName = childHandler.unwrap(CommandMessageHandlingMember.class).map(CommandMessageHandlingMember::commandName).orElse(null);
-        this.isFactoryHandler = childHandler.unwrap(CommandMessageHandlingMember.class).map(CommandMessageHandlingMember::isFactoryHandler).orElse(false);
+        this.commandName =
+                childHandler.unwrap(CommandMessageHandlingMember.class).map(CommandMessageHandlingMember::commandName)
+                        .orElse(null);
+        this.isFactoryHandler = childHandler.unwrap(CommandMessageHandlingMember.class)
+                .map(CommandMessageHandlingMember::isFactoryHandler).orElse(false);
     }
 
     @Override
@@ -78,7 +95,8 @@ public class ChildForwardingCommandMessageHandlingMember<P, C> implements Comman
     public Object handle(Message<?> message, P target) throws Exception {
         C childEntity = childEntityResolver.apply((CommandMessage<?>) message, target);
         if (childEntity == null) {
-            throw new IllegalStateException("Aggregate cannot handle this command, as there is no entity instance to forward it to.");
+            throw new IllegalStateException(
+                    "Aggregate cannot handle this command, as there is no entity instance to forward it to.");
         }
         return childHandler.handle(message, childEntity);
     }

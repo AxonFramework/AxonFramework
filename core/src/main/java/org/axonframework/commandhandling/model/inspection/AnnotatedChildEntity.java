@@ -24,12 +24,29 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+/**
+ * Implementation of a {@link ChildEntity} that uses annotations on a target entity to resolve event and command
+ * handlers.
+ *
+ * @param <P> the parent entity type
+ * @param <C> the child entity type
+ */
 public class AnnotatedChildEntity<P, C> implements ChildEntity<P> {
     private final EntityModel<C> entityModel;
     private final boolean forwardEvents;
     private final Map<String, MessageHandlingMember<? super P>> commandHandlers;
     private final BiFunction<EventMessage<?>, P, Iterable<C>> eventTargetResolver;
 
+    /**
+     * Initiates a new AnnotatedChildEntity instance that uses the provided {@code entityModel} to delegate command
+     * and event handling to an annotated child entity.
+     *
+     * @param entityModel model describing the entity
+     * @param forwardCommands flag indicating whether commands should be forwarded to the entity
+     * @param forwardEvents flag indicating whether events should be forwarded to the entity
+     * @param commandTargetResolver resolver for command handler methods on the target
+     * @param eventTargetResolver resolver for event handler methods on the target
+     */
     @SuppressWarnings("unchecked")
     public AnnotatedChildEntity(EntityModel<C> entityModel, boolean forwardCommands, boolean forwardEvents,
                                 BiFunction<CommandMessage<?>, P, C> commandTargetResolver,

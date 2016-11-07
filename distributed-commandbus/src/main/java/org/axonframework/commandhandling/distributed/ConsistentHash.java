@@ -23,10 +23,21 @@ import org.axonframework.common.digest.Digester;
 import java.util.*;
 import java.util.function.Predicate;
 
+/**
+ * Component used by command routers to find members capable of handling a given command. Members are selected based on
+ * their capabilities and a given routing key. If a ConsistentHash is asked to provide a member for a given routing key
+ * it will always returning the same Member as long as none of the memberships have changed.
+ * <p>
+ * A ConsistentHash is used to route commands targeting the same aggregate to the same member. In that case the
+ * aggregate identifier is the routing key.
+ */
 public class ConsistentHash {
 
     private final SortedMap<String, ConsistentHashMember> hashToMember;
 
+    /**
+     * Initializes a new {@link ConsistentHash}. To register members use {@link #with(Member, int, Predicate)}.
+     */
     public ConsistentHash() {
         hashToMember = Collections.emptySortedMap();
     }
@@ -35,13 +46,22 @@ public class ConsistentHash {
         hashToMember = hashed;
     }
 
+    /**
+     * Returns the member instance to which the given {@code message} should be routed. If no suitable member could be
+     * found an empty Optional is returned.
+     *
+     * @param routingKey     the routing that should be used to select a member
+     * @param commandMessage the command message to find a member for
+     * @return the member that should handle the message or an empty Optional if no suitable member was found
+     */
     public Optional<Member> getMember(String routingKey, CommandMessage<?> commandMessage) {
         String hash = hash(routingKey);
         SortedMap<String, ConsistentHashMember> tailMap = hashToMember.tailMap(hash);
         Iterator<Map.Entry<String, ConsistentHashMember>> tailIterator = tailMap.entrySet().iterator();
         Optional<Member> foundMember = findSuitableMember(commandMessage, tailIterator);
         if (!foundMember.isPresent()) {
-            Iterator<Map.Entry<String, ConsistentHashMember>> headIterator = hashToMember.headMap(hash).entrySet().iterator();
+            Iterator<Map.Entry<String, ConsistentHashMember>> headIterator =
+                    hashToMember.headMap(hash).entrySet().iterator();
             foundMember = findSuitableMember(commandMessage, headIterator);
         }
         return foundMember;
@@ -51,7 +71,8 @@ public class ConsistentHash {
         return Digester.md5Hex(routingKey);
     }
 
-    private Optional<Member> findSuitableMember(CommandMessage<?> commandMessage, Iterator<Map.Entry<String, ConsistentHashMember>> iterator) {
+    private Optional<Member> findSuitableMember(CommandMessage<?> commandMessage,
+                                                Iterator<Map.Entry<String, ConsistentHashMember>> iterator) {
         while (iterator.hasNext()) {
             Map.Entry<String, ConsistentHashMember> entry = iterator.next();
             if (entry.getValue().commandFilter.test(commandMessage)) {
@@ -61,10 +82,42 @@ public class ConsistentHash {
         return Optional.empty();
     }
 
+    /**
+     * Returns the set of members registered with this consistent hash instance.
+     *
+     * @return the members of this consistent hash
+     */
     public Set<Member> getMembers() {
         return Collections.unmodifiableSet(new HashSet<>(hashToMember.values()));
     }
 
+    /**
+     * Registers the given {@code member} with given {@code loadFactor} and {@code commandFilter} and returns a new
+     * {@link ConsistentHash} with updated memberships.
+     * <p>
+     * The relative loadFactor of the member determines the likelihood of being selected as a destination for a command.
+     *
+     * @param member        the member to register
+     * @param loadFactor    the load factor of the new member
+     * @param commandFilter filter describing which commands can be handled by the given member
+     * @return a new {@link ConsistentHash} instance with updated memberships
+     */
+    public ConsistentHash with(Member member, int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
+        Assert.notNull(member, () -> "Member may not be null");
+        SortedMap<String, ConsistentHashMember> members = new TreeMap<>(without(member).hashToMember);
+
+        ConsistentHashMember newMember = new ConsistentHashMember(member, loadFactor, commandFilter);
+        newMember.hashes().forEach(h -> members.put(h, newMember));
+
+        return new ConsistentHash(members);
+    }
+
+    /**
+     * Deregisters the given {@code member} and returns a new {@link ConsistentHash} with updated memberships.
+     *
+     * @param member the member to remove from the consistent hash
+     * @return a new {@link ConsistentHash} instance with updated memberships
+     */
     public ConsistentHash without(Member member) {
         Assert.notNull(member, () -> "Member may not be null");
         SortedMap<String, ConsistentHashMember> newHashes = new TreeMap<>();
@@ -74,16 +127,6 @@ public class ConsistentHash {
             }
         });
         return new ConsistentHash(newHashes);
-    }
-
-    public ConsistentHash with(Member member, int loadFactor, Predicate<? super CommandMessage<?>> commandFilter) {
-        Assert.notNull(member, () -> "Member may not be null");
-        SortedMap<String, ConsistentHashMember> members = new TreeMap<>(without(member).hashToMember);
-
-        ConsistentHashMember newMember = new ConsistentHashMember(member, loadFactor, commandFilter);
-        newMember.hashes().forEach(h -> members.put(h, newMember));
-
-        return new ConsistentHash(members);
     }
 
     @Override
@@ -103,21 +146,26 @@ public class ConsistentHash {
         return Objects.hash(hashToMember);
     }
 
+    /**
+     * Member implementation used by a {@link ConsistentHash} registry.
+     */
     public static class ConsistentHashMember implements Member {
         private final Member member;
         private final int segmentCount;
         private final Predicate<? super CommandMessage<?>> commandFilter;
 
-        public ConsistentHashMember(Member member, int segmentCount, Predicate<? super CommandMessage<?>> commandFilter) {
+        private ConsistentHashMember(Member member, int segmentCount,
+                                     Predicate<? super CommandMessage<?>> commandFilter) {
             if (member instanceof ConsistentHashMember) {
                 this.member = ((ConsistentHashMember) member).member;
-            }else {
+            } else {
                 this.member = member;
             }
             this.segmentCount = segmentCount;
             this.commandFilter = commandFilter;
         }
 
+        @Override
         public String name() {
             return member.name();
         }
@@ -127,10 +175,21 @@ public class ConsistentHash {
             member.suspect();
         }
 
+        /**
+         * Returns this member's segment count which relates to the relative load factor of the member.
+         *
+         * @return the member's segment count
+         */
         public int segmentCount() {
             return segmentCount;
         }
 
+        /**
+         * Returns the hashes covered by the member. If the hash of the routing key matches with one of the returned
+         * hashes and the member is capable of handling the command then it will be selected as a target for the command.
+         *
+         * @return the hashes covered by this member
+         */
         public Set<String> hashes() {
             Set<String> newHashes = new TreeSet<>();
             for (int t = 0; t < segmentCount; t++) {
@@ -154,8 +213,7 @@ public class ConsistentHash {
                 return false;
             }
             ConsistentHashMember that = (ConsistentHashMember) o;
-            return segmentCount == that.segmentCount &&
-                    Objects.equals(member, that.member) &&
+            return segmentCount == that.segmentCount && Objects.equals(member, that.member) &&
                     Objects.equals(commandFilter, that.commandFilter);
         }
 

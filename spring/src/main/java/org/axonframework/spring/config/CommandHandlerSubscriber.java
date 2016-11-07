@@ -27,10 +27,22 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
         this.applicationContext = applicationContext;
     }
 
+    /**
+     * Sets the command bus to use when subscribing command handlers. If not set the command bus is taken from Spring's
+     * application context.
+     *
+     * @param commandBus the command bus to use when subscribing handlers
+     */
     public void setCommandBus(CommandBus commandBus) {
         this.commandBus = commandBus;
     }
 
+    /**
+     * Sets the command handlers to subscribe to the bus. If not set the command handlers are taken from Spring's
+     * application context by scanning for beans of type {@link MessageHandler} that can handle commands.
+     *
+     * @param commandHandlers command handlers to subscribe to the command bus
+     */
     public void setCommandHandlers(Collection<MessageHandler> commandHandlers) {
         this.commandHandlers = commandHandlers;
     }
@@ -55,8 +67,7 @@ public class CommandHandlerSubscriber implements ApplicationContextAware, SmartL
         if (commandHandlers == null) {
             commandHandlers = applicationContext.getBeansOfType(MessageHandler.class).values();
         }
-        commandHandlers.stream()
-                .filter(commandHandler -> commandHandler instanceof SupportedCommandNamesAware)
+        commandHandlers.stream().filter(commandHandler -> commandHandler instanceof SupportedCommandNamesAware)
                 .forEach(commandHandler -> {
                     for (String commandName : ((SupportedCommandNamesAware) commandHandler).supportedCommandNames()) {
                         commandBus.subscribe(commandName, commandHandler);

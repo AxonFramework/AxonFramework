@@ -169,6 +169,11 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      */
     protected abstract Optional<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier);
 
+    /**
+     * Get the serializer used by this storage engine when storing and retrieving events.
+     *
+     * @return the serializer used by this storage
+     */
     public Serializer getSerializer() {
         return serializer;
     }

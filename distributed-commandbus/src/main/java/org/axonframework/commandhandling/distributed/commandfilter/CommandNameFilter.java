@@ -37,10 +37,20 @@ public class CommandNameFilter implements Predicate<CommandMessage<?>>, Serializ
 
     private final Set<String> commandNames;
 
+    /**
+     * Initializes a {@link CommandNameFilter} for the given set of {@code commandNames}.
+     *
+     * @param commandNames commands that can be handled
+     */
     public CommandNameFilter(Set<String> commandNames) {
         this.commandNames = new HashSet<>(commandNames);
     }
 
+    /**
+     * Initializes a {@link CommandNameFilter} for a single command name.
+     *
+     * @param commandName command that can be handled
+     */
     public CommandNameFilter(String commandName) {
         this(Collections.singleton(commandName));
     }

@@ -15,7 +15,17 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.AxonException;
 
+/**
+ * Exception triggered by a saga while it is processing an event or processing a task.
+ */
 public class SagaExecutionException extends AxonException {
+
+    /**
+     * Initializes the exception using the given {@code message} and {@code cause}.
+     *
+     * @param message The message describing the exception
+     * @param cause   The underlying cause of the exception
+     */
     public SagaExecutionException(String message, Throwable cause) {
         super(message, cause);
     }

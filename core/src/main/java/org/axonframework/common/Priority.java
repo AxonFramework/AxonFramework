@@ -46,6 +46,7 @@ public @interface Priority {
      * Value indicating the annotated member should have high priority, effectively placing it "in the first half".
      */
     int HIGH = Integer.MAX_VALUE / 2;
+
     /**
      * Value indicating the annotated member should be the very first
      */

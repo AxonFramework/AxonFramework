@@ -16,14 +16,24 @@
 
 package org.axonframework.mongo.eventsourcing.eventstore.documentpercommit;
 
+import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.EventEntry;
+
 /**
+ * Configuration for a mongo event store entry that contains an array of {@link EventEntry event entries} that are part
+ * of the same UnitOfWork commit.
+ *
  * @author Rene de Waele
  */
 public class CommitEntryConfiguration {
 
-    private final String firstTimestampProperty, lastTimestampProperty, firstSequenceNumberProperty, lastSequenceNumberProperty,
-            eventsProperty;
+    private final String firstTimestampProperty, lastTimestampProperty, firstSequenceNumberProperty,
+            lastSequenceNumberProperty, eventsProperty;
 
+    /**
+     * Returns the default {@link CommitEntryConfiguration}.
+     *
+     * @return the default configuration
+     */
     public static CommitEntryConfiguration getDefault() {
         return builder().build();
     }
@@ -36,35 +46,65 @@ public class CommitEntryConfiguration {
         eventsProperty = builder.eventsProperty;
     }
 
+    /**
+     * Returns a new builder that is initialized with default values.
+     *
+     * @return a new builder with default values
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Returns the name of the property containing the timestamp of the first event entry of the commit.
+     *
+     * @return the property for the timestamp of the first event entry
+     */
     public String firstTimestampProperty() {
         return firstTimestampProperty;
     }
 
+    /**
+     * Returns the name of the property containing the timestamp of the last event entry of the commit.
+     *
+     * @return the property for the timestamp of the last event entry
+     */
     public String lastTimestampProperty() {
         return lastTimestampProperty;
     }
 
+    /**
+     * Returns the name of the property containing the sequence number of the first event entry.
+     *
+     * @return the property for the timestamp of the first sequence number
+     */
     public String firstSequenceNumberProperty() {
         return firstSequenceNumberProperty;
     }
 
+    /**
+     * Returns the name of the property containing the sequence number of the last event entry.
+     *
+     * @return the property for the timestamp of the last sequence number
+     */
     public String lastSequenceNumberProperty() {
         return lastSequenceNumberProperty;
     }
 
+    /**
+     * Returns the name of the property containing the array of event entries.
+     *
+     * @return the property for the array of event entries
+     */
     public String eventsProperty() {
         return eventsProperty;
     }
 
     private static class Builder {
 
-        private String firstTimestampProperty =
-                "firstTimestamp", lastTimestampProperty = "lastTimestamp", firstSequenceNumberProperty =
-                "firstSequenceNumber", lastSequenceNumberProperty = "lastSequenceNumber", eventsProperty = "events";
+        private String firstTimestampProperty = "firstTimestamp", lastTimestampProperty = "lastTimestamp",
+                firstSequenceNumberProperty = "firstSequenceNumber", lastSequenceNumberProperty = "lastSequenceNumber",
+                eventsProperty = "events";
 
         public Builder withFirstTimestampProperty(String firstTimestampProperty) {
             this.firstTimestampProperty = firstTimestampProperty;

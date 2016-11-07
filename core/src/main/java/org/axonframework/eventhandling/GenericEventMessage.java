@@ -28,13 +28,29 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * @author Rene de Waele
+ * Generic implementation of the EventMessage interface.
+ *
+ * @param <T> The type of payload contained in this Message
  */
 public class GenericEventMessage<T> extends MessageDecorator<T> implements EventMessage<T> {
     private final Supplier<Instant> timestampSupplier;
 
+    /**
+     * {@link Clock} instance used to set the time on new events. To fix the time while testing set this value to a
+     * constant value.
+     */
     public static Clock clock = Clock.systemUTC();
 
+    /**
+     * Returns the given event as an EventMessage. If {@code event} already implements EventMessage, it is
+     * returned as-is. If it is a Message, a new EventMessage will be created using the payload and meta data of the
+     * given message. Otherwise, the given {@code event} is wrapped into a GenericEventMessage as its payload.
+     *
+     * @param event the event to wrap as EventMessage
+     * @param <T>   The generic type of the expected payload of the resulting object
+     * @return an EventMessage containing given {@code event} as payload, or {@code event} if it already implements
+     * EventMessage.
+     */
     @SuppressWarnings("unchecked")
     public static <T> EventMessage<T> asEventMessage(Object event) {
         if (EventMessage.class.isInstance(event)) {
@@ -46,25 +62,53 @@ public class GenericEventMessage<T> extends MessageDecorator<T> implements Event
         return new GenericEventMessage<>(new GenericMessage<>((T) event), clock.instant());
     }
 
+    /**
+     * Creates a GenericEventMessage with given {@code payload}, and an empty MetaData.
+     *
+     * @param payload The payload for the message
+     * @see #asEventMessage(Object)
+     */
     public GenericEventMessage(T payload) {
         this(payload, MetaData.emptyInstance());
     }
 
+    /**
+     * Creates a GenericEventMessage with given {@code payload} and given {@code metaData}.
+     *
+     * @param payload  The payload of the EventMessage
+     * @param metaData The MetaData for the EventMessage
+     * @see #asEventMessage(Object)
+     */
     public GenericEventMessage(T payload, Map<String, ?> metaData) {
         this(new GenericMessage<>(payload, metaData), clock.instant());
     }
 
+    /**
+     * Constructor to reconstruct an EventMessage using existing data.
+     *
+     * @param identifier The identifier of the Message
+     * @param timestamp  The timestamp of the Message creation
+     * @param payload    The payload of the message
+     * @param metaData   The meta data of the message
+     */
     public GenericEventMessage(String identifier, T payload, Map<String, ?> metaData, Instant timestamp) {
         this(new GenericMessage<>(identifier, payload, metaData), timestamp);
     }
 
-    protected GenericEventMessage(Message<T> delegate, Instant timestamp) {
-        this(delegate, CachingSupplier.of(timestamp));
-    }
-
+    /**
+     * Constructor to reconstruct an EventMessage using existing data. The timestamp of the event is supplied lazily to
+     * prevent unnecessary deserialization of the timestamp.
+     *
+     * @param delegate          The message containing payload, identifier and metadata
+     * @param timestampSupplier Supplier for the timestamp of the Message creation
+     */
     public GenericEventMessage(Message<T> delegate, Supplier<Instant> timestampSupplier) {
         super(delegate);
         this.timestampSupplier = CachingSupplier.of(timestampSupplier);
+    }
+
+    protected GenericEventMessage(Message<T> delegate, Instant timestamp) {
+        this(delegate, CachingSupplier.of(timestamp));
     }
 
     @Override

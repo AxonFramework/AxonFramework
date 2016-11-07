@@ -18,7 +18,16 @@ package org.axonframework.eventhandling.saga;
 
 import org.axonframework.common.AxonNonTransientException;
 
+/**
+ * Exception triggered during initialization of a Saga.
+ */
 public class SagaInstantiationException extends AxonNonTransientException {
+    /**
+     * Initializes the exception using the given {@code message} and {@code cause}.
+     *
+     * @param message The message describing the exception
+     * @param cause   The underlying cause of the exception
+     */
     public SagaInstantiationException(String message, Throwable cause) {
         super(message, cause);
     }

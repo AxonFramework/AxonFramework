@@ -25,6 +25,9 @@ package org.axonframework.common.transaction;
  */
 public enum NoTransactionManager implements TransactionManager {
 
+    /**
+     * Singleton instance of the TransactionManager
+     */
     INSTANCE;
 
     /**
@@ -36,7 +39,12 @@ public enum NoTransactionManager implements TransactionManager {
         return INSTANCE;
     }
 
-    public static final Transaction TRANSACTION = new Transaction() {
+    @Override
+    public Transaction startTransaction() {
+        return TRANSACTION;
+    }
+
+    private static final Transaction TRANSACTION = new Transaction() {
         @Override
         public void commit() {
             //no op
@@ -47,9 +55,4 @@ public enum NoTransactionManager implements TransactionManager {
             //no op
         }
     };
-
-    @Override
-    public Transaction startTransaction() {
-        return TRANSACTION;
-    }
 }

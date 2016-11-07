@@ -55,10 +55,11 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this EventStore
      * @param aggregateType         the aggregate type this repository manages
+     * @param eventBus              the event bus to which new events are published
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType,
                                 EventBus eventBus) {
-        this(entityManagerProvider, aggregateType, eventBus, new NullLockFactory());
+        this(entityManagerProvider, aggregateType, eventBus, NullLockFactory.INSTANCE);
     }
 
     /**
@@ -67,6 +68,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      *
      * @param entityManagerProvider The EntityManagerProvider providing the EntityManager instance for this repository
      * @param aggregateType         the aggregate type this repository manages
+     * @param eventBus              the event bus to which new events are published
      * @param lockFactory           the additional locking strategy for this repository
      */
     public GenericJpaRepository(EntityManagerProvider entityManagerProvider, Class<T> aggregateType, EventBus eventBus,
@@ -122,8 +124,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Flushing the EntityManager will force JPA to send state changes to the database. Any key violations and failing
      * optimistic locks will be identified in an early stage.
      *
-     * @param forceFlushOnSave whether or not to flush the EntityManager after each save. Defaults to
-     *                         {@code true}.
+     * @param forceFlushOnSave whether or not to flush the EntityManager after each save. Defaults to {@code true}.
      * @see javax.persistence.EntityManager#flush()
      */
     public void setForceFlushOnSave(boolean forceFlushOnSave) {

@@ -37,9 +37,10 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     private final SagaModel<T> sagaMetaModel;
 
     /**
-     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and supporting given
-     * annotated {@code sagaClasses}.
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas. To create a new saga this
+     * manager uses {@link #newInstance(Class)}. Uses a {@link DefaultSagaMetaModelFactory} for the saga's meta model.
      *
+     * @param sagaType       the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository) {
@@ -47,15 +48,26 @@ public class AnnotatedSagaManager<T> extends AbstractSagaManager<T> {
     }
 
     /**
-     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and supporting given
-     * annotated {@code sagaClasses}.
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas and {@code sagaFactory} to
+     * create new sagas. Uses a {@link DefaultSagaMetaModelFactory} for the saga's meta model.
      *
+     * @param sagaType       the saga target type
      * @param sagaRepository The repository providing access to the Saga instances
+     * @param sagaFactory    the factory for new saga instances of type {@link T}
      */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory) {
         this(sagaType, sagaRepository, sagaFactory, new DefaultSagaMetaModelFactory().modelOf(sagaType));
     }
 
+    /**
+     * Initialize the AnnotatedSagaManager using given {@code repository} to load sagas, the {@code sagaFactory} to
+     * create new sagas and the {@code sagaMetaModel} to delegate messages to the saga instances.
+     *
+     * @param sagaType the saga target type
+     * @param sagaRepository The repository providing access to the Saga instances
+     * @param sagaFactory the factory for new saga instances of type {@link T}
+     * @param sagaMetaModel the meta model to delegate messages to a saga instance
+     */
     public AnnotatedSagaManager(Class<T> sagaType, SagaRepository<T> sagaRepository, Supplier<T> sagaFactory,
                                 SagaModel<T> sagaMetaModel) {
         super(sagaType, sagaRepository, sagaFactory);

@@ -48,8 +48,9 @@ public class SagaEntry<T> {
      * Constructs a new SagaEntry for the given {@code saga}. The given saga must be serializable. The provided
      * saga is not modified by this operation.
      *
-     * @param saga       The saga to store
-     * @param serializer The serialization mechanism to convert the Saga to a byte stream
+     * @param saga           The saga to store
+     * @param sagaIdentifier The saga identifier
+     * @param serializer     The serialization mechanism to convert the Saga to a byte stream
      */
     public SagaEntry(T saga, String sagaIdentifier, Serializer serializer) {
         this.sagaId = sagaIdentifier;
@@ -97,6 +98,7 @@ public class SagaEntry<T> {
 
     /**
      * Returns the type identifier of the serialized saga
+     *
      * @return the type identifier of the serialized saga
      */
     public String getSagaType() {
