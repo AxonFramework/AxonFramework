@@ -234,8 +234,9 @@ public class EmbeddedEventStore extends AbstractEventStore {
         }
 
         private void trimCache() {
-            while (newest != null && oldest != null && newest.index - oldest.index >= cachedEvents) {
-                oldest = oldest.next;
+            Node last = oldest;
+            while (newest != null && last != null && newest.index - last.index >= cachedEvents) {
+                last = last.next;
             }
         }
 
