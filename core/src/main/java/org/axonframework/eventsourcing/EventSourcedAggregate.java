@@ -173,6 +173,11 @@ public class EventSourcedAggregate<T> extends AnnotatedAggregate<T> {
         }
     }
 
+    @Override
+    protected boolean getIsLive() {
+        return !initializing;
+    }
+
     /**
      * The trigger instance that monitors this aggregate to trigger a snapshot
      *

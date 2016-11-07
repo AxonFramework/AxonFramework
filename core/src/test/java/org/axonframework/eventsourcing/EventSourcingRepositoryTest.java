@@ -87,6 +87,8 @@ public class EventSourcingRepositoryTest {
         assertSame(event1, aggregate.invoke(TestAggregate::getHandledEvents).get(0));
         assertSame(event2, aggregate.invoke(TestAggregate::getHandledEvents).get(1));
 
+        assertEquals(0, aggregate.invoke(TestAggregate::getLiveEvents).size());
+
         // now the aggregate is loaded (and hopefully correctly locked)
         StubDomainEvent event3 = new StubDomainEvent();
 
@@ -95,6 +97,8 @@ public class EventSourcingRepositoryTest {
         CurrentUnitOfWork.commit();
 
         verify(mockEventStore, times(1)).publish((EventMessage)anyVararg());
+        assertEquals(1, aggregate.invoke(TestAggregate::getLiveEvents).size());
+        assertSame(event3, aggregate.invoke(TestAggregate::getLiveEvents).get(0).getPayload());
     }
 
     @Test
@@ -190,7 +194,8 @@ public class EventSourcingRepositoryTest {
 
     private static class TestAggregate {
 
-        private List<EventMessage<?>> handledEvents = new ArrayList<EventMessage<? extends Object>>();
+        private List<EventMessage<?>> handledEvents = new ArrayList<>();
+        private List<EventMessage<?>> liveEvents = new ArrayList<>();
 
         @AggregateIdentifier
         private String identifier;
@@ -207,10 +212,17 @@ public class EventSourcingRepositoryTest {
         protected void handle(EventMessage event) {
             identifier = ((DomainEventMessage<?>) event).getAggregateIdentifier();
             handledEvents.add(event);
+            if (AggregateLifecycle.isLive()) {
+                liveEvents.add(event);
+            }
         }
 
         public List<EventMessage<?>> getHandledEvents() {
             return handledEvents;
+        }
+
+        public List<EventMessage<?>> getLiveEvents() {
+            return liveEvents;
         }
 
         public String getIdentifier() {

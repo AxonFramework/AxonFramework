@@ -39,6 +39,25 @@ public abstract class AggregateLifecycle {
         return AggregateLifecycle.getInstance().doApply(payload, MetaData.emptyInstance());
     }
 
+    /**
+     * Indicates whether this Aggregate instance is 'live'. Events applied to a 'live' Aggregate represent events that
+     * are currently happening, as opposed to events representing historic decisions used to reconstruct the
+     * Aggregate's state.
+     *
+     * @return {@code true} if the aggregate is 'live', {@code false} if the aggregate is initializing state based on historic events
+     */
+    public static boolean isLive() {
+        return AggregateLifecycle.getInstance().getIsLive();
+    }
+
+    /**
+     * Indicates whether this Aggregate instance is 'live'. This means events currently applied represent events that
+     * are currently happening, as opposed to events representing historic decisions.
+     *
+     * @return {@code true} if the aggregate is 'live', {@code false} if the aggregate is initializing state based on historic events
+     */
+    protected abstract boolean getIsLive();
+
     public static void markDeleted() {
         getInstance().doMarkDeleted();
     }

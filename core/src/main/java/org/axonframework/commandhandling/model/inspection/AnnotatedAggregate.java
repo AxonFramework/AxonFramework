@@ -125,7 +125,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                 delayedTasks.poll().run();
             }
         });
-
     }
 
     @Override
@@ -141,6 +140,11 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     @Override
     public Long version() {
         return inspector.getVersion(aggregateRoot);
+    }
+
+    @Override
+    protected boolean getIsLive() {
+        return true;
     }
 
     @Override
