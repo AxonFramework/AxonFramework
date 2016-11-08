@@ -109,7 +109,6 @@ public class EventHandlingConfiguration implements ModuleConfiguration {
         CorrelationDataInterceptor<EventMessage<?>> interceptor = new CorrelationDataInterceptor<>();
         interceptor.registerCorrelationDataProviders(conf.correlationDataProviders());
         processor.registerInterceptor(interceptor);
-        processor.registerInterceptor(new TransactionManagingInterceptor<>(conf.getComponent(TransactionManager.class, NoTransactionManager::instance)));
         return processor;
     }
 
