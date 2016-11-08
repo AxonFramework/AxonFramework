@@ -14,9 +14,14 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 /**
+ * Jdbc table factory for Postgress databases.
+ *
  * @author Rene de Waele
  */
 public class PostgresEventTableFactory extends AbstractEventTableFactory {
+    /**
+     * Singleton PostgresEventTableFactory instance
+     */
     public static final PostgresEventTableFactory INSTANCE = new PostgresEventTableFactory();
 
     protected PostgresEventTableFactory() {

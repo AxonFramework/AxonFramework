@@ -43,10 +43,7 @@ public interface MessageDispatchInterceptor<T extends Message<?>> {
 
     /**
      * Apply this interceptor to the given list of {@code messages}. This method returns a function that can be
-     * invoked to obtain a modified version of messages at each position in the list. For instance, to obtain the
-     * processed message at index 2, use:
-     * <p/>
-     * Message processedMessage = interceptor.on(someListOfMessages).apply(2);
+     * invoked to obtain a modified version of messages at each position in the list.
      *
      * @param messages  The Messages to pre-process
      * @return a function that processes messages based on their position in the list

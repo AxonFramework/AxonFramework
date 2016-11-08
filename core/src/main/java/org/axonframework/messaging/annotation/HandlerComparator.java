@@ -22,17 +22,27 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
+/**
+ * Comparator used by {@link AnnotatedHandlerInspector} to sort {@link MessageHandlingMember entity members}.
+ */
 public final class HandlerComparator {
 
-    private static final Comparator<MessageHandlingMember<?>> INSTANCE =
-            Comparator.comparing((Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType, HandlerComparator::compareHierarchy)
-                    .thenComparing(Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority).reversed())
-                    .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));
+    private static final Comparator<MessageHandlingMember<?>> INSTANCE = Comparator
+            .comparing((Function<MessageHandlingMember<?>, Class<?>>) MessageHandlingMember::payloadType,
+                       HandlerComparator::compareHierarchy).thenComparing(
+                    Comparator.comparingInt((ToIntFunction<MessageHandlingMember<?>>) MessageHandlingMember::priority)
+                            .reversed())
+            .thenComparing(m -> m.unwrap(Executable.class).map(Executable::toGenericString).orElse(m.toString()));
 
     // prevent construction
     private HandlerComparator() {
     }
 
+    /**
+     * Returns the singleton comparator managed by the HandlerComparator class.
+     *
+     * @return the singleton comparator
+     */
     public static Comparator<MessageHandlingMember<?>> instance() {
         return INSTANCE;
     }

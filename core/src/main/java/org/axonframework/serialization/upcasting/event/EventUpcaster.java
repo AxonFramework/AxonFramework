@@ -16,6 +16,10 @@ package org.axonframework.serialization.upcasting.event;
 import org.axonframework.serialization.upcasting.Upcaster;
 
 /**
+ * Interface that is used for upcasters of event data. The event data provides event context like event identifier,
+ * aggregate identifier, event metadata etc.
+ *
  * @author Rene de Waele
  */
+@FunctionalInterface
 public interface EventUpcaster extends Upcaster<IntermediateEventRepresentation> {}

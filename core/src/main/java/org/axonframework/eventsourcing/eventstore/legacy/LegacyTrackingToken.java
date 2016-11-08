@@ -20,6 +20,12 @@ import java.util.Comparator;
 import java.util.Objects;
 
 /**
+ * Tracking token implementation compatible with event entries stored by legacy event stores prior to Axon v3.
+ * <p>
+ * Order in a legacy event table is determined by comparing timestamp, sequence number and aggregate. Note that it is
+ * generally not safe to track a live event store using these tokens as new events may be committed out of order and
+ * may hence be missed by tracking event processors.
+ *
  * @author Rene de Waele
  */
 public class LegacyTrackingToken implements TrackingToken {
@@ -28,20 +34,43 @@ public class LegacyTrackingToken implements TrackingToken {
     private final String aggregateIdentifier;
     private final long sequenceNumber;
 
+    /**
+     * Initializes a new {@link LegacyTrackingToken} with given {@code timestamp}, {@code aggregateIdentifier} and
+     * {@code sequenceNumber}.
+     *
+     * @param timestamp           the event's timestamp
+     * @param aggregateIdentifier the event's aggregateIdentifier
+     * @param sequenceNumber      the event's sequence number
+     */
     public LegacyTrackingToken(Instant timestamp, String aggregateIdentifier, long sequenceNumber) {
         this.timestamp = timestamp;
         this.aggregateIdentifier = aggregateIdentifier;
         this.sequenceNumber = sequenceNumber;
     }
 
+    /**
+     * Get the timestamp of the event with this token.
+     *
+     * @return the timestamp of the event with this token
+     */
     public Instant getTimestamp() {
         return timestamp;
     }
 
+    /**
+     * Get the aggregate identifier of the event with this token.
+     *
+     * @return the aggregate identifier of the event with this token
+     */
     public String getAggregateIdentifier() {
         return aggregateIdentifier;
     }
 
+    /**
+     * Get the aggregate sequence number of the event with this token.
+     *
+     * @return the sequence number of the event with this token
+     */
     public long getSequenceNumber() {
         return sequenceNumber;
     }
@@ -55,8 +84,7 @@ public class LegacyTrackingToken implements TrackingToken {
             return false;
         }
         LegacyTrackingToken that = (LegacyTrackingToken) o;
-        return sequenceNumber == that.sequenceNumber &&
-                Objects.equals(timestamp, that.timestamp) &&
+        return sequenceNumber == that.sequenceNumber && Objects.equals(timestamp, that.timestamp) &&
                 Objects.equals(aggregateIdentifier, that.aggregateIdentifier);
     }
 
@@ -75,10 +103,7 @@ public class LegacyTrackingToken implements TrackingToken {
 
     @Override
     public String toString() {
-        return "LegacyTrackingToken{" +
-                "timestamp=" + timestamp +
-                ", aggregateIdentifier='" + aggregateIdentifier + '\'' +
-                ", sequenceNumber=" + sequenceNumber +
-                '}';
+        return "LegacyTrackingToken{" + "timestamp=" + timestamp + ", aggregateIdentifier='" + aggregateIdentifier +
+                '\'' + ", sequenceNumber=" + sequenceNumber + '}';
     }
 }

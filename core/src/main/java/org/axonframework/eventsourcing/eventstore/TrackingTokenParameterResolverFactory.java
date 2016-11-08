@@ -9,6 +9,10 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 
+/**
+ * Implementation of a {@link ParameterResolverFactory} that resolves the {@link TrackingToken} of an event message
+ * if that message is a {@link TrackedEventMessage}.
+ */
 public class TrackingTokenParameterResolverFactory implements ParameterResolverFactory {
 
     private static final TrackingTokenParameterResolver RESOLVER = new TrackingTokenParameterResolver();

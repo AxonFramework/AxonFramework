@@ -14,14 +14,18 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 /**
+ * Schema of an event entry to be stored using Jdbc.
+ *
  * @author Rene de Waele
  */
 public class EventSchema {
     private final String domainEventTable, snapshotTable, globalIndexColumn, timestampColumn, eventIdentifierColumn,
             aggregateIdentifierColumn, sequenceNumberColumn, typeColumn, payloadTypeColumn, payloadRevisionColumn,
             payloadColumn, metaDataColumn;
-    private final long lowestGlobalSequence;
 
+    /**
+     * Initializes the default Event Schema
+     */
     public EventSchema() {
         this(builder());
     }
@@ -39,63 +43,123 @@ public class EventSchema {
         payloadRevisionColumn = builder.payloadRevisionColumn;
         payloadColumn = builder.payloadColumn;
         metaDataColumn = builder.metaDataColumn;
-        lowestGlobalSequence = builder.lowestGlobalSequence;
     }
 
+    /**
+     * Returns a new {@link Builder} initialized with default settings.
+     *
+     * @return a new builder for the event schema
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Returns the name of the domain event table.
+     *
+     * @return the name of the domain event table
+     */
     public String domainEventTable() {
         return domainEventTable;
     }
 
+    /**
+     * Returns the name of the snapshot event table.
+     *
+     * @return the name of the snapshot event table
+     */
     public String snapshotTable() {
         return snapshotTable;
     }
 
+    /**
+     * Get the name of the column containing the global index of the event.
+     *
+     * @return the name of the column containing the global index
+     */
     public String globalIndexColumn() {
         return globalIndexColumn;
     }
 
+    /**
+     * Get the name of the column containing the timestamp of the event.
+     *
+     * @return the name of the column containing the timestamp
+     */
     public String timestampColumn() {
         return timestampColumn;
     }
 
+    /**
+     * Get the name of the column containing the identifier of the event.
+     *
+     * @return the name of the column containing the event identifier
+     */
     public String eventIdentifierColumn() {
         return eventIdentifierColumn;
     }
 
+    /**
+     * Get the name of the column containing the aggregate identifier of the event.
+     *
+     * @return the name of the column containing the aggregate identifier
+     */
     public String aggregateIdentifierColumn() {
         return aggregateIdentifierColumn;
     }
 
+    /**
+     * Get the name of the column containing the aggregate sequence number of the event.
+     *
+     * @return the name of the column containing the aggregate sequence number
+     */
     public String sequenceNumberColumn() {
         return sequenceNumberColumn;
     }
 
+    /**
+     * Get the name of the column containing the aggregate type of the event.
+     *
+     * @return the name of the column containing the aggregate type
+     */
     public String typeColumn() {
         return typeColumn;
     }
 
+    /**
+     * Get the name of the column containing the event payload type.
+     *
+     * @return the name of the column containing the payload type
+     */
     public String payloadTypeColumn() {
         return payloadTypeColumn;
     }
 
+    /**
+     * Get the name of the column containing the revision number of the serialized payload.
+     *
+     * @return the name of the column containing the revision number of the serialized payload
+     */
     public String payloadRevisionColumn() {
         return payloadRevisionColumn;
     }
 
+    /**
+     * Get the name of the column containing the serialized payload of the event.
+     *
+     * @return the name of the column containing the serialized payload
+     */
     public String payloadColumn() {
         return payloadColumn;
     }
 
+    /**
+     * Get the name of the column containing the serialized metadata of the event.
+     *
+     * @return the name of the column containing the serialized metadata
+     */
     public String metaDataColumn() {
         return metaDataColumn;
-    }
-
-    public long lowestGlobalSequence() {
-        return lowestGlobalSequence;
     }
 
     @SuppressWarnings("SqlResolve")
@@ -112,7 +176,6 @@ public class EventSchema {
         private String payloadRevisionColumn = "payloadRevision";
         private String payloadColumn = "payload";
         private String metaDataColumn = "metaData";
-        private long lowestGlobalSequence = 1L;
 
         public Builder withEventTable(String eventTable) {
             this.domainEventTable = eventTable;
@@ -171,11 +234,6 @@ public class EventSchema {
 
         public Builder withMetaDataColumn(String metaDataColumn) {
             this.metaDataColumn = metaDataColumn;
-            return this;
-        }
-
-        public Builder withLowestGlobalSequence(long lowestGlobalSequence) {
-            this.lowestGlobalSequence = lowestGlobalSequence;
             return this;
         }
 

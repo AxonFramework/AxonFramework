@@ -89,7 +89,13 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      *                                     sure to choose snapshot trigger and batch size such that a single batch will
      *                                     generally retrieve all events required to rebuild an aggregate's state.
      * @param entityManagerProvider        Provider for the {@link EntityManager} used by this EventStorageEngine.
-     * @param maxGapOffset
+     * @param maxGapOffset                 The maximum distance in sequence numbers between a missing event and the
+     *                                     event with the highest known index. If the gap is bigger it is assumed that
+     *                                     the missing event will not be committed to the store anymore. This event
+     *                                     storage engine will no longer look for those events the next time a batch is
+     *                                     fetched.
+     * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
+     *                                     is 1 unless the table has contained entries before.
      */
     public JpaEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                  PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
@@ -103,9 +109,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () ->
-                String.format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
-                                    GapAwareTrackingToken.class.getSimpleName()));
+        Assert.isTrue(lastToken == null || lastToken instanceof GapAwareTrackingToken, () -> String
+                .format("Token [%s] is of the wrong type. Expected [%s]", lastToken,
+                        GapAwareTrackingToken.class.getSimpleName()));
         GapAwareTrackingToken previousToken = (GapAwareTrackingToken) lastToken;
         Collection<Long> gaps = previousToken == null ? Collections.emptySet() : previousToken.getGaps();
         List<Object[]> entries;
@@ -131,9 +137,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
             long globalSequence = (Long) entry[0];
             GapAwareTrackingToken trackingToken;
             if (previousToken == null) {
-                trackingToken = GapAwareTrackingToken.newInstance(globalSequence,
-                                                                  LongStream.range(lowestGlobalSequence, globalSequence)
-                                                                          .mapToObj(Long::valueOf).collect(toSet()));
+                trackingToken = GapAwareTrackingToken.newInstance(globalSequence, LongStream
+                        .range(Math.min(lowestGlobalSequence, globalSequence), globalSequence).mapToObj(Long::valueOf)
+                        .collect(toSet()));
             } else {
                 trackingToken = previousToken.advanceTo(globalSequence, maxGapOffset);
             }

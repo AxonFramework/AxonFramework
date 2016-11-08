@@ -5,6 +5,11 @@ import org.axonframework.common.Registration;
 import java.util.List;
 import java.util.function.Consumer;
 
+/**
+ * Interface for a source of {@link Message messages} to which message processors can subscribe.
+ *
+ * @param <M> the message type
+ */
 public interface SubscribableMessageSource<M extends Message<?>> {
 
     /**

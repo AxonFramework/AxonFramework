@@ -89,7 +89,7 @@ public class JdbcEventStorageEngineTest extends BatchingEventStorageEngineTest {
                                                           EventTableFactory tableFactory) {
         JdbcEventStorageEngine result =
                 new JdbcEventStorageEngine(new XStreamSerializer(), upcasterChain, persistenceExceptionResolver, 100,
-                                           dataSource::getConnection, dataType, eventSchema, null);
+                                           dataSource::getConnection, dataType, eventSchema, null, null);
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();

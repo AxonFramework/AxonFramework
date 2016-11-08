@@ -22,6 +22,12 @@ import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
 
 /**
+ * Abstract implementation of a {@link Message} that delegates to an existing message. Extend this decorator class to
+ * extend the message with additional features.
+ *
+ * Messages of this type are {@link SerializationAware} meaning they will not be serialized twice by the same
+ * serializer.
+ *
  * @author Rene de Waele
  */
 public abstract class MessageDecorator<T> implements Message<T>, SerializationAware {
@@ -29,7 +35,7 @@ public abstract class MessageDecorator<T> implements Message<T>, SerializationAw
     private final Message<T> delegate;
     private transient volatile SerializedObjectHolder serializedObjectHolder;
 
-    public MessageDecorator(Message<T> delegate) {
+    protected MessageDecorator(Message<T> delegate) {
         this.delegate = delegate;
     }
 

@@ -53,12 +53,14 @@ import static org.axonframework.serialization.MessageSerializer.serializePayload
  */
 public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
 
+    private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
 
     private final ConnectionProvider connectionProvider;
     private final Class<?> dataType;
     private final EventSchema schema;
     private final int maxGapOffset;
+    private final long lowestGlobalSequence;
 
     /**
      * Initializes an EventStorageEngine that uses JDBC to store and load events using the default {@link EventSchema}.
@@ -69,7 +71,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connectionProvider The provider of connections to the underlying database
      */
     public JdbcEventStorageEngine(ConnectionProvider connectionProvider) {
-        this(null, null, null, null, connectionProvider, byte[].class, new EventSchema(), null);
+        this(null, null, null, null, connectionProvider, byte[].class, new EventSchema(), null, null);
     }
 
     /**
@@ -89,7 +91,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
                                   PersistenceExceptionResolver persistenceExceptionResolver,
                                   ConnectionProvider connectionProvider) {
         this(serializer, upcasterChain, persistenceExceptionResolver, null, connectionProvider, byte[].class,
-             new EventSchema(), null);
+             new EventSchema(), null, null);
     }
 
     /**
@@ -106,17 +108,24 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * @param connectionProvider           The provider of connections to the underlying database
      * @param dataType                     The data type for serialized event payload and metadata
      * @param schema                       Object that describes the database schema of event entries
-     * @param maxGapOffset
+     * @param maxGapOffset                 The maximum distance in sequence numbers between a missing event and the
+     *                                     event with the highest known index. If the gap is bigger it is assumed that
+     *                                     the missing event will not be committed to the store anymore. This event
+     *                                     storage engine will no longer look for those events the next time a batch is
+     *                                     fetched.
+     * @param lowestGlobalSequence         The first expected auto generated sequence number. For most data stores this
+     *                                     is 1 unless the table has contained entries before.
      */
     public JdbcEventStorageEngine(Serializer serializer, EventUpcaster upcasterChain,
                                   PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                   ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema,
-                                  Integer maxGapOffset) {
+                                  Integer maxGapOffset, Long lowestGlobalSequence) {
         super(serializer, upcasterChain, getOrDefault(persistenceExceptionResolver, new JdbcSQLErrorCodesResolver()),
               batchSize);
         this.connectionProvider = connectionProvider;
         this.dataType = dataType;
         this.schema = schema;
+        this.lowestGlobalSequence = getOrDefault(lowestGlobalSequence, DEFAULT_LOWEST_GLOBAL_SEQUENCE);
         this.maxGapOffset = getOrDefault(maxGapOffset, DEFAULT_MAX_GAP_OFFSET);
     }
 
@@ -334,7 +343,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * Extracts the next tracked event entry from the given {@code resultSet}.
      *
      * @param resultSet     The results of a query for tracked events
-     * @param previousToken
+     * @param previousToken The last known token of the tracker before obtaining this result set
      * @return The next tracked event
      * @throws SQLException when an exception occurs while creating the event data
      */
@@ -344,7 +353,8 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
         TrackingToken trackingToken;
         if (previousToken == null) {
             trackingToken = GapAwareTrackingToken.newInstance(globalSequence, LongStream
-                    .range(schema.lowestGlobalSequence(), globalSequence).mapToObj(Long::valueOf).collect(toSet()));
+                    .range(Math.min(lowestGlobalSequence, globalSequence), globalSequence).mapToObj(Long::valueOf)
+                    .collect(toSet()));
         } else {
             trackingToken = ((GapAwareTrackingToken) previousToken).advanceTo(globalSequence, maxGapOffset);
         }

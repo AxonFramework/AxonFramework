@@ -16,26 +16,50 @@ package org.axonframework.eventsourcing.eventstore;
 import java.util.Objects;
 
 /**
+ * Tracking token based on the global sequence number of an event.
+ *
  * @author Rene de Waele
  */
 public class GlobalSequenceTrackingToken implements TrackingToken {
 
     private final long globalIndex;
 
+    /**
+     * Initializes a {@link GlobalSequenceTrackingToken} from the given {@code globalIndex} of the event.
+     *
+     * @param globalIndex the global sequence number of the event
+     */
     public GlobalSequenceTrackingToken(long globalIndex) {
         this.globalIndex = globalIndex;
     }
 
+    /**
+     * Get the global sequence number of the event
+     *
+     * @return the global sequence number of the event
+     */
     public long getGlobalIndex() {
         return globalIndex;
     }
 
+    /**
+     * Returns a new {@link GlobalSequenceTrackingToken} instance that is the sum of this token's sequence number and
+     * the given {@code offset}.
+     *
+     * @param offset the offset between this token's sequence number of that of the returned instance
+     * @return a new tracking token with global sequence increased with the given offset
+     */
     public GlobalSequenceTrackingToken offsetBy(int offset) {
         return new GlobalSequenceTrackingToken(globalIndex + offset);
     }
 
+    /**
+     * Returns a new {@link GlobalSequenceTrackingToken} instance with sequence number incremented by 1.
+     *
+     * @return a new tracking token with sequence number incremented by 1
+     */
     public GlobalSequenceTrackingToken next() {
-        return new GlobalSequenceTrackingToken(globalIndex + 1);
+        return offsetBy(1);
     }
 
     @Override
@@ -62,8 +86,6 @@ public class GlobalSequenceTrackingToken implements TrackingToken {
 
     @Override
     public String toString() {
-        return "IndexTrackingToken{" +
-                "globalIndex=" + globalIndex +
-                '}';
+        return "IndexTrackingToken{" + "globalIndex=" + globalIndex + '}';
     }
 }

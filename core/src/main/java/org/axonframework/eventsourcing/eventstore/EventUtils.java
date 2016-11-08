@@ -41,12 +41,24 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
 /**
+ * Utility class for dealing with events and event streams.
+ *
  * @author Rene de Waele
  */
 public abstract class EventUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(EventUtils.class);
 
+    /**
+     * Convert an {@link EventMessage} to a {@link TrackedEventMessage} using the given {@code trackingToken}. If the
+     * event is a {@link DomainEventMessage} the message will be converted to a {@link
+     * GenericTrackedDomainEventMessage}, otherwise a {@link GenericTrackedEventMessage} is returned.
+     *
+     * @param eventMessage  the message to convert
+     * @param trackingToken the tracking token to use for the resulting message
+     * @param <T>           the payload type of the event
+     * @return the message converted to a tracked event messge
+     */
     public static <T> TrackedEventMessage<T> asTrackedEventMessage(EventMessage<T> eventMessage,
                                                                    TrackingToken trackingToken) {
         if (eventMessage instanceof DomainEventMessage<?>) {
@@ -55,6 +67,14 @@ public abstract class EventUtils {
         return new GenericTrackedEventMessage<>(trackingToken, eventMessage);
     }
 
+    /**
+     * Convert a plain {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a {@link
+     * DomainEventMessage} it will be returned as is. Otherwise a new {@link GenericDomainEventMessage} is made with
+     * {@code null} type, aggegrateIdentifier equal to messageIdentifier and sequence number of 0L.
+     *
+     * @param eventMessage the input event message
+     * @return the message converted to a domain event message
+     */
     public static DomainEventMessage<?> asDomainEventMessage(EventMessage<?> eventMessage) {
         if (eventMessage instanceof DomainEventMessage<?>) {
             return (DomainEventMessage<?>) eventMessage;
@@ -78,16 +98,15 @@ public abstract class EventUtils {
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public static DomainEventStream upcastAndDeserializeDomainEvents(
-            Stream<? extends DomainEventData<?>> eventEntryStream, Serializer serializer,
-            EventUpcaster upcasterChain, boolean skipUnknownTypes) {
+            Stream<? extends DomainEventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain,
+            boolean skipUnknownTypes) {
         AtomicReference<Long> currentSequenceNumber = new AtomicReference<>();
         Stream<IntermediateEventRepresentation> upcastResult =
-                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes,
-                                     entry -> {
-                                         InitialEventRepresentation result = new InitialEventRepresentation(entry, serializer);
-                                         currentSequenceNumber.set(result.getSequenceNumber().get());
-                                         return result;
-                                     });
+                upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes, entry -> {
+                    InitialEventRepresentation result = new InitialEventRepresentation(entry, serializer);
+                    currentSequenceNumber.set(result.getSequenceNumber().get());
+                    return result;
+                });
         Stream<? extends DomainEventMessage<?>> stream = upcastResult.map(ir -> {
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(ir.getMessageIdentifier(),
                                                                              new LazyDeserializingObject<>(
@@ -123,8 +142,8 @@ public abstract class EventUtils {
      */
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public static Stream<TrackedEventMessage<?>> upcastAndDeserializeTrackedEvents(
-            Stream<? extends TrackedEventData<?>> eventEntryStream, Serializer serializer,
-            EventUpcaster upcasterChain, boolean skipUnknownTypes) {
+            Stream<? extends TrackedEventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain,
+            boolean skipUnknownTypes) {
         Stream<IntermediateEventRepresentation> upcastResult =
                 upcastAndDeserialize(eventEntryStream, serializer, upcasterChain, skipUnknownTypes,
                                      entry -> new InitialEventRepresentation(entry, serializer));
@@ -147,28 +166,24 @@ public abstract class EventUtils {
         });
     }
 
-    private static Stream<IntermediateEventRepresentation> upcastAndDeserialize(
-            Stream<? extends EventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain,
-            boolean skipUnknownTypes, Function<EventData<?>, IntermediateEventRepresentation> entryConverter) {
-        Stream<IntermediateEventRepresentation> upcastResult =
-                upcasterChain.upcast(eventEntryStream.map(entryConverter));
-        if (skipUnknownTypes) {
-            upcastResult = upcastResult.filter(ir -> {
-                try {
-                    serializer.classForType(ir.getOutputType());
-                    return true;
-                } catch (UnknownSerializedTypeException e) {
-                    return false;
-                }
-            });
-        }
-        return upcastResult;
-    }
-
+    /**
+     * Convert the given {@code domainEventStream} to a regular java {@link Stream} of domain event messages.
+     *
+     * @param domainEventStream the input {@link DomainEventStream}
+     * @return the output {@link Stream} after conversion
+     */
     public static Stream<? extends DomainEventMessage<?>> asStream(DomainEventStream domainEventStream) {
         return stream(spliteratorUnknownSize(domainEventStream, DISTINCT | NONNULL | ORDERED), false);
     }
 
+    /**
+     * Convert the given {@code trackingEventStream} to a regular java {@link Stream} of tracked event messages. Note
+     * that the returned stream will block during iteration if the end of the stream is reached so take heed of this
+     * in production code.
+     *
+     * @param trackingEventStream the input {@link TrackingEventStream}
+     * @return the output {@link Stream} after conversion
+     */
     public static Stream<? extends TrackedEventMessage<?>> asStream(TrackingEventStream trackingEventStream) {
         Spliterator<? extends TrackedEventMessage<?>> spliterator =
                 new Spliterators.AbstractSpliterator<TrackedEventMessage<?>>(Long.MAX_VALUE,
@@ -186,6 +201,24 @@ public abstract class EventUtils {
                     }
                 };
         return stream(spliterator, false);
+    }
+
+    private static Stream<IntermediateEventRepresentation> upcastAndDeserialize(
+            Stream<? extends EventData<?>> eventEntryStream, Serializer serializer, EventUpcaster upcasterChain,
+            boolean skipUnknownTypes, Function<EventData<?>, IntermediateEventRepresentation> entryConverter) {
+        Stream<IntermediateEventRepresentation> upcastResult =
+                upcasterChain.upcast(eventEntryStream.map(entryConverter));
+        if (skipUnknownTypes) {
+            upcastResult = upcastResult.filter(ir -> {
+                try {
+                    serializer.classForType(ir.getOutputType());
+                    return true;
+                } catch (UnknownSerializedTypeException e) {
+                    return false;
+                }
+            });
+        }
+        return upcastResult;
     }
 
     private EventUtils() {
