@@ -36,7 +36,6 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -82,8 +81,6 @@ public class DefaultConfigurer implements Configurer {
     private final Configuration config = new ConfigurationImpl();
 
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory = new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
-    private final Component<MessageHandlerInterceptor<Message<?>>> interceptor = new Component<>(config, "correlationInterceptor",
-                                                                                           c -> new CorrelationDataInterceptor<>());
     private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(config, "correlationProviders",
                                                                                             c -> asList(msg -> singletonMap("correlationId", msg.getIdentifier()),
                                                                                                         msg -> singletonMap("traceId", msg.getMetaData().getOrDefault("traceId", msg.getIdentifier()))
@@ -162,7 +159,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected CommandBus defaultCommandBus(Configuration config) {
         SimpleCommandBus cb = new SimpleCommandBus(config.messageMonitor(SimpleCommandBus.class, "commandBus"));
-        cb.setHandlerInterceptors(singletonList(interceptor.get()));
+        cb.setHandlerInterceptors(singletonList(new CorrelationDataInterceptor<>(config.correlationDataProviders())));
         DefaultUnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory(config.getComponent(TransactionManager.class));
         config.correlationDataProviders().forEach(unitOfWorkFactory::registerCorrelationDataProvider);
         cb.setUnitOfWorkFactory(unitOfWorkFactory);
