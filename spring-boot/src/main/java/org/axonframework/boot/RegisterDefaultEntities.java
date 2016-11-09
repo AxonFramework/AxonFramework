@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Import(DefaultEntityRegistrar.class)
-public @interface RegisterAxonDefaultEntities {
+public @interface RegisterDefaultEntities {
 
-    String[] value();
+    String[] packages();
 }

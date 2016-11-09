@@ -37,7 +37,7 @@ import java.util.function.Consumer;
  */
 public class SubscribingEventProcessor extends AbstractEventProcessor {
 
-    private final SubscribableMessageSource<EventMessage<?>> messageSource;
+    private final SubscribableMessageSource<? extends EventMessage<?>> messageSource;
     private final EventProcessingStrategy processingStrategy;
     private volatile Registration eventBusRegistration;
 
@@ -71,7 +71,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      * @param messageMonitor      Monitor to be invoked before and after event processing
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
-                                     SubscribableMessageSource<EventMessage<?>> messageSource,
+                                     SubscribableMessageSource<? extends EventMessage<?>> messageSource,
                                      MessageMonitor<? super EventMessage<?>> messageMonitor) {
         this(name, eventHandlerInvoker, RollbackConfigurationType.ANY_THROWABLE, messageSource,
              DirectEventProcessingStrategy.INSTANCE, NoOpErrorHandler.INSTANCE, messageMonitor);
@@ -91,7 +91,7 @@ public class SubscribingEventProcessor extends AbstractEventProcessor {
      */
     public SubscribingEventProcessor(String name, EventHandlerInvoker eventHandlerInvoker,
                                      RollbackConfiguration rollbackConfiguration,
-                                     SubscribableMessageSource<EventMessage<?>> messageSource,
+                                     SubscribableMessageSource<? extends EventMessage<?>> messageSource,
                                      EventProcessingStrategy processingStrategy, ErrorHandler errorHandler,
                                      MessageMonitor<? super EventMessage<?>> messageMonitor) {
         super(name, eventHandlerInvoker, rollbackConfiguration, errorHandler, messageMonitor);

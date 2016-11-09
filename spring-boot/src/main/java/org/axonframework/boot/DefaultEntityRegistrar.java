@@ -11,10 +11,11 @@ import java.util.Map;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class DefaultEntityRegistrar implements ImportBeanDefinitionRegistrar {
+
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-        Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes("org.axonframework.boot.RegisterAxonDefaultEntities");
-        String[] packages = (String[]) attributes.get("value");
+        Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes("org.axonframework.boot.RegisterDefaultEntities");
+        String[] packages = (String[]) attributes.get("packages");
 
         AutoConfigurationPackages.register(registry, packages);
     }
