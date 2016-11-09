@@ -13,13 +13,18 @@ import java.sql.SQLException;
  */
 public class Oracle11SagaSqlSchema extends GenericSagaSqlSchema {
 
-    public Oracle11SagaSqlSchema(SchemaConfiguration schemaConfiguration) {
-        super(schemaConfiguration);
+    /**
+     * Initialize a Oracle11SagaSqlSchema using the given {@code sagaSchema}.
+     *
+     * @param sagaSchema the saga schema configuration
+     */
+    public Oracle11SagaSqlSchema(SagaSchema sagaSchema) {
+        super(sagaSchema);
     }
 
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
-        conn.prepareStatement("create table " + schemaConfiguration.associationValueEntryTable() + " (\n" +
+        conn.prepareStatement("create table " + sagaSchema.associationValueEntryTable() + " (\n" +
                 "        id number(38) not null,\n" +
                 "        associationKey varchar(255),\n" +
                 "        associationValue varchar(255),\n" +
@@ -28,14 +33,14 @@ public class Oracle11SagaSqlSchema extends GenericSagaSqlSchema {
                 "        primary key (id)\n" +
                 "    )").executeUpdate();
 
-        Oracle11Utils.simulateAutoIncrement(conn, schemaConfiguration.associationValueEntryTable(), "id");
+        Oracle11Utils.simulateAutoIncrement(conn, sagaSchema.associationValueEntryTable(), "id");
 
         return Oracle11Utils.createNullStatement(conn);
     }
 
     @Override
     public PreparedStatement sql_createTableSagaEntry(final Connection conn) throws SQLException {
-        return conn.prepareStatement("create table " + schemaConfiguration.sagaEntryTable() + " (\n" +
+        return conn.prepareStatement("create table " + sagaSchema.sagaEntryTable() + " (\n" +
                 "        sagaId varchar(255) not null,\n" +
                 "        revision varchar(255),\n" +
                 "        sagaType varchar(255),\n" +

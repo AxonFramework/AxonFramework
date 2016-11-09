@@ -14,10 +14,15 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 /**
+ * Jdbc table factory for HSQL databases.
+ *
  * @author Rene de Waele
  */
 public class HsqlEventTableFactory extends AbstractEventTableFactory {
 
+    /**
+     * Singleton HsqlEventTableFactory instance
+     */
     public static final HsqlEventTableFactory INSTANCE = new HsqlEventTableFactory();
 
     protected HsqlEventTableFactory() {

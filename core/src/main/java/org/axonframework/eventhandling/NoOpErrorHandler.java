@@ -16,12 +16,15 @@ package org.axonframework.eventhandling;
 import java.util.List;
 
 /**
- * Implementation that does not do anything.
+ * Singleton ErrorHandler implementation that does not do anything.
  *
  * @author Rene de Waele
  */
 public enum NoOpErrorHandler implements ErrorHandler {
 
+    /**
+     * Singleton instance of a {@link NoOpErrorHandler}.
+     */
     INSTANCE;
 
     @Override

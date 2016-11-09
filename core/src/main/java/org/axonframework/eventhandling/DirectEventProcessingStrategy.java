@@ -17,9 +17,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
+ * Event processing strategy that directly initiates event processing.
+ *
  * @author Rene de Waele
  */
 public enum DirectEventProcessingStrategy implements EventProcessingStrategy {
+    /**
+     * Singleton instance of the {@link DirectEventProcessingStrategy}.
+     */
     INSTANCE;
 
     @Override

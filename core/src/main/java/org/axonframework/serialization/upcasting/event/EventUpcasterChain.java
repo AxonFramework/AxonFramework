@@ -11,25 +11,24 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.transaction;
+package org.axonframework.serialization.upcasting.event;
 
-import java.sql.Connection;
+import org.axonframework.serialization.upcasting.GenericUpcasterChain;
+import org.axonframework.serialization.upcasting.Upcaster;
+
+import java.util.List;
 
 /**
  * @author Rene de Waele
  */
-public enum TransactionIsolationLevel {
+public class EventUpcasterChain extends GenericUpcasterChain<IntermediateEventRepresentation> implements EventUpcaster {
 
-    READ_COMMITTED(Connection.TRANSACTION_READ_COMMITTED),
-    READ_UNCOMMITTED(Connection.TRANSACTION_READ_UNCOMMITTED);
-
-    private final int isolationLevel;
-
-    TransactionIsolationLevel(int isolationLevel) {
-        this.isolationLevel = isolationLevel;
+    @SafeVarargs
+    public EventUpcasterChain(Upcaster<IntermediateEventRepresentation>... upcasters) {
+        super(upcasters);
     }
 
-    public int get() {
-        return isolationLevel;
+    public EventUpcasterChain(List<? extends Upcaster<IntermediateEventRepresentation>> upcasters) {
+        super(upcasters);
     }
 }

@@ -24,6 +24,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.model.Repository;
 import org.axonframework.common.Registration;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
@@ -36,12 +37,10 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.serialization.AnnotationRevisionResolver;
@@ -59,7 +58,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -82,8 +80,6 @@ public class DefaultConfigurer implements Configurer {
     private final Configuration config = new ConfigurationImpl();
 
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactory = new Component<>(config, "monitorFactory", (c) -> (type, name) -> NoOpMessageMonitor.instance());
-    private final Component<MessageHandlerInterceptor<Message<?>>> interceptor = new Component<>(config, "correlationInterceptor",
-                                                                                           c -> new CorrelationDataInterceptor<>());
     private final Component<List<CorrelationDataProvider>> correlationProviders = new Component<>(config, "correlationProviders",
                                                                                             c -> asList(msg -> singletonMap("correlationId", msg.getIdentifier()),
                                                                                                         msg -> singletonMap("traceId", msg.getMetaData().getOrDefault("traceId", msg.getIdentifier()))
@@ -161,11 +157,9 @@ public class DefaultConfigurer implements Configurer {
      * @return the default CommandBus to use
      */
     protected CommandBus defaultCommandBus(Configuration config) {
-        SimpleCommandBus cb = new SimpleCommandBus(config.messageMonitor(SimpleCommandBus.class, "commandBus"));
-        cb.setHandlerInterceptors(singletonList(interceptor.get()));
-        DefaultUnitOfWorkFactory unitOfWorkFactory = new DefaultUnitOfWorkFactory(config.getComponent(TransactionManager.class));
-        config.correlationDataProviders().forEach(unitOfWorkFactory::registerCorrelationDataProvider);
-        cb.setUnitOfWorkFactory(unitOfWorkFactory);
+        SimpleCommandBus cb = new SimpleCommandBus(config.getComponent(TransactionManager.class, () -> NoTransactionManager.INSTANCE),
+                                                   config.messageMonitor(SimpleCommandBus.class, "commandBus"));
+        cb.registerHandlerInterceptor(new CorrelationDataInterceptor<>(config.correlationDataProviders()));
         return cb;
     }
 

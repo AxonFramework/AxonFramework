@@ -21,9 +21,27 @@ import org.axonframework.commandhandling.CommandMessage;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+/**
+ * Interface describing a mechanism used to find a suitable member of a cluster capable of handling given command
+ * message.
+ */
 public interface CommandRouter {
 
+    /**
+     * Returns the member instance to which the given {@code message} should be routed. If no suitable member could be
+     * found an empty Optional is returned.
+     *
+     * @param message the command message to find a member for
+     * @return the member that should handle the message or an empty Optional if no suitable member was found
+     */
     Optional<Member> findDestination(CommandMessage<?> message);
 
+    /**
+     * Updates the load factor and capabilities of this member representing the current endpoint if the implementation
+     * allows memberships to be updated dynamically.
+     *
+     * @param loadFactor    the new load factor of the member for this endpoint
+     * @param commandFilter the new capabilities of the member for this endpoint
+     */
     void updateMembership(int loadFactor, Predicate<CommandMessage<?>> commandFilter);
 }

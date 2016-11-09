@@ -63,7 +63,7 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
             uow.onCommit(u -> {
                 Connection cx = u.root().getResource(CONNECTION_RESOURCE_NAME);
                 try {
-                    if (!cx.getAutoCommit()) {
+                    if (!cx.isClosed() && !cx.getAutoCommit()) {
                         cx.commit();
                     }
                 } catch (SQLException e) {

@@ -15,30 +15,71 @@ package org.axonframework.eventhandling.saga;
 
 import java.util.concurrent.Callable;
 
+/**
+ * Abstract base class of a component that models a saga's life cycle.
+ */
 public abstract class SagaLifecycle {
 
     private static final ThreadLocal<SagaLifecycle> CURRENT_SAGA_LIFECYCLE = new ThreadLocal<>();
 
+    /**
+     * Registers a AssociationValue with the currently active saga. When the saga is committed, it can be found using
+     * the registered property.
+     *
+     * @param associationKey   The key of the association value to associate this saga with.
+     * @param associationValue The value of the association value to associate this saga with.
+     */
     public static void associateWith(String associationKey, String associationValue) {
         associateWith(new AssociationValue(associationKey, associationValue));
     }
 
+    /**
+     * Registers a AssociationValue with the currently active saga. When the saga is committed, it can be found using
+     * the registered property. The number value will be converted to a string.
+     *
+     * @param associationKey   The key of the association value to associate this saga with.
+     * @param associationValue The value of the association value to associate this saga with.
+     */
     public static void associateWith(String associationKey, Number associationValue) {
         associateWith(new AssociationValue(associationKey, associationValue.toString()));
     }
 
+    /**
+     * Registers a AssociationValue with the currently active saga. When the saga is committed, it can be found using
+     * the registered property.
+     *
+     * @param associationValue The association to associate this saga with.
+     */
     public static void associateWith(AssociationValue associationValue) {
         getInstance().doAssociateWith(associationValue);
     }
 
+    /**
+     * Removes the given association from the currently active Saga. When the saga is committed, it can no longer be
+     * found using the given association value. If the given saga wasn't associated with given values, nothing happens.
+     *
+     * @param associationKey   The key of the association value to remove from this saga.
+     * @param associationValue The value of the association value to remove from this saga.
+     */
     public static void removeAssociationWith(String associationKey, String associationValue) {
         getInstance().doRemoveAssociation(new AssociationValue(associationKey, associationValue));
     }
 
+    /**
+     * Removes the given association from the currently active Saga. When the saga is committed, it can no longer be
+     * found using the given association value. If the given saga wasn't associated with given values, nothing happens.
+     * The number value will be converted to a string.
+     *
+     * @param associationKey   The key of the association value to remove from this saga.
+     * @param associationValue The value of the association value to remove from this saga.
+     */
     public static void removeAssociationWith(String associationKey, Number associationValue) {
         removeAssociationWith(associationKey, associationValue.toString());
     }
 
+    /**
+     * Marks the saga as ended. Ended saga's may be cleaned up by the repository when they are committed.
+     */
     public static void end() {
         getInstance().doEnd();
     }

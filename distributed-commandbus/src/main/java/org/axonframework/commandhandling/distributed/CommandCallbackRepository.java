@@ -6,19 +6,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class retains a list of callbacks for CommandCallbackConnectors to use.
+ *
  * @param <A> The type of the endpoint identifier.
  */
 public class CommandCallbackRepository<A> {
     final Map<String, CommandCallbackWrapper> callbacks = new ConcurrentHashMap<>();
 
+    /**
+     * Removes all callbacks for a given channel. Registered callbacks will receive a failure response containing a
+     * {@link CommandBusConnectorCommunicationException}.
+     *
+     * @param channelId the channel identifier
+     */
     public void cancelCallbacks(A channelId) {
         Iterator<CommandCallbackWrapper> callbacks = this.callbacks.values().iterator();
         while (callbacks.hasNext()) {
             CommandCallbackWrapper wrapper = callbacks.next();
             if (wrapper.getChannelIdentifier().equals(channelId)) {
-                wrapper.fail(new CommandBusConnectorCommunicationException(String.format(
-                        "Connection error while waiting for a response on command %s",
-                        wrapper.getMessage().getCommandName())));
+                wrapper.fail(new CommandBusConnectorCommunicationException(
+                        String.format("Connection error while waiting for a response on command %s",
+                                      wrapper.getMessage().getCommandName())));
                 callbacks.remove();
             }
         }
@@ -28,9 +35,9 @@ public class CommandCallbackRepository<A> {
      * Fetches and removes a callback. The callback will not be used a second time, so removal should be fine
      *
      * @param callbackId The Callback Id to fetch the callback for
-     * @param <E> The type of the remote endpoint identifier
-     * @param <C> The type of the command
-     * @param <R> The type of the result
+     * @param <E>        The type of the remote endpoint identifier
+     * @param <C>        The type of the command
+     * @param <R>        The type of the result
      * @return The stored CommandCallbackWrapper or null if not found
      */
     @SuppressWarnings("unchecked")
@@ -40,11 +47,12 @@ public class CommandCallbackRepository<A> {
 
     /**
      * Stores a callback
-     * @param callbackId The id to store the callback with
+     *
+     * @param callbackId             The id to store the callback with
      * @param commandCallbackWrapper The CommandCallbackWrapper to store
-     * @param <E> The type of the remote endpoint identifier
-     * @param <C> The type of the command
-     * @param <R> The type of the result
+     * @param <E>                    The type of the remote endpoint identifier
+     * @param <C>                    The type of the command
+     * @param <R>                    The type of the result
      */
     public <E, C, R> void store(String callbackId, CommandCallbackWrapper<E, C, R> commandCallbackWrapper) {
         CommandCallbackWrapper previous;

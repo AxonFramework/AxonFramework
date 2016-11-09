@@ -24,7 +24,6 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -73,13 +72,4 @@ public class TransactionManagingInterceptorTest {
 
         verify(transaction).commit();
     }
-
-    @Test
-    public void testUnitOfWorkRollback() throws Exception {
-        subject.handle(unitOfWork, interceptorChain);
-        unitOfWork.rollback();
-
-        verify(transaction).rollback();
-    }
-
 }

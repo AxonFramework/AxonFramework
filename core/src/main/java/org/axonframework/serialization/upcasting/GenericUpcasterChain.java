@@ -16,25 +16,22 @@ package org.axonframework.serialization.upcasting;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author Rene de Waele
  */
 public class GenericUpcasterChain<T> implements Upcaster<T> {
 
-    private final List<Supplier<Upcaster<T>>> upcasterSuppliers;
+    private final List<? extends Upcaster<T>> upcasters;
 
     @SafeVarargs
     public GenericUpcasterChain(Upcaster<T>... upcasters) {
-        this(Arrays.stream(upcasters).map(upcaster -> (Supplier<Upcaster<T>>) () -> upcaster).collect(toList()));
+        this(Arrays.asList(upcasters));
     }
 
-    public GenericUpcasterChain(List<Supplier<Upcaster<T>>> upcasterSuppliers) {
-        this.upcasterSuppliers = new ArrayList<>(upcasterSuppliers);
+    public GenericUpcasterChain(List<? extends Upcaster<T>> upcasters) {
+        this.upcasters = new ArrayList<>(upcasters);
     }
 
     @Override
@@ -46,8 +43,8 @@ public class GenericUpcasterChain<T> implements Upcaster<T> {
         return result;
     }
 
-    protected List<Upcaster<T>> getUpcasters() {
-        return upcasterSuppliers.stream().map(Supplier::get).collect(toList());
+    protected List<? extends Upcaster<T>> getUpcasters() {
+        return upcasters;
     }
 
 }

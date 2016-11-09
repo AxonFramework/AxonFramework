@@ -35,6 +35,10 @@ import org.axonframework.spring.config.AnnotationDriven;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Spring configuration class that contains configuration for an Axon application that uses a {@link
+ * DisruptorCommandBus}.
+ */
 @AnnotationDriven
 @Configuration
 public class AxonDisruptorSpringConfiguration {
@@ -60,8 +64,12 @@ public class AxonDisruptorSpringConfiguration {
     }
 
     @Bean
-    public AggregateAnnotationCommandHandler aggregateAnnotationCommandHandler(ParameterResolverFactory parameterResolverFactory, Repository<ToDoItem> repository) {
-        AggregateAnnotationCommandHandler<ToDoItem> ch = new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository, new AnnotationCommandTargetResolver(), parameterResolverFactory);
+    public AggregateAnnotationCommandHandler aggregateAnnotationCommandHandler(
+            ParameterResolverFactory parameterResolverFactory, Repository<ToDoItem> repository) {
+        AggregateAnnotationCommandHandler<ToDoItem> ch =
+                new AggregateAnnotationCommandHandler<>(ToDoItem.class, repository,
+                                                        new AnnotationCommandTargetResolver(),
+                                                        parameterResolverFactory);
         ch.subscribe(commandBus());
         return ch;
     }
@@ -73,7 +81,9 @@ public class AxonDisruptorSpringConfiguration {
 
     @Bean
     public SubscribingEventProcessor eventProcessor() {
-        SubscribingEventProcessor eventProcessor = new SubscribingEventProcessor("eventProcessor", new SimpleEventHandlerInvoker(eventHandler()), eventStore());
+        SubscribingEventProcessor eventProcessor =
+                new SubscribingEventProcessor("eventProcessor", new SimpleEventHandlerInvoker(eventHandler()),
+                                              eventStore());
         eventProcessor.start();
         return eventProcessor;
     }

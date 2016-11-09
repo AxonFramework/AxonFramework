@@ -23,13 +23,17 @@ import java.io.Serializable;
 /**
  * Implementation of {@link SnapshotTriggerDefinition} that doesn't trigger snapshots at all.
  */
-public class NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
+public enum NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
 
-    public static final NoSnapshotTriggerDefinition INSTANCE = new NoSnapshotTriggerDefinition();
+    /**
+     * The singleton instance of a {@link NoSnapshotTriggerDefinition}.
+     */
+    INSTANCE;
+
+    /**
+     * The singleton instance of a {@link NoSnapshotTrigger}.
+     */
     public static final SnapshotTrigger TRIGGER = new NoSnapshotTrigger();
-
-    private NoSnapshotTriggerDefinition() {
-    }
 
     @Override
     public SnapshotTrigger prepareTrigger(Class<?> aggregateType) {

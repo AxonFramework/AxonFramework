@@ -24,11 +24,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation that informs Axon's auto configurer for Spring that a given {@link Component} is an aggregate instance.
+ */
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Component
 @Scope("prototype")
 public @interface Aggregate {
 
+    /**
+     * Select the name of the AggregateRepository bean. If left empty the simple name of the aggregate's class is used
+     * to name the repository and factory.
+     *
+     * @return the repository name
+     */
     String repository() default "";
 }

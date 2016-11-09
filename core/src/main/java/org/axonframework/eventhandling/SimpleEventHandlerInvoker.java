@@ -23,6 +23,9 @@ import java.util.List;
 import static java.util.stream.Collectors.toList;
 
 /**
+ * Implementation of an {@link EventHandlerInvoker} that forwards events to a list of registered {@link EventListener
+ * EventListeners}.
+ *
  * @author Rene de Waele
  */
 public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
@@ -30,10 +33,32 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
     private final List<EventListener> eventListeners;
     private final ListenerErrorHandler listenerErrorHandler;
 
+    /**
+     * Initializes a {@link SimpleEventHandlerInvoker} containing one or more {@code eventListeners}. If an event
+     * listener is assignable to {@link EventListener} it will registered as is. If not, it will be wrapped by a new
+     * {@link AnnotationEventListenerAdapter}.
+     * <p>
+     * Events handled by the invoker will be passed to all the given {@code eventListeners}. If an exception is
+     * triggered during event handling it will be logged using a {@link LoggingListenerErrorHandler} but otherwise
+     * ignored.
+     *
+     * @param eventListeners one or more event listeners to register with this invoker
+     */
     public SimpleEventHandlerInvoker(Object... eventListeners) {
-        this(Arrays.asList(eventListeners), new LoggingListenerErrorHandler());
+        this(detectList(eventListeners), new LoggingListenerErrorHandler());
     }
 
+    /**
+     * Initializes a {@link SimpleEventHandlerInvoker} containing the given list of {@code eventListeners}. If an event
+     * listener is assignable to {@link EventListener} it will registered as is. If not, it will be wrapped by a new
+     * {@link AnnotationEventListenerAdapter}.
+     * <p>
+     * Events handled by the invoker will be passed to all the given {@code eventListeners}. If an exception is
+     * triggered during event handling it will be handled by the given {@code listenerErrorHandler}.
+     *
+     * @param eventListeners list of event listeners to register with this invoker
+     * @param listenerErrorHandler error handler that handles exceptions during processing
+     */
     public SimpleEventHandlerInvoker(List<?> eventListeners, ListenerErrorHandler listenerErrorHandler) {
         this.eventListeners = new ArrayList<>(eventListeners.stream()
                                                       .map(listener -> listener instanceof EventListener ?
@@ -41,6 +66,17 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
                                                               new AnnotationEventListenerAdapter(listener))
                                                       .collect(toList()));
         this.listenerErrorHandler = listenerErrorHandler;
+    }
+
+    /**
+     * Checks if a List has been passed as first parameter. It is a common 'mistake', which is detected and fixed here.
+     *
+     * @param eventListeners The event listeners to check for a list
+     * @return a list of events listeners
+     */
+    private static List<?> detectList(Object[] eventListeners) {
+        return eventListeners.length == 1 && (eventListeners[0] instanceof List) ? (List<?>) eventListeners[0] :
+                Arrays.asList(eventListeners);
     }
 
     @Override

@@ -37,5 +37,5 @@ public interface EventListener {
      * @param event the event to handle
      * @throws Exception when an exception is raised during event handling
      */
-    void handle(EventMessage event) throws Exception;
+    void handle(EventMessage<?> event) throws Exception;
 }

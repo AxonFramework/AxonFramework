@@ -18,8 +18,17 @@ package org.axonframework.eventhandling.saga.repository;
 
 import org.axonframework.common.AxonNonTransientException;
 
+/**
+ * Exception triggered when a new saga instance could not be instantiated.
+ */
 public class SagaCreationException extends AxonNonTransientException {
 
+    /**
+     * Initializes the exception using the given {@code message} and {@code cause}.
+     *
+     * @param message The message describing the exception
+     * @param cause   The underlying cause of the exception
+     */
     public SagaCreationException(String message, Throwable cause) {
         super(message, cause);
     }

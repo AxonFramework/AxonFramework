@@ -29,16 +29,24 @@ import java.sql.SQLException;
  */
 public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
 
+    /**
+     * Initialize a PostgresSagaSqlSchema using the default schema configuration.
+     */
     public PostgresSagaSqlSchema() {
     }
 
-    public PostgresSagaSqlSchema(SchemaConfiguration schemaConfiguration) {
-        super(schemaConfiguration);
+    /**
+     * Initialize a PostgresSagaSqlSchema using the given {@code sagaSchema}.
+     *
+     * @param sagaSchema the saga schema configuration
+     */
+    public PostgresSagaSqlSchema(SagaSchema sagaSchema) {
+        super(sagaSchema);
     }
 
     @Override
     public PreparedStatement sql_createTableAssocValueEntry(Connection conn) throws SQLException {
-        final String sql = "create table " + schemaConfiguration.associationValueEntryTable() + " (\n" +
+        final String sql = "create table " + sagaSchema.associationValueEntryTable() + " (\n" +
                 "        id bigserial not null,\n" +
                 "        associationKey varchar(255),\n" +
                 "        associationValue varchar(255),\n" +
@@ -51,7 +59,7 @@ public class PostgresSagaSqlSchema extends GenericSagaSqlSchema {
 
     @Override
     public PreparedStatement sql_createTableSagaEntry(Connection conn) throws SQLException {
-        return conn.prepareStatement("create table " + schemaConfiguration.sagaEntryTable() + " (\n" +
+        return conn.prepareStatement("create table " + sagaSchema.sagaEntryTable() + " (\n" +
                 "        sagaId varchar(255) not null,\n" +
                 "        revision varchar(255),\n" +
                 "        sagaType varchar(255),\n" +

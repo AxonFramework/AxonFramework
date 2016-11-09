@@ -27,6 +27,10 @@ import java.util.Optional;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 
+/**
+ * Implementation of a {@link ChildEntityDefinition} that is used to detect single entities annotated with
+ * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entity.
+ */
 public class AggregateMemberAnnotatedChildEntityDefinition implements ChildEntityDefinition {
 
     @Override

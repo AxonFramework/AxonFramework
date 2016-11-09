@@ -46,6 +46,7 @@ public interface ContinuedGivenState extends WhenState {
      *
      * @param elapsedTime The amount of time that will elapse
      * @return an object that allows registration of the actual events to send
+     * @throws Exception if an exception happens when the duration elapses
      */
     ContinuedGivenState andThenTimeElapses(Duration elapsedTime) throws Exception;
 
@@ -55,6 +56,7 @@ public interface ContinuedGivenState extends WhenState {
      *
      * @param newDateTime The time to advance the clock to
      * @return an object that allows registration of the actual events to send
+     * @throws Exception if an exception happens when the time advances
      */
     ContinuedGivenState andThenTimeAdvancesTo(Instant newDateTime) throws Exception;
 
@@ -64,6 +66,7 @@ public interface ContinuedGivenState extends WhenState {
      *
      * @param event The event to publish
      * @return an object that allows chaining of more given state
+     * @throws Exception if an exception happens when the event is handled
      */
     ContinuedGivenState andThenAPublished(Object event) throws Exception;
 }

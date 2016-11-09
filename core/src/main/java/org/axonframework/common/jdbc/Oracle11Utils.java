@@ -4,6 +4,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+/**
+ * Utility class with some specific hacks required to get certain features to work with Oracle v11.
+ */
 public class Oracle11Utils {
 
     private Oracle11Utils() {
@@ -16,7 +19,7 @@ public class Oracle11Utils {
      * @param connection    The connection to the database that will be used to execute the queries
      * @param tableName     The name of the table that contains the column that should be automatically incremented
      * @param columnName    The name of the column that should be automatically incremented
-     * @throws SQLException
+     * @throws SQLException if the auto increment statement cannot be created or executed
      */
     public static void simulateAutoIncrement(Connection connection, String tableName, String columnName) throws SQLException {
         String sequenceName = tableName + "_seq";
@@ -41,11 +44,11 @@ public class Oracle11Utils {
     }
 
     /**
-     * Create a prepared statement that acts as a null object.
+     * Creates a prepared statement that acts as a null object.
      *
      * @param connection The connection that is used to create the prepared statement
      * @return PreparedStatement
-     * @throws SQLException
+     * @throws SQLException if the null statement cannot be created
      */
     public static PreparedStatement createNullStatement(Connection connection) throws SQLException {
         return connection.prepareStatement("select 1 from dual");

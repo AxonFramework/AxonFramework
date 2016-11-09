@@ -61,6 +61,7 @@ public class SimpleEventBus extends AbstractEventBus {
      * Initializes an event bus. Uses the given {@code messageMonitor} to report ingested messages and report the
      * result of processing the message.
      *
+     * @param queueCapacity  The maximum number of events to hold in memory for event tracking
      * @param messageMonitor The monitor used to monitor the ingested messages
      */
     public SimpleEventBus(int queueCapacity, MessageMonitor<? super EventMessage<?>> messageMonitor) {

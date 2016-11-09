@@ -97,7 +97,7 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
                                         PersistenceExceptionResolver persistenceExceptionResolver, Integer batchSize,
                                         ConnectionProvider connectionProvider, Class<?> dataType, EventSchema schema) {
         super(serializer, upcasterChain, persistenceExceptionResolver, batchSize,
-              connectionProvider, dataType, schema, null);
+              connectionProvider, dataType, schema, 0, 0L);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class LegacyJdbcEventStorageEngine extends JdbcEventStorageEngine {
     }
 
     @Override
-    public TrackedEventData<?> getTrackedEventData(ResultSet resultSet, TrackingToken previousToken) throws SQLException {
+    protected TrackedEventData<?> getTrackedEventData(ResultSet resultSet, TrackingToken previousToken) throws SQLException {
         return new GenericLegacyDomainEventEntry<>(resultSet.getString(schema().typeColumn()),
                                                    resultSet.getString(schema().aggregateIdentifierColumn()),
                                                    resultSet.getLong(schema().sequenceNumberColumn()),

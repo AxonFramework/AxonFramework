@@ -16,13 +16,14 @@
 
 package org.axonframework.eventhandling.scheduling.quartz;
 
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWorkFactory;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +51,9 @@ public class FireEventJob implements Job {
      */
     public static final String EVENT_BUS_KEY = EventBus.class.getName();
     /**
-     * The key used to locate the optional EventTriggerCallback in the scheduler context.
+     * The key used to locate the optional TransactionManager in the scheduler context.
      */
-    public static final String UNIT_OF_WORK_FACTORY_KEY = TransactionManager.class.getName();
+    public static final String TRANSACTION_MANAGER_KEY = TransactionManager.class.getName();
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -69,9 +70,14 @@ public class FireEventJob implements Job {
             EventMessage<?> eventMessage = createMessage(event);
 
             EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            UnitOfWorkFactory<?> unitOfWorkFactory =
-                    (UnitOfWorkFactory<?>) context.getScheduler().getContext().get(UNIT_OF_WORK_FACTORY_KEY);
-            UnitOfWork<EventMessage<?>> unitOfWork = unitOfWorkFactory.createUnitOfWork(eventMessage);
+            TransactionManager txManager = (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
+
+            UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+            if (txManager != null) {
+                Transaction transaction = txManager.startTransaction();
+                unitOfWork.onCommit(u -> transaction.commit());
+                unitOfWork.onRollback(u -> transaction.rollback());
+            }
             unitOfWork.execute(() -> eventBus.publish(eventMessage));
 
             if (logger.isInfoEnabled()) {

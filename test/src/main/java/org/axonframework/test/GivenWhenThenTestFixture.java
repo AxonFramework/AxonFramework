@@ -269,8 +269,8 @@ public class GivenWhenThenTestFixture<T> implements FixtureConfiguration<T>, Tes
     }
 
     private void registerCommandInterceptors() {
-        commandBus.setDispatchInterceptors(commandDispatchInterceptors);
-        commandBus.setHandlerInterceptors(commandHandlerInterceptors);
+        commandDispatchInterceptors.forEach(commandBus::registerDispatchInterceptor);
+        commandHandlerInterceptors.forEach(commandBus::registerHandlerInterceptor);
     }
 
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter) {

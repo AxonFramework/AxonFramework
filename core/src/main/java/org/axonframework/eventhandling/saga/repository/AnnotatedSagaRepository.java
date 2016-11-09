@@ -51,16 +51,46 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     private final SagaModel<T> sagaModel;
     private final ResourceInjector injector;
 
+    /**
+     * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
+     * sagaStore}. The repository will use a {@link DefaultSagaMetaModelFactory} and {@link NoResourceInjector} to
+     * initialize {@link Saga} instances after a target instance is created or loaded from the store. This repository
+     * uses a {@link PessimisticLockFactory} when a {@link Saga} is loaded.
+     *
+     * @param sagaType  the saga target type
+     * @param sagaStore the saga store for saving and loading of sagas
+     */
     public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore) {
-        this(sagaType, sagaStore, new NoResourceInjector());
+        this(sagaType, sagaStore, NoResourceInjector.INSTANCE);
     }
 
+    /**
+     * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
+     * sagaStore}. The repository will use given {@code resourceInjector} and {@link DefaultSagaMetaModelFactory} to
+     * initialize {@link Saga} instances after a target instance is created or loaded from the store. This repository
+     * uses a {@link PessimisticLockFactory} when a {@link Saga} is loaded.
+     *
+     * @param sagaType         the saga target type
+     * @param sagaStore        the saga store for saving and loading of sagas
+     * @param resourceInjector the resource injector used to initialize {@link Saga Sagas} that delegate to the target
+     */
     public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore,
                                    ResourceInjector resourceInjector) {
         this(sagaType, sagaStore, new DefaultSagaMetaModelFactory().modelOf(sagaType), resourceInjector,
              new PessimisticLockFactory());
     }
 
+    /**
+     * Initializes an AnnotatedSagaRepository for given {@code sagaType} that stores sagas in the given {@code
+     * sagaStore}. The repository will use the given {@code sagaModel} and {@code resourceInjector} to initialize
+     * {@link Saga} instances after a target instance is created or loaded from the store.
+     *
+     * @param sagaType         the saga target type
+     * @param sagaStore        the saga store for saving and loading of sagas
+     * @param sagaModel        the saga model used to initialize {@link Saga Sagas} that delegate to the target
+     * @param resourceInjector the resource injector used to initialize {@link Saga Sagas} that delegate to the target
+     * @param lockFactory      lock factory used when a saga is loaded
+     */
     public AnnotatedSagaRepository(Class<T> sagaType, SagaStore<? super T> sagaStore, SagaModel<T> sagaModel,
                                    ResourceInjector resourceInjector, LockFactory lockFactory) {
         super(lockFactory);

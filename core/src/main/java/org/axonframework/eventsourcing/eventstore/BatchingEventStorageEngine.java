@@ -121,6 +121,11 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
         return StreamSupport.stream(spliterator, false);
     }
 
+    /**
+     * Returns the maximum number of event entries to be fetched per batch.
+     *
+     * @return the fetch batch size
+     */
     public int batchSize() {
         return batchSize;
     }

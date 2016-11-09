@@ -23,6 +23,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
+import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.eventhandling.EventListener;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
@@ -56,7 +57,7 @@ public class RunBasicCommandHandlingWithMetrics {
                 new MessageMonitorBuilder().buildCommandBusMonitor(mr);
 
         // let's start with the Command Bus
-        CommandBus commandBus = new SimpleCommandBus(commandBusMessageMonitor);
+        CommandBus commandBus = new SimpleCommandBus(NoTransactionManager.INSTANCE, commandBusMessageMonitor);
 
         // the CommandGateway provides a friendlier API to send commands
         CommandGateway commandGateway = new DefaultCommandGateway(commandBus);

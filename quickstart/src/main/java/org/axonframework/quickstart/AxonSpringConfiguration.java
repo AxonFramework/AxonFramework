@@ -25,6 +25,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
+/**
+ * Spring configuration class that contains default configuration for a simple Axon application.
+ */
 @Configuration
 @EnableAxon
 @Import(ToDoItem.class)

@@ -33,6 +33,11 @@ import static java.lang.String.format;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
+/**
+ * Implementation of a {@link ChildEntityDefinition} that is used to detect Maps with entities as values annotated with
+ * {@link AggregateMember}. If such a field is found a {@link ChildEntity} is created that delegates to the entities
+ * in the annotated Map.
+ */
 public class AggregateMemberAnnotatedChildEntityMapDefinition implements ChildEntityDefinition {
 
     private static Class<?> resolveType(Map<String, Object> attributes, Field field) {

@@ -120,8 +120,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      *
      * @param aggregate       The loaded aggregate
      * @param expectedVersion The expected version of the aggregate
-     * @throws ConflictingModificationException
-     * @throws ConflictingAggregateVersionException
+     * @throws ConflictingModificationException when conflicting changes have been detected
+     * @throws ConflictingAggregateVersionException the expected version is not {@code null}
+     * and the version number of the aggregate does not match the expected version
      */
     protected void validateOnLoad(Aggregate<T> aggregate, Long expectedVersion) {
         if (expectedVersion != null && aggregate.version() != null &&

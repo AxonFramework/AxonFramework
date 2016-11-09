@@ -15,12 +15,12 @@ public class Oracle11SagaSqlSchemaTest {
 
     private Oracle11SagaSqlSchema testSubject;
     private Connection connection;
-    private SchemaConfiguration schemaConfiguration;
+    private SagaSchema sagaSchema;
 
     @Before
     public void setUp() throws Exception {
-        schemaConfiguration = new SchemaConfiguration();
-        testSubject = new Oracle11SagaSqlSchema(schemaConfiguration);
+        sagaSchema = new SagaSchema();
+        testSubject = new Oracle11SagaSqlSchema(sagaSchema);
         try {
             connection = DriverManager.getConnection("jdbc:oracle:thin:@//localhost:1521/xe", "axon", "axon");
         } catch (SQLException e) {
@@ -38,12 +38,12 @@ public class Oracle11SagaSqlSchemaTest {
         // test passes if no exception is thrown
         testSubject.sql_createTableAssocValueEntry(connection)
                 .execute();
-        connection.prepareStatement("SELECT * FROM " + schemaConfiguration.associationValueEntryTable())
+        connection.prepareStatement("SELECT * FROM " + sagaSchema.associationValueEntryTable())
                 .execute();
 
-        connection.prepareStatement("DROP TABLE " + schemaConfiguration.associationValueEntryTable())
+        connection.prepareStatement("DROP TABLE " + sagaSchema.associationValueEntryTable())
                 .execute();
-        connection.prepareStatement("DROP SEQUENCE " + schemaConfiguration.associationValueEntryTable() + "_seq")
+        connection.prepareStatement("DROP SEQUENCE " + sagaSchema.associationValueEntryTable() + "_seq")
                 .execute();
     }
 
@@ -52,10 +52,10 @@ public class Oracle11SagaSqlSchemaTest {
         // test passes if no exception is thrown
         testSubject.sql_createTableSagaEntry(connection)
                 .execute();
-        connection.prepareStatement("SELECT * FROM " + schemaConfiguration.sagaEntryTable())
+        connection.prepareStatement("SELECT * FROM " + sagaSchema.sagaEntryTable())
                 .execute();
 
-        connection.prepareStatement("DROP TABLE " + schemaConfiguration.sagaEntryTable())
+        connection.prepareStatement("DROP TABLE " + sagaSchema.sagaEntryTable())
                 .execute();
     }
 }

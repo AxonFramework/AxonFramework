@@ -18,7 +18,16 @@ package org.axonframework.eventhandling.saga.repository;
 
 import org.axonframework.eventhandling.saga.ResourceInjector;
 
-public class NoResourceInjector implements ResourceInjector {
+/**
+ * ResourceInjector that does not inject anything.
+ */
+public enum NoResourceInjector implements ResourceInjector {
+
+    /**
+     * The singleton NoResourceInjector instance
+     */
+    INSTANCE;
+
     @Override
     public void injectResources(Object saga) {
     }

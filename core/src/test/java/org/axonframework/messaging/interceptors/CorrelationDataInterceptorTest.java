@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.interceptors;
 
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
@@ -24,7 +23,10 @@ import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.mockito.Mockito.*;
+import java.util.Arrays;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author Rene de Waele
@@ -34,39 +36,24 @@ public class CorrelationDataInterceptorTest {
     private CorrelationDataInterceptor<Message<?>> subject;
     private UnitOfWork<Message<?>> mockUnitOfWork;
     private InterceptorChain mockInterceptorChain;
+    private CorrelationDataProvider mockProvider1;
+    private CorrelationDataProvider mockProvider2;
 
     @Before
     @SuppressWarnings("unchecked")
     public void setUp() {
-        subject = new CorrelationDataInterceptor<>();
+        mockProvider1 = mock(CorrelationDataProvider.class);
+        mockProvider2 = mock(CorrelationDataProvider.class);
+        subject = new CorrelationDataInterceptor<>(Arrays.asList(mockProvider1, mockProvider2));
         mockUnitOfWork = mock(UnitOfWork.class);
         mockInterceptorChain = mock(InterceptorChain.class);
     }
 
     @Test
     public void testAttachesCorrelationDataProvidersToUnitOfWork() throws Exception {
-        CorrelationDataProvider mockProvider1 = mock(CorrelationDataProvider.class);
-        CorrelationDataProvider mockProvider2 = mock(CorrelationDataProvider.class);
-        subject.registerCorrelationDataProvider(mockProvider1);
-        subject.registerCorrelationDataProvider(mockProvider2);
         subject.handle(mockUnitOfWork, mockInterceptorChain);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider1);
         verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider2);
         verify(mockInterceptorChain).proceed();
     }
-
-    @Test
-    public void testUnregisteredProviderIsNoLongerAttachedToUnitOfWork() throws Exception {
-        CorrelationDataProvider mockProvider = mock(CorrelationDataProvider.class);
-        Registration registration = subject.registerCorrelationDataProvider(mockProvider);
-        subject.handle(mockUnitOfWork, mockInterceptorChain);
-        verify(mockUnitOfWork).registerCorrelationDataProvider(mockProvider);
-        verify(mockInterceptorChain).proceed();
-        registration.cancel();
-        reset((Object) mockInterceptorChain);
-        subject.handle(mockUnitOfWork, mockInterceptorChain);
-        verifyNoMoreInteractions(mockUnitOfWork);
-        verify(mockInterceptorChain).proceed();
-    }
-
 }

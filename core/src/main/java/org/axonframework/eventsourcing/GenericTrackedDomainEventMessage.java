@@ -22,24 +22,44 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * @author Rene de Waele
+ * Generic implementation of a {@link DomainEventMessage} that is also a {@link TrackedEventMessage}.
+ *
+ * @param <T> The type of payload contained in this Message
  */
-public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessage<T> implements TrackedEventMessage<T> {
+public class GenericTrackedDomainEventMessage<T> extends GenericDomainEventMessage<T> implements
+        TrackedEventMessage<T> {
     private final TrackingToken trackingToken;
 
+    /**
+     * Initialize a DomainEventMessage originating from existing data.
+     *
+     * @param trackingToken Tracking token of the event
+     * @param delegate      Delegate domain event containing other event data
+     */
     public GenericTrackedDomainEventMessage(TrackingToken trackingToken, DomainEventMessage<T> delegate) {
         this(trackingToken, delegate.getType(), delegate.getAggregateIdentifier(), delegate.getSequenceNumber(),
              delegate, delegate.getTimestamp());
     }
 
-    protected GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
-                                             long sequenceNumber, Message<T> delegate, Instant timestamp) {
+    /**
+     * Initialize a DomainEventMessage originating from an Aggregate using existing data. The timestamp of the event is
+     * supplied lazily to prevent unnecessary deserialization of the timestamp.
+     *
+     * @param trackingToken       Tracking token of the event
+     * @param type                The domain type
+     * @param aggregateIdentifier The identifier of the aggregate generating this message
+     * @param sequenceNumber      The message's sequence number
+     * @param delegate            The delegate message providing the payload, metadata and identifier of the event
+     * @param timestamp           The event's timestamp supplier
+     */
+    public GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
+                                            long sequenceNumber, Message<T> delegate, Supplier<Instant> timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
         this.trackingToken = trackingToken;
     }
 
-    public GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
-                                            long sequenceNumber, Message<T> delegate, Supplier<Instant> timestamp) {
+    protected GenericTrackedDomainEventMessage(TrackingToken trackingToken, String type, String aggregateIdentifier,
+                                               long sequenceNumber, Message<T> delegate, Instant timestamp) {
         super(type, aggregateIdentifier, sequenceNumber, delegate, timestamp);
         this.trackingToken = trackingToken;
     }

@@ -29,6 +29,12 @@ import java.util.Optional;
 import static org.axonframework.common.ReflectionUtils.fieldsOf;
 import static org.axonframework.common.ReflectionUtils.methodsOf;
 
+/**
+ * Abstract implementation of a {@link ResourceInjector} for sagas that injects field and method resources. Resources
+ * are provided by the concrete implementation.
+ *
+ * @author Allard Buijze
+ */
 public abstract class AbstractResourceInjector implements ResourceInjector {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractResourceInjector.class);

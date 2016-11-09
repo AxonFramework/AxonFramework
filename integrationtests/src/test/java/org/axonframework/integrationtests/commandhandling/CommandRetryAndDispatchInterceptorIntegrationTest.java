@@ -88,7 +88,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
         // say we have a dispatch interceptor that expects to get the user's session from a ThreadLocal...
         // yes, this should be configured on the gateway instead of the command bus, but still...
         final Thread testThread = Thread.currentThread();
-        commandBus.setDispatchInterceptors(Collections.singletonList(new MessageDispatchInterceptor<CommandMessage<?>>() {
+        commandBus.registerDispatchInterceptor(new MessageDispatchInterceptor<CommandMessage<?>>() {
             @Override
             public BiFunction<Integer, CommandMessage<?>, CommandMessage<?>> handle(List<CommandMessage<?>> messages) {
                 return (index, message) -> {
@@ -101,7 +101,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
                     }
                 };
             }
-        }));
+        });
 
         // wait, but hopefully not forever...
         commandGateway.sendAndWait("command");
@@ -113,7 +113,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
      * command gateway's dispatch interceptors} is preserved on retry.
      * <p/>
      * It'd be nice if metadata added by a
-     * {@linkplain SimpleCommandBus#setDispatchInterceptors(List) command bus's
+     * {@linkplain SimpleCommandBus#registerDispatchInterceptor(MessageDispatchInterceptor)}  command bus's
      * dispatch interceptors} could be preserved, too, but that doesn't seem to
      * be possible given how {@link RetryingCallback} works, so verify that it
      * is not preserved.
@@ -153,7 +153,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
 
     /**
      * It'd be nice if metadata added by a
-     * {@linkplain SimpleCommandBus#setDispatchInterceptors(List) command bus's
+     * {@linkplain SimpleCommandBus#registerDispatchInterceptor(MessageDispatchInterceptor)}  command bus's
      * dispatch interceptors} could be preserved, too, but that doesn't seem to
      * be possible given how {@link RetryingCallback} works, so verify that it
      * behaves as designed (if not as "expected").
@@ -172,7 +172,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
             }
         });
 
-        commandBus.setDispatchInterceptors(Collections.singletonList(messages -> (index, message) -> {
+        commandBus.registerDispatchInterceptor(messages -> (index, message) -> {
             if (Thread.currentThread() == testThread) {
                 return message.andMetaData(Collections.singletonMap("commandBusMetaData", "myUserSession"));
             } else {
@@ -181,7 +181,7 @@ public class CommandRetryAndDispatchInterceptorIntegrationTest {
                 // has been "fixed" -- on the retry thread, there's no security context
                 return message.andMetaData(Collections.singletonMap("commandBusMetaData", "noUserSession"));
             }
-        }));
+        });
 
         assertEquals("noUserSession", ((MetaData) commandGateway.sendAndWait("command")).get("commandBusMetaData"));
     }

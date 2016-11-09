@@ -18,7 +18,6 @@ package org.axonframework.spring.eventhandling.scheduling.java;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.scheduling.java.SimpleEventScheduler;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWorkFactory;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -82,8 +81,9 @@ public class SimpleEventSchedulerFactoryBean implements FactoryBean<SimpleEventS
         if (transactionManager == null) {
             this.eventScheduler = new SimpleEventScheduler(executorService, eventBus);
         } else {
-            this.eventScheduler = new SimpleEventScheduler(executorService, eventBus, new DefaultUnitOfWorkFactory(
-                    new SpringTransactionManager(transactionManager, transactionDefinition)));
+            this.eventScheduler = new SimpleEventScheduler(
+                    executorService, eventBus,
+                    new SpringTransactionManager(transactionManager, transactionDefinition));
         }
     }
 

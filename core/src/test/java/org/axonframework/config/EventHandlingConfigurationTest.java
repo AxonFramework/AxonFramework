@@ -44,7 +44,7 @@ public class EventHandlingConfigurationTest {
     @Test
     public void testAssignmentRules() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
-        EventHandlingConfiguration module = EventHandlingConfiguration.assigningHandlersByPackage()
+        EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .registerEventProcessorFactory((config, name, handlers) -> {
                     StubEventProcessor processor = new StubEventProcessor(name, handlers);
                     processors.put(name, processor);
@@ -68,7 +68,7 @@ public class EventHandlingConfigurationTest {
     @Test
     public void testAssignmentRulesOverrideThoseWithLowerPriority() {
         Map<String, StubEventProcessor> processors = new HashMap<>();
-        EventHandlingConfiguration module = EventHandlingConfiguration.assigningHandlersByPackage()
+        EventHandlingConfiguration module = new EventHandlingConfiguration()
                 .registerEventProcessorFactory((config, name, handlers) -> {
                     StubEventProcessor processor = new StubEventProcessor(name, handlers);
                     processors.put(name, processor);

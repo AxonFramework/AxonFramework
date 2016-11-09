@@ -15,14 +15,15 @@ package org.axonframework.serialization.upcasting;
 
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Mockito.*;
 
 /**
  * @author Rene de Waele
@@ -51,21 +52,6 @@ public class GenericUpcasterChainTest {
         Upcaster<Object> testSubject = new GenericUpcasterChain<>(new AToBUpcaster(b, c), new AToBUpcaster(a, b));
         Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
         assertEquals(Arrays.asList(b, c, b, c), result.collect(toList()));
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void testNewUpcasterIsSuppliedForEachRoundOfUpcasting() {
-        Object a = "a", b = "b", c = "c";
-        Supplier<Upcaster<Object>> mockSupplier = mock(Supplier.class);
-        when(mockSupplier.get()).thenReturn(new AToBUpcaster(a, b));
-        Upcaster<Object> testSubject = new GenericUpcasterChain<>(Collections.singletonList(mockSupplier));
-        Stream<Object> result = testSubject.upcast(Stream.of(a, b, a, c));
-        assertEquals(Arrays.asList(b, b, b, c), result.collect(toList()));
-        verify(mockSupplier).get();
-        result = testSubject.upcast(Stream.of(a, b, a, c));
-        assertEquals(Arrays.asList(b, b, b, c), result.collect(toList()));
-        verify(mockSupplier, times(2)).get();
     }
 
     @Test
@@ -103,8 +89,13 @@ public class GenericUpcasterChainTest {
         }
 
         @Override
+        protected boolean canUpcast(Object intermediateRepresentation) {
+            return intermediateRepresentation == a;
+        }
+
+        @Override
         protected Object doUpcast(Object intermediateRepresentation) {
-            return intermediateRepresentation == a ? b : intermediateRepresentation;
+            return b;
         }
     }
 

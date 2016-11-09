@@ -22,28 +22,47 @@ import org.axonframework.eventsourcing.eventstore.TrackingToken;
  * process name and segment index, enabling the same processor to be distributed over multiple processes or machines.
  *
  * @author Rene de Waele
+ * @author Allard Buijze
  */
 public interface TokenStore {
 
     /**
      * Stores the given {@code token} in the store. The token marks the current position of the process with given
-     * {@code processName} and {@code segment}. The given {@code token} may be {@code null}.
+     * {@code processorName} and {@code segment}. The given {@code token} may be {@code null}.
+     * <p/>
+     * Any claims made by the current process have their timestamp updated.
      *
      * @param token       The token to store for a given process and segment. May be {@code null}.
-     * @param processName The name of the process for which to store the token
+     * @param processorName The name of the process for which to store the token
      * @param segment     The index of the segment for which to store the token
+     * @throws UnableToClaimTokenException when the token being updated has been claimed by another process.
      */
-    void storeToken(TrackingToken token, String processName, int segment);
+    void storeToken(TrackingToken token, String processorName, int segment) throws UnableToClaimTokenException;
 
     /**
-     * Returns the last stored {@link TrackingToken token} for the given {@code processName} and {@code segment}.
+     * Returns the last stored {@link TrackingToken token} for the given {@code processorName} and {@code segment}.
      * Returns {@code null} if the store holds no token or if the stored token for the given process and segment is
      * {@code null}.
+     * <p/>
+     * The token will be claimed by the current process (JVM instance), preventing access by other instances. To release
+     * the claim, use {@link #releaseClaim(String, int)}
      *
-     * @param processName The process name for which to fetch the token
+     * @param processorName The process name for which to fetch the token
      * @param segment     The segment index for which to fetch the token
      * @return The last stored TrackingToken or {@code null} if the store holds no token for given process and segment
+     * @throws UnableToClaimTokenException if there is a token for given {@code processorName} and {@code segment}, but
+     * they are claimed by another process.
      */
-    TrackingToken fetchToken(String processName, int segment);
+    TrackingToken fetchToken(String processorName, int segment) throws UnableToClaimTokenException;
 
+    /**
+     * Release a claim of the token for given {@code processorName} and {@code segment}. If no such claim existed,
+     * nothing happens.
+     * <p>
+     * The caller must ensure not to use any streams opened based on the token for which the claim is released.
+     *
+     * @param processorName The name of the process owning the token (e.g. a TrackingEventProcessor name)
+     * @param segment     the segment for which a token was obtained
+     */
+    void releaseClaim(String processorName, int segment);
 }

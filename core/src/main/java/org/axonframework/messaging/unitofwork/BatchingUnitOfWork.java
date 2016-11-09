@@ -19,7 +19,7 @@ import org.axonframework.messaging.Message;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -33,11 +33,21 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     private final List<MessageProcessingContext<T>> processingContexts;
     private MessageProcessingContext<T> processingContext;
 
+    /**
+     * Initializes a BatchingUnitOfWork for processing the given batch of {@code messages}.
+     *
+     * @param messages batch of messages to process
+     */
     @SafeVarargs
     public BatchingUnitOfWork(T... messages) {
         this(Arrays.asList(messages));
     }
 
+    /**
+     * Initializes a BatchingUnitOfWork for processing the given list of {@code messages}.
+     *
+     * @param messages batch of messages to process
+     */
     public BatchingUnitOfWork(List<T> messages) {
         Assert.isFalse(messages.isEmpty(), () -> "The list of Messages to process is empty");
         processingContexts = messages.stream().map(MessageProcessingContext::new).collect(Collectors.toList());
@@ -103,7 +113,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(UnaryOperator<T> transformOperator) {
+    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }
@@ -136,6 +146,11 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
         processingContext.setExecutionResult(executionResult);
     }
 
+    /**
+     * Get the batch of messages that is being processed (or has been processed) by this unit of work.
+     *
+     * @return the message batch
+     */
     public List<? extends Message<?>> getMessages() {
         return processingContexts.stream().map(MessageProcessingContext::getMessage).collect(Collectors.toList());
     }

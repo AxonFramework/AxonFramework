@@ -81,9 +81,15 @@ public interface Configuration {
      * @return the ResourceInjector used to provide resources to Saga instances
      */
     default ResourceInjector resourceInjector() {
-        return getComponent(ResourceInjector.class, NoResourceInjector::new);
+        return getComponent(ResourceInjector.class, () -> NoResourceInjector.INSTANCE);
     }
 
+    /**
+     * Returns the Command Gateway defined in this Configuration. Note that this Configuration should be started (see
+     * {@link #start()}) before sending Commands using this Command Gateway.
+     *
+     * @return the CommandGateway defined in this configuration
+     */
     default CommandGateway commandGateway() {
         return getComponent(CommandGateway.class);
     }

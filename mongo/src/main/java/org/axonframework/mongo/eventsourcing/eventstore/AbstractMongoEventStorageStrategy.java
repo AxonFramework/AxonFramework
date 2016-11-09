@@ -50,6 +50,11 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
     protected static final int ORDER_ASC = 1, ORDER_DESC = -1;
     private final EventEntryConfiguration eventConfiguration;
 
+    /**
+     * Initializes a new StorageStrategy for a EventStorageEngine that uses Mongo.
+     *
+     * @param eventConfiguration configuration of the event entry 'schema'
+     */
     public AbstractMongoEventStorageStrategy(EventEntryConfiguration eventConfiguration) {
         this.eventConfiguration = eventConfiguration;
     }
