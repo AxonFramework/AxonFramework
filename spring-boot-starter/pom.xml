@@ -32,7 +32,7 @@
     <dependencies>
         <dependency>
             <groupId>org.axonframework</groupId>
-            <artifactId>axon-boot</artifactId>
+            <artifactId>axon-spring-boot-autoconfigure</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

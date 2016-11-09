@@ -24,7 +24,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>axon-boot</artifactId>
+    <artifactId>axon-spring-boot-autoconfigure</artifactId>
     <name>Axon Framework Spring Boot Support</name>
 
     <packaging>bundle</packaging>
