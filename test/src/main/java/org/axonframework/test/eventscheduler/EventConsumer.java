@@ -16,7 +16,7 @@
 package org.axonframework.test.eventscheduler;
 
 /**
- * A consumer that allows implementations to throw a exceptions.
+ * A consumer that allows implementations to throw exceptions.
  *
  * @author Steve Chernyak
  * @since 3.0
@@ -24,5 +24,11 @@ package org.axonframework.test.eventscheduler;
 @FunctionalInterface
 public interface EventConsumer<T> {
 
+    /**
+     * Performs this operation on the given argument.
+     *
+     * @param var the input argument
+     * @throws Exception if the operation results in an exception
+     */
     void accept(T var) throws Exception;
 }

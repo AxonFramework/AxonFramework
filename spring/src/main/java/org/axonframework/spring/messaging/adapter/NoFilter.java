@@ -17,11 +17,16 @@
 package org.axonframework.spring.messaging.adapter;
 
 /**
+ * Singleton {@link EventFilter} that lets any event pass.
+ *
  * @author Allard Buijze
  * @since 2.3.1
  */
 public enum NoFilter implements EventFilter {
 
+    /**
+     * Singleton instance of a {@link NoFilter}
+     */
     INSTANCE;
 
     @Override

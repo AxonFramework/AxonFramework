@@ -33,6 +33,9 @@ import java.time.Instant;
 import static org.axonframework.serialization.MessageSerializer.serializeMetaData;
 import static org.axonframework.serialization.MessageSerializer.serializePayload;
 
+/**
+ * Implementation of a serialized event message that can be used to create a Mongo document.
+ */
 public class EventEntry implements DomainEventData<Object>, TrackedEventData<Object> {
 
     private final String aggregateIdentifier;
@@ -70,7 +73,7 @@ public class EventEntry implements DomainEventData<Object>, TrackedEventData<Obj
     }
 
     /**
-     * Creates a new EventEntry based onm data provided by Mongo.
+     * Creates a new EventEntry based on data provided by Mongo.
      *
      * @param dbObject      Mongo object that contains data to represent an EventEntry
      * @param configuration Configuration containing the property names

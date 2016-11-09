@@ -40,6 +40,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
      * Note that this Unit Of Work type is not meant to be shared among different Threads. A single DefaultUnitOfWork
      * instance should be used exclusively by the Thread that created it.
      *
+     * @param message the message that will be processed in the context of the unit of work
      * @return the started UnitOfWork instance
      */
     public static <T extends Message<?>> DefaultUnitOfWork<T> startAndGet(T message) {
@@ -50,6 +51,8 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
 
     /**
      * Initializes a Unit of Work (without starting it).
+     *
+     * @param message the message that will be processed in the context of the unit of work
      */
     public DefaultUnitOfWork(T message) {
         processingContext = new MessageProcessingContext<>(message);

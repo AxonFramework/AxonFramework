@@ -14,10 +14,15 @@
 package org.axonframework.serialization.upcasting.event;
 
 
-import org.axonframework.serialization.upcasting.AbstractSingleEntryUpcaster;
+import org.axonframework.serialization.upcasting.SingleEntryUpcaster;
+import org.axonframework.serialization.upcasting.Upcaster;
 
 /**
+ * Abstract implementation of an event {@link Upcaster} that eases the common process of upcasting one intermediate
+ * event representation to another representation by applying a simple mapping function to the input stream of
+ * intermediate representations.
+ *
  * @author Rene de Waele
  */
-public abstract class AbstractSingleEventUpcaster extends AbstractSingleEntryUpcaster<IntermediateEventRepresentation> {
+public abstract class SingleEventUpcaster extends SingleEntryUpcaster<IntermediateEventRepresentation> {
 }

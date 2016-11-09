@@ -19,14 +19,26 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.common.AxonException;
 
 /**
- * This exception will be thrown when an error occurs during the publishing and unpublishing of this node on the
- * cluster
+ * Exception that is triggered when an error occurs that is related to the registration or deregistration of a member to
+ * the distributed command bus service registry.
  */
 public class ServiceRegistryException extends AxonException {
+
+    /**
+     * Initializes the exception using the given {@code message}.
+     *
+     * @param message The message describing the exception
+     */
     public ServiceRegistryException(String message) {
         super(message);
     }
 
+    /**
+     * Initializes the exception using the given {@code message} and {@code cause}.
+     *
+     * @param message The message describing the exception
+     * @param cause   The underlying cause of the exception
+     */
     public ServiceRegistryException(String message, Throwable cause) {
         super(message, cause);
     }

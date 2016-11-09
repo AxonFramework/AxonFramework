@@ -26,9 +26,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class MessageMonitorBuilder {
+/**
+ * Utility class with static factory methods for common {@link MessageMonitor MessageMonitors}.
+ */
+public class MessageMonitorFactory {
 
-    public MessageMonitor<EventMessage<?>> buildEventProcessorMonitor(MetricRegistry globalRegistry) {
+    /**
+     * Private constructor to prevent instantiation.
+     */
+    private MessageMonitorFactory() {
+    }
+
+    /**
+     * Factory method to create a new {@link MessageMonitor} to monitor the behavior of EventProcessors. The monitor
+     * will be registered with the provided {@code globalRegistry} under 'eventProcessing'.
+     *
+     * @param globalRegistry global monitor registry to which the monitor should be added
+     * @return the new MessageMonitor to monitor the behavior of EventProcessors
+     */
+    public static MessageMonitor<EventMessage<?>> createEventProcessorMonitor(MetricRegistry globalRegistry) {
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
         EventProcessorLatencyMonitor eventProcessorLatencyMonitor = new EventProcessorLatencyMonitor();
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
@@ -48,7 +64,14 @@ public class MessageMonitorBuilder {
         return new MultiMessageMonitor<>(monitors);
     }
 
-    public MessageMonitor<EventMessage<?>> buildEventBusMonitor(MetricRegistry globalRegistry) {
+    /**
+     * Factory method to create a new {@link MessageMonitor} to monitor the behavior of EventBuses. The monitor
+     * will be registered with the provided {@code globalRegistry} under 'eventBus'.
+     *
+     * @param globalRegistry global monitor registry to which the monitor should be added
+     * @return the new MessageMonitor to monitor the behavior of EventBuses
+     */
+    public static MessageMonitor<EventMessage<?>> createEventBusMonitor(MetricRegistry globalRegistry) {
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
 
         MetricRegistry eventProcessingRegistry = new MetricRegistry();
@@ -60,7 +83,14 @@ public class MessageMonitorBuilder {
         return new MultiMessageMonitor<>(monitors);
     }
 
-    public MessageMonitor<CommandMessage<?>> buildCommandBusMonitor(MetricRegistry globalRegistry) {
+    /**
+     * Factory method to create a new {@link MessageMonitor} to monitor the behavior of CommandBuses. The monitor
+     * will be registered with the provided {@code globalRegistry} under 'commandHandling'.
+     *
+     * @param globalRegistry global monitor registry to which the monitor should be added
+     * @return the new MessageMonitor to monitor the behavior of EventBuses
+     */
+    public static MessageMonitor<CommandMessage<?>> createCommandBusMonitor(MetricRegistry globalRegistry) {
         MessageTimerMonitor messageTimerMonitor = new MessageTimerMonitor();
         CapacityMonitor capacityMonitor = new CapacityMonitor(1, TimeUnit.MINUTES);
         MessageCountingMonitor messageCountingMonitor = new MessageCountingMonitor();

@@ -53,8 +53,9 @@ public class JoinMessage implements Externalizable {
     /**
      * Initializes a JoinMessage with the given {@code loadFactor}.
      *
-     * @param loadFactor                The loadFactor the member wishes to join with
-     * @param messageFilter   A predicate the will filter command messages this node will accept.
+     * @param address       The address of the cluster member
+     * @param loadFactor    The loadFactor the member wishes to join with
+     * @param messageFilter A predicate the will filter command messages this node will accept.
      */
     public JoinMessage(Address address, int loadFactor, Predicate<CommandMessage<?>> messageFilter) {
         this.address = address;
@@ -86,6 +87,11 @@ public class JoinMessage implements Externalizable {
         messageFilter = (Predicate<CommandMessage<?>>) in.readObject();
     }
 
+    /**
+     * Returns the command message filter used by the member.
+     *
+     * @return the member's message filter
+     */
     public Predicate<CommandMessage<?>> messageFilter() {
         return messageFilter;
     }

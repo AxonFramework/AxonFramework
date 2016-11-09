@@ -80,7 +80,7 @@ public class GenericUpcasterChainTest {
         assertEquals(Arrays.asList(a, a, c, c, c, c), result.collect(toList()));
     }
 
-    private static class AToBUpcaster extends AbstractSingleEntryUpcaster<Object> {
+    private static class AToBUpcaster extends SingleEntryUpcaster<Object> {
         private final Object a, b;
 
         private AToBUpcaster(Object a, Object b) {

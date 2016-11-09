@@ -34,10 +34,8 @@ import java.lang.annotation.Target;
 public @interface Aggregate {
 
     /**
-     * Select the name of the AggregateRepository bean. If left empty the simple name of the aggregate's class is used
-     * to name the repository and factory.
-     *
-     * @return the repository name
+     * Selects the name of the AggregateRepository bean. If left empty a new repository is created. In that case the
+     * name of the repository will be based on the simple name of the aggregate's class.
      */
     String repository() default "";
 }

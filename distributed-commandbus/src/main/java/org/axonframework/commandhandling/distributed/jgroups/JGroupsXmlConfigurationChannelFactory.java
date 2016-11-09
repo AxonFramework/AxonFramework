@@ -19,18 +19,25 @@ package org.axonframework.commandhandling.distributed.jgroups;
 import org.jgroups.JChannel;
 
 /**
+ * Implementation of a {@link JChannelFactory} that uses configuration from an xml file.
+ *
  * @author Patrick Haas
  */
 public class JGroupsXmlConfigurationChannelFactory implements JChannelFactory {
 
-    private final String configuration;
+    private final String configurationFile;
 
-    public JGroupsXmlConfigurationChannelFactory(String configuration) {
-        this.configuration = configuration;
+    /**
+     * Creates a {@link JChannelFactory} that uses configuration from a given xml file.
+     *
+     * @param configurationFile the configuration xml file name
+     */
+    public JGroupsXmlConfigurationChannelFactory(String configurationFile) {
+        this.configurationFile = configurationFile;
     }
 
     @Override
     public JChannel createChannel() throws Exception {
-        return new JChannel(configuration);
+        return new JChannel(configurationFile);
     }
 }

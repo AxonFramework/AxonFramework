@@ -48,7 +48,11 @@ import java.util.function.Predicate;
  */
 public class DistributedCommandBus implements CommandBus {
 
+    /**
+     * The initial load factor of this node when it is registered with the {@link CommandRouter}.
+     */
     public static final int INITIAL_LOAD_FACTOR = 100;
+
     private static final String DISPATCH_ERROR_MESSAGE = "An error occurred while trying to dispatch a command "
             + "on the DistributedCommandBus";
 
@@ -160,10 +164,20 @@ public class DistributedCommandBus implements CommandBus {
         }
     }
 
+    /**
+     * Returns the current load factor of this node.
+     *
+     * @return the current load factor
+     */
     public int getLoadFactor() {
         return loadFactor;
     }
 
+    /**
+     * Updates the load factor of this node compared to other nodes registered with the {@link CommandRouter}.
+     *
+     * @param loadFactor the new load factor of this node
+     */
     public void updateLoadFactor(int loadFactor) {
         commandRouter.updateMembership(loadFactor, commandFilter.get());
     }

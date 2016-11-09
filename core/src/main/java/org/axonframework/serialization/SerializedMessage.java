@@ -23,6 +23,13 @@ import org.axonframework.messaging.MetaData;
 import java.util.Map;
 
 /**
+ * A message containing serialized payload data and metadata. A SerializedMessage will deserialize the payload or
+ * metadata on demand when {@link #getPayload()} or {@link #getMetaData()} is called.
+ * <p>
+ * The SerializedMessage guarantees that the payload and metadata will not be deserialized more than once. Messages of
+ * this type are also {@link SerializationAware} meaning they will not be serialized more than once by the same
+ * serializer.
+ *
  * @author Rene de Waele
  */
 public class SerializedMessage<T> extends AbstractMessage<T> implements SerializationAware {
@@ -30,12 +37,29 @@ public class SerializedMessage<T> extends AbstractMessage<T> implements Serializ
     private final LazyDeserializingObject<MetaData> metaData;
     private final LazyDeserializingObject<T> payload;
 
+    /**
+     * Initializes a {@link SerializedMessage} with given {@code identifier} from the given serialized payload and
+     * metadata. The given {@code serializer} will be used to deserialize the data.
+     *
+     * @param identifier         the message identifier
+     * @param serializedPayload  the serialized message payload
+     * @param serializedMetaData the serialized message metadata
+     * @param serializer         the serializer required when the data needs to be deserialized
+     */
     public SerializedMessage(String identifier, SerializedObject<?> serializedPayload,
                              SerializedObject<?> serializedMetaData, Serializer serializer) {
         this(identifier, new LazyDeserializingObject<>(serializedPayload, serializer),
              new LazyDeserializingObject<>(serializedMetaData, serializer));
     }
 
+    /**
+     * Initializes a {@link SerializedMessage} with given {@code identifier} from the given lazily deserializing payload
+     * and metadata.
+     *
+     * @param identifier the message identifier
+     * @param payload    serialized payload that can be deserialized on demand and never more than once
+     * @param metaData   serialized metadata that can be deserialized on demand and never more than once
+     */
     public SerializedMessage(String identifier, LazyDeserializingObject<T> payload,
                              LazyDeserializingObject<MetaData> metaData) {
         super(identifier);

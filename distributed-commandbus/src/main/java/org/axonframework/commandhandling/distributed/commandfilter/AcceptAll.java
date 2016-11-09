@@ -27,6 +27,10 @@ import java.util.function.Predicate;
  * @author Koen Lavooij
  */
 public enum AcceptAll implements Predicate<CommandMessage<?>>, Serializable {
+
+    /**
+     * Singleton instance of the {@link AcceptAll} filter
+     */
     INSTANCE;
 
     @Override

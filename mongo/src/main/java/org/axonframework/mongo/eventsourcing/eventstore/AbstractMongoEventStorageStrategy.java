@@ -43,6 +43,9 @@ import static com.mongodb.client.model.Filters.*;
 import static java.util.stream.StreamSupport.stream;
 
 /**
+ * Abstract implementation of a Mongo {@link StorageStrategy}. Implementations only need to provide methods to convert
+ * events and snapshots into Documents and vice versa.
+ *
  * @author Rene de Waele
  */
 public abstract class AbstractMongoEventStorageStrategy implements StorageStrategy {
@@ -119,17 +122,6 @@ public abstract class AbstractMongoEventStorageStrategy implements StorageStrate
         return stream(cursor.spliterator(), false).flatMap(this::extractTrackedEvents)
                 .filter(event -> event.trackingToken().isAfter(lastToken)).limit(batchSize)
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public TrackingToken getTokenForGapDetection(TrackingToken token) {
-        if (token == null) {
-            return null;
-        }
-        Assert.isTrue(token instanceof LegacyTrackingToken, () -> String.format("Token %s is of the wrong type", token));
-        LegacyTrackingToken legacyToken = (LegacyTrackingToken) token;
-        return new LegacyTrackingToken(legacyToken.getTimestamp(),
-                                       legacyToken.getAggregateIdentifier(), legacyToken.getSequenceNumber());
     }
 
     protected abstract FindIterable<Document> applyBatchSize(FindIterable<Document> cursor, int batchSize);

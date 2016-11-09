@@ -27,17 +27,49 @@ import java.util.Map;
  *
  * @author Rene de Waele
  */
-public enum MessageOriginProvider implements CorrelationDataProvider {
-    INSTANCE;
+public class MessageOriginProvider implements CorrelationDataProvider {
+    private static final String DEFAULT_CORRELATION_KEY = "message-origin";
 
     /**
-     * The default meta-data key, which is used to identify the {@link Message} that triggered another message
+     * Returns the default meta-data key for the message origin.
+     *
+     * @return the default meta-data key for the message origin
      */
-    public static final String DEFAULT_CORRELATION_KEY = "message-origin";
+    public static String getDefaultCorrelationKey() {
+        return DEFAULT_CORRELATION_KEY;
+    }
+
+    private final String correlationKey;
+
+    /**
+     * Initializes a {@link MessageOriginProvider} that uses the default key {@link #getDefaultCorrelationKey()}.
+     */
+    public MessageOriginProvider() {
+        this(DEFAULT_CORRELATION_KEY);
+    }
+
+    /**
+     * Initializes a {@link MessageOriginProvider} that uses the given {@code correlationKey}.
+     *
+     * @param correlationKey the key used to store the origin message identifier in the metadata of another message
+     */
+    public MessageOriginProvider(String correlationKey) {
+        this.correlationKey = correlationKey;
+    }
 
     @Override
     public Map<String, ?> correlationDataFor(Message<?> message) {
-        return Collections.singletonMap(DEFAULT_CORRELATION_KEY, message.getIdentifier());
+        return Collections.singletonMap(correlationKey, message.getIdentifier());
+    }
+
+    /**
+     * Returns the meta-data key for the message origin, which is used to identify the {@link Message} that triggered
+     * another message.
+     *
+     * @return he meta-data key for the message origin
+     */
+    public String getCorrelationKey() {
+        return correlationKey;
     }
 
 }

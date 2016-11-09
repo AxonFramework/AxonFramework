@@ -16,7 +16,14 @@
 
 package org.axonframework.mongo.eventsourcing.eventstore.documentperevent;
 
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.mongo.eventsourcing.eventstore.StorageStrategy;
+import org.bson.Document;
+
 /**
+ * Implementation of a {@link StorageStrategy} that stores one {@link Document} per commit of a list of {@link
+ * EventMessage events}.
+ *
  * @author Rene de Waele
  */
 public class EventEntryConfiguration {
@@ -25,6 +32,11 @@ public class EventEntryConfiguration {
             sequenceNumberProperty, typeProperty, payloadTypeProperty, payloadRevisionProperty, payloadProperty,
             metaDataProperty;
 
+    /**
+     * Returns the default {@link EventEntryConfiguration}.
+     *
+     * @return the default {@link EventEntryConfiguration}
+     */
     public static EventEntryConfiguration getDefault() {
         return builder().build();
     }
@@ -40,42 +52,93 @@ public class EventEntryConfiguration {
         payloadProperty = builder.payloadProperty;
         metaDataProperty = builder.metaDataProperty;
     }
+
+    /**
+     * Returns a new Builder for an {@link EventEntryConfiguration} initialized with default settings.
+     *
+     * @return a new Builder with default settings
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Get the name of the property with the timestamp of the event.
+     *
+     * @return the name of the property with the timestamp
+     */
     public String timestampProperty() {
         return timestampProperty;
     }
 
+    /**
+     * Get the name of the property with the identifier of the event.
+     *
+     * @return the name of the propery with the event identifier
+     */
     public String eventIdentifierProperty() {
         return eventIdentifierProperty;
     }
 
+    /**
+     * Get the name of the property with the aggregate identifier of the event.
+     *
+     * @return the name of the property with the aggregate identifier
+     */
     public String aggregateIdentifierProperty() {
         return aggregateIdentifierProperty;
     }
 
+    /**
+     * Get the name of the property with the aggregate sequence number of the event.
+     *
+     * @return the name of the property with the aggregate sequence number
+     */
     public String sequenceNumberProperty() {
         return sequenceNumberProperty;
     }
 
+    /**
+     * Get the name of the property with the aggregate type.
+     *
+     * @return the name of the property with the aggregate type
+     */
     public String typeProperty() {
         return typeProperty;
     }
 
+    /**
+     * Get the name of the property with the payload type.
+     *
+     * @return the name of the property with the payload type
+     */
     public String payloadTypeProperty() {
         return payloadTypeProperty;
     }
 
+    /**
+     * Get the name of the property with the payload revision.
+     *
+     * @return the name of the property with the payload revision
+     */
     public String payloadRevisionProperty() {
         return payloadRevisionProperty;
     }
 
+    /**
+     * Get the name of the property with the payload data.
+     *
+     * @return the name of the property with the payload data
+     */
     public String payloadProperty() {
         return payloadProperty;
     }
 
+    /**
+     * Get the name of the property with the metadata.
+     *
+     * @return the name of the property with the metadata
+     */
     public String metaDataProperty() {
         return metaDataProperty;
     }

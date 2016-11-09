@@ -28,18 +28,30 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A Predicate for CommandMessage's that will deny given command name. It can be combined with other
- * DenyCommandNameFilter's in an efficient manner
+ * A Predicate for CommandMessage's that can deny commands based on their name. It can be combined with other
+ * DenyCommandNameFilters in an efficient manner.
  *
  * @author Koen Lavooij
  */
 public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Serializable {
     private final Set<String> commandNames;
 
+    /**
+     * Initializes a {@link DenyCommandNameFilter} from the given set of {@code commandNames}. Commands with a name that
+     * is present in this set will be blocked by this filter.
+     *
+     * @param commandNames the names of commands blocked by this filter
+     */
     public DenyCommandNameFilter(Set<String> commandNames) {
         this.commandNames = new HashSet<>(commandNames);
     }
 
+    /**
+     * Initializes a {@link DenyCommandNameFilter} for a single {@code commandName}. Commands with a name equal
+     * to the given commandName will be blocked by this filter.
+     *
+     * @param commandName the name of the command blocked by this filter
+     */
     public DenyCommandNameFilter(String commandName) {
         this.commandNames = Collections.singleton(commandName);
     }
@@ -54,8 +66,7 @@ public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Seri
         if (other instanceof DenyCommandNameFilter) {
             return new DenyCommandNameFilter(
                     Stream.concat(commandNames.stream(), ((DenyCommandNameFilter) other).commandNames.stream())
-                            .collect(Collectors.toSet())
-            );
+                            .collect(Collectors.toSet()));
         } else {
             return (t) -> test(t) && other.test(t);
         }
@@ -65,8 +76,7 @@ public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Seri
     public Predicate<CommandMessage<?>> or(Predicate<? super CommandMessage<?>> other) {
         if (other instanceof DenyCommandNameFilter) {
             return new DenyCommandNameFilter(
-                    commandNames.stream()
-                            .filter(((DenyCommandNameFilter) other).commandNames::contains)
+                    commandNames.stream().filter(((DenyCommandNameFilter) other).commandNames::contains)
                             .collect(Collectors.toSet()));
         } else {
             return (t) -> test(t) || other.test(t);
@@ -92,8 +102,6 @@ public class DenyCommandNameFilter implements Predicate<CommandMessage<?>>, Seri
 
     @Override
     public String toString() {
-        return "DenyCommandNameFilter{" +
-                "commandNames=" + commandNames +
-                '}';
+        return "DenyCommandNameFilter{" + "commandNames=" + commandNames + '}';
     }
 }

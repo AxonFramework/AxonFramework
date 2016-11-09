@@ -18,9 +18,13 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 
 /**
+ * Abstract implementation of an {@link Upcaster} that eases the common process of upcasting one intermediate
+ * representation to another representation by applying a simple mapping function to the input stream of intermediate
+ * representations.
+ *
  * @author Rene de Waele
  */
-public abstract class AbstractSingleEntryUpcaster<T> implements Upcaster<T> {
+public abstract class SingleEntryUpcaster<T> implements Upcaster<T> {
 
     @Override
     public Stream<T> upcast(Stream<T> intermediateRepresentations) {
@@ -28,9 +32,8 @@ public abstract class AbstractSingleEntryUpcaster<T> implements Upcaster<T> {
             if (!canUpcast(entry)) {
                 return entry;
             }
-            return requireNonNull(doUpcast(entry),
-                                  () -> "Result from #doUpcast() should not be null. To remove an " +
-                                          "intermediateRepresentation add a filter to the input stream.");
+            return requireNonNull(doUpcast(entry), () -> "Result from #doUpcast() should not be null. To remove an " +
+                    "intermediateRepresentation add a filter to the input stream.");
         });
     }
 

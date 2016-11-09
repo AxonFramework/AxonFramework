@@ -27,6 +27,10 @@ import java.util.function.Predicate;
  * @author Koen Lavooij
  */
 public enum DenyAll implements Predicate<CommandMessage<?>>, Serializable {
+
+    /**
+     * Singleton instance of the {@link DenyAll} filter
+     */
     INSTANCE;
 
     @Override

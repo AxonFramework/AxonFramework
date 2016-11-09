@@ -124,7 +124,7 @@ public class AbstractSingleEventUpcasterTest {
         verify(input, never()).getOutputData();
     }
 
-    private static class StubEventUpcaster extends AbstractSingleEventUpcaster {
+    private static class StubEventUpcaster extends SingleEventUpcaster {
 
         private final SerializedType targetType = new SimpleSerializedType(StubEvent.class.getName(), null);
         private final Class<Document> expectedType = Document.class;

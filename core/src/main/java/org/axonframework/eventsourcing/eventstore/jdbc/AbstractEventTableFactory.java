@@ -18,6 +18,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
+ * Abstract implementation of an {@link EventTableFactory} that provides Jdbc "create table" statements compatible
+ * with most databases.
+ *
  * @author Rene de Waele
  */
 public abstract class AbstractEventTableFactory implements EventTableFactory {

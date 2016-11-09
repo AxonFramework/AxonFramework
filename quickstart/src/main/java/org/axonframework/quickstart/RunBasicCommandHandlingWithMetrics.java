@@ -32,7 +32,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.metrics.MessageMonitorBuilder;
+import org.axonframework.metrics.MessageMonitorFactory;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.quickstart.api.CreateToDoItemCommand;
 import org.axonframework.quickstart.api.MarkCompletedCommand;
@@ -54,7 +54,7 @@ public class RunBasicCommandHandlingWithMetrics {
         // Create a message message monitor that will monitor the messages going through the commandbus
         MetricRegistry mr = new MetricRegistry();
         MessageMonitor<CommandMessage<?>> commandBusMessageMonitor =
-                new MessageMonitorBuilder().buildCommandBusMonitor(mr);
+                MessageMonitorFactory.createCommandBusMonitor(mr);
 
         // let's start with the Command Bus
         CommandBus commandBus = new SimpleCommandBus(NoTransactionManager.INSTANCE, commandBusMessageMonitor);
@@ -63,7 +63,7 @@ public class RunBasicCommandHandlingWithMetrics {
         CommandGateway commandGateway = new DefaultCommandGateway(commandBus);
 
         // we'll store Events in memory
-        MessageMonitor<EventMessage<?>> eventBusMessageMonitor = new MessageMonitorBuilder().buildEventBusMonitor(mr);
+        MessageMonitor<EventMessage<?>> eventBusMessageMonitor = MessageMonitorFactory.createEventBusMonitor(mr);
         EventStore eventStore = new EmbeddedEventStore(new InMemoryEventStorageEngine(), eventBusMessageMonitor);
 
         // we need to configure the repository
@@ -75,7 +75,7 @@ public class RunBasicCommandHandlingWithMetrics {
 
         // Create a message monitor that will monitor the messages going through the event processor
         MessageMonitor<EventMessage<?>> eventProcessorMessageMonitor =
-                new MessageMonitorBuilder().buildEventProcessorMonitor(mr);
+                MessageMonitorFactory.createEventProcessorMonitor(mr);
 
         // We register an event listener to see which events are created
         new SubscribingEventProcessor("processor", new SimpleEventHandlerInvoker((EventListener) event -> System.out
